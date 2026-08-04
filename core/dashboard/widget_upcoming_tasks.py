@@ -66,11 +66,13 @@ class UpcomingTasksWidget(DashboardPanel):
         open_tasks_callback=None,
         open_task_callback=None,
         open_attention_callback=None,
+        open_schuzky_callback=None,
     ):
         super().__init__("Nadcházející události a úkoly")
         self.open_tasks_callback = open_tasks_callback
         self.open_task_callback = open_task_callback
         self.open_attention_callback = open_attention_callback
+        self.open_schuzky_callback = open_schuzky_callback
 
         self.empty_label = QLabel(_EMPTY_TEXT)
         self.empty_label.setWordWrap(True)
@@ -112,7 +114,15 @@ class UpcomingTasksWidget(DashboardPanel):
         self.open_button.setEnabled(False)
         self.open_button.clicked.connect(self._open_selected)
 
+        self.meetings_button = QPushButton("Schůzky")
+        self.meetings_button.setToolTip("Evidence schůzek")
+        if self.open_schuzky_callback:
+            self.meetings_button.clicked.connect(self.open_schuzky_callback)
+        else:
+            self.meetings_button.setEnabled(False)
+
         buttons_layout.addWidget(self.open_button)
+        buttons_layout.addWidget(self.meetings_button)
         buttons_layout.addStretch(1)
 
         self.layout.addWidget(self.empty_label, 1)

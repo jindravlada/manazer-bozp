@@ -23,6 +23,7 @@ def initialize_database() -> None:
         AuditProgramWorkplace,
     )
     from moduly.ukoly.modely.task import Task  # noqa: F401
+    from moduly.schuzky.modely.meeting import Meeting  # noqa: F401
     from moduly.kontroly.modely.control import Control  # noqa: F401
     from moduly.kontroly.modely.thp_monthly_control import ThpMonthlyControl  # noqa: F401
     from moduly.kontroly.modely.thp_yearly_kl_usage import ThpYearlyKlUsage  # noqa: F401

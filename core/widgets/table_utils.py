@@ -154,6 +154,29 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         for column in (COL_DUE_DATE, COL_RESPONSIBLE, COL_WORKPLACE, COL_SOURCE, COL_SOURCE_RECORD, COL_TYPE):
             header.setSectionResizeMode(column, QHeaderView.Fixed)
 
+    elif profile == "meetings":
+        from moduly.schuzky.constants import (
+            COL_LOCATION,
+            COL_ORGANIZER,
+            COL_STARTS_AT,
+            COL_STATUS,
+            COL_TITLE,
+        )
+
+        widths = {
+            COL_STARTS_AT: 140,
+            COL_TITLE: 280,
+            COL_LOCATION: 160,
+            COL_ORGANIZER: 180,
+            COL_STATUS: 120,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        table.setColumnHidden(0, True)
+        header.setSectionResizeMode(COL_TITLE, QHeaderView.Stretch)
+        for column in (COL_STARTS_AT, COL_LOCATION, COL_ORGANIZER, COL_STATUS):
+            header.setSectionResizeMode(column, QHeaderView.Fixed)
+
     elif profile == "mu_investigations":
         widths = {
             0: 0,    # ID

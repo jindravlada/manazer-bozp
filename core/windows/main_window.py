@@ -168,6 +168,7 @@ class MainWindow(QMainWindow):
                 open_accidents_callback=self._open_new_accident,
                 open_kontroly_callback=self._open_kontroly,
                 open_kniha_urazu_callback=self._open_kniha_urazu,
+                open_schuzky_callback=self._open_schuzky,
                 open_sprava_dat_callback=self._open_sprava_dat,
                 refresh_sprava_dat_callback=self._refresh_sprava_dat_status,
             )
@@ -195,6 +196,7 @@ class MainWindow(QMainWindow):
 
         preferred_order = [
             "ukoly",
+            "schuzky",
             "kniha_urazu",
             "vysetrovani_mu",
             "kontroly",
@@ -393,6 +395,9 @@ class MainWindow(QMainWindow):
 
     def _open_kontroly(self):
         self._show("kontroly")
+
+    def _open_schuzky(self):
+        self._show("schuzky")
 
     def _open_kniha_urazu(self):
         self._show("kniha_urazu")

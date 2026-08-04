@@ -6,6 +6,7 @@ from moduly.audity.module import get_module_definition as audity_module
 from moduly.proverky.module import get_module_definition as proverky_module
 from moduly.rizeni_rizik.module import get_module_definition as rizeni_rizik_module
 from moduly.koordinace_bozp.module import get_module_definition as koordinace_bozp_module
+from moduly.schuzky.module import get_module_definition as schuzky_module
 from moduly.vysetrovani_mu.module import get_module_definition as vysetrovani_mu_module
 from moduly.pravni_pozadavky.module import get_module_definition as pravni_pozadavky_module
 from moduly.sprava_dat.module import get_module_definition as sprava_dat_module
@@ -17,6 +18,7 @@ class ModuleManager:
         self.modules = [
             dashboard_module(),
             ukoly_module(),
+            schuzky_module(),
             kniha_urazu_module(),
             kontroly_module(),
             audity_module(),

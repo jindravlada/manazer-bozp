@@ -49,6 +49,7 @@ class DashboardPage(QWidget):
         open_accidents_callback=None,
         open_kontroly_callback=None,
         open_kniha_urazu_callback=None,
+        open_schuzky_callback=None,
         open_sprava_dat_callback=None,
         refresh_sprava_dat_callback=None,
     ) -> None:
@@ -59,6 +60,7 @@ class DashboardPage(QWidget):
         self.open_accidents_callback = open_accidents_callback
         self.open_kontroly_callback = open_kontroly_callback
         self.open_kniha_urazu_callback = open_kniha_urazu_callback
+        self.open_schuzky_callback = open_schuzky_callback
         self.open_sprava_dat_callback = open_sprava_dat_callback
         self.refresh_sprava_dat_callback = refresh_sprava_dat_callback
 
@@ -141,6 +143,7 @@ class DashboardPage(QWidget):
             open_tasks_callback=self.open_tasks_callback,
             open_task_callback=self.open_task_by_id_callback,
             open_attention_callback=self.open_attention_callback,
+            open_schuzky_callback=self.open_schuzky_callback,
         )
         self.calendar = CalendarPlaceholderWidget()
         self.activity = RecentActivityWidget()
