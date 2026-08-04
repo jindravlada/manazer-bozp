@@ -55,10 +55,10 @@ ACTION_OPEN = "Otevřít"
 ACTION_EDIT = "Upravit"
 ACTION_AGENDA = "Agenda"
 
-# Stejná legenda jako v modulu Úkoly.
+# Barva řádku = priorita (úkoly i události).
 ROW_LEGEND = (
-    "Řádky: červená = po termínu, žlutá = čeká na kontrolu, "
-    "zelená = ukončeno, šedá = zrušeno"
+    "Řádky: červená = Kritická, oranžová = Vysoká, "
+    "žlutá = Normální, zelená = Nízká"
 )
 
 EMPTY_STATE_TEXT = "Nejsou evidovány žádné položky agendy odpovídající filtrům."
@@ -84,7 +84,7 @@ COLUMN_HEADERS = [
 
 SOURCE_LABEL_MEETING = "Události"
 
-# Stejné barvy jako TaskTable.
+# Stavové barvy – kalendář / legacy (řádek v Agendě používá PRIORITY_COLORS).
 ROW_STATE_ACTIVE = "active"
 ROW_STATE_OVERDUE = "overdue"
 ROW_STATE_WAITING = "waiting_check"
@@ -98,3 +98,19 @@ ROW_COLORS = {
     ROW_STATE_DONE: "#d9f2d9",
     ROW_STATE_CANCELED: "#eeeeee",
 }
+
+# Stejné barvy priority jako indikátor v TaskTable.
+PRIORITY_CRITICAL = "Kritická"
+PRIORITY_HIGH = "Vysoká"
+PRIORITY_NORMAL = "Normální"
+PRIORITY_LOW = "Nízká"
+DEFAULT_PRIORITY = PRIORITY_NORMAL
+
+PRIORITY_COLORS = {
+    PRIORITY_CRITICAL: "#e53935",
+    PRIORITY_HIGH: "#fb8c00",
+    PRIORITY_NORMAL: "#fdd835",
+    PRIORITY_LOW: "#43a047",
+}
+DEFAULT_PRIORITY_COLOR = "#bdbdbd"
+

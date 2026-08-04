@@ -19,9 +19,11 @@ from PySide6.QtWidgets import (
 from core.widgets.dialog_utils import create_save_cancel_box
 from moduly.schuzky.constants import (
     DEFAULT_EVENT_TYPE,
+    DEFAULT_MEETING_PRIORITY,
     DEFAULT_MEETING_STATUS,
     DIALOG_WINDOW_TITLE,
     END_BEFORE_START_MESSAGE,
+    MEETING_PRIORITIES,
     MEETING_STATUSES,
     TAB_DISCUSSION,
     TAB_MEETING,
@@ -109,11 +111,16 @@ class MeetingDialog(QDialog):
             min_height=110,
         )
 
+        self.priority_combo = QComboBox()
+        self.priority_combo.addItems(list(MEETING_PRIORITIES))
+        self.priority_combo.setCurrentText(DEFAULT_MEETING_PRIORITY)
+
         self.status_combo = QComboBox()
         self.status_combo.addItems(list(MEETING_STATUSES))
         self.status_combo.setCurrentText(DEFAULT_MEETING_STATUS)
 
         form.addRow("Typ události:", self.event_type_combo)
+        form.addRow("Priorita:", self.priority_combo)
         form.addRow("Název události:", self.title_edit)
         form.addRow("Datum zahájení:", self.starts_at_edit)
         form.addRow("Datum ukončení:", self.ends_at_edit)
@@ -154,6 +161,9 @@ class MeetingDialog(QDialog):
             meeting_service.parse_participant_ids(meeting)
         )
         self.agenda_edit.setPlainText(meeting.agenda or "")
+        priority = meeting_service.normalize_priority(getattr(meeting, "priority", None))
+        if self.priority_combo.findText(priority) >= 0:
+            self.priority_combo.setCurrentText(priority)
         status = meeting.status or DEFAULT_MEETING_STATUS
         if self.status_combo.findText(status) >= 0:
             self.status_combo.setCurrentText(status)
@@ -175,6 +185,7 @@ class MeetingDialog(QDialog):
             "participant_ids": self.participants_selector.selected_person_ids(),
             "agenda": self.agenda_edit.toPlainText(),
             "status": self.status_combo.currentText(),
+            "priority": self.priority_combo.currentText(),
             "proceedings": self._legacy_proceedings,
             "conclusions": self._legacy_conclusions,
             "notes": self._legacy_notes,

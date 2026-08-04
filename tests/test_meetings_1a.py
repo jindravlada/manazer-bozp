@@ -33,6 +33,9 @@ with patch.object(Path, "home", return_value=_TMP):
     from core.dashboard.widget_upcoming_tasks import UpcomingTasksWidget
     from moduly.nastaveni.sluzby.person_service import person_service
     from moduly.schuzky.constants import (
+        COL_LOCATION,
+        COL_TITLE,
+        COL_TYPE,
         DEFAULT_MEETING_STATUS,
         END_BEFORE_START_MESSAGE,
         STATUS_PLANNED,
@@ -171,14 +174,14 @@ class Meetings1aTestCase(unittest.TestCase):
 
         found_row = None
         for row in range(page.table.rowCount()):
-            if page.table.item(row, 3).text() == "Schůzka v přehledu":
+            if page.table.item(row, COL_TITLE).text() == "Schůzka v přehledu":
                 found_row = row
                 break
         self.assertIsNotNone(found_row)
         assert found_row is not None
         self.assertEqual(page.table.item(found_row, 0).text(), str(meeting.id))
-        self.assertEqual(page.table.item(found_row, 2).text(), "Schůzka")
-        self.assertEqual(page.table.item(found_row, 4).text(), "Halová")
+        self.assertEqual(page.table.item(found_row, COL_TYPE).text(), "Schůzka")
+        self.assertEqual(page.table.item(found_row, COL_LOCATION).text(), "Halová")
 
         page.table.selectRow(found_row)
         opened: list[int] = []

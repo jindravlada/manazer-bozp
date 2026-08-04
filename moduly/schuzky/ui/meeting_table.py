@@ -19,12 +19,15 @@ from moduly.schuzky.constants import (
     COL_ID,
     COL_LOCATION,
     COL_ORGANIZER,
+    COL_PRIORITY,
     COL_STARTS_AT,
     COL_STATUS,
     COL_TITLE,
     COL_TYPE,
     COLUMN_HEADERS,
     DEFAULT_EVENT_TYPE,
+    DEFAULT_MEETING_PRIORITY,
+    MEETING_PRIORITY_RANK,
     MEETING_STATUSES,
 )
 from moduly.schuzky.sluzby.meeting_event_type_service import meeting_event_type_service
@@ -75,6 +78,17 @@ class MeetingTable(QTableWidget):
                     row,
                     COL_TYPE,
                     create_typed_item(event_type, typed_text(event_type), stable_id=stable_id),
+                )
+                priority = (getattr(meeting, "priority", None) or "").strip() or DEFAULT_MEETING_PRIORITY
+                priority_rank = MEETING_PRIORITY_RANK.get(priority, len(MEETING_PRIORITY_RANK))
+                self.setItem(
+                    row,
+                    COL_PRIORITY,
+                    create_typed_item(
+                        priority,
+                        typed_status(priority_rank, label=priority),
+                        stable_id=stable_id,
+                    ),
                 )
                 title = meeting.title or "—"
                 self.setItem(

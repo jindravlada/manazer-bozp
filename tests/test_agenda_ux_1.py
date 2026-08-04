@@ -37,7 +37,10 @@ with patch.object(Path, "home", return_value=_TMP):
         DEFAULT_STATUS_MODE,
         ITEM_TYPE_MEETING,
         ITEM_TYPE_TASK,
-        ROW_COLORS,
+        PRIORITY_COLORS,
+        PRIORITY_CRITICAL,
+        PRIORITY_HIGH,
+        PRIORITY_NORMAL,
         ROW_LEGEND,
         ROW_STATE_CANCELED,
         ROW_STATE_DONE,
@@ -171,10 +174,11 @@ class AgendaUx1TestCase(unittest.TestCase):
         self.assertEqual(modes, list(STATUS_MODES_MEETINGS_ONLY))
         self.assertIn(STATUS_MODE_PLANNED, modes)
 
-    def test_row_colors_match_tasks(self) -> None:
+    def test_row_colors_match_priority(self) -> None:
         overdue = task_service.create_task(
             title="Po termínu",
             due_date=date.today() - timedelta(days=1),
+            priority=PRIORITY_CRITICAL,
         )
         waiting = task_service.create_task(
             title="Čeká kontrola",
@@ -183,21 +187,25 @@ class AgendaUx1TestCase(unittest.TestCase):
             completed_date=date.today(),
             requires_verification=True,
             check_due_date=date.today() + timedelta(days=10),
+            priority=PRIORITY_HIGH,
         )
         done = task_service.create_task(
             title="Hotovo",
             due_date=date.today() + timedelta(days=1),
+            priority=PRIORITY_NORMAL,
         )
         task_service.mark_completed(done.id)
         cancelled_meeting = meeting_service.create_meeting(
             title="Zrušeno",
             starts_at=datetime.now() + timedelta(days=1),
             status=STATUS_CANCELLED,
+            priority=PRIORITY_NORMAL,
         )
         closed = meeting_service.create_meeting(
             title="Uzavřeno",
             starts_at=datetime.now() - timedelta(days=2),
             status=STATUS_CLOSED,
+            priority=PRIORITY_CRITICAL,
         )
 
         items = { (i.item_type, i.source_id): i for i in agenda_service.get_items() }
@@ -209,31 +217,41 @@ class AgendaUx1TestCase(unittest.TestCase):
             ROW_STATE_CANCELED,
         )
         self.assertEqual(items[(ITEM_TYPE_MEETING, closed.id)].row_state, ROW_STATE_DONE)
+        self.assertEqual(items[(ITEM_TYPE_TASK, overdue.id)].priority, PRIORITY_CRITICAL)
+        self.assertEqual(items[(ITEM_TYPE_MEETING, closed.id)].priority, PRIORITY_CRITICAL)
 
         page = AgendaPage()
         page.status_filter.setCurrentText(STATUS_MODE_ALL)
         page.refresh()
         from PySide6.QtCore import Qt
 
+        found_task = False
+        found_meeting = False
         for row in range(page.table.rowCount()):
             payload = page.table.item(row, COL_TITLE).data(Qt.ItemDataRole.UserRole)
+            color = page.table.item(row, COL_TITLE).background().color()
             if payload.source_id == overdue.id and payload.item_type == ITEM_TYPE_TASK:
-                color = page.table.item(row, COL_TITLE).background().color()
-                self.assertEqual(color, QColor(ROW_COLORS[ROW_STATE_OVERDUE]))
-                break
-        else:
-            self.fail("overdue row not found")
+                self.assertEqual(color, QColor(PRIORITY_COLORS[PRIORITY_CRITICAL]))
+                found_task = True
+            if payload.source_id == closed.id and payload.item_type == ITEM_TYPE_MEETING:
+                self.assertEqual(color, QColor(PRIORITY_COLORS[PRIORITY_CRITICAL]))
+                found_meeting = True
+        self.assertTrue(found_task, "critical task row not found")
+        self.assertTrue(found_meeting, "critical meeting row not found")
 
-    def test_legend_same_as_tasks(self) -> None:
+    def test_legend_shows_priority(self) -> None:
         page = AgendaPage()
         self.assertEqual(page.legend.text(), ROW_LEGEND)
+        self.assertIn("Kritická", ROW_LEGEND)
+        self.assertIn("Normální", ROW_LEGEND)
         ukoly = UkolyPage()
-        legends = [
+        task_legends = [
             label.text()
             for label in ukoly.findChildren(QLabel)
             if "červená = po termínu" in label.text()
         ]
-        self.assertEqual(legends, [ROW_LEGEND])
+        self.assertEqual(len(task_legends), 1)
+        self.assertNotEqual(task_legends[0], ROW_LEGEND)
 
     def test_combined_active_view(self) -> None:
         task = task_service.create_task(

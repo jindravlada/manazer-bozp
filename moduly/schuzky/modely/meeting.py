@@ -37,6 +37,8 @@ class Meeting(Base):
 
     status: Mapped[str] = mapped_column(String(30), default="Naplánováno", nullable=False)
 
+    priority: Mapped[str] = mapped_column(String(30), default="Normální", nullable=False)
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,

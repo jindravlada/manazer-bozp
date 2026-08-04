@@ -7,8 +7,10 @@ from datetime import datetime
 
 from moduly.nastaveni.sluzby.person_service import person_service
 from moduly.schuzky.constants import (
+    DEFAULT_MEETING_PRIORITY,
     DEFAULT_MEETING_STATUS,
     END_BEFORE_START_MESSAGE,
+    MEETING_PRIORITIES,
     MEETING_STATUSES,
 )
 from moduly.schuzky.modely.meeting import Meeting
@@ -42,12 +44,14 @@ class MeetingService:
         participant_ids: list[int] | None = None,
         agenda: str = "",
         status: str = DEFAULT_MEETING_STATUS,
+        priority: str = DEFAULT_MEETING_PRIORITY,
         proceedings: str = "",
         conclusions: str = "",
         notes: str = "",
     ) -> Meeting:
         self.validate_times(starts_at, ends_at)
         status = status if status in MEETING_STATUSES else DEFAULT_MEETING_STATUS
+        priority = self.normalize_priority(priority)
         meeting = Meeting(
             title=(title or "").strip(),
             event_type=meeting_event_type_service.normalize(event_type),
@@ -63,6 +67,7 @@ class MeetingService:
             conclusions=conclusions or "",
             notes=notes or "",
             status=status,
+            priority=priority,
         )
         return self.repository.add(meeting)
 
@@ -79,6 +84,7 @@ class MeetingService:
         participant_ids: list[int] | None = None,
         agenda: str = "",
         status: str = DEFAULT_MEETING_STATUS,
+        priority: str = DEFAULT_MEETING_PRIORITY,
         proceedings: str = "",
         conclusions: str = "",
         notes: str = "",
@@ -89,6 +95,7 @@ class MeetingService:
 
         self.validate_times(starts_at, ends_at)
         status = status if status in MEETING_STATUSES else DEFAULT_MEETING_STATUS
+        priority = self.normalize_priority(priority)
 
         meeting.title = (title or "").strip()
         meeting.event_type = meeting_event_type_service.normalize(event_type)
@@ -104,8 +111,16 @@ class MeetingService:
         meeting.conclusions = conclusions or ""
         meeting.notes = notes or ""
         meeting.status = status
+        meeting.priority = priority
         meeting.updated_at = datetime.now()
         return self.repository.update(meeting)
+
+    @staticmethod
+    def normalize_priority(value: str | None) -> str:
+        text = (value or "").strip()
+        if text in MEETING_PRIORITIES:
+            return text
+        return DEFAULT_MEETING_PRIORITY
 
     def validate_times(
         self,

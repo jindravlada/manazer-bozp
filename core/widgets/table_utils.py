@@ -158,6 +158,7 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         from moduly.schuzky.constants import (
             COL_LOCATION,
             COL_ORGANIZER,
+            COL_PRIORITY,
             COL_STARTS_AT,
             COL_STATUS,
             COL_TITLE,
@@ -167,6 +168,7 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         widths = {
             COL_STARTS_AT: 140,
             COL_TYPE: 130,
+            COL_PRIORITY: 100,
             COL_TITLE: 260,
             COL_LOCATION: 160,
             COL_ORGANIZER: 180,
@@ -176,7 +178,14 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             table.setColumnWidth(column, width)
         table.setColumnHidden(0, True)
         header.setSectionResizeMode(COL_TITLE, QHeaderView.Stretch)
-        for column in (COL_STARTS_AT, COL_TYPE, COL_LOCATION, COL_ORGANIZER, COL_STATUS):
+        for column in (
+            COL_STARTS_AT,
+            COL_TYPE,
+            COL_PRIORITY,
+            COL_LOCATION,
+            COL_ORGANIZER,
+            COL_STATUS,
+        ):
             header.setSectionResizeMode(column, QHeaderView.Fixed)
 
     elif profile == "agenda":

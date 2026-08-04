@@ -22,8 +22,8 @@ from moduly.agenda.constants import (
     COL_TITLE,
     COL_TYPE,
     COLUMN_HEADERS,
-    ROW_COLORS,
-    ROW_STATE_ACTIVE,
+    DEFAULT_PRIORITY_COLOR,
+    PRIORITY_COLORS,
 )
 from moduly.agenda.sluzby.agenda_service import AgendaItem
 
@@ -71,7 +71,7 @@ class AgendaTable(QTableWidget):
                     _TYPE_STABLE_PREFIX.get(agenda.item_type, 9) * 1_000_000_000
                     + int(agenda.source_id)
                 )
-                brush = QBrush(self._row_color(agenda.row_state))
+                brush = QBrush(self._row_color(agenda.priority))
 
                 title_item = create_typed_item(
                     agenda.title,
@@ -120,8 +120,8 @@ class AgendaTable(QTableWidget):
             self.sortItems(COL_DUE, Qt.SortOrder.AscendingOrder)
 
     @staticmethod
-    def _row_color(row_state: str) -> QColor:
-        return QColor(ROW_COLORS.get(row_state, ROW_COLORS[ROW_STATE_ACTIVE]))
+    def _row_color(priority: str) -> QColor:
+        return QColor(PRIORITY_COLORS.get(priority, DEFAULT_PRIORITY_COLOR))
 
     @staticmethod
     def _format_due(agenda: AgendaItem) -> str:

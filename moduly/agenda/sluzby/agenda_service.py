@@ -5,9 +5,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, datetime, time
 
-from core.dashboard.attention_service import build_sort_key
 from core.shared.task_source_display import task_source_short_label
 from moduly.agenda.constants import (
+    DEFAULT_PRIORITY,
     ITEM_TYPE_MEETING,
     ITEM_TYPE_TASK,
     ROW_STATE_ACTIVE,
@@ -27,6 +27,8 @@ from moduly.agenda.constants import (
     TYPE_LABEL_TASK,
 )
 from moduly.schuzky.constants import (
+    DEFAULT_MEETING_PRIORITY,
+    MEETING_PRIORITIES,
     STATUS_CANCELLED,
     STATUS_CLOSED,
     STATUS_HELD,
@@ -34,6 +36,13 @@ from moduly.schuzky.constants import (
 )
 from moduly.schuzky.sluzby.meeting_service import meeting_service
 from moduly.ukoly.sluzby.task_service import task_service
+
+
+def _build_sort_key(*args, **kwargs):
+    # Lazy import – přeruší cyklus agenda_service ↔ core.dashboard.
+    from core.dashboard.attention_service import build_sort_key
+
+    return build_sort_key(*args, **kwargs)
 
 
 @dataclass(frozen=True)
@@ -46,6 +55,7 @@ class AgendaItem:
     status: str
     source: str
     row_state: str = ROW_STATE_ACTIVE
+    priority: str = DEFAULT_PRIORITY
     due_date: date | None = None
     event_at: datetime | None = None
     ends_at: datetime | None = None
@@ -63,6 +73,13 @@ class AgendaItem:
     @property
     def tooltip_title(self) -> str:
         return (self.base_title or self.title or "").strip() or "Bez názvu"
+
+
+def _normalize_priority(value: str | None) -> str:
+    text = (value or "").strip()
+    if text in MEETING_PRIORITIES:
+        return text
+    return DEFAULT_PRIORITY
 
 
 def _task_row_state(task, *, today: date) -> str:
@@ -112,9 +129,10 @@ def _from_tasks(*, today: date) -> list[AgendaItem]:
                 status=status,
                 source=source,
                 row_state=_task_row_state(task, today=today),
+                priority=_normalize_priority(getattr(task, "priority", None)),
                 due_date=task.due_date,
                 base_title=title,
-                sort_key=build_sort_key(
+                sort_key=_build_sort_key(
                     task.due_date,
                     item_type=ITEM_TYPE_TASK,
                     title=title,
@@ -146,11 +164,14 @@ def _from_meetings(*, now: datetime) -> list[AgendaItem]:
                 status=status,
                 source=SOURCE_LABEL_MEETING,
                 row_state=_meeting_row_state(meeting, now=now),
+                priority=_normalize_priority(
+                    getattr(meeting, "priority", None) or DEFAULT_MEETING_PRIORITY
+                ),
                 due_date=starts.date() if starts is not None else None,
                 event_at=starts,
                 ends_at=meeting.ends_at,
                 base_title=base_title,
-                sort_key=build_sort_key(
+                sort_key=_build_sort_key(
                     starts.date() if starts is not None else None,
                     item_type=ITEM_TYPE_MEETING,
                     title=title,
