@@ -25,7 +25,6 @@ from moduly.schuzky.constants import (
     TEMPLATE_ACTION_NEW,
     TEMPLATE_ACTION_OPEN,
     TEMPLATE_ACTION_REMOVE,
-    TEMPLATE_COL_EVENT_TITLE,
     TEMPLATE_COL_ITEMS,
     TEMPLATE_COL_NAME,
     TEMPLATE_COL_PRIORITY,
@@ -61,13 +60,12 @@ class MeetingTemplatesPage(QWidget):
         toolbar.addWidget(self.remove_btn)
         toolbar.addStretch()
 
-        self.table = QTableWidget(0, 6)
+        self.table = QTableWidget(0, 5)
         self.table.setHorizontalHeaderLabels(
             [
                 "ID",
                 TEMPLATE_COL_NAME,
                 TEMPLATE_COL_TYPE,
-                TEMPLATE_COL_EVENT_TITLE,
                 TEMPLATE_COL_PRIORITY,
                 TEMPLATE_COL_ITEMS,
             ]
@@ -117,10 +115,9 @@ class MeetingTemplatesPage(QWidget):
             self.table.setItem(row, 0, QTableWidgetItem(str(template.id)))
             self.table.setItem(row, 1, QTableWidgetItem(template.name or ""))
             self.table.setItem(row, 2, QTableWidgetItem(template.event_type or ""))
-            self.table.setItem(row, 3, QTableWidgetItem(template.title or ""))
-            self.table.setItem(row, 4, QTableWidgetItem(template.priority or ""))
+            self.table.setItem(row, 3, QTableWidgetItem(template.priority or ""))
             count = meeting_template_service.agenda_item_count(template)
-            self.table.setItem(row, 5, QTableWidgetItem(str(count)))
+            self.table.setItem(row, 4, QTableWidgetItem(str(count)))
         has_rows = bool(templates)
         self.table.setVisible(has_rows)
         self.empty_label.setVisible(not has_rows)

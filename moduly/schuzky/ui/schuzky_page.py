@@ -14,7 +14,11 @@ from PySide6.QtWidgets import (
 from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
-from moduly.schuzky.constants import ACTION_NEW_FROM_TEMPLATE, LIST_WINDOW_TITLE
+from moduly.schuzky.constants import (
+    ACTION_NEW_FROM_TEMPLATE,
+    ACTION_OPEN_TEMPLATES,
+    LIST_WINDOW_TITLE,
+)
 from moduly.schuzky.sluzby.meeting_agenda_item_service import meeting_agenda_item_service
 from moduly.schuzky.sluzby.meeting_service import (
     MeetingValidationError,
@@ -35,11 +39,13 @@ class SchuzkyPage(QWidget):
         toolbar = QHBoxLayout()
         self.new_btn = QPushButton("Nová událost")
         self.new_from_template_btn = QPushButton(ACTION_NEW_FROM_TEMPLATE)
+        self.templates_btn = QPushButton(ACTION_OPEN_TEMPLATES)
         self.open_btn = QPushButton("Otevřít")
         self.edit_btn = QPushButton("Upravit")
 
         toolbar.addWidget(self.new_btn)
         toolbar.addWidget(self.new_from_template_btn)
+        toolbar.addWidget(self.templates_btn)
         toolbar.addWidget(self.open_btn)
         toolbar.addWidget(self.edit_btn)
         toolbar.addStretch()
@@ -54,6 +60,7 @@ class SchuzkyPage(QWidget):
 
         self.new_btn.clicked.connect(self.new_meeting)
         self.new_from_template_btn.clicked.connect(self.new_meeting_from_template)
+        self.templates_btn.clicked.connect(self.open_templates)
         self.open_btn.clicked.connect(self.open_selected_meeting)
         self.edit_btn.clicked.connect(self.open_selected_meeting)
         self.table.doubleClicked.connect(self.open_selected_meeting)
@@ -104,6 +111,15 @@ class SchuzkyPage(QWidget):
         if create_meeting_from_template(self):
             self.refresh()
             self._refresh_dashboard()
+
+    def open_templates(self) -> None:
+        widget = self
+        while widget is not None:
+            show = getattr(widget, "_show", None)
+            if callable(show):
+                show("sablony_udalosti")
+                return
+            widget = widget.parent()
 
     def open_selected_meeting(self) -> None:
         meeting_id = self._selected_meeting_id()

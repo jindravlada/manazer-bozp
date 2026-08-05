@@ -52,7 +52,7 @@ class MeetingTemplateService:
         template = MeetingTemplate(
             name=template_name,
             event_type=meeting_event_type_service.normalize(event_type),
-            title=(title or "").strip(),
+            title=template_name,
             location=(location or "").strip(),
             priority=meeting_service.normalize_priority(priority),
             organizer_person_id=organizer_person_id,
@@ -88,7 +88,7 @@ class MeetingTemplateService:
 
         template.name = template_name
         template.event_type = meeting_event_type_service.normalize(event_type)
-        template.title = (title or "").strip()
+        template.title = template_name
         template.location = (location or "").strip()
         template.priority = meeting_service.normalize_priority(priority)
         template.organizer_person_id = organizer_person_id
@@ -156,9 +156,12 @@ class MeetingTemplateService:
         return result
 
     def meeting_data_from_template(self, template: MeetingTemplate) -> dict:
-        """Data pro novou Událost: bez data/času, stav Naplánováno."""
+        """Data pro novou Událost: bez data/času, stav Naplánováno.
+
+        Název Události se předvyplní názvem šablony.
+        """
         return {
-            "title": template.title or "",
+            "title": (template.name or "").strip(),
             "event_type": meeting_event_type_service.normalize(
                 template.event_type or DEFAULT_EVENT_TYPE
             ),

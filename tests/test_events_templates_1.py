@@ -59,7 +59,6 @@ class EventsTemplates1TestCase(unittest.TestCase):
         template = meeting_template_service.create_template(
             name="Kontrola skladu",
             event_type="Kontrolní pochůzka",
-            title="Kontrola skladu BOZP",
             location="Sklad A",
             priority="Vysoká",
             organizer_person_id=organizer.id,
@@ -84,6 +83,7 @@ class EventsTemplates1TestCase(unittest.TestCase):
             ],
         )
         self.assertEqual(template.name, "Kontrola skladu")
+        self.assertEqual(template.title, "Kontrola skladu")
         self.assertEqual(template.event_type, "Kontrolní pochůzka")
         self.assertEqual(template.location, "Sklad A")
         self.assertEqual(template.priority, "Vysoká")
@@ -106,7 +106,6 @@ class EventsTemplates1TestCase(unittest.TestCase):
         template = meeting_template_service.create_template(
             name="Šablona A",
             event_type="Porada",
-            title="Týdenní porada",
             location="Zasedačka",
             priority="Normální",
             organizer_person_id=organizer.id,
@@ -120,7 +119,7 @@ class EventsTemplates1TestCase(unittest.TestCase):
 
         dialog = MeetingDialog(template=template)
         data = dialog.get_data()
-        self.assertEqual(data["title"], "Týdenní porada")
+        self.assertEqual(data["title"], "Šablona A")
         self.assertEqual(data["event_type"], "Porada")
         self.assertEqual(data["location"], "Zasedačka")
         self.assertEqual(data["priority"], "Normální")
@@ -182,7 +181,6 @@ class EventsTemplates1TestCase(unittest.TestCase):
     def test_create_from_template_action_flow(self) -> None:
         template = meeting_template_service.create_template(
             name="Flow",
-            title="Z flow",
             event_type="Schůzka",
             location="Online",
         )
@@ -205,7 +203,7 @@ class EventsTemplates1TestCase(unittest.TestCase):
             self.assertTrue(create_meeting_from_template(None))
 
         created = [
-            m for m in meeting_service.get_all() if (m.title or "") == "Z flow"
+            m for m in meeting_service.get_all() if (m.title or "") == "Flow"
         ]
         self.assertTrue(created)
         self.assertIsNone(created[0].starts_at)

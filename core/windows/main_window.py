@@ -228,7 +228,6 @@ class MainWindow(QMainWindow):
 
         preferred_order = [
             "agenda",
-            "sablony_udalosti",
             "kniha_urazu",
             "vysetrovani_mu",
             "kontroly",

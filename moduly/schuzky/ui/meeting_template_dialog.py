@@ -65,7 +65,7 @@ class MeetingTemplateDialog(QDialog):
         form = QFormLayout(page)
 
         self.name_edit = QLineEdit()
-        self.name_edit.setPlaceholderText("Název šablony")
+        self.name_edit.setPlaceholderText("Název")
 
         self.event_type_combo = QComboBox()
         self.event_type_combo.setEditable(False)
@@ -78,17 +78,13 @@ class MeetingTemplateDialog(QDialog):
         self.priority_combo.addItems(list(MEETING_PRIORITIES))
         self.priority_combo.setCurrentText(DEFAULT_MEETING_PRIORITY)
 
-        self.title_edit = QLineEdit()
-        self.title_edit.setPlaceholderText("Název události")
-
         self.location_edit = MeetingLocationTypeahead()
         self.organizer_selector = MeetingOrganizerWidget()
         self.participants_selector = MeetingParticipantsWidget()
 
-        form.addRow("Název šablony:", self.name_edit)
+        form.addRow("Název:", self.name_edit)
         form.addRow("Typ události:", self.event_type_combo)
         form.addRow("Priorita:", self.priority_combo)
-        form.addRow("Název události:", self.title_edit)
         form.addRow("Místo:", self.location_edit)
         form.addRow("Organizátor:", self.organizer_selector)
         form.addRow("Účastníci:", self.participants_selector)
@@ -115,7 +111,6 @@ class MeetingTemplateDialog(QDialog):
         if self.priority_combo.findText(priority) >= 0:
             self.priority_combo.setCurrentText(priority)
 
-        self.title_edit.setText(template.title or "")
         self.location_edit.set_location_text(template.location or "")
         self.organizer_selector.set_person_id(template.organizer_person_id)
         self.participants_selector.set_participants(
@@ -129,10 +124,11 @@ class MeetingTemplateDialog(QDialog):
         )
 
     def get_data(self) -> dict:
+        name = self.name_edit.text().strip()
         return {
-            "name": self.name_edit.text().strip(),
+            "name": name,
             "event_type": self.event_type_combo.currentText().strip(),
-            "title": self.title_edit.text().strip(),
+            "title": name,
             "location": self.location_edit.display_text(),
             "priority": self.priority_combo.currentText(),
             "organizer_person_id": self.organizer_selector.current_person_id(),

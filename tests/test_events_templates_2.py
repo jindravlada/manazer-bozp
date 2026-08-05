@@ -75,10 +75,7 @@ class EventsTemplates2TestCase(unittest.TestCase):
 
         window = MainWindow()
         texts = _sidebar_texts(window)
-        self.assertIn(MODULE_NAME, texts)
-        agenda_idx = texts.index("Agenda")
-        templates_idx = texts.index(MODULE_NAME)
-        self.assertEqual(templates_idx, agenda_idx + 1)
+        self.assertNotIn(MODULE_NAME, texts)
         self.assertIn(MODULE_KEY, window._page_widgets)
         self.assertIsInstance(window._page_widgets[MODULE_KEY], MeetingTemplatesPage)
 
@@ -90,7 +87,7 @@ class EventsTemplates2TestCase(unittest.TestCase):
             agenda_items=[],
         )
         self.assertEqual(template.name, "Rozpracovaná")
-        self.assertEqual(template.title, "")
+        self.assertEqual(template.title, "Rozpracovaná")
         reloaded = meeting_template_service.get_by_id(template.id)
         self.assertIsNotNone(reloaded)
         assert reloaded is not None
@@ -110,7 +107,6 @@ class EventsTemplates2TestCase(unittest.TestCase):
             template.id,
             name="Upravená",
             event_type="Školení",
-            title="Nový název",
             location="Halová",
             priority="Vysoká",
             agenda_items=[
@@ -119,7 +115,7 @@ class EventsTemplates2TestCase(unittest.TestCase):
         )
         self.assertEqual(updated.name, "Upravená")
         self.assertEqual(updated.event_type, "Školení")
-        self.assertEqual(updated.title, "Nový název")
+        self.assertEqual(updated.title, "Upravená")
         self.assertEqual(updated.location, "Halová")
         self.assertEqual(updated.priority, "Vysoká")
         items = meeting_template_service.parse_agenda_items(updated)
@@ -170,7 +166,6 @@ class EventsTemplates2TestCase(unittest.TestCase):
         self.assertFalse(dialog.agenda_items_widget.tasks_table.isVisible())
 
         dialog.name_edit.setText("S účastníky")
-        dialog.title_edit.setText("Událost ze šablony")
         dialog.organizer_selector.set_person_id(organizer.id)
         dialog.participants_selector.set_participants(
             person_ids=[participant.id],
@@ -213,7 +208,6 @@ class EventsTemplates2TestCase(unittest.TestCase):
         template = meeting_template_service.create_template(
             name="Nezávislost",
             event_type="Kontrolní pochůzka",
-            title="Kontrola",
             location="Sklad",
             priority="Kritická",
             agenda_items=[
@@ -227,6 +221,7 @@ class EventsTemplates2TestCase(unittest.TestCase):
             ],
         )
         data = meeting_template_service.meeting_data_from_template(template)
+        self.assertEqual(data["title"], "Nezávislost")
         self.assertIsNone(data["starts_at"])
         self.assertIsNone(data["ends_at"])
         self.assertEqual(data["status"], DEFAULT_MEETING_STATUS)
@@ -282,7 +277,7 @@ class EventsTemplates2TestCase(unittest.TestCase):
 
         reloaded_template = meeting_template_service.get_by_id(template.id)
         assert reloaded_template is not None
-        self.assertEqual(reloaded_template.title, "Kontrola")
+        self.assertEqual(reloaded_template.name, "Nezávislost")
         self.assertEqual(reloaded_template.location, "Sklad")
         tmpl_items = meeting_template_service.parse_agenda_items(reloaded_template)
         self.assertEqual(tmpl_items[0]["title"], "Vstup")
@@ -291,7 +286,6 @@ class EventsTemplates2TestCase(unittest.TestCase):
             template.id,
             name="Nezávislost",
             event_type="Kontrolní pochůzka",
-            title="Šablona změněna",
             location="Nové místo",
             priority="Kritická",
             agenda_items=[{"title": "Nový bod šablony", "moje_sdeleni": "", "status": "Připraveno"}],
@@ -314,9 +308,15 @@ class EventsTemplates2TestCase(unittest.TestCase):
         self.assertEqual(page.new_btn.text(), TEMPLATE_ACTION_NEW)
         self.assertEqual(page.remove_btn.text(), TEMPLATE_ACTION_REMOVE)
 
+        from moduly.schuzky.constants import ACTION_OPEN_TEMPLATES
+        from moduly.schuzky.ui.schuzky_page import SchuzkyPage
+
         agenda = AgendaPage()
         self.assertEqual(agenda.new_from_template_btn.text(), ACTION_NEW_FROM_TEMPLATE)
-        self.assertEqual(agenda.templates_btn.text(), MODULE_NAME)
+        self.assertEqual(agenda.templates_btn.text(), ACTION_OPEN_TEMPLATES)
+
+        schuzky = SchuzkyPage()
+        self.assertEqual(schuzky.templates_btn.text(), ACTION_OPEN_TEMPLATES)
 
 
 if __name__ == "__main__":
