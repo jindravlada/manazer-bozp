@@ -27,6 +27,8 @@ class Meeting(Base):
 
     participant_ids_json: Mapped[str] = mapped_column(Text, default="[]")
     participant_names: Mapped[str] = mapped_column(Text, default="")
+    # Externí účastníci jen k této události (JSON pole objektů).
+    external_participants_json: Mapped[str] = mapped_column(Text, default="[]")
 
     agenda: Mapped[str] = mapped_column(Text, default="")
 

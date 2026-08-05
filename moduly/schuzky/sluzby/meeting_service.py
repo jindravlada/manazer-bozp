@@ -44,6 +44,7 @@ class MeetingService:
         location: str = "",
         organizer_person_id: int | None = None,
         participant_ids: list[int] | None = None,
+        external_participants: list[dict] | None = None,
         agenda: str = "",
         status: str = DEFAULT_MEETING_STATUS,
         priority: str = DEFAULT_MEETING_PRIORITY,
@@ -54,6 +55,7 @@ class MeetingService:
         self.validate_times(starts_at, ends_at)
         status = status if status in MEETING_STATUSES else DEFAULT_MEETING_STATUS
         priority = self.normalize_priority(priority)
+        externals = self.normalize_external_participants(external_participants or [])
         meeting = Meeting(
             title=(title or "").strip(),
             event_type=meeting_event_type_service.normalize(event_type),
@@ -63,7 +65,8 @@ class MeetingService:
             organizer_person_id=organizer_person_id,
             organizer_name=self._person_name(organizer_person_id),
             participant_ids_json=self._encode_ids(participant_ids),
-            participant_names=self._participant_names(participant_ids),
+            external_participants_json=self._encode_externals(externals),
+            participant_names=self._combined_participant_names(participant_ids, externals),
             agenda=agenda or "",
             proceedings=proceedings or "",
             conclusions=conclusions or "",
@@ -84,6 +87,7 @@ class MeetingService:
         location: str = "",
         organizer_person_id: int | None = None,
         participant_ids: list[int] | None = None,
+        external_participants: list[dict] | None = None,
         agenda: str = "",
         status: str = DEFAULT_MEETING_STATUS,
         priority: str = DEFAULT_MEETING_PRIORITY,
@@ -99,6 +103,12 @@ class MeetingService:
         status = status if status in MEETING_STATUSES else DEFAULT_MEETING_STATUS
         priority = self.normalize_priority(priority)
 
+        if external_participants is not None:
+            externals = self.normalize_external_participants(external_participants)
+            meeting.external_participants_json = self._encode_externals(externals)
+        else:
+            externals = self.parse_external_participants(meeting)
+
         meeting.title = (title or "").strip()
         meeting.event_type = meeting_event_type_service.normalize(event_type)
         meeting.starts_at = starts_at
@@ -107,7 +117,7 @@ class MeetingService:
         meeting.organizer_person_id = organizer_person_id
         meeting.organizer_name = self._person_name(organizer_person_id)
         meeting.participant_ids_json = self._encode_ids(participant_ids)
-        meeting.participant_names = self._participant_names(participant_ids)
+        meeting.participant_names = self._combined_participant_names(participant_ids, externals)
         meeting.agenda = agenda or ""
         meeting.proceedings = proceedings or ""
         meeting.conclusions = conclusions or ""
@@ -267,9 +277,52 @@ class MeetingService:
                 continue
         return result
 
+    def parse_external_participants(self, meeting: Meeting) -> list[dict]:
+        raw = (getattr(meeting, "external_participants_json", None) or "").strip()
+        if not raw:
+            return []
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            return []
+        if not isinstance(data, list):
+            return []
+        return self.normalize_external_participants(data)
+
+    @staticmethod
+    def normalize_external_participants(items: list | None) -> list[dict]:
+        result: list[dict] = []
+        for item in items or []:
+            if not isinstance(item, dict):
+                continue
+            full_name = str(item.get("full_name") or "").strip()
+            if not full_name:
+                continue
+            result.append(
+                {
+                    "full_name": full_name,
+                    "organization": str(item.get("organization") or "").strip(),
+                    "function": str(item.get("function") or "").strip(),
+                    "contact": str(item.get("contact") or "").strip(),
+                    "note": str(item.get("note") or "").strip(),
+                }
+            )
+        return result
+
+    @staticmethod
+    def external_participant_label(item: dict) -> str:
+        name = str(item.get("full_name") or "").strip() or "Bez jména"
+        organization = str(item.get("organization") or "").strip()
+        if organization:
+            return f"{name} ({organization})"
+        return name
+
     def _encode_ids(self, person_ids: list[int] | None) -> str:
         ids = [int(value) for value in (person_ids or [])]
         return json.dumps(ids, ensure_ascii=False)
+
+    def _encode_externals(self, items: list[dict] | None) -> str:
+        return json.dumps(self.normalize_external_participants(items), ensure_ascii=False)
 
     def _person_name(self, person_id: int | None) -> str:
         if person_id is None:
@@ -283,6 +336,21 @@ class MeetingService:
             name = self._person_name(person_id)
             if name:
                 names.append(name)
+        return ", ".join(names)
+
+    def _combined_participant_names(
+        self,
+        person_ids: list[int] | None,
+        external_participants: list[dict] | None,
+    ) -> str:
+        names: list[str] = []
+        internal = self._participant_names(person_ids)
+        if internal:
+            names.extend(part.strip() for part in internal.split(",") if part.strip())
+        for item in external_participants or []:
+            label = self.external_participant_label(item)
+            if label:
+                names.append(label)
         return ", ".join(names)
 
 

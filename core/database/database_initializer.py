@@ -218,6 +218,7 @@ def initialize_database() -> None:
     _ensure_meeting_minutes_columns()
     _ensure_meeting_event_type_column()
     _ensure_meeting_priority_column()
+    _ensure_meeting_external_participants_column()
     _ensure_meeting_event_types_table()
     _ensure_meeting_agenda_items_table()
     _normalize_task_status_values()
@@ -292,6 +293,14 @@ def _ensure_meeting_priority_column() -> None:
         return
     if "priority" not in columns:
         _add_column("meetings", "priority VARCHAR(30) DEFAULT 'Normální' NOT NULL")
+
+
+def _ensure_meeting_external_participants_column() -> None:
+    columns = _table_columns("meetings")
+    if not columns:
+        return
+    if "external_participants_json" not in columns:
+        _add_column("meetings", "external_participants_json TEXT DEFAULT '[]'")
 
 
 def _ensure_meeting_event_types_table() -> None:

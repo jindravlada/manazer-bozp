@@ -166,8 +166,9 @@ class MeetingDialog(QDialog):
 
         self.location_edit.set_location_text(meeting.location or "")
         self.organizer_selector.set_person_id(meeting.organizer_person_id)
-        self.participants_selector.set_person_ids(
-            meeting_service.parse_participant_ids(meeting)
+        self.participants_selector.set_participants(
+            person_ids=meeting_service.parse_participant_ids(meeting),
+            external_participants=meeting_service.parse_external_participants(meeting),
         )
         self.agenda_edit.setPlainText(meeting.agenda or "")
         priority = meeting_service.normalize_priority(getattr(meeting, "priority", None))
@@ -192,6 +193,7 @@ class MeetingDialog(QDialog):
             "location": self.location_edit.display_text(),
             "organizer_person_id": self.organizer_selector.current_person_id(),
             "participant_ids": self.participants_selector.selected_person_ids(),
+            "external_participants": self.participants_selector.external_participants(),
             "agenda": self.agenda_edit.toPlainText(),
             "status": self.status_combo.currentText(),
             "priority": self.priority_combo.currentText(),

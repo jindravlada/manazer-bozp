@@ -20,10 +20,17 @@ from core.widgets.person_selector import PersonSelector
 from core.widgets.search_combo_box import SearchComboBox
 from moduly.nastaveni.sluzby.person_service import person_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
+from moduly.schuzky.constants import (
+    ACTION_ADD_EXTERNAL_PARTICIPANT,
+    ACTION_EDIT,
+    ACTION_REMOVE,
+)
 from moduly.schuzky.sluzby.meeting_person_link import (
     ensure_person_for_thp_worker,
     person_list_label,
 )
+from moduly.schuzky.sluzby.meeting_service import meeting_service
+from moduly.schuzky.ui.external_participant_dialog import ExternalParticipantDialog
 from PySide6.QtWidgets import QCompleter
 
 
@@ -167,7 +174,10 @@ class MeetingOrganizerWidget(QWidget):
 
 
 class MeetingParticipantsWidget(QWidget):
-    """Jeden seznam účastníků; přidávání našeptávačem (THP + Osoby)."""
+    """Jeden seznam účastníků; interní (THP/Osoby) + externí."""
+
+    _KIND_PERSON = "person"
+    _KIND_EXTERNAL = "external"
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -177,8 +187,12 @@ class MeetingParticipantsWidget(QWidget):
 
         top = QHBoxLayout()
         self.typeahead = MeetingPersonTypeahead(include_empty=True)
-        self.remove_btn = QPushButton("Odebrat")
+        self.add_external_btn = QPushButton(ACTION_ADD_EXTERNAL_PARTICIPANT)
+        self.edit_btn = QPushButton(ACTION_EDIT)
+        self.remove_btn = QPushButton(ACTION_REMOVE)
         top.addWidget(self.typeahead, 1)
+        top.addWidget(self.add_external_btn)
+        top.addWidget(self.edit_btn)
         top.addWidget(self.remove_btn)
         layout.addLayout(top)
 
@@ -191,7 +205,10 @@ class MeetingParticipantsWidget(QWidget):
         line = self.typeahead.lineEdit()
         if line is not None:
             line.returnPressed.connect(self._add_current)
+        self.add_external_btn.clicked.connect(self.add_external)
+        self.edit_btn.clicked.connect(self.edit_selected)
         self.remove_btn.clicked.connect(self.remove_selected)
+        self.list_widget.itemDoubleClicked.connect(self._on_item_double_clicked)
 
         # Zpětná kompatibilita starších akcí.
         self.add_thp_btn = QPushButton("Přidat THP")
@@ -202,14 +219,59 @@ class MeetingParticipantsWidget(QWidget):
     def selected_person_ids(self) -> list[int]:
         return self._list_person_ids()
 
+    def external_participants(self) -> list[dict]:
+        return meeting_service.normalize_external_participants(self._list_externals())
+
     def set_person_ids(self, person_ids: list[int] | tuple[int, ...] | None) -> None:
+        self.set_participants(person_ids=person_ids, external_participants=[])
+
+    def set_participants(
+        self,
+        *,
+        person_ids: list[int] | tuple[int, ...] | None = None,
+        external_participants: list[dict] | None = None,
+    ) -> None:
         self.list_widget.clear()
         for person_id in person_ids or ():
             self._append_person_id(int(person_id))
+        for item in meeting_service.normalize_external_participants(external_participants):
+            self._append_external(item)
+
+    def add_external(self) -> None:
+        dialog = ExternalParticipantDialog(self)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        self._append_external(dialog.get_data())
+
+    def edit_selected(self) -> None:
+        items = self.list_widget.selectedItems()
+        if len(items) != 1:
+            return
+        self._edit_item(items[0])
 
     def remove_selected(self) -> None:
         for item in self.list_widget.selectedItems():
             self.list_widget.takeItem(self.list_widget.row(item))
+
+    def _on_item_double_clicked(self, item: QListWidgetItem) -> None:
+        self._edit_item(item)
+
+    def _edit_item(self, item: QListWidgetItem) -> None:
+        payload = item.data(Qt.ItemDataRole.UserRole)
+        if not isinstance(payload, dict) or payload.get("kind") != self._KIND_EXTERNAL:
+            return
+        data = dict(payload.get("data") or {})
+        dialog = ExternalParticipantDialog(self, data=data)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        updated = meeting_service.normalize_external_participants([dialog.get_data()])
+        if not updated:
+            return
+        item.setData(
+            Qt.ItemDataRole.UserRole,
+            {"kind": self._KIND_EXTERNAL, "data": updated[0]},
+        )
+        item.setText(meeting_service.external_participant_label(updated[0]))
 
     def _on_typeahead_activated(self, _index: int) -> None:
         self._add_current()
@@ -225,21 +287,55 @@ class MeetingParticipantsWidget(QWidget):
         ids: list[int] = []
         for index in range(self.list_widget.count()):
             item = self.list_widget.item(index)
-            raw = item.data(Qt.ItemDataRole.UserRole)
-            if raw is None:
-                continue
-            try:
-                ids.append(int(raw))
-            except (TypeError, ValueError):
-                continue
+            payload = item.data(Qt.ItemDataRole.UserRole)
+            if isinstance(payload, dict):
+                if payload.get("kind") != self._KIND_PERSON:
+                    continue
+                try:
+                    ids.append(int(payload.get("person_id")))
+                except (TypeError, ValueError):
+                    continue
+            elif payload is not None:
+                # Legacy: přímo person_id
+                try:
+                    ids.append(int(payload))
+                except (TypeError, ValueError):
+                    continue
         return ids
+
+    def _list_externals(self) -> list[dict]:
+        result: list[dict] = []
+        for index in range(self.list_widget.count()):
+            item = self.list_widget.item(index)
+            payload = item.data(Qt.ItemDataRole.UserRole)
+            if not isinstance(payload, dict) or payload.get("kind") != self._KIND_EXTERNAL:
+                continue
+            data = payload.get("data")
+            if isinstance(data, dict):
+                result.append(data)
+        return result
 
     def _append_person_id(self, person_id: int) -> None:
         if person_id in self._list_person_ids():
             return
         person = person_service.get_by_id(person_id)
         item = QListWidgetItem(person_list_label(person, fallback_id=person_id))
-        item.setData(Qt.ItemDataRole.UserRole, int(person_id))
+        item.setData(
+            Qt.ItemDataRole.UserRole,
+            {"kind": self._KIND_PERSON, "person_id": int(person_id)},
+        )
+        self.list_widget.addItem(item)
+
+    def _append_external(self, data: dict) -> None:
+        normalized = meeting_service.normalize_external_participants([data])
+        if not normalized:
+            return
+        payload = normalized[0]
+        item = QListWidgetItem(meeting_service.external_participant_label(payload))
+        item.setData(
+            Qt.ItemDataRole.UserRole,
+            {"kind": self._KIND_EXTERNAL, "data": payload},
+        )
         self.list_widget.addItem(item)
 
 
