@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (
 from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
-from moduly.schuzky.constants import LIST_WINDOW_TITLE
+from moduly.schuzky.constants import ACTION_NEW_FROM_TEMPLATE, LIST_WINDOW_TITLE
 from moduly.schuzky.sluzby.meeting_agenda_item_service import meeting_agenda_item_service
 from moduly.schuzky.sluzby.meeting_service import (
     MeetingValidationError,
@@ -22,6 +22,7 @@ from moduly.schuzky.sluzby.meeting_service import (
 )
 from moduly.schuzky.ui.meeting_dialog import MeetingDialog
 from moduly.schuzky.ui.meeting_table import MeetingTable
+from moduly.schuzky.ui.meeting_template_actions import create_meeting_from_template
 
 
 class SchuzkyPage(QWidget):
@@ -33,10 +34,12 @@ class SchuzkyPage(QWidget):
 
         toolbar = QHBoxLayout()
         self.new_btn = QPushButton("Nová událost")
+        self.new_from_template_btn = QPushButton(ACTION_NEW_FROM_TEMPLATE)
         self.open_btn = QPushButton("Otevřít")
         self.edit_btn = QPushButton("Upravit")
 
         toolbar.addWidget(self.new_btn)
+        toolbar.addWidget(self.new_from_template_btn)
         toolbar.addWidget(self.open_btn)
         toolbar.addWidget(self.edit_btn)
         toolbar.addStretch()
@@ -50,6 +53,7 @@ class SchuzkyPage(QWidget):
         layout.addWidget(self.table)
 
         self.new_btn.clicked.connect(self.new_meeting)
+        self.new_from_template_btn.clicked.connect(self.new_meeting_from_template)
         self.open_btn.clicked.connect(self.open_selected_meeting)
         self.edit_btn.clicked.connect(self.open_selected_meeting)
         self.table.doubleClicked.connect(self.open_selected_meeting)
@@ -95,6 +99,11 @@ class SchuzkyPage(QWidget):
             return
         self.refresh()
         self._refresh_dashboard()
+
+    def new_meeting_from_template(self) -> None:
+        if create_meeting_from_template(self):
+            self.refresh()
+            self._refresh_dashboard()
 
     def open_selected_meeting(self) -> None:
         meeting_id = self._selected_meeting_id()

@@ -20,6 +20,7 @@ from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
 from moduly.agenda.constants import (
     ACTION_EDIT,
+    ACTION_NEW_FROM_TEMPLATE,
     ACTION_NEW_MEETING,
     ACTION_NEW_TASK,
     ACTION_OPEN,
@@ -47,6 +48,7 @@ from moduly.schuzky.sluzby.meeting_service import (
     meeting_service,
 )
 from moduly.schuzky.ui.meeting_dialog import MeetingDialog
+from moduly.schuzky.ui.meeting_template_actions import create_meeting_from_template
 from moduly.ukoly.sluzby.task_service import task_service
 from moduly.ukoly.ui.task_dialog import TaskDialog
 
@@ -62,10 +64,12 @@ class AgendaPage(QWidget):
         toolbar = QHBoxLayout()
         self.new_task_btn = QPushButton(ACTION_NEW_TASK)
         self.new_meeting_btn = QPushButton(ACTION_NEW_MEETING)
+        self.new_from_template_btn = QPushButton(ACTION_NEW_FROM_TEMPLATE)
         self.open_btn = QPushButton(ACTION_OPEN)
         self.edit_btn = QPushButton(ACTION_EDIT)
         toolbar.addWidget(self.new_task_btn)
         toolbar.addWidget(self.new_meeting_btn)
+        toolbar.addWidget(self.new_from_template_btn)
         toolbar.addWidget(self.open_btn)
         toolbar.addWidget(self.edit_btn)
         toolbar.addStretch()
@@ -104,6 +108,7 @@ class AgendaPage(QWidget):
 
         self.new_task_btn.clicked.connect(self.new_task)
         self.new_meeting_btn.clicked.connect(self.new_meeting)
+        self.new_from_template_btn.clicked.connect(self.new_meeting_from_template)
         self.open_btn.clicked.connect(self.open_selected)
         self.edit_btn.clicked.connect(self.open_selected)
         self.table.doubleClicked.connect(self.open_selected)
@@ -214,6 +219,11 @@ class AgendaPage(QWidget):
             return
         self.refresh()
         self._refresh_dashboard()
+
+    def new_meeting_from_template(self) -> None:
+        if create_meeting_from_template(self):
+            self.refresh()
+            self._refresh_dashboard()
 
     def open_selected(self) -> None:
         item = self.table.selected_item()

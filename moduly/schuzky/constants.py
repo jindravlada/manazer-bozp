@@ -67,6 +67,20 @@ DEFAULT_EVENT_TYPES = (
 
 DEFAULT_EVENT_TYPE = EVENT_TYPE_MEETING
 
+ACTION_SAVE_AS_TEMPLATE = "Uložit jako šablonu..."
+ACTION_NEW_FROM_TEMPLATE = "Nová událost ze šablony..."
+TEMPLATE_PICK_DIALOG_TITLE = "Šablona události"
+TEMPLATE_SAVE_DIALOG_TITLE = "Uložit jako šablonu"
+TEMPLATE_NAME_LABEL = "Název šablony:"
+TEMPLATE_NAME_REQUIRED = "Zadejte název šablony."
+TEMPLATE_SAVE_REQUIRES_MEETING = "Nejdříve událost uložte."
+TEMPLATE_SAVE_SUCCESS = "Šablona byla uložena."
+TEMPLATE_EMPTY_LIST = "Nejsou evidovány žádné šablony událostí."
+TEMPLATE_BTN_USE = "Použít"
+TEMPLATE_COL_NAME = "Název šablony"
+TEMPLATE_COL_TYPE = "Typ události"
+TEMPLATE_COL_ITEMS = "Body zápisků"
+
 ACTION_ADD_EXTERNAL_PARTICIPANT = "Přidat jinou osobu..."
 EXTERNAL_PARTICIPANT_DIALOG_TITLE = "Jiná osoba"
 EXTERNAL_PARTICIPANT_NAME_REQUIRED = "Zadejte jméno a příjmení."

@@ -26,6 +26,7 @@ def initialize_database() -> None:
     from moduly.schuzky.modely.meeting import Meeting  # noqa: F401
     from moduly.schuzky.modely.meeting_agenda_item import MeetingAgendaItem  # noqa: F401
     from moduly.schuzky.modely.meeting_event_type import MeetingEventType  # noqa: F401
+    from moduly.schuzky.modely.meeting_template import MeetingTemplate  # noqa: F401
     from moduly.kontroly.modely.control import Control  # noqa: F401
     from moduly.kontroly.modely.thp_monthly_control import ThpMonthlyControl  # noqa: F401
     from moduly.kontroly.modely.thp_yearly_kl_usage import ThpYearlyKlUsage  # noqa: F401
@@ -221,6 +222,7 @@ def initialize_database() -> None:
     _ensure_meeting_external_participants_column()
     _ensure_meeting_event_types_table()
     _ensure_meeting_agenda_items_table()
+    _ensure_meeting_templates_table()
     _normalize_task_status_values()
     _normalize_accident_legacy_values()
 
@@ -378,6 +380,13 @@ def _ensure_meeting_agenda_items_table() -> None:
             "meeting_agenda_items",
             "status VARCHAR(30) DEFAULT 'Připraveno' NOT NULL",
         )
+
+
+def _ensure_meeting_templates_table() -> None:
+    if not _table_exists("meeting_templates"):
+        from moduly.schuzky.modely.meeting_template import MeetingTemplate
+
+        MeetingTemplate.__table__.create(bind=_db_engine(), checkfirst=True)
 
 
 def _ensure_thp_worker_title_columns() -> None:

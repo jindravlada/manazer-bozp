@@ -8,8 +8,10 @@ from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
     QFormLayout,
+    QHBoxLayout,
     QLineEdit,
     QMessageBox,
+    QPushButton,
     QTabWidget,
     QTextEdit,
     QVBoxLayout,
@@ -18,6 +20,7 @@ from PySide6.QtWidgets import (
 
 from core.widgets.dialog_utils import create_save_cancel_box
 from moduly.schuzky.constants import (
+    ACTION_SAVE_AS_TEMPLATE,
     DEFAULT_EVENT_DURATION_HOURS,
     DEFAULT_EVENT_TYPE,
     DEFAULT_MEETING_PRIORITY,
@@ -34,6 +37,7 @@ from moduly.schuzky.constants import (
 )
 from moduly.schuzky.sluzby.meeting_event_type_service import meeting_event_type_service
 from moduly.schuzky.sluzby.meeting_service import meeting_service
+from moduly.schuzky.sluzby.meeting_template_service import meeting_template_service
 from moduly.schuzky.ui.event_datetime_fields import EventDateTimeFields
 from moduly.schuzky.ui.meeting_agenda_items_widget import MeetingAgendaItemsWidget
 from moduly.schuzky.ui.meeting_conflict_dialog import (
@@ -59,7 +63,7 @@ def _plain_text_edit(*, placeholder: str, min_height: int) -> QTextEdit:
 
 
 class MeetingDialog(QDialog):
-    def __init__(self, parent=None, meeting=None):
+    def __init__(self, parent=None, meeting=None, *, template=None):
         super().__init__(parent)
         self.meeting = meeting
         # Legacy textová pole zápisu – v UI se nezobrazují, při uložení se zachovají.
@@ -79,16 +83,26 @@ class MeetingDialog(QDialog):
         self.tabs.addTab(self._discussion_tab(), TAB_DISCUSSION)
         layout.addWidget(self.tabs, 1)
 
+        button_row = QHBoxLayout()
+        self.save_as_template_btn = QPushButton(ACTION_SAVE_AS_TEMPLATE)
+        self.save_as_template_btn.setEnabled(meeting is not None)
+        button_row.addWidget(self.save_as_template_btn)
+        button_row.addStretch()
         buttons = create_save_cancel_box(self, is_new=meeting is None)
+        button_row.addWidget(buttons)
+        layout.addLayout(button_row)
+
         buttons.accepted.connect(self._on_accept)
         buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+        self.save_as_template_btn.clicked.connect(self._on_save_as_template)
 
         self.starts_at_edit.dateTimeChanged.connect(self._on_starts_changed)
         self.ends_at_edit.dateTimeChanged.connect(self._on_ends_changed)
 
         if meeting is not None:
             self._load_meeting(meeting)
+        elif template is not None:
+            self._load_template(template)
         else:
             self.agenda_items_widget.load_for_meeting(None)
 
@@ -184,6 +198,41 @@ class MeetingDialog(QDialog):
 
         self.agenda_items_widget.load_for_meeting(getattr(meeting, "id", None))
 
+    def _load_template(self, template) -> None:
+        data = meeting_template_service.meeting_data_from_template(template)
+        event_type = meeting_event_type_service.normalize(data.get("event_type"))
+        if self.event_type_combo.findText(event_type) < 0:
+            self.event_type_combo.addItem(event_type)
+        self.event_type_combo.setCurrentText(event_type)
+
+        self.title_edit.setText(data.get("title") or "")
+
+        self._suppress_datetime = True
+        self.starts_at_edit.set_datetime(None)
+        self.ends_at_edit.set_datetime(None)
+        self._suppress_datetime = False
+        self._ends_manually_edited = False
+
+        self.location_edit.set_location_text(data.get("location") or "")
+        self.organizer_selector.set_person_id(data.get("organizer_person_id"))
+        self.participants_selector.set_participants(
+            person_ids=data.get("participant_ids") or [],
+            external_participants=data.get("external_participants") or [],
+        )
+        self.agenda_edit.setPlainText("")
+        priority = meeting_service.normalize_priority(data.get("priority"))
+        if self.priority_combo.findText(priority) >= 0:
+            self.priority_combo.setCurrentText(priority)
+        self.status_combo.setCurrentText(DEFAULT_MEETING_STATUS)
+
+        self._legacy_proceedings = ""
+        self._legacy_conclusions = ""
+        self._legacy_notes = ""
+
+        self.agenda_items_widget.load_items(
+            meeting_template_service.parse_agenda_items(template)
+        )
+
     def get_data(self) -> dict:
         return {
             "title": self.title_edit.text().strip(),
@@ -270,3 +319,8 @@ class MeetingDialog(QDialog):
                 # Uložit přesto – konflikt není chyba; další uložení kontrolu zopakuje.
 
         self.accept()
+
+    def _on_save_as_template(self) -> None:
+        from moduly.schuzky.ui.meeting_template_actions import save_meeting_as_template
+
+        save_meeting_as_template(self, self)

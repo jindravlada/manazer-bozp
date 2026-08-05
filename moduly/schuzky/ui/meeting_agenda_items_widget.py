@@ -277,6 +277,25 @@ class MeetingAgendaItemsWidget(QWidget):
         self._current_index = None
         self._refresh_list(select_row=0 if self._items else None)
 
+    def load_items(self, items: list[dict] | None, *, meeting_id: int | None = None) -> None:
+        """Načte body z dict (např. šablona) bez ID a vazeb na úkoly."""
+        self._flush_editor_to_item()
+        self._meeting_id = meeting_id
+        self._items = []
+        for index, raw in enumerate(items or []):
+            self._items.append(
+                {
+                    "title": str(raw.get("title") or "").strip(),
+                    "status": meeting_agenda_item_service.normalize_status(raw.get("status")),
+                    "moje_sdeleni": str(raw.get("moje_sdeleni") or ""),
+                    "prubeh_jednani": "",
+                    "zaver": "",
+                    "display_order": (index + 1) * 10,
+                }
+            )
+        self._current_index = None
+        self._refresh_list(select_row=0 if self._items else None)
+
     def get_items(self) -> list[dict]:
         self._flush_editor_to_item()
         return [dict(item) for item in self._items]
