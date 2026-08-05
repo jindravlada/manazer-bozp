@@ -41,6 +41,7 @@ from moduly.schuzky.ui.meeting_conflict_dialog import (
     CONFLICT_CHOICE_SAVE,
     MeetingConflictDialog,
 )
+from moduly.schuzky.ui.meeting_location_typeahead import MeetingLocationTypeahead
 from moduly.schuzky.ui.meeting_people_widgets import (
     MeetingOrganizerWidget,
     MeetingParticipantsWidget,
@@ -108,8 +109,7 @@ class MeetingDialog(QDialog):
         self.starts_at_edit = EventDateTimeFields()
         self.ends_at_edit = EventDateTimeFields()
 
-        self.location_edit = QLineEdit()
-        self.location_edit.setPlaceholderText("Místo konání")
+        self.location_edit = MeetingLocationTypeahead()
 
         self.organizer_selector = MeetingOrganizerWidget()
         self.participants_selector = MeetingParticipantsWidget()
@@ -164,7 +164,7 @@ class MeetingDialog(QDialog):
         # Existující ukončení považujeme za vědomě nastavené (nepřepisovat).
         self._ends_manually_edited = meeting.ends_at is not None
 
-        self.location_edit.setText(meeting.location or "")
+        self.location_edit.set_location_text(meeting.location or "")
         self.organizer_selector.set_person_id(meeting.organizer_person_id)
         self.participants_selector.set_person_ids(
             meeting_service.parse_participant_ids(meeting)
@@ -189,7 +189,7 @@ class MeetingDialog(QDialog):
             "event_type": self.event_type_combo.currentText().strip(),
             "starts_at": self.starts_at_edit.get_datetime(),
             "ends_at": self.ends_at_edit.get_datetime(),
-            "location": self.location_edit.text().strip(),
+            "location": self.location_edit.display_text(),
             "organizer_person_id": self.organizer_selector.current_person_id(),
             "participant_ids": self.participants_selector.selected_person_ids(),
             "agenda": self.agenda_edit.toPlainText(),
