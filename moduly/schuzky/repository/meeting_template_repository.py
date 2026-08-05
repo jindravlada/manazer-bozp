@@ -23,3 +23,19 @@ class MeetingTemplateRepository:
             session.commit()
             session.refresh(template)
             return template
+
+    def update(self, template: MeetingTemplate) -> MeetingTemplate:
+        with get_session() as session:
+            merged = session.merge(template)
+            session.commit()
+            session.refresh(merged)
+            return merged
+
+    def delete(self, template_id: int) -> bool:
+        with get_session() as session:
+            template = session.get(MeetingTemplate, template_id)
+            if template is None:
+                return False
+            session.delete(template)
+            session.commit()
+            return True

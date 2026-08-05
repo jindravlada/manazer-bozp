@@ -24,6 +24,7 @@ from moduly.agenda.constants import (
     ACTION_NEW_MEETING,
     ACTION_NEW_TASK,
     ACTION_OPEN,
+    ACTION_OPEN_TEMPLATES,
     DEFAULT_STATUS_MODE,
     EMPTY_STATE_TEXT,
     ITEM_NOT_FOUND_MESSAGE,
@@ -65,11 +66,13 @@ class AgendaPage(QWidget):
         self.new_task_btn = QPushButton(ACTION_NEW_TASK)
         self.new_meeting_btn = QPushButton(ACTION_NEW_MEETING)
         self.new_from_template_btn = QPushButton(ACTION_NEW_FROM_TEMPLATE)
+        self.templates_btn = QPushButton(ACTION_OPEN_TEMPLATES)
         self.open_btn = QPushButton(ACTION_OPEN)
         self.edit_btn = QPushButton(ACTION_EDIT)
         toolbar.addWidget(self.new_task_btn)
         toolbar.addWidget(self.new_meeting_btn)
         toolbar.addWidget(self.new_from_template_btn)
+        toolbar.addWidget(self.templates_btn)
         toolbar.addWidget(self.open_btn)
         toolbar.addWidget(self.edit_btn)
         toolbar.addStretch()
@@ -109,6 +112,7 @@ class AgendaPage(QWidget):
         self.new_task_btn.clicked.connect(self.new_task)
         self.new_meeting_btn.clicked.connect(self.new_meeting)
         self.new_from_template_btn.clicked.connect(self.new_meeting_from_template)
+        self.templates_btn.clicked.connect(self.open_templates)
         self.open_btn.clicked.connect(self.open_selected)
         self.edit_btn.clicked.connect(self.open_selected)
         self.table.doubleClicked.connect(self.open_selected)
@@ -224,6 +228,15 @@ class AgendaPage(QWidget):
         if create_meeting_from_template(self):
             self.refresh()
             self._refresh_dashboard()
+
+    def open_templates(self) -> None:
+        widget = self
+        while widget is not None:
+            show = getattr(widget, "_show", None)
+            if callable(show):
+                show("sablony_udalosti")
+                return
+            widget = widget.parent()
 
     def open_selected(self) -> None:
         item = self.table.selected_item()

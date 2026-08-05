@@ -64,25 +64,44 @@ class MeetingTemplateService:
         )
         return self.repository.add(template)
 
-    def create_from_meeting_payload(
+    def update_template(
         self,
+        template_id: int,
         *,
-        template_name: str,
-        meeting_data: dict,
+        name: str,
+        event_type: str = "",
+        title: str = "",
+        location: str = "",
+        priority: str = DEFAULT_MEETING_PRIORITY,
+        organizer_person_id: int | None = None,
+        participant_ids: list[int] | None = None,
+        external_participants: list[dict] | None = None,
         agenda_items: list[dict] | None = None,
     ) -> MeetingTemplate:
-        """Uloží pracovní obsah editoru jako šablonu (bez data/času/stavu/průběhu)."""
-        return self.create_template(
-            name=template_name,
-            event_type=meeting_data.get("event_type") or "",
-            title=meeting_data.get("title") or "",
-            location=meeting_data.get("location") or "",
-            priority=meeting_data.get("priority") or DEFAULT_MEETING_PRIORITY,
-            organizer_person_id=meeting_data.get("organizer_person_id"),
-            participant_ids=meeting_data.get("participant_ids") or [],
-            external_participants=meeting_data.get("external_participants") or [],
-            agenda_items=agenda_items or [],
+        template = self.repository.get_by_id(template_id)
+        if template is None:
+            raise MeetingTemplateValidationError("Šablona nebyla nalezena.")
+
+        template_name = (name or "").strip()
+        if not template_name:
+            raise MeetingTemplateValidationError("Zadejte název šablony.")
+
+        template.name = template_name
+        template.event_type = meeting_event_type_service.normalize(event_type)
+        template.title = (title or "").strip()
+        template.location = (location or "").strip()
+        template.priority = meeting_service.normalize_priority(priority)
+        template.organizer_person_id = organizer_person_id
+        template.participant_ids_json = meeting_service._encode_ids(participant_ids)
+        template.external_participants_json = meeting_service._encode_externals(
+            external_participants or []
         )
+        template.agenda_items_json = self._encode_agenda_items(agenda_items)
+        template.updated_at = datetime.now()
+        return self.repository.update(template)
+
+    def delete_template(self, template_id: int) -> bool:
+        return self.repository.delete(template_id)
 
     def agenda_item_count(self, template: MeetingTemplate) -> int:
         return len(self.parse_agenda_items(template))
@@ -122,10 +141,8 @@ class MeetingTemplateService:
             title = str(raw.get("title") or "").strip()
             moje = str(raw.get("moje_sdeleni") or "")
             status = meeting_agenda_item_service.normalize_status(raw.get("status"))
-            # Prázdný bod bez obsahu přeskočit.
             if not title and not moje.strip() and status == DEFAULT_AGENDA_ITEM_STATUS:
-                # Keep empty titled? Spec says transfer items - keep if any field set
-                pass
+                continue
             result.append(
                 {
                     "title": title,
@@ -161,7 +178,6 @@ class MeetingTemplateService:
 
     def _encode_agenda_items(self, items: list[dict] | None) -> str:
         normalized = self.normalize_agenda_items(items)
-        # Do DB ukládat jen přenášená pole.
         payload = [
             {
                 "title": item["title"],

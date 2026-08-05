@@ -112,8 +112,9 @@ def _format_due(due_date) -> str:
 
 
 class MeetingAgendaItemsWidget(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, *, template_mode: bool = False):
         super().__init__(parent)
+        self._template_mode = bool(template_mode)
         self._items: list[dict] = []
         self._meeting_id: int | None = None
         self._current_index: int | None = None
@@ -205,11 +206,11 @@ class MeetingAgendaItemsWidget(QWidget):
         form.addRow("Závěr:", self.zaver_edit)
         editor_layout.addLayout(form)
 
-        tasks_header = QLabel(SECTION_ITEM_TASKS)
-        header_font = tasks_header.font()
+        self.tasks_header = QLabel(SECTION_ITEM_TASKS)
+        header_font = self.tasks_header.font()
         header_font.setBold(True)
-        tasks_header.setFont(header_font)
-        editor_layout.addWidget(tasks_header)
+        self.tasks_header.setFont(header_font)
+        editor_layout.addWidget(self.tasks_header)
 
         tasks_toolbar = QHBoxLayout()
         self.add_task_btn = QPushButton(ACTION_ADD_TASK)
@@ -219,6 +220,7 @@ class MeetingAgendaItemsWidget(QWidget):
             tasks_toolbar.addWidget(button)
         tasks_toolbar.addStretch(1)
         editor_layout.addLayout(tasks_toolbar)
+        self._tasks_toolbar = tasks_toolbar
 
         self.tasks_table = QTableWidget(0, 4)
         self.tasks_table.setHorizontalHeaderLabels(
@@ -238,6 +240,9 @@ class MeetingAgendaItemsWidget(QWidget):
         editor_layout.addWidget(self.tasks_table, 1)
 
         self.editor_stack.addWidget(self.editor_panel)
+
+        if self._template_mode:
+            self._apply_template_mode(form)
 
         splitter.addWidget(left)
         splitter.addWidget(self.editor_stack)
@@ -262,6 +267,18 @@ class MeetingAgendaItemsWidget(QWidget):
 
         self._show_none_selected()
         self._refresh_list()
+
+    def _apply_template_mode(self, form: QFormLayout) -> None:
+        """Šablona: jen téma, Moje sdělení a výchozí stav – bez průběhu, závěru a úkolů."""
+        form.labelForField(self.prubeh_jednani_edit).setVisible(False)
+        self.prubeh_jednani_edit.setVisible(False)
+        form.labelForField(self.zaver_edit).setVisible(False)
+        self.zaver_edit.setVisible(False)
+        self.tasks_header.setVisible(False)
+        self.add_task_btn.setVisible(False)
+        self.open_task_btn.setVisible(False)
+        self.unlink_task_btn.setVisible(False)
+        self.tasks_table.setVisible(False)
 
     def selectRow(self, row: int) -> None:
         """Kompatibilita se staršími testy (QTableWidget.selectRow)."""
@@ -298,7 +315,15 @@ class MeetingAgendaItemsWidget(QWidget):
 
     def get_items(self) -> list[dict]:
         self._flush_editor_to_item()
-        return [dict(item) for item in self._items]
+        if not self._template_mode:
+            return [dict(item) for item in self._items]
+        result: list[dict] = []
+        for item in self._items:
+            payload = dict(item)
+            payload["prubeh_jednani"] = ""
+            payload["zaver"] = ""
+            result.append(payload)
+        return result
 
     def add_item(self) -> None:
         self._flush_editor_to_item()

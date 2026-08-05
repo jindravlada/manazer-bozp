@@ -1,4 +1,4 @@
-"""EVENTS-TEMPLATES-1: založení události ze šablony."""
+"""EVENTS-TEMPLATES-1: založení události ze šablony (základní evidence)."""
 
 from __future__ import annotations
 
@@ -6,11 +6,10 @@ import importlib
 import os
 import tempfile
 import unittest
-from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
-from PySide6.QtWidgets import QApplication, QMessageBox
+from PySide6.QtWidgets import QApplication, QPushButton
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -34,11 +33,9 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.nastaveni.sluzby.person_service import person_service
     from moduly.schuzky.constants import (
         ACTION_NEW_FROM_TEMPLATE,
-        ACTION_SAVE_AS_TEMPLATE,
         DEFAULT_MEETING_STATUS,
         STATUS_PLANNED,
         TEMPLATE_BTN_USE,
-        TEMPLATE_SAVE_REQUIRES_MEETING,
     )
     from moduly.schuzky.sluzby.meeting_agenda_item_service import (
         meeting_agenda_item_service,
@@ -46,10 +43,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.schuzky.sluzby.meeting_service import meeting_service
     from moduly.schuzky.sluzby.meeting_template_service import meeting_template_service
     from moduly.schuzky.ui.meeting_dialog import MeetingDialog
-    from moduly.schuzky.ui.meeting_template_actions import (
-        create_meeting_from_template,
-        save_meeting_as_template,
-    )
+    from moduly.schuzky.ui.meeting_template_actions import create_meeting_from_template
     from moduly.schuzky.ui.meeting_template_dialogs import MeetingTemplatePickDialog
     from moduly.schuzky.ui.schuzky_page import SchuzkyPage
 
@@ -59,33 +53,26 @@ class EventsTemplates1TestCase(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls._app = QApplication.instance() or QApplication([])
 
-    def test_create_template_from_meeting_payload(self) -> None:
+    def test_create_template(self) -> None:
         organizer = person_service.create_person(first_name="Org", last_name="Anizátor")
         participant = person_service.create_person(first_name="Účast", last_name="Ník")
-        template = meeting_template_service.create_from_meeting_payload(
-            template_name="Kontrola skladu",
-            meeting_data={
-                "title": "Kontrola skladu BOZP",
-                "event_type": "Kontrolní pochůzka",
-                "location": "Sklad A",
-                "priority": "Vysoká",
-                "organizer_person_id": organizer.id,
-                "participant_ids": [participant.id],
-                "external_participants": [
-                    {
-                        "full_name": "Host Externí",
-                        "organization": "Dodavatel",
-                        "function": "",
-                        "contact": "",
-                        "note": "",
-                    }
-                ],
-                "starts_at": datetime.now(),
-                "ends_at": datetime.now() + timedelta(hours=1),
-                "status": "Proběhlo",
-                "proceedings": "nemá se přenést",
-                "conclusions": "nemá se přenést",
-            },
+        template = meeting_template_service.create_template(
+            name="Kontrola skladu",
+            event_type="Kontrolní pochůzka",
+            title="Kontrola skladu BOZP",
+            location="Sklad A",
+            priority="Vysoká",
+            organizer_person_id=organizer.id,
+            participant_ids=[participant.id],
+            external_participants=[
+                {
+                    "full_name": "Host Externí",
+                    "organization": "Dodavatel",
+                    "function": "",
+                    "contact": "",
+                    "note": "",
+                }
+            ],
             agenda_items=[
                 {
                     "title": "Vstup",
@@ -163,36 +150,6 @@ class EventsTemplates1TestCase(unittest.TestCase):
         self.assertEqual(saved_items[0].title, "Bod 1")
         self.assertEqual(saved_items[0].prubeh_jednani or "", "")
 
-    def test_save_as_template_requires_saved_meeting(self) -> None:
-        dialog = MeetingDialog()
-        self.assertFalse(dialog.save_as_template_btn.isEnabled())
-        with patch.object(QMessageBox, "information") as info:
-            result = save_meeting_as_template(dialog, dialog)
-            self.assertFalse(result)
-            self.assertIn(TEMPLATE_SAVE_REQUIRES_MEETING, str(info.call_args))
-
-        starts = datetime.now() + timedelta(days=2)
-        meeting = meeting_service.create_meeting(
-            title="Uložená",
-            starts_at=starts,
-            status=STATUS_PLANNED,
-        )
-        editor = MeetingDialog(meeting=meeting)
-        self.assertTrue(editor.save_as_template_btn.isEnabled())
-        self.assertEqual(editor.save_as_template_btn.text(), ACTION_SAVE_AS_TEMPLATE)
-
-        with patch(
-            "moduly.schuzky.ui.meeting_template_actions.SaveMeetingTemplateDialog"
-        ) as dialog_cls:
-            instance = dialog_cls.return_value
-            instance.exec.return_value = instance.DialogCode.Accepted
-            instance.template_name.return_value = "Ze uložené"
-            with patch.object(QMessageBox, "information"):
-                self.assertTrue(save_meeting_as_template(editor, editor))
-
-        names = [t.name for t in meeting_template_service.get_all()]
-        self.assertIn("Ze uložené", names)
-
     def test_pick_dialog_shows_template_meta(self) -> None:
         meeting_template_service.create_template(
             name="Meta šablona",
@@ -254,6 +211,11 @@ class EventsTemplates1TestCase(unittest.TestCase):
         self.assertIsNone(created[0].starts_at)
         self.assertEqual(created[0].location, "Online")
         self.assertEqual(created[0].status, STATUS_PLANNED)
+
+    def test_no_save_as_template_button(self) -> None:
+        dialog = MeetingDialog()
+        texts = [btn.text() for btn in dialog.findChildren(QPushButton)]
+        self.assertNotIn("Uložit jako šablonu...", texts)
 
 
 if __name__ == "__main__":

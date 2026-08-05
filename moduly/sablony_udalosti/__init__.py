@@ -1,0 +1,1 @@
+"""Šablony událostí – samostatná evidence."""

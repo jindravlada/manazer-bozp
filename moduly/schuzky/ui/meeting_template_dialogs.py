@@ -1,4 +1,4 @@
-"""Dialogy šablon událostí – uložení a výběr."""
+"""Dialog výběru šablony události."""
 
 from __future__ import annotations
 
@@ -7,63 +7,23 @@ from PySide6.QtWidgets import (
     QAbstractItemView,
     QDialog,
     QDialogButtonBox,
-    QFormLayout,
     QHeaderView,
     QLabel,
-    QLineEdit,
-    QMessageBox,
     QPushButton,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
 )
 
-from core.widgets.dialog_utils import create_save_cancel_box
 from moduly.schuzky.constants import (
     TEMPLATE_BTN_USE,
     TEMPLATE_COL_ITEMS,
     TEMPLATE_COL_NAME,
     TEMPLATE_COL_TYPE,
     TEMPLATE_EMPTY_LIST,
-    TEMPLATE_NAME_LABEL,
-    TEMPLATE_NAME_REQUIRED,
     TEMPLATE_PICK_DIALOG_TITLE,
-    TEMPLATE_SAVE_DIALOG_TITLE,
 )
 from moduly.schuzky.sluzby.meeting_template_service import meeting_template_service
-
-
-class SaveMeetingTemplateDialog(QDialog):
-    def __init__(self, parent=None, *, suggested_name: str = ""):
-        super().__init__(parent)
-        self.setWindowTitle(TEMPLATE_SAVE_DIALOG_TITLE)
-        self.setWindowModality(Qt.WindowModality.WindowModal)
-        self.resize(420, 120)
-
-        layout = QVBoxLayout(self)
-        form = QFormLayout()
-        self.name_edit = QLineEdit()
-        self.name_edit.setPlaceholderText("Název šablony")
-        if suggested_name:
-            self.name_edit.setText(suggested_name)
-            self.name_edit.selectAll()
-        form.addRow(TEMPLATE_NAME_LABEL, self.name_edit)
-        layout.addLayout(form)
-
-        buttons = create_save_cancel_box(self, is_new=True)
-        buttons.accepted.connect(self._on_accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
-
-    def template_name(self) -> str:
-        return self.name_edit.text().strip()
-
-    def _on_accept(self) -> None:
-        if not self.template_name():
-            QMessageBox.warning(self, TEMPLATE_SAVE_DIALOG_TITLE, TEMPLATE_NAME_REQUIRED)
-            self.name_edit.setFocus()
-            return
-        self.accept()
 
 
 class MeetingTemplatePickDialog(QDialog):

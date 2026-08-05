@@ -52,6 +52,7 @@ STATUS_MODES_BOTH = (
 ACTION_NEW_TASK = "Nový úkol"
 ACTION_NEW_MEETING = "Nová událost"
 ACTION_NEW_FROM_TEMPLATE = "Nová událost ze šablony..."
+ACTION_OPEN_TEMPLATES = "Šablony událostí"
 ACTION_OPEN = "Otevřít"
 ACTION_EDIT = "Upravit"
 ACTION_AGENDA = "Agenda"

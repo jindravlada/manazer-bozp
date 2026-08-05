@@ -8,10 +8,8 @@ from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
     QFormLayout,
-    QHBoxLayout,
     QLineEdit,
     QMessageBox,
-    QPushButton,
     QTabWidget,
     QTextEdit,
     QVBoxLayout,
@@ -20,7 +18,6 @@ from PySide6.QtWidgets import (
 
 from core.widgets.dialog_utils import create_save_cancel_box
 from moduly.schuzky.constants import (
-    ACTION_SAVE_AS_TEMPLATE,
     DEFAULT_EVENT_DURATION_HOURS,
     DEFAULT_EVENT_TYPE,
     DEFAULT_MEETING_PRIORITY,
@@ -83,18 +80,11 @@ class MeetingDialog(QDialog):
         self.tabs.addTab(self._discussion_tab(), TAB_DISCUSSION)
         layout.addWidget(self.tabs, 1)
 
-        button_row = QHBoxLayout()
-        self.save_as_template_btn = QPushButton(ACTION_SAVE_AS_TEMPLATE)
-        self.save_as_template_btn.setEnabled(meeting is not None)
-        button_row.addWidget(self.save_as_template_btn)
-        button_row.addStretch()
         buttons = create_save_cancel_box(self, is_new=meeting is None)
-        button_row.addWidget(buttons)
-        layout.addLayout(button_row)
+        layout.addWidget(buttons)
 
         buttons.accepted.connect(self._on_accept)
         buttons.rejected.connect(self.reject)
-        self.save_as_template_btn.clicked.connect(self._on_save_as_template)
 
         self.starts_at_edit.dateTimeChanged.connect(self._on_starts_changed)
         self.ends_at_edit.dateTimeChanged.connect(self._on_ends_changed)
@@ -319,8 +309,3 @@ class MeetingDialog(QDialog):
                 # Uložit přesto – konflikt není chyba; další uložení kontrolu zopakuje.
 
         self.accept()
-
-    def _on_save_as_template(self) -> None:
-        from moduly.schuzky.ui.meeting_template_actions import save_meeting_as_template
-
-        save_meeting_as_template(self, self)

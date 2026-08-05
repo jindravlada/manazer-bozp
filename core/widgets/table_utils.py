@@ -188,6 +188,21 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         ):
             header.setSectionResizeMode(column, QHeaderView.Fixed)
 
+    elif profile == "meeting_templates":
+        widths = {
+            1: 220,
+            2: 140,
+            3: 240,
+            4: 100,
+            5: 110,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        table.setColumnHidden(0, True)
+        header.setSectionResizeMode(1, QHeaderView.Stretch)
+        for column in (2, 3, 4, 5):
+            header.setSectionResizeMode(column, QHeaderView.Fixed)
+
     elif profile == "agenda":
         from moduly.agenda.constants import (
             COL_DUE,
