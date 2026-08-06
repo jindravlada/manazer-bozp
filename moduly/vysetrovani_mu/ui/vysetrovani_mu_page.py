@@ -1,9 +1,11 @@
 from datetime import date
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QLabel,
+    QMenu,
     QMessageBox,
     QPushButton,
     QVBoxLayout,
@@ -43,6 +45,10 @@ class VysetrovaniMuPage(QWidget):
         self.delete_btn = QPushButton("Smazat")
         self.sedmero_btn = QPushButton("Sedmero")
 
+        self._selection_action_buttons = (self.edit_btn, self.delete_btn)
+        for button in self._selection_action_buttons:
+            button.setEnabled(False)
+
         self.status_filter = QComboBox()
         self.status_filter.addItems([
             MU_STATUS_FILTER_PROBIHA,
@@ -78,6 +84,9 @@ class VysetrovaniMuPage(QWidget):
         self.delete_btn.clicked.connect(self.delete_selected_investigation)
         self.sedmero_btn.clicked.connect(self.show_sedmero)
         self.table.doubleClicked.connect(self.edit_selected_investigation)
+        self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self._show_table_context_menu)
+        self.table.selectionModel().selectionChanged.connect(self._refresh_action_buttons)
         self.status_filter.currentIndexChanged.connect(self.refresh)
         self.year_filter.currentIndexChanged.connect(self.refresh)
 
@@ -88,7 +97,37 @@ class VysetrovaniMuPage(QWidget):
         investigations = self._filter_investigations(investigations)
         self.table.load_investigations(investigations)
         configure_table_columns(self.table, "mu_investigations")
+        self.table.clearSelection()
+        self.table.setCurrentCell(-1, -1)
         self.text_filter.update_count()
+        self._refresh_action_buttons()
+
+    def _selected_row_count(self) -> int:
+        return len(self.table.selectionModel().selectedRows())
+
+    def _refresh_action_buttons(self, *_args) -> None:
+        enabled = self._selected_row_count() == 1
+        for button in self._selection_action_buttons:
+            button.setEnabled(enabled)
+
+    def _show_table_context_menu(self, position) -> None:
+        index = self.table.indexAt(position)
+        if index.isValid():
+            self.table.selectRow(index.row())
+            self._refresh_action_buttons()
+
+        enabled = self._selected_row_count() == 1
+        if not enabled and not index.isValid():
+            return
+
+        menu = QMenu(self)
+        for label, slot in (
+            (self.edit_btn.text(), self.edit_selected_investigation),
+            (self.delete_btn.text(), self.delete_selected_investigation),
+        ):
+            action = menu.addAction(label, slot)
+            action.setEnabled(enabled)
+        menu.exec(self.table.viewport().mapToGlobal(position))
 
     def _populate_year_filter(self):
         current_year = date.today().year
@@ -129,6 +168,9 @@ class VysetrovaniMuPage(QWidget):
         return investigations
 
     def _selected_investigation_id(self) -> int | None:
+        if self._selected_row_count() != 1:
+            return None
+
         selected = self.table.selectionModel().selectedRows()
         if not selected:
             return None
@@ -172,7 +214,6 @@ class VysetrovaniMuPage(QWidget):
     def edit_selected_investigation(self):
         investigation_id = self._selected_investigation_id()
         if investigation_id is None:
-            QMessageBox.information(self, "Vyšetřování MU", "Vyberte vyšetřování.")
             return
 
         self.open_investigation(investigation_id)
@@ -218,7 +259,6 @@ class VysetrovaniMuPage(QWidget):
     def delete_selected_investigation(self):
         investigation_id = self._selected_investigation_id()
         if investigation_id is None:
-            QMessageBox.information(self, "Vyšetřování MU", "Vyberte vyšetřování.")
             return
 
         investigation = mu_investigation_service.get_by_id(investigation_id)
