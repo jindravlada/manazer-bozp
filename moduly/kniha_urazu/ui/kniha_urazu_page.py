@@ -1,5 +1,7 @@
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QHBoxLayout,
+    QMenu,
     QMessageBox,
     QPushButton,
     QVBoxLayout,
@@ -77,6 +79,8 @@ class KnihaUrazuPage(QWidget):
         self.vypis_btn.clicked.connect(self.generate_accident_report)
         self.final_report_btn.clicked.connect(self.generate_final_report)
         self.table.doubleClicked.connect(self.edit_selected_accident)
+        self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self._show_table_context_menu)
         self.table.selectionModel().selectionChanged.connect(self._refresh_action_buttons)
 
         self.refresh()
@@ -96,23 +100,46 @@ class KnihaUrazuPage(QWidget):
         return len(self.table.selectionModel().selectedRows())
 
     def _refresh_action_buttons(self, *_args) -> None:
-        # Akce nad jedním záznamem; vícenásobný výběr zatím žádná nepodporuje.
+        # Akce nad jedním záznamem; vícenásobný výběr žádná nepodporuje.
         enabled = self._selected_row_count() == 1
         for button in self._selection_action_buttons:
             button.setEnabled(enabled)
 
+    def _show_table_context_menu(self, position) -> None:
+        index = self.table.indexAt(position)
+        if index.isValid():
+            self.table.selectRow(index.row())
+            self._refresh_action_buttons()
+
+        enabled = self._selected_row_count() == 1
+        if not enabled and not index.isValid():
+            return
+
+        menu = QMenu(self)
+        actions = (
+            (self.edit_btn.text(), self.edit_selected_accident),
+            (self.notice_btn.text(), self.open_union_notice),
+            (self.investigation_btn.text(), lambda: self.open_investigation()),
+            (self.mu_investigation_btn.text(), lambda: self.open_mu_investigation()),
+            (self.vypis_btn.text(), self.generate_accident_report),
+            (self.final_report_btn.text(), self.generate_final_report),
+        )
+        for label, slot in actions:
+            action = menu.addAction(label, slot)
+            action.setEnabled(enabled)
+        menu.exec(self.table.viewport().mapToGlobal(position))
+
     def _selected_accident_id(self):
-        selected = self.table.selectionModel().selectedRows()
-        if not selected:
+        if self._selected_row_count() != 1:
             return None
 
+        selected = self.table.selectionModel().selectedRows()
         item = self.table.item(selected[0].row(), 1)
         return int(item.text()) if item else None
 
     def open_union_notice(self) -> None:
         accident_id = self._selected_accident_id()
         if accident_id is None:
-            QMessageBox.information(self, "Ohláška OO", "Vyberte úraz.")
             return
 
         accident = accident_service.get_by_id(accident_id)
@@ -135,7 +162,6 @@ class KnihaUrazuPage(QWidget):
     def edit_selected_accident(self):
         accident_id = self._selected_accident_id()
         if accident_id is None:
-            QMessageBox.information(self, "Kniha úrazů", "Vyberte úraz.")
             return
 
         self.open_accident(accident_id)
@@ -172,7 +198,6 @@ class KnihaUrazuPage(QWidget):
     def generate_accident_report(self):
         accident_id = self._selected_accident_id()
         if accident_id is None:
-            QMessageBox.information(self, "Výpis o pracovním úrazu", "Vyberte úraz.")
             return
 
         accident = accident_service.get_by_id(accident_id)
@@ -193,7 +218,6 @@ class KnihaUrazuPage(QWidget):
     def generate_final_report(self):
         accident_id = self._selected_accident_id()
         if accident_id is None:
-            QMessageBox.information(self, "Závěrečná zpráva", "Vyberte úraz.")
             return
 
         accident = accident_service.get_by_id(accident_id)
@@ -215,7 +239,6 @@ class KnihaUrazuPage(QWidget):
         if accident_id is None:
             accident_id = self._selected_accident_id()
         if accident_id is None:
-            QMessageBox.information(self, "Ohlašovací povinnosti", "Vyberte úraz.")
             return
 
         accident = accident_service.get_by_id(accident_id)
@@ -235,7 +258,6 @@ class KnihaUrazuPage(QWidget):
         if type(accident_id) is not int:
             accident_id = self._selected_accident_id()
         if accident_id is None:
-            QMessageBox.information(self, "Vyšetřování MU", "Vyberte úraz.")
             return
 
         accident = accident_service.get_by_id(accident_id)

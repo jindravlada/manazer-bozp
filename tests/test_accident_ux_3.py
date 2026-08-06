@@ -89,18 +89,29 @@ class AccidentUx3TestCase(unittest.TestCase):
             self.assertFalse(button.isEnabled(), button.text())
 
     def test_multi_selection_keeps_single_actions_disabled(self) -> None:
-        first = self._create_accident("První")
-        second = self._create_accident("Druhý")
+        self._create_accident("První")
+        self._create_accident("Druhý")
         page = KnihaUrazuPage()
-        # Tabulka má SingleSelection; simulujeme vícenásobný výběr přes mock.
-        with patch.object(page, "_selected_row_count", return_value=2):
-            page._refresh_action_buttons()
+        from PySide6.QtCore import QItemSelectionModel
+        from PySide6.QtWidgets import QAbstractItemView
+
+        self.assertEqual(
+            page.table.selectionMode(),
+            QAbstractItemView.SelectionMode.ExtendedSelection,
+        )
+        model = page.table.selectionModel()
+        model.clearSelection()
+        flags = (
+            QItemSelectionModel.SelectionFlag.Select
+            | QItemSelectionModel.SelectionFlag.Rows
+        )
+        for row in (0, 1):
+            model.select(page.table.model().index(row, 0), flags)
+        page._refresh_action_buttons()
+        self.assertEqual(page._selected_row_count(), 2)
         self.assertTrue(page.new_btn.isEnabled())
         for button in self._selection_buttons(page):
             self.assertFalse(button.isEnabled(), button.text())
-        # Kontrola, že záznamy existují (aby se test neoptimalizoval pryč).
-        self.assertIsNotNone(accident_service.get_by_id(first.id))
-        self.assertIsNotNone(accident_service.get_by_id(second.id))
 
 
 if __name__ == "__main__":

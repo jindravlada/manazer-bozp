@@ -2,7 +2,7 @@ import json
 from datetime import date, datetime, time
 
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QHeaderView, QTableWidget
+from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QTableWidget
 from sqlalchemy import select
 
 from core.database.session import get_session
@@ -71,9 +71,9 @@ class AccidentTable(QTableWidget):
         self.setColumnHidden(1, True)
         self.verticalHeader().setVisible(False)
         self.setAlternatingRowColors(True)
-        self.setSelectionBehavior(QTableWidget.SelectRows)
-        self.setSelectionMode(QTableWidget.SingleSelection)
-        self.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         enable_typed_sorting(self)
 
     def configure_columns(self):
