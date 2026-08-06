@@ -4,11 +4,15 @@ from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
     QFormLayout,
+    QHBoxLayout,
     QLineEdit,
+    QMenu,
     QMessageBox,
+    QPushButton,
     QSpinBox,
     QTabWidget,
     QTextEdit,
+    QToolButton,
     QVBoxLayout,
     QWidget,
 )
@@ -85,10 +89,23 @@ class AccidentDialog(QDialog):
 
         layout.addWidget(self.tabs, 1)
 
+        button_row = QHBoxLayout()
+        self.notice_btn = QToolButton()
+        self.notice_btn.setText("Ohlášení")
+        self.notice_btn.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        notice_menu = QMenu(self.notice_btn)
+        self.union_notice_action = notice_menu.addAction("Odborová organizace...")
+        self.union_notice_action.triggered.connect(self.open_union_notice)
+        self.notice_btn.setMenu(notice_menu)
+        self.notice_btn.setEnabled(accident is not None and getattr(accident, "id", None))
+        button_row.addWidget(self.notice_btn)
+        button_row.addStretch()
+
         buttons = create_save_cancel_box(self, is_new=accident is None)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+        button_row.addWidget(buttons)
+        layout.addLayout(button_row)
 
         self._connect_logic()
 
@@ -97,6 +114,19 @@ class AccidentDialog(QDialog):
 
         self._refresh_logic()
         configure_form_tab_navigation(self)
+
+    def open_union_notice(self) -> None:
+        if self.accident is None or getattr(self.accident, "id", None) is None:
+            QMessageBox.information(
+                self,
+                "Ohlášení odborové organizaci",
+                "Nejdříve pracovní úraz uložte.",
+            )
+            return
+        from moduly.kniha_urazu.ui.union_notice_dialog import UnionNoticeDialog
+
+        dialog = UnionNoticeDialog(self, accident=self.accident)
+        dialog.exec()
 
     def accept(self):
         validations = [
