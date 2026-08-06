@@ -50,8 +50,8 @@ class ProverkyToolbarTestCase(unittest.TestCase):
         self.assertTrue(page.report_btn.isEnabled())
         self.assertIn("Roční zpráva o stavu BOZP", page.report_btn.toolTip())
         self.assertTrue(page.new_btn.isEnabled())
-        self.assertTrue(page.edit_btn.isEnabled())
-        self.assertTrue(page.delete_btn.isEnabled())
+        self.assertFalse(page.edit_btn.isEnabled())
+        self.assertFalse(page.delete_btn.isEnabled())
         self.assertTrue(page.knowledge_editor_btn.isEnabled())
 
     def test_get_for_year_filters_and_sorts(self) -> None:

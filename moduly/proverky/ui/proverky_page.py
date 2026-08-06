@@ -1,6 +1,7 @@
 from datetime import date
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
@@ -76,14 +77,18 @@ class ProverkyPage(QWidget):
         self.plan_btn = QPushButton("Roční plán")
         self.generate_btn = QPushButton("Generovat prověrky")
         self.protocol_btn = QPushButton(INSPECTION_PROTOCOL_BUTTON_LABEL)
-        self.protocol_btn.setEnabled(False)
         self.protocol_btn.setToolTip(INSPECTION_PROTOCOL_TOOLTIP)
         self.detailed_report_btn = QPushButton(INSPECTION_DETAILED_REPORT_BUTTON_LABEL)
-        self.detailed_report_btn.setEnabled(False)
         self.detailed_report_btn.setToolTip(INSPECTION_DETAILED_REPORT_TOOLTIP)
         self.report_btn = QPushButton("Roční zpráva")
         self.report_btn.setToolTip("Roční zpráva o stavu BOZP za vybraný kalendářní rok.")
         self.knowledge_editor_btn = QPushButton(KNOWLEDGE_EDITOR_BUTTON_LABEL)
+
+        self._single_record_buttons = (self.edit_btn, self.delete_btn)
+        for button in self._single_record_buttons:
+            button.setEnabled(False)
+        self.protocol_btn.setEnabled(False)
+        self.detailed_report_btn.setEnabled(False)
 
         self.status_filter = QComboBox()
         self.status_filter.addItems([
@@ -133,11 +138,15 @@ class ProverkyPage(QWidget):
         self.table.doubleClicked.connect(self.open_selected_inspection)
         self.table.customContextMenuRequested.connect(self._show_table_context_menu)
         self.table.selectionModel().selectionChanged.connect(
-            self._update_export_actions
+            self._refresh_action_buttons
         )
         self.status_filter.currentIndexChanged.connect(self.refresh)
         self.year_filter.currentIndexChanged.connect(self.refresh)
 
+        self.refresh()
+
+    def showEvent(self, event: QShowEvent) -> None:
+        super().showEvent(event)
         self.refresh()
 
     def refresh(self) -> None:
@@ -145,8 +154,30 @@ class ProverkyPage(QWidget):
         rows = [_InspectionRow(inspection) for inspection in inspections]
         self.table.load_inspections(rows)
         configure_table_columns(self.table, "bozp_inspections")
+        self.table.clearSelection()
+        self.table.setCurrentCell(-1, -1)
         self.text_filter.update_count()
-        self._update_export_actions()
+        self._refresh_action_buttons()
+
+    def _selected_row_count(self) -> int:
+        return len(self.table.selectionModel().selectedRows())
+
+    def _refresh_action_buttons(self, *_args) -> None:
+        single = self._selected_row_count() == 1
+        for button in self._single_record_buttons:
+            button.setEnabled(single)
+
+        inspection = self._selected_inspection() if single else None
+        completed = (
+            inspection is not None
+            and inspection.status == INSPECTION_STATUS_DOKONCENO
+        )
+        self.protocol_btn.setEnabled(completed)
+        self.detailed_report_btn.setEnabled(completed)
+
+    def _update_export_actions(self, *_args) -> None:
+        # Kompatibilita se staršími voláními / testy.
+        self._refresh_action_buttons()
 
     def _populate_year_filter(self) -> None:
         current_year = date.today().year
@@ -181,6 +212,9 @@ class ProverkyPage(QWidget):
         return inspections
 
     def _selected_inspection_id(self) -> int | None:
+        if self._selected_row_count() != 1:
+            return None
+
         selected = self.table.selectionModel().selectedRows()
         if not selected:
             return None
@@ -194,27 +228,23 @@ class ProverkyPage(QWidget):
             return None
         return bozp_inspection_service.get_by_id(inspection_id)
 
-    def _update_export_actions(self, *_args) -> None:
-        inspection = self._selected_inspection()
-        completed = (
-            inspection is not None
-            and inspection.status == INSPECTION_STATUS_DOKONCENO
-        )
-        self.protocol_btn.setEnabled(completed)
-        self.detailed_report_btn.setEnabled(completed)
-
     def _show_table_context_menu(self, position) -> None:
         index = self.table.indexAt(position)
-        if not index.isValid():
+        if index.isValid():
+            self.table.selectRow(index.row())
+            self._refresh_action_buttons()
+
+        single = self._selected_row_count() == 1
+        if not single and not index.isValid():
             return
 
-        self.table.selectRow(index.row())
         menu = QMenu(self)
-        menu.addAction("Upravit", self.open_selected_inspection)
-        menu.addAction("Smazat", self.delete_selected_inspection)
+        edit_action = menu.addAction("Upravit", self.open_selected_inspection)
+        delete_action = menu.addAction("Smazat", self.delete_selected_inspection)
+        edit_action.setEnabled(single)
+        delete_action.setEnabled(single)
 
-        inspection = self._selected_inspection()
-        if inspection is not None and inspection.status == INSPECTION_STATUS_DOKONCENO:
+        if single and self.protocol_btn.isEnabled():
             menu.addSeparator()
             menu.addAction(
                 INSPECTION_PROTOCOL_BUTTON_LABEL,
@@ -256,7 +286,6 @@ class ProverkyPage(QWidget):
     def open_selected_inspection(self) -> None:
         inspection_id = self._selected_inspection_id()
         if inspection_id is None:
-            QMessageBox.information(self, MODULE_NAME, "Vyberte prověrku.")
             return
 
         self.open_inspection(inspection_id)
@@ -281,9 +310,6 @@ class ProverkyPage(QWidget):
     def export_selected_protocol(self) -> None:
         inspection = self._selected_inspection()
         if inspection is None:
-            QMessageBox.information(
-                self, INSPECTION_PROTOCOL_DIALOG_TITLE, "Vyberte prověrku."
-            )
             return
         if inspection.status != INSPECTION_STATUS_DOKONCENO:
             QMessageBox.information(
@@ -291,7 +317,7 @@ class ProverkyPage(QWidget):
                 INSPECTION_PROTOCOL_DIALOG_TITLE,
                 INSPECTION_PROTOCOL_REQUIRES_COMPLETED,
             )
-            self._update_export_actions()
+            self._refresh_action_buttons()
             return
 
         try:
@@ -306,11 +332,6 @@ class ProverkyPage(QWidget):
     def export_selected_detailed_report(self) -> None:
         inspection = self._selected_inspection()
         if inspection is None:
-            QMessageBox.information(
-                self,
-                INSPECTION_DETAILED_REPORT_DIALOG_TITLE,
-                "Vyberte prověrku.",
-            )
             return
         if inspection.status != INSPECTION_STATUS_DOKONCENO:
             QMessageBox.information(
@@ -318,7 +339,7 @@ class ProverkyPage(QWidget):
                 INSPECTION_DETAILED_REPORT_DIALOG_TITLE,
                 INSPECTION_DETAILED_REPORT_REQUIRES_COMPLETED,
             )
-            self._update_export_actions()
+            self._refresh_action_buttons()
             return
 
         try:
@@ -333,7 +354,6 @@ class ProverkyPage(QWidget):
     def delete_selected_inspection(self) -> None:
         inspection_id = self._selected_inspection_id()
         if inspection_id is None:
-            QMessageBox.information(self, MODULE_NAME, "Vyberte prověrku.")
             return
 
         inspection = bozp_inspection_service.get_by_id(inspection_id)
