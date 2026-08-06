@@ -1,8 +1,10 @@
 from datetime import date
 
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import (
     QHBoxLayout,
+    QMenu,
     QMessageBox,
     QPushButton,
     QVBoxLayout,
@@ -42,6 +44,8 @@ class KontrolyLegislativyTab(QWidget):
         self.perform_check_btn = QPushButton("Provést kontrolu")
         self.open_btn = QPushButton("Otevřít")
         self.toggle_btn = QPushButton("Deaktivovat")
+        self.open_btn.setEnabled(False)
+        self.toggle_btn.setEnabled(False)
         toolbar.addWidget(self.perform_check_btn)
         toolbar.addWidget(self.open_btn)
         toolbar.addWidget(self.toggle_btn)
@@ -58,7 +62,9 @@ class KontrolyLegislativyTab(QWidget):
         self.open_btn.clicked.connect(self.open_selected_run)
         self.toggle_btn.clicked.connect(self.toggle_selected_run)
         self.table.doubleClicked.connect(self.open_selected_run)
-        self.table.itemSelectionChanged.connect(self._update_action_buttons)
+        self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self._show_table_context_menu)
+        self.table.selectionModel().selectionChanged.connect(self._refresh_action_buttons)
 
         self._recover_stale_runs()
         self.refresh()
@@ -74,21 +80,53 @@ class KontrolyLegislativyTab(QWidget):
     def refresh(self) -> None:
         runs = legal_check_run_service.list_all(include_inactive=True)
         self.table.load_runs(runs)
+        self.table.clearSelection()
+        self.table.setCurrentCell(-1, -1)
         self.text_filter.update_count()
-        self._update_action_buttons()
+        self._refresh_action_buttons()
+
+    def _selected_row_count(self) -> int:
+        return len(self.table.selectionModel().selectedRows())
 
     def _selected_run(self):
+        if self._selected_row_count() != 1:
+            return None
         run_id = self.table.selected_run_id()
         if run_id is None:
             return None
         return legal_check_run_service.get_by_id(run_id)
 
-    def _update_action_buttons(self) -> None:
+    def _refresh_action_buttons(self, *_args) -> None:
         run = self._selected_run()
+        single = run is not None
+        self.open_btn.setEnabled(single)
+        self.toggle_btn.setEnabled(single)
         if run is None:
             self.toggle_btn.setText("Deaktivovat")
+        else:
+            self.toggle_btn.setText("Obnovit" if not run.active else "Deaktivovat")
+
+    def _update_action_buttons(self) -> None:
+        # Kompatibilita se staršími voláními / testy.
+        self._refresh_action_buttons()
+
+    def _show_table_context_menu(self, position) -> None:
+        index = self.table.indexAt(position)
+        if index.isValid():
+            self.table.selectRow(index.row())
+            self._refresh_action_buttons()
+
+        run = self._selected_run()
+        single = run is not None
+        if not single and not index.isValid():
             return
-        self.toggle_btn.setText("Obnovit" if not run.active else "Deaktivovat")
+
+        menu = QMenu(self)
+        open_action = menu.addAction("Otevřít", self.open_selected_run)
+        open_action.setEnabled(single)
+        toggle_action = menu.addAction(self.toggle_btn.text(), self.toggle_selected_run)
+        toggle_action.setEnabled(single)
+        menu.exec(self.table.viewport().mapToGlobal(position))
 
     def perform_check(self) -> None:
         period_to = date.today()
@@ -149,7 +187,6 @@ class KontrolyLegislativyTab(QWidget):
     def open_selected_run(self) -> None:
         run = self._selected_run()
         if run is None:
-            QMessageBox.information(self, "Kontroly změn", "Vyberte kontrolu.")
             return
 
         dialog = LegalCheckRunDialog(self, run=run)
@@ -169,7 +206,6 @@ class KontrolyLegislativyTab(QWidget):
     def toggle_selected_run(self) -> None:
         run = self._selected_run()
         if run is None:
-            QMessageBox.information(self, "Kontroly změn", "Vyberte kontrolu.")
             return
 
         if run.active:

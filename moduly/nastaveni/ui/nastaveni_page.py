@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QTabWidget,
     QTableWidget, QLabel, QMessageBox, QComboBox, QCompleter,
-    QFormLayout, QLineEdit, QTreeWidget, QTreeWidgetItem, QTreeWidgetItemIterator,
+    QFormLayout, QLineEdit, QMenu, QTreeWidget, QTreeWidgetItem, QTreeWidgetItemIterator,
 )
 from PySide6.QtCore import Qt
 
@@ -142,19 +142,26 @@ class NastaveniPage(QWidget):
         add_button = QPushButton("Přidat THP pracovníka")
         add_button.clicked.connect(self.add_worker)
 
-        edit_button = QPushButton("Upravit")
-        edit_button.clicked.connect(self.edit_selected_worker)
+        self.worker_edit_button = QPushButton("Upravit")
+        self.worker_edit_button.clicked.connect(self.edit_selected_worker)
+        self.worker_edit_button.setEnabled(False)
 
-        self.active_toggle_button = QPushButton("Deaktivovat / Aktivovat")
-        self.active_toggle_button.clicked.connect(self.toggle_selected_worker_active)
+        self.worker_activate_button = QPushButton("Aktivovat")
+        self.worker_activate_button.clicked.connect(self.activate_selected_worker)
+        self.worker_activate_button.setEnabled(False)
+
+        self.worker_deactivate_button = QPushButton("Deaktivovat")
+        self.worker_deactivate_button.clicked.connect(self.deactivate_selected_worker)
+        self.worker_deactivate_button.setEnabled(False)
 
         self.worker_filter = QComboBox()
         self.worker_filter.addItems(["Aktivní", "Všichni"])
         self.worker_filter.currentIndexChanged.connect(self.refresh_workers)
 
         toolbar.addWidget(add_button)
-        toolbar.addWidget(edit_button)
-        toolbar.addWidget(self.active_toggle_button)
+        toolbar.addWidget(self.worker_edit_button)
+        toolbar.addWidget(self.worker_activate_button)
+        toolbar.addWidget(self.worker_deactivate_button)
         toolbar.addStretch()
         toolbar.addWidget(QLabel("Zobrazit:"))
         toolbar.addWidget(self.worker_filter)
@@ -165,9 +172,11 @@ class NastaveniPage(QWidget):
             ["ID", "Titul před", "Příjmení", "Jméno", "Titul za", "Funkce", "Telefon", "E-mail", "Kont.", "Aktivní"]
         )
         self.worker_table.setSelectionBehavior(QTableWidget.SelectRows)
-        self.worker_table.setSelectionMode(QTableWidget.SingleSelection)
+        self.worker_table.setSelectionMode(QTableWidget.ExtendedSelection)
         self.worker_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.worker_table.doubleClicked.connect(self.edit_selected_worker)
+        self.worker_table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.worker_table.customContextMenuRequested.connect(self._show_worker_context_menu)
         self.worker_table.itemSelectionChanged.connect(self.update_worker_buttons)
         configure_table_columns(self.worker_table, "thp_workers")
         enable_typed_sorting(self.worker_table)
@@ -197,9 +206,15 @@ class NastaveniPage(QWidget):
 
         self.person_edit_button = QPushButton("Upravit")
         self.person_edit_button.clicked.connect(self.edit_selected_person)
+        self.person_edit_button.setEnabled(False)
 
-        self.person_active_toggle_button = QPushButton("Deaktivovat / Aktivovat")
-        self.person_active_toggle_button.clicked.connect(self.toggle_selected_person_active)
+        self.person_activate_button = QPushButton("Aktivovat")
+        self.person_activate_button.clicked.connect(self.activate_selected_person)
+        self.person_activate_button.setEnabled(False)
+
+        self.person_deactivate_button = QPushButton("Deaktivovat")
+        self.person_deactivate_button.clicked.connect(self.deactivate_selected_person)
+        self.person_deactivate_button.setEnabled(False)
 
         self.person_filter = QComboBox()
         self.person_filter.addItems([
@@ -213,7 +228,8 @@ class NastaveniPage(QWidget):
 
         toolbar.addWidget(self.person_add_button)
         toolbar.addWidget(self.person_edit_button)
-        toolbar.addWidget(self.person_active_toggle_button)
+        toolbar.addWidget(self.person_activate_button)
+        toolbar.addWidget(self.person_deactivate_button)
         toolbar.addStretch()
         toolbar.addWidget(QLabel("Zobrazit:"))
         toolbar.addWidget(self.person_filter)
@@ -224,9 +240,11 @@ class NastaveniPage(QWidget):
             ["ID", "Jméno", "Organizace", "Pracovní zařazení", "E-mail", "Telefon", "Zam.", "Stav"]
         )
         self.person_table.setSelectionBehavior(QTableWidget.SelectRows)
-        self.person_table.setSelectionMode(QTableWidget.SingleSelection)
+        self.person_table.setSelectionMode(QTableWidget.ExtendedSelection)
         self.person_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.person_table.doubleClicked.connect(self.edit_selected_person)
+        self.person_table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.person_table.customContextMenuRequested.connect(self._show_person_context_menu)
         self.person_table.itemSelectionChanged.connect(self.update_person_buttons)
         configure_table_columns(self.person_table, "persons")
         enable_typed_sorting(self.person_table)
@@ -255,11 +273,17 @@ class NastaveniPage(QWidget):
         self.workplace_add_part_button = QPushButton("Nová část pracoviště")
         self.workplace_add_part_button.clicked.connect(self.add_workplace_part)
 
-        edit_button = QPushButton("Upravit")
-        edit_button.clicked.connect(self.edit_selected_workplace)
+        self.workplace_edit_button = QPushButton("Upravit")
+        self.workplace_edit_button.clicked.connect(self.edit_selected_workplace)
+        self.workplace_edit_button.setEnabled(False)
 
-        self.workplace_active_toggle_button = QPushButton("Deaktivovat / Aktivovat")
-        self.workplace_active_toggle_button.clicked.connect(self.toggle_selected_workplace_active)
+        self.workplace_activate_button = QPushButton("Aktivovat")
+        self.workplace_activate_button.clicked.connect(self.activate_selected_workplace)
+        self.workplace_activate_button.setEnabled(False)
+
+        self.workplace_deactivate_button = QPushButton("Deaktivovat")
+        self.workplace_deactivate_button.clicked.connect(self.deactivate_selected_workplace)
+        self.workplace_deactivate_button.setEnabled(False)
 
         self.workplace_filter = QComboBox()
         self.workplace_filter.addItems(["Aktivní", "Všechna"])
@@ -268,8 +292,9 @@ class NastaveniPage(QWidget):
         toolbar.addWidget(self.workplace_add_operation_button)
         toolbar.addWidget(self.workplace_add_workplace_button)
         toolbar.addWidget(self.workplace_add_part_button)
-        toolbar.addWidget(edit_button)
-        toolbar.addWidget(self.workplace_active_toggle_button)
+        toolbar.addWidget(self.workplace_edit_button)
+        toolbar.addWidget(self.workplace_activate_button)
+        toolbar.addWidget(self.workplace_deactivate_button)
         toolbar.addStretch()
         toolbar.addWidget(QLabel("Zobrazit:"))
         toolbar.addWidget(self.workplace_filter)
@@ -283,6 +308,8 @@ class NastaveniPage(QWidget):
         self.workplace_tree.setRootIsDecorated(True)
         self.workplace_tree.setUniformRowHeights(True)
         self.workplace_tree.itemDoubleClicked.connect(self._on_workplace_item_double_clicked)
+        self.workplace_tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.workplace_tree.customContextMenuRequested.connect(self._show_workplace_context_menu)
         self.workplace_tree.itemSelectionChanged.connect(self.update_workplace_buttons)
 
         filter_row = QHBoxLayout()
@@ -313,21 +340,30 @@ class NastaveniPage(QWidget):
         add_button = QPushButton("Přidat roli")
         add_button.clicked.connect(self.add_responsibility_role)
 
-        edit_button = QPushButton("Upravit")
-        edit_button.clicked.connect(self.edit_selected_responsibility_role)
+        self.responsibility_role_edit_button = QPushButton("Upravit")
+        self.responsibility_role_edit_button.clicked.connect(self.edit_selected_responsibility_role)
+        self.responsibility_role_edit_button.setEnabled(False)
 
-        self.responsibility_role_active_toggle_button = QPushButton("Deaktivovat / Aktivovat")
-        self.responsibility_role_active_toggle_button.clicked.connect(
-            self.toggle_selected_responsibility_role_active,
+        self.responsibility_role_activate_button = QPushButton("Aktivovat")
+        self.responsibility_role_activate_button.clicked.connect(
+            self.activate_selected_responsibility_role,
         )
+        self.responsibility_role_activate_button.setEnabled(False)
+
+        self.responsibility_role_deactivate_button = QPushButton("Deaktivovat")
+        self.responsibility_role_deactivate_button.clicked.connect(
+            self.deactivate_selected_responsibility_role,
+        )
+        self.responsibility_role_deactivate_button.setEnabled(False)
 
         self.responsibility_role_filter = QComboBox()
         self.responsibility_role_filter.addItems(["Aktivní", "Všechny"])
         self.responsibility_role_filter.currentIndexChanged.connect(self.refresh_responsibility_roles)
 
         toolbar.addWidget(add_button)
-        toolbar.addWidget(edit_button)
-        toolbar.addWidget(self.responsibility_role_active_toggle_button)
+        toolbar.addWidget(self.responsibility_role_edit_button)
+        toolbar.addWidget(self.responsibility_role_activate_button)
+        toolbar.addWidget(self.responsibility_role_deactivate_button)
         toolbar.addStretch()
         toolbar.addWidget(QLabel("Zobrazit:"))
         toolbar.addWidget(self.responsibility_role_filter)
@@ -338,9 +374,13 @@ class NastaveniPage(QWidget):
             ["ID", "Název", "Popis", "Aktivní"],
         )
         self.responsibility_role_table.setSelectionBehavior(QTableWidget.SelectRows)
-        self.responsibility_role_table.setSelectionMode(QTableWidget.SingleSelection)
+        self.responsibility_role_table.setSelectionMode(QTableWidget.ExtendedSelection)
         self.responsibility_role_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.responsibility_role_table.doubleClicked.connect(self.edit_selected_responsibility_role)
+        self.responsibility_role_table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.responsibility_role_table.customContextMenuRequested.connect(
+            self._show_responsibility_role_context_menu,
+        )
         self.responsibility_role_table.itemSelectionChanged.connect(
             self.update_responsibility_role_buttons,
         )
@@ -368,21 +408,24 @@ class NastaveniPage(QWidget):
         toolbar = QHBoxLayout()
         add_button = QPushButton("Přidat")
         add_button.clicked.connect(self.add_exposed_group)
-        edit_button = QPushButton("Upravit")
-        edit_button.clicked.connect(self.edit_selected_exposed_group)
+        self.exposed_group_edit_button = QPushButton("Upravit")
+        self.exposed_group_edit_button.clicked.connect(self.edit_selected_exposed_group)
+        self.exposed_group_edit_button.setEnabled(False)
         self.exposed_group_activate_button = QPushButton("Aktivovat")
         self.exposed_group_activate_button.clicked.connect(
             self.activate_selected_exposed_group,
         )
+        self.exposed_group_activate_button.setEnabled(False)
         self.exposed_group_deactivate_button = QPushButton("Deaktivovat")
         self.exposed_group_deactivate_button.clicked.connect(
             self.deactivate_selected_exposed_group,
         )
+        self.exposed_group_deactivate_button.setEnabled(False)
         self.exposed_group_filter = QComboBox()
         self.exposed_group_filter.addItems(["Aktivní", "Všechny"])
         self.exposed_group_filter.currentIndexChanged.connect(self.refresh_exposed_groups)
         toolbar.addWidget(add_button)
-        toolbar.addWidget(edit_button)
+        toolbar.addWidget(self.exposed_group_edit_button)
         toolbar.addWidget(self.exposed_group_activate_button)
         toolbar.addWidget(self.exposed_group_deactivate_button)
         toolbar.addStretch()
@@ -393,9 +436,13 @@ class NastaveniPage(QWidget):
         self.exposed_group_table.setColumnCount(3)
         self.exposed_group_table.setHorizontalHeaderLabels(["Název", "Poznámka", "Aktivní"])
         self.exposed_group_table.setSelectionBehavior(QTableWidget.SelectRows)
-        self.exposed_group_table.setSelectionMode(QTableWidget.SingleSelection)
+        self.exposed_group_table.setSelectionMode(QTableWidget.ExtendedSelection)
         self.exposed_group_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.exposed_group_table.doubleClicked.connect(self.edit_selected_exposed_group)
+        self.exposed_group_table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.exposed_group_table.customContextMenuRequested.connect(
+            self._show_exposed_group_context_menu,
+        )
         self.exposed_group_table.itemSelectionChanged.connect(
             self.update_exposed_group_buttons,
         )
@@ -466,7 +513,7 @@ class NastaveniPage(QWidget):
 
     def _selected_person_id(self) -> int | None:
         selected = self.person_table.selectionModel().selectedRows()
-        if not selected:
+        if len(selected) != 1:
             return None
 
         item = self.person_table.item(selected[0].row(), 0)
@@ -475,7 +522,6 @@ class NastaveniPage(QWidget):
     def edit_selected_person(self):
         person_id = self._selected_person_id()
         if person_id is None:
-            QMessageBox.information(self, "Osoby", "Vyberte osobu.")
             return
 
         person = person_service.get_by_id(person_id)
@@ -491,10 +537,9 @@ class NastaveniPage(QWidget):
                 person_service.update_person(person_id, **data)
                 self.refresh_persons()
 
-    def toggle_selected_person_active(self):
+    def activate_selected_person(self):
         person_id = self._selected_person_id()
         if person_id is None:
-            QMessageBox.information(self, "Osoby", "Vyberte osobu.")
             return
 
         person = person_service.get_by_id(person_id)
@@ -502,40 +547,75 @@ class NastaveniPage(QWidget):
             QMessageBox.warning(self, "Osoby", "Osoba nebyla nalezena.")
             self.refresh_persons()
             return
-
         if person.active:
-            text = f"Opravdu deaktivovat osobu {person.display_name}?"
-            title = "Deaktivovat osobu"
-            activate = False
-        else:
-            text = f"Opravdu znovu aktivovat osobu {person.display_name}?"
-            title = "Aktivovat osobu"
-            activate = True
+            return
 
-        answer = QMessageBox.question(self, title, text, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        answer = QMessageBox.question(
+            self,
+            "Aktivovat osobu",
+            f"Opravdu znovu aktivovat osobu {person.display_name}?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
         if answer == QMessageBox.Yes:
-            if activate:
-                person_service.activate(person_id)
-            else:
-                person_service.deactivate(person_id)
+            person_service.activate(person_id)
             self.refresh_persons()
 
-    def update_person_buttons(self):
+    def deactivate_selected_person(self):
         person_id = self._selected_person_id()
         if person_id is None:
-            self.person_active_toggle_button.setText("Deaktivovat / Aktivovat")
             return
 
         person = person_service.get_by_id(person_id)
         if person is None:
-            self.person_active_toggle_button.setText("Deaktivovat / Aktivovat")
+            QMessageBox.warning(self, "Osoby", "Osoba nebyla nalezena.")
+            self.refresh_persons()
+            return
+        if not person.active:
             return
 
-        self.person_active_toggle_button.setText("Deaktivovat" if person.active else "Aktivovat")
+        answer = QMessageBox.question(
+            self,
+            "Deaktivovat osobu",
+            f"Opravdu deaktivovat osobu {person.display_name}?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if answer == QMessageBox.Yes:
+            person_service.deactivate(person_id)
+            self.refresh_persons()
+
+    def update_person_buttons(self):
+        person_id = self._selected_person_id()
+        person = person_service.get_by_id(person_id) if person_id is not None else None
+        single = person is not None
+        self.person_edit_button.setEnabled(single)
+        self.person_activate_button.setEnabled(single and not person.active)
+        self.person_deactivate_button.setEnabled(single and person.active)
+
+    def _show_person_context_menu(self, position) -> None:
+        index = self.person_table.indexAt(position)
+        if index.isValid():
+            self.person_table.selectRow(index.row())
+            self.update_person_buttons()
+
+        person_id = self._selected_person_id()
+        single = person_id is not None
+        if not single and not index.isValid():
+            return
+
+        menu = QMenu(self)
+        edit_action = menu.addAction("Upravit", self.edit_selected_person)
+        edit_action.setEnabled(self.person_edit_button.isEnabled())
+        activate_action = menu.addAction("Aktivovat", self.activate_selected_person)
+        activate_action.setEnabled(self.person_activate_button.isEnabled())
+        deactivate_action = menu.addAction("Deaktivovat", self.deactivate_selected_person)
+        deactivate_action.setEnabled(self.person_deactivate_button.isEnabled())
+        menu.exec(self.person_table.viewport().mapToGlobal(position))
 
     def _selected_worker_id(self) -> int | None:
         selected = self.worker_table.selectionModel().selectedRows()
-        if not selected:
+        if len(selected) != 1:
             return None
 
         item = self.worker_table.item(selected[0].row(), 0)
@@ -544,7 +624,6 @@ class NastaveniPage(QWidget):
     def edit_selected_worker(self):
         worker_id = self._selected_worker_id()
         if worker_id is None:
-            QMessageBox.information(self, "THP pracovníci", "Vyberte pracovníka.")
             return
 
         self.open_worker(worker_id)
@@ -565,10 +644,9 @@ class NastaveniPage(QWidget):
                 settings_service.save_worker(id=worker_id, **data)
                 self.refresh_workers()
 
-    def toggle_selected_worker_active(self):
+    def activate_selected_worker(self):
         worker_id = self._selected_worker_id()
         if worker_id is None:
-            QMessageBox.information(self, "THP pracovníci", "Vyberte pracovníka.")
             return
 
         worker = settings_service.get_worker_by_id(worker_id)
@@ -576,37 +654,71 @@ class NastaveniPage(QWidget):
             QMessageBox.warning(self, "THP pracovníci", "Pracovník nebyl nalezen.")
             self.refresh_workers()
             return
-
         if worker.active:
-            text = f"Opravdu deaktivovat pracovníka {worker.full_name}?"
-            title = "Deaktivovat pracovníka"
-            new_state = False
-        else:
-            text = f"Opravdu znovu aktivovat pracovníka {worker.full_name}?"
-            title = "Aktivovat pracovníka"
-            new_state = True
+            return
 
-        answer = QMessageBox.question(self, title, text, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-
+        answer = QMessageBox.question(
+            self,
+            "Aktivovat pracovníka",
+            f"Opravdu znovu aktivovat pracovníka {worker.full_name}?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
         if answer == QMessageBox.Yes:
-            if new_state:
-                settings_service.activate_worker(worker_id)
-            else:
-                settings_service.deactivate_worker(worker_id)
+            settings_service.activate_worker(worker_id)
             self.refresh_workers()
 
-    def update_worker_buttons(self):
+    def deactivate_selected_worker(self):
         worker_id = self._selected_worker_id()
         if worker_id is None:
-            self.active_toggle_button.setText("Deaktivovat / Aktivovat")
             return
 
         worker = settings_service.get_worker_by_id(worker_id)
         if worker is None:
-            self.active_toggle_button.setText("Deaktivovat / Aktivovat")
+            QMessageBox.warning(self, "THP pracovníci", "Pracovník nebyl nalezen.")
+            self.refresh_workers()
+            return
+        if not worker.active:
             return
 
-        self.active_toggle_button.setText("Deaktivovat" if worker.active else "Aktivovat")
+        answer = QMessageBox.question(
+            self,
+            "Deaktivovat pracovníka",
+            f"Opravdu deaktivovat pracovníka {worker.full_name}?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if answer == QMessageBox.Yes:
+            settings_service.deactivate_worker(worker_id)
+            self.refresh_workers()
+
+    def update_worker_buttons(self):
+        worker_id = self._selected_worker_id()
+        worker = settings_service.get_worker_by_id(worker_id) if worker_id is not None else None
+        single = worker is not None
+        self.worker_edit_button.setEnabled(single)
+        self.worker_activate_button.setEnabled(single and not worker.active)
+        self.worker_deactivate_button.setEnabled(single and worker.active)
+
+    def _show_worker_context_menu(self, position) -> None:
+        index = self.worker_table.indexAt(position)
+        if index.isValid():
+            self.worker_table.selectRow(index.row())
+            self.update_worker_buttons()
+
+        worker_id = self._selected_worker_id()
+        single = worker_id is not None
+        if not single and not index.isValid():
+            return
+
+        menu = QMenu(self)
+        edit_action = menu.addAction("Upravit", self.edit_selected_worker)
+        edit_action.setEnabled(self.worker_edit_button.isEnabled())
+        activate_action = menu.addAction("Aktivovat", self.activate_selected_worker)
+        activate_action.setEnabled(self.worker_activate_button.isEnabled())
+        deactivate_action = menu.addAction("Deaktivovat", self.deactivate_selected_worker)
+        deactivate_action.setEnabled(self.worker_deactivate_button.isEnabled())
+        menu.exec(self.worker_table.viewport().mapToGlobal(position))
 
     def add_workplace_operation(self):
         self._open_workplace_dialog(
@@ -684,53 +796,79 @@ class NastaveniPage(QWidget):
     def edit_selected_workplace(self):
         workplace = self._selected_workplace()
         if workplace is None:
-            QMessageBox.information(self, "Provozy a pracoviště", "Vyberte položku.")
             return
 
         self._open_workplace_dialog(workplace=workplace)
 
-    def toggle_selected_workplace_active(self):
+    def activate_selected_workplace(self):
         workplace = self._selected_workplace()
-        if workplace is None:
-            QMessageBox.information(self, "Provozy a pracoviště", "Vyberte položku.")
+        if workplace is None or workplace.active:
             return
 
-        if workplace.active:
-            active_children = settings_service.get_active_workplace_children(workplace.id)
-            if active_children:
-                QMessageBox.warning(
-                    self,
-                    "Provozy a pracoviště",
-                    (
-                        f"Položka {workplace.name} má {len(active_children)} aktivních "
-                        "podřízených položek. Deaktivace nadřazené položky je "
-                        "automaticky neovlivní."
-                    ),
-                )
-            text = f"Opravdu deaktivovat položku {workplace.name}?"
-            title = "Deaktivovat"
-            new_state = False
-        else:
-            text = f"Opravdu znovu aktivovat položku {workplace.name}?"
-            title = "Aktivovat"
-            new_state = True
-
-        answer = QMessageBox.question(self, title, text, QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-
+        answer = QMessageBox.question(
+            self,
+            "Aktivovat",
+            f"Opravdu znovu aktivovat položku {workplace.name}?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
         if answer == QMessageBox.Yes:
-            if new_state:
-                settings_service.activate_workplace(workplace.id)
-            else:
-                settings_service.deactivate_workplace(workplace.id)
+            settings_service.activate_workplace(workplace.id)
+            self.refresh_workplaces()
+
+    def deactivate_selected_workplace(self):
+        workplace = self._selected_workplace()
+        if workplace is None or not workplace.active:
+            return
+
+        active_children = settings_service.get_active_workplace_children(workplace.id)
+        if active_children:
+            QMessageBox.warning(
+                self,
+                "Provozy a pracoviště",
+                (
+                    f"Položka {workplace.name} má {len(active_children)} aktivních "
+                    "podřízených položek. Deaktivace nadřazené položky je "
+                    "automaticky neovlivní."
+                ),
+            )
+        answer = QMessageBox.question(
+            self,
+            "Deaktivovat",
+            f"Opravdu deaktivovat položku {workplace.name}?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if answer == QMessageBox.Yes:
+            settings_service.deactivate_workplace(workplace.id)
             self.refresh_workplaces()
 
     def update_workplace_buttons(self):
         workplace = self._selected_workplace()
-        if workplace is None:
-            self.workplace_active_toggle_button.setText("Deaktivovat / Aktivovat")
+        single = workplace is not None
+        self.workplace_edit_button.setEnabled(single)
+        self.workplace_activate_button.setEnabled(single and not workplace.active)
+        self.workplace_deactivate_button.setEnabled(single and workplace.active)
+
+    def _show_workplace_context_menu(self, position) -> None:
+        item = self.workplace_tree.itemAt(position)
+        if item is not None:
+            self.workplace_tree.setCurrentItem(item)
+            self.update_workplace_buttons()
+
+        workplace = self._selected_workplace()
+        single = workplace is not None
+        if not single and item is None:
             return
 
-        self.workplace_active_toggle_button.setText("Deaktivovat" if workplace.active else "Aktivovat")
+        menu = QMenu(self)
+        edit_action = menu.addAction("Upravit", self.edit_selected_workplace)
+        edit_action.setEnabled(self.workplace_edit_button.isEnabled())
+        activate_action = menu.addAction("Aktivovat", self.activate_selected_workplace)
+        activate_action.setEnabled(self.workplace_activate_button.isEnabled())
+        deactivate_action = menu.addAction("Deaktivovat", self.deactivate_selected_workplace)
+        deactivate_action.setEnabled(self.workplace_deactivate_button.isEnabled())
+        menu.exec(self.workplace_tree.viewport().mapToGlobal(position))
 
     def _apply_workplace_tree_filter(self) -> None:
         text = self.workplace_search_edit.text().strip().lower()
@@ -770,7 +908,7 @@ class NastaveniPage(QWidget):
 
     def _selected_responsibility_role_id(self) -> int | None:
         selected = self.responsibility_role_table.selectionModel().selectedRows()
-        if not selected:
+        if len(selected) != 1:
             return None
 
         item = self.responsibility_role_table.item(selected[0].row(), 0)
@@ -779,7 +917,6 @@ class NastaveniPage(QWidget):
     def edit_selected_responsibility_role(self):
         role_id = self._selected_responsibility_role_id()
         if role_id is None:
-            QMessageBox.information(self, "Funkce / role", "Vyberte roli.")
             return
 
         role = responsibility_role_service.get_by_id(role_id)
@@ -799,10 +936,9 @@ class NastaveniPage(QWidget):
                     return
                 self.refresh_responsibility_roles()
 
-    def toggle_selected_responsibility_role_active(self):
+    def activate_selected_responsibility_role(self):
         role_id = self._selected_responsibility_role_id()
         if role_id is None:
-            QMessageBox.information(self, "Funkce / role", "Vyberte roli.")
             return
 
         role = responsibility_role_service.get_by_id(role_id)
@@ -810,45 +946,74 @@ class NastaveniPage(QWidget):
             QMessageBox.warning(self, "Funkce / role", "Role nebyla nalezena.")
             self.refresh_responsibility_roles()
             return
-
         if role.active:
-            text = f"Opravdu deaktivovat roli {role.name}?"
-            title = "Deaktivovat roli"
-            new_state = False
-        else:
-            text = f"Opravdu znovu aktivovat roli {role.name}?"
-            title = "Aktivovat roli"
-            new_state = True
+            return
 
         answer = QMessageBox.question(
             self,
-            title,
-            text,
+            "Aktivovat roli",
+            f"Opravdu znovu aktivovat roli {role.name}?",
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No,
         )
-
         if answer == QMessageBox.Yes:
-            if new_state:
-                responsibility_role_service.activate(role_id)
-            else:
-                responsibility_role_service.deactivate(role_id)
+            responsibility_role_service.activate(role_id)
             self.refresh_responsibility_roles()
 
-    def update_responsibility_role_buttons(self):
+    def deactivate_selected_responsibility_role(self):
         role_id = self._selected_responsibility_role_id()
         if role_id is None:
-            self.responsibility_role_active_toggle_button.setText("Deaktivovat / Aktivovat")
             return
 
         role = responsibility_role_service.get_by_id(role_id)
         if role is None:
-            self.responsibility_role_active_toggle_button.setText("Deaktivovat / Aktivovat")
+            QMessageBox.warning(self, "Funkce / role", "Role nebyla nalezena.")
+            self.refresh_responsibility_roles()
+            return
+        if not role.active:
             return
 
-        self.responsibility_role_active_toggle_button.setText(
-            "Deaktivovat" if role.active else "Aktivovat",
+        answer = QMessageBox.question(
+            self,
+            "Deaktivovat roli",
+            f"Opravdu deaktivovat roli {role.name}?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
         )
+        if answer == QMessageBox.Yes:
+            responsibility_role_service.deactivate(role_id)
+            self.refresh_responsibility_roles()
+
+    def update_responsibility_role_buttons(self):
+        role_id = self._selected_responsibility_role_id()
+        role = responsibility_role_service.get_by_id(role_id) if role_id is not None else None
+        single = role is not None
+        self.responsibility_role_edit_button.setEnabled(single)
+        self.responsibility_role_activate_button.setEnabled(single and not role.active)
+        self.responsibility_role_deactivate_button.setEnabled(single and role.active)
+
+    def _show_responsibility_role_context_menu(self, position) -> None:
+        index = self.responsibility_role_table.indexAt(position)
+        if index.isValid():
+            self.responsibility_role_table.selectRow(index.row())
+            self.update_responsibility_role_buttons()
+
+        role_id = self._selected_responsibility_role_id()
+        single = role_id is not None
+        if not single and not index.isValid():
+            return
+
+        menu = QMenu(self)
+        edit_action = menu.addAction("Upravit", self.edit_selected_responsibility_role)
+        edit_action.setEnabled(self.responsibility_role_edit_button.isEnabled())
+        activate_action = menu.addAction("Aktivovat", self.activate_selected_responsibility_role)
+        activate_action.setEnabled(self.responsibility_role_activate_button.isEnabled())
+        deactivate_action = menu.addAction(
+            "Deaktivovat",
+            self.deactivate_selected_responsibility_role,
+        )
+        deactivate_action.setEnabled(self.responsibility_role_deactivate_button.isEnabled())
+        menu.exec(self.responsibility_role_table.viewport().mapToGlobal(position))
 
     def refresh(self):
         employer = settings_service.get_employer()
@@ -915,6 +1080,8 @@ class NastaveniPage(QWidget):
                 )
 
         configure_table_columns(self.worker_table, "thp_workers")
+        self.worker_table.clearSelection()
+        self.worker_table.setCurrentCell(-1, -1)
         self.worker_text_filter.update_count()
         self.update_worker_buttons()
 
@@ -991,6 +1158,8 @@ class NastaveniPage(QWidget):
                 )
 
         configure_table_columns(self.person_table, "persons")
+        self.person_table.clearSelection()
+        self.person_table.setCurrentCell(-1, -1)
         self.person_text_filter.update_count()
         self.update_person_buttons()
 
@@ -1072,6 +1241,8 @@ class NastaveniPage(QWidget):
                 )
 
         configure_table_columns(self.responsibility_role_table, "responsibility_roles")
+        self.responsibility_role_table.clearSelection()
+        self.responsibility_role_table.setCurrentCell(-1, -1)
         self.responsibility_role_text_filter.update_count()
         self.update_responsibility_role_buttons()
 
@@ -1088,7 +1259,7 @@ class NastaveniPage(QWidget):
 
     def _selected_exposed_group_id(self) -> int | None:
         selected = self.exposed_group_table.selectionModel().selectedRows()
-        if not selected:
+        if len(selected) != 1:
             return None
         item = self.exposed_group_table.item(selected[0].row(), 0)
         return item.data(Qt.ItemDataRole.UserRole) if item is not None else None
@@ -1096,7 +1267,6 @@ class NastaveniPage(QWidget):
     def edit_selected_exposed_group(self):
         group_id = self._selected_exposed_group_id()
         if group_id is None:
-            QMessageBox.information(self, "Ohrožené skupiny", "Vyberte skupinu.")
             return
         group = exposed_group_service.get_by_id(group_id)
         if group is None:
@@ -1115,7 +1285,6 @@ class NastaveniPage(QWidget):
     def activate_selected_exposed_group(self):
         group_id = self._selected_exposed_group_id()
         if group_id is None:
-            QMessageBox.information(self, "Ohrožené skupiny", "Vyberte skupinu.")
             return
         try:
             exposed_group_service.activate(group_id)
@@ -1127,7 +1296,6 @@ class NastaveniPage(QWidget):
     def deactivate_selected_exposed_group(self):
         group_id = self._selected_exposed_group_id()
         if group_id is None:
-            QMessageBox.information(self, "Ohrožené skupiny", "Vyberte skupinu.")
             return
         try:
             exposed_group_service.deactivate(group_id)
@@ -1138,17 +1306,31 @@ class NastaveniPage(QWidget):
 
     def update_exposed_group_buttons(self):
         group_id = self._selected_exposed_group_id()
-        if group_id is None:
-            self.exposed_group_activate_button.setEnabled(False)
-            self.exposed_group_deactivate_button.setEnabled(False)
+        group = exposed_group_service.get_by_id(group_id) if group_id is not None else None
+        single = group is not None
+        self.exposed_group_edit_button.setEnabled(single)
+        self.exposed_group_activate_button.setEnabled(single and not group.active)
+        self.exposed_group_deactivate_button.setEnabled(single and group.active)
+
+    def _show_exposed_group_context_menu(self, position) -> None:
+        index = self.exposed_group_table.indexAt(position)
+        if index.isValid():
+            self.exposed_group_table.selectRow(index.row())
+            self.update_exposed_group_buttons()
+
+        group_id = self._selected_exposed_group_id()
+        single = group_id is not None
+        if not single and not index.isValid():
             return
-        group = exposed_group_service.get_by_id(group_id)
-        if group is None:
-            self.exposed_group_activate_button.setEnabled(False)
-            self.exposed_group_deactivate_button.setEnabled(False)
-            return
-        self.exposed_group_activate_button.setEnabled(not group.active)
-        self.exposed_group_deactivate_button.setEnabled(group.active)
+
+        menu = QMenu(self)
+        edit_action = menu.addAction("Upravit", self.edit_selected_exposed_group)
+        edit_action.setEnabled(self.exposed_group_edit_button.isEnabled())
+        activate_action = menu.addAction("Aktivovat", self.activate_selected_exposed_group)
+        activate_action.setEnabled(self.exposed_group_activate_button.isEnabled())
+        deactivate_action = menu.addAction("Deaktivovat", self.deactivate_selected_exposed_group)
+        deactivate_action.setEnabled(self.exposed_group_deactivate_button.isEnabled())
+        menu.exec(self.exposed_group_table.viewport().mapToGlobal(position))
 
     def refresh_exposed_groups(self):
         include_inactive = self.exposed_group_filter.currentText() == "Všechny"
@@ -1170,5 +1352,7 @@ class NastaveniPage(QWidget):
                     ),
                 )
         configure_table_columns(self.exposed_group_table, "exposed_groups")
+        self.exposed_group_table.clearSelection()
+        self.exposed_group_table.setCurrentCell(-1, -1)
         self.exposed_group_text_filter.update_count()
         self.update_exposed_group_buttons()

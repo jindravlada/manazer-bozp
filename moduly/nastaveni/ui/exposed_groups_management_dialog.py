@@ -44,17 +44,20 @@ class ExposedGroupsManagementDialog(QDialog):
         toolbar = QHBoxLayout()
         add_button = QPushButton("Přidat")
         add_button.clicked.connect(self.add_group)
-        edit_button = QPushButton("Upravit")
-        edit_button.clicked.connect(self.edit_selected_group)
+        self.edit_button = QPushButton("Upravit")
+        self.edit_button.clicked.connect(self.edit_selected_group)
+        self.edit_button.setEnabled(False)
         self.activate_button = QPushButton("Aktivovat")
         self.activate_button.clicked.connect(self.activate_selected_group)
+        self.activate_button.setEnabled(False)
         self.deactivate_button = QPushButton("Deaktivovat")
         self.deactivate_button.clicked.connect(self.deactivate_selected_group)
+        self.deactivate_button.setEnabled(False)
         self.filter = QComboBox()
         self.filter.addItems(["Aktivní", "Všechny"])
         self.filter.currentIndexChanged.connect(self.refresh)
         toolbar.addWidget(add_button)
-        toolbar.addWidget(edit_button)
+        toolbar.addWidget(self.edit_button)
         toolbar.addWidget(self.activate_button)
         toolbar.addWidget(self.deactivate_button)
         toolbar.addStretch()
@@ -106,21 +109,15 @@ class ExposedGroupsManagementDialog(QDialog):
 
     def _update_action_buttons(self) -> None:
         group_id = self._selected_group_id()
-        if group_id is None:
-            self.activate_button.setEnabled(False)
-            self.deactivate_button.setEnabled(False)
-            return
-        group = exposed_group_service.get_by_id(group_id)
-        if group is None:
-            self.activate_button.setEnabled(False)
-            self.deactivate_button.setEnabled(False)
-            return
-        self.activate_button.setEnabled(not group.active)
-        self.deactivate_button.setEnabled(group.active)
+        group = exposed_group_service.get_by_id(group_id) if group_id is not None else None
+        single = group is not None
+        self.edit_button.setEnabled(single)
+        self.activate_button.setEnabled(single and not group.active)
+        self.deactivate_button.setEnabled(single and group.active)
 
     def _selected_group_id(self) -> int | None:
         selected = self.table.selectionModel().selectedRows()
-        if not selected:
+        if len(selected) != 1:
             return None
         item = self.table.item(selected[0].row(), 0)
         if item is None:
@@ -142,7 +139,6 @@ class ExposedGroupsManagementDialog(QDialog):
     def edit_selected_group(self) -> None:
         group_id = self._selected_group_id()
         if group_id is None:
-            QMessageBox.information(self, "Ohrožené skupiny osob", "Vyberte skupinu.")
             return
         group = exposed_group_service.get_by_id(group_id)
         if group is None:
@@ -161,7 +157,6 @@ class ExposedGroupsManagementDialog(QDialog):
     def activate_selected_group(self) -> None:
         group_id = self._selected_group_id()
         if group_id is None:
-            QMessageBox.information(self, "Ohrožené skupiny osob", "Vyberte skupinu.")
             return
         try:
             exposed_group_service.activate(group_id)
@@ -173,7 +168,6 @@ class ExposedGroupsManagementDialog(QDialog):
     def deactivate_selected_group(self) -> None:
         group_id = self._selected_group_id()
         if group_id is None:
-            QMessageBox.information(self, "Ohrožené skupiny osob", "Vyberte skupinu.")
             return
         try:
             exposed_group_service.deactivate(group_id)

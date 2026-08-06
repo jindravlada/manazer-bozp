@@ -49,17 +49,20 @@ class ResponsibilityRolesManagementDialog(QDialog):
         toolbar = QHBoxLayout()
         add_button = QPushButton("Přidat")
         add_button.clicked.connect(self.add_role)
-        edit_button = QPushButton("Upravit")
-        edit_button.clicked.connect(self.edit_selected_role)
+        self.edit_button = QPushButton("Upravit")
+        self.edit_button.clicked.connect(self.edit_selected_role)
+        self.edit_button.setEnabled(False)
         self.activate_button = QPushButton("Aktivovat")
         self.activate_button.clicked.connect(self.activate_selected_role)
+        self.activate_button.setEnabled(False)
         self.deactivate_button = QPushButton("Deaktivovat")
         self.deactivate_button.clicked.connect(self.deactivate_selected_role)
+        self.deactivate_button.setEnabled(False)
         self.filter = QComboBox()
         self.filter.addItems(["Aktivní", "Všechny"])
         self.filter.currentIndexChanged.connect(self.refresh)
         toolbar.addWidget(add_button)
-        toolbar.addWidget(edit_button)
+        toolbar.addWidget(self.edit_button)
         toolbar.addWidget(self.activate_button)
         toolbar.addWidget(self.deactivate_button)
         toolbar.addStretch()
@@ -124,7 +127,7 @@ class ResponsibilityRolesManagementDialog(QDialog):
 
     def _selected_role_id(self) -> int | None:
         selected = self.table.selectionModel().selectedRows()
-        if not selected:
+        if len(selected) != 1:
             return None
         item = self.table.item(selected[0].row(), 0)
         if item is None:
@@ -137,17 +140,11 @@ class ResponsibilityRolesManagementDialog(QDialog):
 
     def _update_action_buttons(self) -> None:
         role_id = self._selected_role_id()
-        if role_id is None:
-            self.activate_button.setEnabled(False)
-            self.deactivate_button.setEnabled(False)
-            return
-        role = responsibility_role_service.get_by_id(role_id)
-        if role is None:
-            self.activate_button.setEnabled(False)
-            self.deactivate_button.setEnabled(False)
-            return
-        self.activate_button.setEnabled(not role.active)
-        self.deactivate_button.setEnabled(role.active)
+        role = responsibility_role_service.get_by_id(role_id) if role_id is not None else None
+        single = role is not None
+        self.edit_button.setEnabled(single)
+        self.activate_button.setEnabled(single and not role.active)
+        self.deactivate_button.setEnabled(single and role.active)
 
     def add_role(self) -> None:
         dialog = ResponsibilityRoleDialog(self)
@@ -164,7 +161,6 @@ class ResponsibilityRolesManagementDialog(QDialog):
     def edit_selected_role(self) -> None:
         role_id = self._selected_role_id()
         if role_id is None:
-            QMessageBox.information(self, "Funkce / role", "Vyberte roli.")
             return
         role = responsibility_role_service.get_by_id(role_id)
         if role is None:
