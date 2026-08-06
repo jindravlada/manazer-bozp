@@ -1,9 +1,7 @@
 from PySide6.QtWidgets import (
     QHBoxLayout,
-    QMenu,
     QMessageBox,
     QPushButton,
-    QToolButton,
     QVBoxLayout,
     QWidget,
 )
@@ -32,13 +30,7 @@ class KnihaUrazuPage(QWidget):
 
         self.new_btn = QPushButton("Nový úraz")
         self.edit_btn = QPushButton("Upravit")
-        self.notice_btn = QToolButton()
-        self.notice_btn.setText("Ohlášení")
-        self.notice_btn.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
-        notice_menu = QMenu(self.notice_btn)
-        self.union_notice_action = notice_menu.addAction("Odborová organizace...")
-        self.union_notice_action.triggered.connect(self.open_union_notice)
-        self.notice_btn.setMenu(notice_menu)
+        self.notice_btn = QPushButton("Ohláška OO")
         self.notice_btn.setEnabled(False)
         self.investigation_btn = QPushButton("Ohlašovací povinnosti")
         self.mu_investigation_btn = QPushButton("Vyšetřování MU")
@@ -69,6 +61,7 @@ class KnihaUrazuPage(QWidget):
 
         self.new_btn.clicked.connect(self.new_accident)
         self.edit_btn.clicked.connect(self.edit_selected_accident)
+        self.notice_btn.clicked.connect(self.open_union_notice)
         self.investigation_btn.clicked.connect(lambda: self.open_investigation())
         self.mu_investigation_btn.clicked.connect(lambda: self.open_mu_investigation())
         self.vypis_btn.clicked.connect(self.generate_accident_report)
@@ -103,12 +96,12 @@ class KnihaUrazuPage(QWidget):
     def open_union_notice(self) -> None:
         accident_id = self._selected_accident_id()
         if accident_id is None:
-            QMessageBox.information(self, "Ohlášení", "Vyberte úraz.")
+            QMessageBox.information(self, "Ohláška OO", "Vyberte úraz.")
             return
 
         accident = accident_service.get_by_id(accident_id)
         if accident is None:
-            QMessageBox.warning(self, "Ohlášení", "Úraz nebyl nalezen.")
+            QMessageBox.warning(self, "Ohláška OO", "Úraz nebyl nalezen.")
             self.refresh()
             return
 
