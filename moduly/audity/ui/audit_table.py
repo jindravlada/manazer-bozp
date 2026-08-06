@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QHeaderView, QTableWidget
+from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QTableWidget
 
 from core.widgets.info_tooltip import format_info_card
 from core.widgets.typed_table_sort import (
@@ -48,9 +48,9 @@ class AuditTable(QTableWidget):
         self.verticalHeader().setMinimumSectionSize(24)
         self.verticalHeader().setSectionResizeMode(QHeaderView.Fixed)
         self.setAlternatingRowColors(True)
-        self.setSelectionBehavior(QTableWidget.SelectRows)
-        self.setSelectionMode(QTableWidget.SingleSelection)
-        self.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         enable_typed_sorting(self)
 
     def load_audits(self, audits) -> None:

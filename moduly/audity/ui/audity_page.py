@@ -1,10 +1,12 @@
 import traceback
 from datetime import date
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QLabel,
+    QMenu,
     QMessageBox,
     QPushButton,
     QVBoxLayout,
@@ -58,12 +60,10 @@ class AudityPage(QWidget):
         self.delete_btn = QPushButton("Smazat")
         self.refresh_btn = QPushButton("Obnovit")
         self.protocol_btn = QPushButton(AUDIT_PROTOCOL_BUTTON_LABEL)
-        self.protocol_btn.setEnabled(False)
         self.protocol_btn.setToolTip(
             "Export protokolu je dostupný pouze pro dokončené (uzavřené) audity."
         )
         self.detailed_report_btn = QPushButton(AUDIT_DETAILED_REPORT_BUTTON_LABEL)
-        self.detailed_report_btn.setEnabled(False)
         self.detailed_report_btn.setToolTip(
             "Podrobná zpráva je dostupná pouze pro dokončené (uzavřené) audity."
         )
@@ -72,6 +72,12 @@ class AudityPage(QWidget):
         self.report_btn.setToolTip(
             "Roční zpráva z interních auditů za vybraný kalendářní rok."
         )
+
+        self._single_record_buttons = (self.edit_btn, self.delete_btn)
+        for button in self._single_record_buttons:
+            button.setEnabled(False)
+        self.protocol_btn.setEnabled(False)
+        self.detailed_report_btn.setEnabled(False)
 
         self.status_filter = QComboBox()
         self.status_filter.addItems([
@@ -120,8 +126,10 @@ class AudityPage(QWidget):
         self.knowledge_editor_btn.clicked.connect(self.open_knowledge_editor)
         self.report_btn.clicked.connect(self.open_annual_report)
         self.table.doubleClicked.connect(self.open_selected_audit)
+        self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self._show_table_context_menu)
         self.table.selectionModel().selectionChanged.connect(
-            self._update_protocol_action
+            self._refresh_action_buttons
         )
         self.status_filter.currentIndexChanged.connect(self.refresh)
         self.year_filter.currentIndexChanged.connect(self.refresh)
@@ -132,8 +140,49 @@ class AudityPage(QWidget):
         audits = self._filter_audits(audit_service.get_all())
         self.table.load_audits(audits)
         configure_table_columns(self.table, "audity")
+        self.table.clearSelection()
+        self.table.setCurrentCell(-1, -1)
         self._program_manager_banner.refresh()
-        self._update_protocol_action()
+        self._refresh_action_buttons()
+
+    def _selected_row_count(self) -> int:
+        return len(self.table.selectionModel().selectedRows())
+
+    def _refresh_action_buttons(self, *_args) -> None:
+        single = self._selected_row_count() == 1
+        for button in self._single_record_buttons:
+            button.setEnabled(single)
+
+        audit = self._selected_audit() if single else None
+        completed = audit is not None and audit.status == AUDIT_STATUS_DOKONCENO
+        self.protocol_btn.setEnabled(completed)
+        self.detailed_report_btn.setEnabled(completed)
+
+    def _show_table_context_menu(self, position) -> None:
+        index = self.table.indexAt(position)
+        if index.isValid():
+            self.table.selectRow(index.row())
+            self._refresh_action_buttons()
+
+        single = self._selected_row_count() == 1
+        if not single and not index.isValid():
+            return
+
+        menu = QMenu(self)
+        edit_action = menu.addAction(self.edit_btn.text(), self.open_selected_audit)
+        delete_action = menu.addAction(self.delete_btn.text(), self.delete_selected_audit)
+        edit_action.setEnabled(single)
+        delete_action.setEnabled(single)
+
+        if single and self.protocol_btn.isEnabled():
+            menu.addSeparator()
+            menu.addAction(self.protocol_btn.text(), self.export_selected_protocol)
+            menu.addAction(
+                self.detailed_report_btn.text(),
+                self.export_selected_detailed_report,
+            )
+
+        menu.exec(self.table.viewport().mapToGlobal(position))
 
     def _populate_year_filter(self) -> None:
         current_year = date.today().year
@@ -168,6 +217,9 @@ class AudityPage(QWidget):
         return audits
 
     def _selected_audit_id(self) -> int | None:
+        if self._selected_row_count() != 1:
+            return None
+
         selected = self.table.selectionModel().selectedRows()
         if not selected:
             return None
@@ -182,10 +234,8 @@ class AudityPage(QWidget):
         return audit_service.get_by_id(audit_id)
 
     def _update_protocol_action(self, *_args) -> None:
-        audit = self._selected_audit()
-        enabled = audit is not None and audit.status == AUDIT_STATUS_DOKONCENO
-        self.protocol_btn.setEnabled(enabled)
-        self.detailed_report_btn.setEnabled(enabled)
+        # Kompatibilita se staršími testy / voláními.
+        self._refresh_action_buttons()
 
     def new_audit(self) -> None:
         dialog = AuditDialog(self)
@@ -198,7 +248,6 @@ class AudityPage(QWidget):
     def open_selected_audit(self) -> None:
         audit_id = self._selected_audit_id()
         if audit_id is None:
-            QMessageBox.information(self, MODULE_NAME, "Vyberte audit.")
             return
 
         self.open_audit(audit_id)
@@ -223,7 +272,6 @@ class AudityPage(QWidget):
     def export_selected_protocol(self) -> None:
         audit = self._selected_audit()
         if audit is None:
-            QMessageBox.information(self, AUDIT_PROTOCOL_DIALOG_TITLE, "Vyberte audit.")
             return
         if audit.status != AUDIT_STATUS_DOKONCENO:
             QMessageBox.information(
@@ -231,7 +279,7 @@ class AudityPage(QWidget):
                 AUDIT_PROTOCOL_DIALOG_TITLE,
                 "Protokol lze exportovat pouze u dokončeného (uzavřeného) auditu.",
             )
-            self._update_protocol_action()
+            self._refresh_action_buttons()
             return
 
         try:
@@ -247,9 +295,6 @@ class AudityPage(QWidget):
     def export_selected_detailed_report(self) -> None:
         audit = self._selected_audit()
         if audit is None:
-            QMessageBox.information(
-                self, AUDIT_DETAILED_REPORT_DIALOG_TITLE, "Vyberte audit."
-            )
             return
         if audit.status != AUDIT_STATUS_DOKONCENO:
             QMessageBox.information(
@@ -257,7 +302,7 @@ class AudityPage(QWidget):
                 AUDIT_DETAILED_REPORT_DIALOG_TITLE,
                 "Podrobnou zprávu lze exportovat pouze u dokončeného (uzavřeného) auditu.",
             )
-            self._update_protocol_action()
+            self._refresh_action_buttons()
             return
 
         try:
@@ -285,7 +330,6 @@ class AudityPage(QWidget):
     def delete_selected_audit(self) -> None:
         audit_id = self._selected_audit_id()
         if audit_id is None:
-            QMessageBox.information(self, MODULE_NAME, "Vyberte audit.")
             return
 
         audit = audit_service.get_by_id(audit_id)

@@ -111,8 +111,8 @@ class AudityPageTestCase(unittest.TestCase):
         page = self._create_page()
 
         self.assertTrue(page.new_btn.isEnabled())
-        self.assertTrue(page.edit_btn.isEnabled())
-        self.assertTrue(page.delete_btn.isEnabled())
+        self.assertFalse(page.edit_btn.isEnabled())
+        self.assertFalse(page.delete_btn.isEnabled())
         self.assertTrue(page.refresh_btn.isEnabled())
         self.assertTrue(page.knowledge_editor_btn.isEnabled())
         self.assertEqual(page.knowledge_editor_btn.text(), KNOWLEDGE_EDITOR_BUTTON_LABEL)
