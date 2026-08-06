@@ -1,7 +1,9 @@
 from PySide6.QtWidgets import (
     QHBoxLayout,
+    QMenu,
     QMessageBox,
     QPushButton,
+    QToolButton,
     QVBoxLayout,
     QWidget,
 )
@@ -13,6 +15,7 @@ from moduly.kniha_urazu.ui.accident_dialog import AccidentDialog
 from moduly.kniha_urazu.ui.accident_summary_panel import AccidentSummaryPanel
 from moduly.kniha_urazu.ui.accident_table import AccidentTable
 from moduly.kniha_urazu.ui.setreni.setreni_dialog import SetreniDialog
+from moduly.kniha_urazu.ui.union_notice_dialog import UnionNoticeDialog
 from moduly.kniha_urazu.sluzby.zaverecna_zprava_service import zaverecna_zprava_service
 from moduly.kniha_urazu.sluzby.vypis_urazu_service import vypis_urazu_service
 
@@ -29,6 +32,14 @@ class KnihaUrazuPage(QWidget):
 
         self.new_btn = QPushButton("Nový úraz")
         self.edit_btn = QPushButton("Upravit")
+        self.notice_btn = QToolButton()
+        self.notice_btn.setText("Ohlášení")
+        self.notice_btn.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        notice_menu = QMenu(self.notice_btn)
+        self.union_notice_action = notice_menu.addAction("Odborová organizace...")
+        self.union_notice_action.triggered.connect(self.open_union_notice)
+        self.notice_btn.setMenu(notice_menu)
+        self.notice_btn.setEnabled(False)
         self.investigation_btn = QPushButton("Ohlašovací povinnosti")
         self.mu_investigation_btn = QPushButton("Vyšetřování MU")
         self.vypis_btn = QPushButton("Výpis o pracovním úrazu")
@@ -36,6 +47,7 @@ class KnihaUrazuPage(QWidget):
 
         toolbar.addWidget(self.new_btn)
         toolbar.addWidget(self.edit_btn)
+        toolbar.addWidget(self.notice_btn)
         toolbar.addWidget(self.investigation_btn)
         toolbar.addWidget(self.mu_investigation_btn)
         toolbar.addWidget(self.vypis_btn)
@@ -62,6 +74,7 @@ class KnihaUrazuPage(QWidget):
         self.vypis_btn.clicked.connect(self.generate_accident_report)
         self.final_report_btn.clicked.connect(self.generate_final_report)
         self.table.doubleClicked.connect(self.edit_selected_accident)
+        self.table.selectionModel().selectionChanged.connect(self._refresh_notice_button)
 
         self.refresh()
 
@@ -74,6 +87,10 @@ class KnihaUrazuPage(QWidget):
         self.summary_panel.update_summary(self.table.compute_summary(accidents))
 
         self.text_filter.update_count()
+        self._refresh_notice_button()
+
+    def _refresh_notice_button(self, *_args) -> None:
+        self.notice_btn.setEnabled(self._selected_accident_id() is not None)
 
     def _selected_accident_id(self):
         selected = self.table.selectionModel().selectedRows()
@@ -82,6 +99,21 @@ class KnihaUrazuPage(QWidget):
 
         item = self.table.item(selected[0].row(), 1)
         return int(item.text()) if item else None
+
+    def open_union_notice(self) -> None:
+        accident_id = self._selected_accident_id()
+        if accident_id is None:
+            QMessageBox.information(self, "Ohlášení", "Vyberte úraz.")
+            return
+
+        accident = accident_service.get_by_id(accident_id)
+        if accident is None:
+            QMessageBox.warning(self, "Ohlášení", "Úraz nebyl nalezen.")
+            self.refresh()
+            return
+
+        dialog = UnionNoticeDialog(self, accident=accident)
+        dialog.exec()
 
     def new_accident(self):
         dialog = AccidentDialog(self)

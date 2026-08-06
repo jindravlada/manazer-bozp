@@ -94,17 +94,18 @@ class AccidentNoticeUnion1TestCase(unittest.TestCase):
         payload.update(overrides)
         return accident_service.create_accident(**payload)
 
-    def test_open_union_notice_from_accident_dialog(self) -> None:
+    def test_union_notice_dialog_opens_for_saved_accident(self) -> None:
         accident = self._create_full_accident()
-        dialog = AccidentDialog(accident=accident)
-        self.assertTrue(isinstance(dialog.notice_btn, QToolButton))
-        self.assertEqual(dialog.notice_btn.text(), "Ohlášení")
-        self.assertTrue(dialog.notice_btn.isEnabled())
-        self.assertEqual(dialog.union_notice_action.text(), "Odborová organizace...")
-
-        notice = UnionNoticeDialog(dialog, accident=accident)
+        notice = UnionNoticeDialog(None, accident=accident)
         self.assertIn(DOCUMENT_TITLE, notice.windowTitle())
         self.assertIn(DOCUMENT_SUBTITLE, notice.windowTitle())
+
+    def test_editor_has_no_notice_button(self) -> None:
+        accident = self._create_full_accident()
+        dialog = AccidentDialog(accident=accident)
+        self.assertFalse(hasattr(dialog, "notice_btn"))
+        texts = [btn.text() for btn in dialog.findChildren(QToolButton)]
+        self.assertNotIn("Ohlášení", texts)
 
     def test_prefill_employer_employee_injury(self) -> None:
         accident = self._create_full_accident()
@@ -215,9 +216,9 @@ class AccidentNoticeUnion1TestCase(unittest.TestCase):
         self.assertEqual(len(history2), 2)
         self.assertEqual(history2[-1]["action"], ACTION_PDF)
 
-    def test_new_accident_notice_disabled(self) -> None:
+    def test_new_accident_editor_has_no_notice(self) -> None:
         dialog = AccidentDialog()
-        self.assertFalse(dialog.notice_btn.isEnabled())
+        self.assertFalse(hasattr(dialog, "notice_btn"))
 
 
 if __name__ == "__main__":
