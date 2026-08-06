@@ -2,6 +2,7 @@ import traceback
 from datetime import date
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
@@ -58,7 +59,6 @@ class AudityPage(QWidget):
         self.program_btn = QPushButton(AUDIT_PROGRAM_BUTTON_LABEL)
         self.edit_btn = QPushButton("Upravit")
         self.delete_btn = QPushButton("Smazat")
-        self.refresh_btn = QPushButton("Obnovit")
         self.protocol_btn = QPushButton(AUDIT_PROTOCOL_BUTTON_LABEL)
         self.protocol_btn.setToolTip(
             "Export protokolu je dostupný pouze pro dokončené (uzavřené) audity."
@@ -95,7 +95,6 @@ class AudityPage(QWidget):
         toolbar.addWidget(self.program_btn)
         toolbar.addWidget(self.edit_btn)
         toolbar.addWidget(self.delete_btn)
-        toolbar.addWidget(self.refresh_btn)
         toolbar.addWidget(self.protocol_btn)
         toolbar.addWidget(self.detailed_report_btn)
         toolbar.addWidget(self.knowledge_editor_btn)
@@ -120,7 +119,6 @@ class AudityPage(QWidget):
         self.program_btn.clicked.connect(self.open_program_manager)
         self.edit_btn.clicked.connect(self.open_selected_audit)
         self.delete_btn.clicked.connect(self.delete_selected_audit)
-        self.refresh_btn.clicked.connect(self.refresh)
         self.protocol_btn.clicked.connect(self.export_selected_protocol)
         self.detailed_report_btn.clicked.connect(self.export_selected_detailed_report)
         self.knowledge_editor_btn.clicked.connect(self.open_knowledge_editor)
@@ -134,6 +132,10 @@ class AudityPage(QWidget):
         self.status_filter.currentIndexChanged.connect(self.refresh)
         self.year_filter.currentIndexChanged.connect(self.refresh)
 
+        self.refresh()
+
+    def showEvent(self, event: QShowEvent) -> None:
+        super().showEvent(event)
         self.refresh()
 
     def refresh(self) -> None:
