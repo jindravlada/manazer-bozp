@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QLabel,
+    QMenu,
     QMessageBox,
     QPushButton,
     QVBoxLayout,
@@ -32,7 +33,6 @@ from moduly.agenda.constants import (
     ITEM_TYPE_TASK,
     LIST_WINDOW_TITLE,
     ROW_LEGEND,
-    SELECT_ITEM_MESSAGE,
     STATUS_MODE_ACTIVE,
     STATUS_MODES_BOTH,
     STATUS_MODES_MEETINGS_ONLY,
@@ -69,6 +69,11 @@ class AgendaPage(QWidget):
         self.templates_btn = QPushButton(ACTION_OPEN_TEMPLATES)
         self.open_btn = QPushButton(ACTION_OPEN)
         self.edit_btn = QPushButton(ACTION_EDIT)
+
+        self._selection_action_buttons = (self.open_btn, self.edit_btn)
+        for button in self._selection_action_buttons:
+            button.setEnabled(False)
+
         toolbar.addWidget(self.new_task_btn)
         toolbar.addWidget(self.new_meeting_btn)
         toolbar.addWidget(self.new_from_template_btn)
@@ -116,6 +121,9 @@ class AgendaPage(QWidget):
         self.open_btn.clicked.connect(self.open_selected)
         self.edit_btn.clicked.connect(self.open_selected)
         self.table.doubleClicked.connect(self.open_selected)
+        self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self._show_table_context_menu)
+        self.table.selectionModel().selectionChanged.connect(self._refresh_action_buttons)
 
         self._rebuild_status_filter(preferred=DEFAULT_STATUS_MODE)
         self.refresh()
@@ -192,6 +200,7 @@ class AgendaPage(QWidget):
         configure_table_columns(self.table, "agenda")
         self.table.clear_selection()
         self.text_filter.update_count()
+        self._refresh_action_buttons()
 
         if items:
             self.empty_label.hide()
@@ -200,6 +209,31 @@ class AgendaPage(QWidget):
             self.empty_label.setText(EMPTY_STATE_TEXT)
             self.empty_label.show()
             self.table.hide()
+
+    def _selected_row_count(self) -> int:
+        return len(self.table.selectionModel().selectedRows())
+
+    def _refresh_action_buttons(self, *_args) -> None:
+        enabled = self._selected_row_count() == 1
+        for button in self._selection_action_buttons:
+            button.setEnabled(enabled)
+
+    def _show_table_context_menu(self, position) -> None:
+        index = self.table.indexAt(position)
+        if index.isValid():
+            self.table.selectRow(index.row())
+            self._refresh_action_buttons()
+
+        enabled = self._selected_row_count() == 1
+        if not enabled and not index.isValid():
+            return
+
+        menu = QMenu(self)
+        open_action = menu.addAction(ACTION_OPEN, self.open_selected)
+        edit_action = menu.addAction(ACTION_EDIT, self.open_selected)
+        open_action.setEnabled(enabled)
+        edit_action.setEnabled(enabled)
+        menu.exec(self.table.viewport().mapToGlobal(position))
 
     def new_task(self) -> None:
         dialog = TaskDialog(self)
@@ -239,9 +273,10 @@ class AgendaPage(QWidget):
             widget = widget.parent()
 
     def open_selected(self) -> None:
+        if self._selected_row_count() != 1:
+            return
         item = self.table.selected_item()
         if item is None:
-            QMessageBox.information(self, LIST_WINDOW_TITLE, SELECT_ITEM_MESSAGE)
             return
         if item.item_type == ITEM_TYPE_TASK:
             self._open_task(item.source_id)

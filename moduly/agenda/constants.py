@@ -64,7 +64,6 @@ ROW_LEGEND = (
 )
 
 EMPTY_STATE_TEXT = "Nejsou evidovány žádné položky agendy odpovídající filtrům."
-SELECT_ITEM_MESSAGE = "Vyberte položku agendy."
 ITEM_NOT_FOUND_MESSAGE = "Záznam nebyl nalezen."
 
 # Pořadí sloupců blízké Úkolům: Název → Termín → osoba → Stav → Zdroj → Typ.
