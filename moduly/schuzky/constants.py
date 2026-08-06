@@ -67,9 +67,9 @@ DEFAULT_EVENT_TYPES = (
 
 DEFAULT_EVENT_TYPE = EVENT_TYPE_MEETING
 
-ACTION_NEW_FROM_TEMPLATE = "Nová událost ze šablony..."
+ACTION_NEW_FROM_TEMPLATE = "Nová událost ze šablony"
 ACTION_OPEN_TEMPLATES = "Šablony..."
-TEMPLATE_PICK_DIALOG_TITLE = "Šablona události"
+TEMPLATE_PICK_DIALOG_TITLE = "Nová událost ze šablony"
 TEMPLATE_NAME_LABEL = "Název:"
 TEMPLATE_NAME_REQUIRED = "Zadejte název šablony."
 TEMPLATE_EMPTY_LIST = "Nejsou evidovány žádné šablony událostí."

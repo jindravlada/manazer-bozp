@@ -160,8 +160,11 @@ class EventsTemplates1TestCase(unittest.TestCase):
             ],
         )
         dialog = MeetingTemplatePickDialog()
-        self.assertEqual(dialog.windowTitle(), "Šablona události")
+        self.assertEqual(dialog.windowTitle(), "Nová událost ze šablony")
         self.assertEqual(dialog.use_btn.text(), TEMPLATE_BTN_USE)
+        self.assertFalse(dialog.use_btn.icon().isNull())
+        self.assertFalse(dialog.close_btn.icon().isNull())
+        self.assertEqual(dialog.manage_btn.text(), "Šablony...")
         self.assertGreaterEqual(dialog.table.rowCount(), 1)
         found = False
         for row in range(dialog.table.rowCount()):

@@ -316,7 +316,7 @@ class EventsTemplates2TestCase(unittest.TestCase):
 
         agenda = AgendaPage()
         self.assertEqual(agenda.new_from_template_btn.text(), ACTION_NEW_FROM_TEMPLATE)
-        self.assertEqual(agenda.templates_btn.text(), ACTION_OPEN_TEMPLATES)
+        self.assertFalse(hasattr(agenda, "templates_btn"))
 
         schuzky = SchuzkyPage()
         self.assertEqual(schuzky.templates_btn.text(), ACTION_OPEN_TEMPLATES)

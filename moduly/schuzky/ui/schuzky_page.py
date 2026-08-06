@@ -29,7 +29,10 @@ from moduly.schuzky.sluzby.meeting_service import (
 )
 from moduly.schuzky.ui.meeting_dialog import MeetingDialog
 from moduly.schuzky.ui.meeting_table import MeetingTable
-from moduly.schuzky.ui.meeting_template_actions import create_meeting_from_template
+from moduly.schuzky.ui.meeting_template_actions import (
+    create_meeting_from_template,
+    open_meeting_templates_window,
+)
 
 
 class SchuzkyPage(QWidget):
@@ -146,13 +149,7 @@ class SchuzkyPage(QWidget):
             self._refresh_dashboard()
 
     def open_templates(self) -> None:
-        widget = self
-        while widget is not None:
-            show = getattr(widget, "_show", None)
-            if callable(show):
-                show("sablony_udalosti")
-                return
-            widget = widget.parent()
+        open_meeting_templates_window(self)
 
     def edit_selected(self) -> None:
         meeting_id = self._selected_meeting_id()

@@ -59,10 +59,10 @@ class EventsTemplates3TestCase(unittest.TestCase):
         self.assertNotIn(MODULE_NAME, texts)
         self.assertNotIn("Šablony událostí", texts)
 
-    def test_templates_button_on_agenda_and_events(self) -> None:
+    def test_templates_button_on_events_not_agenda(self) -> None:
         agenda = AgendaPage()
         schuzky = SchuzkyPage()
-        self.assertEqual(agenda.templates_btn.text(), ACTION_OPEN_TEMPLATES)
+        self.assertFalse(hasattr(agenda, "templates_btn"))
         self.assertEqual(schuzky.templates_btn.text(), ACTION_OPEN_TEMPLATES)
         self.assertEqual(ACTION_OPEN_TEMPLATES, "Šablony...")
 

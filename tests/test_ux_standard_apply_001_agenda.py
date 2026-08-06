@@ -76,8 +76,8 @@ class UxStandardApply001AgendaTestCase(unittest.TestCase):
         self.assertEqual(page._selected_row_count(), 0)
         self.assertTrue(page.new_task_btn.isEnabled())
         self.assertTrue(page.new_meeting_btn.isEnabled())
-        self.assertTrue(page.templates_btn.isEnabled())
         self.assertTrue(page.new_from_template_btn.isEnabled())
+        self.assertFalse(hasattr(page, "templates_btn"))
         self.assertFalse(page.edit_btn.isEnabled())
         self.assertFalse(hasattr(page, "open_btn"))
 
