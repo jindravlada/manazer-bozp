@@ -191,7 +191,7 @@ class Meetings1aTestCase(unittest.TestCase):
             opened.append(meeting_id)
 
         page.open_meeting = _capture  # type: ignore[method-assign]
-        page.open_selected_meeting()
+        page.edit_selected()
         self.assertEqual(opened, [meeting.id])
         page.open_meeting = original  # type: ignore[method-assign]
 

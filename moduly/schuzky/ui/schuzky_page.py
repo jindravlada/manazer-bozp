@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QHideEvent, QShowEvent
 from PySide6.QtWidgets import (
     QHBoxLayout,
+    QMenu,
     QMessageBox,
     QPushButton,
     QVBoxLayout,
@@ -15,6 +17,7 @@ from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
 from moduly.schuzky.constants import (
+    ACTION_EDIT,
     ACTION_NEW_FROM_TEMPLATE,
     ACTION_OPEN_TEMPLATES,
     LIST_WINDOW_TITLE,
@@ -40,13 +43,13 @@ class SchuzkyPage(QWidget):
         self.new_btn = QPushButton("Nová událost")
         self.new_from_template_btn = QPushButton(ACTION_NEW_FROM_TEMPLATE)
         self.templates_btn = QPushButton(ACTION_OPEN_TEMPLATES)
-        self.open_btn = QPushButton("Otevřít")
-        self.edit_btn = QPushButton("Upravit")
+        self.edit_btn = QPushButton(ACTION_EDIT)
+        self.edit_btn.setEnabled(False)
+        self._selection_action_buttons = (self.edit_btn,)
 
         toolbar.addWidget(self.new_btn)
         toolbar.addWidget(self.new_from_template_btn)
         toolbar.addWidget(self.templates_btn)
-        toolbar.addWidget(self.open_btn)
         toolbar.addWidget(self.edit_btn)
         toolbar.addStretch()
 
@@ -61,9 +64,11 @@ class SchuzkyPage(QWidget):
         self.new_btn.clicked.connect(self.new_meeting)
         self.new_from_template_btn.clicked.connect(self.new_meeting_from_template)
         self.templates_btn.clicked.connect(self.open_templates)
-        self.open_btn.clicked.connect(self.open_selected_meeting)
-        self.edit_btn.clicked.connect(self.open_selected_meeting)
-        self.table.doubleClicked.connect(self.open_selected_meeting)
+        self.edit_btn.clicked.connect(self.edit_selected)
+        self.table.doubleClicked.connect(self.edit_selected)
+        self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self._show_table_context_menu)
+        self.table.selectionModel().selectionChanged.connect(self._refresh_action_buttons)
 
         self.refresh()
 
@@ -73,9 +78,11 @@ class SchuzkyPage(QWidget):
     def showEvent(self, event: QShowEvent) -> None:
         super().showEvent(event)
         self.table.clear_selection()
+        self._refresh_action_buttons()
 
     def hideEvent(self, event: QHideEvent) -> None:
         self.table.clear_selection()
+        self._refresh_action_buttons()
         super().hideEvent(event)
 
     def refresh(self) -> None:
@@ -84,8 +91,34 @@ class SchuzkyPage(QWidget):
         configure_table_columns(self.table, "meetings")
         self.table.clear_selection()
         self.text_filter.update_count()
+        self._refresh_action_buttons()
+
+    def _selected_row_count(self) -> int:
+        return len(self.table.selectionModel().selectedRows())
+
+    def _refresh_action_buttons(self, *_args) -> None:
+        enabled = self._selected_row_count() == 1
+        for button in self._selection_action_buttons:
+            button.setEnabled(enabled)
+
+    def _show_table_context_menu(self, position) -> None:
+        index = self.table.indexAt(position)
+        if index.isValid():
+            self.table.selectRow(index.row())
+            self._refresh_action_buttons()
+
+        enabled = self._selected_row_count() == 1
+        if not enabled and not index.isValid():
+            return
+
+        menu = QMenu(self)
+        edit_action = menu.addAction(ACTION_EDIT, self.edit_selected)
+        edit_action.setEnabled(enabled)
+        menu.exec(self.table.viewport().mapToGlobal(position))
 
     def _selected_meeting_id(self) -> int | None:
+        if self._selected_row_count() != 1:
+            return None
         selected = self.table.selectionModel().selectedRows()
         if not selected:
             return None
@@ -121,10 +154,9 @@ class SchuzkyPage(QWidget):
                 return
             widget = widget.parent()
 
-    def open_selected_meeting(self) -> None:
+    def edit_selected(self) -> None:
         meeting_id = self._selected_meeting_id()
         if meeting_id is None:
-            QMessageBox.information(self, LIST_WINDOW_TITLE, "Vyberte událost.")
             return
         self.open_meeting(meeting_id)
 
