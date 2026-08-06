@@ -88,7 +88,7 @@ class MeetingTemplatePickDialog(QDialog):
         footer.addWidget(buttons)
         layout.addLayout(footer)
 
-        self._load()
+        self.reload()
 
     def selected_template_id(self) -> int | None:
         return self._selected_id
@@ -98,9 +98,38 @@ class MeetingTemplatePickDialog(QDialog):
             open_meeting_templates_window,
         )
 
-        open_meeting_templates_window(self, on_closed=self._load)
+        open_meeting_templates_window(
+            self,
+            on_changed=self.reload,
+            on_closed=lambda *_args: self.reload(),
+        )
 
-    def _load(self, *_args) -> None:
+    def _current_table_selection_id(self) -> int | None:
+        rows = self.table.selectionModel().selectedRows()
+        if not rows:
+            return None
+        item = self.table.item(rows[0].row(), 0)
+        if item is None:
+            return None
+        template_id = item.data(Qt.ItemDataRole.UserRole)
+        return int(template_id) if template_id is not None else None
+
+    def _select_template_id(self, template_id: int | None) -> bool:
+        if template_id is None:
+            return False
+        for row in range(self.table.rowCount()):
+            item = self.table.item(row, 0)
+            if item is None:
+                continue
+            if int(item.data(Qt.ItemDataRole.UserRole)) == int(template_id):
+                self.table.selectRow(row)
+                self.use_btn.setEnabled(True)
+                return True
+        return False
+
+    def reload(self, preferred_template_id=None) -> None:
+        """Obnoví seznam; preferred_template_id má přednost před stávajícím výběrem."""
+        previous_id = self._current_table_selection_id()
         templates = meeting_template_service.get_all()
         self.table.setRowCount(0)
         self.table.setRowCount(len(templates))
@@ -111,12 +140,30 @@ class MeetingTemplatePickDialog(QDialog):
             self.table.setItem(row, 1, QTableWidgetItem(template.event_type or ""))
             count = meeting_template_service.agenda_item_count(template)
             self.table.setItem(row, 2, QTableWidgetItem(str(count)))
+
         has_rows = bool(templates)
         self.table.setVisible(has_rows)
         self.empty_label.setVisible(not has_rows)
-        self.use_btn.setEnabled(has_rows)
-        if has_rows:
-            self.table.selectRow(0)
+
+        if not has_rows:
+            self.table.clearSelection()
+            self.use_btn.setEnabled(False)
+            return
+
+        target_id = (
+            preferred_template_id
+            if preferred_template_id is not None
+            else previous_id
+        )
+        if self._select_template_id(target_id):
+            return
+
+        self.table.clearSelection()
+        self.use_btn.setEnabled(False)
+
+    # Zpětná kompatibilita pro volání on_closed=self._load
+    def _load(self, *_args) -> None:
+        self.reload()
 
     def _on_use(self) -> None:
         rows = self.table.selectionModel().selectedRows()

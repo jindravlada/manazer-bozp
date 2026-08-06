@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QHideEvent, QShowEvent
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -43,6 +43,10 @@ from moduly.schuzky.ui.meeting_template_dialog import MeetingTemplateDialog
 
 
 class MeetingTemplatesPage(QWidget):
+    """preferred_template_id: int | None – šablona k výběru po změně (None = bez preference)."""
+
+    templates_changed = Signal(object)
+
     def __init__(self):
         super().__init__()
 
@@ -168,11 +172,12 @@ class MeetingTemplatesPage(QWidget):
         if not exec_maximized(dialog):
             return
         try:
-            meeting_template_service.create_template(**dialog.get_data())
+            created = meeting_template_service.create_template(**dialog.get_data())
         except MeetingTemplateValidationError as error:
             QMessageBox.warning(self, TEMPLATE_LIST_TITLE, str(error))
             return
         self.refresh()
+        self.templates_changed.emit(int(created.id))
 
     def edit_selected(self) -> None:
         template_id = self._selected_template_id()
@@ -182,6 +187,7 @@ class MeetingTemplatesPage(QWidget):
         if template is None:
             QMessageBox.warning(self, TEMPLATE_LIST_TITLE, TEMPLATE_NOT_FOUND)
             self.refresh()
+            self.templates_changed.emit(None)
             return
 
         dialog = MeetingTemplateDialog(self, template=template)
@@ -193,6 +199,7 @@ class MeetingTemplatesPage(QWidget):
             QMessageBox.warning(self, TEMPLATE_LIST_TITLE, str(error))
             return
         self.refresh()
+        self.templates_changed.emit(template_id)
 
     def delete_selected(self) -> None:
         template_id = self._selected_template_id()
@@ -209,3 +216,4 @@ class MeetingTemplatesPage(QWidget):
             return
         meeting_template_service.delete_template(template_id)
         self.refresh()
+        self.templates_changed.emit(None)

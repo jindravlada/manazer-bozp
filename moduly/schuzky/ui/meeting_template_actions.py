@@ -45,6 +45,7 @@ class MeetingTemplatesWindow(QDialog):
 def open_meeting_templates_window(
     parent: QWidget | None = None,
     *,
+    on_changed=None,
     on_closed=None,
 ) -> MeetingTemplatesWindow:
     """Otevře správu šablon jako neblokující okno (show, ne exec)."""
@@ -58,9 +59,18 @@ def open_meeting_templates_window(
             Qt.ConnectionType.SingleShotConnection,
         )
 
+    def _connect_changed(window: MeetingTemplatesWindow) -> None:
+        if not callable(on_changed):
+            return
+        window.page.templates_changed.connect(
+            on_changed,
+            Qt.ConnectionType.UniqueConnection,
+        )
+
     if _templates_window is not None and _templates_window.isVisible():
         _templates_window.raise_()
         _templates_window.activateWindow()
+        _connect_changed(_templates_window)
         _connect_closed(_templates_window)
         return _templates_window
 
@@ -72,6 +82,7 @@ def open_meeting_templates_window(
             _templates_window = None
 
     window.destroyed.connect(_clear)
+    _connect_changed(window)
     _connect_closed(window)
 
     _templates_window = window
