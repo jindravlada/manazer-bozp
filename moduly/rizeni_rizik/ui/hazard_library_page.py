@@ -1,7 +1,9 @@
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QLabel,
+    QMenu,
     QMessageBox,
     QPushButton,
     QTableWidget,
@@ -65,6 +67,9 @@ class HazardLibraryPage(QWidget):
         self.activate_btn = QPushButton("Aktivovat")
         self.deactivate_btn = QPushButton("Deaktivovat")
         self.manage_categories_btn = QPushButton("Spravovat kategorie…")
+        self.edit_btn.setEnabled(False)
+        self.activate_btn.setEnabled(False)
+        self.deactivate_btn.setEnabled(False)
         toolbar.addWidget(self.new_btn)
         toolbar.addWidget(self.edit_btn)
         toolbar.addWidget(self.activate_btn)
@@ -87,7 +92,7 @@ class HazardLibraryPage(QWidget):
         self.table.setHorizontalHeaderLabels(HAZARD_LIBRARY_TABLE_HEADERS)
         self.table.setColumnHidden(HAZARD_LIBRARY_COL_ID, True)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        self.table.setSelectionMode(QTableWidget.SelectionMode.ExtendedSelection)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setAlternatingRowColors(True)
         configure_table_columns(self.table, "hazard_library_templates")
@@ -104,8 +109,41 @@ class HazardLibraryPage(QWidget):
         self.deactivate_btn.clicked.connect(self.deactivate_selected_template)
         self.manage_categories_btn.clicked.connect(self.manage_categories)
         self.table.doubleClicked.connect(self.edit_selected_template)
+        self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self._show_table_context_menu)
+        self.table.selectionModel().selectionChanged.connect(self._refresh_action_buttons)
 
         self.refresh()
+
+    def _selected_row_count(self) -> int:
+        return len(self.table.selectionModel().selectedRows())
+
+    def _refresh_action_buttons(self, *_args) -> None:
+        template = self._selected_template()
+        single = template is not None
+        self.edit_btn.setEnabled(single)
+        self.activate_btn.setEnabled(single and not template.active)
+        self.deactivate_btn.setEnabled(single and template.active)
+
+    def _show_table_context_menu(self, position) -> None:
+        index = self.table.indexAt(position)
+        if index.isValid():
+            self.table.selectRow(index.row())
+            self._refresh_action_buttons()
+
+        template = self._selected_template()
+        single = template is not None
+        if not single and not index.isValid():
+            return
+
+        menu = QMenu(self)
+        edit_action = menu.addAction("Upravit", self.edit_selected_template)
+        edit_action.setEnabled(single)
+        activate_action = menu.addAction("Aktivovat", self.activate_selected_template)
+        activate_action.setEnabled(single and template is not None and not template.active)
+        deactivate_action = menu.addAction("Deaktivovat", self.deactivate_selected_template)
+        deactivate_action.setEnabled(single and template is not None and template.active)
+        menu.exec(self.table.viewport().mapToGlobal(position))
 
     def refresh(self) -> None:
         rows = hazard_library_template_service.get_all_rows(include_inactive=True)
@@ -164,7 +202,10 @@ class HazardLibraryPage(QWidget):
                     ),
                 )
         configure_table_columns(self.table, "hazard_library_templates")
+        self.table.clearSelection()
+        self.table.setCurrentCell(-1, -1)
         self.text_filter.update_count()
+        self._refresh_action_buttons()
 
     def new_template(self) -> None:
         dialog = HazardLibraryTemplateDialog(self)
@@ -174,11 +215,6 @@ class HazardLibraryPage(QWidget):
     def edit_selected_template(self) -> None:
         template = self._selected_template()
         if template is None:
-            QMessageBox.information(
-                self,
-                HAZARD_LIBRARY_PAGE_TITLE,
-                "Vyberte zdroj rizika.",
-            )
             return
         dialog = HazardLibraryTemplateDialog(self, template=template)
         exec_maximized(dialog)
@@ -187,7 +223,6 @@ class HazardLibraryPage(QWidget):
     def activate_selected_template(self) -> None:
         template = self._selected_template()
         if template is None:
-            QMessageBox.information(self, HAZARD_LIBRARY_PAGE_TITLE, "Vyberte zdroj rizika.")
             return
         if template.active:
             QMessageBox.information(self, HAZARD_LIBRARY_PAGE_TITLE, "Zdroj rizika je již aktivní.")
@@ -202,7 +237,6 @@ class HazardLibraryPage(QWidget):
     def deactivate_selected_template(self) -> None:
         template = self._selected_template()
         if template is None:
-            QMessageBox.information(self, HAZARD_LIBRARY_PAGE_TITLE, "Vyberte zdroj rizika.")
             return
         if not template.active:
             QMessageBox.information(self, HAZARD_LIBRARY_PAGE_TITLE, "Zdroj rizika je již neaktivní.")
@@ -222,6 +256,7 @@ class HazardLibraryPage(QWidget):
             if id_item is not None and int(id_item.text()) == template_id:
                 self.table.selectRow(row_index)
                 self.table.scrollToItem(id_item)
+                self._refresh_action_buttons()
                 break
 
     def open_template_editor(self, template_id: int) -> None:
@@ -240,6 +275,8 @@ class HazardLibraryPage(QWidget):
         self.refresh()
 
     def _selected_template_id(self) -> int | None:
+        if self._selected_row_count() != 1:
+            return None
         selected = self.table.selectionModel().selectedRows()
         if not selected:
             return None

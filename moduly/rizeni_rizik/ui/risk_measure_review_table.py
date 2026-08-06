@@ -49,7 +49,7 @@ class RiskMeasureReviewTable(QTableWidget):
         self.setHorizontalHeaderLabels(RISK_MEASURE_REVIEW_TABLE_HEADERS)
         self.setColumnHidden(RISK_MEASURE_REVIEW_COL_ID, True)
         self.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        self.setSelectionMode(QTableWidget.SelectionMode.ExtendedSelection)
         self.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.setAlternatingRowColors(True)
         enable_typed_sorting(self)

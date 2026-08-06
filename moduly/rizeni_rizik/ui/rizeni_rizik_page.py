@@ -1,7 +1,9 @@
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QLabel,
+    QMenu,
     QMessageBox,
     QPushButton,
     QTabWidget,
@@ -42,6 +44,9 @@ class HazardIdentificationsTab(QWidget):
         self.activate_btn = QPushButton("Aktivovat")
         self.deactivate_btn = QPushButton("Deaktivovat")
         self.pravidla_btn = QPushButton("Pravidla bezpečné práce")
+        self.edit_btn.setEnabled(False)
+        self.activate_btn.setEnabled(False)
+        self.deactivate_btn.setEnabled(False)
 
         toolbar.addWidget(self.new_btn)
         toolbar.addWidget(self.edit_btn)
@@ -74,8 +79,41 @@ class HazardIdentificationsTab(QWidget):
         self.deactivate_btn.clicked.connect(self.deactivate_selected_identification)
         self.pravidla_btn.clicked.connect(self.open_pravidla_bezpecne_prace)
         self.table.doubleClicked.connect(self.edit_selected_identification)
+        self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self._show_table_context_menu)
+        self.table.selectionModel().selectionChanged.connect(self._refresh_action_buttons)
 
         self.refresh()
+
+    def _selected_row_count(self) -> int:
+        return len(self.table.selectionModel().selectedRows())
+
+    def _refresh_action_buttons(self, *_args) -> None:
+        identification = self._selected_identification()
+        single = identification is not None
+        self.edit_btn.setEnabled(single)
+        self.activate_btn.setEnabled(single and not identification.active)
+        self.deactivate_btn.setEnabled(single and identification.active)
+
+    def _show_table_context_menu(self, position) -> None:
+        index = self.table.indexAt(position)
+        if index.isValid():
+            self.table.selectRow(index.row())
+            self._refresh_action_buttons()
+
+        identification = self._selected_identification()
+        single = identification is not None
+        if not single and not index.isValid():
+            return
+
+        menu = QMenu(self)
+        edit_action = menu.addAction("Upravit", self.edit_selected_identification)
+        edit_action.setEnabled(single)
+        activate_action = menu.addAction("Aktivovat", self.activate_selected_identification)
+        activate_action.setEnabled(single and identification is not None and not identification.active)
+        deactivate_action = menu.addAction("Deaktivovat", self.deactivate_selected_identification)
+        deactivate_action.setEnabled(single and identification is not None and identification.active)
+        menu.exec(self.table.viewport().mapToGlobal(position))
 
     def new_identification(self) -> None:
         dialog = HazardIdentificationDialog(
@@ -90,15 +128,8 @@ class HazardIdentificationsTab(QWidget):
         dialog.exec()
 
     def edit_selected_identification(self) -> None:
-        identification_id = self.table.selected_identification_id()
-        if identification_id is None:
-            QMessageBox.information(self, DIALOG_WINDOW_TITLE, "Vyberte identifikaci.")
-            return
-
-        identification = hazard_identification_service.get_by_id(identification_id)
+        identification = self._selected_identification()
         if identification is None:
-            QMessageBox.warning(self, DIALOG_WINDOW_TITLE, "Identifikace nebyla nalezena.")
-            self.refresh()
             return
 
         dialog = HazardIdentificationDialog(
@@ -109,14 +140,9 @@ class HazardIdentificationsTab(QWidget):
         exec_maximized(dialog)
         self.refresh()
 
-    def _on_open_library_template(self, template_id: int) -> None:
-        if self._on_open_library_template is not None:
-            self._on_open_library_template(template_id)
-
     def activate_selected_identification(self) -> None:
         identification = self._selected_identification()
         if identification is None:
-            QMessageBox.information(self, DIALOG_WINDOW_TITLE, "Vyberte identifikaci.")
             return
         if identification.active:
             QMessageBox.information(self, DIALOG_WINDOW_TITLE, "Identifikace je již aktivní.")
@@ -136,7 +162,6 @@ class HazardIdentificationsTab(QWidget):
     def deactivate_selected_identification(self) -> None:
         identification = self._selected_identification()
         if identification is None:
-            QMessageBox.information(self, DIALOG_WINDOW_TITLE, "Vyberte identifikaci.")
             return
         if not identification.active:
             QMessageBox.information(self, DIALOG_WINDOW_TITLE, "Identifikace je již neaktivní.")
@@ -154,6 +179,8 @@ class HazardIdentificationsTab(QWidget):
             self.refresh()
 
     def _selected_identification(self):
+        if self._selected_row_count() != 1:
+            return None
         identification_id = self.table.selected_identification_id()
         if identification_id is None:
             return None
@@ -168,7 +195,10 @@ class HazardIdentificationsTab(QWidget):
             identifications = [item for item in identifications if not item.active]
         self.table.load_identifications(identifications)
         configure_table_columns(self.table, "hazard_identifications")
+        self.table.clearSelection()
+        self.table.setCurrentCell(-1, -1)
         self.text_filter.update_count()
+        self._refresh_action_buttons()
 
 
 class RizeniRizikPage(QWidget):

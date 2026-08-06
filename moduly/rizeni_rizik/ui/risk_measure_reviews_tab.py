@@ -1,7 +1,9 @@
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QLabel,
+    QMenu,
     QMessageBox,
     QPushButton,
     QVBoxLayout,
@@ -43,7 +45,10 @@ class RiskMeasureReviewsTab(QWidget):
         self.execute_btn = QPushButton("Provést přezkoumání")
         self.archive_btn = QPushButton("Archivovat")
         self.restore_btn = QPushButton("Obnovit")
+        self.edit_btn.setEnabled(False)
         self.execute_btn.setEnabled(False)
+        self.archive_btn.setEnabled(False)
+        self.restore_btn.setEnabled(False)
         toolbar.addWidget(self.new_btn)
         toolbar.addWidget(self.edit_btn)
         toolbar.addWidget(self.execute_btn)
@@ -85,9 +90,44 @@ class RiskMeasureReviewsTab(QWidget):
         self.archive_btn.clicked.connect(self.archive_selected_review)
         self.restore_btn.clicked.connect(self.restore_selected_review)
         self.table.doubleClicked.connect(self.edit_selected_review)
-        self.table.itemSelectionChanged.connect(self._update_action_buttons)
+        self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self._show_table_context_menu)
+        self.table.selectionModel().selectionChanged.connect(self._refresh_action_buttons)
 
         self.refresh()
+
+    def _selected_row_count(self) -> int:
+        return len(self.table.selectionModel().selectedRows())
+
+    def _refresh_action_buttons(self, *_args) -> None:
+        review = self._selected_review()
+        single = review is not None
+        self.edit_btn.setEnabled(single)
+        self.execute_btn.setEnabled(single and review.archived_at is None)
+        self.archive_btn.setEnabled(single and review.archived_at is None)
+        self.restore_btn.setEnabled(single and review.archived_at is not None)
+
+    def _show_table_context_menu(self, position) -> None:
+        index = self.table.indexAt(position)
+        if index.isValid():
+            self.table.selectRow(index.row())
+            self._refresh_action_buttons()
+
+        review = self._selected_review()
+        single = review is not None
+        if not single and not index.isValid():
+            return
+
+        menu = QMenu(self)
+        edit_action = menu.addAction("Upravit", self.edit_selected_review)
+        edit_action.setEnabled(single)
+        execute_action = menu.addAction("Provést přezkoumání", self.execute_selected_review)
+        execute_action.setEnabled(single and review is not None and review.archived_at is None)
+        archive_action = menu.addAction("Archivovat", self.archive_selected_review)
+        archive_action.setEnabled(single and review is not None and review.archived_at is None)
+        restore_action = menu.addAction("Obnovit", self.restore_selected_review)
+        restore_action.setEnabled(single and review is not None and review.archived_at is not None)
+        menu.exec(self.table.viewport().mapToGlobal(position))
 
     def new_review(self) -> None:
         dialog = RiskMeasureReviewDialog(self)
@@ -97,11 +137,6 @@ class RiskMeasureReviewsTab(QWidget):
     def edit_selected_review(self) -> None:
         review = self._selected_review()
         if review is None:
-            QMessageBox.information(
-                self,
-                RISK_MEASURE_REVIEW_DIALOG_TITLE,
-                "Vyberte přezkoumání.",
-            )
             return
         dialog = RiskMeasureReviewDialog(self, review=review)
         dialog.exec()
@@ -110,11 +145,6 @@ class RiskMeasureReviewsTab(QWidget):
     def execute_selected_review(self) -> None:
         review = self._selected_review()
         if review is None:
-            QMessageBox.information(
-                self,
-                RISK_MEASURE_REVIEW_EXECUTE_DIALOG_TITLE,
-                "Vyberte přezkoumání.",
-            )
             return
         if review.archived_at is not None:
             QMessageBox.information(
@@ -130,11 +160,6 @@ class RiskMeasureReviewsTab(QWidget):
     def archive_selected_review(self) -> None:
         review = self._selected_review()
         if review is None:
-            QMessageBox.information(
-                self,
-                RISK_MEASURE_REVIEW_DIALOG_TITLE,
-                "Vyberte přezkoumání.",
-            )
             return
         if review.archived_at is not None:
             QMessageBox.information(
@@ -157,11 +182,6 @@ class RiskMeasureReviewsTab(QWidget):
     def restore_selected_review(self) -> None:
         review = self._selected_review()
         if review is None:
-            QMessageBox.information(
-                self,
-                RISK_MEASURE_REVIEW_DIALOG_TITLE,
-                "Vyberte přezkoumání.",
-            )
             return
         if review.archived_at is None:
             QMessageBox.information(
@@ -182,14 +202,12 @@ class RiskMeasureReviewsTab(QWidget):
             self.refresh()
 
     def _selected_review(self):
+        if self._selected_row_count() != 1:
+            return None
         review_id = self.table.selected_review_id()
         if review_id is None:
             return None
         return risk_measure_review_service.get_by_id(review_id)
-
-    def _update_action_buttons(self) -> None:
-        review = self._selected_review()
-        self.execute_btn.setEnabled(review is not None and review.archived_at is None)
 
     def refresh(self) -> None:
         reviews = risk_measure_review_service.get_all(include_archived=True)
@@ -198,5 +216,7 @@ class RiskMeasureReviewsTab(QWidget):
             reviews = [review for review in reviews if review.status == mode]
         self.table.load_reviews(reviews)
         configure_table_columns(self.table, "risk_measure_reviews")
+        self.table.clearSelection()
+        self.table.setCurrentCell(-1, -1)
         self.text_filter.update_count()
-        self._update_action_buttons()
+        self._refresh_action_buttons()

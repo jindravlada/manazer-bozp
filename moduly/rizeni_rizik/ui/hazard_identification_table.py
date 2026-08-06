@@ -44,7 +44,7 @@ class HazardIdentificationTable(QTableWidget):
         self.setColumnHidden(COL_ID, True)
         self.setColumnHidden(COL_IDENTIFICATION, True)
         self.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        self.setSelectionMode(QTableWidget.SelectionMode.ExtendedSelection)
         self.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.setAlternatingRowColors(True)
         enable_typed_sorting(self)
