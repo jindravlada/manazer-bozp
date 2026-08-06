@@ -1,4 +1,4 @@
-"""MENU-UX-2: výraznější zvýraznění aktivního modulu."""
+"""MENU-UX-3: odstranění tučného písma aktivního modulu."""
 
 from __future__ import annotations
 
@@ -37,7 +37,7 @@ def _is_highlighted(button) -> bool:
     return "#E3F2FD" in sheet and "2px solid #93c5fd" in sheet
 
 
-class MenuUx2TestCase(unittest.TestCase):
+class MenuUx3TestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls._app = QApplication.instance() or QApplication([])
@@ -49,33 +49,35 @@ class MenuUx2TestCase(unittest.TestCase):
             if _is_highlighted(button)
         ]
 
-    def test_active_style_has_background_and_border(self) -> None:
+    def test_no_bold_on_active_module(self) -> None:
         window = MainWindow()
-        self.assertEqual(
-            window._SIDEBAR_ACTIVE_STYLE,
-            "QPushButton { background-color: #E3F2FD; border: 2px solid #93c5fd; }",
-        )
-        self.assertEqual(self._highlighted_keys(window), ["dashboard"])
-        self.assertFalse(window._sidebar_buttons["dashboard"].font().bold())
+        for button in window._sidebar_buttons.values():
+            self.assertFalse(button.font().bold())
 
-    def test_switch_moves_highlight_to_single_module(self) -> None:
+        dashboard = window._sidebar_buttons["dashboard"]
+        self.assertTrue(_is_highlighted(dashboard))
+        self.assertNotIn("font-weight", dashboard.styleSheet().lower())
+        self.assertNotIn("bold", dashboard.styleSheet().lower())
+
+    def test_all_modules_highlight_immediately_and_exclusively(self) -> None:
         window = MainWindow()
-        for key in ("agenda", "kniha_urazu", "nastaveni", "dashboard"):
+        keys = list(window._sidebar_buttons.keys())
+        self.assertGreaterEqual(len(keys), 5)
+
+        for key in keys:
             window._show(key)
             highlighted = self._highlighted_keys(window)
-            self.assertEqual(highlighted, [key])
-            self.assertEqual(len(highlighted), 1)
-
+            self.assertEqual(
+                highlighted,
+                [key],
+                f"Po přepnutí na {key} má být zvýrazněn pouze aktivní modul",
+            )
             for other_key, button in window._sidebar_buttons.items():
                 self.assertFalse(button.font().bold())
                 if other_key == key:
-                    continue
-                self.assertEqual(button.styleSheet(), "")
-
-    def test_button_height_unchanged(self) -> None:
-        window = MainWindow()
-        for button in window._sidebar_buttons.values():
-            self.assertEqual(button.minimumHeight(), 34)
+                    self.assertTrue(_is_highlighted(button))
+                else:
+                    self.assertEqual(button.styleSheet(), "")
 
 
 if __name__ == "__main__":

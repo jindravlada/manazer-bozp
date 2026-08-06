@@ -1,7 +1,7 @@
 from datetime import date
 
 from PySide6.QtCore import QSize, QStringListModel, Qt
-from PySide6.QtGui import QFont, QKeySequence, QShortcut
+from PySide6.QtGui import QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QCompleter,
     QDialog,
@@ -316,15 +316,14 @@ class MainWindow(QMainWindow):
 
     def _update_sidebar_active(self, active_key: str) -> None:
         for key, button in self._sidebar_buttons.items():
-            font = QFont(button.font())
             if key == active_key:
-                font.setBold(True)
-                button.setFont(font)
                 button.setStyleSheet(self._SIDEBAR_ACTIVE_STYLE)
             else:
-                font.setBold(False)
-                button.setFont(font)
                 button.setStyleSheet("")
+            style = button.style()
+            style.unpolish(button)
+            style.polish(button)
+            button.update()
 
     def _show(self, key):
         if key in self._pages:

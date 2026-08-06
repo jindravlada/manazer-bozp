@@ -40,7 +40,7 @@ class MenuUx1TestCase(unittest.TestCase):
     def test_dashboard_highlighted_on_startup(self) -> None:
         window = MainWindow()
         dashboard = window._sidebar_buttons["dashboard"]
-        self.assertTrue(dashboard.font().bold())
+        self.assertFalse(dashboard.font().bold())
         self.assertIn("#E3F2FD", dashboard.styleSheet())
         self.assertIn("2px solid #93c5fd", dashboard.styleSheet())
 
@@ -57,7 +57,7 @@ class MenuUx1TestCase(unittest.TestCase):
 
         self.assertFalse(dashboard.font().bold())
         self.assertEqual(dashboard.styleSheet(), "")
-        self.assertTrue(agenda.font().bold())
+        self.assertFalse(agenda.font().bold())
         self.assertIn("#E3F2FD", agenda.styleSheet())
         self.assertIn("2px solid #93c5fd", agenda.styleSheet())
 
@@ -65,7 +65,7 @@ class MenuUx1TestCase(unittest.TestCase):
         settings = window._sidebar_buttons["nastaveni"]
         self.assertFalse(agenda.font().bold())
         self.assertEqual(agenda.styleSheet(), "")
-        self.assertTrue(settings.font().bold())
+        self.assertFalse(settings.font().bold())
         self.assertIn("#E3F2FD", settings.styleSheet())
         self.assertIn("2px solid #93c5fd", settings.styleSheet())
 
