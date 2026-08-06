@@ -63,7 +63,7 @@ class AccidentUx1TestCase(unittest.TestCase):
         accident = self._create_accident()
         page = KnihaUrazuPage()
         self.assertTrue(page._select_accident(accident.id))
-        page._refresh_notice_button()
+        page._refresh_action_buttons()
         self.assertTrue(page.notice_btn.isEnabled())
 
     def test_opens_same_union_notice_dialog(self) -> None:

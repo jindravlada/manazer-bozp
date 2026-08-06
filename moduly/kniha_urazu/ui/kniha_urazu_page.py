@@ -31,11 +31,21 @@ class KnihaUrazuPage(QWidget):
         self.new_btn = QPushButton("Nový úraz")
         self.edit_btn = QPushButton("Upravit")
         self.notice_btn = QPushButton("Ohláška OO")
-        self.notice_btn.setEnabled(False)
         self.investigation_btn = QPushButton("Ohlašovací povinnosti")
         self.mu_investigation_btn = QPushButton("Vyšetřování MU")
         self.vypis_btn = QPushButton("Výpis o pracovním úrazu")
         self.final_report_btn = QPushButton("Závěrečná zpráva")
+
+        self._selection_action_buttons = (
+            self.edit_btn,
+            self.notice_btn,
+            self.investigation_btn,
+            self.mu_investigation_btn,
+            self.vypis_btn,
+            self.final_report_btn,
+        )
+        for button in self._selection_action_buttons:
+            button.setEnabled(False)
 
         toolbar.addWidget(self.new_btn)
         toolbar.addWidget(self.edit_btn)
@@ -67,7 +77,7 @@ class KnihaUrazuPage(QWidget):
         self.vypis_btn.clicked.connect(self.generate_accident_report)
         self.final_report_btn.clicked.connect(self.generate_final_report)
         self.table.doubleClicked.connect(self.edit_selected_accident)
-        self.table.selectionModel().selectionChanged.connect(self._refresh_notice_button)
+        self.table.selectionModel().selectionChanged.connect(self._refresh_action_buttons)
 
         self.refresh()
 
@@ -80,10 +90,16 @@ class KnihaUrazuPage(QWidget):
         self.summary_panel.update_summary(self.table.compute_summary(accidents))
 
         self.text_filter.update_count()
-        self._refresh_notice_button()
+        self._refresh_action_buttons()
 
-    def _refresh_notice_button(self, *_args) -> None:
-        self.notice_btn.setEnabled(self._selected_accident_id() is not None)
+    def _selected_row_count(self) -> int:
+        return len(self.table.selectionModel().selectedRows())
+
+    def _refresh_action_buttons(self, *_args) -> None:
+        # Akce nad jedním záznamem; vícenásobný výběr zatím žádná nepodporuje.
+        enabled = self._selected_row_count() == 1
+        for button in self._selection_action_buttons:
+            button.setEnabled(enabled)
 
     def _selected_accident_id(self):
         selected = self.table.selectionModel().selectedRows()

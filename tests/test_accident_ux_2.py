@@ -63,7 +63,7 @@ class AccidentUx2TestCase(unittest.TestCase):
         accident = self._create_accident()
         page = KnihaUrazuPage()
         page._select_accident(accident.id)
-        page._refresh_notice_button()
+        page._refresh_action_buttons()
         self.assertTrue(page.notice_btn.isEnabled())
 
         opened: list[object] = []
