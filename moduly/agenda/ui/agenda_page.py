@@ -24,7 +24,6 @@ from moduly.agenda.constants import (
     ACTION_NEW_FROM_TEMPLATE,
     ACTION_NEW_MEETING,
     ACTION_NEW_TASK,
-    ACTION_OPEN,
     ACTION_OPEN_TEMPLATES,
     DEFAULT_STATUS_MODE,
     EMPTY_STATE_TEXT,
@@ -67,18 +66,15 @@ class AgendaPage(QWidget):
         self.new_meeting_btn = QPushButton(ACTION_NEW_MEETING)
         self.new_from_template_btn = QPushButton(ACTION_NEW_FROM_TEMPLATE)
         self.templates_btn = QPushButton(ACTION_OPEN_TEMPLATES)
-        self.open_btn = QPushButton(ACTION_OPEN)
         self.edit_btn = QPushButton(ACTION_EDIT)
+        self.edit_btn.setEnabled(False)
 
-        self._selection_action_buttons = (self.open_btn, self.edit_btn)
-        for button in self._selection_action_buttons:
-            button.setEnabled(False)
+        self._selection_action_buttons = (self.edit_btn,)
 
         toolbar.addWidget(self.new_task_btn)
         toolbar.addWidget(self.new_meeting_btn)
         toolbar.addWidget(self.new_from_template_btn)
         toolbar.addWidget(self.templates_btn)
-        toolbar.addWidget(self.open_btn)
         toolbar.addWidget(self.edit_btn)
         toolbar.addStretch()
 
@@ -118,9 +114,8 @@ class AgendaPage(QWidget):
         self.new_meeting_btn.clicked.connect(self.new_meeting)
         self.new_from_template_btn.clicked.connect(self.new_meeting_from_template)
         self.templates_btn.clicked.connect(self.open_templates)
-        self.open_btn.clicked.connect(self.open_selected)
-        self.edit_btn.clicked.connect(self.open_selected)
-        self.table.doubleClicked.connect(self.open_selected)
+        self.edit_btn.clicked.connect(self.edit_selected)
+        self.table.doubleClicked.connect(self.edit_selected)
         self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.table.customContextMenuRequested.connect(self._show_table_context_menu)
         self.table.selectionModel().selectionChanged.connect(self._refresh_action_buttons)
@@ -229,9 +224,7 @@ class AgendaPage(QWidget):
             return
 
         menu = QMenu(self)
-        open_action = menu.addAction(ACTION_OPEN, self.open_selected)
-        edit_action = menu.addAction(ACTION_EDIT, self.open_selected)
-        open_action.setEnabled(enabled)
+        edit_action = menu.addAction(ACTION_EDIT, self.edit_selected)
         edit_action.setEnabled(enabled)
         menu.exec(self.table.viewport().mapToGlobal(position))
 
@@ -272,7 +265,7 @@ class AgendaPage(QWidget):
                 return
             widget = widget.parent()
 
-    def open_selected(self) -> None:
+    def edit_selected(self) -> None:
         if self._selected_row_count() != 1:
             return
         item = self.table.selected_item()

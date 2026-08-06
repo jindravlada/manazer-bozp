@@ -213,13 +213,13 @@ class Agenda1TestCase(unittest.TestCase):
             payload = page.table.item(row, 0).data(Qt.ItemDataRole.UserRole)
             if payload.source_id == task.id and payload.item_type == ITEM_TYPE_TASK:
                 page.table.selectRow(row)
-                page.open_selected()
+                page.edit_selected()
                 break
         for row in range(page.table.rowCount()):
             payload = page.table.item(row, 0).data(Qt.ItemDataRole.UserRole)
             if payload.source_id == meeting.id and payload.item_type == ITEM_TYPE_MEETING:
                 page.table.selectRow(row)
-                page.open_selected()
+                page.edit_selected()
                 break
 
         self.assertEqual(opened, [f"task:{task.id}", f"meeting:{meeting.id}"])

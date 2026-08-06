@@ -33,7 +33,7 @@ with patch.object(Path, "home", return_value=_TMP):
     initialize_database()
 
     from moduly.agenda import constants as agenda_constants
-    from moduly.agenda.constants import ACTION_EDIT, ACTION_OPEN
+    from moduly.agenda.constants import ACTION_EDIT
     from moduly.agenda.ui.agenda_page import AgendaPage
     from moduly.schuzky.constants import STATUS_PLANNED
     from moduly.schuzky.sluzby.meeting_service import meeting_service
@@ -78,18 +78,17 @@ class UxStandardApply001AgendaTestCase(unittest.TestCase):
         self.assertTrue(page.new_meeting_btn.isEnabled())
         self.assertTrue(page.templates_btn.isEnabled())
         self.assertTrue(page.new_from_template_btn.isEnabled())
-        self.assertFalse(page.open_btn.isEnabled())
         self.assertFalse(page.edit_btn.isEnabled())
+        self.assertFalse(hasattr(page, "open_btn"))
 
-    def test_one_selection_enables_open_edit(self) -> None:
+    def test_one_selection_enables_edit(self) -> None:
         self._create_task()
         page = AgendaPage()
         self.assertGreaterEqual(page.table.rowCount(), 1)
         self._select_rows(page, [0])
-        self.assertTrue(page.open_btn.isEnabled())
         self.assertTrue(page.edit_btn.isEnabled())
 
-    def test_multi_selection_disables_open_edit(self) -> None:
+    def test_multi_selection_disables_edit(self) -> None:
         self._create_task("Úkol 1")
         self._create_meeting("Událost 1")
         page = AgendaPage()
@@ -100,25 +99,23 @@ class UxStandardApply001AgendaTestCase(unittest.TestCase):
         self.assertGreaterEqual(page.table.rowCount(), 2)
         self._select_rows(page, [0, 1])
         self.assertEqual(page._selected_row_count(), 2)
-        self.assertFalse(page.open_btn.isEnabled())
         self.assertFalse(page.edit_btn.isEnabled())
 
-    def test_clear_selection_disables_open_edit(self) -> None:
+    def test_clear_selection_disables_edit(self) -> None:
         self._create_task()
         page = AgendaPage()
         self._select_rows(page, [0])
         page.table.clear_selection()
         page._refresh_action_buttons()
-        self.assertFalse(page.open_btn.isEnabled())
         self.assertFalse(page.edit_btn.isEnabled())
 
-    def test_double_click_same_as_open(self) -> None:
+    def test_double_click_same_as_edit(self) -> None:
         init_source = inspect.getsource(AgendaPage.__init__)
-        self.assertIn("self.open_btn.clicked.connect(self.open_selected)", init_source)
-        self.assertIn("self.edit_btn.clicked.connect(self.open_selected)", init_source)
-        self.assertIn("self.table.doubleClicked.connect(self.open_selected)", init_source)
+        self.assertIn("self.edit_btn.clicked.connect(self.edit_selected)", init_source)
+        self.assertIn("self.table.doubleClicked.connect(self.edit_selected)", init_source)
+        self.assertNotIn("open_btn", init_source)
 
-    def test_context_menu_enables_actions_for_one_row(self) -> None:
+    def test_context_menu_enables_edit_for_one_row(self) -> None:
         self._create_task()
         page = AgendaPage()
         enabled_flags: list[bool] = []
@@ -149,8 +146,8 @@ class UxStandardApply001AgendaTestCase(unittest.TestCase):
         ):
             page._show_table_context_menu(QPoint(10, 10))
 
-        self.assertEqual(labels, [ACTION_OPEN, ACTION_EDIT])
-        self.assertEqual(enabled_flags, [True, True])
+        self.assertEqual(labels, [ACTION_EDIT])
+        self.assertEqual(enabled_flags, [True])
 
     def test_context_menu_hidden_without_selection_and_row(self) -> None:
         page = AgendaPage()
@@ -162,13 +159,13 @@ class UxStandardApply001AgendaTestCase(unittest.TestCase):
 
     def test_no_select_item_dialog(self) -> None:
         self.assertFalse(hasattr(agenda_constants, "SELECT_ITEM_MESSAGE"))
-        source = inspect.getsource(AgendaPage.open_selected)
+        source = inspect.getsource(AgendaPage.edit_selected)
         self.assertNotIn("Vyberte", source)
         self.assertNotIn("QMessageBox.information", source)
 
         page = AgendaPage()
         with patch("moduly.agenda.ui.agenda_page.QMessageBox.information") as info:
-            page.open_selected()
+            page.edit_selected()
             info.assert_not_called()
 
 

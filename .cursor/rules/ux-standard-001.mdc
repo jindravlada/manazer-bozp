@@ -1,0 +1,18 @@
+---
+description: UX STANDARD 001 – aktivace akcí podle výběru záznamu
+alwaysApply: true
+---
+
+# UX STANDARD č. 001
+
+Při návrhu a úpravách seznamových modulů dodržovat `UX_STANDARD_001.md`.
+
+## Aktivace tlačítek
+
+- **Bez výběru:** aktivní jen akce nezávislé na záznamu (Nový, Import, Nastavení, Šablony…).
+- **Jeden výběr:** aktivní i akce nad jedním záznamem (Upravit, Dokumenty, Ohláška…).
+- **Více výběrů:** aktivní jen hromadné akce; akce nad jedním záznamem neaktivní.
+- **Bez hlášky „Vyberte záznam.“** – stejný výsledek řešit deaktivací tlačítka.
+- **Dvojklik** = stejná akce jako **Upravit** (nebo výjimečně Otevřít při prohlížení).
+- **Ne současně Otevřít + Upravit**, pokud obě vedou na stejný editor – ponechat jen Upravit.
+- Zavádět **postupně** – jeden modul = jeden sprint = jeden commit.
