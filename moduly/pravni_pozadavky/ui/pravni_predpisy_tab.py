@@ -1,8 +1,10 @@
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QFileDialog,
     QComboBox,
     QHBoxLayout,
     QLabel,
+    QMenu,
     QMessageBox,
     QPushButton,
     QSizePolicy,
@@ -26,9 +28,6 @@ from moduly.pravni_pozadavky.import_export.legal_document_json_export_service im
 )
 from moduly.pravni_pozadavky.import_export.legal_document_json_import_service import (
     legal_document_json_import_service,
-)
-from moduly.pravni_pozadavky.import_export.legal_document_txt_import_service import (
-    legal_document_txt_import_service,
 )
 from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
 from moduly.pravni_pozadavky.sluzby.legal_document_version_service import (
@@ -65,6 +64,10 @@ class PravniPredpisyTab(QWidget):
         self.import_btn = QPushButton("Import JSON")
         self.export_btn = QPushButton("Export JSON")
         self.toggle_btn = QPushButton("Deaktivovat")
+        self.edit_btn.setEnabled(False)
+        self.valid_text_btn.setEnabled(False)
+        self.export_btn.setEnabled(False)
+        self.toggle_btn.setEnabled(False)
 
         for button in (
             self.new_btn,
@@ -126,7 +129,9 @@ class PravniPredpisyTab(QWidget):
         self.valid_text_btn.clicked.connect(self.open_valid_text)
         self.toggle_btn.clicked.connect(self.toggle_selected_document)
         self.table.doubleClicked.connect(self.edit_selected_document)
-        self.table.itemSelectionChanged.connect(self._update_action_buttons)
+        self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self._show_table_context_menu)
+        self.table.selectionModel().selectionChanged.connect(self._refresh_action_buttons)
         self.active_filter.currentIndexChanged.connect(self.refresh)
         self.included_in_processes_filter.currentIndexChanged.connect(self.refresh)
 
@@ -135,9 +140,11 @@ class PravniPredpisyTab(QWidget):
     def refresh(self) -> None:
         documents = self._filter_documents(legal_document_service.list_all(include_inactive=True))
         self.table.load_documents(documents)
+        self.table.clearSelection()
+        self.table.setCurrentCell(-1, -1)
         self.text_filter.apply_filter()
         self.text_filter.update_count()
-        self._update_action_buttons()
+        self._refresh_action_buttons()
 
     def _filter_documents(self, documents):
         active_mode = self.active_filter.currentText()
@@ -153,18 +160,54 @@ class PravniPredpisyTab(QWidget):
             return [document for document in documents if not document.included_in_processes]
         return documents
 
+    def _selected_row_count(self) -> int:
+        return len(self.table.selectionModel().selectedRows())
+
     def _selected_document(self):
+        if self._selected_row_count() != 1:
+            return None
         document_id = self.table.selected_document_id()
         if document_id is None:
             return None
         return legal_document_service.get_by_id(document_id)
 
-    def _update_action_buttons(self) -> None:
+    def _refresh_action_buttons(self, *_args) -> None:
         document = self._selected_document()
+        single = document is not None
+        self.edit_btn.setEnabled(single)
+        self.valid_text_btn.setEnabled(single)
+        self.export_btn.setEnabled(single)
+        self.toggle_btn.setEnabled(single)
         if document is None:
             self.toggle_btn.setText("Deaktivovat")
+        else:
+            self.toggle_btn.setText("Obnovit" if not document.active else "Deaktivovat")
+
+    def _show_table_context_menu(self, position) -> None:
+        index = self.table.indexAt(position)
+        if index.isValid():
+            self.table.selectRow(index.row())
+            self._refresh_action_buttons()
+
+        document = self._selected_document()
+        single = document is not None
+        if not single and not index.isValid():
             return
-        self.toggle_btn.setText("Obnovit" if not document.active else "Deaktivovat")
+
+        menu = QMenu(self)
+        edit_action = menu.addAction("Upravit", self.edit_selected_document)
+        edit_action.setEnabled(single)
+        valid_text_action = menu.addAction("Platné znění", self.open_valid_text)
+        valid_text_action.setEnabled(single)
+        export_action = menu.addAction("Export JSON", self.export_json_document)
+        export_action.setEnabled(single)
+        toggle_action = menu.addAction(self.toggle_btn.text(), self.toggle_selected_document)
+        toggle_action.setEnabled(single)
+        menu.exec(self.table.viewport().mapToGlobal(position))
+
+    def _update_action_buttons(self) -> None:
+        # Kompatibilita se staršími voláními / testy.
+        self._refresh_action_buttons()
 
     def new_document(self) -> None:
         dialog = LegalDocumentDialog(self)
@@ -248,7 +291,6 @@ class PravniPredpisyTab(QWidget):
     def export_json_document(self) -> None:
         document = self._selected_document()
         if document is None:
-            QMessageBox.information(self, "Právní předpisy", "Vyberte právní předpis.")
             return
 
         file_path, _ = QFileDialog.getSaveFileName(
@@ -280,7 +322,6 @@ class PravniPredpisyTab(QWidget):
     def open_valid_text(self) -> None:
         document = self._selected_document()
         if document is None:
-            QMessageBox.information(self, "Právní předpisy", "Vyberte právní předpis.")
             return
 
         version = legal_document_version_service.get_current_version(document.id)
@@ -302,7 +343,6 @@ class PravniPredpisyTab(QWidget):
     def edit_selected_document(self) -> None:
         document = self._selected_document()
         if document is None:
-            QMessageBox.information(self, "Právní předpisy", "Vyberte právní předpis.")
             return
 
         self._open_document_editor(document.id)
@@ -323,6 +363,7 @@ class PravniPredpisyTab(QWidget):
             if item is not None and item.text() == str(document_id):
                 self.table.selectRow(row)
                 self.table.scrollToItem(item)
+                self._refresh_action_buttons()
                 break
 
     def _open_document_editor(self, document_id: int) -> None:
@@ -349,7 +390,6 @@ class PravniPredpisyTab(QWidget):
     def toggle_selected_document(self) -> None:
         document = self._selected_document()
         if document is None:
-            QMessageBox.information(self, "Právní předpisy", "Vyberte právní předpis.")
             return
 
         if document.active:

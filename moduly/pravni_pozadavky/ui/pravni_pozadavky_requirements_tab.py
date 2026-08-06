@@ -1,3 +1,4 @@
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QHideEvent, QShowEvent
 from PySide6.QtWidgets import (
     QDialog,
@@ -6,6 +7,7 @@ from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
+    QMenu,
     QMessageBox,
     QPushButton,
     QSizePolicy,
@@ -76,6 +78,10 @@ class PravniPozadavkyRequirementsTab(QWidget):
         self.verify_btn = QPushButton("Ověřit plnění")
         self.task_btn = QPushButton("Vytvořit úkol")
         self.diagnostic_registry_btn = QPushButton("Diagnostika registru")
+        self.edit_btn.setEnabled(False)
+        self.archive_btn.setEnabled(False)
+        self.verify_btn.setEnabled(False)
+        self.task_btn.setEnabled(False)
 
         for button in (
             self.new_btn,
@@ -147,6 +153,9 @@ class PravniPozadavkyRequirementsTab(QWidget):
         self.verify_btn.clicked.connect(self.verify_selected_requirement)
         self.task_btn.clicked.connect(self.create_task_for_selected)
         self.table.doubleClicked.connect(self.edit_selected_requirement)
+        self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self._show_table_context_menu)
+        self.table.selectionModel().selectionChanged.connect(self._refresh_action_buttons)
         self.status_filter.currentIndexChanged.connect(self.refresh)
         self.owner_filter.currentIndexChanged.connect(self.refresh)
         self.owner_filter.activated.connect(lambda _index: self.refresh())
@@ -165,9 +174,11 @@ class PravniPozadavkyRequirementsTab(QWidget):
     def showEvent(self, event: QShowEvent) -> None:
         super().showEvent(event)
         self.table.clear_selection()
+        self._refresh_action_buttons()
 
     def hideEvent(self, event: QHideEvent) -> None:
         self.table.clear_selection()
+        self._refresh_action_buttons()
         super().hideEvent(event)
 
     def refresh(self) -> None:
@@ -178,6 +189,7 @@ class PravniPozadavkyRequirementsTab(QWidget):
         configure_table_columns(self.table, "legal_requirements")
         self.table.clear_selection()
         self.text_filter.update_count()
+        self._refresh_action_buttons()
 
     def show_created_requirement(self, requirement_id: int | None = None) -> None:
         self.status_filter.setCurrentIndex(0)
@@ -195,7 +207,58 @@ class PravniPozadavkyRequirementsTab(QWidget):
             if item is not None and item.text() == str(requirement_id):
                 self.table.selectRow(row)
                 self.table.scrollToItem(item)
+                self._refresh_action_buttons()
                 break
+
+    def _selected_row_count(self) -> int:
+        return len(self.table.selectionModel().selectedRows())
+
+    def _selected_requirement(self):
+        requirement_id = self._selected_requirement_id()
+        if requirement_id is None:
+            return None
+        return legal_requirement_service.get_by_id(requirement_id)
+
+    def _refresh_action_buttons(self, *_args) -> None:
+        requirement = self._selected_requirement()
+        single = requirement is not None
+        self.edit_btn.setEnabled(single)
+        self.archive_btn.setEnabled(single)
+        self.verify_btn.setEnabled(single)
+        self.task_btn.setEnabled(
+            single and legal_requirement_task_service.can_create_task(requirement)
+        )
+        if requirement is None:
+            self.archive_btn.setText("Archivovat")
+        else:
+            self.archive_btn.setText("Obnovit" if not requirement.active else "Archivovat")
+
+    def _show_table_context_menu(self, position) -> None:
+        index = self.table.indexAt(position)
+        if index.isValid():
+            self.table.selectRow(index.row())
+            self._refresh_action_buttons()
+
+        requirement = self._selected_requirement()
+        single = requirement is not None
+        if not single and not index.isValid():
+            return
+
+        menu = QMenu(self)
+        edit_action = menu.addAction("Upravit", self.edit_selected_requirement)
+        edit_action.setEnabled(single)
+        archive_action = menu.addAction(
+            self.archive_btn.text(),
+            self.archive_selected_requirement,
+        )
+        archive_action.setEnabled(single)
+        verify_action = menu.addAction("Ověřit plnění", self.verify_selected_requirement)
+        verify_action.setEnabled(single)
+        task_action = menu.addAction("Vytvořit úkol", self.create_task_for_selected)
+        task_action.setEnabled(
+            single and legal_requirement_task_service.can_create_task(requirement)
+        )
+        menu.exec(self.table.viewport().mapToGlobal(position))
 
     def _populate_filter_options(self) -> None:
         requirements = legal_requirement_service.get_all()
@@ -268,6 +331,8 @@ class PravniPozadavkyRequirementsTab(QWidget):
         return requirements
 
     def _selected_requirement_id(self) -> int | None:
+        if self._selected_row_count() != 1:
+            return None
         selected = self.table.selectionModel().selectedRows()
         if not selected:
             return None
@@ -389,7 +454,6 @@ class PravniPozadavkyRequirementsTab(QWidget):
     def edit_selected_requirement(self) -> None:
         requirement_id = self._selected_requirement_id()
         if requirement_id is None:
-            QMessageBox.information(self, "Právní požadavky", "Vyberte požadavek.")
             return
         self.open_requirement(requirement_id)
 
@@ -443,7 +507,6 @@ class PravniPozadavkyRequirementsTab(QWidget):
     def archive_selected_requirement(self) -> None:
         requirement_id = self._selected_requirement_id()
         if requirement_id is None:
-            QMessageBox.information(self, "Právní požadavky", "Vyberte požadavek.")
             return
 
         requirement = legal_requirement_service.get_by_id(requirement_id)
@@ -483,7 +546,6 @@ class PravniPozadavkyRequirementsTab(QWidget):
     def verify_selected_requirement(self) -> None:
         requirement_id = self._selected_requirement_id()
         if requirement_id is None:
-            QMessageBox.information(self, "Právní požadavky", "Vyberte požadavek.")
             return
 
         requirement = legal_requirement_service.get_by_id(requirement_id)
@@ -505,7 +567,6 @@ class PravniPozadavkyRequirementsTab(QWidget):
     def create_task_for_selected(self) -> None:
         requirement_id = self._selected_requirement_id()
         if requirement_id is None:
-            QMessageBox.information(self, "Právní požadavky", "Vyberte požadavek.")
             return
 
         requirement = legal_requirement_service.get_by_id(requirement_id)

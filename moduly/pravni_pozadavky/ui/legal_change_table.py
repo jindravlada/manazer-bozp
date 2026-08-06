@@ -67,7 +67,7 @@ class LegalChangeTable(QTableWidget):
         self.verticalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.setAlternatingRowColors(True)
         self.setSelectionBehavior(QTableWidget.SelectRows)
-        self.setSelectionMode(QTableWidget.SingleSelection)
+        self.setSelectionMode(QTableWidget.ExtendedSelection)
         self.setEditTriggers(QTableWidget.NoEditTriggers)
 
         header = self.horizontalHeader()

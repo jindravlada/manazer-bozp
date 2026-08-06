@@ -95,15 +95,14 @@ class LegalDocumentValidTextPhase93bTestCase(unittest.TestCase):
                 tab.table.selectRow(row)
                 break
 
-    def test_valid_text_button_without_selection_shows_warning(self) -> None:
+    def test_valid_text_button_without_selection_is_disabled(self) -> None:
         tab = PravniPredpisyTab()
         tab.refresh()
 
+        self.assertFalse(tab.valid_text_btn.isEnabled())
         with patch.object(QMessageBox, "information") as mock_info:
             tab.open_valid_text()
-
-        mock_info.assert_called_once()
-        self.assertIn("Vyberte právní předpis.", mock_info.call_args[0][2])
+        mock_info.assert_not_called()
 
     def test_valid_text_button_without_current_version_shows_message(self) -> None:
         tab = PravniPredpisyTab()

@@ -1,5 +1,7 @@
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QHBoxLayout,
+    QMenu,
     QMessageBox,
     QPushButton,
     QVBoxLayout,
@@ -25,6 +27,9 @@ class ZmenyLegislativyTab(QWidget):
         self.open_btn = QPushButton("Otevřít")
         self.toggle_btn = QPushButton("Deaktivovat")
         self.evaluate_btn = QPushButton("Označit jako vyhodnocené")
+        self.open_btn.setEnabled(False)
+        self.toggle_btn.setEnabled(False)
+        self.evaluate_btn.setEnabled(False)
         toolbar.addWidget(self.open_btn)
         toolbar.addWidget(self.toggle_btn)
         toolbar.addWidget(self.evaluate_btn)
@@ -41,33 +46,72 @@ class ZmenyLegislativyTab(QWidget):
         self.toggle_btn.clicked.connect(self.toggle_selected_change)
         self.evaluate_btn.clicked.connect(self.mark_selected_evaluated)
         self.table.doubleClicked.connect(self.open_selected_change)
-        self.table.itemSelectionChanged.connect(self._update_action_buttons)
+        self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self._show_table_context_menu)
+        self.table.selectionModel().selectionChanged.connect(self._refresh_action_buttons)
 
         self.refresh()
 
     def refresh(self) -> None:
         changes = legal_change_service.list_all(include_inactive=True)
         self.table.load_changes(changes)
+        self.table.clearSelection()
+        self.table.setCurrentCell(-1, -1)
         self.text_filter.update_count()
-        self._update_action_buttons()
+        self._refresh_action_buttons()
+
+    def _selected_row_count(self) -> int:
+        return len(self.table.selectionModel().selectedRows())
 
     def _selected_change(self):
+        if self._selected_row_count() != 1:
+            return None
         change_id = self.table.selected_change_id()
         if change_id is None:
             return None
         return legal_change_service.get_by_id(change_id)
 
-    def _update_action_buttons(self) -> None:
+    def _refresh_action_buttons(self, *_args) -> None:
         change = self._selected_change()
+        single = change is not None
+        self.open_btn.setEnabled(single)
+        self.toggle_btn.setEnabled(single)
+        self.evaluate_btn.setEnabled(single and not change.evaluated)
         if change is None:
             self.toggle_btn.setText("Deaktivovat")
+        else:
+            self.toggle_btn.setText("Obnovit" if not change.active else "Deaktivovat")
+
+    def _show_table_context_menu(self, position) -> None:
+        index = self.table.indexAt(position)
+        if index.isValid():
+            self.table.selectRow(index.row())
+            self._refresh_action_buttons()
+
+        change = self._selected_change()
+        single = change is not None
+        if not single and not index.isValid():
             return
-        self.toggle_btn.setText("Obnovit" if not change.active else "Deaktivovat")
+
+        menu = QMenu(self)
+        open_action = menu.addAction("Otevřít", self.open_selected_change)
+        open_action.setEnabled(single)
+        toggle_action = menu.addAction(self.toggle_btn.text(), self.toggle_selected_change)
+        toggle_action.setEnabled(single)
+        evaluate_action = menu.addAction(
+            "Označit jako vyhodnocené",
+            self.mark_selected_evaluated,
+        )
+        evaluate_action.setEnabled(single and change is not None and not change.evaluated)
+        menu.exec(self.table.viewport().mapToGlobal(position))
+
+    def _update_action_buttons(self) -> None:
+        # Kompatibilita se staršími voláními / testy.
+        self._refresh_action_buttons()
 
     def open_selected_change(self) -> None:
         change = self._selected_change()
         if change is None:
-            QMessageBox.information(self, "Zjištěné změny", "Vyberte změnu.")
             return
 
         dialog = LegalChangeDetailDialog(self, change=change)
@@ -76,7 +120,6 @@ class ZmenyLegislativyTab(QWidget):
     def toggle_selected_change(self) -> None:
         change = self._selected_change()
         if change is None:
-            QMessageBox.information(self, "Zjištěné změny", "Vyberte změnu.")
             return
 
         if change.active:
@@ -98,7 +141,6 @@ class ZmenyLegislativyTab(QWidget):
     def mark_selected_evaluated(self) -> None:
         change = self._selected_change()
         if change is None:
-            QMessageBox.information(self, "Zjištěné změny", "Vyberte změnu.")
             return
         if change.evaluated:
             QMessageBox.information(
