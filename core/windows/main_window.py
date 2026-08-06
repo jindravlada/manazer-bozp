@@ -1,7 +1,7 @@
 from datetime import date
 
 from PySide6.QtCore import QSize, QStringListModel, Qt
-from PySide6.QtGui import QKeySequence, QShortcut
+from PySide6.QtGui import QFont, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QCompleter,
     QDialog,
@@ -36,6 +36,7 @@ from core.search.ui.global_search_dialog import GlobalSearchDialog
 
 class MainWindow(QMainWindow):
     _COMPLETER_ROW_SEP = "\u2063"
+    _SIDEBAR_ACTIVE_STYLE = "QPushButton { background-color: #E3F2FD; }"
 
     def __init__(self):
         super().__init__()
@@ -45,6 +46,7 @@ class MainWindow(QMainWindow):
         self.module_manager = ModuleManager()
         self._pages = {}
         self._page_widgets = {}
+        self._sidebar_buttons: dict[str, QPushButton] = {}
         self._search_results = []
 
         self._create_toolbar()
@@ -301,6 +303,7 @@ class MainWindow(QMainWindow):
         else:
             button.setEnabled(False)
 
+        self._sidebar_buttons[key] = button
         layout.addWidget(button)
 
     def _add_separator(self, layout):
@@ -309,6 +312,18 @@ class MainWindow(QMainWindow):
         line.setFrameShadow(QFrame.Sunken)
         layout.addWidget(line)
 
+    def _update_sidebar_active(self, active_key: str) -> None:
+        for key, button in self._sidebar_buttons.items():
+            font = QFont(button.font())
+            if key == active_key:
+                font.setBold(True)
+                button.setFont(font)
+                button.setStyleSheet(self._SIDEBAR_ACTIVE_STYLE)
+            else:
+                font.setBold(False)
+                button.setFont(font)
+                button.setStyleSheet("")
+
     def _show(self, key):
         if key in self._pages:
             widget = self._page_widgets.get(key)
@@ -316,6 +331,7 @@ class MainWindow(QMainWindow):
                 widget.refresh()
 
             self.stack.setCurrentIndex(self._pages[key])
+            self._update_sidebar_active(key)
             self.statusBar().showMessage(f"Otevřen modul: {key}")
 
     def current_page_widget(self) -> QWidget | None:
