@@ -42,6 +42,7 @@ class MenuUx1TestCase(unittest.TestCase):
         dashboard = window._sidebar_buttons["dashboard"]
         self.assertTrue(dashboard.font().bold())
         self.assertIn("#E3F2FD", dashboard.styleSheet())
+        self.assertIn("2px solid #93c5fd", dashboard.styleSheet())
 
         agenda = window._sidebar_buttons["agenda"]
         self.assertFalse(agenda.font().bold())
@@ -58,6 +59,7 @@ class MenuUx1TestCase(unittest.TestCase):
         self.assertEqual(dashboard.styleSheet(), "")
         self.assertTrue(agenda.font().bold())
         self.assertIn("#E3F2FD", agenda.styleSheet())
+        self.assertIn("2px solid #93c5fd", agenda.styleSheet())
 
         window._show("nastaveni")
         settings = window._sidebar_buttons["nastaveni"]
@@ -65,6 +67,7 @@ class MenuUx1TestCase(unittest.TestCase):
         self.assertEqual(agenda.styleSheet(), "")
         self.assertTrue(settings.font().bold())
         self.assertIn("#E3F2FD", settings.styleSheet())
+        self.assertIn("2px solid #93c5fd", settings.styleSheet())
 
     def test_button_height_unchanged(self) -> None:
         window = MainWindow()

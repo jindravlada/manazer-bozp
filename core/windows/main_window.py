@@ -36,7 +36,9 @@ from core.search.ui.global_search_dialog import GlobalSearchDialog
 
 class MainWindow(QMainWindow):
     _COMPLETER_ROW_SEP = "\u2063"
-    _SIDEBAR_ACTIVE_STYLE = "QPushButton { background-color: #E3F2FD; }"
+    _SIDEBAR_ACTIVE_STYLE = (
+        "QPushButton { background-color: #E3F2FD; border: 2px solid #93c5fd; }"
+    )
 
     def __init__(self):
         super().__init__()
