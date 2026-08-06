@@ -38,8 +38,8 @@ with patch.object(Path, "home", return_value=_TMP):
         ACTION_NEW_FROM_TEMPLATE,
         DEFAULT_MEETING_STATUS,
         STATUS_PLANNED,
+        TEMPLATE_ACTION_DELETE,
         TEMPLATE_ACTION_NEW,
-        TEMPLATE_ACTION_REMOVE,
         TEMPLATE_DIALOG_TITLE,
     )
     from moduly.schuzky.sluzby.meeting_agenda_item_service import (
@@ -134,13 +134,14 @@ class EventsTemplates2TestCase(unittest.TestCase):
                 break
         self.assertIsNotNone(target_row)
         page.table.selectRow(target_row)
+        page._refresh_action_buttons()
 
         with patch.object(QMessageBox, "question", return_value=QMessageBox.StandardButton.No):
-            page.remove_selected()
+            page.delete_selected()
         self.assertIsNotNone(meeting_template_service.get_by_id(template.id))
 
         with patch.object(QMessageBox, "question", return_value=QMessageBox.StandardButton.Yes):
-            page.remove_selected()
+            page.delete_selected()
         self.assertIsNone(meeting_template_service.get_by_id(template.id))
 
     def test_templates_from_templates_1_visible(self) -> None:
@@ -306,7 +307,9 @@ class EventsTemplates2TestCase(unittest.TestCase):
     def test_pages_actions(self) -> None:
         page = MeetingTemplatesPage()
         self.assertEqual(page.new_btn.text(), TEMPLATE_ACTION_NEW)
-        self.assertEqual(page.remove_btn.text(), TEMPLATE_ACTION_REMOVE)
+        self.assertEqual(page.delete_btn.text(), TEMPLATE_ACTION_DELETE)
+        self.assertFalse(hasattr(page, "open_btn"))
+        self.assertFalse(hasattr(page, "remove_btn"))
 
         from moduly.schuzky.constants import ACTION_OPEN_TEMPLATES
         from moduly.schuzky.ui.schuzky_page import SchuzkyPage

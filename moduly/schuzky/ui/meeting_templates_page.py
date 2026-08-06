@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QHeaderView,
     QLabel,
+    QMenu,
     QMessageBox,
     QPushButton,
     QTableWidget,
@@ -21,20 +22,18 @@ from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
 from moduly.schuzky.constants import (
+    TEMPLATE_ACTION_DELETE,
     TEMPLATE_ACTION_EDIT,
     TEMPLATE_ACTION_NEW,
-    TEMPLATE_ACTION_OPEN,
-    TEMPLATE_ACTION_REMOVE,
     TEMPLATE_COL_ITEMS,
     TEMPLATE_COL_NAME,
     TEMPLATE_COL_PRIORITY,
     TEMPLATE_COL_TYPE,
+    TEMPLATE_DELETE_CONFIRM,
+    TEMPLATE_DELETE_TITLE,
     TEMPLATE_EMPTY_LIST,
     TEMPLATE_LIST_TITLE,
     TEMPLATE_NOT_FOUND,
-    TEMPLATE_REMOVE_CONFIRM,
-    TEMPLATE_REMOVE_TITLE,
-    TEMPLATE_SELECT_MESSAGE,
 )
 from moduly.schuzky.sluzby.meeting_template_service import (
     MeetingTemplateValidationError,
@@ -51,13 +50,14 @@ class MeetingTemplatesPage(QWidget):
 
         toolbar = QHBoxLayout()
         self.new_btn = QPushButton(TEMPLATE_ACTION_NEW)
-        self.open_btn = QPushButton(TEMPLATE_ACTION_OPEN)
         self.edit_btn = QPushButton(TEMPLATE_ACTION_EDIT)
-        self.remove_btn = QPushButton(TEMPLATE_ACTION_REMOVE)
+        self.delete_btn = QPushButton(TEMPLATE_ACTION_DELETE)
+        self.edit_btn.setEnabled(False)
+        self.delete_btn.setEnabled(False)
+        self._selection_action_buttons = (self.edit_btn, self.delete_btn)
         toolbar.addWidget(self.new_btn)
-        toolbar.addWidget(self.open_btn)
         toolbar.addWidget(self.edit_btn)
-        toolbar.addWidget(self.remove_btn)
+        toolbar.addWidget(self.delete_btn)
         toolbar.addStretch()
 
         self.table = QTableWidget(0, 5)
@@ -74,7 +74,7 @@ class MeetingTemplatesPage(QWidget):
         self.table.verticalHeader().setVisible(False)
         self.table.setAlternatingRowColors(True)
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         configure_table_columns(self.table, "meeting_templates")
@@ -90,10 +90,12 @@ class MeetingTemplatesPage(QWidget):
         layout.addWidget(self.empty_label)
 
         self.new_btn.clicked.connect(self.new_template)
-        self.open_btn.clicked.connect(self.open_selected)
-        self.edit_btn.clicked.connect(self.open_selected)
-        self.remove_btn.clicked.connect(self.remove_selected)
-        self.table.doubleClicked.connect(self.open_selected)
+        self.edit_btn.clicked.connect(self.edit_selected)
+        self.delete_btn.clicked.connect(self.delete_selected)
+        self.table.doubleClicked.connect(self.edit_selected)
+        self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self._show_table_context_menu)
+        self.table.selectionModel().selectionChanged.connect(self._refresh_action_buttons)
 
         self.refresh()
 
@@ -101,6 +103,7 @@ class MeetingTemplatesPage(QWidget):
         super().showEvent(event)
         self.table.clearSelection()
         self.table.setCurrentCell(-1, -1)
+        self._refresh_action_buttons()
 
     def hideEvent(self, event: QHideEvent) -> None:
         self.table.clearSelection()
@@ -123,10 +126,37 @@ class MeetingTemplatesPage(QWidget):
         self.empty_label.setVisible(not has_rows)
         configure_table_columns(self.table, "meeting_templates")
         self.text_filter.update_count()
+        self.table.clearSelection()
+        self._refresh_action_buttons()
+
+    def _selected_row_count(self) -> int:
+        return len(self.table.selectionModel().selectedRows())
+
+    def _refresh_action_buttons(self, *_args) -> None:
+        enabled = self._selected_row_count() == 1
+        for button in self._selection_action_buttons:
+            button.setEnabled(enabled)
+
+    def _show_table_context_menu(self, position) -> None:
+        index = self.table.indexAt(position)
+        if index.isValid():
+            self.table.selectRow(index.row())
+            self._refresh_action_buttons()
+
+        enabled = self._selected_row_count() == 1
+        if not enabled and not index.isValid():
+            return
+
+        menu = QMenu(self)
+        edit_action = menu.addAction(TEMPLATE_ACTION_EDIT, self.edit_selected)
+        edit_action.setEnabled(enabled)
+        delete_action = menu.addAction(TEMPLATE_ACTION_DELETE, self.delete_selected)
+        delete_action.setEnabled(enabled)
+        menu.exec(self.table.viewport().mapToGlobal(position))
 
     def _selected_template_id(self) -> int | None:
         selected = self.table.selectionModel().selectedRows()
-        if not selected:
+        if len(selected) != 1:
             return None
         item = self.table.item(selected[0].row(), 0)
         if item is None:
@@ -144,10 +174,9 @@ class MeetingTemplatesPage(QWidget):
             return
         self.refresh()
 
-    def open_selected(self) -> None:
+    def edit_selected(self) -> None:
         template_id = self._selected_template_id()
         if template_id is None:
-            QMessageBox.information(self, TEMPLATE_LIST_TITLE, TEMPLATE_SELECT_MESSAGE)
             return
         template = meeting_template_service.get_by_id(template_id)
         if template is None:
@@ -165,15 +194,14 @@ class MeetingTemplatesPage(QWidget):
             return
         self.refresh()
 
-    def remove_selected(self) -> None:
+    def delete_selected(self) -> None:
         template_id = self._selected_template_id()
         if template_id is None:
-            QMessageBox.information(self, TEMPLATE_LIST_TITLE, TEMPLATE_SELECT_MESSAGE)
             return
         answer = QMessageBox.question(
             self,
-            TEMPLATE_REMOVE_TITLE,
-            TEMPLATE_REMOVE_CONFIRM,
+            TEMPLATE_DELETE_TITLE,
+            TEMPLATE_DELETE_CONFIRM,
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No,
         )
