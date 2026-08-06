@@ -379,28 +379,27 @@ class LegalRegistryTransferTab(QWidget):
     def _open_export_location(self) -> None:
         record = data_management_settings_service.get_last_registry_export()
         if record is None or not record.path:
-            QMessageBox.information(self, "Umístění", "Poslední export registru zatím nebyl vytvořen.")
             return
         open_path_in_file_manager(record.path, parent=self, title="Umístění exportu")
 
     def _open_safety_backup_location(self) -> None:
-        pre_import = data_management_settings_service.get_last_registry_pre_import_backup()
-        path = pre_import.path if pre_import is not None else ""
+        path = self._safety_backup_path()
         if not path:
-            record = data_management_settings_service.get_last_registry_import()
-            path = record.safety_backup_path if record is not None else ""
-        if not path:
-            QMessageBox.information(
-                self,
-                "Umístění",
-                "Bezpečnostní záloha před importem zatím nebyla vytvořena.",
-            )
             return
         open_path_in_file_manager(
             path,
             parent=self,
             title="Bezpečnostní záloha před importem",
         )
+
+    def _safety_backup_path(self) -> str:
+        pre_import = data_management_settings_service.get_last_registry_pre_import_backup()
+        if pre_import is not None and pre_import.path:
+            return pre_import.path
+        record = data_management_settings_service.get_last_registry_import()
+        if record is not None and record.safety_backup_path:
+            return record.safety_backup_path
+        return ""
 
     def _update_last_export_display(self) -> None:
         record = data_management_settings_service.get_last_registry_export()
@@ -426,7 +425,7 @@ class LegalRegistryTransferTab(QWidget):
             f"• soubor: {file_name}\n"
             f"• cesta: {record.path}{missing_note}"
         )
-        self.open_export_button.setEnabled(True)
+        self.open_export_button.setEnabled(bool(record.path))
         self._populate_manifest_table(
             self.export_manifest_table,
             self.export_manifest_placeholder,
@@ -438,9 +437,10 @@ class LegalRegistryTransferTab(QWidget):
 
     def _update_last_import_display(self) -> None:
         record = data_management_settings_service.get_last_registry_import()
+        safety_path = self._safety_backup_path()
         if record is None:
             self.last_import_label.setText("Poslední import registru: nebyl proveden.")
-            self.open_safety_backup_button.setEnabled(False)
+            self.open_safety_backup_button.setEnabled(bool(safety_path))
             self._populate_manifest_table(
                 self.import_manifest_table,
                 self.import_manifest_placeholder,
@@ -464,7 +464,7 @@ class LegalRegistryTransferTab(QWidget):
             f"• bezpečnostní záloha: {record.safety_backup_path}{safety_missing}\n"
             f"• výsledek importu: {legal_registry_manifest_service.format_counts_manifest(counts).replace(chr(10), ', ')}"
         )
-        self.open_safety_backup_button.setEnabled(bool(record.safety_backup_path))
+        self.open_safety_backup_button.setEnabled(bool(safety_path))
         self._populate_manifest_table(
             self.import_manifest_table,
             self.import_manifest_placeholder,

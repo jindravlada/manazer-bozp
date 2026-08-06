@@ -5,11 +5,13 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QAbstractItemView,
     QFileDialog,
     QFrame,
     QGroupBox,
     QHBoxLayout,
     QLabel,
+    QMenu,
     QMessageBox,
     QPushButton,
     QScrollArea,
@@ -160,7 +162,10 @@ class CodebooksTab(QWidget):
 
         self.catalog_tree = QTreeWidget()
         self.catalog_tree.setHeaderHidden(True)
+        self.catalog_tree.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.catalog_tree.currentItemChanged.connect(self._on_catalog_selection_changed)
+        self.catalog_tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.catalog_tree.customContextMenuRequested.connect(self._show_catalog_context_menu)
         left_layout.addWidget(self.catalog_tree)
 
         self.detail_title = QLabel("Vyberte skupinu nebo číselník")
@@ -392,6 +397,31 @@ class CodebooksTab(QWidget):
             self._clear_entry_details()
             return
         self._show_entry_details(entry)
+
+    def _show_catalog_context_menu(self, position) -> None:
+        item = self.catalog_tree.itemAt(position)
+        if item is not None:
+            self.catalog_tree.setCurrentItem(item)
+
+        if self._selected_entry is None and self._selected_group is None:
+            return
+
+        menu = QMenu(self)
+        if self._selected_entry is not None:
+            export_action = menu.addAction("Export", self._export_selected)
+            export_action.setEnabled(self.export_button.isEnabled())
+            if not self.import_button.isHidden():
+                import_action = menu.addAction("Import", self._import_selected)
+                import_action.setEnabled(self.import_button.isEnabled())
+        elif self._selected_group is not None:
+            export_group_action = menu.addAction("Exportovat skupinu", self._export_group)
+            export_group_action.setEnabled(self.export_group_button.isEnabled())
+            import_group_action = menu.addAction("Importovat skupinu", self._import_group)
+            import_group_action.setEnabled(self.import_group_button.isEnabled())
+
+        if menu.isEmpty():
+            return
+        menu.exec(self.catalog_tree.viewport().mapToGlobal(position))
 
     def _clear_entry_details(self) -> None:
         self.detail_title.setText("Vyberte skupinu nebo číselník")
