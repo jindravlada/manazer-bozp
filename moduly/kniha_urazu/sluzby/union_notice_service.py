@@ -92,6 +92,8 @@ class UnionNoticeData:
 
     # VIII
     description: str = ""
+    cause: str = ""
+    source: str = ""
 
     # IX
     notifier_name: str = ""
@@ -171,23 +173,12 @@ def _cz_isco_display(accident) -> str:
     return code
 
 
-def _build_description(accident) -> str:
-    parts: list[str] = []
-    deje = _text(getattr(accident, "popis_urazoveho_deje", ""))
-    if deje:
-        parts.append(deje)
-    misto = _text(getattr(accident, "misto_urazu", "")) or _text(
-        getattr(accident, "adresa_pracoviste", "")
-    )
-    if misto:
-        parts.append(f"Místo: {misto}")
-    pricina = _text(getattr(accident, "pricina_urazu", ""))
-    if pricina:
-        parts.append(f"Příčina: {pricina}")
-    zdroj = _text(getattr(accident, "zdroj_urazu", ""))
-    if zdroj:
-        parts.append(f"Zdroj: {zdroj}")
-    return "\n".join(parts)
+def _build_description_parts(accident) -> tuple[str, str, str]:
+    """Popis / Příčina / Zdroj – bez Místa (to je v bodě III)."""
+    description = _text(getattr(accident, "popis_urazoveho_deje", ""))
+    cause = _text(getattr(accident, "pricina_urazu", ""))
+    source = _text(getattr(accident, "zdroj_urazu", ""))
+    return description, cause, source
 
 
 class UnionNoticeService:
@@ -225,6 +216,8 @@ class UnionNoticeService:
             except ValueError:
                 mass = "Ne"
 
+        description, cause, source = _build_description_parts(accident)
+
         return UnionNoticeData(
             accident_id=int(getattr(accident, "id", 0) or 0),
             employer_name=employer_name,
@@ -260,7 +253,9 @@ class UnionNoticeService:
             injured_count=injured_text,
             mass_accident=mass,
             is_fatal=is_fatal_accident(accident),
-            description=_build_description(accident),
+            description=description,
+            cause=cause,
+            source=source,
             notifier_name=_text(getattr(accident, "podatel_jmeno", "")),
             notifier_phone=phone or _text(getattr(accident, "podatel_telefon", "")),
             notifier_email=email,
@@ -350,7 +345,7 @@ class UnionNoticeService:
         # IV–VI
         req(
             "workplace_characteristic",
-            "Charakteristika místa",
+            "Charakteristika pracoviště",
             "IV",
             data.workplace_characteristic,
         )
@@ -457,7 +452,7 @@ class UnionNoticeService:
         ]
         rows_iv = [
             (
-                "Charakteristika místa",
+                "Charakteristika pracoviště",
                 v("workplace_characteristic", data.workplace_characteristic),
             )
         ]
@@ -466,18 +461,22 @@ class UnionNoticeService:
         rows_vii = [
             ("Datum úrazu", v("accident_date", data.accident_date)),
             ("Čas úrazu", v("accident_time", data.accident_time)),
-            (
-                "Datum úmrtí",
-                v("death_date", data.death_date)
-                if data.is_fatal
-                else "není relevantní",
-            ),
-            ("Druh zranění", v("injury_type", data.injury_type)),
-            ("Zraněná část těla", v("body_part", data.body_part)),
-            ("Počet zraněných osob", v("injured_count", data.injured_count)),
-            ("Hromadný pracovní úraz", v("mass_accident", data.mass_accident)),
         ]
-        rows_viii = [("Popis", v("description", data.description))]
+        if data.is_fatal:
+            rows_vii.append(("Datum úmrtí", v("death_date", data.death_date)))
+        rows_vii.extend(
+            [
+                ("Druh zranění", v("injury_type", data.injury_type)),
+                ("Zraněná část těla", v("body_part", data.body_part)),
+                ("Počet zraněných osob", v("injured_count", data.injured_count)),
+                ("Hromadný pracovní úraz", v("mass_accident", data.mass_accident)),
+            ]
+        )
+        rows_viii = [
+            ("Popis", v("description", data.description)),
+            ("Příčina", v("cause", data.cause)),
+            ("Zdroj", v("source", data.source)),
+        ]
         rows_ix = [
             ("Jméno", v("notifier_name", data.notifier_name)),
             ("Telefon", v("notifier_phone", data.notifier_phone)),
@@ -492,7 +491,7 @@ class UnionNoticeService:
                 "III. Adresa pracoviště nebo jiného místa, kde k pracovnímu úrazu došlo",
                 rows_iii,
             ),
-            ("IV. Charakteristika místa", rows_iv),
+            ("IV. Charakteristika pracoviště", rows_iv),
             ("V. Činnost, při které k pracovnímu úrazu došlo", rows_v),
             ("VI. Druh vykonávané práce podle CZ-ISCO", rows_vi),
             ("VII. Údaje o pracovním úrazu", rows_vii),

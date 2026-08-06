@@ -236,7 +236,7 @@ class UnionNoticeDialog(QDialog):
         self.activity = self._line()
         self.cz_isco = self._line()
         form.addRow("Adresa místa úrazu:", self.accident_place_address)
-        form.addRow("Charakteristika místa:", self.workplace_characteristic)
+        form.addRow("Charakteristika pracoviště:", self.workplace_characteristic)
         form.addRow("Činnost při úrazu:", self.activity)
         form.addRow("CZ-ISCO:", self.cz_isco)
         return self._scroll(page)
@@ -251,7 +251,9 @@ class UnionNoticeDialog(QDialog):
         self.body_part = self._line()
         self.injured_count = self._line()
         self.mass_accident = self._combo(YES_NO_CHOICES)
-        self.description = self._text(140)
+        self.description = self._text(110)
+        self.cause = self._text(70)
+        self.source = self._text(70)
         form.addRow("Datum úrazu:", self.accident_date)
         form.addRow("Čas úrazu:", self.accident_time)
         form.addRow("Datum úmrtí:", self.death_date)
@@ -259,7 +261,9 @@ class UnionNoticeDialog(QDialog):
         form.addRow("Zraněná část těla:", self.body_part)
         form.addRow("Počet zraněných osob:", self.injured_count)
         form.addRow("Hromadný pracovní úraz:", self.mass_accident)
-        form.addRow("Popis úrazu (děj, místo, příčiny, okolnosti):", self.description)
+        form.addRow("Popis:", self.description)
+        form.addRow("Příčina:", self.cause)
+        form.addRow("Zdroj:", self.source)
         return self._scroll(page)
 
     def _tab_notifier(self) -> QWidget:
@@ -315,6 +319,8 @@ class UnionNoticeDialog(QDialog):
         self.injured_count.setText(data.injured_count)
         self._set_combo(self.mass_accident, data.mass_accident)
         self.description.setPlainText(data.description)
+        self.cause.setPlainText(data.cause)
+        self.source.setPlainText(data.source)
         self.notifier_name.setText(data.notifier_name)
         self.notifier_phone.setText(data.notifier_phone)
         self.notifier_email.setText(data.notifier_email)
@@ -350,6 +356,8 @@ class UnionNoticeDialog(QDialog):
             mass_accident=self.mass_accident.currentText().strip(),
             is_fatal=bool(self._is_fatal),
             description=self.description.toPlainText().strip(),
+            cause=self.cause.toPlainText().strip(),
+            source=self.source.toPlainText().strip(),
             notifier_name=self.notifier_name.text().strip(),
             notifier_phone=self.notifier_phone.text().strip(),
             notifier_email=self.notifier_email.text().strip(),
