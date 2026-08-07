@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.widgets.typed_table_sort import enable_typed_sorting
 from moduly.rizeni_rizik.sluzby.hazard_event_service import hazard_event_service
 from moduly.rizeni_rizik.sluzby.pbp_validation_approval_service import (
     pbp_validation_approval_service,
@@ -150,8 +151,7 @@ class PbpValidationResultsDialog(QDialog):
         self.table.verticalHeader().setVisible(False)
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.horizontalHeader().setSectionsClickable(True)
-        self.table.horizontalHeader().setSortIndicatorShown(True)
-        self.table.setSortingEnabled(True)
+        enable_typed_sorting(self.table)
         self.table.horizontalHeader().sortIndicatorChanged.connect(
             self._on_sort_indicator_changed
         )
