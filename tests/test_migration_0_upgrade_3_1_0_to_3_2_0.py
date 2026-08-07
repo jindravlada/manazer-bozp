@@ -28,6 +28,11 @@ with patch.object(Path, "home", return_value=_MIGRATION_HOME):
 
     importlib.reload(session_module)
 
+    from core.database.database_initializer import initialize_database
+
+    # Import nesmí nechat prázdnou DB na sdíleném storage singletonu.
+    initialize_database()
+
 from core.backup import (  # noqa: E402
     create_instance_backup,
     inspect_backup_integrity,
@@ -328,6 +333,9 @@ def _snapshot_legacy_counts(db_path: Path) -> dict[str, int]:
 
 
 class Migration0UpgradeTestCase(unittest.TestCase):
+    # setUp maže DB a test staví záměrně legacy 3.1.0 – guard před testem by překážel.
+    bozp_skip_schema_guard = True
+
     def setUp(self) -> None:
         # Izolovaný workspace zachycený při importu (nesdílet singleton s jinými testy).
         self.ws = _MIGRATION_WS
@@ -343,6 +351,19 @@ class Migration0UpgradeTestCase(unittest.TestCase):
             importlib.reload(storage_module)
             importlib.reload(session_module)
             session_module.dispose_database_engine()
+
+    def tearDown(self) -> None:
+        # Legacy / nedokončené schéma nesmí zůstat na sdíleném storage singletonu.
+        with patch.object(Path, "home", return_value=_MIGRATION_HOME):
+            importlib.reload(storage_module)
+            importlib.reload(session_module)
+            db = storage_module.storage_service.database_path
+            if db.exists():
+                db.unlink()
+            session_module.reconfigure_database_engine(force=True)
+            from core.database.database_initializer import initialize_database
+
+            initialize_database()
 
     def _prepare_legacy_instance(self) -> tuple[Path, Path, dict[str, int]]:
         db = self.ws / "databaze" / "manager_bozp.db"

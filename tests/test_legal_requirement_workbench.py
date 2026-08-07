@@ -370,10 +370,23 @@ class LegalRequirementWorkbenchWidgetTestCase(unittest.TestCase):
         self.assertEqual(tab.editor.requirement_summary.toPlainText(), "Společný text")
         self.assertEqual(tab.editor.current_section_id(), sections[1].id)
 
-    def test_workbench_creates_ten_consecutive_requirements(self) -> None:
+    @patch(
+        "moduly.pravni_pozadavky.ui.legal_document_workbench_tab.LegalRequirementSectionAttachDialog",
+    )
+    def test_workbench_creates_ten_consecutive_requirements(
+        self,
+        mock_dialog_cls,
+    ) -> None:
+        from PySide6.QtWidgets import QDialog
+
         document = self._create_document()
         version = self._create_version(document)
         sections = self._create_processable_sections(document, version, 10)
+
+        mock_dialog = mock_dialog_cls.return_value
+        mock_dialog.exec.return_value = QDialog.DialogCode.Accepted
+        mock_dialog.create_new_process.return_value = True
+        mock_dialog.selected_requirement_id.return_value = None
 
         tab = LegalDocumentWorkbenchTab(document_id=document.id, version_id=version.id)
         assert tab.editor is not None

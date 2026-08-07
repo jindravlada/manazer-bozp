@@ -6,8 +6,9 @@ from core.database.session import create_database
 
 
 def _db_engine():
-    from core.database.session import engine
+    from core.database.session import engine, reconfigure_database_engine
 
+    reconfigure_database_engine()
     return engine
 
 
@@ -264,6 +265,9 @@ def _is_hazard_library_master_catalog_migration_complete() -> bool:
 
 
 def _add_column(table_name: str, column_sql: str) -> None:
+    column_name = column_sql.split(None, 1)[0]
+    if column_name in _table_columns(table_name):
+        return
     with _db_engine().connect() as connection:
         connection.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {column_sql}"))
         connection.commit()
@@ -431,7 +435,18 @@ def _ensure_task_columns() -> None:
 
 def _ensure_accident_columns() -> None:
     columns = _table_columns("accidents")
+    if not columns:
+        return
     additions = {
+        "number": "number VARCHAR(30) DEFAULT ''",
+        "year": "year INTEGER",
+        "employee_first_name": "employee_first_name VARCHAR(100) DEFAULT ''",
+        "employee_last_name": "employee_last_name VARCHAR(100) DEFAULT ''",
+        "employee_personal_number": "employee_personal_number VARCHAR(50) DEFAULT ''",
+        "injury_type": "injury_type VARCHAR(250) DEFAULT ''",
+        "injured_body_part": "injured_body_part VARCHAR(250) DEFAULT ''",
+        "description": "description TEXT DEFAULT ''",
+        "measures_summary": "measures_summary TEXT DEFAULT ''",
         "datum_zapisu": "datum_zapisu DATE",
         "podatel_jmeno": "podatel_jmeno VARCHAR(150) DEFAULT ''",
         "podatel_email": "podatel_email VARCHAR(150) DEFAULT ''",
@@ -491,8 +506,23 @@ def _ensure_audit_commission_table() -> None:
 
 def _ensure_person_columns() -> None:
     columns = _table_columns("persons")
-    if "is_employee" not in columns:
-        _add_column("persons", "is_employee BOOLEAN DEFAULT 0")
+    if not columns:
+        return
+    additions = {
+        "title_before": "title_before VARCHAR(50) DEFAULT ''",
+        "title_after": "title_after VARCHAR(50) DEFAULT ''",
+        "organization": "organization VARCHAR(200) DEFAULT ''",
+        "job_title": "job_title VARCHAR(150) DEFAULT ''",
+        "email": "email VARCHAR(150) DEFAULT ''",
+        "phone": "phone VARCHAR(50) DEFAULT ''",
+        "note": "note TEXT DEFAULT ''",
+        "is_employee": "is_employee BOOLEAN DEFAULT 0",
+        "created_at": "created_at DATETIME",
+        "updated_at": "updated_at DATETIME",
+    }
+    for column_name, column_sql in additions.items():
+        if column_name not in columns:
+            _add_column("persons", column_sql)
 
 
 def _ensure_mu_investigation_columns() -> None:
@@ -577,10 +607,26 @@ def _ensure_bozp_inspection_columns() -> None:
     columns = _table_columns("bozp_inspections")
     if not columns:
         return
-    if "silne_stranky" not in columns:
-        _add_column("bozp_inspections", "silne_stranky TEXT DEFAULT '' NOT NULL")
-    if "doporuceni_vedouciho" not in columns:
-        _add_column("bozp_inspections", "doporuceni_vedouciho TEXT DEFAULT '' NOT NULL")
+    additions = {
+        "number": "number VARCHAR(30) DEFAULT ''",
+        "year": "year INTEGER",
+        "planned_month": "planned_month INTEGER",
+        "inspection_date": "inspection_date DATE",
+        "started_at": "started_at DATE",
+        "finished_at": "finished_at DATE",
+        "status": "status VARCHAR(30) DEFAULT 'Plánováno' NOT NULL",
+        "inspection_type": "inspection_type VARCHAR(30) DEFAULT 'Řádná' NOT NULL",
+        "workplace_id": "workplace_id INTEGER",
+        "workplace_name": "workplace_name VARCHAR(150) DEFAULT ''",
+        "title": "title VARCHAR(250) DEFAULT ''",
+        "silne_stranky": "silne_stranky TEXT DEFAULT '' NOT NULL",
+        "doporuceni_vedouciho": "doporuceni_vedouciho TEXT DEFAULT '' NOT NULL",
+        "created_at": "created_at DATETIME",
+        "updated_at": "updated_at DATETIME",
+    }
+    for column_name, column_sql in additions.items():
+        if column_name not in columns:
+            _add_column("bozp_inspections", column_sql)
 
 
 def _ensure_bozp_inspection_verification_override_table() -> None:
@@ -779,8 +825,27 @@ def _ensure_audit_columns() -> None:
     columns = _table_columns("audits")
     if not columns:
         return
-    if "silne_stranky" not in columns:
-        _add_column("audits", "silne_stranky TEXT DEFAULT '' NOT NULL")
+    additions = {
+        "number": "number VARCHAR(30) DEFAULT ''",
+        "year": "year INTEGER",
+        "planned_month": "planned_month INTEGER",
+        "audit_date": "audit_date DATE",
+        "started_at": "started_at DATE",
+        "finished_at": "finished_at DATE",
+        "status": "status VARCHAR(30) DEFAULT 'Plánováno' NOT NULL",
+        "audit_type": "audit_type VARCHAR(30) DEFAULT 'Řádný' NOT NULL",
+        "workplace_id": "workplace_id INTEGER",
+        "workplace_name": "workplace_name VARCHAR(150) DEFAULT ''",
+        "title": "title VARCHAR(250) DEFAULT ''",
+        "program_id": "program_id INTEGER",
+        "program_visit_id": "program_visit_id INTEGER",
+        "silne_stranky": "silne_stranky TEXT DEFAULT '' NOT NULL",
+        "created_at": "created_at DATETIME",
+        "updated_at": "updated_at DATETIME",
+    }
+    for column_name, column_sql in additions.items():
+        if column_name not in columns:
+            _add_column("audits", column_sql)
 
 
 def _ensure_legal_requirement_columns() -> None:
@@ -1132,6 +1197,7 @@ def _migrate_hazard_events_drop_identified_hazards() -> None:
                         name VARCHAR(200) NOT NULL,
                         description TEXT DEFAULT '',
                         note TEXT DEFAULT '',
+                        modified BOOLEAN DEFAULT 0,
                         active BOOLEAN DEFAULT 1,
                         sort_order INTEGER NOT NULL DEFAULT 0,
                         created_at DATETIME,
@@ -1140,39 +1206,79 @@ def _migrate_hazard_events_drop_identified_hazards() -> None:
                     """
                 )
             )
-            connection.execute(
-                text(
-                    """
-                    INSERT INTO hazard_events_new (
-                        id,
-                        inventory_item_id,
-                        name,
-                        description,
-                        note,
-                        active,
-                        sort_order,
-                        created_at,
-                        updated_at
+            has_modified = "modified" in event_columns
+            if has_modified:
+                connection.execute(
+                    text(
+                        """
+                        INSERT INTO hazard_events_new (
+                            id,
+                            inventory_item_id,
+                            name,
+                            description,
+                            note,
+                            modified,
+                            active,
+                            sort_order,
+                            created_at,
+                            updated_at
+                        )
+                        SELECT
+                            id,
+                            inventory_item_id,
+                            name,
+                            description,
+                            note,
+                            COALESCE(modified, 0),
+                            active,
+                            sort_order,
+                            created_at,
+                            updated_at
+                        FROM hazard_events
+                        """
                     )
-                    SELECT
-                        id,
-                        inventory_item_id,
-                        name,
-                        description,
-                        note,
-                        active,
-                        sort_order,
-                        created_at,
-                        updated_at
-                    FROM hazard_events
-                    """
                 )
-            )
+            else:
+                connection.execute(
+                    text(
+                        """
+                        INSERT INTO hazard_events_new (
+                            id,
+                            inventory_item_id,
+                            name,
+                            description,
+                            note,
+                            modified,
+                            active,
+                            sort_order,
+                            created_at,
+                            updated_at
+                        )
+                        SELECT
+                            id,
+                            inventory_item_id,
+                            name,
+                            description,
+                            note,
+                            0,
+                            active,
+                            sort_order,
+                            created_at,
+                            updated_at
+                        FROM hazard_events
+                        """
+                    )
+                )
             connection.execute(text("DROP TABLE hazard_events"))
             connection.execute(
                 text("ALTER TABLE hazard_events_new RENAME TO hazard_events")
             )
             connection.commit()
+
+    # R12 rebuild historicky vynechával sloupec modified – doplnit vždy.
+    event_columns = _table_columns("hazard_events")
+    if event_columns and "modified" not in event_columns:
+        _add_column("hazard_events", "modified BOOLEAN DEFAULT 0")
 
     if hazard_columns:
         with _db_engine().connect() as connection:

@@ -2,10 +2,14 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from core.database.base import Base
-from core.services.storage_service import storage_service
+from core.services import storage_service as storage_module
 
 
-DATABASE_URL = f"sqlite:///{storage_service.database_path}"
+def _database_url() -> str:
+    return f"sqlite:///{storage_module.storage_service.database_path}"
+
+
+DATABASE_URL = _database_url()
 
 engine = create_engine(
     DATABASE_URL,
@@ -21,12 +25,38 @@ SessionLocal = sessionmaker(
 )
 
 
+def reconfigure_database_engine(*, force: bool = False) -> None:
+    """Obnoví engine podle aktuálního ``storage_service`` (po reloadu / změně cesty)."""
+    global DATABASE_URL, engine, SessionLocal
+
+    desired = _database_url()
+    if DATABASE_URL == desired and not force:
+        return
+
+    engine.dispose()
+    DATABASE_URL = desired
+    engine = create_engine(
+        DATABASE_URL,
+        echo=False,
+        future=True,
+    )
+    SessionLocal = sessionmaker(
+        bind=engine,
+        autoflush=False,
+        autocommit=False,
+        future=True,
+    )
+
+
 def create_database() -> None:
-    storage_service.ensure_structure()
+    storage_module.storage_service.ensure_structure()
+    reconfigure_database_engine()
     Base.metadata.create_all(bind=engine)
 
 
 def get_session():
+    # Vždy čti aktuální singleton storage (po importlib.reload v testech).
+    reconfigure_database_engine()
     return SessionLocal()
 
 

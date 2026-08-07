@@ -104,72 +104,76 @@ class HazardIdentificationNumberPhaseR04aTestCase(unittest.TestCase):
     def test_migration_assigns_numbers_and_removes_title(self) -> None:
         from core.database.session import get_session
 
-        with get_session() as session:
-            session.execute(text("DROP TABLE IF EXISTS hazard_identifications"))
-            session.execute(
-                text(
-                    """
-                    CREATE TABLE hazard_identifications (
-                        id INTEGER PRIMARY KEY,
-                        title VARCHAR(250) NOT NULL,
-                        operation_id INTEGER,
-                        operation_name VARCHAR(150) DEFAULT '',
-                        workplace_id INTEGER,
-                        workplace_name VARCHAR(150) DEFAULT '',
-                        workplace_part_id INTEGER,
-                        workplace_part_name VARCHAR(150) DEFAULT '',
-                        responsible_person_id INTEGER,
-                        responsible_person_name VARCHAR(150) DEFAULT '',
-                        started_at DATE,
-                        status VARCHAR(30) NOT NULL DEFAULT 'draft',
-                        note TEXT DEFAULT '',
-                        active BOOLEAN DEFAULT 1,
-                        created_at DATETIME,
-                        updated_at DATETIME
-                    )
-                    """
-                )
-            )
-            session.execute(
-                text(
-                    """
-                    INSERT INTO hazard_identifications (
-                        title, operation_id, workplace_id, created_at, status, active
-                    ) VALUES
-                        ('Starší identifikace', :operation_id, :workplace_id, :created_at, 'draft', 1),
-                        ('Novější identifikace', :operation_id, :workplace_id, :created_at, 'draft', 1)
-                    """
-                ),
-                {
-                    "operation_id": self.operation_id,
-                    "workplace_id": self.workplace_id,
-                    "created_at": datetime(2026, 1, 15),
-                },
-            )
-            session.commit()
-
-        from core.database.database_initializer import _add_column
-
-        _add_column(
-            "hazard_identifications",
-            "identification_number VARCHAR(20) DEFAULT '' NOT NULL",
-        )
-        _migrate_hazard_identification_numbers()
-        _remove_hazard_identification_title_column()
-
-        columns = _table_columns("hazard_identifications")
-        self.assertIn("identification_number", columns)
-        self.assertNotIn("title", columns)
-
-        with get_session() as session:
-            numbers = list(
-                session.scalars(
+        try:
+            with get_session() as session:
+                session.execute(text("DROP TABLE IF EXISTS hazard_identifications"))
+                session.execute(
                     text(
-                        "SELECT identification_number FROM hazard_identifications ORDER BY id"
+                        """
+                        CREATE TABLE hazard_identifications (
+                            id INTEGER PRIMARY KEY,
+                            title VARCHAR(250) NOT NULL,
+                            operation_id INTEGER,
+                            operation_name VARCHAR(150) DEFAULT '',
+                            workplace_id INTEGER,
+                            workplace_name VARCHAR(150) DEFAULT '',
+                            workplace_part_id INTEGER,
+                            workplace_part_name VARCHAR(150) DEFAULT '',
+                            responsible_person_id INTEGER,
+                            responsible_person_name VARCHAR(150) DEFAULT '',
+                            started_at DATE,
+                            status VARCHAR(30) NOT NULL DEFAULT 'draft',
+                            note TEXT DEFAULT '',
+                            active BOOLEAN DEFAULT 1,
+                            created_at DATETIME,
+                            updated_at DATETIME
+                        )
+                        """
                     )
                 )
+                session.execute(
+                    text(
+                        """
+                        INSERT INTO hazard_identifications (
+                            title, operation_id, workplace_id, created_at, status, active
+                        ) VALUES
+                            ('Starší identifikace', :operation_id, :workplace_id, :created_at, 'draft', 1),
+                            ('Novější identifikace', :operation_id, :workplace_id, :created_at, 'draft', 1)
+                        """
+                    ),
+                    {
+                        "operation_id": self.operation_id,
+                        "workplace_id": self.workplace_id,
+                        "created_at": datetime(2026, 1, 15),
+                    },
+                )
+                session.commit()
+
+            from core.database.database_initializer import _add_column
+
+            _add_column(
+                "hazard_identifications",
+                "identification_number VARCHAR(20) DEFAULT '' NOT NULL",
             )
-        self.assertEqual(numbers, ["2026-0001", "2026-0002"])
+            _migrate_hazard_identification_numbers()
+            _remove_hazard_identification_title_column()
+
+            columns = _table_columns("hazard_identifications")
+            self.assertIn("identification_number", columns)
+            self.assertNotIn("title", columns)
+
+            with get_session() as session:
+                numbers = list(
+                    session.scalars(
+                        text(
+                            "SELECT identification_number FROM hazard_identifications ORDER BY id"
+                        )
+                    )
+                )
+            self.assertEqual(numbers, ["2026-0001", "2026-0002"])
+        finally:
+            # Obnovit aktuální schéma – destruktivní SQL nesmí otrávit zbytek sady.
+            initialize_database()
 
     def test_basics_widget_shows_read_only_identification_number(self) -> None:
         from moduly.rizeni_rizik.ui.hazard_identification_basics_widget import (
