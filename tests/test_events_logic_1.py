@@ -327,7 +327,7 @@ class EventsLogic1TestCase(unittest.TestCase):
         )
         dialog = MeetingDialog()
         dialog.title_edit.setText("Rozepsáno")
-        dialog.location_edit.setText("Místnost X")
+        dialog.location_edit.set_location_text("Místnost X")
         dialog.starts_at_edit.set_datetime(start + timedelta(hours=1))
         dialog.ends_at_edit.set_datetime(start + timedelta(hours=3))
 
@@ -339,7 +339,7 @@ class EventsLogic1TestCase(unittest.TestCase):
             dialog._on_accept()
         self.assertNotEqual(dialog.result(), dialog.DialogCode.Accepted)
         self.assertEqual(dialog.title_edit.text(), "Rozepsáno")
-        self.assertEqual(dialog.location_edit.text(), "Místnost X")
+        self.assertEqual(dialog.location_edit.display_text(), "Místnost X")
 
     def test_conflict_rechecked_after_time_change(self) -> None:
         start = datetime.now() + timedelta(days=14)

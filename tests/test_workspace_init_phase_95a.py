@@ -129,14 +129,17 @@ class WorkspaceInitPhase95aTestCase(unittest.TestCase):
         empty_bundled = self._tmp / "empty_bundle_ui"
         empty_bundled.mkdir()
 
-        from moduly.audity.ui.audit_knowledge_tree_widget import AuditKnowledgeTreeWidget
+        from moduly.audity.ui import audit_knowledge_tree_widget as tree_module
+
+        # Po reloadu audit_knowledge_service musí mít widget stejnou třídu AuditCatalogError.
+        importlib.reload(tree_module)
 
         with patch.object(
             self.catalog_module.editable_catalog_service,
             "bundled_dir",
             return_value=empty_bundled,
         ):
-            widget = AuditKnowledgeTreeWidget()
+            widget = tree_module.AuditKnowledgeTreeWidget()
             widget.reload_tree()
 
         self.assertEqual(widget.topLevelItemCount(), 0)

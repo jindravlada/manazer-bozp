@@ -106,7 +106,7 @@ class KnowledgeEditorConfirmLabelsPhase97sTestCase(unittest.TestCase):
                 return self._buttons[-1]
 
         with patch(
-            "core.widgets.knowledge_editor_actions.QMessageBox",
+            "core.widgets.editor_dialog_controller.QMessageBox",
             _FakeMessageBox,
         ):
             result = confirm_close_with_unsaved_changes(None, title="Test")
