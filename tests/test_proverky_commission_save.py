@@ -1,4 +1,6 @@
+import html
 import importlib
+import re
 import tempfile
 import unittest
 import zipfile
@@ -43,6 +45,20 @@ with patch.object(Path, "home", return_value=_TMP):
 def _odt_content(path: Path) -> str:
     with zipfile.ZipFile(path, "r") as zin:
         return zin.read("content.xml").decode("utf-8")
+
+
+def _odt_plain_text(content: str) -> str:
+    """ODT content.xml → čitelný text (tagy, text:s, line-break)."""
+    text = re.sub(r"<text:line-break\s*/>", "\n", content)
+    text = re.sub(
+        r'<text:s\s+text:c="(\d+)"/>',
+        lambda match: " " * int(match.group(1)),
+        text,
+    )
+    text = re.sub(r"<text:s\s*/>", " ", text)
+    text = re.sub(r"<text:tab\s*/>", "\t", text)
+    text = re.sub(r"<[^>]+>", "", text)
+    return html.unescape(text)
 
 
 class ProverkyCommissionSaveTestCase(unittest.TestCase):
@@ -180,21 +196,22 @@ class ProverkyCommissionSaveTestCase(unittest.TestCase):
 
         path = protokol_proverky_service.generate_for_inspection(loaded)
         content = _odt_content(path)
+        plain = _odt_plain_text(content)
 
-        leader_pos = content.index("Jan Novák")
-        workplace_pos = content.index("Eva Králová")
+        leader_pos = plain.index("Jan Novák")
+        workplace_pos = plain.index("Eva Králová")
 
-        self.assertIn("Vedoucí prověrky", content)
-        self.assertIn("Zástupce provozu", content)
+        self.assertIn("Vedoucí prověrky", plain)
+        self.assertIn("Zástupce provozu", plain)
         self.assertLess(leader_pos, workplace_pos)
 
         # V základních informacích jsou i ostatní role.
-        self.assertIn("Lucie Horáková", content)
-        self.assertIn("Petr Svoboda", content)
-        self.assertIn("Tomáš Malý", content)
+        self.assertIn("Lucie Horáková", plain)
+        self.assertIn("Petr Svoboda", plain)
+        self.assertIn("Tomáš Malý", plain)
 
         # Podpisy: vedoucí, zástupce provozu a (pokud existuje) zástupce odborů.
-        signatures = content.split("Podpisy", 1)[1]
+        signatures = _odt_plain_text(content.split("Podpisy", 1)[1])
         self.assertIn("Vedoucí prověrky", signatures)
         self.assertIn("Zástupce provozu", signatures)
         self.assertIn("Zástupce odborové organizace", signatures)

@@ -219,8 +219,10 @@ class UxCoord12dContactEmployerTestCase(unittest.TestCase):
         coordination_protocol_odt_renderer.render_from_result(target, result)
         content = _odt_content(target)
         self.assertIn("ZX-ZF", content)
-        self.assertIn("Jan Novák, technik", content)
-        self.assertIn("Telefon: +420111", content)
+        # Kontakt je na více řádcích (jméno / funkce / Tel. / E-mail).
+        self.assertIn("Jan Novák", content)
+        self.assertIn("technik", content)
+        self.assertIn("Tel.: +420111", content)
         self.assertIn("E-mail: jan@example.com", content)
 
     def test_legacy_contact_without_employer_preserved(self) -> None:

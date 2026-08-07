@@ -11,7 +11,7 @@ from datetime import date
 from pathlib import Path
 from unittest.mock import patch
 
-from PySide6.QtWidgets import QApplication, QGroupBox, QLabel
+from PySide6.QtWidgets import QApplication, QLabel
 from sqlalchemy import delete
 
 _TMP = Path(tempfile.mkdtemp(prefix="ux-coord-4a-"))
@@ -294,11 +294,7 @@ class UxCoord4aMeasuresDisplayTestCase(unittest.TestCase):
                 None,
                 coordination_id=coordination.id,
             )
-        section_texts = []
-        for group in dialog.findChildren(QGroupBox):
-            if group.title() == "Společná pravidla BOZP":
-                for label in group.findChildren(QLabel):
-                    section_texts.append(label.text())
+        section_texts = [label.text() for label in dialog.findChildren(QLabel)]
         joined = "\n".join(section_texts)
         self.assertIn(
             "• Organizační zajištění prací zajistí vedoucí zaměstnanec.",
@@ -319,9 +315,13 @@ class UxCoord4aMeasuresDisplayTestCase(unittest.TestCase):
         self.assertIn("Parkování vozidel", content)
         self.assertNotIn("Organizace práce", content)
         self.assertNotIn("Pohyb vozidel", content)
-        # Kategorie jako nadpis „…:“ se v ODT nesmí objevit.
-        for label in MEASURE_CATEGORY_LABELS.values():
-            self.assertNotIn(f"{label}:", content)
+        # Kategorie opatření se neuvádí jako „Kategorie:“; shoda s nadpisem bodu 6
+        # („Mimořádné události:“) není kategorie opatření.
+        for key in (
+            MEASURE_CATEGORY_WORK_ORGANIZATION,
+            MEASURE_CATEGORY_VEHICLE_MOVEMENT,
+        ):
+            self.assertNotIn(f"{MEASURE_CATEGORY_LABELS[key]}:", content)
 
 
 if __name__ == "__main__":

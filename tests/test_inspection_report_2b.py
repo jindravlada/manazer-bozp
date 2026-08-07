@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import html
 import importlib
 import os
+import re
 import shutil
 import tempfile
 import unittest
@@ -56,6 +58,20 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 def _odt_content(path: Path) -> str:
     with zipfile.ZipFile(path, "r") as zin:
         return zin.read("content.xml").decode("utf-8")
+
+
+def _odt_plain_text(content: str) -> str:
+    """ODT content.xml → čitelný text (tagy, text:s, line-break)."""
+    text = re.sub(r"<text:line-break\s*/>", "\n", content)
+    text = re.sub(
+        r'<text:s\s+text:c="(\d+)"/>',
+        lambda match: " " * int(match.group(1)),
+        text,
+    )
+    text = re.sub(r"<text:s\s*/>", " ", text)
+    text = re.sub(r"<text:tab\s*/>", "\t", text)
+    text = re.sub(r"<[^>]+>", "", text)
+    return html.unescape(text)
 
 
 def _sync_inspection_templates() -> None:
@@ -264,7 +280,9 @@ class InspectionReport2bTestCase(unittest.TestCase):
         content = _odt_content(
             protokol_proverky_service.generate_for_inspection(inspection)
         )
-        signatures = content.split("Podpisy", 1)[1].split("Příloha A", 1)[0]
+        signatures = _odt_plain_text(
+            content.split("Podpisy", 1)[1].split("Příloha A", 1)[0]
+        )
         self.assertIn("Vedoucí prověrky", signatures)
         self.assertIn("Zástupce provozu", signatures)
         self.assertIn(COMMISSION_LABEL_UNION, signatures)
@@ -283,7 +301,9 @@ class InspectionReport2bTestCase(unittest.TestCase):
         content = _odt_content(
             protokol_proverky_service.generate_for_inspection(inspection)
         )
-        signatures = content.split("Podpisy", 1)[1].split("Příloha A", 1)[0]
+        signatures = _odt_plain_text(
+            content.split("Podpisy", 1)[1].split("Příloha A", 1)[0]
+        )
         self.assertIn("Vedoucí prověrky", signatures)
         self.assertIn("Zástupce provozu", signatures)
         self.assertNotIn(COMMISSION_LABEL_UNION, signatures)

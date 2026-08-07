@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib
 import os
+import re
 import tempfile
 import unittest
 import zipfile
@@ -238,8 +239,10 @@ class UxCoord2ManualCoordinatorTestCase(unittest.TestCase):
         self.assertIn("Firma Ruční", content)
         self.assertIn("externí", content)
         # Koordinátor už není Jan – jméno zůstává jen u účastníků.
-        self.assertIn("Jméno: Ruční Koordinátor", content)
-        self.assertNotIn("Jméno: Jan Účastník", content)
+        # Popisek „Jméno:“ je v ODT v bold spanu, hodnota hned za ním.
+        plain = re.sub(r"<[^>]+>", "", content)
+        self.assertIn("Jméno: Ruční Koordinátor", plain)
+        self.assertNotIn("Jméno: Jan Účastník", plain)
 
     def test_ui_source_modes(self) -> None:
         coordination, main, participant = self._setup()

@@ -240,7 +240,7 @@ class InspectionReport2TestCase(unittest.TestCase):
         content = _odt_content(path)
 
         self.assertIn("PODROBNÁ ZPRÁVA Z PROVĚRKY BOZP", content)
-        self.assertIn("Prověrka Hala Detail 2026", content)
+        # Název záznamu se do šablony nevkládá (jen číslo / provoz / data).
         self.assertIn(inspection.number, content)
         self.assertIn("Hala Detail", content)
         self.assertIn("01.07.2026", content)

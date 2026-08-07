@@ -1,4 +1,6 @@
+import html
 import importlib
+import re
 import tempfile
 import unittest
 import zipfile
@@ -65,6 +67,20 @@ def _odt_content(path: Path) -> str:
         return zin.read("content.xml").decode("utf-8")
 
 
+def _odt_plain_text(content: str) -> str:
+    """ODT content.xml → čitelný text (tagy, text:s, line-break)."""
+    text = re.sub(r"<text:line-break\s*/>", "\n", content)
+    text = re.sub(
+        r'<text:s\s+text:c="(\d+)"/>',
+        lambda match: " " * int(match.group(1)),
+        text,
+    )
+    text = re.sub(r"<text:s\s*/>", " ", text)
+    text = re.sub(r"<text:tab\s*/>", "\t", text)
+    text = re.sub(r"<[^>]+>", "", text)
+    return html.unescape(text)
+
+
 class AudityProtokolExportTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -93,36 +109,53 @@ class AudityProtokolExportTestCase(unittest.TestCase):
     def test_protocol_template_uses_local_copy_and_preserves_customization(self) -> None:
         import shutil
 
-        user = storage_service.template_file("exporty", "ProtokolAudit.odt")
-        bundled = storage_service.bundled_template_file("exporty", "ProtokolAudit.odt")
-        self.assertIsNotNone(bundled)
-        assert bundled is not None
+        import core.services.storage_service as storage_module
+        import moduly.audity.sluzby.protokol_audit_service as protokol_module
 
-        resolved = protokol_audit_service.template_path()
-        self.assertEqual(resolved.resolve(), user.resolve())
-        self.assertTrue(str(resolved).startswith(str(_TMP)))
+        # Suite může přepsat singleton storage – znovu navázat na _TMP tohoto souboru.
+        with patch.object(Path, "home", return_value=_TMP):
+            importlib.reload(storage_module)
+            local_storage = storage_module.storage_service
+            local_storage.ensure_structure()
+            importlib.reload(protokol_module)
+            local_protokol = protokol_module.protokol_audit_service
 
-        shutil.copy2(bundled, user)
-        storage_service._write_template_bundle_hash(
-            user,
-            storage_service._file_sha256(bundled),
-        )
-        customized = b"custom-logo-template"
-        user.write_bytes(customized)
-        self.assertEqual(
-            storage_service.resolve_editable_template("exporty", "ProtokolAudit.odt").read_bytes(),
-            customized,
-        )
+            user = local_storage.template_file("exporty", "ProtokolAudit.odt")
+            bundled = local_storage.bundled_template_file(
+                "exporty", "ProtokolAudit.odt"
+            )
+            self.assertIsNotNone(bundled)
+            assert bundled is not None
 
-        # Neupravená (marker odpovídá obsahu) se při změně balíčku obnoví.
-        old_default = b"old-default-from-previous-appimage"
-        user.write_bytes(old_default)
-        storage_service._write_template_bundle_hash(
-            user,
-            storage_service._file_sha256(user),
-        )
-        refreshed = storage_service.resolve_editable_template("exporty", "ProtokolAudit.odt")
-        self.assertEqual(refreshed.read_bytes(), bundled.read_bytes())
+            resolved = local_protokol.template_path()
+            self.assertEqual(resolved.resolve(), user.resolve())
+            self.assertTrue(str(resolved).startswith(str(_TMP)))
+
+            shutil.copy2(bundled, user)
+            local_storage._write_template_bundle_hash(
+                user,
+                local_storage._file_sha256(bundled),
+            )
+            customized = b"custom-logo-template"
+            user.write_bytes(customized)
+            self.assertEqual(
+                local_storage.resolve_editable_template(
+                    "exporty", "ProtokolAudit.odt"
+                ).read_bytes(),
+                customized,
+            )
+
+            # Neupravená (marker odpovídá obsahu) se při změně balíčku obnoví.
+            old_default = b"old-default-from-previous-appimage"
+            user.write_bytes(old_default)
+            local_storage._write_template_bundle_hash(
+                user,
+                local_storage._file_sha256(user),
+            )
+            refreshed = local_storage.resolve_editable_template(
+                "exporty", "ProtokolAudit.odt"
+            )
+            self.assertEqual(refreshed.read_bytes(), bundled.read_bytes())
 
     def _create_audit(self, **fields):
         workplace = settings_service.save_workplace(name="Provoz A")
@@ -331,9 +364,9 @@ class AudityProtokolExportTestCase(unittest.TestCase):
         self.assertIn("   Stav:", tasks_text)
 
         path = protokol_audit_service.generate_for_audit(audit)
-        content = _odt_content(path)
-        self.assertIn("   Popis: Chybí dokumentace", content)
-        self.assertIn("   Termín: 15.08.2026", content)
+        plain = _odt_plain_text(_odt_content(path))
+        self.assertIn("   Popis: Chybí dokumentace", plain)
+        self.assertIn("   Termín: 15.08.2026", plain)
 
     def test_conclusion_text_is_short_without_process_list(self) -> None:
         audit = self._create_audit()
@@ -925,11 +958,25 @@ class AudityProtokolExportTestCase(unittest.TestCase):
         self.assertIn("Příloha A – Auditované procesy", content)
         self.assertIn("Příloha B – Auditní tvrzení", content)
         self.assertNotIn("Příloha – Auditované procesy", content)
+        # LO auto-styl (např. P9) s fo:break-before – styl jednou, použití u obou příloh.
         self.assertIn('fo:break-before="page"', content)
-        self.assertIn('text:style-name="HPageBreak"', content)
-        self.assertEqual(content.count('text:style-name="HPageBreak"'), 2)
+        page_break_style = re.search(
+            r'<style:style style:name="(?P<name>[^"]+)"[^>]*>'
+            r'(?:(?!</style:style>).)*?fo:break-before="page"',
+            content,
+            re.DOTALL,
+        )
+        self.assertIsNotNone(page_break_style)
+        assert page_break_style is not None
+        style_name = page_break_style.group("name")
+        self.assertGreaterEqual(
+            content.count(f'text:style-name="{style_name}"'),
+            2,
+        )
 
-        signatures = content.split("Podpisy", 1)[1].split("Příloha A", 1)[0]
+        signatures = _odt_plain_text(
+            content.split("Podpisy", 1)[1].split("Příloha A", 1)[0]
+        )
         self.assertIn("Jan Novák", signatures)
         self.assertIn("Eva Králová", signatures)
         self.assertIn("Lucie Horáková", signatures)
@@ -961,7 +1008,9 @@ class AudityProtokolExportTestCase(unittest.TestCase):
         content2 = _odt_content(path2)
         basic2 = content2.split("Základní informace", 1)[1].split("CELKOVÉ HODNOCENÍ", 1)[0]
         self.assertIn("Neuveden", basic2)
-        signatures2 = content2.split("Podpisy", 1)[1].split("Příloha A", 1)[0]
+        signatures2 = _odt_plain_text(
+            content2.split("Podpisy", 1)[1].split("Příloha A", 1)[0]
+        )
         self.assertNotIn("Zástupce odborové organizace", signatures2)
 
     def test_appendix_assertions_skips_empty_area_heading(self) -> None:
