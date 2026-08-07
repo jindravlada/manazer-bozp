@@ -1,0 +1,40 @@
+{
+  "document": {
+    "document_type": "nařízení vlády",
+    "number": "390",
+    "year": 2021,
+    "title": "Nařízení vlády č. 390/2021 Sb.",
+    "short_title": "NV 390/2021",
+    "valid_from": null,
+    "valid_to": null,
+    "effective_from": "2021-11-01",
+    "effective_to": null,
+    "source_url": "",
+    "local_file_path": "",
+    "note": ""
+  },
+  "version": {
+    "version_name": "Aktuální znění",
+    "valid_from": null,
+    "valid_to": null,
+    "effective_from": "2021-11-01",
+    "effective_to": null,
+    "publication_date": null,
+    "source_url": "",
+    "local_file_path": "",
+    "checksum": "",
+    "note": ""
+  },
+  "sections": [
+    {
+      "section_type": "paragraf",
+      "section_number": "1",
+      "paragraph": "1",
+      "item_letter": "",
+      "title": "Předmět úpravy",
+      "text": "Text ustanovení.",
+      "sort_order": 1,
+      "note": ""
+    }
+  ]
+}

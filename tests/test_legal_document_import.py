@@ -50,11 +50,7 @@ class LegalDocumentJsonImportTestCase(unittest.TestCase):
             session.commit()
 
         self.sample_path = (
-            Path(__file__).resolve().parents[1]
-            / "moduly"
-            / "pravni_pozadavky"
-            / "import_export"
-            / "sample_legal_document_import.json"
+            Path(__file__).resolve().parent / "data" / "sample_legal_document_import.json"
         )
 
     def test_import_creates_document(self) -> None:
@@ -174,11 +170,7 @@ class LegalDocumentJsonExportTestCase(unittest.TestCase):
             session.commit()
 
         self.sample_path = (
-            Path(__file__).resolve().parents[1]
-            / "moduly"
-            / "pravni_pozadavky"
-            / "import_export"
-            / "sample_legal_document_import.json"
+            Path(__file__).resolve().parent / "data" / "sample_legal_document_import.json"
         )
 
     def _import_sample(self):
