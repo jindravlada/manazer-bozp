@@ -5,6 +5,7 @@ from datetime import datetime
 from pathlib import Path
 
 from core.export import OdtExportEngine, open_export_file
+from core.export.commission_display import AUDIT_OPTIONAL_COMMISSION_PLACEHOLDERS
 from core.services.storage_service import storage_service
 from moduly.audity.modely.audit import Audit
 from moduly.audity.sluzby.audit_export_context_service import (
@@ -155,7 +156,12 @@ class ProtokolAuditService:
             self._output_filename(audit, detailed=detailed),
         )
         _diag(f"render() → {output_path}")
-        rendered = self.engine.render(template, output_path, values)
+        rendered = self.engine.render(
+            template,
+            output_path,
+            values,
+            omit_empty_placeholder_rows=AUDIT_OPTIONAL_COMMISSION_PLACEHOLDERS,
+        )
         _diag(
             f"soubor vytvořen path={rendered} "
             f"exists={rendered.exists()} "

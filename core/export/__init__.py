@@ -1,4 +1,5 @@
 from .commission_display import (
+    AUDIT_OPTIONAL_COMMISSION_PLACEHOLDERS,
     COMMISSION_LABEL_INVITED,
     COMMISSION_LABEL_LEADER_AUDIT,
     COMMISSION_LABEL_LEADER_INSPECTION,
@@ -7,6 +8,7 @@ from .commission_display import (
     COMMISSION_LABEL_WORKPLACE,
     CommissionSection,
     INSPECTION_OPTIONAL_COMMISSION_PLACEHOLDERS,
+    UNION_SIGNATURE_NAME_PLACEHOLDER,
     build_commission_sections,
     commission_sections_text,
 )
@@ -34,9 +36,11 @@ __all__ = [
     "COMMISSION_LABEL_MEMBERS",
     "COMMISSION_LABEL_UNION",
     "COMMISSION_LABEL_WORKPLACE",
+    "AUDIT_OPTIONAL_COMMISSION_PLACEHOLDERS",
     "CommissionSection",
     "ControlPointAppendixItem",
     "INSPECTION_OPTIONAL_COMMISSION_PLACEHOLDERS",
+    "UNION_SIGNATURE_NAME_PLACEHOLDER",
     "OdtExportEngine",
     "OdtExportError",
     "OdtParagraph",

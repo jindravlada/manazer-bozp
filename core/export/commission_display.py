@@ -22,13 +22,21 @@ COMMISSION_SECTION_ORDER = (
     "invited",
 )
 
+# Jméno v části Podpisy – prázdné = celý podpisový řádek odborů pryč.
+# Oddělené od „zastupce_odborove_organizace“ (základní info může mít „Neuveden“).
+UNION_SIGNATURE_NAME_PLACEHOLDER = "podpis_zastupce_odborove_organizace"
+
 # Placeholdery volitelných řádků v ODT šablonách prověrek (prázdné = řádek pryč).
 INSPECTION_OPTIONAL_COMMISSION_PLACEHOLDERS = (
     "zastupce_odborove_organizace",
     "zastupce_odboru",
     "clenove_komise_text",
     "prizvane_osoby_text",
+    UNION_SIGNATURE_NAME_PLACEHOLDER,
 )
+
+# Audit: v Podpisech vynechat prázdný řádek odborů (základní info nechat).
+AUDIT_OPTIONAL_COMMISSION_PLACEHOLDERS = (UNION_SIGNATURE_NAME_PLACEHOLDER,)
 
 
 @dataclass(frozen=True)

@@ -444,6 +444,7 @@ class AudityProtokolExportTestCase(unittest.TestCase):
             "vedouci_auditor",
             "zastupce_provozu",
             "zastupce_odborove_organizace",
+            "podpis_zastupce_odborove_organizace",
             "podpis_odboru_blok",
             "doporuceni_auditora",
             "silne_stranky_text",
@@ -1002,6 +1003,7 @@ class AudityProtokolExportTestCase(unittest.TestCase):
             audit_reloaded
         ).placeholder_values()
         self.assertEqual(values_without_union["zastupce_odborove_organizace"], "Neuveden")
+        self.assertEqual(values_without_union["podpis_zastupce_odborove_organizace"], "")
         self.assertEqual(values_without_union["podpis_odboru_blok"], "")
 
         path2 = protokol_audit_service.generate_for_audit(audit_reloaded)

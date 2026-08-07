@@ -986,6 +986,8 @@ class AuditExportContext:
             "vedouci_auditor": self.leader_auditor_name(),
             "zastupce_provozu": self.workplace_representative_name(),
             "zastupce_odborove_organizace": self.union_representative_name(),
+            # Podpisy: prázdné jméno → řádek se odstraní (ne „Neuveden“).
+            "podpis_zastupce_odborove_organizace": self.union_representative_raw_name(),
             "podpis_odboru_blok": union_signature,
             "doporuceni_auditora": self.auditor_recommendation_text(),
             "silne_stranky_text": self.strengths_text(),

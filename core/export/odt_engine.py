@@ -249,7 +249,8 @@ class OdtExportEngine:
                 r"</table:table-row>",
                 re.DOTALL,
             )
-            result = pattern.sub("", result, count=1)
+            # Všechny výskyty (základní info + Podpisy), ne jen první řádek.
+            result = pattern.sub("", result)
         return result
 
     def _replace_placeholders(self, xml: str, values: Mapping[str, Any]) -> str:

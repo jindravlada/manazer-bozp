@@ -662,6 +662,8 @@ class InspectionExportContext:
             "zastupce_provozu": self.workplace_representative_name(),
             "zastupce_odboru": self.union_representative_name(),
             "zastupce_odborove_organizace": self.union_representative_name(),
+            # Podpisy: samostatný klíč – prázdný = podpisový řádek odborů pryč.
+            "podpis_zastupce_odborove_organizace": self.union_representative_name(),
             "clenove_komise_text": self.members_text(),
             "prizvane_osoby_text": self.invited_text(),
             "podpis_odboru_blok": union_signature,
