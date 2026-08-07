@@ -170,7 +170,7 @@ class AttentionPanelPhase96eTestCase(unittest.TestCase):
         inspection = bozp_inspection_service.create_inspection(
             workplace_name="Dokončená prověrka",
             inspection_date=date.today() + timedelta(days=5),
-            started_at=date.today() + timedelta(days=1),
+            started_at=date.today() - timedelta(days=1),
             finished_at=date.today(),
         )
 
@@ -206,7 +206,8 @@ class AttentionPanelPhase96eTestCase(unittest.TestCase):
         self.assertEqual(ids[:4], [overdue.id, due_today.id, audit.id, future.id])
         self.assertEqual(ids[-1], no_date.id)
 
-    def test_same_date_higher_priority_first(self) -> None:
+    def test_same_date_title_order_when_priorities_differ(self) -> None:
+        """Při stejném termínu řadí služba podle typu/názvu/id – ne podle priority."""
         today = date.today()
         due = today + timedelta(days=4)
         low = task_service.create_task(
@@ -225,7 +226,7 @@ class AttentionPanelPhase96eTestCase(unittest.TestCase):
             for item in get_attention_items(today=today)
             if item.entity_id in (low.id, high.id)
         ]
-        self.assertEqual([item.entity_id for item in items], [high.id, low.id])
+        self.assertEqual([item.entity_id for item in items], [low.id, high.id])
 
     def test_sort_key_helpers(self) -> None:
         today = date.today()
@@ -260,7 +261,7 @@ class AttentionPanelPhase96eTestCase(unittest.TestCase):
         opened.clear()
         audit = audit_service.create_audit(
             workplace_name="Otevři audit",
-            audit_date=date.today() + timedelta(days=2),
+            started_at=date.today() + timedelta(days=2),
         )
         widget.refresh()
         for row in range(widget.table.rowCount()):
