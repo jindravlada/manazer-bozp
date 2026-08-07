@@ -178,6 +178,7 @@ class RizeniRizikEditorPhaseR01bTestCase(unittest.TestCase):
         from moduly.rizeni_rizik.ui.rizeni_rizik_page import RizeniRizikPage
 
         page = RizeniRizikPage()
+        tab = page.identifications_tab
         saved_number = {"value": ""}
 
         def _accept(dialog):
@@ -191,16 +192,16 @@ class RizeniRizikEditorPhaseR01bTestCase(unittest.TestCase):
                 self.workplace_a1.id,
             )
             with patch("moduly.rizeni_rizik.ui.hazard_identification_dialog.QMessageBox.information"):
-                dialog._save_basics()
+                dialog._save_all()
             saved_number["value"] = dialog.identification.identification_number
             dialog.accept()
             return True
 
         mock_exec.side_effect = _accept
-        page.new_identification()
+        tab.new_identification()
 
-        self.assertEqual(page.table.rowCount(), 1)
-        self.assertEqual(page.table.item(0, 1).text(), saved_number["value"])
+        self.assertEqual(tab.table.rowCount(), 1)
+        self.assertEqual(tab.table.item(0, 1).text(), saved_number["value"])
 
     @patch("moduly.rizeni_rizik.ui.rizeni_rizik_page.exec_maximized")
     def test_edit_identification_from_page(self, mock_exec) -> None:
@@ -208,17 +209,18 @@ class RizeniRizikEditorPhaseR01bTestCase(unittest.TestCase):
 
         created = self._create_sample()
         page = RizeniRizikPage()
-        page.table.selectRow(0)
+        tab = page.identifications_tab
+        tab.table.selectRow(0)
 
         def _accept(dialog):
             dialog.basics_widget.note.setPlainText("Upraveno ze stránky")
             with patch("moduly.rizeni_rizik.ui.hazard_identification_dialog.QMessageBox.information"):
-                dialog._save_basics()
+                dialog._save_all()
             dialog.accept()
             return True
 
         mock_exec.side_effect = _accept
-        page.edit_selected_identification()
+        tab.edit_selected_identification()
 
         reloaded = hazard_identification_service.get_by_id(created.id)
         assert reloaded is not None

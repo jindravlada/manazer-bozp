@@ -187,12 +187,16 @@ class HazardSelectionHotfixR18f1TestCase(unittest.TestCase):
             template_id=self.template.id,
             template_event_id=self.event.id,
         )
+        from moduly.rizeni_rizik.sluzby.exposed_target_ref import SOURCE_TYPE_HAZARD_GROUP
+
         selector = dialog.exposed_groups.selector
-        selector._rebuild_popup_items(selected_id=None)
+        selector.reload()
         group_ids = {
-            selector.itemData(index)
+            data[1]
             for index in range(selector.count())
-            if isinstance(selector.itemData(index), int)
+            if isinstance((data := selector.itemData(index)), tuple)
+            and len(data) == 2
+            and data[0] == SOURCE_TYPE_HAZARD_GROUP
         }
         self.assertIn(self.active_group.id, group_ids)
         self.assertNotIn(self.inactive_group.id, group_ids)

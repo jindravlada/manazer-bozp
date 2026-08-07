@@ -129,7 +129,7 @@ class PhaseR20eTestCase(unittest.TestCase):
         with patch(
             "moduly.rizeni_rizik.ui.hazard_library_template_dialog.QMessageBox.information"
         ):
-            dialog._save_basics()
+            dialog._save_all()
         saved = dialog.saved_template
         assert saved is not None
         self.assertEqual(saved.application_scope, DEFAULT_HAZARD_LIBRARY_SCOPE)

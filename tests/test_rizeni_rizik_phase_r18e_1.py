@@ -91,11 +91,16 @@ class HazardCatalogManualItemUpdateGuardR18e1TestCase(unittest.TestCase):
         from moduly.rizeni_rizik.modely.hazard_required_measure import HazardRequiredMeasure
         from moduly.rizeni_rizik.modely.hazard_risk_assessment import HazardRiskAssessment
 
+        from moduly.rizeni_rizik.modely.hazard_library_template_revision import (
+            HazardLibraryTemplateRevision,
+        )
+
         with get_session() as session:
             session.execute(delete(HazardLibraryTemplateRequiredMeasure))
             session.execute(delete(HazardLibraryTemplateExistingMeasure))
             session.execute(delete(HazardLibraryTemplateAssessment))
             session.execute(delete(HazardLibraryTemplateEvent))
+            session.execute(delete(HazardLibraryTemplateRevision))
             session.execute(delete(HazardLibraryTemplate))
             session.execute(delete(HazardRequiredMeasure))
             session.execute(delete(HazardExistingMeasure))

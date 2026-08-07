@@ -404,16 +404,17 @@ class HazardCatalogAiPeerReviewR18fTestCase(unittest.TestCase):
             self.identification.id,
             target,
         )
+        # Oponentura AI je v editoru identifikace záměrně odstraněna (pouze Katalog).
         dialog = HazardIdentificationDialog(identification=self.identification)
-        self.assertFalse(dialog.ai_peer_review_widget.export_btn.isEnabled())
-        self.assertFalse(dialog.ai_peer_review_widget.import_btn.isEnabled())
-        self.assertEqual(dialog.ai_peer_review_widget.table.rowCount(), 1)
+        self.assertFalse(hasattr(dialog, "ai_peer_review_widget"))
 
         widget = AiPeerReviewWidget(
             provider=hazard_identification_peer_review_provider,
             allow_new_exports=False,
         )
         widget.set_source(self.identification.id)
+        self.assertFalse(widget.export_btn.isEnabled())
+        self.assertFalse(widget.import_btn.isEnabled())
         self.assertEqual(widget.table.rowCount(), 1)
 
 
