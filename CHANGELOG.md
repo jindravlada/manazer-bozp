@@ -14,6 +14,72 @@
 
 ---
 
+# Verze 3.4.0
+
+Datum vydání:
+
+7. 8. 2026
+
+Významné rozšíření práce s agendou, událostmi a šablonami, sjednocení UX a úpravy Knihy úrazů.
+
+---
+
+## Hlavní novinky
+
+### Agenda
+
+- společný přehled úkolů a událostí
+- sjednocený vstup k zakládání a úpravám
+- zjednodušená práce se šablonami událostí (Nová událost ze šablony, správa šablon bez zavírání výběru)
+
+### Události
+
+- ergonomie editoru a výběru osob
+- priority událostí
+- našeptávání místa z pracovišť
+- externí účastníci
+- kontrola minulého termínu a časových konfliktů
+
+### Šablony událostí
+
+- zakládání události ze šablony
+- samostatná správa šablon
+- sjednocení lišty editoru šablon
+- automatická synchronizace dialogu výběru při změnách ve správě
+
+### Kalendář
+
+- zobrazení událostí v kalendáři
+- delší a stabilní tooltipy
+
+### Kniha úrazů
+
+- přesun akcí ohlášení do přehledu úrazů
+- Ohláška odborové organizaci
+- sjednocení aktivace tlačítek
+
+### UX standardy
+
+- jednotné názvosloví a standardní komponenty
+- sjednocení akcí Otevřít / Upravit
+- jednotná horní lišta modulů
+- sjednocení aktivace tlačítek napříč moduly
+- výraznější zvýraznění aktivního modulu v levém menu
+
+### Podobnosti a správa dat
+
+- analýza podobností mezi oblastmi
+- správa zkontrolovaných dvojic a možnost jejich vrácení do analýzy
+
+---
+
+## Podporované platformy
+
+- Linux
+- Windows
+
+---
+
 # Verze 3.1.0
 
 Datum vydání:

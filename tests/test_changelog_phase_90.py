@@ -48,6 +48,16 @@ class ChangelogPhase90TestCase(unittest.TestCase):
         path = project_root() / CHANGELOG_FILENAME
         self.assertTrue(path.is_file(), f"Chybí soubor {path}")
 
+    def test_changelog_contains_release_notes_for_3_4_0(self) -> None:
+        content = load_changelog_text()
+
+        self.assertIn("# Verze 3.4.0", content)
+        self.assertIn("7. 8. 2026", content)
+        self.assertIn("Agenda", content)
+        self.assertIn("Šablony událostí", content)
+        self.assertIn("Ohláška odborové organizaci", content)
+        self.assertIn("podobností", content)
+
     def test_changelog_contains_release_notes_for_3_1_0(self) -> None:
         content = load_changelog_text()
 
@@ -70,7 +80,9 @@ class ChangelogPhase90TestCase(unittest.TestCase):
         viewer = dialog.findChild(QPlainTextEdit)
         self.assertIsNotNone(viewer)
         assert viewer is not None
-        self.assertIn("Verze 3.1.0", viewer.toPlainText())
+        text = viewer.toPlainText()
+        self.assertIn("Verze 3.4.0", text)
+        self.assertIn("Verze 3.1.0", text)
 
     def test_show_version_history_opens_dialog(self) -> None:
         with patch("core.windows.help_menu.ChangelogDialog") as mock_dialog_cls:
