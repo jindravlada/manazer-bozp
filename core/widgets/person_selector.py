@@ -4,6 +4,7 @@ from PySide6.QtWidgets import QCompleter
 from core.utils.czech_sort import czech_sorted, worker_sort_key
 from core.widgets.search_combo_box import SearchComboBox
 from moduly.nastaveni.sluzby.person_service import person_service
+from moduly.nastaveni.sluzby.person_thp_link import find_thp_worker_for_person
 
 ADD_NEW_PERSON = object()
 ADD_NEW_PERSON_LABEL = "➕ Přidat novou osobu..."
@@ -17,17 +18,26 @@ class PersonSelector(SearchComboBox):
         allow_custom_value: bool = True,
         include_inactive: bool = False,
         allow_add_new: bool = True,
+        exclude_thp_linked: bool = False,
     ):
         super().__init__(values=[], parent=parent, allow_custom_value=allow_custom_value)
         self.include_empty = include_empty
         self.include_inactive = include_inactive
         self.allow_add_new = allow_add_new
+        self.exclude_thp_linked = exclude_thp_linked
         self._persons_by_id = {}
         self._preserve_person_id: int | None = None
         self._handling_add_new = False
 
         self.activated.connect(self._on_activated)
         self.reload()
+
+    def _should_include_person(self, person, *, preserve_id: int | None) -> bool:
+        if not self.exclude_thp_linked:
+            return True
+        if preserve_id is not None and person.id == preserve_id:
+            return True
+        return find_thp_worker_for_person(person) is None
 
     def reload(self, preserve_id: int | None = None) -> None:
         if preserve_id is not None:
@@ -45,9 +55,12 @@ class PersonSelector(SearchComboBox):
 
         persons = person_service.get_all(include_inactive=self.include_inactive)
         persons = czech_sorted(persons, key=worker_sort_key)
+        keep_id = self._preserve_person_id or current_id
 
         names = []
         for person in persons:
+            if not self._should_include_person(person, preserve_id=keep_id):
+                continue
             self._append_person_item(person)
             names.append(person.display_name)
 

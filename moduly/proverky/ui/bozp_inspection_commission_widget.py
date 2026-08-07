@@ -48,7 +48,11 @@ class BozpInspectionCommissionWidget(QWidget):
 
         self.leader_selector = ThpWorkerSelector(include_empty=True)
         self.workplace_selector = ThpWorkerSelector(include_empty=True)
-        self.union_selector = PersonSelector(include_empty=True, allow_add_new=True)
+        self.union_selector = PersonSelector(
+            include_empty=True,
+            allow_add_new=True,
+            exclude_thp_linked=True,
+        )
 
         fixed_form.addRow("Vedoucí komise:", self.leader_selector)
         fixed_form.addRow("Zástupce pracoviště:", self.workplace_selector)

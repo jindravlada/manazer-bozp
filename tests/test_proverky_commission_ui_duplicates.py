@@ -167,6 +167,22 @@ class ProverkyCommissionUiDuplicateTestCase(unittest.TestCase):
         mock_message.assert_called_once()
         self.assertEqual(len(widget._invited), 1)
 
+    def test_union_selector_excludes_thp_linked_persons(self) -> None:
+        from moduly.nastaveni.sluzby.person_thp_link import ensure_person_for_thp_worker
+
+        thp_person = ensure_person_for_thp_worker(
+            settings_service.get_worker_by_id(self.leader_id)
+        )
+        widget = self._widget()
+        union_ids = {
+            widget.union_selector.itemData(index)
+            for index in range(widget.union_selector.count())
+            if isinstance(widget.union_selector.itemData(index), int)
+        }
+        self.assertIn(self.union_id, union_ids)
+        self.assertIn(self.invited_id, union_ids)
+        self.assertNotIn(thp_person.id, union_ids)
+
     def test_full_commission_still_validates_and_saves(self) -> None:
         widget = self._widget()
         widget.leader_selector.set_person_id(self.leader_id)
