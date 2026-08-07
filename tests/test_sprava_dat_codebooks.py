@@ -69,7 +69,7 @@ class CodebookCatalogServiceTestCase(unittest.TestCase):
         self.assertIn(MODULE_VYSETROVANI_MU, modules)
 
         global_names = {entry.name for entry in grouped[MODULE_GLOBAL]}
-        self.assertIn("Pracoviště", global_names)
+        self.assertIn("Provozy a pracoviště", global_names)
         self.assertIn("THP pracovníci", global_names)
 
         kniha_names = {entry.name for entry in grouped[MODULE_KNIHA_URAZU]}

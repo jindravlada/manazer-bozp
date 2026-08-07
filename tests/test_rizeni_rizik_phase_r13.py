@@ -39,7 +39,9 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rizeni_rizik.constants import (
         HAZARD_IDENTIFICATION_STATUS_ARCHIVED,
         HAZARD_IDENTIFICATION_STATUS_COMPLETED,
+        HAZARD_IDENTIFICATION_VISIBLE_TABS,
         HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
+        TAB_AI_PEER_REVIEW,
         TAB_PHOTOS,
         is_identification_photos_read_only,
     )
@@ -289,10 +291,14 @@ class HazardIdentificationPhotosR13TestCase(unittest.TestCase):
 
     def test_dialog_tab_order_includes_photos(self) -> None:
         dialog = HazardIdentificationDialog(identification=self.identification)
+        # R21a: viditelné jen Základní údaje / Fotodokumentace / Zdroje / Posouzení.
+        self.assertEqual(dialog.tabs.count(), len(HAZARD_IDENTIFICATION_VISIBLE_TABS))
         self.assertEqual(dialog.tabs.tabText(1), TAB_PHOTOS)
         self.assertTrue(dialog.tabs.isTabEnabled(1))
-        self.assertTrue(dialog.tabs.isTabEnabled(4))  # AI
         self.assertIs(dialog.tabs.widget(1), dialog.photos_widget)
+        visible = [dialog.tabs.tabText(i) for i in range(dialog.tabs.count())]
+        self.assertEqual(visible, list(HAZARD_IDENTIFICATION_VISIBLE_TABS))
+        self.assertNotIn(TAB_AI_PEER_REVIEW, visible)
 
 
 if __name__ == "__main__":

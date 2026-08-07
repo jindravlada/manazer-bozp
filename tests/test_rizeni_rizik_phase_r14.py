@@ -43,6 +43,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from moduly.rizeni_rizik.constants import (
         HAZARD_INVENTORY_CATEGORY_EQUIPMENT,
+        INVENTORY_ADD_NEW_BUTTON,
         format_inventory_item_display_name,
     )
     from moduly.rizeni_rizik.modely.hazard_event import HazardEvent
@@ -174,7 +175,7 @@ class HazardInventoryRelationsRemovalR14TestCase(unittest.TestCase):
         self.assertEqual(
             [widget.add_btn.text(), widget.edit_btn.text(), widget.activate_btn.text(),
              widget.deactivate_btn.text()],
-            ["Přidat", "Upravit", "Aktivovat", "Deaktivovat"],
+            [INVENTORY_ADD_NEW_BUTTON, "Upravit", "Aktivovat", "Deaktivovat"],
         )
         self.assertEqual(widget.add_event_btn.text(), "Přidat událost")
         self.assertTrue(hasattr(widget, "events_table"))
