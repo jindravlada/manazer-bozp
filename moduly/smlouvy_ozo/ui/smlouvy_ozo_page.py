@@ -36,6 +36,7 @@ from moduly.smlouvy_ozo.ui.ozo_contract_table import OzoContractTable
 class SmlouvyOzoPage(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self._dashboard_refresh_callback = None
 
         layout = QVBoxLayout(self)
 
@@ -80,6 +81,9 @@ class SmlouvyOzoPage(QWidget):
         self.table.selectionModel().selectionChanged.connect(self._refresh_action_buttons)
 
         self.refresh()
+
+    def set_dashboard_refresh_callback(self, callback) -> None:
+        self._dashboard_refresh_callback = callback
 
     def showEvent(self, event: QShowEvent) -> None:
         super().showEvent(event)
@@ -146,6 +150,8 @@ class SmlouvyOzoPage(QWidget):
         dialog = OzoContractDialog(self)
         exec_maximized(dialog)
         self.refresh()
+        if dialog.contract is not None:
+            self._notify_dashboard()
 
     def edit_selected(self) -> None:
         if self._selected_row_count() != 1:
@@ -158,6 +164,27 @@ class SmlouvyOzoPage(QWidget):
         dialog = OzoContractDialog(self, contract=contract)
         exec_maximized(dialog)
         self.refresh()
+        self._notify_dashboard()
+
+    def open_contract(self, contract_id: int) -> None:
+        contract = ozo_contract_service.get_by_id(contract_id)
+        if contract is None:
+            QMessageBox.warning(self, MODULE_NAME, ITEM_NOT_FOUND_MESSAGE)
+            self.refresh()
+            return
+        if not contract.active:
+            self.show_inactive.setChecked(True)
+        self.refresh()
+        for row in range(self.table.rowCount()):
+            item = self.table.item(row, 0)
+            if item is not None and item.data(Qt.ItemDataRole.UserRole) == contract_id:
+                self.table.selectRow(row)
+                break
+        self._refresh_action_buttons()
+        dialog = OzoContractDialog(self, contract=contract)
+        exec_maximized(dialog)
+        self.refresh()
+        self._notify_dashboard()
 
     def activate_selected(self) -> None:
         if not self.activate_btn.isEnabled():
@@ -169,6 +196,7 @@ class SmlouvyOzoPage(QWidget):
             return
         ozo_contract_service.activate(contract.id)
         self.refresh()
+        self._notify_dashboard()
 
     def deactivate_selected(self) -> None:
         if not self.deactivate_btn.isEnabled():
@@ -180,3 +208,8 @@ class SmlouvyOzoPage(QWidget):
             return
         ozo_contract_service.deactivate(contract.id)
         self.refresh()
+        self._notify_dashboard()
+
+    def _notify_dashboard(self) -> None:
+        if callable(self._dashboard_refresh_callback):
+            self._dashboard_refresh_callback()

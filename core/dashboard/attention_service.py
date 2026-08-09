@@ -8,11 +8,13 @@ from core.dashboard.attention_item import (
     ITEM_TYPE_AUDIT,
     ITEM_TYPE_INSPECTION,
     ITEM_TYPE_MEETING,
+    ITEM_TYPE_OZO_CONTRACT,
     ITEM_TYPE_PERIODIC,
     ITEM_TYPE_TASK,
     ITEM_TYPE_YEARLY_PLAN_MONTH,
     SOURCE_LABEL_AUDIT,
     SOURCE_LABEL_INSPECTION,
+    SOURCE_LABEL_OZO_CONTRACT,
     SOURCE_LABEL_PERIODIC,
     SOURCE_LABEL_YEARLY_PLAN,
     AttentionItem,
@@ -33,6 +35,11 @@ from moduly.rocni_plan.constants import (
 from moduly.rocni_plan.sluzby.yearly_plan_service import yearly_plan_service
 from moduly.schuzky.constants import STATUS_PLANNED
 from moduly.schuzky.sluzby.meeting_service import meeting_service
+from moduly.smlouvy_ozo.constants import STATUS_EXPIRED, status_label
+from moduly.smlouvy_ozo.sluzby.ozo_contract_service import ozo_contract_service
+from moduly.smlouvy_ozo.sluzby.ozo_contract_validity import (
+    is_due_for_attention as is_ozo_contract_due_for_attention,
+)
 from moduly.ukoly.sluzby.task_service import task_service
 
 
@@ -326,8 +333,60 @@ def _from_yearly_plan_month(today: date) -> list[AttentionItem]:
     ]
 
 
+def _ozo_contract_subtitle(contract, *, expired: bool) -> str:
+    number = (contract.contract_number or "").strip()
+    parts: list[str] = []
+    if expired:
+        parts.append(status_label(STATUS_EXPIRED))
+    if number:
+        parts.append(number)
+    if parts:
+        return " · ".join(parts)
+    return SOURCE_LABEL_OZO_CONTRACT
+
+
+def _from_ozo_contracts(today: date) -> list[AttentionItem]:
+    items: list[AttentionItem] = []
+    for contract in ozo_contract_service.get_all(active_only=True):
+        if not is_ozo_contract_due_for_attention(
+            active=bool(contract.active),
+            indefinite=bool(contract.indefinite),
+            valid_to=contract.valid_to,
+            notify_before_value=int(contract.notify_before_value or 0),
+            notify_before_unit=contract.notify_before_unit or "",
+            today=today,
+        ):
+            continue
+        title = (contract.employer_name or "").strip() or f"Smlouva OZO #{contract.id}"
+        due_date = contract.valid_to
+        expired = bool(due_date is not None and today > due_date)
+        items.append(
+            AttentionItem(
+                item_type=ITEM_TYPE_OZO_CONTRACT,
+                source_type=ITEM_TYPE_OZO_CONTRACT,
+                source_id=contract.id,
+                title=title,
+                date=due_date,
+                subtitle=_ozo_contract_subtitle(contract, expired=expired),
+                status=status_label(STATUS_EXPIRED) if expired else "",
+                priority="",
+                open_metadata={
+                    "source_type": ITEM_TYPE_OZO_CONTRACT,
+                    "source_id": contract.id,
+                },
+                sort_key=build_sort_key(
+                    due_date,
+                    item_type=ITEM_TYPE_OZO_CONTRACT,
+                    title=title,
+                    source_id=contract.id,
+                ),
+            )
+        )
+    return items
+
+
 def get_attention_items(*, today: date | None = None) -> list[AttentionItem]:
-    """Vrátí společně seřazené úkoly, audity, prověrky, schůzky, periodiky a měsíční plán."""
+    """Vrátí společně seřazené úkoly, audity, prověrky, schůzky, periodiky, plán a smlouvy OZO."""
     today = today or date.today()
     items = (
         _from_tasks(today)
@@ -336,6 +395,7 @@ def get_attention_items(*, today: date | None = None) -> list[AttentionItem]:
         + _from_meetings(today)
         + _from_periodics(today)
         + _from_yearly_plan_month(today)
+        + _from_ozo_contracts(today)
     )
     items.sort(key=lambda item: item.sort_key)
     return items

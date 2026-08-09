@@ -196,6 +196,13 @@ class MainWindow(QMainWindow):
             page.set_dashboard_refresh_callback(self._refresh_dashboard_and_agenda)
             return page
 
+        if module.key == "smlouvy_ozo":
+            from moduly.smlouvy_ozo.ui.smlouvy_ozo_page import SmlouvyOzoPage
+
+            page = SmlouvyOzoPage()
+            page.set_dashboard_refresh_callback(self._refresh_dashboard_and_agenda)
+            return page
+
         return module.page_factory()
 
     def _refresh_dashboard_page(self) -> None:
@@ -420,6 +427,7 @@ class MainWindow(QMainWindow):
             ITEM_TYPE_AUDIT,
             ITEM_TYPE_INSPECTION,
             ITEM_TYPE_MEETING,
+            ITEM_TYPE_OZO_CONTRACT,
             ITEM_TYPE_PERIODIC,
             ITEM_TYPE_TASK,
             ITEM_TYPE_YEARLY_PLAN_MONTH,
@@ -443,6 +451,9 @@ class MainWindow(QMainWindow):
             return
         if item_type == ITEM_TYPE_PERIODIC and entity_id is not None:
             self._open_periodic_activity_by_id(entity_id)
+            return
+        if item_type == ITEM_TYPE_OZO_CONTRACT and entity_id is not None:
+            self._open_ozo_contract_by_id(entity_id)
             return
         if item_type == ITEM_TYPE_YEARLY_PLAN_MONTH:
             metadata = getattr(item, "open_metadata", None) or {}
@@ -561,6 +572,22 @@ class MainWindow(QMainWindow):
         page = self._page_widgets.get("agenda")
         if page is not None and hasattr(page, "open_yearly_plan"):
             page.open_yearly_plan(year, month)
+        self._refresh_dashboard_and_agenda()
+
+    def _open_ozo_contract_by_id(self, contract_id: int) -> None:
+        from moduly.smlouvy_ozo.constants import MODULE_NAME, ITEM_NOT_FOUND_MESSAGE
+        from moduly.smlouvy_ozo.sluzby.ozo_contract_service import ozo_contract_service
+
+        contract = ozo_contract_service.get_by_id(contract_id)
+        if contract is None:
+            QMessageBox.warning(self, MODULE_NAME, ITEM_NOT_FOUND_MESSAGE)
+            self._refresh_dashboard_and_agenda()
+            return
+
+        self._show("smlouvy_ozo")
+        page = self._page_widgets.get("smlouvy_ozo")
+        if page is not None and hasattr(page, "open_contract"):
+            page.open_contract(contract_id)
         self._refresh_dashboard_and_agenda()
 
     def _open_schuzky(self):

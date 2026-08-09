@@ -73,3 +73,26 @@ def contract_status(
     if start is not None and current >= start:
         return STATUS_ENDING
     return STATUS_ACTIVE
+
+
+def is_due_for_attention(
+    *,
+    active: bool,
+    indefinite: bool,
+    valid_to: date | None,
+    notify_before_value: int = 0,
+    notify_before_unit: str = DEFAULT_NOTIFY_BEFORE_UNIT,
+    today: date | None = None,
+) -> bool:
+    """True od data upozornění (valid_to − předstih) u aktivní smlouvy na dobu určitou."""
+    if not active or indefinite or valid_to is None:
+        return False
+    notify_on = notify_start_date(
+        valid_to,
+        notify_before_value,
+        notify_before_unit,
+    )
+    if notify_on is None:
+        return False
+    current = today or date.today()
+    return current >= notify_on
