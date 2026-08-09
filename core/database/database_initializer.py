@@ -28,6 +28,12 @@ def initialize_database() -> None:
     from moduly.schuzky.modely.meeting_agenda_item import MeetingAgendaItem  # noqa: F401
     from moduly.schuzky.modely.meeting_event_type import MeetingEventType  # noqa: F401
     from moduly.schuzky.modely.meeting_template import MeetingTemplate  # noqa: F401
+    from moduly.periodicke_cinnosti.modely.periodic_activity import (  # noqa: F401
+        PeriodicActivity,
+    )
+    from moduly.periodicke_cinnosti.modely.periodic_activity_occurrence import (  # noqa: F401
+        PeriodicActivityOccurrence,
+    )
     from moduly.kontroly.modely.control import Control  # noqa: F401
     from moduly.kontroly.modely.thp_monthly_control import ThpMonthlyControl  # noqa: F401
     from moduly.kontroly.modely.thp_yearly_kl_usage import ThpYearlyKlUsage  # noqa: F401
