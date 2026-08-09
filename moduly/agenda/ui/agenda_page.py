@@ -152,6 +152,13 @@ class AgendaPage(QWidget):
             self.tabs.setCurrentIndex(index)
         self.periodic_tab.open_activity(activity_id)
 
+    def open_yearly_plan(self, year: int, month: int) -> None:
+        """Přepne na Roční plán a nastaví rok/měsíc."""
+        index = self.tabs.indexOf(self.yearly_plan_tab)
+        if index >= 0:
+            self.tabs.setCurrentIndex(index)
+        self.yearly_plan_tab.set_year_month(year, month)
+
     def apply_workspace_filters(self) -> None:
         """Výchozí filtr z pracovní plochy: oba typy + Aktivní."""
         self.tabs.setCurrentIndex(0)

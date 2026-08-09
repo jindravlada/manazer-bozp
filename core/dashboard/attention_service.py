@@ -10,12 +10,15 @@ from core.dashboard.attention_item import (
     ITEM_TYPE_MEETING,
     ITEM_TYPE_PERIODIC,
     ITEM_TYPE_TASK,
+    ITEM_TYPE_YEARLY_PLAN_MONTH,
     SOURCE_LABEL_AUDIT,
     SOURCE_LABEL_INSPECTION,
     SOURCE_LABEL_PERIODIC,
+    SOURCE_LABEL_YEARLY_PLAN,
     AttentionItem,
 )
 from core.shared.task_source_display import task_source_short_label
+from core.shared.working_days import first_working_day
 from moduly.audity.sluzby.audit_service import audit_service
 from moduly.periodicke_cinnosti.constants import PLACE_KIND_NONE, format_place
 from moduly.periodicke_cinnosti.sluzby.periodic_activity_service import (
@@ -23,6 +26,11 @@ from moduly.periodicke_cinnosti.sluzby.periodic_activity_service import (
     periodic_activity_service,
 )
 from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
+from moduly.rocni_plan.constants import (
+    month_planning_attention_title,
+    month_planning_source_id,
+)
+from moduly.rocni_plan.sluzby.yearly_plan_service import yearly_plan_service
 from moduly.schuzky.constants import STATUS_PLANNED
 from moduly.schuzky.sluzby.meeting_service import meeting_service
 from moduly.ukoly.sluzby.task_service import task_service
@@ -284,8 +292,42 @@ def _from_periodics(today: date) -> list[AttentionItem]:
     return items
 
 
+def _from_yearly_plan_month(today: date) -> list[AttentionItem]:
+    if not yearly_plan_service.should_show_month_planning_attention(today=today):
+        return []
+    year = today.year
+    month = today.month
+    title = month_planning_attention_title(year, month)
+    source_id = month_planning_source_id(year, month)
+    due_date = first_working_day(year, month)
+    return [
+        AttentionItem(
+            item_type=ITEM_TYPE_YEARLY_PLAN_MONTH,
+            source_type=ITEM_TYPE_YEARLY_PLAN_MONTH,
+            source_id=source_id,
+            title=title,
+            date=due_date,
+            subtitle=SOURCE_LABEL_YEARLY_PLAN,
+            status="",
+            priority="",
+            open_metadata={
+                "source_type": ITEM_TYPE_YEARLY_PLAN_MONTH,
+                "source_id": source_id,
+                "year": year,
+                "month": month,
+            },
+            sort_key=build_sort_key(
+                due_date,
+                item_type=ITEM_TYPE_YEARLY_PLAN_MONTH,
+                title=title,
+                source_id=source_id,
+            ),
+        )
+    ]
+
+
 def get_attention_items(*, today: date | None = None) -> list[AttentionItem]:
-    """Vrátí společně seřazené úkoly, audity, prověrky, schůzky a periodické činnosti."""
+    """Vrátí společně seřazené úkoly, audity, prověrky, schůzky, periodiky a měsíční plán."""
     today = today or date.today()
     items = (
         _from_tasks(today)
@@ -293,6 +335,7 @@ def get_attention_items(*, today: date | None = None) -> list[AttentionItem]:
         + _from_inspections(today)
         + _from_meetings(today)
         + _from_periodics(today)
+        + _from_yearly_plan_month(today)
     )
     items.sort(key=lambda item: item.sort_key)
     return items

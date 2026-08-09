@@ -16,6 +16,7 @@ from moduly.rocni_plan.constants import (
     ITEM_STATUSES,
     MAX_YEAR,
     MIN_YEAR,
+    MONTH_ALREADY_PROCESSED_MESSAGE,
     ROW_KIND_MANUAL,
     ROW_KIND_PERIODIC,
     SOURCE_LABEL_MANUAL,
@@ -28,11 +29,14 @@ from moduly.rocni_plan.constants import (
 )
 from moduly.rocni_plan.modely.yearly_plan_item import YearlyPlanItem
 from moduly.rocni_plan.modely.yearly_plan_item_move import YearlyPlanItemMove
+from moduly.rocni_plan.modely.yearly_plan_month_status import YearlyPlanMonthStatus
 from moduly.rocni_plan.modely.yearly_plan_row import YearlyPlanRow
 from moduly.rocni_plan.repository.yearly_plan_repository import (
     YearlyPlanItemMoveRepository,
     YearlyPlanItemRepository,
+    YearlyPlanMonthStatusRepository,
 )
+from core.shared.working_days import first_working_day
 from moduly.periodicke_cinnosti.sluzby.periodic_activity_service import (
     add_period,
     periodic_activity_service,
@@ -231,6 +235,7 @@ class YearlyPlanService:
     def __init__(self) -> None:
         self.repository = YearlyPlanItemRepository()
         self.move_repository = YearlyPlanItemMoveRepository()
+        self.month_status_repository = YearlyPlanMonthStatusRepository()
 
     def get_by_id(self, item_id: int) -> YearlyPlanItem | None:
         return self.repository.get_by_id(item_id)
@@ -490,6 +495,46 @@ class YearlyPlanService:
             else:
                 statuses.append(resolve_display_status(item, today=today))
         return summarize_display_statuses(statuses)
+
+    def get_month_status(self, year: int, month: int) -> YearlyPlanMonthStatus | None:
+        self._validate_year_month(year, month)
+        return self.month_status_repository.get_for_month(year, month)
+
+    def is_month_processed(self, year: int, month: int) -> bool:
+        return self.get_month_status(year, month) is not None
+
+    def mark_month_processed(
+        self,
+        year: int,
+        month: int,
+        *,
+        processed_at: datetime | None = None,
+    ) -> YearlyPlanMonthStatus:
+        """Označí měsíc jako zpracovaný. Nemění stavy položek."""
+        self._validate_year_month(year, month)
+        existing = self.month_status_repository.get_for_month(year, month)
+        if existing is not None:
+            raise YearlyPlanValidationError(MONTH_ALREADY_PROCESSED_MESSAGE)
+        status = YearlyPlanMonthStatus(
+            year=year,
+            month=month,
+            processed_at=processed_at or datetime.now(),
+        )
+        return self.month_status_repository.add(status)
+
+    def should_show_month_planning_attention(
+        self,
+        *,
+        today: date | None = None,
+    ) -> bool:
+        """
+        True od prvního pracovního dne aktuálního měsíce,
+        dokud měsíc není označen jako zpracovaný.
+        """
+        today = today or date.today()
+        if today < first_working_day(today.year, today.month):
+            return False
+        return not self.is_month_processed(today.year, today.month)
 
 
 yearly_plan_service = YearlyPlanService()

@@ -69,6 +69,7 @@ ACTION_CREATE_TASK = "Vytvořit úkol"
 ACTION_CREATE_MEETING = "Vytvořit událost"
 ACTION_MOVE = "Přesunout"
 ACTION_CANCEL = "Zrušit"
+ACTION_MARK_MONTH_PROCESSED = "Měsíc zpracován"
 
 DIALOG_TITLE_NEW = "Nová položka Ročního plánu"
 DIALOG_TITLE_EDIT = "Položka Ročního plánu"
@@ -81,8 +82,14 @@ EMPTY_STATE_TEXT = "Nejsou evidovány žádné položky Ročního plánu pro zvo
 ITEM_NOT_FOUND_MESSAGE = "Položka Ročního plánu nebyla nalezena."
 TITLE_REQUIRED_MESSAGE = "Vyplňte název položky."
 CANCEL_CONFIRM_MESSAGE = "Opravdu zrušit vybranou položku Ročního plánu?"
+MARK_MONTH_PROCESSED_CONFIRM = (
+    "Označit měsíc jako zpracovaný?\n\n"
+    "Potvrzujete, že jste prošli plán tohoto měsíce a rozhodli jste, "
+    "co budete dělat. Stavy jednotlivých položek se nemění."
+)
 ALREADY_LINKED_MESSAGE = "Položka už má vazbu na Úkol nebo Událost."
 CANCELLED_ACTION_MESSAGE = "Zrušenou položku nelze upravit touto akcí."
+MONTH_ALREADY_PROCESSED_MESSAGE = "Tento měsíc už je označen jako zpracovaný."
 
 COL_ID = 0
 COL_SOURCE = 1
@@ -122,6 +129,23 @@ def month_label(month: int) -> str:
 def format_year_month(year: int, month: int) -> str:
     name = month_label(month)
     return f"{name} {year}"
+
+
+def format_processed_at(value) -> str:
+    """Decentní zobrazení data zpracování měsíce."""
+    if value is None:
+        return ""
+    if hasattr(value, "day") and hasattr(value, "month") and hasattr(value, "year"):
+        return f"{value.day}. {value.month}. {value.year}"
+    return str(value)
+
+
+def month_planning_attention_title(year: int, month: int) -> str:
+    return f"Zpracovat úkoly měsíce – {format_year_month(year, month)}"
+
+
+def month_planning_source_id(year: int, month: int) -> int:
+    return int(year) * 100 + int(month)
 
 
 def status_label(status: str) -> str:

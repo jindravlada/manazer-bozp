@@ -38,6 +38,9 @@ def initialize_database() -> None:
     from moduly.rocni_plan.modely.yearly_plan_item_move import (  # noqa: F401
         YearlyPlanItemMove,
     )
+    from moduly.rocni_plan.modely.yearly_plan_month_status import (  # noqa: F401
+        YearlyPlanMonthStatus,
+    )
     from moduly.kontroly.modely.control import Control  # noqa: F401
     from moduly.kontroly.modely.thp_monthly_control import ThpMonthlyControl  # noqa: F401
     from moduly.kontroly.modely.thp_yearly_kl_usage import ThpYearlyKlUsage  # noqa: F401

@@ -7,6 +7,7 @@ from sqlalchemy import select
 from core.database.session import get_session
 from moduly.rocni_plan.modely.yearly_plan_item import YearlyPlanItem
 from moduly.rocni_plan.modely.yearly_plan_item_move import YearlyPlanItemMove
+from moduly.rocni_plan.modely.yearly_plan_month_status import YearlyPlanMonthStatus
 
 
 class YearlyPlanItemRepository:
@@ -66,3 +67,32 @@ class YearlyPlanItemMoveRepository:
             session.commit()
             session.refresh(move)
             return move
+
+
+class YearlyPlanMonthStatusRepository:
+    def get_for_month(self, year: int, month: int) -> YearlyPlanMonthStatus | None:
+        with get_session() as session:
+            stmt = select(YearlyPlanMonthStatus).where(
+                YearlyPlanMonthStatus.year == year,
+                YearlyPlanMonthStatus.month == month,
+            )
+            return session.scalars(stmt).first()
+
+    def add(self, status: YearlyPlanMonthStatus) -> YearlyPlanMonthStatus:
+        with get_session() as session:
+            session.add(status)
+            session.commit()
+            session.refresh(status)
+            return status
+
+    def delete_for_month(self, year: int, month: int) -> None:
+        with get_session() as session:
+            row = session.scalars(
+                select(YearlyPlanMonthStatus).where(
+                    YearlyPlanMonthStatus.year == year,
+                    YearlyPlanMonthStatus.month == month,
+                )
+            ).first()
+            if row is not None:
+                session.delete(row)
+                session.commit()

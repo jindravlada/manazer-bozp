@@ -413,6 +413,7 @@ class MainWindow(QMainWindow):
             ITEM_TYPE_MEETING,
             ITEM_TYPE_PERIODIC,
             ITEM_TYPE_TASK,
+            ITEM_TYPE_YEARLY_PLAN_MONTH,
         )
 
         item_type = getattr(item, "item_type", None) or getattr(item, "source_type", None)
@@ -433,6 +434,16 @@ class MainWindow(QMainWindow):
             return
         if item_type == ITEM_TYPE_PERIODIC and entity_id is not None:
             self._open_periodic_activity_by_id(entity_id)
+            return
+        if item_type == ITEM_TYPE_YEARLY_PLAN_MONTH:
+            metadata = getattr(item, "open_metadata", None) or {}
+            year = metadata.get("year")
+            month = metadata.get("month")
+            if year is None or month is None:
+                today = date.today()
+                year = today.year
+                month = today.month
+            self._open_yearly_plan_month(int(year), int(month))
 
     def _open_audit_by_id(self, audit_id: int) -> None:
         from moduly.audity.sluzby.audit_service import audit_service
@@ -534,6 +545,13 @@ class MainWindow(QMainWindow):
         if page is not None and hasattr(page, "open_periodic_activity"):
             page.open_periodic_activity(activity_id)
 
+        self._refresh_dashboard_and_agenda()
+
+    def _open_yearly_plan_month(self, year: int, month: int) -> None:
+        self._show("agenda")
+        page = self._page_widgets.get("agenda")
+        if page is not None and hasattr(page, "open_yearly_plan"):
+            page.open_yearly_plan(year, month)
         self._refresh_dashboard_and_agenda()
 
     def _open_schuzky(self):

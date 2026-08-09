@@ -25,6 +25,7 @@ from moduly.rocni_plan.constants import (
     ACTION_CREATE_MEETING,
     ACTION_CREATE_TASK,
     ACTION_EDIT,
+    ACTION_MARK_MONTH_PROCESSED,
     ACTION_MOVE,
     ACTION_NEW,
     ALREADY_LINKED_MESSAGE,
@@ -32,12 +33,14 @@ from moduly.rocni_plan.constants import (
     CANCELLED_ACTION_MESSAGE,
     EMPTY_STATE_TEXT,
     ITEM_NOT_FOUND_MESSAGE,
+    MARK_MONTH_PROCESSED_CONFIRM,
     MAX_YEAR,
     MIN_YEAR,
     MONTH_NAMES,
     SOURCE_MODULE_YEARLY_PLAN,
     STATUS_CANCELLED,
     TAB_YEARLY_PLAN,
+    format_processed_at,
 )
 from moduly.periodicke_cinnosti.sluzby.periodic_activity_service import (
     periodic_activity_service,
@@ -96,6 +99,9 @@ class YearlyPlanTab(QWidget):
         self.create_meeting_btn = QPushButton(ACTION_CREATE_MEETING)
         self.move_btn = QPushButton(ACTION_MOVE)
         self.cancel_btn = QPushButton(ACTION_CANCEL)
+        self.mark_month_btn = QPushButton(ACTION_MARK_MONTH_PROCESSED)
+        self.month_status_label = QLabel("")
+        self.month_status_label.setObjectName("MutedText")
         for button in (
             self.edit_btn,
             self.create_task_btn,
@@ -111,7 +117,9 @@ class YearlyPlanTab(QWidget):
         toolbar.addWidget(self.create_meeting_btn)
         toolbar.addWidget(self.move_btn)
         toolbar.addWidget(self.cancel_btn)
+        toolbar.addWidget(self.mark_month_btn)
         toolbar.addStretch()
+        toolbar.addWidget(self.month_status_label)
 
         self.table = YearlyPlanTable()
         configure_table_columns(self.table, "yearly_plan")
@@ -136,6 +144,7 @@ class YearlyPlanTab(QWidget):
         self.create_meeting_btn.clicked.connect(self.create_meeting_for_selected)
         self.move_btn.clicked.connect(self.move_selected)
         self.cancel_btn.clicked.connect(self.cancel_selected)
+        self.mark_month_btn.clicked.connect(self.mark_month_processed)
         self.year_combo.currentIndexChanged.connect(self.refresh)
         self.month_combo.currentIndexChanged.connect(self.refresh)
         self.table.doubleClicked.connect(self.edit_selected)
@@ -178,6 +187,7 @@ class YearlyPlanTab(QWidget):
         self.table.clear_selection()
         self.text_filter.update_count()
         self._refresh_action_buttons()
+        self._refresh_month_processed_state()
         self._refresh_summary(rows)
         if rows:
             self.empty_label.hide()
@@ -186,6 +196,44 @@ class YearlyPlanTab(QWidget):
             self.empty_label.setText(EMPTY_STATE_TEXT)
             self.empty_label.show()
             self.table.hide()
+
+    def _refresh_month_processed_state(self) -> None:
+        status = yearly_plan_service.get_month_status(
+            self.current_year(),
+            self.current_month(),
+        )
+        if status is None:
+            self.month_status_label.setText("")
+            self.mark_month_btn.setEnabled(True)
+            return
+        self.month_status_label.setText(
+            f"Zpracováno: {format_processed_at(status.processed_at)}"
+        )
+        self.mark_month_btn.setEnabled(False)
+
+    def mark_month_processed(self) -> None:
+        if not self.mark_month_btn.isEnabled():
+            return
+        answer = QMessageBox.question(
+            self,
+            ACTION_MARK_MONTH_PROCESSED,
+            MARK_MONTH_PROCESSED_CONFIRM,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+        try:
+            yearly_plan_service.mark_month_processed(
+                self.current_year(),
+                self.current_month(),
+            )
+        except YearlyPlanValidationError as error:
+            QMessageBox.warning(self, ACTION_MARK_MONTH_PROCESSED, str(error))
+            self.refresh()
+            return
+        self.refresh()
+        self._notify_changed()
 
     def _refresh_summary(self, rows) -> None:
         summary = yearly_plan_service.month_summary(rows)
