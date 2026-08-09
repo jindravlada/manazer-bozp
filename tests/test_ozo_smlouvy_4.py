@@ -59,15 +59,20 @@ class OzoSmlouvy4TestCase(unittest.TestCase):
         from moduly.smlouvy_ozo.modely.ozo_contract import OzoContract
         from moduly.smlouvy_ozo.modely.ozo_person import OzoPerson
 
+        self._ico_seq = 0
         with get_session() as session:
             session.execute(delete(OzoContract))
             session.execute(delete(OzoPerson))
             session.commit()
 
+    def _next_ico(self) -> str:
+        self._ico_seq += 1
+        return f"{self._ico_seq:08d}"
+
     def _create(self, **overrides):
         data = {
             "employer_name": "Objednatel A",
-            "ico": "11111111",
+            "ico": self._next_ico(),
             "valid_from": date(2030, 3, 1),
             "valid_to": date(2030, 12, 31),
             "indefinite": False,

@@ -46,6 +46,8 @@ class OzoContract(Base):
 
     services_scope: Mapped[str] = mapped_column(Text, default="")
     note: Mapped[str] = mapped_column(Text, default="")
+    # Výjimečná technická archivace chybného záznamu – neukončuje smlouvu.
+    # Ukončení platnosti = valid_to / indefinite=False (stav Po platnosti).
     active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)

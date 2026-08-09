@@ -34,8 +34,6 @@ with patch.object(Path, "home", return_value=_TMP):
     from core.services.attachment_service import attachment_service
     from core.windows.main_window import MainWindow
     from moduly.smlouvy_ozo.constants import (
-        ACTION_ACTIVATE,
-        ACTION_DEACTIVATE,
         ACTION_EDIT,
         ACTION_NEW,
         COL_EMPLOYER,
@@ -68,14 +66,19 @@ class OzoSmlouvy2TestCase(unittest.TestCase):
         cls._app = QApplication.instance() or QApplication([])
 
     def setUp(self) -> None:
+        self._ico_seq = 0
         for contract in list(ozo_contract_service.get_all()):
             ozo_contract_service.deactivate(contract.id)
             # Soft cleanup: leave inactive; create unique names per test.
 
+    def _next_ico(self) -> str:
+        self._ico_seq += 1
+        return f"{self._ico_seq:08d}"
+
     def _create(self, **overrides):
         data = {
             "employer_name": "Test Objednatel a.s.",
-            "ico": "12345678",
+            "ico": self._next_ico(),
             "address": "Praha 1",
             "valid_from": date(2030, 1, 1),
             "valid_to": date(2030, 12, 31),
@@ -293,16 +296,14 @@ class OzoSmlouvy2TestCase(unittest.TestCase):
         self.assertIsNotNone(active.id)
 
     def test_action_buttons_by_selection(self) -> None:
-        contract = self._create(employer_name="Tlačítka OZO")
+        self._create(employer_name="Tlačítka OZO")
         page = SmlouvyOzoPage()
         self._select_all_years(page)
         self.assertEqual(page.new_btn.text(), ACTION_NEW)
         self.assertEqual(page.edit_btn.text(), ACTION_EDIT)
-        self.assertEqual(page.activate_btn.text(), ACTION_ACTIVATE)
-        self.assertEqual(page.deactivate_btn.text(), ACTION_DEACTIVATE)
+        self.assertFalse(hasattr(page, "activate_btn"))
+        self.assertFalse(hasattr(page, "deactivate_btn"))
         self.assertFalse(page.edit_btn.isEnabled())
-        self.assertFalse(page.activate_btn.isEnabled())
-        self.assertFalse(page.deactivate_btn.isEnabled())
 
         for row in range(page.table.rowCount()):
             if page.table.item(row, COL_EMPLOYER).text() == "Tlačítka OZO":
@@ -310,19 +311,6 @@ class OzoSmlouvy2TestCase(unittest.TestCase):
                 break
         page._refresh_action_buttons()
         self.assertTrue(page.edit_btn.isEnabled())
-        self.assertFalse(page.activate_btn.isEnabled())
-        self.assertTrue(page.deactivate_btn.isEnabled())
-
-        ozo_contract_service.deactivate(contract.id)
-        page.show_inactive.setChecked(True)
-        page.refresh()
-        for row in range(page.table.rowCount()):
-            if page.table.item(row, COL_EMPLOYER).text() == "Tlačítka OZO":
-                page.table.selectRow(row)
-                break
-        page._refresh_action_buttons()
-        self.assertTrue(page.activate_btn.isEnabled())
-        self.assertFalse(page.deactivate_btn.isEnabled())
         page.close()
 
     def test_list_status_column(self) -> None:

@@ -164,8 +164,6 @@ class OzoContractDialog(QDialog):
         self.note = QTextEdit()
         self.note.setAcceptRichText(False)
         self.note.setMinimumHeight(70)
-        self.active_checkbox = QCheckBox("Aktivní")
-        self.active_checkbox.setChecked(True)
 
         form.addRow("Číslo smlouvy:", self.contract_number)
         form.addRow("Datum uzavření:", self.signed_on)
@@ -175,7 +173,6 @@ class OzoContractDialog(QDialog):
         form.addRow("Upozornit před koncem:", self.notify_widget)
         form.addRow("Rozsah poskytovaných služeb:", self.services_scope)
         form.addRow("Poznámka:", self.note)
-        form.addRow("", self.active_checkbox)
         return box
 
     def _load(self, contract) -> None:
@@ -202,7 +199,6 @@ class OzoContractDialog(QDialog):
             self.notify_before_unit.setCurrentIndex(unit_index)
         self.services_scope.setPlainText(contract.services_scope or "")
         self.note.setPlainText(contract.note or "")
-        self.active_checkbox.setChecked(bool(contract.active))
 
     def _sync_validity_fields(self) -> None:
         indefinite = self.indefinite_checkbox.isChecked()
@@ -254,7 +250,6 @@ class OzoContractDialog(QDialog):
             or DEFAULT_NOTIFY_BEFORE_UNIT,
             "services_scope": self.services_scope.toPlainText().strip(),
             "note": self.note.toPlainText().strip(),
-            "active": self.active_checkbox.isChecked(),
         }
 
     def _save(self) -> bool:
@@ -272,6 +267,7 @@ class OzoContractDialog(QDialog):
             if self.contract is None:
                 self.contract = ozo_contract_service.create(**data)
             else:
+                # active neměnit z editoru – výjimečná archivace jen mimo běžné UI
                 self.contract = ozo_contract_service.update(self.contract.id, **data)
         except OzoContractValidationError as error:
             QMessageBox.warning(self, self.windowTitle(), str(error))

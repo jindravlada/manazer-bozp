@@ -9,6 +9,7 @@ from moduly.smlouvy_ozo.constants import (
     DEFAULT_NOTIFY_BEFORE_VALUE,
     EMPLOYER_NAME_REQUIRED_MESSAGE,
     NOTIFY_UNITS,
+    OVERLAP_MESSAGE,
     VALID_FROM_REQUIRED_MESSAGE,
     VALID_TO_REQUIRED_MESSAGE,
 )
@@ -26,6 +27,30 @@ def relation_date(contract: OzoContract) -> date | None:
     if contract.signed_on is not None:
         return contract.signed_on
     return contract.valid_from
+
+
+def normalize_ico(ico: str | None) -> str:
+    return (ico or "").strip()
+
+
+def validity_end(*, indefinite: bool, valid_to: date | None) -> date | None:
+    """Konec intervalu platnosti; None = doba neurčitá (otevřený konec)."""
+    if indefinite:
+        return None
+    return valid_to
+
+
+def validity_intervals_overlap(
+    from_a: date,
+    to_a: date | None,
+    from_b: date,
+    to_b: date | None,
+) -> bool:
+    """Překryv uzavřených intervalů; None u konce = nekonečno. Navazující OK."""
+    # new_from <= existing_to  AND  existing_from <= new_to
+    left_ok = True if to_b is None else from_a <= to_b
+    right_ok = True if to_a is None else from_b <= to_a
+    return left_ok and right_ok
 
 
 def covers_calendar_year(contract: OzoContract, year: int) -> bool:
@@ -163,6 +188,7 @@ class OzoContractService:
             services_scope=fields.get("services_scope", contract.services_scope),
             note=fields.get("note", contract.note),
             active=fields.get("active", contract.active),
+            exclude_id=contract_id,
         )
         for key, value in data.items():
             setattr(contract, key, value)
@@ -170,10 +196,44 @@ class OzoContractService:
         return self.repository.update(contract)
 
     def activate(self, contract_id: int) -> OzoContract:
+        """Výjimečná obnova archivovaného záznamu (ne běžné UI)."""
         return self.update(contract_id, active=True)
 
     def deactivate(self, contract_id: int) -> OzoContract:
+        """Výjimečná technická archivace chybného záznamu (ne ukončení smlouvy)."""
         return self.update(contract_id, active=False)
+
+    def find_overlapping_contract(
+        self,
+        *,
+        ico: str,
+        valid_from: date,
+        valid_to: date | None,
+        indefinite: bool,
+        exclude_id: int | None = None,
+    ) -> OzoContract | None:
+        """První aktivní smlouva se stejným IČO a překryvem platnosti."""
+        ico_norm = normalize_ico(ico)
+        if not ico_norm:
+            return None
+        new_to = validity_end(indefinite=indefinite, valid_to=valid_to)
+        for other in self.repository.get_all(active_only=True):
+            if exclude_id is not None and other.id == exclude_id:
+                continue
+            if normalize_ico(other.ico) != ico_norm:
+                continue
+            other_to = validity_end(
+                indefinite=bool(other.indefinite),
+                valid_to=other.valid_to,
+            )
+            if validity_intervals_overlap(
+                valid_from,
+                new_to,
+                other.valid_from,
+                other_to,
+            ):
+                return other
+        return None
 
     def _validated(
         self,
@@ -194,6 +254,7 @@ class OzoContractService:
         services_scope: str = "",
         note: str = "",
         active: bool = True,
+        exclude_id: int | None = None,
     ) -> dict:
         name = (employer_name or "").strip()
         if not name:
@@ -221,9 +282,21 @@ class OzoContractService:
             notify_value = DEFAULT_NOTIFY_BEFORE_VALUE
             unit = DEFAULT_NOTIFY_BEFORE_UNIT
 
+        ico_norm = normalize_ico(ico)
+        if bool(active) and ico_norm:
+            overlapping = self.find_overlapping_contract(
+                ico=ico_norm,
+                valid_from=valid_from,
+                valid_to=valid_to,
+                indefinite=indefinite,
+                exclude_id=exclude_id,
+            )
+            if overlapping is not None:
+                raise OzoContractValidationError(OVERLAP_MESSAGE)
+
         return {
             "employer_name": name,
-            "ico": (ico or "").strip(),
+            "ico": ico_norm,
             "address": (address or "").strip(),
             "contact_person": (contact_person or "").strip(),
             "phone": (phone or "").strip(),

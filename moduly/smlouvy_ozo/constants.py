@@ -27,6 +27,10 @@ ITEM_NOT_FOUND_MESSAGE = "Smlouva OZO nebyla nalezena."
 EMPLOYER_NAME_REQUIRED_MESSAGE = "Vyplňte název zaměstnavatele / objednatele."
 VALID_FROM_REQUIRED_MESSAGE = "Vyplňte datum platnosti od."
 VALID_TO_REQUIRED_MESSAGE = "U smlouvy na dobu určitou vyplňte platnost do."
+OVERLAP_MESSAGE = (
+    "Pro stejné IČO již existuje smlouva s překrývající se platností. "
+    "Upravte interval platnosti nebo ukončete stávající smlouvu datem Platnost do."
+)
 YEAR_REQUIRED_FOR_LIST_MESSAGE = "Pro chronologický seznam smluv vyberte kalendářní rok."
 OZO_PERSON_MISSING_MESSAGE = (
     "Pro výstup chronologického seznamu smluv doplňte údaje OZO:\n\n{items}"

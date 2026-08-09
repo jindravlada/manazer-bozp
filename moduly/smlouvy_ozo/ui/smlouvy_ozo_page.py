@@ -22,9 +22,7 @@ from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
 from moduly.smlouvy_ozo.constants import (
-    ACTION_ACTIVATE,
     ACTION_CHRONOLOGICAL_LIST,
-    ACTION_DEACTIVATE,
     ACTION_EDIT,
     ACTION_NEW,
     ACTION_OZO_PERSON,
@@ -58,24 +56,19 @@ class SmlouvyOzoPage(QWidget):
         toolbar = QHBoxLayout()
         self.new_btn = QPushButton(ACTION_NEW)
         self.edit_btn = QPushButton(ACTION_EDIT)
-        self.activate_btn = QPushButton(ACTION_ACTIVATE)
-        self.deactivate_btn = QPushButton(ACTION_DEACTIVATE)
         self.ozo_person_btn = QPushButton(ACTION_OZO_PERSON)
         self.list_btn = QPushButton(ACTION_CHRONOLOGICAL_LIST)
         self.edit_btn.setEnabled(False)
-        self.activate_btn.setEnabled(False)
-        self.deactivate_btn.setEnabled(False)
 
         toolbar.addWidget(self.new_btn)
         toolbar.addWidget(self.edit_btn)
-        toolbar.addWidget(self.activate_btn)
-        toolbar.addWidget(self.deactivate_btn)
         toolbar.addWidget(self.ozo_person_btn)
         toolbar.addWidget(self.list_btn)
         toolbar.addStretch()
         toolbar.addWidget(QLabel("Rok:"))
         self.year_filter = QComboBox()
         toolbar.addWidget(self.year_filter)
+        # Výjimečně archivované (active=False) záznamy – ne běžné ukončení smlouvy.
         self.show_inactive = QCheckBox(SHOW_INACTIVE_LABEL)
         toolbar.addWidget(self.show_inactive)
 
@@ -94,8 +87,6 @@ class SmlouvyOzoPage(QWidget):
 
         self.new_btn.clicked.connect(self.new_contract)
         self.edit_btn.clicked.connect(self.edit_selected)
-        self.activate_btn.clicked.connect(self.activate_selected)
-        self.deactivate_btn.clicked.connect(self.deactivate_selected)
         self.ozo_person_btn.clicked.connect(self.edit_ozo_person)
         self.list_btn.clicked.connect(self.open_chronological_list)
         self.year_filter.currentIndexChanged.connect(self.refresh)
@@ -155,7 +146,7 @@ class SmlouvyOzoPage(QWidget):
             if all_index >= 0:
                 self.year_filter.setCurrentIndex(all_index)
         self.year_filter.blockSignals(False)
-        # Při výběru roku je historie včetně neaktivních – checkbox se nepoužívá.
+        # Při výběru roku je historie včetně archivovaných – checkbox se nepoužívá.
         year_mode = self.selected_year() is not None
         self.show_inactive.setEnabled(not year_mode)
 
@@ -195,28 +186,18 @@ class SmlouvyOzoPage(QWidget):
         return ozo_contract_service.get_by_id(contract_id)
 
     def _refresh_action_buttons(self, *_args) -> None:
-        contract = self._selected_contract()
-        single = contract is not None
-        self.edit_btn.setEnabled(single)
-        self.activate_btn.setEnabled(single and not contract.active)
-        self.deactivate_btn.setEnabled(single and contract.active)
+        self.edit_btn.setEnabled(self._selected_contract() is not None)
 
     def _show_context_menu(self, position) -> None:
         index = self.table.indexAt(position)
         if index.isValid():
             self.table.selectRow(index.row())
             self._refresh_action_buttons()
-        contract = self._selected_contract()
-        single = contract is not None
-        if not single and not index.isValid():
+        if self._selected_contract() is None and not index.isValid():
             return
         menu = QMenu(self)
         edit_action = menu.addAction(ACTION_EDIT, self.edit_selected)
         edit_action.setEnabled(self.edit_btn.isEnabled())
-        activate_action = menu.addAction(ACTION_ACTIVATE, self.activate_selected)
-        activate_action.setEnabled(self.activate_btn.isEnabled())
-        deactivate_action = menu.addAction(ACTION_DEACTIVATE, self.deactivate_selected)
-        deactivate_action.setEnabled(self.deactivate_btn.isEnabled())
         menu.exec(self.table.viewport().mapToGlobal(position))
 
     def edit_ozo_person(self) -> None:
@@ -294,30 +275,6 @@ class SmlouvyOzoPage(QWidget):
         dialog = OzoContractDialog(self, contract=contract)
         exec_maximized(dialog)
         self._populate_year_filter(select_year=self.selected_year())
-        self.refresh()
-        self._notify_dashboard()
-
-    def activate_selected(self) -> None:
-        if not self.activate_btn.isEnabled():
-            return
-        contract = self._selected_contract()
-        if contract is None:
-            QMessageBox.warning(self, MODULE_NAME, ITEM_NOT_FOUND_MESSAGE)
-            self.refresh()
-            return
-        ozo_contract_service.activate(contract.id)
-        self.refresh()
-        self._notify_dashboard()
-
-    def deactivate_selected(self) -> None:
-        if not self.deactivate_btn.isEnabled():
-            return
-        contract = self._selected_contract()
-        if contract is None:
-            QMessageBox.warning(self, MODULE_NAME, ITEM_NOT_FOUND_MESSAGE)
-            self.refresh()
-            return
-        ozo_contract_service.deactivate(contract.id)
         self.refresh()
         self._notify_dashboard()
 
