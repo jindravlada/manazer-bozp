@@ -258,10 +258,16 @@ class AgendaPeriod2bTestCase(unittest.TestCase):
         tab.close()
 
     def test_performance_dialog_get_data(self) -> None:
-        dialog = PeriodicPerformanceDialog(activity_title="X")
+        activity = periodic_activity_service.create_activity(
+            title="Dialog data",
+            next_due_date=date(2026, 6, 1),
+            active=True,
+        )
+        dialog = PeriodicPerformanceDialog(activity_id=activity.id, activity_title="X")
         data = dialog.get_data()
         self.assertIsInstance(data["performed_at"], date)
         self.assertIn(data["performed_by_kind"], ("thp", "person", "external"))
+        dialog._editor._closing = True
         dialog.close()
 
 

@@ -28,7 +28,6 @@ from moduly.periodicke_cinnosti.constants import (
     TAB_PERIODIC,
 )
 from moduly.periodicke_cinnosti.sluzby.periodic_activity_service import (
-    PeriodicActivityValidationError,
     periodic_activity_service,
 )
 from moduly.periodicke_cinnosti.ui.periodic_activity_dialog import PeriodicActivityDialog
@@ -169,17 +168,15 @@ class PeriodicActivitiesTab(QWidget):
             QMessageBox.warning(self, TAB_PERIODIC, ITEM_NOT_FOUND_MESSAGE)
             self.refresh()
             return
-        dialog = PeriodicPerformanceDialog(self, activity_title=activity.title)
-        if not dialog.exec():
-            return
-        data = dialog.get_data()
-        try:
-            periodic_activity_service.record_performance(activity.id, **data)
-        except PeriodicActivityValidationError as error:
-            QMessageBox.warning(self, ACTION_PERFORM, str(error))
-            return
+        dialog = PeriodicPerformanceDialog(
+            self,
+            activity_id=activity.id,
+            activity_title=activity.title,
+        )
+        exec_maximized(dialog)
         self.refresh()
-        self._notify_changed()
+        if dialog.occurrence is not None:
+            self._notify_changed()
 
     def _notify_changed(self) -> None:
         if callable(self._on_changed):

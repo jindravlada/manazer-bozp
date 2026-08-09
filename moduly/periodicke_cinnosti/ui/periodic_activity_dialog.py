@@ -6,6 +6,7 @@ from datetime import date, datetime, time
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QAbstractItemView,
     QCheckBox,
     QComboBox,
     QDialog,
@@ -22,6 +23,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.widgets.attachment_widget import AttachmentWidget
 from core.widgets.dialog_utils import (
     configure_resizable_form_dialog,
     create_save_cancel_box,
@@ -48,6 +50,9 @@ from moduly.periodicke_cinnosti.constants import (
     DEFAULT_REPEAT_UNIT,
     DIALOG_TITLE_EDIT,
     DIALOG_TITLE_NEW,
+    ENTITY_PERIODIC_OCCURRENCE,
+    HISTORY_ATTACHMENTS_HINT,
+    HISTORY_ATTACHMENTS_LABEL,
     HISTORY_HEADERS,
     NEXT_FROM_LABELS,
     NEXT_FROM_VALUES,
@@ -181,11 +186,23 @@ class PeriodicActivityDialog(QDialog):
         self.history_table.setHorizontalHeaderLabels(HISTORY_HEADERS)
         self.history_table.verticalHeader().setVisible(False)
         self.history_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        self.history_table.setSelectionMode(QTableWidget.SelectionMode.NoSelection)
+        self.history_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.history_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.history_table.setAlternatingRowColors(True)
         enable_typed_sorting(self.history_table)
+        self.history_table.itemSelectionChanged.connect(self._on_history_selection_changed)
+
+        self.history_attachments_hint = QLabel(HISTORY_ATTACHMENTS_HINT)
+        self.history_attachments_hint.setObjectName("MutedText")
+        self.history_attachments_hint.setWordWrap(True)
+        self.history_attachments_label = QLabel(HISTORY_ATTACHMENTS_LABEL)
+        self.history_attachments = AttachmentWidget(ENTITY_PERIODIC_OCCURRENCE, None)
+
         layout.addWidget(self.history_empty)
         layout.addWidget(self.history_table, 1)
+        layout.addWidget(self.history_attachments_hint)
+        layout.addWidget(self.history_attachments_label)
+        layout.addWidget(self.history_attachments, 1)
         return page
 
     def _sync_place_fields(self) -> None:
@@ -226,11 +243,13 @@ class PeriodicActivityDialog(QDialog):
             if activity_id is None:
                 self.history_empty.show()
                 self.history_table.hide()
+                self._clear_history_attachments()
                 return
             rows = periodic_activity_service.list_occurrences(activity_id)
             if not rows:
                 self.history_empty.show()
                 self.history_table.hide()
+                self._clear_history_attachments()
                 return
             self.history_empty.hide()
             self.history_table.show()
@@ -247,11 +266,9 @@ class PeriodicActivityDialog(QDialog):
                     if planned
                     else typed_empty()
                 )
-                self.history_table.setItem(
-                    row,
-                    0,
-                    create_typed_item(planned_text, planned_sort),
-                )
+                planned_item = create_typed_item(planned_text, planned_sort)
+                planned_item.setData(Qt.ItemDataRole.UserRole, occurrence.id)
+                self.history_table.setItem(row, 0, planned_item)
 
                 performed = occurrence.performed_at
                 performed_text = f"{performed.day:02d}.{performed.month:02d}.{performed.year}"
@@ -275,6 +292,30 @@ class PeriodicActivityDialog(QDialog):
                     3,
                     create_typed_item(note, typed_text(note)),
                 )
+        self._clear_history_attachments()
+
+    def _selected_occurrence_id(self) -> int | None:
+        rows = self.history_table.selectionModel().selectedRows()
+        if len(rows) != 1:
+            return None
+        item = self.history_table.item(rows[0].row(), 0)
+        if item is None:
+            return None
+        value = item.data(Qt.ItemDataRole.UserRole)
+        return int(value) if value is not None else None
+
+    def _clear_history_attachments(self) -> None:
+        self.history_attachments.set_entity(ENTITY_PERIODIC_OCCURRENCE, None)
+        self.history_attachments_hint.setText(HISTORY_ATTACHMENTS_HINT)
+        self.history_attachments_hint.show()
+
+    def _on_history_selection_changed(self) -> None:
+        occurrence_id = self._selected_occurrence_id()
+        if occurrence_id is None:
+            self._clear_history_attachments()
+            return
+        self.history_attachments_hint.hide()
+        self.history_attachments.set_entity(ENTITY_PERIODIC_OCCURRENCE, occurrence_id)
 
     def get_data(self) -> dict:
         worker = self.responsible_selector.current_person()

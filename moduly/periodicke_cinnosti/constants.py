@@ -3,6 +3,9 @@
 MODULE_KEY = "periodicke_cinnosti"
 MODULE_NAME = "Periodické činnosti"
 
+# Přílohy patří ke konkrétnímu provedení (occurrence), ne k definici činnosti.
+ENTITY_PERIODIC_OCCURRENCE = "periodic_occurrence"
+
 PLACE_KIND_WORKPLACE = "workplace"
 PLACE_KIND_ORGANIZATION = "organization"
 PLACE_KIND_OTHER = "other"
@@ -93,6 +96,13 @@ EMPTY_STATE_TEXT = "Nejsou evidovány žádné periodické činnosti odpovídaj�
 ITEM_NOT_FOUND_MESSAGE = "Periodická činnost nebyla nalezena."
 TITLE_REQUIRED_MESSAGE = "Vyplňte název periodické činnosti."
 PERFORMED_DATE_REQUIRED_MESSAGE = "Vyplňte datum provedení."
+HISTORY_ATTACHMENTS_HINT = (
+    "Vyberte provedení v historii pro zobrazení a správu příloh."
+)
+PERFORMANCE_ATTACHMENTS_HINT = (
+    "Přílohy (protokol, zpráva, potvrzení, PDF, fotografie) lze přidat po uložení provedení."
+)
+HISTORY_ATTACHMENTS_LABEL = "Přílohy vybraného provedení"
 
 COL_ID = 0
 COL_TITLE = 1
