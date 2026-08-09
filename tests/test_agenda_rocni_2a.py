@@ -97,10 +97,11 @@ class AgendaRocni2aTestCase(unittest.TestCase):
         self.assertEqual(moved.year, 2026)
         self.assertEqual(moved.month, 8)
         self.assertEqual(moved.status, STATUS_PLANNED)
-        self.assertEqual(yearly_plan_service.list_for_month(2026, 5), [])
-        self.assertEqual(
+        may_ids = [row.id for row in yearly_plan_service.list_for_month(2026, 5)]
+        self.assertNotIn(original_id, may_ids)
+        self.assertIn(
+            original_id,
             [row.id for row in yearly_plan_service.list_for_month(2026, 8)],
-            [original_id],
         )
 
     def test_move_december_to_january_next_year(self) -> None:

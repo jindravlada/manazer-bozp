@@ -11,6 +11,8 @@ from moduly.rocni_plan.constants import (
     MIN_YEAR,
     STATUS_CANCELLED,
     STATUS_PLANNED,
+    STATUS_VIA_MEETING,
+    STATUS_VIA_TASK,
 )
 from moduly.rocni_plan.modely.yearly_plan_item import YearlyPlanItem
 from moduly.rocni_plan.modely.yearly_plan_item_move import YearlyPlanItemMove
@@ -136,7 +138,50 @@ class YearlyPlanService:
 
         item.year = to_year
         item.month = to_month
-        item.status = STATUS_PLANNED
+        if item.task_id is not None:
+            item.status = STATUS_VIA_TASK
+        elif item.meeting_id is not None:
+            item.status = STATUS_VIA_MEETING
+        else:
+            item.status = STATUS_PLANNED
+        item.updated_at = datetime.now()
+        return self.repository.update(item)
+
+    def link_task(self, item_id: int, task_id: int) -> YearlyPlanItem:
+        item = self.repository.get_by_id(item_id)
+        if item is None:
+            raise YearlyPlanValidationError("Položka Ročního plánu nebyla nalezena.")
+        if item.status == STATUS_CANCELLED:
+            raise YearlyPlanValidationError("Zrušenou položku nelze navázat na Úkol.")
+        if item.task_id is not None or item.meeting_id is not None:
+            raise YearlyPlanValidationError(
+                "Položka už má vazbu na Úkol nebo Událost."
+            )
+        if not task_id:
+            raise YearlyPlanValidationError("Úkol nebyl vytvořen.")
+
+        item.task_id = int(task_id)
+        item.meeting_id = None
+        item.status = STATUS_VIA_TASK
+        item.updated_at = datetime.now()
+        return self.repository.update(item)
+
+    def link_meeting(self, item_id: int, meeting_id: int) -> YearlyPlanItem:
+        item = self.repository.get_by_id(item_id)
+        if item is None:
+            raise YearlyPlanValidationError("Položka Ročního plánu nebyla nalezena.")
+        if item.status == STATUS_CANCELLED:
+            raise YearlyPlanValidationError("Zrušenou položku nelze navázat na Událost.")
+        if item.task_id is not None or item.meeting_id is not None:
+            raise YearlyPlanValidationError(
+                "Položka už má vazbu na Úkol nebo Událost."
+            )
+        if not meeting_id:
+            raise YearlyPlanValidationError("Událost nebyla vytvořena.")
+
+        item.meeting_id = int(meeting_id)
+        item.task_id = None
+        item.status = STATUS_VIA_MEETING
         item.updated_at = datetime.now()
         return self.repository.update(item)
 

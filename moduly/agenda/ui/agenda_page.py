@@ -43,6 +43,8 @@ from moduly.agenda.sluzby.agenda_service import agenda_service
 from moduly.agenda.ui.agenda_table import AgendaTable
 from moduly.periodicke_cinnosti.constants import TAB_PERIODIC, TAB_TASKS_MEETINGS
 from moduly.periodicke_cinnosti.ui.periodic_activities_tab import PeriodicActivitiesTab
+from moduly.rocni_plan.constants import TAB_YEARLY_PLAN
+from moduly.rocni_plan.ui.yearly_plan_tab import YearlyPlanTab
 from moduly.schuzky.constants import LIST_WINDOW_TITLE as MEETINGS_TITLE
 from moduly.schuzky.sluzby.meeting_agenda_item_service import meeting_agenda_item_service
 from moduly.schuzky.sluzby.meeting_service import (
@@ -118,9 +120,14 @@ class AgendaPage(QWidget):
             self,
             on_changed=self._refresh_dashboard,
         )
+        self.yearly_plan_tab = YearlyPlanTab(
+            self,
+            on_changed=self._refresh_dashboard,
+        )
 
         self.tabs.addTab(tasks_tab, TAB_TASKS_MEETINGS)
         self.tabs.addTab(self.periodic_tab, TAB_PERIODIC)
+        self.tabs.addTab(self.yearly_plan_tab, TAB_YEARLY_PLAN)
         layout.addWidget(self.tabs)
 
         self.new_task_btn.clicked.connect(self.new_task)
@@ -159,10 +166,12 @@ class AgendaPage(QWidget):
         super().showEvent(event)
         self.refresh()
         self.periodic_tab.refresh()
+        self.yearly_plan_tab.refresh()
 
     def hideEvent(self, event: QHideEvent) -> None:
         self.table.clear_selection()
         self.periodic_tab.table.clear_selection()
+        self.yearly_plan_tab.table.clear_selection()
         super().hideEvent(event)
 
     def _selected_type_filters(self) -> set[str]:
