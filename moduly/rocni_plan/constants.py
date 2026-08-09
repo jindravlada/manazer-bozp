@@ -1,0 +1,21 @@
+"""Konstanty Ročního plánu."""
+
+MODULE_KEY = "rocni_plan"
+MODULE_NAME = "Roční plán"
+
+STATUS_PLANNED = "planned"
+STATUS_VIA_TASK = "via_task"
+STATUS_VIA_MEETING = "via_meeting"
+STATUS_CANCELLED = "cancelled"
+
+ITEM_STATUSES = (
+    STATUS_PLANNED,
+    STATUS_VIA_TASK,
+    STATUS_VIA_MEETING,
+    STATUS_CANCELLED,
+)
+
+DEFAULT_STATUS = STATUS_PLANNED
+
+MIN_YEAR = 2000
+MAX_YEAR = 2100
