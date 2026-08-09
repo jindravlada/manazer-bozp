@@ -6,6 +6,7 @@ import importlib
 import os
 import tempfile
 import unittest
+from datetime import date
 from pathlib import Path
 from unittest.mock import patch
 
@@ -30,7 +31,10 @@ with patch.object(Path, "home", return_value=_TMP):
     initialize_database()
 
     from core.services.attachment_service import attachment_service
-    from moduly.smlouvy_ozo.constants import ENTITY_OZO_PERSON
+    from moduly.smlouvy_ozo.constants import (
+        ENTITY_OZO_PERSON,
+        ENTITY_OZO_PERSON_PERIOD,
+    )
     from moduly.smlouvy_ozo.sluzby.ozo_contract_list_service import (
         ozo_contract_list_service,
     )
@@ -49,11 +53,11 @@ class OzoSmlouvy4aTestCase(unittest.TestCase):
         from core.database.session import get_session
         from core.models.attachment import Attachment
         from moduly.smlouvy_ozo.modely.ozo_person import OzoPerson
+        from moduly.smlouvy_ozo.modely.ozo_person_period import OzoPersonPeriod
 
         with get_session() as session:
-            session.execute(
-                delete(Attachment).where(Attachment.entity_type == ENTITY_OZO_PERSON)
-            )
+            session.execute(delete(Attachment))
+            session.execute(delete(OzoPersonPeriod))
             session.execute(delete(OzoPerson))
             session.commit()
 
@@ -68,14 +72,19 @@ class OzoSmlouvy4aTestCase(unittest.TestCase):
         self.assertTrue(dialog._save())
 
         self.assertIsNotNone(dialog.person)
-        self.assertEqual(dialog.attachments.entity_type, ENTITY_OZO_PERSON)
-        self.assertEqual(dialog.attachments.entity_id, dialog.person.id)
+        self.assertIsNotNone(dialog.period)
+        self.assertEqual(dialog.attachments.entity_type, ENTITY_OZO_PERSON_PERIOD)
+        self.assertEqual(dialog.attachments.entity_id, dialog.period.id)
         self.assertTrue(dialog.attachments.btn_add.isEnabled())
 
         tmp = Path(tempfile.mkdtemp()) / "osvedceni.pdf"
         tmp.write_bytes(b"%PDF-ozo")
-        attachment_service.add_file(ENTITY_OZO_PERSON, dialog.person.id, str(tmp))
-        items = attachment_service.get_for_entity(ENTITY_OZO_PERSON, dialog.person.id)
+        attachment_service.add_file(
+            ENTITY_OZO_PERSON_PERIOD, dialog.period.id, str(tmp)
+        )
+        items = attachment_service.get_for_entity(
+            ENTITY_OZO_PERSON_PERIOD, dialog.period.id
+        )
         self.assertEqual(len(items), 1)
         self.assertEqual(items[0].filename, "osvedceni.pdf")
         dialog.close()
@@ -86,7 +95,7 @@ class OzoSmlouvy4aTestCase(unittest.TestCase):
         dialog.last_name.setText("Testová")
         self.assertTrue(dialog._save())
         items = attachment_service.get_for_entity(
-            ENTITY_OZO_PERSON, dialog.person.id
+            ENTITY_OZO_PERSON_PERIOD, dialog.period.id
         )
         self.assertEqual(items, [])
         dialog.close()
@@ -96,10 +105,12 @@ class OzoSmlouvy4aTestCase(unittest.TestCase):
             first_name="Petr",
             last_name="Dvořák",
             certificate_number="OZO-77",
+            exam_date=date(2030, 1, 1),
         )
+        period = ozo_person_service.get_open_period(person)
         tmp = Path(tempfile.mkdtemp()) / "tajny-sken.pdf"
         tmp.write_bytes(b"%PDF-secret")
-        attachment_service.add_file(ENTITY_OZO_PERSON, person.id, str(tmp))
+        attachment_service.add_file(ENTITY_OZO_PERSON_PERIOD, period.id, str(tmp))
 
         html = ozo_contract_list_service.build_html(2030)
         self.assertIn("Petr Dvořák", html)

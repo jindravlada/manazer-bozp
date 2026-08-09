@@ -213,7 +213,7 @@ class SmlouvyOzoPage(QWidget):
                 YEAR_REQUIRED_FOR_LIST_MESSAGE,
             )
             return
-        missing = ozo_contract_list_service.missing_ozo_fields()
+        missing = ozo_contract_list_service.missing_ozo_fields(year)
         if missing:
             QMessageBox.warning(
                 self,

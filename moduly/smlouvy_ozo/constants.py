@@ -6,6 +6,7 @@ MODULE_DESCRIPTION = "Evidence smluv OZO se zaměstnavateli / objednateli."
 
 ENTITY_OZO_CONTRACT = "ozo_contract"
 ENTITY_OZO_PERSON = "ozo_person"
+ENTITY_OZO_PERSON_PERIOD = "ozo_person_period"
 
 ACTION_NEW = "Nová smlouva"
 ACTION_EDIT = "Upravit"
@@ -17,7 +18,10 @@ ACTION_CHRONOLOGICAL_LIST = "Chronologický seznam smluv"
 DIALOG_TITLE_NEW = "Nová smlouva OZO"
 DIALOG_TITLE_EDIT = "Smlouva OZO"
 DIALOG_TITLE_OZO_PERSON = "Odborně způsobilá osoba"
+DIALOG_TITLE_OZO_PERIOD = "Historická verze OZO"
 DIALOG_TITLE_CHRONOLOGICAL_LIST = "Chronologický seznam smluv"
+TAB_OZO_DATA = "Údaje"
+TAB_OZO_HISTORY = "Historie"
 
 SHOW_INACTIVE_LABEL = "Zobrazit neaktivní"
 YEAR_FILTER_ALL = "Vše"

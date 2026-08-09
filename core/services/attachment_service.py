@@ -66,6 +66,44 @@ class AttachmentService:
     def delete(self, attachment_id: int):
         return self.repository.delete(attachment_id)
 
+    def rebind_entity(
+        self,
+        old_entity_type: str,
+        old_entity_id: int,
+        new_entity_type: str,
+        new_entity_id: int,
+    ) -> int:
+        """Přesune přílohy na jinou entitu (DB + soubory). Vrací počet přesunů."""
+        if not old_entity_id or not new_entity_id:
+            return 0
+        if (
+            old_entity_type == new_entity_type
+            and int(old_entity_id) == int(new_entity_id)
+        ):
+            return 0
+
+        moved = 0
+        for attachment in list(
+            self.repository.get_for_entity(old_entity_type, old_entity_id)
+        ):
+            old_path = self.resolve_path(attachment)
+            target_dir = storage_service.attachment_dir(new_entity_type, new_entity_id)
+            filename = attachment.filename or (
+                old_path.name if old_path else f"attachment-{attachment.id}"
+            )
+            target = self._unique_target(target_dir / filename)
+            if old_path.exists():
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(old_path), str(target))
+            relative_path = target.relative_to(storage_service.attachments_dir)
+            attachment.entity_type = new_entity_type
+            attachment.entity_id = int(new_entity_id)
+            attachment.stored_path = str(relative_path)
+            attachment.filename = target.name
+            self.repository.update(attachment)
+            moved += 1
+        return moved
+
     def _store_source_file(self, source: Path, target: Path) -> tuple[Path, str]:
         if source.suffix.lower() in _IMAGE_SUFFIXES:
             try:

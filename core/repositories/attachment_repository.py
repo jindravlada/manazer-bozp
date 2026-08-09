@@ -24,6 +24,13 @@ class AttachmentRepository:
             session.refresh(attachment)
             return attachment
 
+    def update(self, attachment: Attachment) -> Attachment:
+        with get_session() as session:
+            attachment = session.merge(attachment)
+            session.commit()
+            session.refresh(attachment)
+            return attachment
+
     def delete(self, attachment_id: int) -> bool:
         with get_session() as session:
             attachment = session.get(Attachment, attachment_id)

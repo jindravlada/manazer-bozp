@@ -71,6 +71,7 @@ def initialize_database() -> None:
     )
     from moduly.smlouvy_ozo.modely.ozo_contract import OzoContract  # noqa: F401
     from moduly.smlouvy_ozo.modely.ozo_person import OzoPerson  # noqa: F401
+    from moduly.smlouvy_ozo.modely.ozo_person_period import OzoPersonPeriod  # noqa: F401
     from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement  # noqa: F401
     from moduly.pravni_pozadavky.modely.legal_requirement_check import (  # noqa: F401
         LegalRequirementCheck,
@@ -171,6 +172,7 @@ def initialize_database() -> None:
     create_database()
     _ensure_thp_worker_title_columns()
     _ensure_ozo_person_title_columns()
+    _migrate_ozo_person_periods()
     _ensure_employer_columns()
     _ensure_task_columns()
     _ensure_accident_columns()
@@ -460,6 +462,16 @@ def _ensure_ozo_person_title_columns() -> None:
         _add_column("ozo_persons", "title_before VARCHAR(50) DEFAULT ''")
     if "title_after" not in columns:
         _add_column("ozo_persons", "title_after VARCHAR(50) DEFAULT ''")
+
+
+def _migrate_ozo_person_periods() -> None:
+    """Vytvoří první historické verze OZO a přesune přílohy ze singleton karty."""
+    from moduly.smlouvy_ozo.sluzby.ozo_person_service import ozo_person_service
+
+    person = ozo_person_service.repository.get()
+    if person is None:
+        return
+    ozo_person_service.ensure_migrated(person)
 
 
 def _ensure_employer_columns() -> None:
