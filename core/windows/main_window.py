@@ -256,6 +256,15 @@ class MainWindow(QMainWindow):
         layout.addSpacing(8)
         self._add_separator(layout)
 
+        smlouvy_ozo_module = modules.get("smlouvy_ozo")
+        if smlouvy_ozo_module is not None:
+            self._add_sidebar_button(
+                layout,
+                smlouvy_ozo_module.name,
+                smlouvy_ozo_module.key,
+                smlouvy_ozo_module.enabled,
+            )
+
         sprava_dat_module = modules.get("sprava_dat")
         if sprava_dat_module is not None:
             self._add_sidebar_button(

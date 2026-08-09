@@ -280,6 +280,39 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         for column in (COL_SOURCE, COL_STATUS, COL_LINK, COL_NOTE):
             header.setSectionResizeMode(column, QHeaderView.Fixed)
 
+    elif profile == "ozo_contracts":
+        from moduly.smlouvy_ozo.constants import (
+            COL_EMPLOYER,
+            COL_ICO,
+            COL_ID,
+            COL_NUMBER,
+            COL_STATUS,
+            COL_VALID_FROM,
+            COL_VALID_TO,
+        )
+
+        widths = {
+            COL_ID: 0,
+            COL_EMPLOYER: 260,
+            COL_ICO: 100,
+            COL_NUMBER: 130,
+            COL_VALID_FROM: 110,
+            COL_VALID_TO: 110,
+            COL_STATUS: 120,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        table.setColumnHidden(COL_ID, True)
+        header.setSectionResizeMode(COL_EMPLOYER, QHeaderView.Stretch)
+        for column in (
+            COL_ICO,
+            COL_NUMBER,
+            COL_VALID_FROM,
+            COL_VALID_TO,
+            COL_STATUS,
+        ):
+            header.setSectionResizeMode(column, QHeaderView.Fixed)
+
     elif profile == "mu_investigations":
         widths = {
             0: 0,    # ID
