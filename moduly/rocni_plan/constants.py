@@ -24,6 +24,23 @@ STATUS_LABELS = {
     STATUS_CANCELLED: "Zrušeno",
 }
 
+# Odvozené stavy (neukládají se do yearly_plan_items.status).
+DISPLAY_PLANNED = STATUS_PLANNED
+DISPLAY_VIA_TASK = STATUS_VIA_TASK
+DISPLAY_VIA_MEETING = STATUS_VIA_MEETING
+DISPLAY_DONE = "done"
+DISPLAY_CANCELLED = STATUS_CANCELLED
+DISPLAY_REST = "rest"
+
+DISPLAY_STATUS_LABELS = {
+    DISPLAY_PLANNED: "Naplánováno",
+    DISPLAY_VIA_TASK: "Řeší se úkolem",
+    DISPLAY_VIA_MEETING: "Řeší se událostí",
+    DISPLAY_DONE: "Splněno",
+    DISPLAY_CANCELLED: "Zrušeno",
+    DISPLAY_REST: "Rest",
+}
+
 SOURCE_MODULE_YEARLY_PLAN = "yearly_plan"
 
 MIN_YEAR = 2000
@@ -100,7 +117,7 @@ def format_year_month(year: int, month: int) -> str:
 
 
 def status_label(status: str) -> str:
-    return STATUS_LABELS.get(status, status)
+    return DISPLAY_STATUS_LABELS.get(status, STATUS_LABELS.get(status, status))
 
 
 def link_label(item) -> str:

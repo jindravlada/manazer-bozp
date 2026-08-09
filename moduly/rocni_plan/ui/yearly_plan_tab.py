@@ -116,12 +116,15 @@ class YearlyPlanTab(QWidget):
         self.empty_label.setWordWrap(True)
         self.empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.empty_label.hide()
+        self.summary_label = QLabel("")
+        self.summary_label.setObjectName("MutedText")
 
         layout.addLayout(filters)
         layout.addLayout(toolbar)
         layout.addWidget(self.text_filter)
         layout.addWidget(self.empty_label)
         layout.addWidget(self.table)
+        layout.addWidget(self.summary_label)
 
         self.new_btn.clicked.connect(self.new_item)
         self.edit_btn.clicked.connect(self.edit_selected)
@@ -168,6 +171,7 @@ class YearlyPlanTab(QWidget):
         self.table.clear_selection()
         self.text_filter.update_count()
         self._refresh_action_buttons()
+        self._refresh_summary(items)
         if items:
             self.empty_label.hide()
             self.table.show()
@@ -175,6 +179,13 @@ class YearlyPlanTab(QWidget):
             self.empty_label.setText(EMPTY_STATE_TEXT)
             self.empty_label.show()
             self.table.hide()
+
+    def _refresh_summary(self, items) -> None:
+        summary = yearly_plan_service.month_summary(items)
+        self.summary_label.setText(
+            "Celkem: {total}   Splněno: {done}   Řeší se: {in_progress}   "
+            "Resty: {rest}   Zrušeno: {cancelled}".format(**summary)
+        )
 
     def _selected_row_count(self) -> int:
         return len(self.table.selectionModel().selectedRows())

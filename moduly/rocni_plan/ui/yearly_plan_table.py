@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import date
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QTableWidget
 
@@ -22,8 +24,10 @@ from moduly.rocni_plan.constants import (
     status_label,
 )
 from moduly.rocni_plan.modely.yearly_plan_item import YearlyPlanItem
+from moduly.rocni_plan.sluzby.yearly_plan_service import resolve_display_status
 
 _ROLE_ID = Qt.ItemDataRole.UserRole
+_ROLE_DISPLAY_STATUS = Qt.ItemDataRole.UserRole + 1
 
 
 class YearlyPlanTable(QTableWidget):
@@ -58,7 +62,12 @@ class YearlyPlanTable(QTableWidget):
         except (TypeError, ValueError):
             return None
 
-    def load_items(self, items: list[YearlyPlanItem]) -> None:
+    def load_items(
+        self,
+        items: list[YearlyPlanItem],
+        *,
+        today: date | None = None,
+    ) -> None:
         with sorting_paused(self):
             self.setRowCount(0)
             self.setRowCount(len(items))
@@ -78,16 +87,15 @@ class YearlyPlanTable(QTableWidget):
                     create_typed_item(title, typed_text(title), stable_id=plan_item.id),
                 )
 
-                status_text = status_label(plan_item.status)
-                self.setItem(
-                    row,
-                    COL_STATUS,
-                    create_typed_item(
-                        status_text,
-                        typed_text(status_text),
-                        stable_id=plan_item.id,
-                    ),
+                display_status = resolve_display_status(plan_item, today=today)
+                status_text = status_label(display_status)
+                status_item = create_typed_item(
+                    status_text,
+                    typed_text(status_text),
+                    stable_id=plan_item.id,
                 )
+                status_item.setData(_ROLE_DISPLAY_STATUS, display_status)
+                self.setItem(row, COL_STATUS, status_item)
 
                 link_text = link_label(plan_item)
                 self.setItem(

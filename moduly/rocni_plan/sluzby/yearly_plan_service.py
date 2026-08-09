@@ -1,11 +1,18 @@
-"""Služba Ročního plánu – CRUD, zrušení, přesun, validace."""
+"""Služba Ročního plánu – CRUD, zrušení, přesun, validace, odvozené stavy."""
 
 from __future__ import annotations
 
-from datetime import datetime
+import calendar
+from datetime import date, datetime
 
 from moduly.rocni_plan.constants import (
     DEFAULT_STATUS,
+    DISPLAY_CANCELLED,
+    DISPLAY_DONE,
+    DISPLAY_PLANNED,
+    DISPLAY_REST,
+    DISPLAY_VIA_MEETING,
+    DISPLAY_VIA_TASK,
     ITEM_STATUSES,
     MAX_YEAR,
     MIN_YEAR,
@@ -20,10 +27,90 @@ from moduly.rocni_plan.repository.yearly_plan_repository import (
     YearlyPlanItemMoveRepository,
     YearlyPlanItemRepository,
 )
+from moduly.schuzky.constants import (
+    STATUS_CLOSED as MEETING_CLOSED,
+)
+from moduly.schuzky.constants import (
+    STATUS_HELD as MEETING_HELD,
+)
+from moduly.schuzky.constants import (
+    STATUS_PLANNED as MEETING_PLANNED,
+)
+from moduly.schuzky.sluzby.meeting_service import meeting_service
+from moduly.ukoly.sluzby.task_service import task_service
 
 
 class YearlyPlanValidationError(ValueError):
     """Neplatná data položky Ročního plánu."""
+
+
+def month_has_ended(year: int, month: int, *, today: date | None = None) -> bool:
+    """True, pokud kalendářní měsíc year/month už skončil vůči today."""
+    today = today or date.today()
+    last_day = calendar.monthrange(year, month)[1]
+    return today > date(year, month, last_day)
+
+
+def resolve_display_status(item: YearlyPlanItem, *, today: date | None = None) -> str:
+    """
+    Odvozený stav pro UI.
+
+    Splněno a Rest se neukládají – vždy z Úkolu/Události a data.
+    """
+    today = today or date.today()
+
+    if (item.status or "") == STATUS_CANCELLED:
+        return DISPLAY_CANCELLED
+
+    base = DISPLAY_PLANNED
+
+    if item.task_id is not None:
+        task = task_service.get_task_by_id(item.task_id)
+        if task is not None and task.computed_status == "Ukončeno":
+            return DISPLAY_DONE
+        base = DISPLAY_VIA_TASK
+    elif item.meeting_id is not None:
+        meeting = meeting_service.get_by_id(item.meeting_id)
+        meeting_status = (meeting.status if meeting is not None else "") or ""
+        if meeting_status == MEETING_CLOSED:
+            return DISPLAY_DONE
+        if meeting_status in {MEETING_PLANNED, MEETING_HELD}:
+            base = DISPLAY_VIA_MEETING
+        else:
+            # Zrušená / neznámá Událost → nevyřízená, ne Splněno.
+            base = DISPLAY_PLANNED
+    elif (item.status or "") == STATUS_VIA_TASK:
+        base = DISPLAY_VIA_TASK
+    elif (item.status or "") == STATUS_VIA_MEETING:
+        base = DISPLAY_VIA_MEETING
+
+    if month_has_ended(item.year, item.month, today=today):
+        return DISPLAY_REST
+    return base
+
+
+def summarize_display_statuses(statuses: list[str]) -> dict[str, int]:
+    """Souhrn odvozených stavů pro měsíc."""
+    summary = {
+        "total": len(statuses),
+        "done": 0,
+        "in_progress": 0,
+        "rest": 0,
+        "cancelled": 0,
+        "planned": 0,
+    }
+    for status in statuses:
+        if status == DISPLAY_DONE:
+            summary["done"] += 1
+        elif status in {DISPLAY_VIA_TASK, DISPLAY_VIA_MEETING}:
+            summary["in_progress"] += 1
+        elif status == DISPLAY_REST:
+            summary["rest"] += 1
+        elif status == DISPLAY_CANCELLED:
+            summary["cancelled"] += 1
+        elif status == DISPLAY_PLANNED:
+            summary["planned"] += 1
+    return summary
 
 
 class YearlyPlanService:
@@ -239,6 +326,24 @@ class YearlyPlanService:
             "task_id": task_id,
             "meeting_id": meeting_id,
         }
+
+    def resolve_display_status(
+        self,
+        item: YearlyPlanItem,
+        *,
+        today: date | None = None,
+    ) -> str:
+        return resolve_display_status(item, today=today)
+
+    def month_summary(
+        self,
+        items: list[YearlyPlanItem],
+        *,
+        today: date | None = None,
+    ) -> dict[str, int]:
+        today = today or date.today()
+        statuses = [resolve_display_status(item, today=today) for item in items]
+        return summarize_display_statuses(statuses)
 
 
 yearly_plan_service = YearlyPlanService()
