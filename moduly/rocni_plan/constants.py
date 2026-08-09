@@ -131,19 +131,19 @@ CANCELLED_ACTION_MESSAGE = "Zrušenou položku nelze upravit touto akcí."
 MONTH_ALREADY_PROCESSED_MESSAGE = "Tento měsíc už je označen jako zpracovaný."
 
 COL_ID = 0
-COL_SOURCE = 1
-COL_TITLE = 2
-COL_STATUS = 3
-COL_LINK = 4
-COL_NOTE = 5
+COL_TITLE = 1
+COL_STATUS = 2
+COL_LINK = 3
+COL_NOTE = 4
+COL_SOURCE = 5
 
 COLUMN_HEADERS = [
     "ID",
-    "Zdroj",
     "Název",
     "Stav",
     "Vazba",
     "Poznámka",
+    "Zdroj",
 ]
 
 ROW_KIND_MANUAL = "manual"

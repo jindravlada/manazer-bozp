@@ -171,9 +171,9 @@ class YearlyPlanTable(QTableWidget):
         row = self.month_header_row(month)
         if row is None:
             return
-        item = self.item(row, COL_SOURCE)
+        item = self.item(row, COL_TITLE)
         if item is None:
-            item = self.item(row, COL_TITLE)
+            item = self.item(row, COL_SOURCE)
         if item is not None:
             self.scrollToItem(item, QAbstractItemView.ScrollHint.PositionAtTop)
 
@@ -181,9 +181,10 @@ class YearlyPlanTable(QTableWidget):
         row = self.month_header_row(month)
         if row is None:
             return ""
-        item = self.item(row, COL_SOURCE)
+        item = self.item(row, COL_TITLE)
         return item.text() if item is not None else ""
 
+    def ensure_month_headers_visibility(self) -> None:
         """Po filtru ponechá viditelný řádek měsíce, pokud má viditelné položky."""
         header_rows = sorted(self._month_header_rows.values())
         for index, header_row in enumerate(header_rows):
@@ -213,6 +214,16 @@ class YearlyPlanTable(QTableWidget):
         if item is None:
             return False
         return bool(item.data(_ROLE_IS_MONTH_HEADER))
+
+    def selected_header_month(self) -> int | None:
+        item = self._selected_id_item()
+        if item is None or not item.data(_ROLE_IS_MONTH_HEADER):
+            return None
+        raw = item.data(_ROLE_HEADER_MONTH)
+        try:
+            return int(raw)
+        except (TypeError, ValueError):
+            return None
 
     def selected_item_id(self) -> int | None:
         """ID ruční položky / definice, nebo None u Periodické činnosti."""
@@ -327,13 +338,15 @@ class YearlyPlanTable(QTableWidget):
         brush: QBrush,
     ) -> None:
         display = f"{name}{_HEADER_NAME_GAP}{summary}" if summary else name
-        no_flags = Qt.ItemFlag.NoItemFlags
+        header_flags = (
+            Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+        )
         for column in range(self.columnCount()):
-            if column == COL_SOURCE:
+            if column == COL_TITLE:
                 item = QTableWidgetItem(display)
             else:
                 item = QTableWidgetItem("")
-            item.setFlags(no_flags)
+            item.setFlags(header_flags)
             item.setBackground(brush)
             item.setData(_ROLE_IS_MONTH_HEADER, True)
             item.setData(_ROLE_HEADER_MONTH, month)
@@ -342,8 +355,8 @@ class YearlyPlanTable(QTableWidget):
             if column == COL_ID:
                 item.setData(_ROLE_SLOT_MONTH, month)
             self.setItem(row_index, column, item)
-        # Text přes Zdroj–Poznámka (COL_TITLE je Stretch – span začíná u Zdroje).
-        self.setSpan(row_index, COL_SOURCE, 1, 5)
+        # Text přes Název–Zdroj (5 viditelných sloupců).
+        self.setSpan(row_index, COL_TITLE, 1, 5)
 
     def _fill_item_row(
         self,
@@ -379,11 +392,11 @@ class YearlyPlanTable(QTableWidget):
         self.setItem(row_index, COL_ID, id_item)
 
         cells = [
-            (COL_SOURCE, plan_row.source_label or "—"),
             (COL_TITLE, (plan_row.title or "").strip() or "—"),
             (COL_STATUS, status_label(plan_row.display_status)),
             (COL_LINK, plan_row.link_text or "—"),
             (COL_NOTE, (plan_row.note or "").strip() or "—"),
+            (COL_SOURCE, plan_row.source_label or "—"),
         ]
         for column, value in cells:
             item = create_typed_item(value, typed_text(value), stable_id=stable_id)

@@ -17,15 +17,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.widgets.dialog_utils import (
-    configure_cancel_action_button,
-    configure_create_linked_action_button,
-    configure_edit_action_button,
-    configure_move_action_button,
-    configure_new_action_button,
-    configure_perform_action_button,
-    exec_maximized,
-)
+from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
 from moduly.rocni_plan.constants import (
@@ -60,7 +52,6 @@ from moduly.rocni_plan.sluzby.yearly_plan_service import (
     yearly_plan_service,
 )
 from moduly.rocni_plan.ui.yearly_plan_item_dialog import YearlyPlanItemDialog
-from moduly.rocni_plan.ui.yearly_plan_month_pick_dialog import YearlyPlanMonthPickDialog
 from moduly.rocni_plan.ui.yearly_plan_move_dialog import YearlyPlanMoveDialog
 from moduly.rocni_plan.ui.yearly_plan_table import (
     YearlyPlanMonthSection,
@@ -107,13 +98,6 @@ class YearlyPlanTab(QWidget):
         self.move_btn = QPushButton(ACTION_MOVE)
         self.cancel_btn = QPushButton(ACTION_CANCEL)
         self.mark_month_btn = QPushButton(ACTION_MARK_MONTH_PROCESSED)
-        configure_new_action_button(self.new_btn)
-        configure_edit_action_button(self.edit_btn)
-        configure_create_linked_action_button(self.create_task_btn)
-        configure_create_linked_action_button(self.create_meeting_btn)
-        configure_move_action_button(self.move_btn)
-        configure_cancel_action_button(self.cancel_btn)
-        configure_perform_action_button(self.mark_month_btn)
         # Kompatibilita se staršími testy – stav fokusovaného měsíce.
         self.month_status_label = QLabel("")
         self.month_status_label.setObjectName("MutedText")
@@ -126,6 +110,7 @@ class YearlyPlanTab(QWidget):
             self.create_meeting_btn,
             self.move_btn,
             self.cancel_btn,
+            self.mark_month_btn,
         ):
             button.setEnabled(False)
 
@@ -251,27 +236,20 @@ class YearlyPlanTab(QWidget):
         )
         if status is None:
             self.month_status_label.setText("")
-            self.mark_month_btn.setEnabled(True)
             return
         self.month_status_label.setText(
             f"Zpracováno: {format_processed_at(status.processed_at)}"
         )
-        # Tlačítko zůstává aktivní – lze zpracovat jiný měsíc přes dialog.
-        self.mark_month_btn.setEnabled(True)
 
     def _month_for_mark_action(self) -> int | None:
-        slot = self._selected_slot()
-        if slot is not None:
-            return int(slot[1])
-        dialog = YearlyPlanMonthPickDialog(
-            self,
-            default_month=self._focus_month,
-        )
-        if not dialog.exec():
+        """Měsíc jen z označeného oddělovacího řádku (ne z položky, ne z dialogu)."""
+        if not self.table.selected_is_month_header():
             return None
-        return dialog.selected_month()
+        return self.table.selected_header_month()
 
     def mark_month_processed(self) -> None:
+        if not self.mark_month_btn.isEnabled():
+            return
         month = self._month_for_mark_action()
         if month is None:
             return
@@ -333,11 +311,23 @@ class YearlyPlanTab(QWidget):
 
     def _refresh_action_buttons(self, *_args) -> None:
         single = self._selected_row_count() == 1
-        if (
-            not single
-            or self.table.selected_is_month_header()
-            or self.table.selected_is_periodic()
-        ):
+        is_header = bool(single and self.table.selected_is_month_header())
+        is_periodic = bool(single and self.table.selected_is_periodic())
+
+        if is_header:
+            month = self.table.selected_header_month()
+            can_mark = bool(
+                month is not None
+                and not yearly_plan_service.is_month_processed(
+                    self.current_year(),
+                    month,
+                )
+            )
+            self.mark_month_btn.setEnabled(can_mark)
+        else:
+            self.mark_month_btn.setEnabled(False)
+
+        if not single or is_header or is_periodic:
             self.edit_btn.setEnabled(False)
             self.create_task_btn.setEnabled(False)
             self.create_meeting_btn.setEnabled(False)

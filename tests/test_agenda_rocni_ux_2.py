@@ -138,18 +138,18 @@ class AgendaRocniUx2TestCase(unittest.TestCase):
         self.assertNotIn("Žádné položky", text)
         tab.close()
 
-    def test_month_header_style_and_not_selectable(self) -> None:
+    def test_month_header_style_selectable_not_item(self) -> None:
         from PySide6.QtCore import Qt
 
         tab = YearlyPlanTab()
         tab.set_year_month(2031, 5)
         row = tab.table.month_header_row(5)
-        item = tab.table.item(row, COL_SOURCE)
+        item = tab.table.item(row, COL_TITLE)
         self.assertEqual(item.background().color().name().lower(), "#e3f2fd")
         self.assertEqual(_MONTH_HEADER_BG.name().lower(), "#e3f2fd")
-        self.assertEqual(item.flags(), Qt.ItemFlag.NoItemFlags)
+        self.assertTrue(bool(item.flags() & Qt.ItemFlag.ItemIsSelectable))
         tab.table.selectRow(row)
-        # NoItemFlags – řádek měsíce nejde vybrat jako položku.
+        self.assertTrue(tab.table.selected_is_month_header())
         self.assertIsNone(tab.table.selected_item_id())
         tab._refresh_action_buttons()
         self.assertFalse(tab.edit_btn.isEnabled())
@@ -279,7 +279,7 @@ class AgendaRocniUx2TestCase(unittest.TestCase):
         tab = YearlyPlanTab()
         tab.set_year_month(2031, 3)
         row = tab.table.month_header_row(3)
-        item = tab.table.item(row, COL_SOURCE)
+        item = tab.table.item(row, COL_TITLE)
         self.assertEqual(item.data(_ROLE_HEADER_NAME), "Březen")
         self.assertIn("Celkem:", item.data(_ROLE_HEADER_SUMMARY))
         self.assertNotEqual(
