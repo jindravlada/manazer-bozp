@@ -6,11 +6,8 @@ from dataclasses import dataclass
 from datetime import date
 
 from moduly.rocni_plan.constants import (
-    DISPLAY_PLANNED,
     ROW_KIND_MANUAL,
     ROW_KIND_PERIODIC,
-    SOURCE_LABEL_MANUAL,
-    SOURCE_LABEL_PERIODIC,
 )
 
 
@@ -26,6 +23,9 @@ class YearlyPlanRow:
     activity_id: int | None = None
     planned_due_date: date | None = None
     occurrence_id: int | None = None
+    slot_year: int | None = None
+    slot_month: int | None = None
+    is_recurring: bool = False
 
     @property
     def is_manual(self) -> bool:

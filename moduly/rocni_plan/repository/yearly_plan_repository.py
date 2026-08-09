@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 
 from core.database.session import get_session
+from moduly.rocni_plan.constants import DEFAULT_REPEAT_EVERY, REPEAT_UNIT_NONE
 from moduly.rocni_plan.modely.yearly_plan_item import YearlyPlanItem
 from moduly.rocni_plan.modely.yearly_plan_item_move import YearlyPlanItemMove
 from moduly.rocni_plan.modely.yearly_plan_month_status import YearlyPlanMonthStatus
+from moduly.rocni_plan.modely.yearly_plan_occurrence import YearlyPlanOccurrence
 
 
 class YearlyPlanItemRepository:
@@ -22,6 +24,34 @@ class YearlyPlanItemRepository:
                 .where(
                     YearlyPlanItem.year == year,
                     YearlyPlanItem.month == month,
+                )
+                .order_by(YearlyPlanItem.id)
+            )
+            return list(session.scalars(stmt))
+
+    def list_oneshots_for_month(self, year: int, month: int) -> list[YearlyPlanItem]:
+        with get_session() as session:
+            stmt = (
+                select(YearlyPlanItem)
+                .where(
+                    YearlyPlanItem.year == year,
+                    YearlyPlanItem.month == month,
+                    or_(
+                        YearlyPlanItem.repeat_every <= 0,
+                        YearlyPlanItem.repeat_unit == REPEAT_UNIT_NONE,
+                    ),
+                )
+                .order_by(YearlyPlanItem.id)
+            )
+            return list(session.scalars(stmt))
+
+    def list_repeating(self) -> list[YearlyPlanItem]:
+        with get_session() as session:
+            stmt = (
+                select(YearlyPlanItem)
+                .where(
+                    YearlyPlanItem.repeat_every > DEFAULT_REPEAT_EVERY,
+                    YearlyPlanItem.repeat_unit != REPEAT_UNIT_NONE,
                 )
                 .order_by(YearlyPlanItem.id)
             )
@@ -96,3 +126,62 @@ class YearlyPlanMonthStatusRepository:
             if row is not None:
                 session.delete(row)
                 session.commit()
+
+
+class YearlyPlanOccurrenceRepository:
+    def get_slot(
+        self,
+        definition_id: int,
+        year: int,
+        month: int,
+    ) -> YearlyPlanOccurrence | None:
+        with get_session() as session:
+            stmt = select(YearlyPlanOccurrence).where(
+                YearlyPlanOccurrence.definition_id == definition_id,
+                YearlyPlanOccurrence.year == year,
+                YearlyPlanOccurrence.month == month,
+            )
+            return session.scalars(stmt).first()
+
+    def list_for_definition(self, definition_id: int) -> list[YearlyPlanOccurrence]:
+        with get_session() as session:
+            stmt = (
+                select(YearlyPlanOccurrence)
+                .where(YearlyPlanOccurrence.definition_id == definition_id)
+                .order_by(
+                    YearlyPlanOccurrence.year,
+                    YearlyPlanOccurrence.month,
+                    YearlyPlanOccurrence.id,
+                )
+            )
+            return list(session.scalars(stmt))
+
+    def list_displayed_in_month(
+        self,
+        year: int,
+        month: int,
+    ) -> list[YearlyPlanOccurrence]:
+        with get_session() as session:
+            stmt = (
+                select(YearlyPlanOccurrence)
+                .where(
+                    YearlyPlanOccurrence.display_year == year,
+                    YearlyPlanOccurrence.display_month == month,
+                )
+                .order_by(YearlyPlanOccurrence.id)
+            )
+            return list(session.scalars(stmt))
+
+    def add(self, occurrence: YearlyPlanOccurrence) -> YearlyPlanOccurrence:
+        with get_session() as session:
+            session.add(occurrence)
+            session.commit()
+            session.refresh(occurrence)
+            return occurrence
+
+    def update(self, occurrence: YearlyPlanOccurrence) -> YearlyPlanOccurrence:
+        with get_session() as session:
+            occurrence = session.merge(occurrence)
+            session.commit()
+            session.refresh(occurrence)
+            return occurrence

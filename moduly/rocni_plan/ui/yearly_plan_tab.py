@@ -39,6 +39,7 @@ from moduly.rocni_plan.constants import (
     MONTH_NAMES,
     SOURCE_MODULE_YEARLY_PLAN,
     STATUS_CANCELLED,
+    STATUS_PLANNED,
     TAB_YEARLY_PLAN,
     format_processed_at,
 )
@@ -48,6 +49,7 @@ from moduly.periodicke_cinnosti.sluzby.periodic_activity_service import (
 from moduly.periodicke_cinnosti.ui.periodic_activity_dialog import PeriodicActivityDialog
 from moduly.rocni_plan.sluzby.yearly_plan_service import (
     YearlyPlanValidationError,
+    is_repeating,
     yearly_plan_service,
 )
 from moduly.rocni_plan.ui.yearly_plan_item_dialog import YearlyPlanItemDialog
@@ -251,8 +253,25 @@ class YearlyPlanTab(QWidget):
             return None
         return yearly_plan_service.get_by_id(item_id)
 
-    def _has_link(self, item) -> bool:
-        return item.task_id is not None or item.meeting_id is not None
+    def _selected_slot(self) -> tuple[int, int] | None:
+        return self.table.selected_slot_year_month()
+
+    def _occurrence_state(self, item):
+        """Vrátí (status, task_id, meeting_id) pro vybraný řádek."""
+        if item is None:
+            return None, None, None
+        if not self.table.selected_is_recurring() and not is_repeating(item):
+            return item.status, item.task_id, item.meeting_id
+        slot = self._selected_slot()
+        if slot is None:
+            return STATUS_PLANNED, None, None
+        occurrence = yearly_plan_service.get_occurrence(item.id, slot[0], slot[1])
+        if occurrence is None:
+            return STATUS_PLANNED, None, None
+        return occurrence.status, occurrence.task_id, occurrence.meeting_id
+
+    def _has_link_ids(self, task_id, meeting_id) -> bool:
+        return task_id is not None or meeting_id is not None
 
     def _refresh_action_buttons(self, *_args) -> None:
         single = self._selected_row_count() == 1
@@ -265,8 +284,9 @@ class YearlyPlanTab(QWidget):
             return
         item = self._selected_item()
         self.edit_btn.setEnabled(item is not None)
-        can_act = bool(item and item.status != STATUS_CANCELLED)
-        unlinked = bool(can_act and not self._has_link(item))
+        status, task_id, meeting_id = self._occurrence_state(item)
+        can_act = bool(item and status != STATUS_CANCELLED)
+        unlinked = bool(can_act and not self._has_link_ids(task_id, meeting_id))
         self.create_task_btn.setEnabled(unlinked)
         self.create_meeting_btn.setEnabled(unlinked)
         self.move_btn.setEnabled(can_act)
@@ -315,13 +335,8 @@ class YearlyPlanTab(QWidget):
             return
         dialog = YearlyPlanItemDialog(self, item=item)
         exec_maximized(dialog)
-        if dialog.item is not None and (
-            dialog.item.year != self.current_year()
-            or dialog.item.month != self.current_month()
-        ):
-            self.set_year_month(dialog.item.year, dialog.item.month)
-        else:
-            self.refresh()
+        # Po úpravě definice zůstat ve zvoleném měsíci pohledu.
+        self.refresh()
         self._notify_changed()
 
     def _open_selected_periodic(self) -> None:
@@ -346,25 +361,45 @@ class YearlyPlanTab(QWidget):
             QMessageBox.warning(self, TAB_YEARLY_PLAN, ITEM_NOT_FOUND_MESSAGE)
             self.refresh()
             return
+        slot = self._selected_slot()
+        from_year = self.current_year()
+        from_month = self.current_month()
+        if self.table.selected_is_recurring() and slot is not None:
+            occurrence = yearly_plan_service.get_occurrence(item.id, slot[0], slot[1])
+            if occurrence is not None:
+                from_year = occurrence.display_year
+                from_month = occurrence.display_month
+            else:
+                from_year, from_month = slot
         dialog = YearlyPlanMoveDialog(
             self,
-            from_year=item.year,
-            from_month=item.month,
-            default_year=item.year,
-            default_month=item.month,
+            from_year=from_year,
+            from_month=from_month,
+            default_year=from_year,
+            default_month=from_month,
         )
         if not dialog.exec():
             return
         try:
-            moved = yearly_plan_service.move_to_month(
-                item.id,
-                to_year=dialog.selected_year(),
-                to_month=dialog.selected_month(),
-            )
+            if self.table.selected_is_recurring() and slot is not None:
+                yearly_plan_service.move_occurrence(
+                    item.id,
+                    year=slot[0],
+                    month=slot[1],
+                    to_year=dialog.selected_year(),
+                    to_month=dialog.selected_month(),
+                )
+                self.set_year_month(dialog.selected_year(), dialog.selected_month())
+            else:
+                moved = yearly_plan_service.move_to_month(
+                    item.id,
+                    to_year=dialog.selected_year(),
+                    to_month=dialog.selected_month(),
+                )
+                self.set_year_month(moved.year, moved.month)
         except YearlyPlanValidationError as error:
             QMessageBox.warning(self, ACTION_MOVE, str(error))
             return
-        self.set_year_month(moved.year, moved.month)
         self._notify_changed()
 
     def cancel_selected(self) -> None:
@@ -385,7 +420,17 @@ class YearlyPlanTab(QWidget):
         if answer != QMessageBox.StandardButton.Yes:
             return
         try:
-            yearly_plan_service.cancel(item.id)
+            if self.table.selected_is_recurring():
+                slot = self._selected_slot()
+                if slot is None:
+                    raise YearlyPlanValidationError(ITEM_NOT_FOUND_MESSAGE)
+                yearly_plan_service.cancel_occurrence(
+                    item.id,
+                    year=slot[0],
+                    month=slot[1],
+                )
+            else:
+                yearly_plan_service.cancel(item.id)
         except YearlyPlanValidationError as error:
             QMessageBox.warning(self, ACTION_CANCEL, str(error))
             return
@@ -400,10 +445,11 @@ class YearlyPlanTab(QWidget):
             QMessageBox.warning(self, TAB_YEARLY_PLAN, ITEM_NOT_FOUND_MESSAGE)
             self.refresh()
             return
-        if item.status == STATUS_CANCELLED:
+        status, task_id, meeting_id = self._occurrence_state(item)
+        if status == STATUS_CANCELLED:
             QMessageBox.warning(self, ACTION_CREATE_TASK, CANCELLED_ACTION_MESSAGE)
             return
-        if self._has_link(item):
+        if self._has_link_ids(task_id, meeting_id):
             QMessageBox.warning(self, ACTION_CREATE_TASK, ALREADY_LINKED_MESSAGE)
             return
 
@@ -424,7 +470,18 @@ class YearlyPlanTab(QWidget):
             requires_verification=False,
         )
         try:
-            yearly_plan_service.link_task(item.id, task.id)
+            if self.table.selected_is_recurring():
+                slot = self._selected_slot()
+                if slot is None:
+                    raise YearlyPlanValidationError(ITEM_NOT_FOUND_MESSAGE)
+                yearly_plan_service.link_task_occurrence(
+                    item.id,
+                    year=slot[0],
+                    month=slot[1],
+                    task_id=task.id,
+                )
+            else:
+                yearly_plan_service.link_task(item.id, task.id)
         except YearlyPlanValidationError as error:
             QMessageBox.warning(self, ACTION_CREATE_TASK, str(error))
             return
@@ -439,10 +496,11 @@ class YearlyPlanTab(QWidget):
             QMessageBox.warning(self, TAB_YEARLY_PLAN, ITEM_NOT_FOUND_MESSAGE)
             self.refresh()
             return
-        if item.status == STATUS_CANCELLED:
+        status, task_id, meeting_id = self._occurrence_state(item)
+        if status == STATUS_CANCELLED:
             QMessageBox.warning(self, ACTION_CREATE_MEETING, CANCELLED_ACTION_MESSAGE)
             return
-        if self._has_link(item):
+        if self._has_link_ids(task_id, meeting_id):
             QMessageBox.warning(self, ACTION_CREATE_MEETING, ALREADY_LINKED_MESSAGE)
             return
 
@@ -453,7 +511,18 @@ class YearlyPlanTab(QWidget):
         try:
             meeting = meeting_service.create_meeting(**dialog.get_data())
             meeting_agenda_item_service.save_items(meeting.id, dialog.get_agenda_items())
-            yearly_plan_service.link_meeting(item.id, meeting.id)
+            if self.table.selected_is_recurring():
+                slot = self._selected_slot()
+                if slot is None:
+                    raise YearlyPlanValidationError(ITEM_NOT_FOUND_MESSAGE)
+                yearly_plan_service.link_meeting_occurrence(
+                    item.id,
+                    year=slot[0],
+                    month=slot[1],
+                    meeting_id=meeting.id,
+                )
+            else:
+                yearly_plan_service.link_meeting(item.id, meeting.id)
         except (MeetingValidationError, YearlyPlanValidationError) as error:
             QMessageBox.warning(self, MEETINGS_TITLE, str(error))
             return

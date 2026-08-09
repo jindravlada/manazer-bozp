@@ -9,9 +9,11 @@ from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
     QFormLayout,
+    QHBoxLayout,
     QLabel,
     QLineEdit,
     QMessageBox,
+    QSpinBox,
     QTabWidget,
     QTableWidget,
     QTextEdit,
@@ -33,13 +35,24 @@ from core.widgets.typed_table_sort import (
     typed_text,
 )
 from moduly.rocni_plan.constants import (
+    DEFAULT_DUE_KIND,
+    DEFAULT_REPEAT_EVERY,
+    DEFAULT_REPEAT_UNIT,
     DEFAULT_STATUS,
     DIALOG_TITLE_EDIT,
     DIALOG_TITLE_NEW,
+    DUE_KIND_DAY,
+    DUE_KIND_FIRST_WORKING_DAY,
+    DUE_KIND_LABELS,
+    DUE_KIND_NONE,
     MAX_YEAR,
     MIN_YEAR,
     MONTH_NAMES,
     MOVE_HISTORY_HEADERS,
+    REPEAT_UNIT_LABELS,
+    REPEAT_UNIT_MONTHS,
+    REPEAT_UNIT_NONE,
+    REPEAT_UNIT_YEARS,
     TAB_ITEM,
     TAB_MOVE_HISTORY,
     TITLE_REQUIRED_MESSAGE,
@@ -64,7 +77,7 @@ class YearlyPlanItemDialog(QDialog):
         self.item = item
         self.setWindowTitle(DIALOG_TITLE_EDIT if item is not None else DIALOG_TITLE_NEW)
         self.setWindowModality(Qt.WindowModality.WindowModal)
-        configure_resizable_form_dialog(self, width=560, height=480, min_width=420, min_height=360)
+        configure_resizable_form_dialog(self, width=560, height=560, min_width=420, min_height=400)
 
         layout = QVBoxLayout(self)
         self.tabs = QTabWidget()
@@ -98,6 +111,8 @@ class YearlyPlanItemDialog(QDialog):
                 self.month_combo.setCurrentIndex(month_index)
             self._load_history(None)
 
+        self._sync_repeat_controls()
+        self._sync_due_controls()
         self._editor.capture_baseline()
 
     def _item_tab(self) -> QWidget:
@@ -116,10 +131,41 @@ class YearlyPlanItemDialog(QDialog):
         for index, name in enumerate(MONTH_NAMES, start=1):
             self.month_combo.addItem(name, index)
 
+        self.repeat_enabled = QComboBox()
+        self.repeat_enabled.addItem("Neopakovat", REPEAT_UNIT_NONE)
+        self.repeat_enabled.addItem("Každých N měsíců", REPEAT_UNIT_MONTHS)
+        self.repeat_enabled.addItem("Každých N let", REPEAT_UNIT_YEARS)
+        self.repeat_enabled.currentIndexChanged.connect(self._sync_repeat_controls)
+
+        repeat_row = QWidget()
+        repeat_layout = QHBoxLayout(repeat_row)
+        repeat_layout.setContentsMargins(0, 0, 0, 0)
+        self.repeat_every_spin = QSpinBox()
+        self.repeat_every_spin.setRange(1, 120)
+        self.repeat_every_spin.setValue(1)
+        self.repeat_unit_label = QLabel(REPEAT_UNIT_LABELS[REPEAT_UNIT_MONTHS])
+        repeat_layout.addWidget(QLabel("každých"))
+        repeat_layout.addWidget(self.repeat_every_spin)
+        repeat_layout.addWidget(self.repeat_unit_label)
+        repeat_layout.addStretch()
+
+        self.due_kind_combo = QComboBox()
+        for kind in (DUE_KIND_NONE, DUE_KIND_DAY, DUE_KIND_FIRST_WORKING_DAY):
+            self.due_kind_combo.addItem(DUE_KIND_LABELS[kind], kind)
+        self.due_kind_combo.currentIndexChanged.connect(self._sync_due_controls)
+
+        self.due_day_spin = QSpinBox()
+        self.due_day_spin.setRange(1, 31)
+        self.due_day_spin.setValue(1)
+
         form.addRow("Název:", self.title_edit)
         form.addRow("Poznámka:", self.note_edit)
         form.addRow("Rok:", self.year_combo)
         form.addRow("Měsíc:", self.month_combo)
+        form.addRow("Opakovat:", self.repeat_enabled)
+        form.addRow("", repeat_row)
+        form.addRow("Kdy:", self.due_kind_combo)
+        form.addRow("Den v měsíci:", self.due_day_spin)
         return page
 
     def _history_tab(self) -> QWidget:
@@ -139,6 +185,20 @@ class YearlyPlanItemDialog(QDialog):
         layout.addWidget(self.history_table, 1)
         return page
 
+    def _sync_repeat_controls(self) -> None:
+        unit = self.repeat_enabled.currentData()
+        enabled = unit != REPEAT_UNIT_NONE
+        self.repeat_every_spin.setEnabled(enabled)
+        self.repeat_unit_label.setEnabled(enabled)
+        if unit == REPEAT_UNIT_YEARS:
+            self.repeat_unit_label.setText(REPEAT_UNIT_LABELS[REPEAT_UNIT_YEARS])
+        else:
+            self.repeat_unit_label.setText(REPEAT_UNIT_LABELS[REPEAT_UNIT_MONTHS])
+
+    def _sync_due_controls(self) -> None:
+        kind = self.due_kind_combo.currentData()
+        self.due_day_spin.setEnabled(kind == DUE_KIND_DAY)
+
     def _load_item(self, item) -> None:
         self.title_edit.setText(item.title or "")
         self.note_edit.setPlainText(item.note or "")
@@ -148,6 +208,22 @@ class YearlyPlanItemDialog(QDialog):
         month_index = self.month_combo.findData(item.month)
         if month_index >= 0:
             self.month_combo.setCurrentIndex(month_index)
+
+        unit = (item.repeat_unit or DEFAULT_REPEAT_UNIT).strip()
+        every = int(item.repeat_every or 0)
+        if every <= 0 or unit == REPEAT_UNIT_NONE:
+            unit = REPEAT_UNIT_NONE
+        index = self.repeat_enabled.findData(unit)
+        if index >= 0:
+            self.repeat_enabled.setCurrentIndex(index)
+        self.repeat_every_spin.setValue(max(1, every or 1))
+
+        kind = (item.due_kind or DEFAULT_DUE_KIND).strip()
+        kind_index = self.due_kind_combo.findData(kind)
+        if kind_index >= 0:
+            self.due_kind_combo.setCurrentIndex(kind_index)
+        if item.due_day:
+            self.due_day_spin.setValue(int(item.due_day))
 
     def _load_history(self, item_id: int | None) -> None:
         with sorting_paused(self.history_table):
@@ -194,11 +270,18 @@ class YearlyPlanItemDialog(QDialog):
                 )
 
     def get_data(self) -> dict:
+        unit = self.repeat_enabled.currentData() or REPEAT_UNIT_NONE
+        every = int(self.repeat_every_spin.value()) if unit != REPEAT_UNIT_NONE else 0
+        kind = self.due_kind_combo.currentData() or DUE_KIND_NONE
         return {
             "title": self.title_edit.text().strip(),
             "note": self.note_edit.toPlainText().strip(),
             "year": int(self.year_combo.currentData()),
             "month": int(self.month_combo.currentData()),
+            "repeat_every": every,
+            "repeat_unit": unit,
+            "due_kind": kind,
+            "due_day": int(self.due_day_spin.value()) if kind == DUE_KIND_DAY else None,
         }
 
     def _save(self) -> bool:
@@ -214,6 +297,10 @@ class YearlyPlanItemDialog(QDialog):
                     title=data["title"],
                     note=data["note"],
                     status=DEFAULT_STATUS,
+                    repeat_every=data["repeat_every"],
+                    repeat_unit=data["repeat_unit"],
+                    due_kind=data["due_kind"],
+                    due_day=data["due_day"],
                 )
                 self._load_history(self.item.id)
             else:
@@ -226,6 +313,10 @@ class YearlyPlanItemDialog(QDialog):
                     status=self.item.status,
                     task_id=self.item.task_id,
                     meeting_id=self.item.meeting_id,
+                    repeat_every=data["repeat_every"],
+                    repeat_unit=data["repeat_unit"],
+                    due_kind=data["due_kind"],
+                    due_day=data["due_day"],
                 )
         except YearlyPlanValidationError as error:
             QMessageBox.warning(self, self.windowTitle(), str(error))

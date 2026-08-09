@@ -17,6 +17,45 @@ ITEM_STATUSES = (
 
 DEFAULT_STATUS = STATUS_PLANNED
 
+# Opakování ruční položky.
+REPEAT_UNIT_NONE = "none"
+REPEAT_UNIT_MONTHS = "months"
+REPEAT_UNIT_YEARS = "years"
+
+REPEAT_UNITS = (
+    REPEAT_UNIT_NONE,
+    REPEAT_UNIT_MONTHS,
+    REPEAT_UNIT_YEARS,
+)
+
+DEFAULT_REPEAT_EVERY = 0
+DEFAULT_REPEAT_UNIT = REPEAT_UNIT_NONE
+
+REPEAT_UNIT_LABELS = {
+    REPEAT_UNIT_NONE: "neopakovat",
+    REPEAT_UNIT_MONTHS: "měsíců",
+    REPEAT_UNIT_YEARS: "let",
+}
+
+# Typ termínu v měsíci.
+DUE_KIND_NONE = "none"
+DUE_KIND_DAY = "day"
+DUE_KIND_FIRST_WORKING_DAY = "first_working_day"
+
+DUE_KINDS = (
+    DUE_KIND_NONE,
+    DUE_KIND_DAY,
+    DUE_KIND_FIRST_WORKING_DAY,
+)
+
+DEFAULT_DUE_KIND = DUE_KIND_NONE
+
+DUE_KIND_LABELS = {
+    DUE_KIND_NONE: "Bez konkrétního dne",
+    DUE_KIND_DAY: "Konkrétní den",
+    DUE_KIND_FIRST_WORKING_DAY: "První pracovní den",
+}
+
 STATUS_LABELS = {
     STATUS_PLANNED: "Naplánováno",
     STATUS_VIA_TASK: "Řeší se úkolem",

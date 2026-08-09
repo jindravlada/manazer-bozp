@@ -1,4 +1,4 @@
-"""Ruční položka Ročního plánu."""
+"""Ruční položka Ročního plánu (definice, případně s opakováním)."""
 
 from __future__ import annotations
 
@@ -8,7 +8,12 @@ from sqlalchemy import DateTime, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.database.base import Base
-from moduly.rocni_plan.constants import DEFAULT_STATUS
+from moduly.rocni_plan.constants import (
+    DEFAULT_DUE_KIND,
+    DEFAULT_REPEAT_EVERY,
+    DEFAULT_REPEAT_UNIT,
+    DEFAULT_STATUS,
+)
 
 
 class YearlyPlanItem(Base):
@@ -26,6 +31,23 @@ class YearlyPlanItem(Base):
 
     task_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     meeting_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    repeat_every: Mapped[int] = mapped_column(
+        Integer,
+        default=DEFAULT_REPEAT_EVERY,
+        nullable=False,
+    )
+    repeat_unit: Mapped[str] = mapped_column(
+        String(20),
+        default=DEFAULT_REPEAT_UNIT,
+        nullable=False,
+    )
+    due_kind: Mapped[str] = mapped_column(
+        String(30),
+        default=DEFAULT_DUE_KIND,
+        nullable=False,
+    )
+    due_day: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(

@@ -41,6 +41,9 @@ def initialize_database() -> None:
     from moduly.rocni_plan.modely.yearly_plan_month_status import (  # noqa: F401
         YearlyPlanMonthStatus,
     )
+    from moduly.rocni_plan.modely.yearly_plan_occurrence import (  # noqa: F401
+        YearlyPlanOccurrence,
+    )
     from moduly.kontroly.modely.control import Control  # noqa: F401
     from moduly.kontroly.modely.thp_monthly_control import ThpMonthlyControl  # noqa: F401
     from moduly.kontroly.modely.thp_yearly_kl_usage import ThpYearlyKlUsage  # noqa: F401
@@ -238,6 +241,7 @@ def initialize_database() -> None:
     _ensure_meeting_event_types_table()
     _ensure_meeting_agenda_items_table()
     _ensure_meeting_templates_table()
+    _ensure_yearly_plan_repeat_columns()
     _normalize_task_status_values()
     _normalize_accident_legacy_values()
 
@@ -321,6 +325,26 @@ def _ensure_periodic_occurrence_columns() -> None:
         return
     if "performed_by_kind" not in columns:
         _add_column("periodic_activity_occurrences", "performed_by_kind VARCHAR(20) DEFAULT ''")
+
+
+def _ensure_yearly_plan_repeat_columns() -> None:
+    columns = _table_columns("yearly_plan_items")
+    if not columns:
+        return
+    if "repeat_every" not in columns:
+        _add_column("yearly_plan_items", "repeat_every INTEGER DEFAULT 0 NOT NULL")
+    if "repeat_unit" not in columns:
+        _add_column("yearly_plan_items", "repeat_unit VARCHAR(20) DEFAULT 'none' NOT NULL")
+    if "due_kind" not in columns:
+        _add_column("yearly_plan_items", "due_kind VARCHAR(30) DEFAULT 'none' NOT NULL")
+    if "due_day" not in columns:
+        _add_column("yearly_plan_items", "due_day INTEGER")
+
+    occurrence_columns = _table_columns("yearly_plan_occurrences")
+    if not occurrence_columns:
+        from moduly.rocni_plan.modely.yearly_plan_occurrence import YearlyPlanOccurrence
+
+        YearlyPlanOccurrence.__table__.create(bind=_db_engine(), checkfirst=True)
 
 
 def _ensure_meeting_external_participants_column() -> None:

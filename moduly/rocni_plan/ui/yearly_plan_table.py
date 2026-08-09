@@ -29,6 +29,9 @@ _ROLE_PLAN_ITEM_ID = Qt.ItemDataRole.UserRole
 _ROLE_KIND = Qt.ItemDataRole.UserRole + 1
 _ROLE_ACTIVITY_ID = Qt.ItemDataRole.UserRole + 2
 _ROLE_DISPLAY_STATUS = Qt.ItemDataRole.UserRole + 3
+_ROLE_SLOT_YEAR = Qt.ItemDataRole.UserRole + 4
+_ROLE_SLOT_MONTH = Qt.ItemDataRole.UserRole + 5
+_ROLE_IS_RECURRING = Qt.ItemDataRole.UserRole + 6
 
 
 class YearlyPlanTable(QTableWidget):
@@ -57,7 +60,7 @@ class YearlyPlanTable(QTableWidget):
         return self.item(rows[0].row(), COL_ID)
 
     def selected_item_id(self) -> int | None:
-        """ID ruční položky, nebo None u Periodické činnosti / žádného výběru."""
+        """ID ruční položky / definice, nebo None u Periodické činnosti."""
         item = self._selected_id_item()
         if item is None:
             return None
@@ -94,19 +97,38 @@ class YearlyPlanTable(QTableWidget):
     def selected_is_manual(self) -> bool:
         return self.selected_kind() == ROW_KIND_MANUAL
 
+    def selected_is_recurring(self) -> bool:
+        item = self._selected_id_item()
+        if item is None:
+            return False
+        return bool(item.data(_ROLE_IS_RECURRING))
+
+    def selected_slot_year_month(self) -> tuple[int, int] | None:
+        item = self._selected_id_item()
+        if item is None:
+            return None
+        year = item.data(_ROLE_SLOT_YEAR)
+        month = item.data(_ROLE_SLOT_MONTH)
+        try:
+            return int(year), int(month)
+        except (TypeError, ValueError):
+            return None
+
     def load_rows(self, rows: list[YearlyPlanRow]) -> None:
         with sorting_paused(self):
             self.setRowCount(0)
             self.setRowCount(len(rows))
             for row_index, plan_row in enumerate(rows):
-                stable_id = plan_row.plan_item_id or (
-                    1_000_000 + (plan_row.activity_id or 0)
-                )
-                id_text = (
-                    str(plan_row.plan_item_id)
-                    if plan_row.plan_item_id is not None
-                    else f"P{plan_row.activity_id or 0}"
-                )
+                if plan_row.plan_item_id is not None:
+                    stable_id = (
+                        int(plan_row.plan_item_id) * 100_000
+                        + (plan_row.slot_year or 0) * 12
+                        + (plan_row.slot_month or 0)
+                    )
+                    id_text = str(plan_row.plan_item_id)
+                else:
+                    stable_id = 1_000_000_000 + (plan_row.activity_id or 0)
+                    id_text = f"P{plan_row.activity_id or 0}"
                 id_item = create_typed_item(
                     id_text,
                     typed_text(id_text),
@@ -115,6 +137,9 @@ class YearlyPlanTable(QTableWidget):
                 id_item.setData(_ROLE_PLAN_ITEM_ID, plan_row.plan_item_id)
                 id_item.setData(_ROLE_KIND, plan_row.kind)
                 id_item.setData(_ROLE_ACTIVITY_ID, plan_row.activity_id)
+                id_item.setData(_ROLE_SLOT_YEAR, plan_row.slot_year)
+                id_item.setData(_ROLE_SLOT_MONTH, plan_row.slot_month)
+                id_item.setData(_ROLE_IS_RECURRING, bool(plan_row.is_recurring))
                 self.setItem(row_index, COL_ID, id_item)
 
                 source = plan_row.source_label or "—"
