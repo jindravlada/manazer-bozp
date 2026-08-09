@@ -1,4 +1,4 @@
-"""Společný přehled Agendy – úkoly a události."""
+"""Společný přehled Agendy – úkoly, události a periodické činnosti."""
 
 from __future__ import annotations
 
@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QMenu,
     QMessageBox,
     QPushButton,
+    QTabWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -40,6 +41,8 @@ from moduly.agenda.constants import (
 )
 from moduly.agenda.sluzby.agenda_service import agenda_service
 from moduly.agenda.ui.agenda_table import AgendaTable
+from moduly.periodicke_cinnosti.constants import TAB_PERIODIC, TAB_TASKS_MEETINGS
+from moduly.periodicke_cinnosti.ui.periodic_activities_tab import PeriodicActivitiesTab
 from moduly.schuzky.constants import LIST_WINDOW_TITLE as MEETINGS_TITLE
 from moduly.schuzky.sluzby.meeting_agenda_item_service import meeting_agenda_item_service
 from moduly.schuzky.sluzby.meeting_service import (
@@ -59,6 +62,10 @@ class AgendaPage(QWidget):
         self._updating_status_filter = False
 
         layout = QVBoxLayout(self)
+        self.tabs = QTabWidget()
+
+        tasks_tab = QWidget()
+        tasks_layout = QVBoxLayout(tasks_tab)
 
         toolbar = QHBoxLayout()
         self.new_task_btn = QPushButton(ACTION_NEW_TASK)
@@ -101,11 +108,20 @@ class AgendaPage(QWidget):
         self.empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.empty_label.hide()
 
-        layout.addLayout(toolbar)
-        layout.addWidget(self.text_filter)
-        layout.addWidget(self.legend)
-        layout.addWidget(self.empty_label)
-        layout.addWidget(self.table)
+        tasks_layout.addLayout(toolbar)
+        tasks_layout.addWidget(self.text_filter)
+        tasks_layout.addWidget(self.legend)
+        tasks_layout.addWidget(self.empty_label)
+        tasks_layout.addWidget(self.table)
+
+        self.periodic_tab = PeriodicActivitiesTab(
+            self,
+            on_changed=self._refresh_dashboard,
+        )
+
+        self.tabs.addTab(tasks_tab, TAB_TASKS_MEETINGS)
+        self.tabs.addTab(self.periodic_tab, TAB_PERIODIC)
+        layout.addWidget(self.tabs)
 
         self.new_task_btn.clicked.connect(self.new_task)
         self.new_meeting_btn.clicked.connect(self.new_meeting)
@@ -124,6 +140,7 @@ class AgendaPage(QWidget):
 
     def apply_workspace_filters(self) -> None:
         """Výchozí filtr z pracovní plochy: oba typy + Aktivní."""
+        self.tabs.setCurrentIndex(0)
         for check in self.type_checks.values():
             check.blockSignals(True)
             check.setChecked(True)
@@ -134,9 +151,11 @@ class AgendaPage(QWidget):
     def showEvent(self, event: QShowEvent) -> None:
         super().showEvent(event)
         self.refresh()
+        self.periodic_tab.refresh()
 
     def hideEvent(self, event: QHideEvent) -> None:
         self.table.clear_selection()
+        self.periodic_tab.table.clear_selection()
         super().hideEvent(event)
 
     def _selected_type_filters(self) -> set[str]:

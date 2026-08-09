@@ -41,3 +41,104 @@ DEFAULT_REPEAT_UNIT = UNIT_YEARS
 DEFAULT_NOTIFY_EVERY = 0
 DEFAULT_NOTIFY_UNIT = UNIT_DAYS
 DEFAULT_NEXT_FROM = NEXT_FROM_PLANNED
+
+PLACE_KIND_LABELS = {
+    PLACE_KIND_WORKPLACE: "Provoz / pracoviště",
+    PLACE_KIND_ORGANIZATION: "Celá organizace",
+    PLACE_KIND_OTHER: "Jiné / mimo organizaci",
+    PLACE_KIND_NONE: "Bez určení místa",
+}
+
+UNIT_LABELS = {
+    UNIT_DAYS: "dny",
+    UNIT_WEEKS: "týdny",
+    UNIT_MONTHS: "měsíce",
+    UNIT_YEARS: "roky",
+}
+
+NEXT_FROM_LABELS = {
+    NEXT_FROM_PLANNED: "plánovaného termínu",
+    NEXT_FROM_ACTUAL: "skutečného data provedení",
+}
+
+PERFORMER_KIND_THP = "thp"
+PERFORMER_KIND_PERSON = "person"
+PERFORMER_KIND_EXTERNAL = "external"
+PERFORMER_KINDS = (
+    PERFORMER_KIND_THP,
+    PERFORMER_KIND_PERSON,
+    PERFORMER_KIND_EXTERNAL,
+)
+PERFORMER_KIND_LABELS = {
+    PERFORMER_KIND_THP: "THP",
+    PERFORMER_KIND_PERSON: "Osoba",
+    PERFORMER_KIND_EXTERNAL: "Externí / dodavatel",
+}
+
+TAB_TASKS_MEETINGS = "Úkoly a události"
+TAB_PERIODIC = "Periodické činnosti"
+
+ACTION_NEW = "Nová periodická činnost"
+ACTION_EDIT = "Upravit"
+ACTION_PERFORM = "Provedeno"
+SHOW_INACTIVE_LABEL = "Zobrazit neaktivní"
+
+DIALOG_TITLE_NEW = "Nová periodická činnost"
+DIALOG_TITLE_EDIT = "Periodická činnost"
+DIALOG_TITLE_PERFORM = "Provedení periodické činnosti"
+TAB_ACTIVITY = "Činnost"
+TAB_HISTORY = "Historie"
+
+EMPTY_STATE_TEXT = "Nejsou evidovány žádné periodické činnosti odpovídající filtrům."
+ITEM_NOT_FOUND_MESSAGE = "Periodická činnost nebyla nalezena."
+TITLE_REQUIRED_MESSAGE = "Vyplňte název periodické činnosti."
+PERFORMED_DATE_REQUIRED_MESSAGE = "Vyplňte datum provedení."
+
+COL_ID = 0
+COL_TITLE = 1
+COL_PLACE = 2
+COL_RESPONSIBLE = 3
+COL_NEXT_DUE = 4
+COL_PERIOD = 5
+COL_NOTIFY = 6
+COL_ACTIVE = 7
+
+COLUMN_HEADERS = [
+    "ID",
+    "Název",
+    "Místo",
+    "Odpovědná osoba",
+    "Nejbližší termín",
+    "Perioda",
+    "Upozornit",
+    "Aktivní",
+]
+
+HISTORY_HEADERS = [
+    "Plánovaný termín",
+    "Datum provedení",
+    "Provedl",
+    "Výsledek / poznámka",
+]
+
+
+def format_interval(every: int, unit: str) -> str:
+    label = UNIT_LABELS.get(unit, unit)
+    return f"{every} {label}"
+
+
+def format_place(activity) -> str:
+    kind = getattr(activity, "place_kind", PLACE_KIND_NONE)
+    if kind == PLACE_KIND_WORKPLACE:
+        name = (getattr(activity, "workplace_name", None) or "").strip()
+        return name or PLACE_KIND_LABELS[PLACE_KIND_WORKPLACE]
+    if kind == PLACE_KIND_OTHER:
+        text = (getattr(activity, "place_text", None) or "").strip()
+        return text or PLACE_KIND_LABELS[PLACE_KIND_OTHER]
+    return PLACE_KIND_LABELS.get(kind, PLACE_KIND_LABELS[PLACE_KIND_NONE])
+
+
+def format_notify(every: int, unit: str) -> str:
+    if every <= 0:
+        return "—"
+    return f"{format_interval(every, unit)} před termínem"

@@ -226,6 +226,35 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         for column in (COL_DUE, COL_PERSON, COL_STATUS, COL_SOURCE, COL_TYPE):
             header.setSectionResizeMode(column, QHeaderView.Fixed)
 
+    elif profile == "periodic_activities":
+        from moduly.periodicke_cinnosti.constants import (
+            COL_ACTIVE,
+            COL_ID,
+            COL_NEXT_DUE,
+            COL_NOTIFY,
+            COL_PERIOD,
+            COL_PLACE,
+            COL_RESPONSIBLE,
+            COL_TITLE,
+        )
+
+        widths = {
+            COL_ID: 0,
+            COL_TITLE: 260,
+            COL_PLACE: 180,
+            COL_RESPONSIBLE: 160,
+            COL_NEXT_DUE: 120,
+            COL_PERIOD: 110,
+            COL_NOTIFY: 140,
+            COL_ACTIVE: 80,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        table.setColumnHidden(COL_ID, True)
+        header.setSectionResizeMode(COL_TITLE, QHeaderView.Stretch)
+        for column in (COL_PLACE, COL_RESPONSIBLE, COL_NEXT_DUE, COL_PERIOD, COL_NOTIFY, COL_ACTIVE):
+            header.setSectionResizeMode(column, QHeaderView.Fixed)
+
     elif profile == "mu_investigations":
         widths = {
             0: 0,    # ID

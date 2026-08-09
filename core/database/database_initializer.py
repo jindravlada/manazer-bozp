@@ -227,6 +227,7 @@ def initialize_database() -> None:
     _ensure_meeting_event_type_column()
     _ensure_meeting_priority_column()
     _ensure_meeting_external_participants_column()
+    _ensure_periodic_occurrence_columns()
     _ensure_meeting_event_types_table()
     _ensure_meeting_agenda_items_table()
     _ensure_meeting_templates_table()
@@ -305,6 +306,14 @@ def _ensure_meeting_priority_column() -> None:
         return
     if "priority" not in columns:
         _add_column("meetings", "priority VARCHAR(30) DEFAULT 'Normální' NOT NULL")
+
+
+def _ensure_periodic_occurrence_columns() -> None:
+    columns = _table_columns("periodic_activity_occurrences")
+    if not columns:
+        return
+    if "performed_by_kind" not in columns:
+        _add_column("periodic_activity_occurrences", "performed_by_kind VARCHAR(20) DEFAULT ''")
 
 
 def _ensure_meeting_external_participants_column() -> None:

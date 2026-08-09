@@ -5,6 +5,8 @@ from __future__ import annotations
 import calendar
 from datetime import date, datetime, timedelta
 
+from moduly.nastaveni.sluzby.person_service import person_service
+from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.periodicke_cinnosti.constants import (
     DEFAULT_NEXT_FROM,
     DEFAULT_NOTIFY_EVERY,
@@ -15,6 +17,14 @@ from moduly.periodicke_cinnosti.constants import (
     NEXT_FROM_ACTUAL,
     NEXT_FROM_PLANNED,
     NEXT_FROM_VALUES,
+    PERFORMER_KIND_EXTERNAL,
+    PERFORMER_KIND_PERSON,
+    PERFORMER_KIND_THP,
+    PERFORMER_KINDS,
+    PLACE_KIND_NONE,
+    PLACE_KIND_ORGANIZATION,
+    PLACE_KIND_OTHER,
+    PLACE_KIND_WORKPLACE,
     PLACE_KINDS,
     TIME_UNITS,
     UNIT_DAYS,
@@ -211,6 +221,7 @@ class PeriodicActivityService:
         activity_id: int,
         *,
         performed_at: date,
+        performed_by_kind: str = "",
         performed_by_id: int | None = None,
         performed_by_name: str = "",
         result_note: str = "",
@@ -222,6 +233,24 @@ class PeriodicActivityService:
         activity = self.repository.get_by_id(activity_id)
         if activity is None:
             raise PeriodicActivityValidationError("Periodická činnost nebyla nalezena.")
+
+        kind = (performed_by_kind or "").strip()
+        if kind and kind not in PERFORMER_KINDS:
+            raise PeriodicActivityValidationError(
+                f"performed_by_kind musí být jedna z: {', '.join(PERFORMER_KINDS)}."
+            )
+
+        name = (performed_by_name or "").strip()
+        if not name and performed_by_id is not None:
+            if kind == PERFORMER_KIND_THP:
+                worker = settings_service.get_worker_by_id(performed_by_id)
+                name = worker.display_name if worker else ""
+            elif kind == PERFORMER_KIND_PERSON:
+                person = person_service.get_by_id(performed_by_id)
+                name = person.display_name if person else ""
+
+        if kind == PERFORMER_KIND_EXTERNAL:
+            performed_by_id = None
 
         planned = activity.next_due_date
         next_due = calculate_next_due_date(
@@ -236,8 +265,9 @@ class PeriodicActivityService:
             activity_id=activity.id,
             planned_due_date=planned,
             performed_at=performed_at,
+            performed_by_kind=kind,
             performed_by_id=performed_by_id,
-            performed_by_name=(performed_by_name or "").strip(),
+            performed_by_name=name,
             result_note=(result_note or "").strip(),
         )
         saved = self.occurrence_repository.add(occurrence)
@@ -291,14 +321,36 @@ class PeriodicActivityService:
                 f"next_from musí být jedna z: {', '.join(NEXT_FROM_VALUES)}."
             )
 
+        resolved_workplace_id = workplace_id
+        resolved_workplace_name = (workplace_name or "").strip()
+        resolved_place_text = (place_text or "").strip()
+        if place_kind == PLACE_KIND_WORKPLACE:
+            if resolved_workplace_id and not resolved_workplace_name:
+                workplace = settings_service.get_workplace_by_id(resolved_workplace_id)
+                resolved_workplace_name = workplace.name if workplace else ""
+            resolved_place_text = ""
+        elif place_kind in {PLACE_KIND_ORGANIZATION, PLACE_KIND_NONE}:
+            resolved_workplace_id = None
+            resolved_workplace_name = ""
+            resolved_place_text = ""
+        elif place_kind == PLACE_KIND_OTHER:
+            resolved_workplace_id = None
+            resolved_workplace_name = ""
+
+        resolved_responsible_id = responsible_person_id
+        resolved_responsible_name = (responsible_person_name or "").strip()
+        if resolved_responsible_id and not resolved_responsible_name:
+            worker = settings_service.get_worker_by_id(resolved_responsible_id)
+            resolved_responsible_name = worker.display_name if worker else ""
+
         return {
             "title": clean_title,
             "place_kind": place_kind,
-            "workplace_id": workplace_id,
-            "workplace_name": (workplace_name or "").strip(),
-            "place_text": (place_text or "").strip(),
-            "responsible_person_id": responsible_person_id,
-            "responsible_person_name": (responsible_person_name or "").strip(),
+            "workplace_id": resolved_workplace_id,
+            "workplace_name": resolved_workplace_name,
+            "place_text": resolved_place_text,
+            "responsible_person_id": resolved_responsible_id,
+            "responsible_person_name": resolved_responsible_name,
             "next_due_date": next_due_date,
             "repeat_every": int(repeat_every),
             "repeat_unit": repeat_unit,
