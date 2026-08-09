@@ -16,16 +16,26 @@ from moduly.rocni_plan.constants import (
     ITEM_STATUSES,
     MAX_YEAR,
     MIN_YEAR,
+    ROW_KIND_MANUAL,
+    ROW_KIND_PERIODIC,
+    SOURCE_LABEL_MANUAL,
+    SOURCE_LABEL_PERIODIC,
     STATUS_CANCELLED,
     STATUS_PLANNED,
     STATUS_VIA_MEETING,
     STATUS_VIA_TASK,
+    link_label,
 )
 from moduly.rocni_plan.modely.yearly_plan_item import YearlyPlanItem
 from moduly.rocni_plan.modely.yearly_plan_item_move import YearlyPlanItemMove
+from moduly.rocni_plan.modely.yearly_plan_row import YearlyPlanRow
 from moduly.rocni_plan.repository.yearly_plan_repository import (
     YearlyPlanItemMoveRepository,
     YearlyPlanItemRepository,
+)
+from moduly.periodicke_cinnosti.sluzby.periodic_activity_service import (
+    add_period,
+    periodic_activity_service,
 )
 from moduly.schuzky.constants import (
     STATUS_CLOSED as MEETING_CLOSED,
@@ -38,6 +48,8 @@ from moduly.schuzky.constants import (
 )
 from moduly.schuzky.sluzby.meeting_service import meeting_service
 from moduly.ukoly.sluzby.task_service import task_service
+
+_MAX_PERIODIC_PROJECTIONS = 5000
 
 
 class YearlyPlanValidationError(ValueError):
@@ -111,6 +123,108 @@ def summarize_display_statuses(statuses: list[str]) -> dict[str, int]:
         elif status == DISPLAY_PLANNED:
             summary["planned"] += 1
     return summary
+
+
+def _manual_row(item: YearlyPlanItem, *, today: date) -> YearlyPlanRow:
+    return YearlyPlanRow(
+        kind=ROW_KIND_MANUAL,
+        title=(item.title or "").strip() or f"Položka #{item.id}",
+        note=(item.note or "").strip(),
+        display_status=resolve_display_status(item, today=today),
+        link_text=link_label(item),
+        source_label=SOURCE_LABEL_MANUAL,
+        plan_item_id=item.id,
+    )
+
+
+def _periodic_display_status(planned_due: date, *, has_occurrence: bool, today: date) -> str:
+    if has_occurrence:
+        return DISPLAY_DONE
+    if month_has_ended(planned_due.year, planned_due.month, today=today):
+        return DISPLAY_REST
+    return DISPLAY_PLANNED
+
+
+def list_periodic_rows_for_month(
+    year: int,
+    month: int,
+    *,
+    today: date | None = None,
+) -> list[YearlyPlanRow]:
+    """Projekce aktivních Periodických činností do měsíce (bez kopírování do DB)."""
+    today = today or date.today()
+    rows: list[YearlyPlanRow] = []
+    seen: set[tuple[int, date]] = set()
+
+    for activity in periodic_activity_service.get_all(active_only=True):
+        title = (activity.title or "").strip() or f"Periodická činnost #{activity.id}"
+        note = (activity.note or "").strip()
+
+        for occurrence in periodic_activity_service.list_occurrences(activity.id):
+            planned = occurrence.planned_due_date
+            if planned is None:
+                continue
+            if planned.year != year or planned.month != month:
+                continue
+            key = (activity.id, planned)
+            if key in seen:
+                continue
+            seen.add(key)
+            rows.append(
+                YearlyPlanRow(
+                    kind=ROW_KIND_PERIODIC,
+                    title=title,
+                    note=note,
+                    display_status=DISPLAY_DONE,
+                    link_text="—",
+                    source_label=SOURCE_LABEL_PERIODIC,
+                    activity_id=activity.id,
+                    planned_due_date=planned,
+                    occurrence_id=occurrence.id,
+                )
+            )
+
+        due = activity.next_due_date
+        if due is None:
+            continue
+
+        candidate = due
+        for _ in range(_MAX_PERIODIC_PROJECTIONS):
+            if candidate.year > year:
+                break
+            if candidate.year == year and candidate.month == month:
+                key = (activity.id, candidate)
+                if key not in seen:
+                    seen.add(key)
+                    rows.append(
+                        YearlyPlanRow(
+                            kind=ROW_KIND_PERIODIC,
+                            title=title,
+                            note=note,
+                            display_status=_periodic_display_status(
+                                candidate,
+                                has_occurrence=False,
+                                today=today,
+                            ),
+                            link_text="—",
+                            source_label=SOURCE_LABEL_PERIODIC,
+                            activity_id=activity.id,
+                            planned_due_date=candidate,
+                        )
+                    )
+            try:
+                nxt = add_period(
+                    candidate,
+                    activity.repeat_every,
+                    activity.repeat_unit,
+                )
+            except Exception:
+                break
+            if nxt <= candidate:
+                break
+            candidate = nxt
+
+    return rows
 
 
 class YearlyPlanService:
@@ -335,14 +449,46 @@ class YearlyPlanService:
     ) -> str:
         return resolve_display_status(item, today=today)
 
+    def list_month_rows(
+        self,
+        year: int,
+        month: int,
+        *,
+        today: date | None = None,
+    ) -> list[YearlyPlanRow]:
+        """Ruční položky + Periodické činnosti pro měsíc."""
+        today = today or date.today()
+        self._validate_year_month(year, month)
+        manual = [
+            _manual_row(item, today=today)
+            for item in self.list_for_month(year, month)
+        ]
+        periodic = list_periodic_rows_for_month(year, month, today=today)
+        rows = manual + periodic
+        rows.sort(
+            key=lambda row: (
+                (row.title or "").casefold(),
+                0 if row.is_manual else 1,
+                row.plan_item_id or 0,
+                row.activity_id or 0,
+                row.planned_due_date or date.min,
+            )
+        )
+        return rows
+
     def month_summary(
         self,
-        items: list[YearlyPlanItem],
+        items: list[YearlyPlanItem] | list[YearlyPlanRow],
         *,
         today: date | None = None,
     ) -> dict[str, int]:
         today = today or date.today()
-        statuses = [resolve_display_status(item, today=today) for item in items]
+        statuses: list[str] = []
+        for item in items:
+            if isinstance(item, YearlyPlanRow):
+                statuses.append(item.display_status)
+            else:
+                statuses.append(resolve_display_status(item, today=today))
         return summarize_display_statuses(statuses)
 
 

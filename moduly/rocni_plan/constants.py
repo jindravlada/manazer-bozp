@@ -85,18 +85,26 @@ ALREADY_LINKED_MESSAGE = "Položka už má vazbu na Úkol nebo Událost."
 CANCELLED_ACTION_MESSAGE = "Zrušenou položku nelze upravit touto akcí."
 
 COL_ID = 0
-COL_TITLE = 1
-COL_STATUS = 2
-COL_LINK = 3
-COL_NOTE = 4
+COL_SOURCE = 1
+COL_TITLE = 2
+COL_STATUS = 3
+COL_LINK = 4
+COL_NOTE = 5
 
 COLUMN_HEADERS = [
     "ID",
+    "Zdroj",
     "Název",
     "Stav",
     "Vazba",
     "Poznámka",
 ]
+
+ROW_KIND_MANUAL = "manual"
+ROW_KIND_PERIODIC = "periodic"
+
+SOURCE_LABEL_MANUAL = "Roční plán"
+SOURCE_LABEL_PERIODIC = "Periodická činnost"
 
 MOVE_HISTORY_HEADERS = [
     "Odkud",

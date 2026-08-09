@@ -39,6 +39,10 @@ from moduly.rocni_plan.constants import (
     STATUS_CANCELLED,
     TAB_YEARLY_PLAN,
 )
+from moduly.periodicke_cinnosti.sluzby.periodic_activity_service import (
+    periodic_activity_service,
+)
+from moduly.periodicke_cinnosti.ui.periodic_activity_dialog import PeriodicActivityDialog
 from moduly.rocni_plan.sluzby.yearly_plan_service import (
     YearlyPlanValidationError,
     yearly_plan_service,
@@ -165,14 +169,17 @@ class YearlyPlanTab(QWidget):
         self.refresh()
 
     def refresh(self) -> None:
-        items = yearly_plan_service.list_for_month(self.current_year(), self.current_month())
-        self.table.load_items(items)
+        rows = yearly_plan_service.list_month_rows(
+            self.current_year(),
+            self.current_month(),
+        )
+        self.table.load_rows(rows)
         configure_table_columns(self.table, "yearly_plan")
         self.table.clear_selection()
         self.text_filter.update_count()
         self._refresh_action_buttons()
-        self._refresh_summary(items)
-        if items:
+        self._refresh_summary(rows)
+        if rows:
             self.empty_label.hide()
             self.table.show()
         else:
@@ -180,8 +187,8 @@ class YearlyPlanTab(QWidget):
             self.empty_label.show()
             self.table.hide()
 
-    def _refresh_summary(self, items) -> None:
-        summary = yearly_plan_service.month_summary(items)
+    def _refresh_summary(self, rows) -> None:
+        summary = yearly_plan_service.month_summary(rows)
         self.summary_label.setText(
             "Celkem: {total}   Splněno: {done}   Řeší se: {in_progress}   "
             "Resty: {rest}   Zrušeno: {cancelled}".format(**summary)
@@ -201,8 +208,15 @@ class YearlyPlanTab(QWidget):
 
     def _refresh_action_buttons(self, *_args) -> None:
         single = self._selected_row_count() == 1
-        item = self._selected_item() if single else None
-        self.edit_btn.setEnabled(single and item is not None)
+        if not single or self.table.selected_is_periodic():
+            self.edit_btn.setEnabled(False)
+            self.create_task_btn.setEnabled(False)
+            self.create_meeting_btn.setEnabled(False)
+            self.move_btn.setEnabled(False)
+            self.cancel_btn.setEnabled(False)
+            return
+        item = self._selected_item()
+        self.edit_btn.setEnabled(item is not None)
         can_act = bool(item and item.status != STATUS_CANCELLED)
         unlinked = bool(can_act and not self._has_link(item))
         self.create_task_btn.setEnabled(unlinked)
@@ -243,6 +257,9 @@ class YearlyPlanTab(QWidget):
     def edit_selected(self) -> None:
         if self._selected_row_count() != 1:
             return
+        if self.table.selected_is_periodic():
+            self._open_selected_periodic()
+            return
         item = self._selected_item()
         if item is None:
             QMessageBox.warning(self, TAB_YEARLY_PLAN, ITEM_NOT_FOUND_MESSAGE)
@@ -257,6 +274,20 @@ class YearlyPlanTab(QWidget):
             self.set_year_month(dialog.item.year, dialog.item.month)
         else:
             self.refresh()
+        self._notify_changed()
+
+    def _open_selected_periodic(self) -> None:
+        activity_id = self.table.selected_activity_id()
+        if activity_id is None:
+            return
+        activity = periodic_activity_service.get_by_id(activity_id)
+        if activity is None:
+            QMessageBox.warning(self, TAB_YEARLY_PLAN, ITEM_NOT_FOUND_MESSAGE)
+            self.refresh()
+            return
+        dialog = PeriodicActivityDialog(self, activity=activity)
+        exec_maximized(dialog)
+        self.refresh()
         self._notify_changed()
 
     def move_selected(self) -> None:

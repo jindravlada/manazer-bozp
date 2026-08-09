@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import date
-
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QTableWidget
 
@@ -17,17 +15,20 @@ from moduly.rocni_plan.constants import (
     COL_ID,
     COL_LINK,
     COL_NOTE,
+    COL_SOURCE,
     COL_STATUS,
     COL_TITLE,
     COLUMN_HEADERS,
-    link_label,
+    ROW_KIND_MANUAL,
+    ROW_KIND_PERIODIC,
     status_label,
 )
-from moduly.rocni_plan.modely.yearly_plan_item import YearlyPlanItem
-from moduly.rocni_plan.sluzby.yearly_plan_service import resolve_display_status
+from moduly.rocni_plan.modely.yearly_plan_row import YearlyPlanRow
 
-_ROLE_ID = Qt.ItemDataRole.UserRole
-_ROLE_DISPLAY_STATUS = Qt.ItemDataRole.UserRole + 1
+_ROLE_PLAN_ITEM_ID = Qt.ItemDataRole.UserRole
+_ROLE_KIND = Qt.ItemDataRole.UserRole + 1
+_ROLE_ACTIVITY_ID = Qt.ItemDataRole.UserRole + 2
+_ROLE_DISPLAY_STATUS = Qt.ItemDataRole.UserRole + 3
 
 
 class YearlyPlanTable(QTableWidget):
@@ -49,68 +50,110 @@ class YearlyPlanTable(QTableWidget):
         self.clearSelection()
         self.setCurrentCell(-1, -1)
 
-    def selected_item_id(self) -> int | None:
+    def _selected_id_item(self):
         rows = self.selectionModel().selectedRows()
         if len(rows) != 1:
             return None
-        item = self.item(rows[0].row(), COL_ID)
+        return self.item(rows[0].row(), COL_ID)
+
+    def selected_item_id(self) -> int | None:
+        """ID ruční položky, nebo None u Periodické činnosti / žádného výběru."""
+        item = self._selected_id_item()
         if item is None:
             return None
-        raw = item.data(_ROLE_ID)
+        if item.data(_ROLE_KIND) != ROW_KIND_MANUAL:
+            return None
+        raw = item.data(_ROLE_PLAN_ITEM_ID)
         try:
             return int(raw)
         except (TypeError, ValueError):
             return None
 
-    def load_items(
-        self,
-        items: list[YearlyPlanItem],
-        *,
-        today: date | None = None,
-    ) -> None:
+    def selected_activity_id(self) -> int | None:
+        item = self._selected_id_item()
+        if item is None:
+            return None
+        if item.data(_ROLE_KIND) != ROW_KIND_PERIODIC:
+            return None
+        raw = item.data(_ROLE_ACTIVITY_ID)
+        try:
+            return int(raw)
+        except (TypeError, ValueError):
+            return None
+
+    def selected_kind(self) -> str | None:
+        item = self._selected_id_item()
+        if item is None:
+            return None
+        kind = item.data(_ROLE_KIND)
+        return str(kind) if kind else None
+
+    def selected_is_periodic(self) -> bool:
+        return self.selected_kind() == ROW_KIND_PERIODIC
+
+    def selected_is_manual(self) -> bool:
+        return self.selected_kind() == ROW_KIND_MANUAL
+
+    def load_rows(self, rows: list[YearlyPlanRow]) -> None:
         with sorting_paused(self):
             self.setRowCount(0)
-            self.setRowCount(len(items))
-            for row, plan_item in enumerate(items):
+            self.setRowCount(len(rows))
+            for row_index, plan_row in enumerate(rows):
+                stable_id = plan_row.plan_item_id or (
+                    1_000_000 + (plan_row.activity_id or 0)
+                )
+                id_text = (
+                    str(plan_row.plan_item_id)
+                    if plan_row.plan_item_id is not None
+                    else f"P{plan_row.activity_id or 0}"
+                )
                 id_item = create_typed_item(
-                    str(plan_item.id),
-                    typed_text(str(plan_item.id)),
-                    stable_id=plan_item.id,
+                    id_text,
+                    typed_text(id_text),
+                    stable_id=stable_id,
                 )
-                id_item.setData(_ROLE_ID, plan_item.id)
-                self.setItem(row, COL_ID, id_item)
+                id_item.setData(_ROLE_PLAN_ITEM_ID, plan_row.plan_item_id)
+                id_item.setData(_ROLE_KIND, plan_row.kind)
+                id_item.setData(_ROLE_ACTIVITY_ID, plan_row.activity_id)
+                self.setItem(row_index, COL_ID, id_item)
 
-                title = (plan_item.title or "").strip() or "—"
+                source = plan_row.source_label or "—"
                 self.setItem(
-                    row,
-                    COL_TITLE,
-                    create_typed_item(title, typed_text(title), stable_id=plan_item.id),
+                    row_index,
+                    COL_SOURCE,
+                    create_typed_item(source, typed_text(source), stable_id=stable_id),
                 )
 
-                display_status = resolve_display_status(plan_item, today=today)
-                status_text = status_label(display_status)
+                title = (plan_row.title or "").strip() or "—"
+                self.setItem(
+                    row_index,
+                    COL_TITLE,
+                    create_typed_item(title, typed_text(title), stable_id=stable_id),
+                )
+
+                status_text = status_label(plan_row.display_status)
                 status_item = create_typed_item(
                     status_text,
                     typed_text(status_text),
-                    stable_id=plan_item.id,
+                    stable_id=stable_id,
                 )
-                status_item.setData(_ROLE_DISPLAY_STATUS, display_status)
-                self.setItem(row, COL_STATUS, status_item)
+                status_item.setData(_ROLE_DISPLAY_STATUS, plan_row.display_status)
+                self.setItem(row_index, COL_STATUS, status_item)
 
-                link_text = link_label(plan_item)
+                link_text = plan_row.link_text or "—"
                 self.setItem(
-                    row,
+                    row_index,
                     COL_LINK,
                     create_typed_item(
                         link_text,
                         typed_text(link_text),
-                        stable_id=plan_item.id,
+                        stable_id=stable_id,
                     ),
                 )
 
-                note = (plan_item.note or "").strip() or "—"
+                note = (plan_row.note or "").strip() or "—"
                 self.setItem(
-                    row,
+                    row_index,
                     COL_NOTE,
-                    create_typed_item(note, typed_text(note), stable_id=plan_item.id),
+                    create_typed_item(note, typed_text(note), stable_id=stable_id),
                 )

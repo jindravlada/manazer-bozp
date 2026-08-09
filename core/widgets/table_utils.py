@@ -260,12 +260,14 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             COL_ID,
             COL_LINK,
             COL_NOTE,
+            COL_SOURCE,
             COL_STATUS,
             COL_TITLE,
         )
 
         widths = {
             COL_ID: 0,
+            COL_SOURCE: 150,
             COL_TITLE: 280,
             COL_STATUS: 150,
             COL_LINK: 120,
@@ -275,7 +277,7 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             table.setColumnWidth(column, width)
         table.setColumnHidden(COL_ID, True)
         header.setSectionResizeMode(COL_TITLE, QHeaderView.Stretch)
-        for column in (COL_STATUS, COL_LINK, COL_NOTE):
+        for column in (COL_SOURCE, COL_STATUS, COL_LINK, COL_NOTE):
             header.setSectionResizeMode(column, QHeaderView.Fixed)
 
     elif profile == "mu_investigations":
