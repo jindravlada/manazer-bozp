@@ -44,6 +44,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rocni_plan.ui.yearly_plan_tab import YearlyPlanTab
     from moduly.rocni_plan.ui.yearly_plan_table import (
         _MONTH_HEADER_BG,
+        format_month_header_parts,
         format_month_header_text,
     )
     from moduly.periodicke_cinnosti.constants import NEXT_FROM_PLANNED, UNIT_YEARS
@@ -260,6 +261,32 @@ class AgendaRocniUx2TestCase(unittest.TestCase):
         self.assertTrue(text.startswith("Srpen"))
         self.assertIn("Celkem: 2", text)
         self.assertIn("Zpracováno: 5. 8. 2031", text)
+
+    def test_month_header_bold_name_separate_from_summary(self) -> None:
+        from moduly.rocni_plan.ui.yearly_plan_table import (
+            _ROLE_HEADER_NAME,
+            _ROLE_HEADER_SUMMARY,
+        )
+
+        name, summary = format_month_header_parts(
+            3,
+            {"total": 1, "done": 0, "in_progress": 1, "rest": 0, "cancelled": 0},
+        )
+        self.assertEqual(name, "Březen")
+        self.assertTrue(summary.startswith("Celkem:"))
+        self.assertNotIn("Březen", summary)
+
+        tab = YearlyPlanTab()
+        tab.set_year_month(2031, 3)
+        row = tab.table.month_header_row(3)
+        item = tab.table.item(row, COL_SOURCE)
+        self.assertEqual(item.data(_ROLE_HEADER_NAME), "Březen")
+        self.assertIn("Celkem:", item.data(_ROLE_HEADER_SUMMARY))
+        self.assertNotEqual(
+            item.data(_ROLE_HEADER_NAME),
+            item.data(_ROLE_HEADER_SUMMARY),
+        )
+        tab.close()
 
     def test_periodic_still_listed(self) -> None:
         periodic_activity_service.create_activity(

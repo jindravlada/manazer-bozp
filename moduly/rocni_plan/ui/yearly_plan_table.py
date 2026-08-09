@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QBrush, QColor, QPainter, QPalette, QPen
+from PySide6.QtCore import QRect, Qt
+from PySide6.QtGui import QBrush, QColor, QFont, QPainter, QPalette, QPen
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QHeaderView,
@@ -45,6 +45,10 @@ _ROLE_SLOT_MONTH = Qt.ItemDataRole.UserRole + 5
 _ROLE_IS_RECURRING = Qt.ItemDataRole.UserRole + 6
 _ROLE_IS_MONTH_HEADER = Qt.ItemDataRole.UserRole + 7
 _ROLE_HEADER_MONTH = Qt.ItemDataRole.UserRole + 8
+_ROLE_HEADER_NAME = Qt.ItemDataRole.UserRole + 9
+_ROLE_HEADER_SUMMARY = Qt.ItemDataRole.UserRole + 10
+
+_HEADER_NAME_GAP = "   "
 
 
 @dataclass(frozen=True)
@@ -55,25 +59,39 @@ class YearlyPlanMonthSection:
     processed_at: object | None = None
 
 
+def format_month_header_parts(
+    month: int,
+    summary: dict[str, int],
+    *,
+    processed_at=None,
+) -> tuple[str, str]:
+    """Vrátí (název měsíce, souhrn). Název se zobrazuje tučně, souhrn normálně."""
+    name = month_label(month).capitalize()
+    parts = [
+        "Celkem: {total}   Splněno: {done}   Řeší se: {in_progress}   "
+        "Resty: {rest}   Zrušeno: {cancelled}".format(**summary),
+    ]
+    if processed_at is not None:
+        parts.append(f"Zpracováno: {format_processed_at(processed_at)}")
+    return name, _HEADER_NAME_GAP.join(parts)
+
+
 def format_month_header_text(
     month: int,
     summary: dict[str, int],
     *,
     processed_at=None,
 ) -> str:
-    name = month_label(month).capitalize()
-    parts = [
-        name,
-        "Celkem: {total}   Splněno: {done}   Řeší se: {in_progress}   "
-        "Resty: {rest}   Zrušeno: {cancelled}".format(**summary),
-    ]
-    if processed_at is not None:
-        parts.append(f"Zpracováno: {format_processed_at(processed_at)}")
-    return "   ".join(parts)
+    name, rest = format_month_header_parts(
+        month, summary, processed_at=processed_at
+    )
+    if rest:
+        return f"{name}{_HEADER_NAME_GAP}{rest}"
+    return name
 
 
 class _MonthHeaderDelegate(QStyledItemDelegate):
-    """Světle modré pozadí a modrý rámeček jako aktivní modul v menu."""
+    """Světle modré pozadí a modrý rámeček; tučný jen název měsíce."""
 
     def paint(self, painter: QPainter, option: QStyleOptionViewItem, index) -> None:
         if not index.data(_ROLE_IS_MONTH_HEADER):
@@ -84,17 +102,43 @@ class _MonthHeaderDelegate(QStyledItemDelegate):
         pen = QPen(_MONTH_HEADER_BORDER, 2)
         painter.setPen(pen)
         painter.drawRect(option.rect.adjusted(1, 1, -2, -2))
-        text = index.data(Qt.ItemDataRole.DisplayRole) or ""
-        if text:
-            painter.setPen(option.palette.color(QPalette.ColorRole.Text))
-            font = option.font
-            font.setBold(False)
-            painter.setFont(font)
-            painter.drawText(
-                option.rect.adjusted(8, 0, -8, 0),
-                int(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft),
-                str(text),
+
+        name = str(index.data(_ROLE_HEADER_NAME) or "")
+        summary = str(index.data(_ROLE_HEADER_SUMMARY) or "")
+        if not name and not summary:
+            text = str(index.data(Qt.ItemDataRole.DisplayRole) or "")
+            if _HEADER_NAME_GAP in text:
+                name, summary = text.split(_HEADER_NAME_GAP, 1)
+            else:
+                name = text
+
+        painter.setPen(option.palette.color(QPalette.ColorRole.Text))
+        text_rect = option.rect.adjusted(8, 0, -8, 0)
+        align = int(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+        x = text_rect.left()
+
+        if name:
+            bold_font = QFont(option.font)
+            bold_font.setBold(True)
+            painter.setFont(bold_font)
+            name_width = painter.fontMetrics().horizontalAdvance(name)
+            name_rect = QRect(x, text_rect.top(), name_width, text_rect.height())
+            painter.drawText(name_rect, align, name)
+            x += name_width
+
+        if summary:
+            normal_font = QFont(option.font)
+            normal_font.setBold(False)
+            painter.setFont(normal_font)
+            gap = painter.fontMetrics().horizontalAdvance(_HEADER_NAME_GAP)
+            summary_rect = QRect(
+                x + gap,
+                text_rect.top(),
+                max(0, text_rect.right() - (x + gap) + 1),
+                text_rect.height(),
             )
+            painter.drawText(summary_rect, align, summary)
+
         painter.restore()
 
 
@@ -242,7 +286,7 @@ class YearlyPlanTable(QTableWidget):
 
             for section in sections:
                 self._month_header_rows[int(section.month)] = row_index
-                header_text = format_month_header_text(
+                name, summary_text = format_month_header_parts(
                     section.month,
                     section.summary,
                     processed_at=section.processed_at,
@@ -250,7 +294,8 @@ class YearlyPlanTable(QTableWidget):
                 self._fill_month_header_row(
                     row_index,
                     month=section.month,
-                    text=header_text,
+                    name=name,
+                    summary=summary_text,
                     brush=header_brush,
                 )
                 row_index += 1
@@ -277,19 +322,23 @@ class YearlyPlanTable(QTableWidget):
         row_index: int,
         *,
         month: int,
-        text: str,
+        name: str,
+        summary: str,
         brush: QBrush,
     ) -> None:
+        display = f"{name}{_HEADER_NAME_GAP}{summary}" if summary else name
         no_flags = Qt.ItemFlag.NoItemFlags
         for column in range(self.columnCount()):
             if column == COL_SOURCE:
-                item = QTableWidgetItem(text)
+                item = QTableWidgetItem(display)
             else:
                 item = QTableWidgetItem("")
             item.setFlags(no_flags)
             item.setBackground(brush)
             item.setData(_ROLE_IS_MONTH_HEADER, True)
             item.setData(_ROLE_HEADER_MONTH, month)
+            item.setData(_ROLE_HEADER_NAME, name)
+            item.setData(_ROLE_HEADER_SUMMARY, summary)
             if column == COL_ID:
                 item.setData(_ROLE_SLOT_MONTH, month)
             self.setItem(row_index, column, item)
