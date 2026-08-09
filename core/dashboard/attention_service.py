@@ -334,15 +334,16 @@ def _from_yearly_plan_month(today: date) -> list[AttentionItem]:
 
 
 def _ozo_contract_subtitle(contract, *, expired: bool) -> str:
+    """Zdroj = Smlouvy OZO; číslo smlouvy a Po platnosti v subtitulku (sloupec Zdroj / Co hoří)."""
     number = (contract.contract_number or "").strip()
-    parts: list[str] = []
+    base = (
+        f"{SOURCE_LABEL_OZO_CONTRACT} · {number}"
+        if number
+        else SOURCE_LABEL_OZO_CONTRACT
+    )
     if expired:
-        parts.append(status_label(STATUS_EXPIRED))
-    if number:
-        parts.append(number)
-    if parts:
-        return " · ".join(parts)
-    return SOURCE_LABEL_OZO_CONTRACT
+        return f"{status_label(STATUS_EXPIRED)} · {base}"
+    return base
 
 
 def _from_ozo_contracts(today: date) -> list[AttentionItem]:

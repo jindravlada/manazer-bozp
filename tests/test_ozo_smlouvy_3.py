@@ -92,6 +92,7 @@ class OzoSmlouvy3TestCase(unittest.TestCase):
         self.assertEqual(item.title, "Firma OZO a.s.")
         self.assertEqual(item.date, date(2030, 6, 30))
         self.assertEqual(item.type_label, "Smlouva OZO")
+        self.assertIn("Smlouvy OZO", item.subtitle)
         self.assertIn("S-100", item.subtitle)
         self.assertEqual(item.status, "")
 

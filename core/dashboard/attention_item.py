@@ -31,7 +31,7 @@ SOURCE_LABEL_AUDIT = "Audit systému řízení"
 SOURCE_LABEL_INSPECTION = "Prověrka BOZP"
 SOURCE_LABEL_PERIODIC = "Periodická činnost"
 SOURCE_LABEL_YEARLY_PLAN = "Roční plán"
-SOURCE_LABEL_OZO_CONTRACT = "Smlouva OZO"
+SOURCE_LABEL_OZO_CONTRACT = "Smlouvy OZO"
 
 PRIORITY_RANK = {
     "Kritická": 0,
