@@ -1,10 +1,10 @@
-"""Záložka Agendy – Roční plán."""
+"""Záložka Agendy – Roční plán (celoroční pohled)."""
 
 from __future__ import annotations
 
 from datetime import date
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QTimer, Qt
 from PySide6.QtGui import QHideEvent, QShowEvent
 from PySide6.QtWidgets import (
     QComboBox,
@@ -39,12 +39,11 @@ from moduly.rocni_plan.constants import (
     ALREADY_LINKED_MESSAGE,
     CANCEL_CONFIRM_MESSAGE,
     CANCELLED_ACTION_MESSAGE,
-    EMPTY_STATE_TEXT,
     ITEM_NOT_FOUND_MESSAGE,
     MARK_MONTH_PROCESSED_CONFIRM,
     MAX_YEAR,
     MIN_YEAR,
-    MONTH_NAMES,
+    MONTH_ALREADY_PROCESSED_MESSAGE,
     SOURCE_MODULE_YEARLY_PLAN,
     STATUS_CANCELLED,
     STATUS_PLANNED,
@@ -61,8 +60,12 @@ from moduly.rocni_plan.sluzby.yearly_plan_service import (
     yearly_plan_service,
 )
 from moduly.rocni_plan.ui.yearly_plan_item_dialog import YearlyPlanItemDialog
+from moduly.rocni_plan.ui.yearly_plan_month_pick_dialog import YearlyPlanMonthPickDialog
 from moduly.rocni_plan.ui.yearly_plan_move_dialog import YearlyPlanMoveDialog
-from moduly.rocni_plan.ui.yearly_plan_table import YearlyPlanTable
+from moduly.rocni_plan.ui.yearly_plan_table import (
+    YearlyPlanMonthSection,
+    YearlyPlanTable,
+)
 from moduly.schuzky.constants import LIST_WINDOW_TITLE as MEETINGS_TITLE
 from moduly.schuzky.sluzby.meeting_agenda_item_service import meeting_agenda_item_service
 from moduly.schuzky.sluzby.meeting_service import (
@@ -78,6 +81,8 @@ class YearlyPlanTab(QWidget):
     def __init__(self, parent=None, *, on_changed=None):
         super().__init__(parent)
         self._on_changed = on_changed
+        self._focus_month = date.today().month
+        self._pending_scroll_month: int | None = None
 
         layout = QVBoxLayout(self)
 
@@ -87,20 +92,12 @@ class YearlyPlanTab(QWidget):
         for year in range(MIN_YEAR, MAX_YEAR + 1):
             self.year_combo.addItem(str(year), year)
         filters.addWidget(self.year_combo)
-        filters.addWidget(QLabel("Měsíc:"))
-        self.month_combo = QComboBox()
-        for index, name in enumerate(MONTH_NAMES, start=1):
-            self.month_combo.addItem(name, index)
-        filters.addWidget(self.month_combo)
         filters.addStretch()
 
         today = date.today()
         year_index = self.year_combo.findData(today.year)
         if year_index >= 0:
             self.year_combo.setCurrentIndex(year_index)
-        month_index = self.month_combo.findData(today.month)
-        if month_index >= 0:
-            self.month_combo.setCurrentIndex(month_index)
 
         toolbar = QHBoxLayout()
         self.new_btn = QPushButton(ACTION_NEW)
@@ -117,8 +114,12 @@ class YearlyPlanTab(QWidget):
         configure_move_action_button(self.move_btn)
         configure_cancel_action_button(self.cancel_btn)
         configure_perform_action_button(self.mark_month_btn)
+        # Kompatibilita se staršími testy – stav fokusovaného měsíce.
         self.month_status_label = QLabel("")
         self.month_status_label.setObjectName("MutedText")
+        self.summary_label = QLabel("")
+        self.summary_label.setObjectName("MutedText")
+        self.summary_label.hide()
         for button in (
             self.edit_btn,
             self.create_task_btn,
@@ -141,18 +142,12 @@ class YearlyPlanTab(QWidget):
         self.table = YearlyPlanTable()
         configure_table_columns(self.table, "yearly_plan")
         self.text_filter = FilterBar(self.table, placeholder="🔍 Hledat v Ročním plánu...")
-        self.empty_label = QLabel(EMPTY_STATE_TEXT)
-        self.empty_label.setWordWrap(True)
-        self.empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.empty_label.hide()
-        self.summary_label = QLabel("")
-        self.summary_label.setObjectName("MutedText")
+        self.text_filter.search_edit.textChanged.connect(self._after_filter)
 
         layout.addLayout(filters)
         layout.addLayout(toolbar)
         layout.addWidget(self.text_filter)
-        layout.addWidget(self.empty_label)
-        layout.addWidget(self.table)
+        layout.addWidget(self.table, 1)
         layout.addWidget(self.summary_label)
 
         self.new_btn.clicked.connect(self.new_item)
@@ -162,8 +157,7 @@ class YearlyPlanTab(QWidget):
         self.move_btn.clicked.connect(self.move_selected)
         self.cancel_btn.clicked.connect(self.cancel_selected)
         self.mark_month_btn.clicked.connect(self.mark_month_processed)
-        self.year_combo.currentIndexChanged.connect(self.refresh)
-        self.month_combo.currentIndexChanged.connect(self.refresh)
+        self.year_combo.currentIndexChanged.connect(self._on_year_changed)
         self.table.doubleClicked.connect(self.edit_selected)
         self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.table.customContextMenuRequested.connect(self._show_context_menu)
@@ -183,41 +177,77 @@ class YearlyPlanTab(QWidget):
         return int(self.year_combo.currentData())
 
     def current_month(self) -> int:
-        return int(self.month_combo.currentData())
+        """Fokusovaný měsíc (scroll / poslední set_year_month)."""
+        return int(self._focus_month)
 
     def set_year_month(self, year: int, month: int) -> None:
+        self._focus_month = int(month)
+        self._pending_scroll_month = int(month)
         year_index = self.year_combo.findData(year)
         if year_index >= 0:
-            self.year_combo.setCurrentIndex(year_index)
-        month_index = self.month_combo.findData(month)
-        if month_index >= 0:
-            self.month_combo.setCurrentIndex(month_index)
+            if self.year_combo.currentIndex() != year_index:
+                self.year_combo.setCurrentIndex(year_index)
+                return  # refresh přes _on_year_changed
         self.refresh()
 
+    def _on_year_changed(self, *_args) -> None:
+        self.refresh()
+
+    def _after_filter(self, *_args) -> None:
+        text = self.text_filter.search_edit.text().strip()
+        if not text:
+            for row in range(self.table.rowCount()):
+                self.table.setRowHidden(row, False)
+            return
+        self.table.ensure_month_headers_visibility()
+
     def refresh(self) -> None:
-        rows = yearly_plan_service.list_month_rows(
-            self.current_year(),
-            self.current_month(),
-        )
-        self.table.load_rows(rows)
+        year = self.current_year()
+        sections: list[YearlyPlanMonthSection] = []
+        focus_rows = []
+        for month in range(1, 13):
+            rows = yearly_plan_service.list_month_rows(year, month)
+            summary = yearly_plan_service.month_summary(rows)
+            status = yearly_plan_service.get_month_status(year, month)
+            sections.append(
+                YearlyPlanMonthSection(
+                    month=month,
+                    rows=rows,
+                    summary=summary,
+                    processed_at=status.processed_at if status is not None else None,
+                )
+            )
+            if month == self._focus_month:
+                focus_rows = rows
+
+        self.table.load_year_sections(sections)
         configure_table_columns(self.table, "yearly_plan")
         self.table.clear_selection()
         self.text_filter.update_count()
         self._refresh_action_buttons()
-        self._refresh_month_processed_state()
-        self._refresh_summary(rows)
-        if rows:
-            self.empty_label.hide()
-            self.table.show()
-        else:
-            self.empty_label.setText(EMPTY_STATE_TEXT)
-            self.empty_label.show()
-            self.table.hide()
+        self._refresh_focus_month_state(focus_rows)
+        self._scroll_pending_month()
 
-    def _refresh_month_processed_state(self) -> None:
+    def _scroll_pending_month(self) -> None:
+        month = self._pending_scroll_month
+        if month is None:
+            return
+        self._pending_scroll_month = None
+
+        def _do_scroll() -> None:
+            self.table.scroll_to_month(month)
+
+        QTimer.singleShot(0, _do_scroll)
+
+    def _refresh_focus_month_state(self, focus_rows) -> None:
+        summary = yearly_plan_service.month_summary(focus_rows)
+        self.summary_label.setText(
+            "Celkem: {total}   Splněno: {done}   Řeší se: {in_progress}   "
+            "Resty: {rest}   Zrušeno: {cancelled}".format(**summary)
+        )
         status = yearly_plan_service.get_month_status(
             self.current_year(),
-            self.current_month(),
+            self._focus_month,
         )
         if status is None:
             self.month_status_label.setText("")
@@ -226,10 +256,32 @@ class YearlyPlanTab(QWidget):
         self.month_status_label.setText(
             f"Zpracováno: {format_processed_at(status.processed_at)}"
         )
-        self.mark_month_btn.setEnabled(False)
+        # Tlačítko zůstává aktivní – lze zpracovat jiný měsíc přes dialog.
+        self.mark_month_btn.setEnabled(True)
+
+    def _month_for_mark_action(self) -> int | None:
+        slot = self._selected_slot()
+        if slot is not None:
+            return int(slot[1])
+        dialog = YearlyPlanMonthPickDialog(
+            self,
+            default_month=self._focus_month,
+        )
+        if not dialog.exec():
+            return None
+        return dialog.selected_month()
 
     def mark_month_processed(self) -> None:
-        if not self.mark_month_btn.isEnabled():
+        month = self._month_for_mark_action()
+        if month is None:
+            return
+        year = self.current_year()
+        if yearly_plan_service.is_month_processed(year, month):
+            QMessageBox.warning(
+                self,
+                ACTION_MARK_MONTH_PROCESSED,
+                MONTH_ALREADY_PROCESSED_MESSAGE,
+            )
             return
         answer = QMessageBox.question(
             self,
@@ -241,23 +293,14 @@ class YearlyPlanTab(QWidget):
         if answer != QMessageBox.StandardButton.Yes:
             return
         try:
-            yearly_plan_service.mark_month_processed(
-                self.current_year(),
-                self.current_month(),
-            )
+            yearly_plan_service.mark_month_processed(year, month)
         except YearlyPlanValidationError as error:
             QMessageBox.warning(self, ACTION_MARK_MONTH_PROCESSED, str(error))
             self.refresh()
             return
+        self._focus_month = month
         self.refresh()
         self._notify_changed()
-
-    def _refresh_summary(self, rows) -> None:
-        summary = yearly_plan_service.month_summary(rows)
-        self.summary_label.setText(
-            "Celkem: {total}   Splněno: {done}   Řeší se: {in_progress}   "
-            "Resty: {rest}   Zrušeno: {cancelled}".format(**summary)
-        )
 
     def _selected_row_count(self) -> int:
         return len(self.table.selectionModel().selectedRows())
@@ -290,7 +333,11 @@ class YearlyPlanTab(QWidget):
 
     def _refresh_action_buttons(self, *_args) -> None:
         single = self._selected_row_count() == 1
-        if not single or self.table.selected_is_periodic():
+        if (
+            not single
+            or self.table.selected_is_month_header()
+            or self.table.selected_is_periodic()
+        ):
             self.edit_btn.setEnabled(False)
             self.create_task_btn.setEnabled(False)
             self.create_meeting_btn.setEnabled(False)
@@ -314,6 +361,8 @@ class YearlyPlanTab(QWidget):
             self._refresh_action_buttons()
         if self._selected_row_count() != 1 and not index.isValid():
             return
+        if self.table.selected_is_month_header():
+            return
         menu = QMenu(self)
         for label, handler, button in (
             (ACTION_EDIT, self.edit_selected, self.edit_btn),
@@ -327,18 +376,25 @@ class YearlyPlanTab(QWidget):
         menu.exec(self.table.viewport().mapToGlobal(position))
 
     def new_item(self) -> None:
+        today = date.today()
+        default_month = today.month if today.year == self.current_year() else 1
         dialog = YearlyPlanItemDialog(
             self,
             default_year=self.current_year(),
-            default_month=self.current_month(),
+            default_month=default_month,
         )
         exec_maximized(dialog)
         self.refresh()
         if dialog.item is not None:
+            self._focus_month = int(dialog.item.month)
+            self._pending_scroll_month = self._focus_month
+            self._scroll_pending_month()
             self._notify_changed()
 
     def edit_selected(self) -> None:
         if self._selected_row_count() != 1:
+            return
+        if self.table.selected_is_month_header():
             return
         if self.table.selected_is_periodic():
             self._open_selected_periodic()
@@ -350,7 +406,6 @@ class YearlyPlanTab(QWidget):
             return
         dialog = YearlyPlanItemDialog(self, item=item)
         exec_maximized(dialog)
-        # Po úpravě definice zůstat ve zvoleném měsíci pohledu.
         self.refresh()
         self._notify_changed()
 
@@ -378,14 +433,14 @@ class YearlyPlanTab(QWidget):
             return
         slot = self._selected_slot()
         from_year = self.current_year()
-        from_month = self.current_month()
+        from_month = self._focus_month
+        if slot is not None:
+            from_year, from_month = slot
         if self.table.selected_is_recurring() and slot is not None:
             occurrence = yearly_plan_service.get_occurrence(item.id, slot[0], slot[1])
             if occurrence is not None:
                 from_year = occurrence.display_year
                 from_month = occurrence.display_month
-            else:
-                from_year, from_month = slot
         dialog = YearlyPlanMoveDialog(
             self,
             from_year=from_year,
@@ -404,7 +459,12 @@ class YearlyPlanTab(QWidget):
                     to_year=dialog.selected_year(),
                     to_month=dialog.selected_month(),
                 )
-                self.set_year_month(dialog.selected_year(), dialog.selected_month())
+                self._focus_month = dialog.selected_month()
+                if dialog.selected_year() != self.current_year():
+                    self.set_year_month(dialog.selected_year(), dialog.selected_month())
+                else:
+                    self._pending_scroll_month = self._focus_month
+                    self.refresh()
             else:
                 moved = yearly_plan_service.move_to_month(
                     item.id,

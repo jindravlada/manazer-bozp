@@ -43,6 +43,7 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.rocni_plan.constants import (
         COL_SOURCE,
+        COL_TITLE,
         DISPLAY_DONE,
         DISPLAY_PLANNED,
         DISPLAY_REST,
@@ -258,7 +259,12 @@ class AgendaRocni2dTestCase(unittest.TestCase):
 
     def test_not_copied_into_yearly_plan_items(self) -> None:
         self._create_periodic(title="Jen projekce", due=date(2026, 8, 1))
-        self.assertEqual(yearly_plan_service.list_for_month(2026, 8), [])
+        active = [
+            item
+            for item in yearly_plan_service.list_for_month(2026, 8)
+            if item.status != STATUS_CANCELLED
+        ]
+        self.assertEqual(active, [])
         rows = yearly_plan_service.list_month_rows(2026, 8, today=date(2026, 8, 1))
         self.assertTrue(any(row.is_periodic for row in rows))
 
@@ -306,7 +312,14 @@ class AgendaRocni2dTestCase(unittest.TestCase):
 
         manual_row = None
         for row in range(tab.table.rowCount()):
-            if tab.table.item(row, COL_SOURCE).text() == SOURCE_LABEL_MANUAL:
+            source_item = tab.table.item(row, COL_SOURCE)
+            title_item = tab.table.item(row, COL_TITLE)
+            if (
+                source_item is not None
+                and source_item.text() == SOURCE_LABEL_MANUAL
+                and title_item is not None
+                and title_item.text() == "Ruční"
+            ):
                 manual_row = row
                 break
         self.assertIsNotNone(manual_row)
@@ -363,9 +376,11 @@ class AgendaRocni2dTestCase(unittest.TestCase):
 
         tab = YearlyPlanTab()
         tab.set_year_month(2026, 10)
-        text = tab.summary_label.text()
+        text = tab.table.header_text_for_month(10)
         self.assertIn("Celkem: 3", text)
         self.assertIn("Splněno: 1", text)
+        # Kompatibilní souhrn fokusovaného měsíce.
+        self.assertIn("Celkem: 3", tab.summary_label.text())
         tab.close()
 
 

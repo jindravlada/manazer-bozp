@@ -150,9 +150,10 @@ class AgendaRocni2eTestCase(unittest.TestCase):
 
         tab = YearlyPlanTab()
         tab.set_year_month(2026, 9)
-        self.assertIn("Zpracováno:", tab.month_status_label.text())
-        self.assertIn("7. 9. 2026", tab.month_status_label.text())
-        self.assertFalse(tab.mark_month_btn.isEnabled())
+        header = tab.table.header_text_for_month(9)
+        self.assertIn("Zpracováno:", header)
+        self.assertIn("7. 9. 2026", header)
+        self.assertIn("Září", header)
         tab.close()
 
     def test_mark_month_does_not_change_item_statuses(self) -> None:

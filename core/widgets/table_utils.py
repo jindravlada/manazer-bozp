@@ -1105,5 +1105,8 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         table.setAlternatingRowColors(False)
 
     table.verticalHeader().setVisible(False)
-    if profile != "controls_year_matrix":
+    if profile not in ("controls_year_matrix", "yearly_plan"):
         table.setAlternatingRowColors(True)
+    if profile == "yearly_plan":
+        # Celoroční pohled: zebra po měsících přes Base/AlternateBase, ne globálně.
+        table.setAlternatingRowColors(False)
