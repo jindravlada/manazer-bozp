@@ -8,13 +8,20 @@ from core.dashboard.attention_item import (
     ITEM_TYPE_AUDIT,
     ITEM_TYPE_INSPECTION,
     ITEM_TYPE_MEETING,
+    ITEM_TYPE_PERIODIC,
     ITEM_TYPE_TASK,
     SOURCE_LABEL_AUDIT,
     SOURCE_LABEL_INSPECTION,
+    SOURCE_LABEL_PERIODIC,
     AttentionItem,
 )
 from core.shared.task_source_display import task_source_short_label
 from moduly.audity.sluzby.audit_service import audit_service
+from moduly.periodicke_cinnosti.constants import PLACE_KIND_NONE, format_place
+from moduly.periodicke_cinnosti.sluzby.periodic_activity_service import (
+    is_due_for_attention,
+    periodic_activity_service,
+)
 from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
 from moduly.schuzky.constants import STATUS_PLANNED
 from moduly.schuzky.sluzby.meeting_service import meeting_service
@@ -225,14 +232,67 @@ def _from_meetings(_today: date) -> list[AttentionItem]:
     return items
 
 
+def _periodic_place_label(activity) -> str:
+    kind = getattr(activity, "place_kind", PLACE_KIND_NONE) or PLACE_KIND_NONE
+    if kind == PLACE_KIND_NONE:
+        return ""
+    return (format_place(activity) or "").strip()
+
+
+def _periodic_subtitle(activity) -> str:
+    place = _periodic_place_label(activity)
+    if place:
+        return f"{SOURCE_LABEL_PERIODIC} · {place}"
+    return SOURCE_LABEL_PERIODIC
+
+
+def _from_periodics(today: date) -> list[AttentionItem]:
+    items: list[AttentionItem] = []
+    for activity in periodic_activity_service.get_all(active_only=True):
+        if not is_due_for_attention(
+            next_due_date=activity.next_due_date,
+            notify_every=activity.notify_every,
+            notify_unit=activity.notify_unit,
+            active=bool(activity.active),
+            today=today,
+        ):
+            continue
+        title = (activity.title or "").strip() or f"Periodická činnost #{activity.id}"
+        due_date = activity.next_due_date
+        items.append(
+            AttentionItem(
+                item_type=ITEM_TYPE_PERIODIC,
+                source_type=ITEM_TYPE_PERIODIC,
+                source_id=activity.id,
+                title=title,
+                date=due_date,
+                subtitle=_periodic_subtitle(activity),
+                status="Aktivní",
+                priority="",
+                open_metadata={
+                    "source_type": ITEM_TYPE_PERIODIC,
+                    "source_id": activity.id,
+                },
+                sort_key=build_sort_key(
+                    due_date,
+                    item_type=ITEM_TYPE_PERIODIC,
+                    title=title,
+                    source_id=activity.id,
+                ),
+            )
+        )
+    return items
+
+
 def get_attention_items(*, today: date | None = None) -> list[AttentionItem]:
-    """Vrátí společně seřazené úkoly, audity, prověrky a schůzky."""
+    """Vrátí společně seřazené úkoly, audity, prověrky, schůzky a periodické činnosti."""
     today = today or date.today()
     items = (
         _from_tasks(today)
         + _from_audits(today)
         + _from_inspections(today)
         + _from_meetings(today)
+        + _from_periodics(today)
     )
     items.sort(key=lambda item: item.sort_key)
     return items

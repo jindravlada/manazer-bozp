@@ -138,6 +138,13 @@ class AgendaPage(QWidget):
     def set_dashboard_refresh_callback(self, callback) -> None:
         self._dashboard_refresh_callback = callback
 
+    def open_periodic_activity(self, activity_id: int) -> None:
+        """Přepne na Periodické činnosti a otevře konkrétní záznam."""
+        index = self.tabs.indexOf(self.periodic_tab)
+        if index >= 0:
+            self.tabs.setCurrentIndex(index)
+        self.periodic_tab.open_activity(activity_id)
+
     def apply_workspace_filters(self) -> None:
         """Výchozí filtr z pracovní plochy: oba typy + Aktivní."""
         self.tabs.setCurrentIndex(0)

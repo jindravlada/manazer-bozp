@@ -33,6 +33,7 @@ with patch.object(Path, "home", return_value=_TMP):
         ITEM_TYPE_AUDIT,
         ITEM_TYPE_BOZP_INSPECTION,
         ITEM_TYPE_MEETING,
+        ITEM_TYPE_PERIODIC,
         ITEM_TYPE_TASK,
         SOURCE_LABEL_AUDIT,
         SOURCE_LABEL_INSPECTION,
@@ -302,6 +303,7 @@ class AttentionPanelPhase96eTestCase(unittest.TestCase):
                     ITEM_TYPE_AUDIT,
                     ITEM_TYPE_BOZP_INSPECTION,
                     ITEM_TYPE_MEETING,
+                    ITEM_TYPE_PERIODIC,
                 }
             )
         )

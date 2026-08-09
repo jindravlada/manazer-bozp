@@ -11,6 +11,7 @@ ITEM_TYPE_TASK = "task"
 ITEM_TYPE_AUDIT = "audit"
 ITEM_TYPE_INSPECTION = "inspection"
 ITEM_TYPE_MEETING = "meeting"
+ITEM_TYPE_PERIODIC = "periodic"
 # Zpětná kompatibilita staršího interního názvu.
 ITEM_TYPE_BOZP_INSPECTION = ITEM_TYPE_INSPECTION
 
@@ -19,10 +20,12 @@ TYPE_LABELS = {
     ITEM_TYPE_AUDIT: "Audit",
     ITEM_TYPE_INSPECTION: "Prověrka",
     ITEM_TYPE_MEETING: "Událost",
+    ITEM_TYPE_PERIODIC: "Periodická činnost",
 }
 
 SOURCE_LABEL_AUDIT = "Audit systému řízení"
 SOURCE_LABEL_INSPECTION = "Prověrka BOZP"
+SOURCE_LABEL_PERIODIC = "Periodická činnost"
 
 PRIORITY_RANK = {
     "Kritická": 0,

@@ -411,6 +411,7 @@ class MainWindow(QMainWindow):
             ITEM_TYPE_AUDIT,
             ITEM_TYPE_INSPECTION,
             ITEM_TYPE_MEETING,
+            ITEM_TYPE_PERIODIC,
             ITEM_TYPE_TASK,
         )
 
@@ -429,6 +430,9 @@ class MainWindow(QMainWindow):
             return
         if item_type == ITEM_TYPE_MEETING and entity_id is not None:
             self._open_meeting_by_id(entity_id)
+            return
+        if item_type == ITEM_TYPE_PERIODIC and entity_id is not None:
+            self._open_periodic_activity_by_id(entity_id)
 
     def _open_audit_by_id(self, audit_id: int) -> None:
         from moduly.audity.sluzby.audit_service import audit_service
@@ -510,6 +514,25 @@ class MainWindow(QMainWindow):
                 )
             except MeetingValidationError as error:
                 QMessageBox.warning(self, "Události", str(error))
+
+        self._refresh_dashboard_and_agenda()
+
+    def _open_periodic_activity_by_id(self, activity_id: int) -> None:
+        from moduly.periodicke_cinnosti.constants import TAB_PERIODIC
+        from moduly.periodicke_cinnosti.sluzby.periodic_activity_service import (
+            periodic_activity_service,
+        )
+
+        activity = periodic_activity_service.get_by_id(activity_id)
+        if activity is None:
+            QMessageBox.warning(self, TAB_PERIODIC, "Periodická činnost nebyla nalezena.")
+            self._refresh_dashboard_and_agenda()
+            return
+
+        self._show("agenda")
+        page = self._page_widgets.get("agenda")
+        if page is not None and hasattr(page, "open_periodic_activity"):
+            page.open_periodic_activity(activity_id)
 
         self._refresh_dashboard_and_agenda()
 

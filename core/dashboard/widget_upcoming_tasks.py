@@ -20,6 +20,7 @@ from core.dashboard.attention_item import (
     ITEM_TYPE_AUDIT,
     ITEM_TYPE_INSPECTION,
     ITEM_TYPE_MEETING,
+    ITEM_TYPE_PERIODIC,
     ITEM_TYPE_TASK,
     PRIORITY_RANK,
     AttentionItem,
@@ -41,6 +42,7 @@ _TYPE_STABLE_PREFIX = {
     ITEM_TYPE_AUDIT: 2,
     ITEM_TYPE_INSPECTION: 3,
     ITEM_TYPE_MEETING: 4,
+    ITEM_TYPE_PERIODIC: 5,
 }
 
 _EMPTY_TEXT = "Nejsou evidovány žádné nadcházející události ani úkoly."

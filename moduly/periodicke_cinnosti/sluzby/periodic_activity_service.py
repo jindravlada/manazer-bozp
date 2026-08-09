@@ -76,6 +76,56 @@ def add_period(value: date, every: int, unit: str) -> date:
     raise PeriodicActivityValidationError(f"Nepodporovaná jednotka periody: {unit}")
 
 
+def subtract_period(value: date, every: int, unit: str) -> date:
+    """Odečte předstih (every × unit) od data kalendářně."""
+    if every < 0:
+        raise PeriodicActivityValidationError("notify_every nesmí být záporné.")
+    if every == 0:
+        return value
+    if unit not in TIME_UNITS:
+        raise PeriodicActivityValidationError(
+            f"notify_unit musí být jedna z: {', '.join(TIME_UNITS)}."
+        )
+    if unit == UNIT_DAYS:
+        return value - timedelta(days=every)
+    if unit == UNIT_WEEKS:
+        return value - timedelta(weeks=every)
+    if unit == UNIT_MONTHS:
+        return add_calendar_months(value, -every)
+    if unit == UNIT_YEARS:
+        return add_calendar_months(value, -every * 12)
+    raise PeriodicActivityValidationError(f"Nepodporovaná jednotka periody: {unit}")
+
+
+def calculate_notify_date(
+    next_due_date: date | None,
+    notify_every: int,
+    notify_unit: str,
+) -> date | None:
+    """Datum upozornění = next_due_date − nastavený předstih."""
+    if next_due_date is None:
+        return None
+    return subtract_period(next_due_date, int(notify_every or 0), notify_unit or DEFAULT_NOTIFY_UNIT)
+
+
+def is_due_for_attention(
+    *,
+    next_due_date: date | None,
+    notify_every: int,
+    notify_unit: str,
+    active: bool,
+    today: date | None = None,
+) -> bool:
+    """True, pokud aktivní činnost má být na Pracovní ploše (od data upozornění)."""
+    if not active:
+        return False
+    notify_on = calculate_notify_date(next_due_date, notify_every, notify_unit)
+    if notify_on is None:
+        return False
+    today = today or date.today()
+    return today >= notify_on
+
+
 def calculate_next_due_date(
     *,
     planned_due_date: date | None,

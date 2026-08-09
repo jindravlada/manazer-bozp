@@ -160,6 +160,26 @@ class PeriodicActivitiesTab(QWidget):
         self.refresh()
         self._notify_changed()
 
+    def open_activity(self, activity_id: int) -> None:
+        activity = periodic_activity_service.get_by_id(activity_id)
+        if activity is None:
+            QMessageBox.warning(self, TAB_PERIODIC, ITEM_NOT_FOUND_MESSAGE)
+            self.refresh()
+            return
+        if not activity.active:
+            self.show_inactive.setChecked(True)
+        self.refresh()
+        for row in range(self.table.rowCount()):
+            item = self.table.item(row, 0)
+            if item is not None and item.data(Qt.ItemDataRole.UserRole) == activity_id:
+                self.table.selectRow(row)
+                break
+        self._refresh_action_buttons()
+        dialog = PeriodicActivityDialog(self, activity=activity)
+        exec_maximized(dialog)
+        self.refresh()
+        self._notify_changed()
+
     def perform_selected(self) -> None:
         if not self.perform_btn.isEnabled():
             return
