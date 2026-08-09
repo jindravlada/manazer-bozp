@@ -140,7 +140,10 @@ class DashboardPage(QWidget):
         grid = QGridLayout()
         grid.setSpacing(14)
 
-        self.today = TodayWidget(open_task_callback=self.open_task_by_id_callback)
+        self.today = TodayWidget(
+            open_task_callback=self.open_task_by_id_callback,
+            open_attention_callback=self.open_attention_callback,
+        )
         self.upcoming = UpcomingTasksWidget(
             open_task_callback=self.open_task_by_id_callback,
             open_attention_callback=self.open_attention_callback,

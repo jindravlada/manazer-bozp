@@ -6,8 +6,8 @@ import warnings
 from collections.abc import Callable
 from typing import Literal
 
-from PySide6.QtCore import QObject
-from PySide6.QtGui import QCloseEvent, QIcon
+from PySide6.QtCore import QEvent, QObject, Qt
+from PySide6.QtGui import QCloseEvent, QIcon, QKeyEvent
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -51,14 +51,17 @@ def confirm_unsaved_editor_close(parent: QWidget | None, *, title: str) -> Unsav
         EDITOR_UNSAVED_SAVE_LABEL,
         QMessageBox.ButtonRole.AcceptRole,
     )
+    configure_editor_save_button(save_btn)
     discard_btn = message.addButton(
         EDITOR_UNSAVED_DISCARD_LABEL,
         QMessageBox.ButtonRole.DestructiveRole,
     )
+    discard_btn.setIcon(_standard_icon(QStyle.StandardPixmap.SP_DialogResetButton))
     cancel_btn = message.addButton(
         EDITOR_UNSAVED_ABORT_LABEL,
         QMessageBox.ButtonRole.RejectRole,
     )
+    configure_editor_close_button(cancel_btn, is_new=True)
     message.setDefaultButton(cancel_btn)
     message.exec()
 
@@ -308,8 +311,9 @@ class EditorDialogController(QObject):
 
     def _run_save(self) -> bool:
         if self._on_save is None:
+            # Klasický modal: parent uloží po accept(); validace může accept zrušit.
             self._dialog.accept()
-            return True
+            return self._dialog.result() == QDialog.DialogCode.Accepted
         ok = bool(self._on_save())
         if not ok:
             return False
@@ -332,15 +336,43 @@ class EditorDialogController(QObject):
         if not self.request_close():
             return
         self._closing = True
+        # „Uložit“ v promptu mohlo dialog už acceptnout (modální editor).
+        if self._dialog.result() == QDialog.DialogCode.Accepted:
+            return
         self._dialog.reject()
 
     def eventFilter(self, watched, event):  # noqa: N802
         dialog = getattr(self, "_dialog", None)
-        if dialog is not None and watched is dialog and isinstance(event, QCloseEvent):
-            if self._closing:
+        if dialog is not None and watched is dialog:
+            if isinstance(event, QCloseEvent):
+                if self._closing:
+                    return False
+                # Nezobrazený dialog (typicky unit testy / cleanup) – bez promptu.
+                if not dialog.isVisible():
+                    self._closing = True
+                    return False
+                if not self.request_close():
+                    event.ignore()
+                    return True
+                self._closing = True
+                if dialog.result() == QDialog.DialogCode.Accepted:
+                    event.accept()
+                    return True
                 return False
-            if not self.request_close():
-                event.ignore()
+            if (
+                isinstance(event, QKeyEvent)
+                and event.type() == QEvent.Type.KeyPress
+                and event.key() == Qt.Key.Key_Escape
+            ):
+                if self._closing:
+                    return False
+                if not dialog.isVisible():
+                    return False
+                if not self.request_close():
+                    return True
+                self._closing = True
+                if dialog.result() == QDialog.DialogCode.Accepted:
+                    return True
+                dialog.reject()
                 return True
-            self._closing = True
         return super().eventFilter(watched, event)

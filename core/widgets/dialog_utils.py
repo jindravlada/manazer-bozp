@@ -55,6 +55,40 @@ def configure_navigate_button(button: QPushButton) -> None:
     button.setIcon(icon)
 
 
+def configure_new_action_button(button: QPushButton) -> None:
+    """Ikona pro akci Nová / Nový (stejná jako jinde přes QStyle)."""
+    button.setIcon(_standard_icon(QStyle.StandardPixmap.SP_FileDialogNewFolder))
+
+
+def configure_edit_action_button(button: QPushButton) -> None:
+    button.setIcon(_standard_icon(QStyle.StandardPixmap.SP_FileDialogDetailedView))
+
+
+def configure_perform_action_button(button: QPushButton) -> None:
+    """Provedeno / Měsíc zpracován – Apply."""
+    icon = _standard_icon(QStyle.StandardPixmap.SP_DialogApplyButton)
+    if icon.isNull():
+        icon = _standard_icon(QStyle.StandardPixmap.SP_DialogOkButton)
+    button.setIcon(icon)
+
+
+def configure_create_linked_action_button(button: QPushButton) -> None:
+    """Vytvořit úkol / Vytvořit událost."""
+    button.setIcon(_standard_icon(QStyle.StandardPixmap.SP_FileLinkIcon))
+
+
+def configure_move_action_button(button: QPushButton) -> None:
+    icon = _standard_icon(QStyle.StandardPixmap.SP_ArrowForward)
+    if icon.isNull():
+        icon = _standard_icon(QStyle.StandardPixmap.SP_ArrowRight)
+    button.setIcon(icon)
+
+
+def configure_cancel_action_button(button: QPushButton) -> None:
+    """Zrušit záznam (ne dialog Zrušit)."""
+    button.setIcon(_standard_icon(QStyle.StandardPixmap.SP_TrashIcon))
+
+
 def create_save_cancel_box(
     parent: QWidget | None = None,
     *,

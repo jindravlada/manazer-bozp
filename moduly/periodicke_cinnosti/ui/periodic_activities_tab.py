@@ -15,7 +15,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.widgets.dialog_utils import exec_maximized
+from core.widgets.dialog_utils import (
+    configure_edit_action_button,
+    configure_new_action_button,
+    configure_perform_action_button,
+    exec_maximized,
+)
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
 from moduly.periodicke_cinnosti.constants import (
@@ -48,6 +53,9 @@ class PeriodicActivitiesTab(QWidget):
         self.new_btn = QPushButton(ACTION_NEW)
         self.edit_btn = QPushButton(ACTION_EDIT)
         self.perform_btn = QPushButton(ACTION_PERFORM)
+        configure_new_action_button(self.new_btn)
+        configure_edit_action_button(self.edit_btn)
+        configure_perform_action_button(self.perform_btn)
         self.edit_btn.setEnabled(False)
         self.perform_btn.setEnabled(False)
         self._selection_action_buttons = (self.edit_btn, self.perform_btn)

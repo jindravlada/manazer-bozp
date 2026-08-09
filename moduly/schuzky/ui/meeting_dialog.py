@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box
+from core.widgets.editor_dialog_controller import EditorDialogController
 from moduly.schuzky.constants import (
     DEFAULT_EVENT_DURATION_HOURS,
     DEFAULT_EVENT_TYPE,
@@ -82,9 +83,16 @@ class MeetingDialog(QDialog):
 
         buttons = create_save_cancel_box(self, is_new=meeting is None)
         layout.addWidget(buttons)
-
-        buttons.accepted.connect(self._on_accept)
-        buttons.rejected.connect(self.reject)
+        self._editor = EditorDialogController(
+            self,
+            buttons,
+            is_new=meeting is None,
+            title=self.windowTitle(),
+        )
+        self._editor.set_snapshot_provider(self._snapshot)
+        self._editor.install_auto_dirty_tracking()
+        self.starts_at_edit.dateTimeChanged.connect(self._editor.mark_dirty)
+        self.ends_at_edit.dateTimeChanged.connect(self._editor.mark_dirty)
 
         self.starts_at_edit.dateTimeChanged.connect(self._on_starts_changed)
         self.ends_at_edit.dateTimeChanged.connect(self._on_ends_changed)
@@ -95,6 +103,8 @@ class MeetingDialog(QDialog):
             self._load_template(template)
         else:
             self.agenda_items_widget.load_for_meeting(None)
+
+        self._editor.capture_baseline()
 
     def _meeting_tab(self) -> QWidget:
         page = QWidget()
@@ -114,7 +124,6 @@ class MeetingDialog(QDialog):
         self.ends_at_edit = EventDateTimeFields()
 
         self.location_edit = MeetingLocationTypeahead()
-
         self.organizer_selector = MeetingOrganizerWidget()
         self.participants_selector = MeetingParticipantsWidget()
 
@@ -241,6 +250,9 @@ class MeetingDialog(QDialog):
             "notes": self._legacy_notes,
         }
 
+    def _snapshot(self) -> tuple:
+        return (self.get_data(), self.get_agenda_items())
+
     def get_agenda_items(self) -> list[dict]:
         return self.agenda_items_widget.get_items()
 
@@ -275,13 +287,13 @@ class MeetingDialog(QDialog):
         box.exec()
         self._focus_starts_at()
 
-    def _on_accept(self) -> None:
+    def _validate(self) -> bool:
         data = self.get_data()
         try:
             meeting_service.validate_times(data["starts_at"], data["ends_at"])
         except ValueError:
             QMessageBox.warning(self, DIALOG_WINDOW_TITLE, END_BEFORE_START_MESSAGE)
-            return
+            return False
 
         if meeting_service.is_planned_start_in_past_forbidden(
             status=data["status"],
@@ -289,7 +301,7 @@ class MeetingDialog(QDialog):
             existing=self.meeting,
         ):
             self._show_past_start_blocked()
-            return
+            return False
 
         if data["status"] == STATUS_PLANNED:
             exclude_id = getattr(self.meeting, "id", None) if self.meeting else None
@@ -303,9 +315,14 @@ class MeetingDialog(QDialog):
                 choice = conflict_dialog.exec()
                 if choice == CONFLICT_CHOICE_EDIT:
                     self._focus_starts_at()
-                    return
+                    return False
                 if choice != CONFLICT_CHOICE_SAVE:
-                    return
+                    return False
                 # Uložit přesto – konflikt není chyba; další uložení kontrolu zopakuje.
 
-        self.accept()
+        return True
+
+    def accept(self) -> None:
+        if not self._validate():
+            return
+        super().accept()

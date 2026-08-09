@@ -17,7 +17,15 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.widgets.dialog_utils import exec_maximized
+from core.widgets.dialog_utils import (
+    configure_cancel_action_button,
+    configure_create_linked_action_button,
+    configure_edit_action_button,
+    configure_move_action_button,
+    configure_new_action_button,
+    configure_perform_action_button,
+    exec_maximized,
+)
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
 from moduly.rocni_plan.constants import (
@@ -102,6 +110,13 @@ class YearlyPlanTab(QWidget):
         self.move_btn = QPushButton(ACTION_MOVE)
         self.cancel_btn = QPushButton(ACTION_CANCEL)
         self.mark_month_btn = QPushButton(ACTION_MARK_MONTH_PROCESSED)
+        configure_new_action_button(self.new_btn)
+        configure_edit_action_button(self.edit_btn)
+        configure_create_linked_action_button(self.create_task_btn)
+        configure_create_linked_action_button(self.create_meeting_btn)
+        configure_move_action_button(self.move_btn)
+        configure_cancel_action_button(self.cancel_btn)
+        configure_perform_action_button(self.mark_month_btn)
         self.month_status_label = QLabel("")
         self.month_status_label.setObjectName("MutedText")
         for button in (
