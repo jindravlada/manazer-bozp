@@ -170,6 +170,7 @@ def initialize_database() -> None:
 
     create_database()
     _ensure_thp_worker_title_columns()
+    _ensure_ozo_person_title_columns()
     _ensure_employer_columns()
     _ensure_task_columns()
     _ensure_accident_columns()
@@ -449,6 +450,16 @@ def _ensure_thp_worker_title_columns() -> None:
         _add_column("thp_workers", "title_after VARCHAR(50) DEFAULT ''")
     if "performs_controls" not in columns:
         _add_column("thp_workers", "performs_controls BOOLEAN DEFAULT 0")
+
+
+def _ensure_ozo_person_title_columns() -> None:
+    columns = _table_columns("ozo_persons")
+    if not columns:
+        return
+    if "title_before" not in columns:
+        _add_column("ozo_persons", "title_before VARCHAR(50) DEFAULT ''")
+    if "title_after" not in columns:
+        _add_column("ozo_persons", "title_after VARCHAR(50) DEFAULT ''")
 
 
 def _ensure_employer_columns() -> None:

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import date, datetime
 
+from moduly.smlouvy_ozo.constants import format_ozo_display_name
 from moduly.smlouvy_ozo.modely.ozo_person import OzoPerson
 from moduly.smlouvy_ozo.repository.ozo_person_repository import OzoPersonRepository
 
@@ -24,8 +25,10 @@ class OzoPersonService:
     def save(
         self,
         *,
+        title_before: str = "",
         first_name: str = "",
         last_name: str = "",
+        title_after: str = "",
         residence_address: str = "",
         exam_date: date | None = None,
         certificate_number: str = "",
@@ -35,8 +38,10 @@ class OzoPersonService:
         person = self.repository.get()
         if person is None:
             person = OzoPerson()
+        person.title_before = (title_before or "").strip()
         person.first_name = (first_name or "").strip()
         person.last_name = (last_name or "").strip()
+        person.title_after = (title_after or "").strip()
         person.residence_address = (residence_address or "").strip()
         person.exam_date = exam_date
         person.certificate_number = (certificate_number or "").strip()
@@ -61,13 +66,11 @@ class OzoPersonService:
         person = person if person is not None else self.get()
         if person is None:
             return ""
-        return " ".join(
-            part
-            for part in (
-                (person.first_name or "").strip(),
-                (person.last_name or "").strip(),
-            )
-            if part
+        return format_ozo_display_name(
+            getattr(person, "title_before", "") or "",
+            person.first_name or "",
+            person.last_name or "",
+            getattr(person, "title_after", "") or "",
         )
 
 

@@ -15,8 +15,10 @@ class OzoPerson(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
 
+    title_before: Mapped[str] = mapped_column(String(50), default="")
     first_name: Mapped[str] = mapped_column(String(100), default="")
     last_name: Mapped[str] = mapped_column(String(100), default="")
+    title_after: Mapped[str] = mapped_column(String(50), default="")
     residence_address: Mapped[str] = mapped_column(String(300), default="")
     exam_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     certificate_number: Mapped[str] = mapped_column(String(100), default="")

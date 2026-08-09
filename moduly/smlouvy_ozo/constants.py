@@ -103,3 +103,25 @@ def format_valid_to(*, indefinite: bool, valid_to) -> str:
 
 def status_label(status: str) -> str:
     return STATUS_LABELS.get(status, status)
+
+
+def format_ozo_display_name(
+    title_before: str = "",
+    first_name: str = "",
+    last_name: str = "",
+    title_after: str = "",
+) -> str:
+    """Složí zobrazované jméno OZO včetně titulů bez zdvojených mezer/čárek."""
+    before = (title_before or "").strip()
+    first = (first_name or "").strip()
+    last = (last_name or "").strip()
+    after = (title_after or "").strip()
+
+    base = " ".join(part for part in (before, first, last) if part)
+    if not after:
+        return base
+    if after.startswith(","):
+        return f"{base}{after}" if base else after.lstrip(", ").strip()
+    if not base:
+        return after
+    return f"{base}, {after}"

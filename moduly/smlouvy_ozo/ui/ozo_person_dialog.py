@@ -44,8 +44,10 @@ class OzoPersonDialog(QDialog):
 
         fields = QWidget()
         form = QFormLayout(fields)
+        self.title_before = QLineEdit()
         self.first_name = QLineEdit()
         self.last_name = QLineEdit()
+        self.title_after = QLineEdit()
         self.residence_address = QLineEdit()
         self.exam_date = NullableDateEdit()
         self.certificate_number = QLineEdit()
@@ -54,8 +56,10 @@ class OzoPersonDialog(QDialog):
         self.note.setAcceptRichText(False)
         self.note.setMinimumHeight(60)
 
+        form.addRow("Titul před jménem:", self.title_before)
         form.addRow("Jméno:", self.first_name)
         form.addRow("Příjmení:", self.last_name)
+        form.addRow("Titul za jménem:", self.title_after)
         form.addRow("Adresa bydliště / trvalého pobytu:", self.residence_address)
         form.addRow("Datum zkoušky / periodické zkoušky:", self.exam_date)
         form.addRow("Číslo osvědčení:", self.certificate_number)
@@ -98,8 +102,10 @@ class OzoPersonDialog(QDialog):
         self._editor.capture_baseline()
 
     def _load(self, person) -> None:
+        self.title_before.setText(getattr(person, "title_before", "") or "")
         self.first_name.setText(person.first_name or "")
         self.last_name.setText(person.last_name or "")
+        self.title_after.setText(getattr(person, "title_after", "") or "")
         self.residence_address.setText(person.residence_address or "")
         self.exam_date.set_date_value(person.exam_date)
         self.certificate_number.setText(person.certificate_number or "")
@@ -112,8 +118,10 @@ class OzoPersonDialog(QDialog):
 
     def get_data(self) -> dict:
         return {
+            "title_before": self.title_before.text().strip(),
             "first_name": self.first_name.text().strip(),
             "last_name": self.last_name.text().strip(),
+            "title_after": self.title_after.text().strip(),
             "residence_address": self.residence_address.text().strip(),
             "exam_date": self.exam_date.get_date(),
             "certificate_number": self.certificate_number.text().strip(),
