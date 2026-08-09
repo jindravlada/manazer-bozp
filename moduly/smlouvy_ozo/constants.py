@@ -10,16 +10,31 @@ ACTION_NEW = "Nová smlouva"
 ACTION_EDIT = "Upravit"
 ACTION_ACTIVATE = "Aktivovat"
 ACTION_DEACTIVATE = "Deaktivovat"
+ACTION_OZO_PERSON = "Odborně způsobilá osoba"
+ACTION_CHRONOLOGICAL_LIST = "Chronologický seznam smluv"
 
 DIALOG_TITLE_NEW = "Nová smlouva OZO"
 DIALOG_TITLE_EDIT = "Smlouva OZO"
+DIALOG_TITLE_OZO_PERSON = "Odborně způsobilá osoba"
+DIALOG_TITLE_CHRONOLOGICAL_LIST = "Chronologický seznam smluv"
 
 SHOW_INACTIVE_LABEL = "Zobrazit neaktivní"
+YEAR_FILTER_ALL = "Vše"
 EMPTY_STATE_TEXT = "Nejsou evidovány žádné smlouvy OZO."
+EMPTY_STATE_YEAR_TEXT = "Pro zvolený rok nejsou evidovány žádné smluvní vztahy."
 ITEM_NOT_FOUND_MESSAGE = "Smlouva OZO nebyla nalezena."
 EMPLOYER_NAME_REQUIRED_MESSAGE = "Vyplňte název zaměstnavatele / objednatele."
 VALID_FROM_REQUIRED_MESSAGE = "Vyplňte datum platnosti od."
 VALID_TO_REQUIRED_MESSAGE = "U smlouvy na dobu určitou vyplňte platnost do."
+YEAR_REQUIRED_FOR_LIST_MESSAGE = "Pro chronologický seznam smluv vyberte kalendářní rok."
+OZO_PERSON_MISSING_MESSAGE = (
+    "Pro výstup chronologického seznamu smluv doplňte údaje OZO:\n\n{items}"
+)
+
+DOCUMENT_LIST_TITLE = "Chronologický seznam smluvních vztahů"
+DOCUMENT_LIST_LEGAL = (
+    "Podle § 10 odst. 4 písm. a) zákona č. 309/2006 Sb."
+)
 
 UNIT_DAYS = "days"
 UNIT_WEEKS = "weeks"

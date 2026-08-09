@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+from datetime import date
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QHideEvent, QShowEvent
 from PySide6.QtWidgets import (
     QCheckBox,
+    QComboBox,
     QHBoxLayout,
     QLabel,
     QMenu,
@@ -20,17 +23,29 @@ from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
 from moduly.smlouvy_ozo.constants import (
     ACTION_ACTIVATE,
+    ACTION_CHRONOLOGICAL_LIST,
     ACTION_DEACTIVATE,
     ACTION_EDIT,
     ACTION_NEW,
+    ACTION_OZO_PERSON,
+    DIALOG_TITLE_CHRONOLOGICAL_LIST,
     EMPTY_STATE_TEXT,
+    EMPTY_STATE_YEAR_TEXT,
     ITEM_NOT_FOUND_MESSAGE,
     MODULE_NAME,
+    OZO_PERSON_MISSING_MESSAGE,
     SHOW_INACTIVE_LABEL,
+    YEAR_FILTER_ALL,
+    YEAR_REQUIRED_FOR_LIST_MESSAGE,
+)
+from moduly.smlouvy_ozo.sluzby.ozo_contract_list_service import (
+    ozo_contract_list_service,
 )
 from moduly.smlouvy_ozo.sluzby.ozo_contract_service import ozo_contract_service
 from moduly.smlouvy_ozo.ui.ozo_contract_dialog import OzoContractDialog
+from moduly.smlouvy_ozo.ui.ozo_contract_list_dialog import OzoContractListDialog
 from moduly.smlouvy_ozo.ui.ozo_contract_table import OzoContractTable
+from moduly.smlouvy_ozo.ui.ozo_person_dialog import OzoPersonDialog
 
 
 class SmlouvyOzoPage(QWidget):
@@ -45,6 +60,8 @@ class SmlouvyOzoPage(QWidget):
         self.edit_btn = QPushButton(ACTION_EDIT)
         self.activate_btn = QPushButton(ACTION_ACTIVATE)
         self.deactivate_btn = QPushButton(ACTION_DEACTIVATE)
+        self.ozo_person_btn = QPushButton(ACTION_OZO_PERSON)
+        self.list_btn = QPushButton(ACTION_CHRONOLOGICAL_LIST)
         self.edit_btn.setEnabled(False)
         self.activate_btn.setEnabled(False)
         self.deactivate_btn.setEnabled(False)
@@ -53,7 +70,12 @@ class SmlouvyOzoPage(QWidget):
         toolbar.addWidget(self.edit_btn)
         toolbar.addWidget(self.activate_btn)
         toolbar.addWidget(self.deactivate_btn)
+        toolbar.addWidget(self.ozo_person_btn)
+        toolbar.addWidget(self.list_btn)
         toolbar.addStretch()
+        toolbar.addWidget(QLabel("Rok:"))
+        self.year_filter = QComboBox()
+        toolbar.addWidget(self.year_filter)
         self.show_inactive = QCheckBox(SHOW_INACTIVE_LABEL)
         toolbar.addWidget(self.show_inactive)
 
@@ -74,12 +96,16 @@ class SmlouvyOzoPage(QWidget):
         self.edit_btn.clicked.connect(self.edit_selected)
         self.activate_btn.clicked.connect(self.activate_selected)
         self.deactivate_btn.clicked.connect(self.deactivate_selected)
+        self.ozo_person_btn.clicked.connect(self.edit_ozo_person)
+        self.list_btn.clicked.connect(self.open_chronological_list)
+        self.year_filter.currentIndexChanged.connect(self.refresh)
         self.show_inactive.toggled.connect(self.refresh)
         self.table.doubleClicked.connect(self.edit_selected)
         self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.table.customContextMenuRequested.connect(self._show_context_menu)
         self.table.selectionModel().selectionChanged.connect(self._refresh_action_buttons)
 
+        self._populate_year_filter(select_year=date.today().year)
         self.refresh()
 
     def set_dashboard_refresh_callback(self, callback) -> None:
@@ -87,17 +113,64 @@ class SmlouvyOzoPage(QWidget):
 
     def showEvent(self, event: QShowEvent) -> None:
         super().showEvent(event)
+        self._populate_year_filter(select_year=self.selected_year())
         self.refresh()
 
     def hideEvent(self, event: QHideEvent) -> None:
         self.table.clear_selection()
         super().hideEvent(event)
 
+    def selected_year(self) -> int | None:
+        data = self.year_filter.currentData()
+        if data is None:
+            return None
+        try:
+            return int(data)
+        except (TypeError, ValueError):
+            return None
+
+    def _populate_year_filter(self, *, select_year: int | None = None) -> None:
+        previous = select_year if select_year is not None else self.selected_year()
+        years = set(ozo_contract_service.available_years())
+        years.add(date.today().year)
+        ordered = sorted(years, reverse=True)
+
+        self.year_filter.blockSignals(True)
+        self.year_filter.clear()
+        for year in ordered:
+            self.year_filter.addItem(str(year), year)
+        self.year_filter.addItem(YEAR_FILTER_ALL, None)
+
+        if previous is not None:
+            index = self.year_filter.findData(previous)
+            if index >= 0:
+                self.year_filter.setCurrentIndex(index)
+            else:
+                # konkrétní rok – výchozí aktuální
+                current_index = self.year_filter.findData(date.today().year)
+                self.year_filter.setCurrentIndex(max(0, current_index))
+        else:
+            # Vše
+            all_index = self.year_filter.findData(None)
+            if all_index >= 0:
+                self.year_filter.setCurrentIndex(all_index)
+        self.year_filter.blockSignals(False)
+        # Při výběru roku je historie včetně neaktivních – checkbox se nepoužívá.
+        year_mode = self.selected_year() is not None
+        self.show_inactive.setEnabled(not year_mode)
+
     def refresh(self) -> None:
-        if self.show_inactive.isChecked():
+        year = self.selected_year()
+        if year is not None:
+            contracts = ozo_contract_service.list_for_calendar_year(year)
+            empty_text = EMPTY_STATE_YEAR_TEXT
+        elif self.show_inactive.isChecked():
             contracts = ozo_contract_service.get_all()
+            empty_text = EMPTY_STATE_TEXT
         else:
             contracts = ozo_contract_service.get_all(active_only=True)
+            empty_text = EMPTY_STATE_TEXT
+
         self.table.load_contracts(contracts)
         configure_table_columns(self.table, "ozo_contracts")
         self.table.clear_selection()
@@ -108,7 +181,7 @@ class SmlouvyOzoPage(QWidget):
             self.empty_label.hide()
             self.table.show()
         else:
-            self.empty_label.setText(EMPTY_STATE_TEXT)
+            self.empty_label.setText(empty_text)
             self.empty_label.show()
             self.table.hide()
 
@@ -146,9 +219,37 @@ class SmlouvyOzoPage(QWidget):
         deactivate_action.setEnabled(self.deactivate_btn.isEnabled())
         menu.exec(self.table.viewport().mapToGlobal(position))
 
+    def edit_ozo_person(self) -> None:
+        dialog = OzoPersonDialog(self)
+        dialog.exec()
+
+    def open_chronological_list(self) -> None:
+        year = self.selected_year()
+        if year is None:
+            QMessageBox.warning(
+                self,
+                DIALOG_TITLE_CHRONOLOGICAL_LIST,
+                YEAR_REQUIRED_FOR_LIST_MESSAGE,
+            )
+            return
+        missing = ozo_contract_list_service.missing_ozo_fields()
+        if missing:
+            QMessageBox.warning(
+                self,
+                DIALOG_TITLE_CHRONOLOGICAL_LIST,
+                OZO_PERSON_MISSING_MESSAGE.format(
+                    items="\n".join(f"• {item}" for item in missing)
+                ),
+            )
+            return
+        html = ozo_contract_list_service.build_html(year)
+        dialog = OzoContractListDialog(self, year=year, html=html)
+        dialog.exec()
+
     def new_contract(self) -> None:
         dialog = OzoContractDialog(self)
         exec_maximized(dialog)
+        self._populate_year_filter(select_year=self.selected_year())
         self.refresh()
         if dialog.contract is not None:
             self._notify_dashboard()
@@ -163,16 +264,25 @@ class SmlouvyOzoPage(QWidget):
             return
         dialog = OzoContractDialog(self, contract=contract)
         exec_maximized(dialog)
+        self._populate_year_filter(select_year=self.selected_year())
         self.refresh()
         self._notify_dashboard()
 
     def open_contract(self, contract_id: int) -> None:
+        from moduly.smlouvy_ozo.sluzby.ozo_contract_service import relation_date
+
         contract = ozo_contract_service.get_by_id(contract_id)
         if contract is None:
             QMessageBox.warning(self, MODULE_NAME, ITEM_NOT_FOUND_MESSAGE)
             self.refresh()
             return
-        if not contract.active:
+        rel = relation_date(contract)
+        if rel is not None:
+            self._populate_year_filter(select_year=rel.year)
+        elif not contract.active:
+            index = self.year_filter.findData(None)
+            if index >= 0:
+                self.year_filter.setCurrentIndex(index)
             self.show_inactive.setChecked(True)
         self.refresh()
         for row in range(self.table.rowCount()):
@@ -183,6 +293,7 @@ class SmlouvyOzoPage(QWidget):
         self._refresh_action_buttons()
         dialog = OzoContractDialog(self, contract=contract)
         exec_maximized(dialog)
+        self._populate_year_filter(select_year=self.selected_year())
         self.refresh()
         self._notify_dashboard()
 

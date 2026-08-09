@@ -70,6 +70,7 @@ def initialize_database() -> None:
         BozpInspectionVerificationOverride,
     )
     from moduly.smlouvy_ozo.modely.ozo_contract import OzoContract  # noqa: F401
+    from moduly.smlouvy_ozo.modely.ozo_person import OzoPerson  # noqa: F401
     from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement  # noqa: F401
     from moduly.pravni_pozadavky.modely.legal_requirement_check import (  # noqa: F401
         LegalRequirementCheck,

@@ -261,12 +261,18 @@ class OzoSmlouvy2TestCase(unittest.TestCase):
         activated = ozo_contract_service.activate(contract.id)
         self.assertTrue(activated.active)
 
+    def _select_all_years(self, page: SmlouvyOzoPage) -> None:
+        index = page.year_filter.findData(None)
+        self.assertGreaterEqual(index, 0)
+        page.year_filter.setCurrentIndex(index)
+
     def test_inactive_filter_default(self) -> None:
         active = self._create(employer_name="Aktivní OZO")
         inactive = self._create(employer_name="Neaktivní OZO")
         ozo_contract_service.deactivate(inactive.id)
 
         page = SmlouvyOzoPage()
+        self._select_all_years(page)
         names = [
             page.table.item(row, COL_EMPLOYER).text()
             for row in range(page.table.rowCount())
@@ -289,6 +295,7 @@ class OzoSmlouvy2TestCase(unittest.TestCase):
     def test_action_buttons_by_selection(self) -> None:
         contract = self._create(employer_name="Tlačítka OZO")
         page = SmlouvyOzoPage()
+        self._select_all_years(page)
         self.assertEqual(page.new_btn.text(), ACTION_NEW)
         self.assertEqual(page.edit_btn.text(), ACTION_EDIT)
         self.assertEqual(page.activate_btn.text(), ACTION_ACTIVATE)

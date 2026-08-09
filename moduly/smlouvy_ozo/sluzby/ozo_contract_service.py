@@ -21,6 +21,13 @@ class OzoContractValidationError(Exception):
     pass
 
 
+def relation_date(contract: OzoContract) -> date | None:
+    """Datum smluvního vztahu: přednostně uzavření, jinak platnost od."""
+    if contract.signed_on is not None:
+        return contract.signed_on
+    return contract.valid_from
+
+
 class OzoContractService:
     def __init__(self, repository: OzoContractRepository | None = None):
         self.repository = repository or OzoContractRepository()
@@ -30,6 +37,30 @@ class OzoContractService:
 
     def get_by_id(self, contract_id: int) -> OzoContract | None:
         return self.repository.get_by_id(contract_id)
+
+    def available_years(self) -> list[int]:
+        years: set[int] = set()
+        for contract in self.repository.get_all():
+            value = relation_date(contract)
+            if value is not None:
+                years.add(value.year)
+        return sorted(years, reverse=True)
+
+    def list_for_calendar_year(self, year: int) -> list[OzoContract]:
+        """Všechny smlouvy (včetně neaktivních) náležící do kalendářního roku."""
+        rows = []
+        for contract in self.repository.get_all():
+            value = relation_date(contract)
+            if value is not None and value.year == int(year):
+                rows.append(contract)
+        rows.sort(
+            key=lambda item: (
+                relation_date(item) or date.max,
+                (item.employer_name or "").casefold(),
+                item.id or 0,
+            )
+        )
+        return rows
 
     def status_for(self, contract: OzoContract, *, today: date | None = None) -> str:
         return contract_status(
