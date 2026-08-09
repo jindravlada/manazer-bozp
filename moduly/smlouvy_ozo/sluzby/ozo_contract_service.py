@@ -28,6 +28,31 @@ def relation_date(contract: OzoContract) -> date | None:
     return contract.valid_from
 
 
+def covers_calendar_year(contract: OzoContract, year: int) -> bool:
+    """True, pokud smlouva byla alespoň část kalendářního roku platná.
+
+    Podmínky:
+    - valid_from <= 31.12.R
+    - doba neurčitá NEBO valid_to >= 1.1.R
+
+    Deaktivace záznamu na výsledek nemá vliv.
+    """
+    valid_from = contract.valid_from
+    if valid_from is None:
+        return False
+    year = int(year)
+    year_start = date(year, 1, 1)
+    year_end = date(year, 12, 31)
+    if valid_from > year_end:
+        return False
+    if bool(contract.indefinite):
+        return True
+    valid_to = contract.valid_to
+    if valid_to is None:
+        return False
+    return valid_to >= year_start
+
+
 class OzoContractService:
     def __init__(self, repository: OzoContractRepository | None = None):
         self.repository = repository or OzoContractRepository()
@@ -47,12 +72,12 @@ class OzoContractService:
         return sorted(years, reverse=True)
 
     def list_for_calendar_year(self, year: int) -> list[OzoContract]:
-        """Všechny smlouvy (včetně neaktivních) náležící do kalendářního roku."""
-        rows = []
-        for contract in self.repository.get_all():
-            value = relation_date(contract)
-            if value is not None and value.year == int(year):
-                rows.append(contract)
+        """Smlouvy platné alespoň část roku (včetně neaktivních)."""
+        rows = [
+            contract
+            for contract in self.repository.get_all()
+            if covers_calendar_year(contract, year)
+        ]
         rows.sort(
             key=lambda item: (
                 relation_date(item) or date.max,
