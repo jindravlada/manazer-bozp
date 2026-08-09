@@ -5,6 +5,7 @@ MODULE_NAME = "Smlouvy OZO"
 MODULE_DESCRIPTION = "Evidence smluv OZO se zaměstnavateli / objednateli."
 
 ENTITY_OZO_CONTRACT = "ozo_contract"
+ENTITY_OZO_PERSON = "ozo_person"
 
 ACTION_NEW = "Nová smlouva"
 ACTION_EDIT = "Upravit"
