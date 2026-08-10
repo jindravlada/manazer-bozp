@@ -41,7 +41,6 @@ class AuditCommissionWidget(QWidget):
         self.audit_id: int | None = None
         self._members: list[dict] = []
         self._invited: list[dict] = []
-        self._on_changed = None
 
         layout = QVBoxLayout(self)
 
@@ -190,13 +189,6 @@ class AuditCommissionWidget(QWidget):
 
         self._sync_committed_selector_state()
         self._refresh_tables()
-
-    def set_on_changed(self, callback) -> None:
-        self._on_changed = callback
-
-    def _emit_changed(self) -> None:
-        if callable(self._on_changed):
-            self._on_changed()
 
     def validate(self) -> tuple[bool, str]:
         leader_id = self.leader_selector.current_person_id()
@@ -478,7 +470,6 @@ class AuditCommissionWidget(QWidget):
             return
         self._members.append(data)
         self._refresh_tables()
-        self._emit_changed()
 
     def edit_member(self) -> None:
         row = self._selected_row(self.members_table)
@@ -505,7 +496,6 @@ class AuditCommissionWidget(QWidget):
         self._members[row] = data
         self._refresh_tables()
         self.members_table.selectRow(row)
-        self._emit_changed()
 
     def remove_member(self) -> None:
         row = self._selected_row(self.members_table)
@@ -514,7 +504,6 @@ class AuditCommissionWidget(QWidget):
             return
         del self._members[row]
         self._refresh_tables()
-        self._emit_changed()
 
     def add_invited(self) -> None:
         dialog = AuditCommissionEntryDialog(self, entry_type="invited")
@@ -529,7 +518,6 @@ class AuditCommissionWidget(QWidget):
             return
         self._invited.append(data)
         self._refresh_tables()
-        self._emit_changed()
 
     def edit_invited(self) -> None:
         row = self._selected_row(self.invited_table)
@@ -553,7 +541,6 @@ class AuditCommissionWidget(QWidget):
         self._invited[row] = data
         self._refresh_tables()
         self.invited_table.selectRow(row)
-        self._emit_changed()
 
     def remove_invited(self) -> None:
         row = self._selected_row(self.invited_table)
@@ -562,7 +549,6 @@ class AuditCommissionWidget(QWidget):
             return
         del self._invited[row]
         self._refresh_tables()
-        self._emit_changed()
 
     def move_item(self, list_type: str, direction: int) -> None:
         items = self._members if list_type == "member" else self._invited
@@ -580,4 +566,3 @@ class AuditCommissionWidget(QWidget):
         items[row], items[new_row] = items[new_row], items[row]
         self._refresh_tables()
         table.selectRow(new_row)
-        self._emit_changed()

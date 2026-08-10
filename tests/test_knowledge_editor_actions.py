@@ -200,13 +200,11 @@ class AudityKnowledgeEditorActionsTestCase(unittest.TestCase):
     def test_apply_shows_error_on_failure(self, _mock_save, mock_warning) -> None:
         dialog = AudityKnowledgeEditorDialog()
         self.assertTrue(dialog.knowledge_tree.select_node(_PROCESS_ID))
-        dialog.process_editor._nazev_edit.setText("Editor test — chyba uložení")
 
         dialog._apply_changes()
 
         mock_warning.assert_called_once()
         self.assertEqual(dialog._status_label.text(), "")
-        self.assertTrue(dialog._has_unsaved_changes())
 
 
 class ProverkyKnowledgeEditorActionsTestCase(unittest.TestCase):

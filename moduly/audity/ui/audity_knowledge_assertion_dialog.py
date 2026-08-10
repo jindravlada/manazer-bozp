@@ -17,7 +17,6 @@ from PySide6.QtWidgets import (
 
 from core.shared.verification_type import VERIFICATION_TYPE_OPTIONS
 from core.widgets.dialog_utils import create_save_cancel_box
-from core.widgets.editor_dialog_controller import EditorDialogController
 from moduly.audity.constants import (
     CONTROL_POINT_SEVERITY_DEFAULT,
     CONTROL_POINT_SEVERITY_OPTIONS,
@@ -96,19 +95,10 @@ class AudityKnowledgeAssertionDialog(QDialog):
         form.addRow("", self._aktivni_check)
         layout.addLayout(form)
 
-        is_new = not bool(self._editing_id)
-        buttons = create_save_cancel_box(self, is_new=is_new)
+        buttons = create_save_cancel_box(self)
+        buttons.accepted.connect(self._accept_if_valid)
+        buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
-        self._editor = EditorDialogController(
-            self,
-            buttons,
-            is_new=is_new,
-            title=self.windowTitle(),
-        )
-        self._editor.set_snapshot_provider(self.assertion_payload)
-        self._editor.install_auto_dirty_tracking()
-        for radio in self._verification_radios.values():
-            radio.toggled.connect(self._editor.mark_dirty)
 
         if assertion:
             self._text_edit.setPlainText(str(assertion.get("text") or assertion.get("nazev") or ""))
@@ -137,8 +127,6 @@ class AudityKnowledgeAssertionDialog(QDialog):
             )
             self._update_generated_id_preview()
 
-        self._editor.capture_baseline()
-
     def _set_verification_type(self, verification_type: str) -> None:
         radio = self._verification_radios.get(verification_type)
         if radio is not None:
@@ -162,11 +150,11 @@ class AudityKnowledgeAssertionDialog(QDialog):
         generated = audit_knowledge_service.generate_item_id(text, self._existing_ids)
         self._id_edit.setText(generated)
 
-    def accept(self) -> None:
+    def _accept_if_valid(self) -> None:
         if not self.assertion_payload()["text"]:
             self._text_edit.setFocus()
             return
-        super().accept()
+        self.accept()
 
     def assertion_payload(self) -> dict:
         return {

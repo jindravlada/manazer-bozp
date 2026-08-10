@@ -10,7 +10,6 @@ from core.shared.verification_type import (
     VERIFICATION_TYPE_TERRAIN,
 )
 from core.widgets.dialog_utils import create_save_cancel_box
-from core.widgets.editor_dialog_controller import EditorDialogController
 from moduly.audity.constants import FINDING_SOURCE_LABEL, TAB_LABELS
 from moduly.audity.sluzby.audit_commission_service import audit_commission_service
 from moduly.audity.sluzby.audit_program_service import AuditVisitContext
@@ -65,17 +64,10 @@ class AuditDialog(QDialog):
         self.tabs.addTab(self.conclusion_widget, TAB_LABELS[7])
         layout.addWidget(self.tabs)
 
-        is_new = audit is None
-        buttons = create_save_cancel_box(self, is_new=is_new)
+        buttons = create_save_cancel_box(self, is_new=audit is None)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
-        self._editor = EditorDialogController(
-            self,
-            buttons,
-            is_new=is_new,
-            title=self.windowTitle(),
-        )
-        self._editor.set_snapshot_provider(self.get_data)
-        self._editor.install_auto_dirty_tracking()
 
         audit_id = audit.id if audit is not None else None
         self.set_audit_id(audit_id)
@@ -97,8 +89,6 @@ class AuditDialog(QDialog):
         self.history_widget.load_audit(audit)
         self.conclusion_widget.load_audit(audit)
         self.commission_widget.set_audit_context(audit_id)
-        self.commission_widget.set_on_changed(self._editor.mark_dirty)
-        self._editor.capture_baseline()
 
     def set_audit_id(self, audit_id: int | None) -> None:
         self.processes_widget.set_audit_id(audit_id)

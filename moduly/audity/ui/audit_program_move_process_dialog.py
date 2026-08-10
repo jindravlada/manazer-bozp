@@ -3,7 +3,6 @@
 from PySide6.QtWidgets import QComboBox, QDialog, QFormLayout, QLabel, QVBoxLayout
 
 from core.widgets.dialog_utils import create_save_cancel_box
-from core.widgets.editor_dialog_controller import EditorDialogController
 from moduly.audity.constants import (
     AUDIT_PROGRAM_MOVE_PROCESS_DIALOG_TITLE,
     AUDIT_PROGRAM_VISIT_SKIPPED_SUFFIX,
@@ -58,22 +57,15 @@ class AuditProgramMoveProcessDialog(QDialog):
         form.addRow("Cílová návštěva:", self._visit_combo)
         layout.addLayout(form)
 
-        buttons = create_save_cancel_box(self, is_new=True)
+        buttons = create_save_cancel_box(self)
+        buttons.accepted.connect(self._accept_if_valid)
+        buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
-        self._editor = EditorDialogController(
-            self,
-            buttons,
-            is_new=True,
-            title=self.windowTitle(),
-        )
-        self._editor.set_snapshot_provider(lambda: self.target_visit_id())
-        self._editor.install_auto_dirty_tracking()
-        self._editor.capture_baseline()
 
-    def accept(self) -> None:
+    def _accept_if_valid(self) -> None:
         if self._visit_combo.count() == 0:
             return
-        super().accept()
+        self.accept()
 
     def target_visit_id(self) -> int | None:
         if self._visit_combo.count() == 0:

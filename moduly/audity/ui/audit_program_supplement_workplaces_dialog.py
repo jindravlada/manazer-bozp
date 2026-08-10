@@ -2,18 +2,14 @@
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QApplication,
     QDialog,
-    QDialogButtonBox,
     QLabel,
     QListWidget,
     QListWidgetItem,
-    QPushButton,
-    QStyle,
     QVBoxLayout,
 )
 
-from core.widgets.dialog_utils import configure_close_push_button
+from core.widgets.dialog_utils import create_save_cancel_box
 from moduly.audity.constants import AUDIT_PROGRAM_SUPPLEMENT_WORKPLACES_DIALOG_TITLE
 from moduly.audity.sluzby.audit_program_service import MissingAuditableWorkplace
 
@@ -51,25 +47,9 @@ class AuditProgramSupplementWorkplacesDialog(QDialog):
             self._list.addItem(item)
         layout.addWidget(self._list, 1)
 
-        buttons = QDialogButtonBox(self)
-        self.use_btn = QPushButton("Použít")
-        self.use_btn.setDefault(True)
-        apply_icon = QApplication.style().standardIcon(
-            QStyle.StandardPixmap.SP_DialogApplyButton
-        )
-        if apply_icon.isNull():
-            apply_icon = QApplication.style().standardIcon(
-                QStyle.StandardPixmap.SP_DialogOkButton
-            )
-        self.use_btn.setIcon(apply_icon)
-
-        self.close_btn = QPushButton("Zavřít")
-        configure_close_push_button(self.close_btn)
-
-        buttons.addButton(self.use_btn, QDialogButtonBox.ButtonRole.AcceptRole)
-        buttons.addButton(self.close_btn, QDialogButtonBox.ButtonRole.RejectRole)
-        self.use_btn.clicked.connect(self._accept_if_valid)
-        self.close_btn.clicked.connect(self.reject)
+        buttons = create_save_cancel_box(self)
+        buttons.accepted.connect(self._accept_if_valid)
+        buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
 
     def _accept_if_valid(self) -> None:

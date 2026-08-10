@@ -14,7 +14,6 @@ from PySide6.QtWidgets import (
 
 from core.ui.photo_picker_dialog import PhotoPickerDialog
 from core.widgets.dialog_utils import create_save_cancel_box
-from core.widgets.editor_dialog_controller import EditorDialogController
 from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
 
 
@@ -79,17 +78,10 @@ class AudityKnowledgeReferencePhotoDialog(QDialog):
         form.addRow("", self._aktivni_check)
         layout.addLayout(form)
 
-        is_new = not bool(self._editing_id)
-        buttons = create_save_cancel_box(self, is_new=is_new)
+        buttons = create_save_cancel_box(self)
+        buttons.accepted.connect(self._accept_if_valid)
+        buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
-        self._editor = EditorDialogController(
-            self,
-            buttons,
-            is_new=is_new,
-            title=self.windowTitle(),
-        )
-        self._editor.set_snapshot_provider(self.item_payload)
-        self._editor.install_auto_dirty_tracking()
 
         if item:
             self._nazev_edit.setText(str(item.get("nazev") or ""))
@@ -101,8 +93,6 @@ class AudityKnowledgeReferencePhotoDialog(QDialog):
             self._poradi_spin.setValue(10)
             self._aktivni_check.setChecked(True)
             self._update_generated_id_preview()
-
-        self._editor.capture_baseline()
 
     def _browse_file(self) -> None:
         selected = PhotoPickerDialog.get_photo(parent=self)
@@ -120,7 +110,7 @@ class AudityKnowledgeReferencePhotoDialog(QDialog):
         generated = audit_knowledge_service.generate_item_id(nazev, self._existing_ids)
         self._id_edit.setText(generated)
 
-    def accept(self) -> None:
+    def _accept_if_valid(self) -> None:
         payload = self.item_payload()
         if not payload["nazev"]:
             self._nazev_edit.setFocus()
@@ -128,7 +118,7 @@ class AudityKnowledgeReferencePhotoDialog(QDialog):
         if payload["aktivni"] and not payload["soubor"]:
             self._soubor_edit.setFocus()
             return
-        super().accept()
+        self.accept()
 
     def item_payload(self) -> dict:
         payload = {

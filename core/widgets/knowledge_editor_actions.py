@@ -70,9 +70,6 @@ def create_knowledge_editor_footer(
     apply_btn = QPushButton()
     save_close_btn = QPushButton()
     close_btn = QPushButton()
-    apply_btn.setObjectName("KnowledgeEditorApplyButton")
-    save_close_btn.setObjectName("KnowledgeEditorSaveCloseButton")
-    close_btn.setObjectName("KnowledgeEditorCloseButton")
 
     _configure_apply_button(apply_btn)
     _configure_save_close_button(save_close_btn)

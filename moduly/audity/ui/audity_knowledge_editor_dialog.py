@@ -330,21 +330,21 @@ class AudityKnowledgeEditorDialog(QDialog):
             show_save_status(self._status_label)
 
     def _apply_changes(self) -> None:
-        """Použít — uloží všechny odložené změny a editor zůstane otevřený."""
-        if not self._has_unsaved_changes():
-            return
-        if not self._save_all_pending():
-            return
-        show_save_status(self._status_label)
-        self._update_action_buttons()
+        if self._save_current():
+            self._current_dirty = False
+            self._refresh_dirty_status()
+            if not self._has_unsaved_changes():
+                show_save_status(self._status_label)
+            else:
+                show_unsaved_status(self._status_label)
 
     def _save_and_close(self) -> None:
-        """Uložit a zavřít — uloží všechny odložené změny a editor zavře."""
         if not self._has_unsaved_changes() and not self._can_save_current():
             self._modified = False
             self.accept()
             return
         if self._save_all_pending():
+            self._mark_saved()
             self.accept()
 
     def _request_close(self) -> None:
