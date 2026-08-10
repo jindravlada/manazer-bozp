@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box
+from core.widgets.editor_dialog_controller import EditorDialogController
 from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
 
 
@@ -59,10 +60,17 @@ class AudityKnowledgeListItemDialog(QDialog):
         form.addRow("", self._aktivni_check)
         layout.addLayout(form)
 
-        buttons = create_save_cancel_box(self)
-        buttons.accepted.connect(self._accept_if_valid)
-        buttons.rejected.connect(self.reject)
+        is_new = not bool(self._editing_id)
+        buttons = create_save_cancel_box(self, is_new=is_new)
         layout.addWidget(buttons)
+        self._editor = EditorDialogController(
+            self,
+            buttons,
+            is_new=is_new,
+            title=self.windowTitle(),
+        )
+        self._editor.set_snapshot_provider(self.item_payload)
+        self._editor.install_auto_dirty_tracking()
 
         if item:
             self._text_edit.setText(str(item.get("nazev") or item.get("text") or ""))
@@ -72,6 +80,8 @@ class AudityKnowledgeListItemDialog(QDialog):
             self._poradi_spin.setValue(10)
             self._aktivni_check.setChecked(True)
             self._update_generated_id_preview()
+
+        self._editor.capture_baseline()
 
     def _update_generated_id_preview(self) -> None:
         if self._editing_id:
@@ -84,11 +94,11 @@ class AudityKnowledgeListItemDialog(QDialog):
         generated = audit_knowledge_service.generate_item_id(text, self._existing_ids)
         self._id_edit.setText(generated)
 
-    def _accept_if_valid(self) -> None:
+    def accept(self) -> None:
         if not self.item_payload()["nazev"]:
             self._text_edit.setFocus()
             return
-        self.accept()
+        super().accept()
 
     def item_payload(self) -> dict:
         return {

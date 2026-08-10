@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box
+from core.widgets.editor_dialog_controller import EditorDialogController
 from core.widgets.nullable_date_edit import NullableDateEdit
 from moduly.audity.constants import (
     AUDIT_PROGRAM_CREATE_DIALOG_TITLE,
@@ -66,14 +67,22 @@ class AuditProgramCreateDialog(QDialog):
         form.addRow("Poznámka:", self._note_edit)
         layout.addLayout(form)
 
-        buttons = create_save_cancel_box(self)
-        buttons.accepted.connect(self._accept_if_valid)
-        buttons.rejected.connect(self.reject)
+        is_new = program is None
+        buttons = create_save_cancel_box(self, is_new=is_new)
         layout.addWidget(buttons)
+        self._editor = EditorDialogController(
+            self,
+            buttons,
+            is_new=is_new,
+            title=self.windowTitle(),
+        )
+        self._editor.set_snapshot_provider(self.program_payload)
+        self._editor.install_auto_dirty_tracking()
 
         if program is not None:
             self._load_program(program)
         self._populate_previous_programs(program.id if program is not None else None)
+        self._editor.capture_baseline()
 
     def _populate_previous_programs(self, current_program_id: int | None) -> None:
         self._previous_program_combo.blockSignals(True)
@@ -105,7 +114,7 @@ class AuditProgramCreateDialog(QDialog):
         self._description_edit.setPlainText(program.description)
         self._note_edit.setPlainText(program.note)
 
-    def _accept_if_valid(self) -> None:
+    def accept(self) -> None:
         if not self.program_payload()["name"]:
             self._name_edit.setFocus()
             return
@@ -113,7 +122,7 @@ class AuditProgramCreateDialog(QDialog):
             return
         if not self._selected_standards():
             return
-        self.accept()
+        super().accept()
 
     def _selected_standards(self) -> list[str]:
         standards: list[str] = []

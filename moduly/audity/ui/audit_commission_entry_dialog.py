@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box
+from core.widgets.editor_dialog_controller import EditorDialogController
 from core.widgets.person_selector import PersonSelector
 from core.widgets.thp_worker_selector import ThpWorkerSelector
 from moduly.audity.constants import (
@@ -51,10 +52,17 @@ class AuditCommissionEntryDialog(QDialog):
         form.addRow("Poznámka:", self.note_edit)
         layout.addLayout(form)
 
-        buttons = create_save_cancel_box(self)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
+        is_new = entry is None
+        buttons = create_save_cancel_box(self, is_new=is_new)
         layout.addWidget(buttons)
+        self._editor = EditorDialogController(
+            self,
+            buttons,
+            is_new=is_new,
+            title=self.windowTitle(),
+        )
+        self._editor.set_snapshot_provider(self.get_data)
+        self._editor.install_auto_dirty_tracking()
 
         self.thp_selector.setVisible(entry_type == "member")
         self.person_selector.setVisible(entry_type == "invited")
@@ -68,6 +76,8 @@ class AuditCommissionEntryDialog(QDialog):
                 self.role_edit.setText(entry["role_text"])
             if entry.get("note_text"):
                 self.note_edit.setText(entry["note_text"])
+
+        self._editor.capture_baseline()
 
     def get_data(self) -> dict:
         role_text = self.role_edit.text().strip() or None

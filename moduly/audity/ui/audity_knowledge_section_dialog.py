@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box
+from core.widgets.editor_dialog_controller import EditorDialogController
 from moduly.audity.constants import KNOWLEDGE_EDITOR_SECTION_CONTROL_PROCESS_LABEL
 from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
 from moduly.audity.ui.audit_knowledge_control_process_combo import (
@@ -74,10 +75,17 @@ class AudityKnowledgeSectionDialog(QDialog):
         form.addRow("", self._aktivni_check)
         layout.addLayout(form)
 
-        buttons = create_save_cancel_box(self)
-        buttons.accepted.connect(self._accept_if_valid)
-        buttons.rejected.connect(self.reject)
+        buttons = create_save_cancel_box(self, is_new=True)
         layout.addWidget(buttons)
+        self._editor = EditorDialogController(
+            self,
+            buttons,
+            is_new=True,
+            title=self.windowTitle(),
+        )
+        self._editor.set_snapshot_provider(self.section_payload)
+        self._editor.install_auto_dirty_tracking()
+        self._editor.capture_baseline()
 
     def _update_generated_id_preview(self) -> None:
         nazev = self._nazev_edit.text().strip()
@@ -88,11 +96,11 @@ class AudityKnowledgeSectionDialog(QDialog):
         generated = audit_knowledge_service.generate_item_id(nazev, self._existing_ids)
         self._id_edit.setText(generated)
 
-    def _accept_if_valid(self) -> None:
+    def accept(self) -> None:
         if not self.section_payload()["nazev"]:
             self._nazev_edit.setFocus()
             return
-        self.accept()
+        super().accept()
 
     def section_payload(self) -> dict:
         return {

@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box
+from core.widgets.editor_dialog_controller import EditorDialogController
 from core.widgets.nullable_date_edit import NullableDateEdit
 from moduly.audity.constants import (
     AUDIT_PROGRAM_EDIT_VISIT_DIALOG_TITLE,
@@ -53,13 +54,22 @@ class AuditProgramVisitDialog(QDialog):
         form.addRow("Poznámka:", self._note_edit)
         layout.addLayout(form)
 
-        buttons = create_save_cancel_box(self)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
+        is_new = visit is None
+        buttons = create_save_cancel_box(self, is_new=is_new)
         layout.addWidget(buttons)
+        self._editor = EditorDialogController(
+            self,
+            buttons,
+            is_new=is_new,
+            title=self.windowTitle(),
+        )
+        self._editor.set_snapshot_provider(self.visit_payload)
+        self._editor.install_auto_dirty_tracking()
 
         if visit is not None:
             self._load_visit(visit)
+
+        self._editor.capture_baseline()
 
     def _load_visit(self, visit: AuditProgramVisit) -> None:
         if visit.planned_month is not None:
