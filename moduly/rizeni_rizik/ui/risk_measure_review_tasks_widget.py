@@ -205,29 +205,28 @@ class RiskMeasureReviewNonCompliantPointWidget(QFrame):
             QMessageBox.warning(self, RISK_MEASURE_REVIEW_TASKS_TITLE, "Přezkoumání není uložené.")
             return
 
-        dialog = TaskDialog(self)
+        def _create_task(data: dict):
+            try:
+                return risk_measure_review_service.create_task_for_checklist_item(
+                    int(self.review_id),
+                    self.row.item_id,
+                    title=data["title"],
+                    description=data.get("description") or "",
+                    due_date=data.get("due_date"),
+                    responsible_person_id=data.get("responsible_person_id"),
+                    workplace_id=data.get("workplace_id"),
+                )
+            except RiskMeasureReviewError as error:
+                QMessageBox.warning(self, RISK_MEASURE_REVIEW_TASKS_TITLE, str(error))
+                return None
+
+        dialog = TaskDialog(self, create_factory=_create_task)
         title_parts = [self.row.measure_title or ""]
         if self.row.note:
             title_parts.append(self.row.note)
         dialog.title_edit.setPlainText("\n".join(part for part in title_parts if part).strip())
-        if dialog.exec() != QDialog.Accepted:
-            return
-        data = dialog.get_data()
-        if not data.get("title"):
-            return
-        try:
-            risk_measure_review_service.create_task_for_checklist_item(
-                int(self.review_id),
-                self.row.item_id,
-                title=data["title"],
-                description=data.get("description") or "",
-                due_date=data.get("due_date"),
-                responsible_person_id=data.get("responsible_person_id"),
-                workplace_id=data.get("workplace_id"),
-            )
-        except RiskMeasureReviewError as error:
-            QMessageBox.warning(self, RISK_MEASURE_REVIEW_TASKS_TITLE, str(error))
-            return
+        dialog._capture_baseline()
+        dialog.exec()
         if callable(self._on_changed):
             self._on_changed()
 
@@ -483,24 +482,22 @@ class RiskMeasureReviewTasksWidget(QWidget):
             )
             return
 
-        dialog = TaskDialog(self)
-        if dialog.exec() != QDialog.Accepted:
-            return
-        data = dialog.get_data()
-        if not data.get("title"):
-            return
-        try:
-            risk_measure_review_service.create_task_for_review(
-                self.review_id,
-                title=data["title"],
-                description=data.get("description") or "",
-                due_date=data.get("due_date"),
-                responsible_person_id=data.get("responsible_person_id"),
-                workplace_id=data.get("workplace_id"),
-            )
-        except RiskMeasureReviewError as error:
-            QMessageBox.warning(self, RISK_MEASURE_REVIEW_TASKS_TITLE, str(error))
-            return
+        def _create_task(data: dict):
+            try:
+                return risk_measure_review_service.create_task_for_review(
+                    self.review_id,
+                    title=data["title"],
+                    description=data.get("description") or "",
+                    due_date=data.get("due_date"),
+                    responsible_person_id=data.get("responsible_person_id"),
+                    workplace_id=data.get("workplace_id"),
+                )
+            except RiskMeasureReviewError as error:
+                QMessageBox.warning(self, RISK_MEASURE_REVIEW_TASKS_TITLE, str(error))
+                return None
+
+        dialog = TaskDialog(self, create_factory=_create_task)
+        dialog.exec()
         self.refresh()
 
     def _update_state(self) -> None:
@@ -531,8 +528,5 @@ class RiskMeasureReviewTasksWidget(QWidget):
             return
 
         dialog = TaskDialog(self, task=task)
-        if dialog.exec() == QDialog.Accepted:
-            data = dialog.get_data()
-            if data["title"]:
-                task_service.update_task(task_id=task_id, **data)
-            self.refresh()
+        dialog.exec()
+        self.refresh()

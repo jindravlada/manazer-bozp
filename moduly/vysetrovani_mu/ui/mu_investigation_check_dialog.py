@@ -280,8 +280,7 @@ class MuInvestigationCheckDialog(QDialog):
             return
 
         dialog = TaskDialog(self, task=task)
-        if dialog.exec():
-            task_service.update_task(task_id=task_id, **dialog.get_data())
+        dialog.exec()
 
     def _selected_result(self) -> InvestigationCheckResult | None:
         for table in self._tables:

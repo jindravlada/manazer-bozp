@@ -105,31 +105,25 @@ class Agenda2TestCase(unittest.TestCase):
             created.append(task.id)
             return task
 
+        class _FakeTaskDialog:
+            def __init__(self, parent=None, task=None, **kwargs):
+                self.task = task
+
+            def exec(self):
+                self.task = task_service.create_task(
+                    title="Rychlý úkol AGENDA-2",
+                    description="",
+                    priority="Normální",
+                    due_date=date.today() + timedelta(days=2),
+                )
+                return True
+
         with patch.object(task_service, "create_task", side_effect=_create):
             with patch(
-                "moduly.ukoly.ui.task_dialog.TaskDialog.exec",
-                return_value=True,
+                "moduly.ukoly.ui.task_dialog.TaskDialog",
+                _FakeTaskDialog,
             ):
-                with patch(
-                    "moduly.ukoly.ui.task_dialog.TaskDialog.get_data",
-                    return_value={
-                        "title": "Rychlý úkol AGENDA-2",
-                        "description": "",
-                        "priority": "Normální",
-                        "due_date": date.today() + timedelta(days=2),
-                        "responsible_person_id": None,
-                        "workplace_id": None,
-                        "completed": False,
-                        "completed_date": None,
-                        "requires_verification": False,
-                        "check_due_date": None,
-                        "checked_date": None,
-                        "checked_by_id": None,
-                        "canceled": False,
-                        "note": "",
-                    },
-                ):
-                    self.window._open_new_task()
+                self.window._open_new_task()
 
         self.assertEqual(len(created), 1)
         agenda = self.window._page_widgets["agenda"]

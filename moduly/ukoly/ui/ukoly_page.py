@@ -111,11 +111,8 @@ class UkolyPage(QWidget):
 
     def new_task(self):
         dialog = TaskDialog(self)
-        if dialog.exec():
-            data = dialog.get_data()
-            if data["title"]:
-                task_service.create_task(**data)
-                self.refresh()
+        dialog.exec()
+        self.refresh()
 
     def edit_selected_task(self):
         task_id = self._selected_task_id()
@@ -133,11 +130,8 @@ class UkolyPage(QWidget):
             return
 
         dialog = TaskDialog(self, task=task)
-        if dialog.exec():
-            data = dialog.get_data()
-            if data["title"]:
-                task_service.update_task(task_id=task_id, **data)
-                self.refresh()
+        dialog.exec()
+        self.refresh()
 
     def mark_completed(self):
         task_id = self._selected_task_id()

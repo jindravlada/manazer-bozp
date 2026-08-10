@@ -370,8 +370,5 @@ class AuditWorkplaceHistoryWidget(QWidget):
             return
 
         dialog = TaskDialog(self, task=task)
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            data = dialog.get_data()
-            if data["title"]:
-                task_service.update_task(task_id=task_id, **data)
+        dialog.exec()
         self.refresh()

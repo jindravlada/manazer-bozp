@@ -64,7 +64,6 @@ from moduly.schuzky.sluzby.meeting_service import (
     meeting_service,
 )
 from moduly.schuzky.ui.meeting_dialog import MeetingDialog
-from moduly.ukoly.sluzby.task_service import task_service
 from moduly.ukoly.ui.task_dialog import TaskDialog
 
 
@@ -518,22 +517,24 @@ class YearlyPlanTab(QWidget):
             QMessageBox.warning(self, ACTION_CREATE_TASK, ALREADY_LINKED_MESSAGE)
             return
 
-        dialog = TaskDialog(self)
+        dialog = TaskDialog(
+            self,
+            create_kwargs={
+                "source_module": SOURCE_MODULE_YEARLY_PLAN,
+                "source_record_id": item.id,
+                "requires_verification": False,
+            },
+        )
         dialog.title_edit.setPlainText(item.title or "")
         dialog.requires_verification_checkbox.setChecked(False)
+        dialog._capture_baseline()
         if item.note:
             dialog.note_edit.setPlainText(item.note)
-        if not dialog.exec():
+            dialog._capture_baseline()
+        dialog.exec()
+        task = dialog.task
+        if task is None:
             return
-        data = dialog.get_data()
-        if not data.get("title"):
-            return
-        task = task_service.create_task(
-            **data,
-            source_module=SOURCE_MODULE_YEARLY_PLAN,
-            source_record_id=item.id,
-            requires_verification=False,
-        )
         try:
             if self.table.selected_is_recurring():
                 slot = self._selected_slot()

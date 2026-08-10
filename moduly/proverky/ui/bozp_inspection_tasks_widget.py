@@ -196,8 +196,5 @@ class BozpInspectionTasksWidget(QWidget):
             return
 
         dialog = TaskDialog(self, task=task)
-        if dialog.exec() == QDialog.Accepted:
-            data = dialog.get_data()
-            if data["title"]:
-                task_service.update_task(task_id=task_id, **data)
-            self.refresh()
+        dialog.exec()
+        self.refresh()

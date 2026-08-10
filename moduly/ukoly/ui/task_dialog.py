@@ -1,12 +1,18 @@
 from datetime import date, timedelta
+from collections.abc import Callable
+from typing import Any
 
+from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDialog,
     QFormLayout,
+    QHBoxLayout,
     QLabel,
     QMessageBox,
+    QPushButton,
+    QSizePolicy,
     QTabWidget,
     QTextEdit,
     QVBoxLayout,
@@ -22,24 +28,48 @@ from core.navigation.source_navigator import (
 from core.shared.sluzby.finding_task_service import finding_task_service
 from core.shared.task_source_display import task_source_label, task_type_label
 from core.widgets.attachment_widget import AttachmentWidget
-from core.widgets.dialog_utils import create_save_cancel_box, configure_resizable_form_dialog, wrap_in_scroll_area
-from core.widgets.editor_dialog_controller import EditorDialogController
+from core.widgets.dialog_utils import configure_resizable_form_dialog, wrap_in_scroll_area
+from core.widgets.editor_dialog_controller import (
+    EDITOR_CLOSE_LABEL,
+    EDITOR_SAVE_LABEL,
+    configure_editor_close_button,
+    configure_editor_save_button,
+    confirm_unsaved_editor_close,
+)
 from core.widgets.task_finding_source_panel import TaskFindingSourcePanel
 from moduly.kniha_urazu.sluzby.accident_reporting_task_service import (
     is_accident_reporting_task_title,
 )
 from moduly.ukoly.constants import TASK_TYPE_INVESTIGATION_ACTION
+from moduly.ukoly.sluzby.task_service import task_service
 from core.widgets.date_edit import DateEdit
 from core.widgets.nullable_date_edit import NullableDateEdit
 from core.widgets.thp_worker_selector import ThpWorkerSelector
 from core.widgets.workplace_selector import WorkplaceSelector
 
+_SAVE_CLOSE_LABEL = "Uložit a zavřít"
+_ATTACHMENTS_INFO = "Přílohy lze přidat až po prvním uložení opatření."
+
 
 class TaskDialog(QDialog):
-    def __init__(self, parent=None, task=None):
+    """Editor úkolu / opatření se stay-open ukládáním (AGENDA-TASK-UX-6)."""
+
+    def __init__(
+        self,
+        parent=None,
+        task=None,
+        *,
+        create_kwargs: dict | None = None,
+        create_factory: Callable[[dict], Any] | None = None,
+    ):
         super().__init__(parent)
 
         self.task = task
+        self._create_kwargs = dict(create_kwargs or {})
+        self._create_factory = create_factory
+        self._baseline: object | None = None
+        self._closing = False
+        self._attachments_info_label: QLabel | None = None
         self._finding = finding_task_service.get_finding_for_task(task) if task is not None else None
         self._is_investigation_action = (
             task is not None
@@ -102,17 +132,7 @@ class TaskDialog(QDialog):
         self.tabs.addTab(wrap_in_scroll_area(self._attachments_tab()), "Přílohy")
 
         main_layout.addWidget(self.tabs, 1)
-
-        buttons = create_save_cancel_box(self, is_new=task is None)
-        main_layout.addWidget(buttons)
-        self._editor = EditorDialogController(
-            self,
-            buttons,
-            is_new=task is None,
-            title=self.windowTitle(),
-        )
-        self._editor.set_snapshot_provider(self.get_data)
-        self._editor.install_auto_dirty_tracking()
+        main_layout.addLayout(self._build_footer())
 
         self.completed_checkbox.stateChanged.connect(self._completed_changed)
         self.requires_verification_checkbox.stateChanged.connect(self._verification_changed)
@@ -142,7 +162,114 @@ class TaskDialog(QDialog):
 
         self._verification_changed()
         self._refresh_status()
-        self._editor.capture_baseline()
+        self._capture_baseline()
+
+    def _build_footer(self) -> QHBoxLayout:
+        footer = QHBoxLayout()
+        footer.setContentsMargins(0, 0, 0, 0)
+        footer.setSpacing(8)
+        footer.addStretch(1)
+
+        self._save_btn = QPushButton()
+        configure_editor_save_button(self._save_btn)
+        self._save_btn.setText(EDITOR_SAVE_LABEL)
+
+        self._save_close_btn = QPushButton(_SAVE_CLOSE_LABEL)
+        configure_editor_save_button(self._save_close_btn)
+        self._save_close_btn.setText(_SAVE_CLOSE_LABEL)
+
+        self._close_btn = QPushButton()
+        configure_editor_close_button(self._close_btn, is_new=False)
+        self._close_btn.setText(EDITOR_CLOSE_LABEL)
+
+        for button in (self._save_btn, self._save_close_btn, self._close_btn):
+            button.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+
+        self._save_btn.clicked.connect(self._save_keep_open)
+        self._save_close_btn.clicked.connect(self._save_and_close)
+        self._close_btn.clicked.connect(self._request_close)
+
+        footer.addWidget(self._save_btn)
+        footer.addWidget(self._save_close_btn)
+        footer.addWidget(self._close_btn)
+        return footer
+
+    def _capture_baseline(self) -> None:
+        self._baseline = self.get_data()
+
+    def _is_dirty(self) -> bool:
+        return self.get_data() != self._baseline
+
+    def _save_keep_open(self) -> None:
+        self._persist()
+
+    def _save_and_close(self) -> None:
+        if self._persist():
+            self._closing = True
+            self.accept()
+
+    def _persist(self) -> bool:
+        data = self.get_data()
+        if not data["title"]:
+            QMessageBox.warning(
+                self,
+                self.windowTitle(),
+                "Zadejte text opatření / úkolu.",
+            )
+            return False
+
+        if self.task is None:
+            if self._create_factory is not None:
+                self.task = self._create_factory(data)
+            else:
+                self.task = task_service.create_task(**data, **self._create_kwargs)
+            if self.task is None:
+                return False
+            self._activate_attachments(self.task.id)
+        else:
+            task_service.update_task(task_id=self.task.id, **data)
+            refreshed = task_service.get_task_by_id(self.task.id)
+            if refreshed is not None:
+                self.task = refreshed
+
+        self._capture_baseline()
+        return True
+
+    def _activate_attachments(self, task_id: int) -> None:
+        self.attachment_widget.set_entity("task", task_id)
+        if self._attachments_info_label is not None:
+            self._attachments_info_label.setVisible(False)
+
+    def _request_close(self) -> None:
+        if self._confirm_close():
+            self._closing = True
+            self.reject()
+
+    def _confirm_close(self) -> bool:
+        if self._closing or not self._is_dirty():
+            return True
+        decision = confirm_unsaved_editor_close(self, title=self.windowTitle())
+        if decision == "cancel":
+            return False
+        if decision == "save":
+            if not self._persist():
+                return False
+            self._closing = True
+            self.accept()
+            return False
+        return True
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        if self._confirm_close():
+            self._closing = True
+            event.accept()
+        else:
+            event.ignore()
+
+    def reject(self) -> None:
+        if self._confirm_close():
+            self._closing = True
+            super().reject()
 
     def _should_show_source_open_button(self) -> bool:
         if self._finding is None:
@@ -263,8 +390,8 @@ class TaskDialog(QDialog):
         self.attachment_widget = AttachmentWidget("task", entity_id)
 
         if entity_id is None:
-            info = QLabel("Přílohy lze přidat až po prvním uložení opatření.")
-            layout.addWidget(info)
+            self._attachments_info_label = QLabel(_ATTACHMENTS_INFO)
+            layout.addWidget(self._attachments_info_label)
 
         layout.addWidget(self.attachment_widget)
         return tab

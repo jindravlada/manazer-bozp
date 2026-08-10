@@ -2629,21 +2629,22 @@ class SetreniDialog(QDialog):
             self.opatreni_table.setRowHeight(row, 24)
 
     def add_opatreni_task(self):
-        dialog = TaskDialog(self)
+        dialog = TaskDialog(
+            self,
+            create_kwargs={
+                "source_module": self._opatreni_source_module(),
+                "source_record_id": self._opatreni_source_record_id(),
+            },
+        )
         if self.accident is not None:
             if getattr(self.accident, "workplace_id", None):
                 dialog.workplace_selector.set_workplace_id(self.accident.workplace_id)
             elif getattr(self.accident, "workplace_name", ""):
                 dialog.workplace_selector.setCurrentText(self.accident.workplace_name)
+            dialog._capture_baseline()
 
-        if dialog.exec() == QDialog.Accepted:
-            data = dialog.get_data()
-            task_service.create_task(
-                **data,
-                source_module=self._opatreni_source_module(),
-                source_record_id=self._opatreni_source_record_id(),
-            )
-            self.refresh_opatreni_tasks()
+        dialog.exec()
+        self.refresh_opatreni_tasks()
 
     def edit_opatreni_task(self):
         task = self._selected_opatreni_task()
@@ -2651,10 +2652,8 @@ class SetreniDialog(QDialog):
             return
 
         dialog = TaskDialog(self, task=task)
-        if dialog.exec() == QDialog.Accepted:
-            task_service.update_task(task.id, **dialog.get_data())
-            self.refresh_opatreni_tasks()
-
+        dialog.exec()
+        self.refresh_opatreni_tasks()
     def delete_opatreni_task(self):
         task = self._selected_opatreni_task()
         if task is None:

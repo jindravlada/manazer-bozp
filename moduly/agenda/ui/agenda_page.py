@@ -268,13 +268,9 @@ class AgendaPage(QWidget):
 
     def new_task(self) -> None:
         dialog = TaskDialog(self)
-        if not exec_maximized(dialog):
-            return
-        data = dialog.get_data()
-        if data["title"]:
-            task_service.create_task(**data)
-            self.refresh()
-            self._refresh_dashboard()
+        exec_maximized(dialog)
+        self.refresh()
+        self._refresh_dashboard()
 
     def new_meeting(self) -> None:
         dialog = MeetingDialog(self)
@@ -312,13 +308,9 @@ class AgendaPage(QWidget):
             self.refresh()
             return
         dialog = TaskDialog(self, task=task)
-        if not dialog.exec():
-            return
-        data = dialog.get_data()
-        if data["title"]:
-            task_service.update_task(task_id=task_id, **data)
-            self.refresh()
-            self._refresh_dashboard()
+        dialog.exec()
+        self.refresh()
+        self._refresh_dashboard()
 
     def _open_meeting(self, meeting_id: int) -> None:
         meeting = meeting_service.get_by_id(meeting_id)

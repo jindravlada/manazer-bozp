@@ -1,7 +1,6 @@
-from PySide6.QtWidgets import QDialog, QMessageBox, QPushButton
+from PySide6.QtWidgets import QMessageBox, QPushButton
 
 from core.shared.sluzby.finding_task_service import finding_task_service
-from moduly.ukoly.sluzby.task_service import task_service
 from moduly.ukoly.ui.task_dialog import TaskDialog
 
 
@@ -53,9 +52,8 @@ class FindingTaskActions:
         self._on_changed()
 
         dialog = TaskDialog(self._parent, task=task)
-        if dialog.exec() == QDialog.Accepted:
-            task_service.update_task(task.id, **dialog.get_data())
-            self._on_changed()
+        dialog.exec()
+        self._on_changed()
 
     def _open_task(self, finding_id: int) -> None:
         from core.shared.sluzby.finding_service import finding_service
@@ -68,6 +66,5 @@ class FindingTaskActions:
             return
 
         dialog = TaskDialog(self._parent, task=task)
-        if dialog.exec() == QDialog.Accepted:
-            task_service.update_task(task.id, **dialog.get_data())
-            self._on_changed()
+        dialog.exec()
+        self._on_changed()

@@ -365,16 +365,12 @@ class MainWindow(QMainWindow):
             page.open_library_template_editor(template_id)
 
     def _open_new_task(self):
-        from moduly.ukoly.sluzby.task_service import task_service
         from moduly.ukoly.ui.task_dialog import TaskDialog
 
         dashboard = self._page_widgets.get("dashboard")
         parent = dashboard if dashboard is not None else self
         dialog = TaskDialog(parent)
-        if dialog.exec():
-            data = dialog.get_data()
-            if data["title"]:
-                task_service.create_task(**data)
+        dialog.exec()
         self._refresh_dashboard_and_agenda()
 
     def _open_new_meeting(self) -> None:
@@ -415,11 +411,7 @@ class MainWindow(QMainWindow):
 
         parent = dashboard if dashboard is not None else self
         dialog = TaskDialog(parent, task=task)
-        if dialog.exec():
-            data = dialog.get_data()
-            if data["title"]:
-                task_service.update_task(task_id=task_id, **data)
-
+        dialog.exec()
         self._refresh_dashboard_and_agenda()
 
     def _open_attention_item(self, item) -> None:

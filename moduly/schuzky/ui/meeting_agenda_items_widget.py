@@ -6,7 +6,6 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QActionGroup
 from PySide6.QtWidgets import (
     QComboBox,
-    QDialog,
     QFormLayout,
     QHBoxLayout,
     QHeaderView,
@@ -369,33 +368,28 @@ class MeetingAgendaItemsWidget(QWidget):
             )
             return
 
-        dialog = TaskDialog(self)
-        if dialog.exec() != QDialog.DialogCode.Accepted:
-            return
-        data = dialog.get_data()
-        title = (data.get("title") or "").strip()
-        if not title:
-            QMessageBox.information(self, DIALOG_WINDOW_TITLE, "Zadejte název úkolu.")
-            return
+        def _create_for_item(data: dict):
+            return meeting_item_task_service.create_for_item(
+                meeting_id=meeting_id,
+                item_id=item_id,
+                title=data.get("title") or "",
+                description=data.get("description") or "",
+                priority=data.get("priority") or "Normální",
+                due_date=data.get("due_date"),
+                responsible_person_id=data.get("responsible_person_id"),
+                workplace_id=data.get("workplace_id"),
+                completed=bool(data.get("completed")),
+                completed_date=data.get("completed_date"),
+                check_due_date=data.get("check_due_date"),
+                checked_date=data.get("checked_date"),
+                checked_by_id=data.get("checked_by_id"),
+                canceled=bool(data.get("canceled")),
+                note=data.get("note") or "",
+                requires_verification=data.get("requires_verification"),
+            )
 
-        meeting_item_task_service.create_for_item(
-            meeting_id=meeting_id,
-            item_id=item_id,
-            title=title,
-            description=data.get("description") or "",
-            priority=data.get("priority") or "Normální",
-            due_date=data.get("due_date"),
-            responsible_person_id=data.get("responsible_person_id"),
-            workplace_id=data.get("workplace_id"),
-            completed=bool(data.get("completed")),
-            completed_date=data.get("completed_date"),
-            check_due_date=data.get("check_due_date"),
-            checked_date=data.get("checked_date"),
-            checked_by_id=data.get("checked_by_id"),
-            canceled=bool(data.get("canceled")),
-            note=data.get("note") or "",
-            requires_verification=data.get("requires_verification"),
-        )
+        dialog = TaskDialog(self, create_factory=_create_for_item)
+        dialog.exec()
         self._refresh_tasks()
 
     def open_selected_task(self) -> None:
@@ -408,8 +402,7 @@ class MeetingAgendaItemsWidget(QWidget):
             self._refresh_tasks()
             return
         dialog = TaskDialog(self, task=task)
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            task_service.update_task(task_id, **dialog.get_data())
+        dialog.exec()
         self._refresh_tasks()
 
     def unlink_selected_task(self) -> None:

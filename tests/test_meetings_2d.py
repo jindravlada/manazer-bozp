@@ -149,14 +149,17 @@ class Meetings2dTestCase(unittest.TestCase):
         widget.load_for_meeting(meeting.id)
 
         class FakeTaskDialog:
-            def __init__(self, parent=None, task=None):
-                self._title = ""
-
-            def exec(self):
-                return QDialog.DialogCode.Accepted
-
-            def get_data(self):
-                return {
+            def __init__(
+                self,
+                parent=None,
+                task=None,
+                *,
+                create_kwargs=None,
+                create_factory=None,
+            ):
+                self.task = task
+                self._create_factory = create_factory
+                self._data = {
                     "title": "Vědomě zadaný název",
                     "description": "",
                     "priority": "Normální",
@@ -172,6 +175,14 @@ class Meetings2dTestCase(unittest.TestCase):
                     "note": "",
                     "requires_verification": False,
                 }
+
+            def exec(self):
+                if self.task is None and self._create_factory is not None:
+                    self.task = self._create_factory(self._data)
+                return QDialog.DialogCode.Accepted
+
+            def get_data(self):
+                return self._data
 
         with patch(
             "moduly.schuzky.ui.meeting_agenda_items_widget.TaskDialog",
