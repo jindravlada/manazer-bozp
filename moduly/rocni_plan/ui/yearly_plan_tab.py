@@ -7,12 +7,12 @@ from datetime import date
 from PySide6.QtCore import QTimer, Qt
 from PySide6.QtGui import QHideEvent, QShowEvent
 from PySide6.QtWidgets import (
-    QComboBox,
     QHBoxLayout,
     QLabel,
     QMenu,
     QMessageBox,
     QPushButton,
+    QSpinBox,
     QVBoxLayout,
     QWidget,
 )
@@ -33,14 +33,13 @@ from moduly.rocni_plan.constants import (
     CANCELLED_ACTION_MESSAGE,
     ITEM_NOT_FOUND_MESSAGE,
     MARK_MONTH_PROCESSED_CONFIRM,
-    MAX_YEAR,
-    MIN_YEAR,
     MONTH_ALREADY_PROCESSED_MESSAGE,
     SOURCE_MODULE_YEARLY_PLAN,
     STATUS_CANCELLED,
     STATUS_PLANNED,
     TAB_YEARLY_PLAN,
-    YEAR_COMBO_MAX_VISIBLE,
+    YEAR_SPIN_MAX,
+    YEAR_SPIN_MIN,
     format_processed_at,
 )
 from moduly.periodicke_cinnosti.sluzby.periodic_activity_service import (
@@ -79,10 +78,12 @@ class YearlyPlanTab(QWidget):
 
         filters = QHBoxLayout()
         filters.addWidget(QLabel("Rok:"))
-        self.year_combo = QComboBox()
-        self.year_combo.setMaxVisibleItems(YEAR_COMBO_MAX_VISIBLE)
-        self._sync_year_combo(preferred_year=date.today().year)
-        filters.addWidget(self.year_combo)
+        self.year_spin = QSpinBox()
+        self.year_spin.setRange(YEAR_SPIN_MIN, YEAR_SPIN_MAX)
+        self.year_spin.setSingleStep(1)
+        self.year_spin.setValue(date.today().year)
+        self.year_spin.setKeyboardTracking(False)
+        filters.addWidget(self.year_spin)
         filters.addStretch()
 
         toolbar = QHBoxLayout()
@@ -137,7 +138,7 @@ class YearlyPlanTab(QWidget):
         self.move_btn.clicked.connect(self.move_selected)
         self.cancel_btn.clicked.connect(self.cancel_selected)
         self.mark_month_btn.clicked.connect(self.mark_month_processed)
-        self.year_combo.currentIndexChanged.connect(self._on_year_changed)
+        self.year_spin.valueChanged.connect(self._on_year_changed)
         self.table.doubleClicked.connect(self.edit_selected)
         self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.table.customContextMenuRequested.connect(self._show_context_menu)
@@ -154,7 +155,7 @@ class YearlyPlanTab(QWidget):
         super().hideEvent(event)
 
     def current_year(self) -> int:
-        return int(self.year_combo.currentData())
+        return int(self.year_spin.value())
 
     def current_month(self) -> int:
         """Fokusovaný měsíc (scroll / poslední set_year_month)."""
@@ -163,54 +164,14 @@ class YearlyPlanTab(QWidget):
     def set_year_month(self, year: int, month: int) -> None:
         self._focus_month = int(month)
         self._pending_scroll_month = int(month)
-        self._sync_year_combo(preferred_year=int(year))
-        year_index = self.year_combo.findData(int(year))
-        if year_index >= 0:
-            if self.year_combo.currentIndex() != year_index:
-                self.year_combo.setCurrentIndex(year_index)
-                return  # refresh přes _on_year_changed
+        year = max(YEAR_SPIN_MIN, min(YEAR_SPIN_MAX, int(year)))
+        if self.year_spin.value() != year:
+            self.year_spin.setValue(year)
+            return  # refresh přes _on_year_changed
         self.refresh()
 
     def _on_year_changed(self, *_args) -> None:
         self.refresh()
-
-    def _combo_years(self) -> list[int]:
-        return [
-            int(self.year_combo.itemData(index))
-            for index in range(self.year_combo.count())
-        ]
-
-    def _sync_year_combo(self, *, preferred_year: int | None = None) -> None:
-        """Obnoví nabídku roku: −5…+10 + použité roky; zachová / nastaví výběr."""
-        current = None
-        if self.year_combo.count() > 0:
-            data = self.year_combo.currentData()
-            if data is not None:
-                current = int(data)
-        preferred = preferred_year if preferred_year is not None else current
-        if preferred is None:
-            preferred = date.today().year
-        preferred = int(preferred)
-
-        years = set(yearly_plan_service.years_for_year_combo())
-        years.add(preferred)
-        years_list = sorted(year for year in years if MIN_YEAR <= year <= MAX_YEAR)
-
-        if self._combo_years() == years_list and self.year_combo.currentData() == preferred:
-            return
-
-        self.year_combo.blockSignals(True)
-        self.year_combo.clear()
-        for year in years_list:
-            self.year_combo.addItem(str(year), year)
-        index = self.year_combo.findData(preferred)
-        if index < 0:
-            index = self.year_combo.findData(date.today().year)
-        if index >= 0:
-            self.year_combo.setCurrentIndex(index)
-        elif self.year_combo.count() > 0:
-            self.year_combo.setCurrentIndex(0)
-        self.year_combo.blockSignals(False)
 
     def _after_filter(self, *_args) -> None:
         text = self.text_filter.search_edit.text().strip()
@@ -221,7 +182,6 @@ class YearlyPlanTab(QWidget):
         self.table.ensure_month_headers_visibility()
 
     def refresh(self) -> None:
-        self._sync_year_combo()
         year = self.current_year()
         sections: list[YearlyPlanMonthSection] = []
         focus_rows = []

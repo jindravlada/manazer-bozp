@@ -11,7 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from PySide6.QtGui import QPalette
-from PySide6.QtWidgets import QApplication, QComboBox
+from PySide6.QtWidgets import QApplication, QSpinBox
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -84,9 +84,10 @@ class AgendaRocniUx2TestCase(unittest.TestCase):
     def test_all_twelve_months_visible(self) -> None:
         tab = YearlyPlanTab()
         tab.set_year_month(2031, 1)
-        # Pouze výběr roku nahoře (jeden QComboBox).
-        combos = tab.findChildren(QComboBox)
-        self.assertEqual(len(combos), 1)
+        # Výběr roku nahoře je QSpinBox (volný rok).
+        spins = tab.findChildren(QSpinBox)
+        self.assertEqual(len(spins), 1)
+        self.assertEqual(spins[0].value(), 2031)
         for month in range(1, 13):
             row = tab.table.month_header_row(month)
             self.assertIsNotNone(row, msg=f"Chybí měsíc {month}")

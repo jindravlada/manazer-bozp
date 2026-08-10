@@ -149,7 +149,7 @@ class AgendaRocni2aTestCase(unittest.TestCase):
         with self.assertRaises(YearlyPlanValidationError):
             yearly_plan_service.create(year=2026, month=13, title="X")
         with self.assertRaises(YearlyPlanValidationError):
-            yearly_plan_service.create(year=1999, month=6, title="X")
+            yearly_plan_service.create(year=1899, month=6, title="X")
         with self.assertRaises(YearlyPlanValidationError):
             yearly_plan_service.create(year=2026, month=6, title="   ")
 

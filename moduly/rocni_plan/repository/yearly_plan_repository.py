@@ -66,21 +66,6 @@ class YearlyPlanItemRepository:
             )
             return list(session.scalars(stmt))
 
-    def list_used_years(self) -> list[int]:
-        """Roky, pro které existují položky / výskyty / stav měsíce Ročního plánu."""
-        with get_session() as session:
-            years: set[int] = set()
-            for stmt in (
-                select(YearlyPlanItem.year).distinct(),
-                select(YearlyPlanOccurrence.year).distinct(),
-                select(YearlyPlanOccurrence.display_year).distinct(),
-                select(YearlyPlanMonthStatus.year).distinct(),
-            ):
-                for value in session.scalars(stmt):
-                    if value is not None:
-                        years.add(int(value))
-            return sorted(years)
-
     def add(self, item: YearlyPlanItem) -> YearlyPlanItem:
         with get_session() as session:
             session.add(item)

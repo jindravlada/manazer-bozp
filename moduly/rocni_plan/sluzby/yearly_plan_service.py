@@ -26,8 +26,6 @@ from moduly.rocni_plan.constants import (
     DUE_KIND_NONE,
     DUE_KINDS,
     ITEM_STATUSES,
-    MAX_YEAR,
-    MIN_YEAR,
     MONTH_ALREADY_PROCESSED_MESSAGE,
     REPEAT_UNIT_MONTHS,
     REPEAT_UNIT_NONE,
@@ -41,8 +39,8 @@ from moduly.rocni_plan.constants import (
     STATUS_PLANNED,
     STATUS_VIA_MEETING,
     STATUS_VIA_TASK,
-    YEAR_COMBO_FUTURE_YEARS,
-    YEAR_COMBO_PAST_YEARS,
+    YEAR_SPIN_MAX,
+    YEAR_SPIN_MIN,
 )
 from moduly.rocni_plan.modely.yearly_plan_item import YearlyPlanItem
 from moduly.rocni_plan.modely.yearly_plan_item_move import YearlyPlanItemMove
@@ -361,21 +359,6 @@ class YearlyPlanService:
     def list_for_year(self, year: int) -> list[YearlyPlanItem]:
         self._validate_year(year)
         return self.repository.list_for_year(year)
-
-    def list_used_years(self) -> list[int]:
-        return self.repository.list_used_years()
-
-    def years_for_year_combo(self, *, today: date | None = None) -> list[int]:
-        """Roky pro combo Agendy: aktuální −5 … +10 plus skutečně použité roky."""
-        today = today or date.today()
-        years = set(
-            range(
-                today.year - YEAR_COMBO_PAST_YEARS,
-                today.year + YEAR_COMBO_FUTURE_YEARS + 1,
-            )
-        )
-        years.update(self.list_used_years())
-        return sorted(year for year in years if MIN_YEAR <= year <= MAX_YEAR)
 
     def get_move_history(self, item_id: int) -> list[YearlyPlanItemMove]:
         return self.move_repository.list_for_item(item_id)
@@ -755,9 +738,9 @@ class YearlyPlanService:
     def _validate_year(self, year: int) -> None:
         if not isinstance(year, int) or isinstance(year, bool):
             raise YearlyPlanValidationError("Rok musí být celé číslo.")
-        if year < MIN_YEAR or year > MAX_YEAR:
+        if year < YEAR_SPIN_MIN or year > YEAR_SPIN_MAX:
             raise YearlyPlanValidationError(
-                f"Rok musí být v rozmezí {MIN_YEAR}–{MAX_YEAR}."
+                f"Rok musí být v rozmezí {YEAR_SPIN_MIN}–{YEAR_SPIN_MAX}."
             )
 
     def _validate_month(self, month: int) -> None:
