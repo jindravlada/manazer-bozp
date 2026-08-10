@@ -208,7 +208,7 @@ class SmlouvyOzoPage(QWidget):
 
     def edit_ozo_person(self) -> None:
         dialog = OzoPersonDialog(self)
-        dialog.exec()
+        exec_maximized(dialog)
         self._notify_dashboard()
 
     def open_other_certificates(self) -> None:
