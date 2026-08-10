@@ -103,9 +103,11 @@ class OzoPersonService:
             return None
         existing = self.period_repository.get_open(person.id)
         if existing is not None:
-            return existing
+            self._normalize_usage_timeline(person.id)
+            return self.period_repository.get_open(person.id)
         if self.period_repository.count_for_person(person.id) > 0:
             # pouze uzavřené – otevři poslední? nemělo by nastat; vrať None
+            self._normalize_usage_timeline(person.id)
             periods = self.period_repository.list_for_person(person.id)
             return periods[0] if periods else None
 
@@ -178,6 +180,7 @@ class OzoPersonService:
                 )
             self._apply_fields_to_period(open_period, fields)
             open_period = self.period_repository.update(open_period)
+            self._normalize_usage_timeline(person.id)
 
         self._apply_fields_to_person(person, fields)
         person.updated_at = datetime.now()
@@ -229,12 +232,15 @@ class OzoPersonService:
             raise OzoPersonValidationError(
                 "Nelze obnovit osvědčení OZO bez aktuální verze."
             )
-        if exam_date <= open_period.valid_from:
+
+        previous_exam = open_period.exam_date or open_period.valid_from
+        if exam_date <= previous_exam:
             raise OzoPersonValidationError(
-                "Datum nové zkoušky musí být později než začátek "
-                "platnosti současné verze údajů OZO."
+                "Datum nové zkoušky musí být pozdější než datum zkoušky "
+                "současné verze údajů OZO."
             )
 
+        # certificate_valid_to předchozí verze se nemění – uzavírá se jen osa používání.
         open_period.valid_to = exam_date - timedelta(days=1)
         self.period_repository.update(open_period)
         self._create_period(person.id, fields, valid_from=exam_date)
@@ -405,6 +411,43 @@ class OzoPersonService:
         if person.created_at is not None:
             return person.created_at.date()
         return date.today()
+
+    def _normalize_usage_timeline(self, ozo_person_id: int) -> bool:
+        """Sjednotí valid_from s exam_date a přestaví období používání.
+
+        Nemění certificate_valid_to, čísla osvědčení ani přílohy.
+        """
+        periods = self.period_repository.list_for_person(ozo_person_id)
+        if not periods:
+            return False
+
+        changed = False
+        for period in periods:
+            if period.exam_date is None:
+                continue
+            if period.valid_from != period.exam_date:
+                period.valid_from = period.exam_date
+                changed = True
+
+        ordered = sorted(periods, key=self._period_exam_sort_key)
+        for index, period in enumerate(ordered):
+            if index + 1 < len(ordered):
+                nxt = ordered[index + 1]
+                expected_to = nxt.valid_from - timedelta(days=1)
+                if period.valid_to != expected_to:
+                    period.valid_to = expected_to
+                    changed = True
+            else:
+                if period.valid_to is not None:
+                    period.valid_to = None
+                    changed = True
+
+        if not changed:
+            return False
+
+        for period in ordered:
+            self.period_repository.update(period)
+        return True
 
     @staticmethod
     def _period_exam_sort_key(period: OzoPersonPeriod) -> tuple:
