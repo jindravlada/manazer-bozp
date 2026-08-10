@@ -99,7 +99,8 @@ ROW_COLORS = {
     ROW_STATE_CANCELED: "#eeeeee",
 }
 
-# Stejné barvy priority jako indikátor v TaskTable.
+# Pastelové barvy priority (AGENDA-UX-COLORS-1) – intenzita jako stavové
+# karty / matice v Kontrolách (Material *100 / *200).
 PRIORITY_CRITICAL = "Kritická"
 PRIORITY_HIGH = "Vysoká"
 PRIORITY_NORMAL = "Normální"
@@ -107,10 +108,10 @@ PRIORITY_LOW = "Nízká"
 DEFAULT_PRIORITY = PRIORITY_NORMAL
 
 PRIORITY_COLORS = {
-    PRIORITY_CRITICAL: "#e53935",
-    PRIORITY_HIGH: "#fb8c00",
-    PRIORITY_NORMAL: "#fdd835",
-    PRIORITY_LOW: "#43a047",
+    PRIORITY_CRITICAL: "#ffcdd2",  # světle červená (Kontroly Neprovedeno)
+    PRIORITY_HIGH: "#ffe0b2",  # světle oranžová (Kontroly Se závadou)
+    PRIORITY_NORMAL: "#fff9c4",  # světle žlutá (Material Yellow 100)
+    PRIORITY_LOW: "#c8e6c9",  # světle zelená (Kontroly Provedeno)
 }
-DEFAULT_PRIORITY_COLOR = "#bdbdbd"
+DEFAULT_PRIORITY_COLOR = "#eeeeee"
 

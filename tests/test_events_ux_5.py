@@ -242,7 +242,7 @@ class EventsUx5TestCase(unittest.TestCase):
             colors[("meeting", normal.id)],
             QColor(PRIORITY_COLORS[PRIORITY_NORMAL]),
         )
-        self.assertEqual(PRIORITY_COLORS[PRIORITY_LOW], "#43a047")
+        self.assertEqual(PRIORITY_COLORS[PRIORITY_LOW], "#c8e6c9")
 
     def test_migration_sets_normal_priority(self) -> None:
         from core.database.database_initializer import _table_columns
