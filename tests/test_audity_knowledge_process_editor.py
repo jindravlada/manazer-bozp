@@ -299,6 +299,7 @@ class AudityKnowledgeEditorDialogSaveFeedbackTestCase(
     def test_save_error_shows_message(self, _mock_save, mock_warning) -> None:
         dialog = AudityKnowledgeEditorDialog()
         self.assertTrue(dialog.knowledge_tree.select_node(_PROCESS_ID))
+        dialog.process_editor._nazev_edit.setText("Editor test — chyba uložení")
 
         dialog._apply_changes()
 

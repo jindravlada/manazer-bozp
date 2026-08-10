@@ -175,7 +175,6 @@ class AudityKnowledgeListEditorWidget(QWidget):
         if dialog.exec() != AudityKnowledgeListItemDialog.DialogCode.Accepted:
             return
 
-        self.content_modified.emit()
         errors = audit_knowledge_editor_service.save_section_list_item(
             self._process_id,
             self._section_id,
@@ -203,7 +202,6 @@ class AudityKnowledgeListEditorWidget(QWidget):
         if dialog.exec() != AudityKnowledgeListItemDialog.DialogCode.Accepted:
             return
 
-        self.content_modified.emit()
         errors = audit_knowledge_editor_service.save_section_list_item(
             self._process_id,
             self._section_id,
@@ -223,7 +221,6 @@ class AudityKnowledgeListEditorWidget(QWidget):
         if not selected.get("aktivni", True):
             return
 
-        self.content_modified.emit()
         errors = audit_knowledge_editor_service.set_section_list_item_active(
             self._process_id,
             self._section_id,
@@ -243,7 +240,6 @@ class AudityKnowledgeListEditorWidget(QWidget):
         if selected.get("aktivni", True):
             return
 
-        self.content_modified.emit()
         errors = audit_knowledge_editor_service.set_section_list_item_active(
             self._process_id,
             self._section_id,

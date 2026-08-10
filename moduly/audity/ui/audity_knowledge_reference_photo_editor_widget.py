@@ -174,7 +174,7 @@ class AudityKnowledgeReferencePhotoEditorWidget(QWidget):
         if not paths:
             return
 
-        self.content_modified.emit()
+        # Okamžité uložení fotografií — neoznačovat odložený dirty stav.
         existing_ids = self._existing_ids()
         next_poradi = 10
         if self._items:
@@ -221,7 +221,6 @@ class AudityKnowledgeReferencePhotoEditorWidget(QWidget):
         if dialog.exec() != AudityKnowledgeReferencePhotoDialog.DialogCode.Accepted:
             return
 
-        self.content_modified.emit()
         errors = audit_knowledge_editor_service.save_section_list_item(
             self._process_id,
             self._section_id,
@@ -238,7 +237,6 @@ class AudityKnowledgeReferencePhotoEditorWidget(QWidget):
         selected = self._selected_item()
         if selected is None or not selected.get("aktivni", True):
             return
-        self.content_modified.emit()
         errors = audit_knowledge_editor_service.set_section_list_item_active(
             self._process_id,
             self._section_id,
@@ -255,7 +253,6 @@ class AudityKnowledgeReferencePhotoEditorWidget(QWidget):
         selected = self._selected_item()
         if selected is None or selected.get("aktivni", True):
             return
-        self.content_modified.emit()
         errors = audit_knowledge_editor_service.set_section_list_item_active(
             self._process_id,
             self._section_id,

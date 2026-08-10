@@ -220,7 +220,7 @@ class AudityKnowledgeAssertionsWidget(QWidget):
             "aktivni": bool(assertion.get("aktivni", True)),
         }
 
-        self.content_modified.emit()
+        # Okamžité uložení (FO-3) — neoznačovat odložený dirty stav editoru.
         errors = audit_knowledge_editor_service.save_assertion(
             self._process_id,
             self._section_id,
@@ -266,7 +266,7 @@ class AudityKnowledgeAssertionsWidget(QWidget):
         if dialog.exec() != AudityKnowledgeAssertionDialog.DialogCode.Accepted:
             return
 
-        self.content_modified.emit()
+        # Nested dialog + okamžité uložení — stay-open footer ukládá jen metadata.
         errors = audit_knowledge_editor_service.save_assertion(
             self._process_id,
             self._section_id,
@@ -293,7 +293,6 @@ class AudityKnowledgeAssertionsWidget(QWidget):
         if dialog.exec() != AudityKnowledgeAssertionDialog.DialogCode.Accepted:
             return
 
-        self.content_modified.emit()
         errors = audit_knowledge_editor_service.save_assertion(
             self._process_id,
             self._section_id,
@@ -312,7 +311,6 @@ class AudityKnowledgeAssertionsWidget(QWidget):
         if not selected.get("aktivni", True):
             return
 
-        self.content_modified.emit()
         errors = audit_knowledge_editor_service.set_assertion_active(
             self._process_id,
             self._section_id,
@@ -331,7 +329,6 @@ class AudityKnowledgeAssertionsWidget(QWidget):
         if selected.get("aktivni", True):
             return
 
-        self.content_modified.emit()
         errors = audit_knowledge_editor_service.set_assertion_active(
             self._process_id,
             self._section_id,
