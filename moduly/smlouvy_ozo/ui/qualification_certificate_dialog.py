@@ -1,10 +1,11 @@
-"""Karta údajů odborně způsobilé osoby + historie verzí."""
+"""Editor ostatního osvědčení / odborné způsobilosti."""
 
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QCheckBox,
     QComboBox,
     QDialog,
     QFormLayout,
@@ -32,55 +33,65 @@ from core.widgets.dialog_utils import (
 from core.widgets.editor_dialog_controller import EditorDialogController
 from core.widgets.nullable_date_edit import NullableDateEdit
 from moduly.smlouvy_ozo.constants import (
-    DIALOG_TITLE_OZO_PERSON,
-    ENTITY_OZO_PERSON_PERIOD,
+    DIALOG_TITLE_CERTIFICATE_EDIT,
+    DIALOG_TITLE_CERTIFICATE_NEW,
+    ENTITY_QUALIFICATION_CERTIFICATE_PERIOD,
     NOTIFY_UNITS,
-    TAB_OZO_DATA,
-    TAB_OZO_HISTORY,
+    TAB_CERTIFICATE_DATA,
+    TAB_CERTIFICATE_HISTORY,
     UNIT_DAYS,
     UNIT_LABELS,
     format_date,
-    format_ozo_display_name,
 )
-from moduly.smlouvy_ozo.sluzby.ozo_person_service import (
-    OzoPersonValidationError,
-    ozo_person_service,
+from moduly.smlouvy_ozo.sluzby.qualification_certificate_service import (
+    QualificationCertificateValidationError,
+    qualification_certificate_service,
 )
-from moduly.smlouvy_ozo.ui.ozo_period_detail_dialog import OzoPeriodDetailDialog
+from moduly.smlouvy_ozo.ui.qualification_period_detail_dialog import (
+    QualificationPeriodDetailDialog,
+)
 
 
-class OzoPersonDialog(QDialog):
-    def __init__(self, parent=None):
+class QualificationCertificateDialog(QDialog):
+    def __init__(self, parent=None, certificate=None):
         super().__init__(parent)
-        self.person = ozo_person_service.get()
-        self.period = ozo_person_service.get_open_period(self.person)
-        self.setWindowTitle(DIALOG_TITLE_OZO_PERSON)
+        self.certificate = certificate
+        self.period = (
+            qualification_certificate_service.get_open_period(certificate)
+            if certificate is not None
+            else None
+        )
+        self.setWindowTitle(
+            DIALOG_TITLE_CERTIFICATE_EDIT
+            if certificate is not None
+            else DIALOG_TITLE_CERTIFICATE_NEW
+        )
         configure_resizable_form_dialog(
             self, width=640, height=620, min_width=480, min_height=440
         )
 
         layout = QVBoxLayout(self)
         self.tabs = QTabWidget()
-        self.tabs.addTab(self._build_data_tab(), TAB_OZO_DATA)
-        self.tabs.addTab(self._build_history_tab(), TAB_OZO_HISTORY)
+        self.tabs.addTab(self._build_data_tab(), TAB_CERTIFICATE_DATA)
+        self.tabs.addTab(self._build_history_tab(), TAB_CERTIFICATE_HISTORY)
         layout.addWidget(self.tabs, 1)
 
-        buttons = create_save_cancel_box(self, is_new=self.person is None)
+        buttons = create_save_cancel_box(self, is_new=certificate is None)
         layout.addWidget(buttons)
         self._editor = EditorDialogController(
             self,
             buttons,
-            is_new=self.person is None,
+            is_new=certificate is None,
             title=self.windowTitle(),
             on_save=self._save,
         )
         self._editor.set_snapshot_provider(self.get_data)
         self._editor.install_auto_dirty_tracking()
 
+        self.indefinite_checkbox.toggled.connect(self._sync_validity_fields)
         if self.period is not None:
-            self._load_period(self.period)
-        elif self.person is not None:
-            self._load_period(self.person)
+            self._load(self.certificate, self.period)
+        self._sync_validity_fields()
         self._sync_attachments_hint()
         self._reload_history()
         self._editor.capture_baseline()
@@ -88,17 +99,15 @@ class OzoPersonDialog(QDialog):
     def _build_data_tab(self) -> QWidget:
         form_host = QWidget()
         form_layout = QVBoxLayout(form_host)
-
         fields = QWidget()
         form = QFormLayout(fields)
-        self.title_before = QLineEdit()
-        self.first_name = QLineEdit()
-        self.last_name = QLineEdit()
-        self.title_after = QLineEdit()
-        self.residence_address = QLineEdit()
-        self.exam_date = NullableDateEdit()
+
+        self.name = QLineEdit()
         self.certificate_number = QLineEdit()
+        self.exam_date = NullableDateEdit()
+        self.indefinite_checkbox = QCheckBox("Na dobu neurčitou")
         self.certificate_valid_to = NullableDateEdit()
+
         self.notify_before_value = QSpinBox()
         self.notify_before_value.setRange(0, 9999)
         self.notify_before_value.setValue(0)
@@ -112,26 +121,24 @@ class OzoPersonDialog(QDialog):
         notify_row.addWidget(QLabel("předem"))
         self.notify_widget = QWidget()
         self.notify_widget.setLayout(notify_row)
+
         self.note = QTextEdit()
         self.note.setAcceptRichText(False)
         self.note.setMinimumHeight(60)
 
-        form.addRow("Titul před jménem:", self.title_before)
-        form.addRow("Jméno:", self.first_name)
-        form.addRow("Příjmení:", self.last_name)
-        form.addRow("Titul za jménem:", self.title_after)
-        form.addRow("Adresa bydliště / trvalého pobytu:", self.residence_address)
-        form.addRow("Datum zkoušky / periodické zkoušky:", self.exam_date)
+        form.addRow("Název odborné způsobilosti *:", self.name)
         form.addRow("Číslo osvědčení:", self.certificate_number)
-        form.addRow("Platnost osvědčení do:", self.certificate_valid_to)
+        form.addRow("Datum získání / zkoušky:", self.exam_date)
+        form.addRow("", self.indefinite_checkbox)
+        form.addRow("Platnost do:", self.certificate_valid_to)
         form.addRow("Upozornit před koncem:", self.notify_widget)
         form.addRow("Poznámka:", self.note)
         form_layout.addWidget(fields)
 
         hint = QLabel(
-            "Nové datum zkoušky / periodické zkoušky pozdější než u současné "
-            "verze založí novou historickou verzi a uzavře předchozí. "
-            "Předstih 0 = bez upozornění předem (po platnosti se zobrazí vždy)."
+            "Nové datum zkoušky pozdější než u současné verze založí "
+            "novou historickou verzi a uzavře předchozí. Předstih 0 = "
+            "bez upozornění předem."
         )
         hint.setObjectName("MutedText")
         hint.setWordWrap(True)
@@ -140,34 +147,34 @@ class OzoPersonDialog(QDialog):
         attachments_box = QGroupBox("Přílohy")
         attachments_layout = QVBoxLayout(attachments_box)
         self.attachments_hint = QLabel(
-            "Přílohy (např. sken osvědčení OZO) lze přidat až po uložení záznamu."
+            "Přílohy (např. sken osvědčení) lze přidat až po uložení záznamu."
         )
         self.attachments_hint.setObjectName("MutedText")
         self.attachments_hint.setWordWrap(True)
         period_id = self.period.id if self.period is not None else None
-        self.attachments = AttachmentWidget(ENTITY_OZO_PERSON_PERIOD, period_id)
+        self.attachments = AttachmentWidget(
+            ENTITY_QUALIFICATION_CERTIFICATE_PERIOD,
+            period_id,
+        )
         attachments_layout.addWidget(self.attachments_hint)
         attachments_layout.addWidget(self.attachments)
         form_layout.addWidget(attachments_box)
-
         return wrap_in_scroll_area(form_host)
 
     def _build_history_tab(self) -> QWidget:
         host = QWidget()
         layout = QVBoxLayout(host)
         self.history_empty = QLabel(
-            "Zatím nejsou evidovány uzavřené historické verze údajů OZO."
+            "Zatím nejsou evidovány uzavřené historické verze osvědčení."
         )
         self.history_empty.setObjectName("MutedText")
         self.history_empty.setWordWrap(True)
         self.history_empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        self.history_table = QTableWidget(0, 6)
+        self.history_table = QTableWidget(0, 5)
         self.history_table.setHorizontalHeaderLabels(
             [
                 "Platnost od",
                 "Platnost do",
-                "Jméno",
                 "Datum zkoušky",
                 "Číslo osvědčení",
                 "Platnost osvědčení do",
@@ -183,40 +190,44 @@ class OzoPersonDialog(QDialog):
         self.history_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.history_table.setAlternatingRowColors(True)
         self.history_table.horizontalHeader().setStretchLastSection(True)
-        self.history_table.horizontalHeader().setSectionResizeMode(
-            2, QHeaderView.ResizeMode.Stretch
-        )
         self.history_table.doubleClicked.connect(self._open_history_period)
-
         layout.addWidget(self.history_empty)
         layout.addWidget(self.history_table)
         return host
 
-    def _load_period(self, source) -> None:
-        self.title_before.setText(getattr(source, "title_before", "") or "")
-        self.first_name.setText(source.first_name or "")
-        self.last_name.setText(source.last_name or "")
-        self.title_after.setText(getattr(source, "title_after", "") or "")
-        self.residence_address.setText(source.residence_address or "")
-        self.exam_date.set_date_value(source.exam_date)
-        self.certificate_number.setText(source.certificate_number or "")
-        self.certificate_valid_to.set_date_value(source.certificate_valid_to)
-        self.notify_before_value.setValue(
-            int(getattr(source, "notify_before_value", 0) or 0)
-        )
+    def _load(self, certificate, period) -> None:
+        self.name.setText(certificate.name or "")
+        self.certificate_number.setText(period.certificate_number or "")
+        self.exam_date.set_date_value(period.exam_date)
+        self.indefinite_checkbox.setChecked(bool(period.indefinite))
+        self.certificate_valid_to.set_date_value(period.certificate_valid_to)
+        self.notify_before_value.setValue(int(period.notify_before_value or 0))
         unit_index = self.notify_before_unit.findData(
-            getattr(source, "notify_before_unit", None) or UNIT_DAYS
+            period.notify_before_unit or UNIT_DAYS
         )
         if unit_index >= 0:
             self.notify_before_unit.setCurrentIndex(unit_index)
-        self.note.setPlainText(source.note or "")
+        self.note.setPlainText(period.note or "")
+
+    def _sync_validity_fields(self) -> None:
+        indefinite = self.indefinite_checkbox.isChecked()
+        self.certificate_valid_to.setEnabled(not indefinite)
+        self.notify_widget.setEnabled(not indefinite)
+        if indefinite:
+            self.certificate_valid_to.clear_date()
+            self.notify_before_value.setValue(0)
 
     def _sync_attachments_hint(self) -> None:
         has_id = self.period is not None and self.period.id is not None
         self.attachments_hint.setVisible(not has_id)
 
     def _reload_history(self) -> None:
-        periods = ozo_person_service.list_closed_periods(self.person)
+        if self.certificate is None:
+            periods = []
+        else:
+            periods = qualification_certificate_service.list_closed_periods(
+                self.certificate
+            )
         self.history_table.setRowCount(0)
         if not periods:
             self.history_empty.show()
@@ -226,19 +237,14 @@ class OzoPersonDialog(QDialog):
         self.history_table.show()
         self.history_table.setRowCount(len(periods))
         for row, period in enumerate(periods):
-            full_name = format_ozo_display_name(
-                period.title_before or "",
-                period.first_name or "",
-                period.last_name or "",
-                period.title_after or "",
-            )
             values = [
                 format_date(period.valid_from),
-                format_date(period.valid_to),
-                full_name or "—",
+                format_date(period.valid_to_period),
                 format_date(period.exam_date),
                 (period.certificate_number or "").strip() or "—",
-                format_date(period.certificate_valid_to),
+                "neurčitá"
+                if period.indefinite
+                else format_date(period.certificate_valid_to),
             ]
             for col, text in enumerate(values):
                 item = QTableWidgetItem(text)
@@ -247,33 +253,29 @@ class OzoPersonDialog(QDialog):
                 self.history_table.setItem(row, col, item)
 
     def _open_history_period(self, *_args) -> None:
-        rows = self.history_table.selectionModel().selectedRows()
-        if not rows:
-            index = self.history_table.currentIndex()
-            if not index.isValid():
-                return
-            row = index.row()
-        else:
-            row = rows[0].row()
-        item = self.history_table.item(row, 0)
+        index = self.history_table.currentIndex()
+        if not index.isValid():
+            return
+        item = self.history_table.item(index.row(), 0)
         if item is None:
             return
-        period_id = item.data(Qt.ItemDataRole.UserRole)
-        period = ozo_person_service.get_period(int(period_id))
+        period = qualification_certificate_service.get_period(
+            int(item.data(Qt.ItemDataRole.UserRole))
+        )
         if period is None:
             return
-        dialog = OzoPeriodDetailDialog(self, period=period)
+        name = self.certificate.name if self.certificate is not None else ""
+        dialog = QualificationPeriodDetailDialog(
+            self, period=period, certificate_name=name
+        )
         dialog.exec()
 
     def get_data(self) -> dict:
         return {
-            "title_before": self.title_before.text().strip(),
-            "first_name": self.first_name.text().strip(),
-            "last_name": self.last_name.text().strip(),
-            "title_after": self.title_after.text().strip(),
-            "residence_address": self.residence_address.text().strip(),
-            "exam_date": self.exam_date.get_date(),
+            "name": self.name.text().strip(),
             "certificate_number": self.certificate_number.text().strip(),
+            "exam_date": self.exam_date.get_date(),
+            "indefinite": self.indefinite_checkbox.isChecked(),
             "certificate_valid_to": self.certificate_valid_to.get_date(),
             "notify_before_value": int(self.notify_before_value.value()),
             "notify_before_unit": self.notify_before_unit.currentData() or UNIT_DAYS,
@@ -281,18 +283,25 @@ class OzoPersonDialog(QDialog):
         }
 
     def _save(self) -> bool:
+        data = self.get_data()
         try:
-            self.person = ozo_person_service.save(**self.get_data())
-        except OzoPersonValidationError as error:
-            QMessageBox.warning(self, DIALOG_TITLE_OZO_PERSON, str(error))
+            if self.certificate is None:
+                self.certificate = qualification_certificate_service.save(**data)
+            else:
+                self.certificate = qualification_certificate_service.save(
+                    certificate_id=self.certificate.id,
+                    **data,
+                )
+        except QualificationCertificateValidationError as error:
+            QMessageBox.warning(self, self.windowTitle(), str(error))
             return False
-        except Exception as error:  # noqa: BLE001
-            QMessageBox.warning(self, DIALOG_TITLE_OZO_PERSON, str(error))
-            return False
-        self.period = ozo_person_service.get_open_period(self.person)
+        self.period = qualification_certificate_service.get_open_period(self.certificate)
         if self.period is not None:
-            self.attachments.set_entity(ENTITY_OZO_PERSON_PERIOD, self.period.id)
-            self._load_period(self.period)
+            self.attachments.set_entity(
+                ENTITY_QUALIFICATION_CERTIFICATE_PERIOD,
+                self.period.id,
+            )
+        self.setWindowTitle(DIALOG_TITLE_CERTIFICATE_EDIT)
         self._sync_attachments_hint()
         self._reload_history()
         return True

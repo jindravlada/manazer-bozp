@@ -5,6 +5,8 @@ from PySide6.QtWidgets import QLabel, QSizePolicy
 
 from core.dashboard.attention_item import (
     ITEM_TYPE_OZO_CONTRACT,
+    ITEM_TYPE_OZO_PERSON_CERTIFICATE,
+    ITEM_TYPE_QUALIFICATION_CERTIFICATE,
     ITEM_TYPE_YEARLY_PLAN_MONTH,
     AttentionItem,
 )
@@ -89,6 +91,32 @@ def overdue_ozo_contract_items(
         item
         for item in items
         if item.item_type == ITEM_TYPE_OZO_CONTRACT
+        and item.due_date is not None
+        and item.due_date < today
+    ]
+    overdue.sort(key=lambda item: (item.due_date or date.max, item.source_id))
+    return overdue
+
+
+_CERTIFICATE_ITEM_TYPES = {
+    ITEM_TYPE_OZO_PERSON_CERTIFICATE,
+    ITEM_TYPE_QUALIFICATION_CERTIFICATE,
+}
+
+
+def overdue_certificate_items(
+    today: date,
+    *,
+    attention_items: list[AttentionItem] | None = None,
+) -> list[AttentionItem]:
+    """Osvědčení OZO / ostatní po datu platnosti."""
+    items = attention_items
+    if items is None:
+        items = get_attention_items(today=today)
+    overdue = [
+        item
+        for item in items
+        if item.item_type in _CERTIFICATE_ITEM_TYPES
         and item.due_date is not None
         and item.due_date < today
     ]
@@ -192,12 +220,19 @@ class TodayWidget(DashboardPanel):
         overdue_contracts = overdue_ozo_contract_items(
             today, attention_items=attention_items
         )
-        self._linked_attention = list(overdue_months) + list(overdue_contracts)
+        overdue_certs = overdue_certificate_items(
+            today, attention_items=attention_items
+        )
+        self._linked_attention = (
+            list(overdue_months) + list(overdue_contracts) + list(overdue_certs)
+        )
 
         ordered: list[str] = []
         for item in overdue_months:
             ordered.append(self._attention_line(item, "🔴"))
         for item in overdue_contracts:
+            ordered.append(self._attention_line(item, "🔴"))
+        for item in overdue_certs:
             ordered.append(self._attention_line(item, "🔴"))
         ordered.extend(self._task_line(task, "🔴") for task in burning)
         ordered.extend(self._task_line(task, "🔵") for task in due_today)

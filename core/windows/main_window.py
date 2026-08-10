@@ -428,7 +428,9 @@ class MainWindow(QMainWindow):
             ITEM_TYPE_INSPECTION,
             ITEM_TYPE_MEETING,
             ITEM_TYPE_OZO_CONTRACT,
+            ITEM_TYPE_OZO_PERSON_CERTIFICATE,
             ITEM_TYPE_PERIODIC,
+            ITEM_TYPE_QUALIFICATION_CERTIFICATE,
             ITEM_TYPE_TASK,
             ITEM_TYPE_YEARLY_PLAN_MONTH,
         )
@@ -454,6 +456,12 @@ class MainWindow(QMainWindow):
             return
         if item_type == ITEM_TYPE_OZO_CONTRACT and entity_id is not None:
             self._open_ozo_contract_by_id(entity_id)
+            return
+        if item_type == ITEM_TYPE_OZO_PERSON_CERTIFICATE:
+            self._open_ozo_person()
+            return
+        if item_type == ITEM_TYPE_QUALIFICATION_CERTIFICATE and entity_id is not None:
+            self._open_qualification_certificate_by_id(entity_id)
             return
         if item_type == ITEM_TYPE_YEARLY_PLAN_MONTH:
             metadata = getattr(item, "open_metadata", None) or {}
@@ -588,6 +596,20 @@ class MainWindow(QMainWindow):
         page = self._page_widgets.get("smlouvy_ozo")
         if page is not None and hasattr(page, "open_contract"):
             page.open_contract(contract_id)
+        self._refresh_dashboard_and_agenda()
+
+    def _open_ozo_person(self) -> None:
+        self._show("smlouvy_ozo")
+        page = self._page_widgets.get("smlouvy_ozo")
+        if page is not None and hasattr(page, "edit_ozo_person"):
+            page.edit_ozo_person()
+        self._refresh_dashboard_and_agenda()
+
+    def _open_qualification_certificate_by_id(self, certificate_id: int) -> None:
+        self._show("smlouvy_ozo")
+        page = self._page_widgets.get("smlouvy_ozo")
+        if page is not None and hasattr(page, "open_qualification_certificate"):
+            page.open_qualification_certificate(certificate_id)
         self._refresh_dashboard_and_agenda()
 
     def _open_schuzky(self):

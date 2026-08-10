@@ -25,6 +25,7 @@ from moduly.smlouvy_ozo.constants import (
     ACTION_CHRONOLOGICAL_LIST,
     ACTION_EDIT,
     ACTION_NEW,
+    ACTION_OTHER_CERTIFICATES,
     ACTION_OZO_PERSON,
     DIALOG_TITLE_CHRONOLOGICAL_LIST,
     EMPTY_STATE_TEXT,
@@ -44,7 +45,9 @@ from moduly.smlouvy_ozo.ui.ozo_contract_dialog import OzoContractDialog
 from moduly.smlouvy_ozo.ui.ozo_contract_list_dialog import OzoContractListDialog
 from moduly.smlouvy_ozo.ui.ozo_contract_table import OzoContractTable
 from moduly.smlouvy_ozo.ui.ozo_person_dialog import OzoPersonDialog
-
+from moduly.smlouvy_ozo.ui.qualification_certificates_dialog import (
+    QualificationCertificatesDialog,
+)
 
 class SmlouvyOzoPage(QWidget):
     def __init__(self, parent=None):
@@ -57,12 +60,14 @@ class SmlouvyOzoPage(QWidget):
         self.new_btn = QPushButton(ACTION_NEW)
         self.edit_btn = QPushButton(ACTION_EDIT)
         self.ozo_person_btn = QPushButton(ACTION_OZO_PERSON)
+        self.other_certificates_btn = QPushButton(ACTION_OTHER_CERTIFICATES)
         self.list_btn = QPushButton(ACTION_CHRONOLOGICAL_LIST)
         self.edit_btn.setEnabled(False)
 
         toolbar.addWidget(self.new_btn)
         toolbar.addWidget(self.edit_btn)
         toolbar.addWidget(self.ozo_person_btn)
+        toolbar.addWidget(self.other_certificates_btn)
         toolbar.addWidget(self.list_btn)
         toolbar.addStretch()
         toolbar.addWidget(QLabel("Rok:"))
@@ -88,6 +93,7 @@ class SmlouvyOzoPage(QWidget):
         self.new_btn.clicked.connect(self.new_contract)
         self.edit_btn.clicked.connect(self.edit_selected)
         self.ozo_person_btn.clicked.connect(self.edit_ozo_person)
+        self.other_certificates_btn.clicked.connect(self.open_other_certificates)
         self.list_btn.clicked.connect(self.open_chronological_list)
         self.year_filter.currentIndexChanged.connect(self.refresh)
         self.show_inactive.toggled.connect(self.refresh)
@@ -203,6 +209,34 @@ class SmlouvyOzoPage(QWidget):
     def edit_ozo_person(self) -> None:
         dialog = OzoPersonDialog(self)
         dialog.exec()
+        self._notify_dashboard()
+
+    def open_other_certificates(self) -> None:
+        dialog = QualificationCertificatesDialog(self)
+        dialog.exec()
+        self._notify_dashboard()
+
+    def open_qualification_certificate(self, certificate_id: int) -> None:
+        from moduly.smlouvy_ozo.constants import (
+            CERTIFICATE_NOT_FOUND_MESSAGE,
+            DIALOG_TITLE_OTHER_CERTIFICATES,
+        )
+        from moduly.smlouvy_ozo.sluzby.qualification_certificate_service import (
+            qualification_certificate_service,
+        )
+        from moduly.smlouvy_ozo.ui.qualification_certificate_dialog import (
+            QualificationCertificateDialog,
+        )
+
+        certificate = qualification_certificate_service.get_by_id(certificate_id)
+        if certificate is None:
+            QMessageBox.warning(
+                self, DIALOG_TITLE_OTHER_CERTIFICATES, CERTIFICATE_NOT_FOUND_MESSAGE
+            )
+            return
+        dialog = QualificationCertificateDialog(self, certificate=certificate)
+        exec_maximized(dialog)
+        self._notify_dashboard()
 
     def open_chronological_list(self) -> None:
         year = self.selected_year()

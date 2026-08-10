@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import date, datetime, timedelta
 
-from moduly.smlouvy_ozo.constants import format_ozo_display_name
+from moduly.smlouvy_ozo.constants import UNIT_DAYS, format_ozo_display_name
 from moduly.smlouvy_ozo.modely.ozo_person import OzoPerson
 from moduly.smlouvy_ozo.modely.ozo_person_period import OzoPersonPeriod
 from moduly.smlouvy_ozo.repository.ozo_person_period_repository import (
@@ -122,6 +122,8 @@ class OzoPersonService:
             exam_date=person.exam_date,
             certificate_number=person.certificate_number or "",
             certificate_valid_to=person.certificate_valid_to,
+            notify_before_value=0,
+            notify_before_unit=UNIT_DAYS,
             note=person.note or "",
         )
         period = self.period_repository.add(period)
@@ -139,6 +141,8 @@ class OzoPersonService:
         exam_date: date | None = None,
         certificate_number: str = "",
         certificate_valid_to: date | None = None,
+        notify_before_value: int = 0,
+        notify_before_unit: str = UNIT_DAYS,
         note: str = "",
     ) -> OzoPerson:
         person = self.repository.get()
@@ -154,6 +158,8 @@ class OzoPersonService:
             "exam_date": exam_date,
             "certificate_number": (certificate_number or "").strip(),
             "certificate_valid_to": certificate_valid_to,
+            "notify_before_value": max(0, int(notify_before_value or 0)),
+            "notify_before_unit": (notify_before_unit or UNIT_DAYS).strip() or UNIT_DAYS,
             "note": (note or "").strip(),
         }
 
@@ -281,6 +287,10 @@ class OzoPersonService:
         period.exam_date = fields["exam_date"]
         period.certificate_number = fields["certificate_number"]
         period.certificate_valid_to = fields["certificate_valid_to"]
+        period.notify_before_value = int(fields.get("notify_before_value") or 0)
+        period.notify_before_unit = (
+            fields.get("notify_before_unit") or UNIT_DAYS
+        )
         period.note = fields["note"]
 
     @staticmethod

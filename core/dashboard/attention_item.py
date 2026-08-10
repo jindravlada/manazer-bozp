@@ -14,6 +14,8 @@ ITEM_TYPE_MEETING = "meeting"
 ITEM_TYPE_PERIODIC = "periodic"
 ITEM_TYPE_YEARLY_PLAN_MONTH = "yearly_plan_month"
 ITEM_TYPE_OZO_CONTRACT = "ozo_contract"
+ITEM_TYPE_OZO_PERSON_CERTIFICATE = "ozo_person_certificate"
+ITEM_TYPE_QUALIFICATION_CERTIFICATE = "qualification_certificate"
 # Zpětná kompatibilita staršího interního názvu.
 ITEM_TYPE_BOZP_INSPECTION = ITEM_TYPE_INSPECTION
 
@@ -25,6 +27,8 @@ TYPE_LABELS = {
     ITEM_TYPE_PERIODIC: "Periodická činnost",
     ITEM_TYPE_YEARLY_PLAN_MONTH: "Roční plán",
     ITEM_TYPE_OZO_CONTRACT: "Smlouva OZO",
+    ITEM_TYPE_OZO_PERSON_CERTIFICATE: "Osvědčení OZO",
+    ITEM_TYPE_QUALIFICATION_CERTIFICATE: "Osvědčení",
 }
 
 SOURCE_LABEL_AUDIT = "Audit systému řízení"
@@ -32,6 +36,8 @@ SOURCE_LABEL_INSPECTION = "Prověrka BOZP"
 SOURCE_LABEL_PERIODIC = "Periodická činnost"
 SOURCE_LABEL_YEARLY_PLAN = "Roční plán"
 SOURCE_LABEL_OZO_CONTRACT = "Smlouvy OZO"
+SOURCE_LABEL_OZO_PERSON = "Odborně způsobilá osoba"
+SOURCE_LABEL_QUALIFICATION = "Ostatní osvědčení"
 
 PRIORITY_RANK = {
     "Kritická": 0,

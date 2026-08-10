@@ -34,5 +34,9 @@ class OzoPersonPeriod(Base):
     certificate_number: Mapped[str] = mapped_column(String(100), default="")
     certificate_valid_to: Mapped[date | None] = mapped_column(Date, nullable=True)
 
+    # Individuální předstih upozornění na konec platnosti osvědčení (0 = bez předstihu).
+    notify_before_value: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    notify_before_unit: Mapped[str] = mapped_column(String(20), default="days", nullable=False)
+
     note: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)

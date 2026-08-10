@@ -72,6 +72,12 @@ def initialize_database() -> None:
     from moduly.smlouvy_ozo.modely.ozo_contract import OzoContract  # noqa: F401
     from moduly.smlouvy_ozo.modely.ozo_person import OzoPerson  # noqa: F401
     from moduly.smlouvy_ozo.modely.ozo_person_period import OzoPersonPeriod  # noqa: F401
+    from moduly.smlouvy_ozo.modely.qualification_certificate import (  # noqa: F401
+        QualificationCertificate,
+    )
+    from moduly.smlouvy_ozo.modely.qualification_certificate_period import (  # noqa: F401
+        QualificationCertificatePeriod,
+    )
     from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement  # noqa: F401
     from moduly.pravni_pozadavky.modely.legal_requirement_check import (  # noqa: F401
         LegalRequirementCheck,
@@ -172,6 +178,7 @@ def initialize_database() -> None:
     create_database()
     _ensure_thp_worker_title_columns()
     _ensure_ozo_person_title_columns()
+    _ensure_ozo_person_period_notify_columns()
     _migrate_ozo_person_periods()
     _ensure_employer_columns()
     _ensure_task_columns()
@@ -462,6 +469,16 @@ def _ensure_ozo_person_title_columns() -> None:
         _add_column("ozo_persons", "title_before VARCHAR(50) DEFAULT ''")
     if "title_after" not in columns:
         _add_column("ozo_persons", "title_after VARCHAR(50) DEFAULT ''")
+
+
+def _ensure_ozo_person_period_notify_columns() -> None:
+    columns = _table_columns("ozo_person_periods")
+    if not columns:
+        return
+    if "notify_before_value" not in columns:
+        _add_column("ozo_person_periods", "notify_before_value INTEGER DEFAULT 0")
+    if "notify_before_unit" not in columns:
+        _add_column("ozo_person_periods", "notify_before_unit VARCHAR(20) DEFAULT 'days'")
 
 
 def _migrate_ozo_person_periods() -> None:
