@@ -88,7 +88,7 @@ class AudityDialogTestCase(unittest.TestCase):
         dialog = self._open_dialog()
 
         self.assertIsNone(dialog.audit)
-        self.assertEqual(dialog.tabs.count(), 7)
+        self.assertEqual(dialog.tabs.count(), 8)
         for index, label in enumerate(TAB_LABELS):
             self.assertEqual(dialog.tabs.tabText(index), label)
 

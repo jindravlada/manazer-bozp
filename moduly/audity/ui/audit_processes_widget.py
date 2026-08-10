@@ -12,13 +12,18 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import exec_maximized
+from core.shared.verification_type import (
+    VERIFICATION_TYPE_DOCUMENTATION,
+    VERIFICATION_TYPE_TERRAIN,
+)
 from moduly.audity.constants import (
     KNOWLEDGE_EDITOR_BUTTON_LABEL,
     METHODOLOGY_PANEL_STRETCH,
     PROCESS_NOT_IMPLEMENTED_TEXT,
     PROCESS_PANEL_LEFT_WIDTH,
     PROCESS_TERM_CRITERION,
-    TAB_AUDITOVANE_PROCESY,
+    TAB_DOCUMENTACE,
+    TAB_TEREN,
     WORK_PANEL_STRETCH,
 )
 from moduly.audity.sluzby.audit_knowledge_service import KnowledgeTreeNode, audit_knowledge_service
@@ -32,15 +37,29 @@ from moduly.audity.ui.audity_knowledge_editor_dialog import AudityKnowledgeEdito
 
 
 class AuditProcessesWidget(QWidget):
-    """Záložka Řídicí procesy — strom | pracovní plocha | metodická podpora."""
+    """Záložka Dokumentace / Terén — strom | pracovní plocha | metodická podpora."""
 
     _PAGE_HINT = 0
     _PAGE_PLACEHOLDER = 1
     _PAGE_OVERVIEW = 2
     _PAGE_KNOWLEDGE = 3
 
-    def __init__(self, parent=None):
+    def __init__(
+        self,
+        parent=None,
+        *,
+        verification_type: str = VERIFICATION_TYPE_DOCUMENTATION,
+    ):
         super().__init__(parent)
+
+        self._verification_type = (
+            VERIFICATION_TYPE_TERRAIN
+            if verification_type == VERIFICATION_TYPE_TERRAIN
+            else VERIFICATION_TYPE_DOCUMENTATION
+        )
+        self._tab_title = (
+            TAB_TEREN if self._verification_type == VERIFICATION_TYPE_TERRAIN else TAB_DOCUMENTACE
+        )
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -81,6 +100,7 @@ class AuditProcessesWidget(QWidget):
         self._current_criterion_id = ""
         self._current_criterion_label = ""
         self._planned_process_ids: set[str] | None = None
+        self._on_verification_type_changed = None
 
         header_row = QHBoxLayout()
         header_row.setContentsMargins(0, 0, 0, 0)
@@ -114,7 +134,13 @@ class AuditProcessesWidget(QWidget):
         self.content_stack.addWidget(self.overview_widget)
 
         self.methodology_panel = AuditMethodologyPanelWidget()
-        self.knowledge_widget = AuditProcessKnowledgeWidget(self.methodology_panel)
+        self.knowledge_widget = AuditProcessKnowledgeWidget(
+            self.methodology_panel,
+            verification_filter=self._verification_type,
+        )
+        self.knowledge_widget.verification_type_changed.connect(
+            self._emit_verification_type_changed
+        )
         self.content_stack.addWidget(self.knowledge_widget)
 
         center_layout.addLayout(header_row)
@@ -138,6 +164,12 @@ class AuditProcessesWidget(QWidget):
 
         self.reload_processes()
 
+    def set_on_verification_type_changed(self, callback) -> None:
+        self._on_verification_type_changed = callback
+
+    def _emit_verification_type_changed(self) -> None:
+        if self._on_verification_type_changed is not None:
+            self._on_verification_type_changed()
     def _show_catalog_error(self, message: str) -> None:
         self._catalog_error_label.setText(message)
         self._catalog_error_label.setVisible(True)
@@ -222,7 +254,7 @@ class AuditProcessesWidget(QWidget):
         self._current_process_knowledge = None
         self._current_criterion_id = ""
         self._current_criterion_label = ""
-        self.center_title_label.setText(TAB_AUDITOVANE_PROCESY)
+        self.center_title_label.setText(self._tab_title)
         self.center_description_label.setText(
             f"Vyberte {PROCESS_TERM_CRITERION.lower()} ve stromu řídicích procesů vlevo."
         )

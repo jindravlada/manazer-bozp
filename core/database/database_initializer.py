@@ -69,6 +69,9 @@ def initialize_database() -> None:
     from moduly.proverky.modely.bozp_inspection_verification_override import (  # noqa: F401
         BozpInspectionVerificationOverride,
     )
+    from moduly.audity.modely.audit_verification_override import (  # noqa: F401
+        AuditVerificationOverride,
+    )
     from moduly.smlouvy_ozo.modely.ozo_contract import OzoContract  # noqa: F401
     from moduly.smlouvy_ozo.modely.ozo_person import OzoPerson  # noqa: F401
     from moduly.smlouvy_ozo.modely.ozo_person_period import OzoPersonPeriod  # noqa: F401
@@ -193,6 +196,7 @@ def initialize_database() -> None:
     _ensure_bozp_inspection_commission_table()
     _ensure_bozp_inspection_columns()
     _ensure_bozp_inspection_verification_override_table()
+    _ensure_audit_verification_override_table()
     _ensure_bozp_annual_report_table()
     _ensure_audit_annual_report_table()
     _ensure_audit_process_maturity_snapshot_table()
@@ -728,6 +732,15 @@ def _ensure_bozp_inspection_verification_override_table() -> None:
     BozpInspectionVerificationOverride.__table__.create(
         bind=_db_engine(), checkfirst=True
     )
+
+
+def _ensure_audit_verification_override_table() -> None:
+    columns = _table_columns("audit_verification_overrides")
+    if columns:
+        return
+    from moduly.audity.modely.audit_verification_override import AuditVerificationOverride
+
+    AuditVerificationOverride.__table__.create(bind=_db_engine(), checkfirst=True)
 
 
 def _ensure_bozp_annual_report_table() -> None:

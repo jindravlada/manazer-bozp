@@ -23,6 +23,10 @@ from core.shared.control_result_display import (
 from core.shared.finding_display import finding_status_label
 from core.shared.sluzby.control_result_service import ControlPointContext, control_result_service
 from core.shared.sluzby.finding_service import finding_service
+from core.shared.verification_type import (
+    VERIFICATION_TYPE_DOCUMENTATION,
+    VERIFICATION_TYPE_TERRAIN,
+)
 from core.widgets.control_result_selector import ControlResultSelectorWidget
 from core.widgets.control_result_photo_widget import ControlResultPhotoWidget
 from core.widgets.finding_dialog import FindingDialog
@@ -44,6 +48,9 @@ from moduly.audity.constants import (
     AUDIT_RESULT_HEADER_LABEL,
     AUDIT_RESULT_NOTE_LABEL,
     KNOWLEDGE_REFERENCE_PHOTOS_TITLE,
+    MOVE_TO_DOCUMENTATION_LABEL,
+    MOVE_TO_TERRAIN_LABEL,
+    MOVE_VERIFICATION_TYPE_TOOLTIP,
     REFERENCE_PHOTO_THUMBNAIL_SIZE,
     PROCESS_TERM_CRITERION,
     PROCESS_TERM_QUESTION,
@@ -52,6 +59,7 @@ from moduly.audity.constants import (
 from moduly.audity.sluzby.audit_service import audit_service
 from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
 from moduly.audity.sluzby.audit_reference_photo_service import audit_reference_photo_service
+from moduly.audity.sluzby.audit_verification_service import audit_verification_service
 from moduly.audity.ui.audit_methodology_panel_widget import AuditMethodologyPanelWidget
 
 
@@ -96,10 +104,21 @@ class _ControlPointSeverityBadge(QLabel):
 class AuditKnowledgeCriterionWidget(QWidget):
     """Střední pracovní plocha oblasti ověření — návodné otázky a hodnocení."""
 
-    def __init__(self, methodology_panel: AuditMethodologyPanelWidget | None = None, parent=None):
+    verification_type_changed = Signal()
+
+    def __init__(
+        self,
+        methodology_panel: AuditMethodologyPanelWidget | None = None,
+        parent=None,
+        *,
+        verification_filter: str = VERIFICATION_TYPE_DOCUMENTATION,
+    ):
         super().__init__(parent)
 
         self._methodology_panel = methodology_panel
+        self._verification_filter = audit_verification_service.normalize_verification_type(
+            verification_filter
+        )
 
         self._area_id = ""
         self._area_label = ""
@@ -111,6 +130,7 @@ class AuditKnowledgeCriterionWidget(QWidget):
         self._on_finding_saved = None
         self._selected_control_point_id = ""
         self._control_point_frames: dict[str, _ControlPointFrame] = {}
+        self._overrides_cache: dict[tuple[str, str, str], str] | None = None
 
         self._content_host = QWidget()
         self._content_layout = QVBoxLayout(self._content_host)
@@ -127,6 +147,36 @@ class AuditKnowledgeCriterionWidget(QWidget):
         outer.setContentsMargins(0, 0, 0, 0)
         outer.addWidget(scroll, 1)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+    def set_verification_filter(self, verification_type: str) -> None:
+        self._verification_filter = audit_verification_service.normalize_verification_type(
+            verification_type
+        )
+        self._rebuild_content()
+
+    def set_audit_id(self, audit_id: int | None) -> None:
+        self._audit_id = audit_id
+        self._overrides_cache = None
+        self.refresh()
+
+    def _overrides(self) -> dict[tuple[str, str, str], str]:
+        if self._overrides_cache is None:
+            self._overrides_cache = audit_verification_service.overrides_map(self._audit_id)
+        return self._overrides_cache
+
+    def _effective_type(self, item: dict) -> str:
+        return audit_verification_service.effective_verification_type(
+            self._audit_id,
+            area_id=self._area_id,
+            section_id=self._section_id,
+            control_point_id=str(item.get("id") or "").strip(),
+            item=item,
+            overrides=self._overrides(),
+        )
+
+    def _filtered_questions(self, section: dict) -> list[dict]:
+        items = audit_knowledge_service.get_audit_questions(section)
+        return [item for item in items if self._effective_type(item) == self._verification_filter]
 
     def scroll_to_top(self) -> None:
         self._scroll_area.verticalScrollBar().setValue(0)
@@ -150,14 +200,11 @@ class AuditKnowledgeCriterionWidget(QWidget):
         self._rebuild_content()
         self.scroll_to_top()
 
-    def set_audit_id(self, audit_id: int | None) -> None:
-        self._audit_id = audit_id
-        self.refresh()
-
     def set_on_finding_saved(self, callback) -> None:
         self._on_finding_saved = callback
 
     def refresh(self) -> None:
+        self._overrides_cache = None
         self._rebuild_content()
 
     def _rebuild_content(self) -> None:
@@ -262,9 +309,12 @@ class AuditKnowledgeCriterionWidget(QWidget):
             self._methodology_panel.refresh_history(context)
 
     def _build_control_points_section(self, section: dict) -> QWidget | None:
-        items = audit_knowledge_service.get_audit_questions(section)
+        items = self._filtered_questions(section)
         if not items:
-            return None
+            empty = QLabel(self._empty_questions_message(section))
+            empty.setObjectName("InfoText")
+            empty.setWordWrap(True)
+            return self._build_block(PROCESS_TERM_QUESTION, empty)
 
         content = QWidget()
         layout = QVBoxLayout(content)
@@ -281,6 +331,20 @@ class AuditKnowledgeCriterionWidget(QWidget):
             self._select_control_point(first_context)
 
         return self._build_block(PROCESS_TERM_QUESTION, content)
+
+    def _empty_questions_message(self, section: dict) -> str:
+        all_items = audit_knowledge_service.get_audit_questions(section)
+        if not all_items:
+            return f"Pro tuto {PROCESS_TERM_CRITERION.lower()} zatím nejsou žádná auditní tvrzení."
+        if self._verification_filter == VERIFICATION_TYPE_TERRAIN:
+            return (
+                "Žádná auditní tvrzení pro terénní ověření. "
+                "Tvrzení typu Dokumentace jsou na záložce Dokumentace."
+            )
+        return (
+            "Žádná auditní tvrzení pro ověření dokumentace. "
+            "Tvrzení typu Terén jsou na záložce Terén."
+        )
 
     def _build_control_point_row(self, item: dict) -> QWidget:
         context = self._context_for_control_point(item)
@@ -337,6 +401,25 @@ class AuditKnowledgeCriterionWidget(QWidget):
             must_be_saved_message=AUDIT_MUST_BE_SAVED_MESSAGE,
         )
         row_layout.addWidget(photo_widget)
+
+        move_row = QHBoxLayout()
+        move_row.setContentsMargins(0, 0, 0, 0)
+        if self._verification_filter == VERIFICATION_TYPE_TERRAIN:
+            move_label = MOVE_TO_DOCUMENTATION_LABEL
+            move_target = VERIFICATION_TYPE_DOCUMENTATION
+        else:
+            move_label = MOVE_TO_TERRAIN_LABEL
+            move_target = VERIFICATION_TYPE_TERRAIN
+        move_btn = QPushButton(move_label)
+        move_btn.setToolTip(MOVE_VERIFICATION_TYPE_TOOLTIP)
+        move_btn.clicked.connect(
+            lambda _checked=False, cp=item, target=move_target, label=move_label: (
+                self._move_verification_type(cp, target, label)
+            )
+        )
+        move_row.addWidget(move_btn)
+        move_row.addStretch()
+        row_layout.addLayout(move_row)
 
         finding_host = QWidget()
         finding_layout = QVBoxLayout(finding_host)
@@ -416,6 +499,34 @@ class AuditKnowledgeCriterionWidget(QWidget):
             self._finding_for_context(context),
             result,
         )
+
+    def _move_verification_type(
+        self,
+        control_point: dict,
+        target_type: str,
+        button_label: str,
+    ) -> None:
+        if self._audit_id is None:
+            QMessageBox.information(
+                self,
+                button_label,
+                AUDIT_MUST_BE_SAVED_MESSAGE,
+            )
+            return
+        cp_id = str(control_point.get("id") or "").strip()
+        if not cp_id:
+            return
+        audit_verification_service.set_override(
+            self._audit_id,
+            area_id=self._area_id,
+            section_id=self._section_id,
+            control_point_id=cp_id,
+            verification_type=target_type,
+            item=control_point,
+        )
+        self._overrides_cache = None
+        self.verification_type_changed.emit()
+        self.refresh()
 
     def _build_create_finding_button(self, control_point: dict) -> QPushButton:
         button = QPushButton(FINDING_CREATE_FROM_CONTROL_POINT_LABEL)

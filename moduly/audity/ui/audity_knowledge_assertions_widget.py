@@ -16,6 +16,7 @@ from moduly.audity.constants import CONTROL_POINT_SEVERITY_OPTIONS
 from moduly.audity.sluzby.audit_knowledge_editor_service import audit_knowledge_editor_service
 from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
 from moduly.audity.ui.audity_knowledge_assertion_dialog import AudityKnowledgeAssertionDialog
+from core.shared.verification_type import VERIFICATION_TYPE_LABELS
 
 _SEVERITY_LABELS = dict(CONTROL_POINT_SEVERITY_OPTIONS)
 
@@ -23,8 +24,9 @@ _COL_ID = 0
 _COL_TEXT = 1
 _COL_POPIS = 2
 _COL_SEVERITY = 3
-_COL_PORADI = 4
-_COL_AKTIVNI = 5
+_COL_VERIFICATION = 4
+_COL_PORADI = 5
+_COL_AKTIVNI = 6
 
 
 class AudityKnowledgeAssertionsWidget(QWidget):
@@ -62,9 +64,9 @@ class AudityKnowledgeAssertionsWidget(QWidget):
         toolbar.addStretch()
 
         self._table = QTableWidget()
-        self._table.setColumnCount(6)
+        self._table.setColumnCount(7)
         self._table.setHorizontalHeaderLabels(
-            ["ID", "Text tvrzení", "Popis", "Závažnost", "Pořadí", "Aktivní"]
+            ["ID", "Text tvrzení", "Popis", "Závažnost", "Typ ověření", "Pořadí", "Aktivní"]
         )
         self._table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self._table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
@@ -80,6 +82,7 @@ class AudityKnowledgeAssertionsWidget(QWidget):
         header.setSectionResizeMode(_COL_POPIS, QHeaderView.ResizeMode.Stretch)
         self._table.setColumnHidden(_COL_ID, True)
         self._table.setColumnWidth(_COL_SEVERITY, 110)
+        self._table.setColumnWidth(_COL_VERIFICATION, 110)
         self._table.setColumnWidth(_COL_PORADI, 70)
         self._table.setColumnWidth(_COL_AKTIVNI, 70)
 
@@ -137,6 +140,10 @@ class AudityKnowledgeAssertionsWidget(QWidget):
                 item.get("text", ""),
                 item.get("popis", ""),
                 _SEVERITY_LABELS.get(item.get("zavaznost", ""), item.get("zavaznost", "")),
+                VERIFICATION_TYPE_LABELS.get(
+                    item.get("verification_type", ""),
+                    item.get("verification_type", ""),
+                ),
                 str(item.get("poradi", "")),
                 "Ano" if item.get("aktivni", True) else "Ne",
             ]

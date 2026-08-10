@@ -422,8 +422,8 @@ class AuditWorkplaceHistoryWidgetTestCase(unittest.TestCase):
         )
         dialog = AuditDialog(audit=audit)
 
-        self.assertEqual(dialog.tabs.count(), 7)
-        self.assertEqual(dialog.tabs.tabText(3), TAB_WORKPLACE_HISTORY)
+        self.assertEqual(dialog.tabs.count(), 8)
+        self.assertEqual(dialog.tabs.tabText(4), TAB_WORKPLACE_HISTORY)
         self.assertIsNotNone(dialog.history_widget)
 
     def test_history_widget_loads_summary(self) -> None:

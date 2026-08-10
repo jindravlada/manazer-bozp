@@ -5,12 +5,14 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 
-from moduly.proverky.constants import (
+from core.shared.verification_type import (
     VERIFICATION_TYPE_DEFAULT,
     VERIFICATION_TYPE_DOCUMENTATION,
     VERIFICATION_TYPE_TERRAIN,
-    ProverkyFindingKnowledgeContext,
+    methodology_verification_type as shared_methodology_verification_type,
+    normalize_verification_type as shared_normalize_verification_type,
 )
+from moduly.proverky.constants import ProverkyFindingKnowledgeContext
 from moduly.proverky.repository.bozp_inspection_verification_override_repository import (
     BozpInspectionVerificationOverrideRepository,
 )
@@ -21,14 +23,6 @@ from moduly.proverky.sluzby.proverky_knowledge_service import (
 
 logger = logging.getLogger(__name__)
 
-_VALID_VERIFICATION_TYPES = frozenset(
-    {
-        VERIFICATION_TYPE_DOCUMENTATION,
-        VERIFICATION_TYPE_TERRAIN,
-    }
-)
-
-# Historické / alternativní zápisy → kanonické hodnoty projektu (dokumentace / teren).
 _DOCUMENTATION_ALIASES = frozenset(
     {
         VERIFICATION_TYPE_DOCUMENTATION,
@@ -46,7 +40,6 @@ _TERRAIN_ALIASES = frozenset(
         "terén",
         "terrain",
         "field",
-        "teren",
     }
 )
 
@@ -84,24 +77,10 @@ class InspectionVerificationService:
     @staticmethod
     def normalize_verification_type(value) -> str:
         """Sjednotí typ ověření na kanonické hodnoty projektu (dokumentace / teren)."""
-        raw = str(value or "").strip()
-        normalized = raw.casefold()
-        if normalized in _DOCUMENTATION_ALIASES:
-            return VERIFICATION_TYPE_DOCUMENTATION
-        if normalized in _TERRAIN_ALIASES:
-            return VERIFICATION_TYPE_TERRAIN
-        if raw:
-            logger.warning(
-                "Neznámý typ ověření kontrolního bodu %r – použito výchozí %s.",
-                value,
-                VERIFICATION_TYPE_DEFAULT,
-            )
-        return VERIFICATION_TYPE_DEFAULT
+        return shared_normalize_verification_type(value)
 
     def methodology_verification_type(self, item: dict | None) -> str:
-        if not isinstance(item, dict):
-            return VERIFICATION_TYPE_DEFAULT
-        return self.normalize_verification_type(item.get("verification_type"))
+        return shared_methodology_verification_type(item)
 
     def partition_active_control_points(
         self,

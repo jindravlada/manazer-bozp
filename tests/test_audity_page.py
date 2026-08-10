@@ -322,7 +322,7 @@ class AudityPageTestCase(unittest.TestCase):
         self.assertEqual(dialog.spis_widget.audit_date_edit.get_date(), date(2026, 5, 20))
         self.assertEqual(dialog.spis_widget.status_label.text(), AUDIT_STATUS_PROBIHA)
         self.assertEqual(dialog.commission_widget.leader_selector.current_person_id(), self.leader_id)
-        self.assertEqual(dialog.tabs.count(), 7)
+        self.assertEqual(dialog.tabs.count(), 8)
 
     @patch("moduly.audity.ui.audity_page.QMessageBox.question")
     def test_delete_selected_audit_removes_row(self, mock_question) -> None:

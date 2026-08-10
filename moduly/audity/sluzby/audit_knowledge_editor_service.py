@@ -804,6 +804,10 @@ class AuditKnowledgeEditorService:
         if zavaznost not in VALID_ZAVAZNOST:
             return None, [f"Neplatná závažnost '{zavaznost}'."]
 
+        verification_type = audit_knowledge_service.normalize_verification_type(
+            payload.get("verification_type")
+        )
+
         normalized = {
             "text": text,
             "nazev": text,
@@ -811,6 +815,7 @@ class AuditKnowledgeEditorService:
             "poradi": poradi,
             "aktivni": bool(payload.get("aktivni", True)),
             "zavaznost": zavaznost,
+            "verification_type": verification_type,
         }
         if item_id:
             normalized["id"] = item_id

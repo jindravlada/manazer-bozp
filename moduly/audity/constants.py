@@ -66,8 +66,6 @@ AUDIT_STATUS_BY_FILTER = {
 
 YEAR_FILTER_VSE = "Vše"
 
-TAB_AUDITOVANE_PROCESY = "Řídicí procesy"
-
 COMMISSION_RECORD_LEADER = "vedouci_komise"
 COMMISSION_RECORD_WORKPLACE = "zastupce_pracoviste"
 COMMISSION_RECORD_UNION = "zastupce_odboru"
@@ -111,16 +109,25 @@ COMMISSION_LABEL_UNION = "Zástupce odborové organizace"
 COMMISSION_LABEL_INVITED = "Přizvané osoby"
 
 TAB_AUDITOVANE_PROCESY = "Řídicí procesy"
+TAB_DOCUMENTACE = "Dokumentace"
+TAB_TEREN = "Terén"
 TAB_WORKPLACE_HISTORY = "Historie pracoviště"
 
 TAB_LABELS = (
     "Spis",
     "Komise",
-    TAB_AUDITOVANE_PROCESY,
+    TAB_DOCUMENTACE,
+    TAB_TEREN,
     TAB_WORKPLACE_HISTORY,
     "Zjištění",
     "Úkoly",
     "Závěr",
+)
+
+MOVE_TO_TERRAIN_LABEL = "→ Terén"
+MOVE_TO_DOCUMENTATION_LABEL = "→ Dokumentace"
+MOVE_VERIFICATION_TYPE_TOOLTIP = (
+    "Změní typ ověření jen pro tento audit. Metodika zůstane beze změny."
 )
 
 PROCESS_PANEL_LEFT_WIDTH = 260

@@ -1,16 +1,21 @@
 """Dialog pro vytvoření nebo editaci auditního tvrzení."""
 
 from PySide6.QtWidgets import (
+    QButtonGroup,
     QCheckBox,
     QComboBox,
     QDialog,
     QFormLayout,
+    QHBoxLayout,
     QLineEdit,
+    QRadioButton,
     QSpinBox,
     QTextEdit,
     QVBoxLayout,
+    QWidget,
 )
 
+from core.shared.verification_type import VERIFICATION_TYPE_OPTIONS
 from core.widgets.dialog_utils import create_save_cancel_box
 from moduly.audity.constants import (
     CONTROL_POINT_SEVERITY_DEFAULT,
@@ -37,7 +42,7 @@ class AudityKnowledgeAssertionDialog(QDialog):
         self.setWindowTitle(
             "Upravit auditní tvrzení" if self._editing_id else "Nové auditní tvrzení"
         )
-        self.resize(640, 420)
+        self.resize(640, 460)
 
         layout = QVBoxLayout(self)
         form = QFormLayout()
@@ -61,6 +66,20 @@ class AudityKnowledgeAssertionDialog(QDialog):
         for value, label in CONTROL_POINT_SEVERITY_OPTIONS:
             self._severity_combo.addItem(label, value)
 
+        self._verification_group = QButtonGroup(self)
+        verification_row = QWidget()
+        verification_layout = QHBoxLayout(verification_row)
+        verification_layout.setContentsMargins(0, 0, 0, 0)
+        verification_layout.setSpacing(16)
+        self._verification_radios: dict[str, QRadioButton] = {}
+        for value, label in VERIFICATION_TYPE_OPTIONS:
+            radio = QRadioButton(label)
+            radio.setProperty("verification_type", value)
+            self._verification_group.addButton(radio)
+            self._verification_radios[value] = radio
+            verification_layout.addWidget(radio)
+        verification_layout.addStretch()
+
         self._poradi_spin = QSpinBox()
         self._poradi_spin.setRange(0, 99999)
         self._poradi_spin.setSingleStep(10)
@@ -71,6 +90,7 @@ class AudityKnowledgeAssertionDialog(QDialog):
         form.addRow("Text tvrzení:", self._text_edit)
         form.addRow("Popis:", self._popis_edit)
         form.addRow("Závažnost:", self._severity_combo)
+        form.addRow("Typ ověření:", verification_row)
         form.addRow("Pořadí:", self._poradi_spin)
         form.addRow("", self._aktivni_check)
         layout.addLayout(form)
@@ -91,13 +111,33 @@ class AudityKnowledgeAssertionDialog(QDialog):
                 self._severity_combo.setCurrentIndex(severity_index)
             self._poradi_spin.setValue(int(assertion.get("poradi") or 0))
             self._aktivni_check.setChecked(bool(assertion.get("aktivni", True)))
+            self._set_verification_type(
+                audit_knowledge_service.normalize_verification_type(
+                    assertion.get("verification_type")
+                )
+            )
         else:
             default_index = self._severity_combo.findData(CONTROL_POINT_SEVERITY_DEFAULT)
             if default_index >= 0:
                 self._severity_combo.setCurrentIndex(default_index)
             self._poradi_spin.setValue(10)
             self._aktivni_check.setChecked(True)
+            self._set_verification_type(
+                audit_knowledge_service.normalize_verification_type(None)
+            )
             self._update_generated_id_preview()
+
+    def _set_verification_type(self, verification_type: str) -> None:
+        radio = self._verification_radios.get(verification_type)
+        if radio is not None:
+            radio.setChecked(True)
+        elif self._verification_radios:
+            next(iter(self._verification_radios.values())).setChecked(True)
+
+    def _current_verification_type(self) -> str:
+        checked = self._verification_group.checkedButton()
+        value = checked.property("verification_type") if checked is not None else None
+        return audit_knowledge_service.normalize_verification_type(value)
 
     def _update_generated_id_preview(self) -> None:
         if self._editing_id:
@@ -122,6 +162,7 @@ class AudityKnowledgeAssertionDialog(QDialog):
             "text": self._text_edit.toPlainText().strip(),
             "popis": self._popis_edit.toPlainText().strip(),
             "zavaznost": self._severity_combo.currentData(),
+            "verification_type": self._current_verification_type(),
             "poradi": self._poradi_spin.value(),
             "aktivni": self._aktivni_check.isChecked(),
         }

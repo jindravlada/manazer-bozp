@@ -2,6 +2,7 @@
 
 from PySide6.QtWidgets import QFrame, QLabel, QScrollArea, QSizePolicy, QVBoxLayout, QWidget
 
+from core.shared.verification_type import VERIFICATION_TYPE_DOCUMENTATION
 from moduly.audity.constants import (
     GUIDE_LABEL_AREAS,
     GUIDE_LABEL_EXPECTED_OUTPUT,
@@ -115,7 +116,13 @@ class AuditProcessOverviewWidget(QWidget):
 
 
 class AuditProcessKnowledgeWidget(QWidget):
-    def __init__(self, methodology_panel: AuditMethodologyPanelWidget, parent=None):
+    def __init__(
+        self,
+        methodology_panel: AuditMethodologyPanelWidget,
+        parent=None,
+        *,
+        verification_filter: str = VERIFICATION_TYPE_DOCUMENTATION,
+    ):
         super().__init__(parent)
 
         self._methodology_panel = methodology_panel
@@ -124,9 +131,19 @@ class AuditProcessKnowledgeWidget(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
 
-        self.criterion_widget = AuditKnowledgeCriterionWidget(methodology_panel=methodology_panel)
+        self.criterion_widget = AuditKnowledgeCriterionWidget(
+            methodology_panel=methodology_panel,
+            verification_filter=verification_filter,
+        )
         layout.addWidget(self.criterion_widget, 1)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+    @property
+    def verification_type_changed(self):
+        return self.criterion_widget.verification_type_changed
+
+    def set_verification_filter(self, verification_type: str) -> None:
+        self.criterion_widget.set_verification_filter(verification_type)
 
     def show_criterion(
         self,

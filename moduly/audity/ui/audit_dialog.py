@@ -5,8 +5,12 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from core.shared.verification_type import (
+    VERIFICATION_TYPE_DOCUMENTATION,
+    VERIFICATION_TYPE_TERRAIN,
+)
 from core.widgets.dialog_utils import create_save_cancel_box
-from moduly.audity.constants import FINDING_SOURCE_LABEL, TAB_AUDITOVANE_PROCESY, TAB_LABELS
+from moduly.audity.constants import FINDING_SOURCE_LABEL, TAB_LABELS
 from moduly.audity.sluzby.audit_commission_service import audit_commission_service
 from moduly.audity.sluzby.audit_program_service import AuditVisitContext
 from moduly.audity.sluzby.audit_service import audit_service
@@ -40,7 +44,12 @@ class AuditDialog(QDialog):
         self.tabs = QTabWidget()
         self.spis_widget = AuditSpisWidget()
         self.commission_widget = AuditCommissionWidget()
-        self.processes_widget = AuditProcessesWidget()
+        self.processes_widget = AuditProcessesWidget(
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION
+        )
+        self.terrain_widget = AuditProcessesWidget(
+            verification_type=VERIFICATION_TYPE_TERRAIN
+        )
         self.history_widget = AuditWorkplaceHistoryWidget()
         self.findings_widget = AuditFindingsWidget()
         self.tasks_widget = AuditTasksWidget()
@@ -48,10 +57,11 @@ class AuditDialog(QDialog):
         self.tabs.addTab(self.spis_widget, TAB_LABELS[0])
         self.tabs.addTab(self.commission_widget, TAB_LABELS[1])
         self.tabs.addTab(self.processes_widget, TAB_LABELS[2])
-        self.tabs.addTab(self.history_widget, TAB_LABELS[3])
-        self.tabs.addTab(self.findings_widget, TAB_LABELS[4])
-        self.tabs.addTab(self.tasks_widget, TAB_LABELS[5])
-        self.tabs.addTab(self.conclusion_widget, TAB_LABELS[6])
+        self.tabs.addTab(self.terrain_widget, TAB_LABELS[3])
+        self.tabs.addTab(self.history_widget, TAB_LABELS[4])
+        self.tabs.addTab(self.findings_widget, TAB_LABELS[5])
+        self.tabs.addTab(self.tasks_widget, TAB_LABELS[6])
+        self.tabs.addTab(self.conclusion_widget, TAB_LABELS[7])
         layout.addWidget(self.tabs)
 
         buttons = create_save_cancel_box(self, is_new=audit is None)
@@ -62,8 +72,17 @@ class AuditDialog(QDialog):
         audit_id = audit.id if audit is not None else None
         self.set_audit_id(audit_id)
         if visit_context is not None:
-            self.processes_widget.set_planned_process_ids(visit_context.planned_process_ids)
+            planned = visit_context.planned_process_ids
+            self.processes_widget.set_planned_process_ids(planned)
+            self.terrain_widget.set_planned_process_ids(planned)
         self.processes_widget.set_on_finding_saved(self._on_finding_changed)
+        self.terrain_widget.set_on_finding_saved(self._on_finding_changed)
+        self.processes_widget.set_on_verification_type_changed(
+            self._on_verification_type_changed
+        )
+        self.terrain_widget.set_on_verification_type_changed(
+            self._on_verification_type_changed
+        )
         self.findings_widget.set_on_task_changed(self._on_related_data_changed)
         self.conclusion_widget.set_complete_handler(self._complete_audit)
         self.spis_widget.load_audit(audit)
@@ -73,12 +92,18 @@ class AuditDialog(QDialog):
 
     def set_audit_id(self, audit_id: int | None) -> None:
         self.processes_widget.set_audit_id(audit_id)
+        self.terrain_widget.set_audit_id(audit_id)
         self.findings_widget.set_audit_id(audit_id)
         self.tasks_widget.set_audit_id(audit_id)
 
     def _on_finding_changed(self) -> None:
         self._on_related_data_changed()
         self.processes_widget.refresh_findings_display()
+        self.terrain_widget.refresh_findings_display()
+
+    def _on_verification_type_changed(self) -> None:
+        self.processes_widget.refresh_findings_display()
+        self.terrain_widget.refresh_findings_display()
 
     def _on_related_data_changed(self) -> None:
         self.findings_widget.refresh()

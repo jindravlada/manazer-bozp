@@ -7,6 +7,11 @@ from pathlib import Path
 
 from core.services.editable_catalog_service import editable_catalog_service
 from core.services.storage_service import storage_service
+from core.shared.verification_type import (
+    VERIFICATION_TYPE_DEFAULT,
+    methodology_verification_type as shared_methodology_verification_type,
+    normalize_verification_type as shared_normalize_verification_type,
+)
 from moduly.audity.constants import (
     CONTROL_POINT_SEVERITY_DEFAULT,
     CONTROL_POINT_SEVERITY_KRITICKA,
@@ -42,6 +47,8 @@ _CATALOG_DIR = "audity"
 _PROCESY_FILE = f"{_CATALOG_DIR}/procesy.json"
 _ZAVAZNOST_SEED_SYNC_KEY = "zavaznost_seed_sync"
 _ZAVAZNOST_SEED_SYNC_VERSION = 1
+_VERIFICATION_TYPE_SEED_SYNC_KEY = "verification_type_seed_sync"
+_VERIFICATION_TYPE_SEED_SYNC_VERSION = 1
 
 KNOWLEDGE_NODE_PROCESS = "process"
 KNOWLEDGE_NODE_SECTION = "section"
@@ -595,11 +602,16 @@ class AuditKnowledgeService:
     def _merge_knowledge_from_seed(self, user: dict, seed: dict) -> bool:
         changed = False
         full_severity_sync = int(user.get(_ZAVAZNOST_SEED_SYNC_KEY) or 0) < _ZAVAZNOST_SEED_SYNC_VERSION
+        full_verification_sync = (
+            int(user.get(_VERIFICATION_TYPE_SEED_SYNC_KEY) or 0)
+            < _VERIFICATION_TYPE_SEED_SYNC_VERSION
+        )
 
         merged_sections, sections_changed = self._merge_sections_list_from_seed(
             user.get("sekce"),
             seed.get("sekce"),
             full_severity_sync=full_severity_sync,
+            full_verification_sync=full_verification_sync,
         )
         if sections_changed:
             user["sekce"] = merged_sections
@@ -607,6 +619,10 @@ class AuditKnowledgeService:
 
         if full_severity_sync:
             user[_ZAVAZNOST_SEED_SYNC_KEY] = _ZAVAZNOST_SEED_SYNC_VERSION
+            changed = True
+
+        if full_verification_sync:
+            user[_VERIFICATION_TYPE_SEED_SYNC_KEY] = _VERIFICATION_TYPE_SEED_SYNC_VERSION
             changed = True
 
         for field in _KNOWLEDGE_TEXT_FIELDS:
@@ -639,6 +655,7 @@ class AuditKnowledgeService:
         seed_sections: list | None,
         *,
         full_severity_sync: bool,
+        full_verification_sync: bool = False,
     ) -> tuple[list, bool]:
         user_list = list(user_sections or []) if isinstance(user_sections, list) else []
         seed_list = [
@@ -668,6 +685,7 @@ class AuditKnowledgeService:
                 user_section,
                 seed_section,
                 full_severity_sync=full_severity_sync,
+                full_verification_sync=full_verification_sync,
             ):
                 changed = True
 
@@ -685,6 +703,7 @@ class AuditKnowledgeService:
         seed_section: dict,
         *,
         full_severity_sync: bool,
+        full_verification_sync: bool = False,
     ) -> bool:
         changed = False
 
@@ -719,10 +738,18 @@ class AuditKnowledgeService:
             ):
                 changed = True
 
+        if self._merge_assertion_verification_type_from_seed(
+            user_section,
+            seed_section,
+            full_sync=full_verification_sync,
+        ):
+            changed = True
+
         nested_sections, nested_changed = self._merge_sections_list_from_seed(
             user_section.get("sekce"),
             seed_section.get("sekce"),
             full_severity_sync=full_severity_sync,
+            full_verification_sync=full_verification_sync,
         )
         if nested_changed:
             user_section["sekce"] = nested_sections
@@ -734,6 +761,65 @@ class AuditKnowledgeService:
             seed_value = str(seed_section.get(field) or "").strip()
             if seed_value:
                 user_section[field] = seed_value
+                changed = True
+
+        return changed
+
+    def _merge_auditni_tvrzeni_from_seed(
+        self,
+        user_section: dict,
+        seed_section: dict,
+    ) -> bool:
+        seed_items = seed_section.get("auditni_tvrzeni") or []
+        if not seed_items:
+            return False
+
+        user_items = user_section.get("auditni_tvrzeni") or []
+        if user_items:
+            return False
+
+        user_section["auditni_tvrzeni"] = deepcopy(seed_items)
+        if user_section.get("navodne_otazky"):
+            user_section["navodne_otazky"] = []
+        return True
+
+    def _merge_assertion_verification_type_from_seed(
+        self,
+        user_section: dict,
+        seed_section: dict,
+        *,
+        full_sync: bool,
+    ) -> bool:
+        user_items = user_section.get("auditni_tvrzeni") or []
+        seed_items = seed_section.get("auditni_tvrzeni") or []
+        if not user_items:
+            return False
+
+        seed_by_id: dict[str, str] = {}
+        for seed_item in seed_items:
+            if not isinstance(seed_item, dict):
+                continue
+            item_id = str(seed_item.get("id") or "").strip()
+            if item_id:
+                seed_by_id[item_id] = self.normalize_verification_type(
+                    seed_item.get("verification_type")
+                )
+
+        changed = False
+        for user_item in user_items:
+            if not isinstance(user_item, dict):
+                continue
+            item_id = str(user_item.get("id") or "").strip()
+            if not item_id:
+                continue
+
+            if not full_sync and user_item.get("verification_type") not in (None, ""):
+                continue
+
+            new_type = seed_by_id.get(item_id, VERIFICATION_TYPE_DEFAULT)
+            current = user_item.get("verification_type")
+            if current in (None, "") or self.normalize_verification_type(current) != new_type:
+                user_item["verification_type"] = new_type
                 changed = True
 
         return changed
@@ -766,24 +852,6 @@ class AuditKnowledgeService:
             changed = True
 
         return user_list, changed
-
-    def _merge_auditni_tvrzeni_from_seed(
-        self,
-        user_section: dict,
-        seed_section: dict,
-    ) -> bool:
-        seed_items = seed_section.get("auditni_tvrzeni") or []
-        if not seed_items:
-            return False
-
-        user_items = user_section.get("auditni_tvrzeni") or []
-        if user_items:
-            return False
-
-        user_section["auditni_tvrzeni"] = deepcopy(seed_items)
-        if user_section.get("navodne_otazky"):
-            user_section["navodne_otazky"] = []
-        return True
 
     def _merge_control_point_severity_from_seed(
         self,
@@ -986,6 +1054,14 @@ class AuditKnowledgeService:
         return cls.normalize_control_point_severity(item.get("zavaznost"))
 
     @classmethod
+    def normalize_verification_type(cls, value) -> str:
+        return shared_normalize_verification_type(value)
+
+    @classmethod
+    def get_verification_type(cls, item: dict | None) -> str:
+        return shared_methodology_verification_type(item)
+
+    @classmethod
     def normalize_auditni_tvrzeni(cls, items: list[dict]) -> list[dict]:
         normalized: list[dict] = []
         for index, raw in enumerate(items):
@@ -1005,6 +1081,9 @@ class AuditKnowledgeService:
                     "poradi": poradi if poradi is not None else (index + 1) * 10,
                     "aktivni": bool(raw.get("aktivni", True)),
                     "zavaznost": cls.normalize_control_point_severity(raw.get("zavaznost")),
+                    "verification_type": cls.normalize_verification_type(
+                        raw.get("verification_type")
+                    ),
                 }
             )
         return normalized
