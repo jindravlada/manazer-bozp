@@ -19,9 +19,9 @@ from PySide6.QtWidgets import (
 from core.widgets.dialog_utils import configure_resizable_form_dialog, exec_maximized
 from moduly.smlouvy_ozo.constants import (
     ACTION_EDIT,
-    ACTION_NEW,
     CERTIFICATE_EMPTY_STATE,
     CERTIFICATE_NOT_FOUND_MESSAGE,
+    DIALOG_TITLE_CERTIFICATE_NEW,
     DIALOG_TITLE_OTHER_CERTIFICATES,
     format_date,
 )
@@ -43,7 +43,7 @@ class QualificationCertificatesDialog(QDialog):
 
         layout = QVBoxLayout(self)
         toolbar = QHBoxLayout()
-        self.new_btn = QPushButton(ACTION_NEW)
+        self.new_btn = QPushButton(DIALOG_TITLE_CERTIFICATE_NEW)
         self.edit_btn = QPushButton(ACTION_EDIT)
         self.edit_btn.setEnabled(False)
         toolbar.addWidget(self.new_btn)
