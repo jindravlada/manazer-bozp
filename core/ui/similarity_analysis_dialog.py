@@ -46,14 +46,15 @@ from core.shared.sluzby.similarity_domain_analysis import (
 from core.shared.sluzby.similarity_item_collectors import (
     collect_similarity_items,
 )
+from core.shared.sluzby.similarity_item_opener import (
+    SimilarityItemOpenError,
+    open_similarity_item,
+)
 from core.ui.similarity_checked_pairs_dialog import SimilarityCheckedPairsDialog
 from core.widgets.dialog_utils import exec_maximized, prepare_work_dialog_maximized
 from core.widgets.table_utils import refresh_elided_cell_tooltips
 from moduly.proverky.sluzby.control_point_similarity_analysis import (
     ControlPointSimilarityPair,
-)
-from moduly.proverky.sluzby.control_point_similarity_service import (
-    parse_control_point_composite_id,
 )
 
 # Sloupce výsledkové tabulky:
@@ -656,41 +657,16 @@ class SimilarityAnalysisDialog(QDialog):
         self._show_results()
 
     def _open_similarity_item(self, item) -> None:
-        entity_type = getattr(item, "entity_type", SIMILARITY_ENTITY_PROVERKY_CONTROL_POINT)
-        composite_id = str(getattr(item, "composite_id", "") or "")
-        prefix = f"{SIMILARITY_ENTITY_PROVERKY_CONTROL_POINT}::"
-        if composite_id.startswith(prefix):
-            composite_id = composite_id[len(prefix) :]
-            entity_type = SIMILARITY_ENTITY_PROVERKY_CONTROL_POINT
-
-        if entity_type != SIMILARITY_ENTITY_PROVERKY_CONTROL_POINT:
-            QMessageBox.information(
-                self,
-                self.windowTitle(),
-                "Otevření položek této oblasti bude doplněno v dalším sprintu.",
-            )
-            return
-
-        from moduly.proverky.ui.proverky_knowledge_editor_dialog import (
-            ProverkyKnowledgeEditorDialog,
-        )
-
-        parsed = parse_control_point_composite_id(composite_id)
-        if parsed is None:
+        try:
+            open_similarity_item(self, item)
+        except SimilarityItemOpenError as error:
+            QMessageBox.warning(self, self.windowTitle(), str(error))
+        except Exception as error:  # noqa: BLE001
             QMessageBox.warning(
                 self,
                 self.windowTitle(),
-                "Kontrolní otázku nelze otevřít — neplatný identifikátor.",
+                f"Položku se nepodařilo otevřít.\n\n{error}",
             )
-            return
-        area_id, section_id, item_id = parsed
-        dialog = ProverkyKnowledgeEditorDialog(
-            self,
-            area_id=area_id,
-            section_id=section_id,
-            control_point_id=item_id,
-        )
-        exec_maximized(dialog)
 
     def _back_to_setup(self) -> None:
         self._pairs = []
