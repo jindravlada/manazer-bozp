@@ -2,6 +2,7 @@
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
+    QComboBox,
     QHBoxLayout,
     QHeaderView,
     QMessageBox,
@@ -12,11 +13,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.shared.verification_type import VERIFICATION_TYPE_OPTIONS
 from moduly.audity.constants import CONTROL_POINT_SEVERITY_OPTIONS
 from moduly.audity.sluzby.audit_knowledge_editor_service import audit_knowledge_editor_service
 from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
 from moduly.audity.ui.audity_knowledge_assertion_dialog import AudityKnowledgeAssertionDialog
-from core.shared.verification_type import VERIFICATION_TYPE_LABELS
 
 _SEVERITY_LABELS = dict(CONTROL_POINT_SEVERITY_OPTIONS)
 
@@ -27,6 +28,10 @@ _COL_SEVERITY = 3
 _COL_VERIFICATION = 4
 _COL_PORADI = 5
 _COL_AKTIVNI = 6
+
+_VERIFICATION_COMBO_TOOLTIP = (
+    "Závazné pro všechny audity. Ad hoc přesun v jednom auditu metodiku nemění."
+)
 
 
 class AudityKnowledgeAssertionsWidget(QWidget):
@@ -82,7 +87,7 @@ class AudityKnowledgeAssertionsWidget(QWidget):
         header.setSectionResizeMode(_COL_POPIS, QHeaderView.ResizeMode.Stretch)
         self._table.setColumnHidden(_COL_ID, True)
         self._table.setColumnWidth(_COL_SEVERITY, 110)
-        self._table.setColumnWidth(_COL_VERIFICATION, 110)
+        self._table.setColumnWidth(_COL_VERIFICATION, 140)
         self._table.setColumnWidth(_COL_PORADI, 70)
         self._table.setColumnWidth(_COL_AKTIVNI, 70)
 
@@ -135,25 +140,98 @@ class AudityKnowledgeAssertionsWidget(QWidget):
     def _populate_table(self) -> None:
         self._table.setRowCount(len(self._assertions))
         for row, item in enumerate(self._assertions):
-            values = [
-                item.get("id", ""),
-                item.get("text", ""),
-                item.get("popis", ""),
-                _SEVERITY_LABELS.get(item.get("zavaznost", ""), item.get("zavaznost", "")),
-                VERIFICATION_TYPE_LABELS.get(
-                    item.get("verification_type", ""),
-                    item.get("verification_type", ""),
+            values = {
+                _COL_ID: item.get("id", ""),
+                _COL_TEXT: item.get("text", ""),
+                _COL_POPIS: item.get("popis", ""),
+                _COL_SEVERITY: _SEVERITY_LABELS.get(
+                    item.get("zavaznost", ""), item.get("zavaznost", "")
                 ),
-                str(item.get("poradi", "")),
-                "Ano" if item.get("aktivni", True) else "Ne",
-            ]
-            for column, value in enumerate(values):
+                _COL_PORADI: str(item.get("poradi", "")),
+                _COL_AKTIVNI: "Ano" if item.get("aktivni", True) else "Ne",
+            }
+            for column, value in values.items():
                 cell = QTableWidgetItem(str(value))
                 cell.setData(Qt.ItemDataRole.UserRole, item.get("id", ""))
                 if not item.get("aktivni", True):
                     cell.setForeground(Qt.GlobalColor.gray)
                 self._table.setItem(row, column, cell)
+
+            self._table.setCellWidget(
+                row,
+                _COL_VERIFICATION,
+                self._build_verification_combo(item),
+            )
         self._update_buttons()
+
+    def _build_verification_combo(self, item: dict) -> QComboBox:
+        combo = QComboBox()
+        combo.setFixedWidth(128)
+        combo.setToolTip(_VERIFICATION_COMBO_TOOLTIP)
+        for value, label in VERIFICATION_TYPE_OPTIONS:
+            combo.addItem(label, value)
+
+        current = audit_knowledge_service.normalize_verification_type(
+            item.get("verification_type")
+        )
+        index = combo.findData(current)
+        if index >= 0:
+            combo.setCurrentIndex(index)
+
+        assertion_id = str(item.get("id") or "").strip()
+        combo.setProperty("assertion_id", assertion_id)
+        combo.currentIndexChanged.connect(
+            lambda _index, c=combo: self._on_verification_combo_changed(c)
+        )
+        return combo
+
+    def _on_verification_combo_changed(self, combo: QComboBox) -> None:
+        if not self.has_section():
+            return
+        assertion_id = str(combo.property("assertion_id") or "").strip()
+        if not assertion_id:
+            return
+
+        assertion = next(
+            (
+                item
+                for item in self._assertions
+                if str(item.get("id") or "").strip() == assertion_id
+            ),
+            None,
+        )
+        if assertion is None:
+            return
+
+        new_type = audit_knowledge_service.normalize_verification_type(combo.currentData())
+        current_type = audit_knowledge_service.normalize_verification_type(
+            assertion.get("verification_type")
+        )
+        if new_type == current_type:
+            return
+
+        payload = {
+            "id": assertion_id,
+            "text": assertion.get("text") or assertion.get("nazev") or "",
+            "popis": assertion.get("popis") or "",
+            "zavaznost": assertion.get("zavaznost"),
+            "verification_type": new_type,
+            "poradi": assertion.get("poradi", 0),
+            "aktivni": bool(assertion.get("aktivni", True)),
+        }
+
+        self.content_modified.emit()
+        errors = audit_knowledge_editor_service.save_assertion(
+            self._process_id,
+            self._section_id,
+            payload,
+            assertion_id=assertion_id,
+        )
+        if errors:
+            self._show_errors(errors)
+            self.reload_assertions()
+            return
+        self.reload_assertions()
 
     def _selected_assertion(self) -> dict | None:
         row = self._table.currentRow()
