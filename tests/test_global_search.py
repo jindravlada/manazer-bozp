@@ -140,7 +140,7 @@ class GlobalSearchServiceTestCase(unittest.TestCase):
 
         self.assertFalse(service.open_result(result, host=None))
 
-    def test_task_opener_opens_ukoly_page(self) -> None:
+    def test_task_opener_opens_agenda_page(self) -> None:
         from unittest.mock import MagicMock
 
         from core.search.bootstrap import build_default_search_result_opener
@@ -157,15 +157,16 @@ class GlobalSearchServiceTestCase(unittest.TestCase):
         )
 
         host = MagicMock()
-        ukoly_page = MagicMock()
-        host._page_widgets = {"ukoly": ukoly_page}
+        agenda_page = MagicMock()
+        host._page_widgets = {"agenda": agenda_page, "ukoly": MagicMock()}
 
         with patch("moduly.ukoly.ui.task_dialog.TaskDialog") as mock_dialog:
             mock_dialog.return_value.exec.return_value = 0
             self.assertTrue(service.open_result(result, host))
 
-        host._show.assert_called_once_with("ukoly")
-        ukoly_page.open_task.assert_called_once_with(task.id)
+        host._show.assert_called_once_with("agenda")
+        agenda_page.open_task.assert_called_once_with(task.id)
+        host._page_widgets["ukoly"].open_task.assert_not_called()
 
     def test_deduplicates_by_source_type_and_id(self) -> None:
         service = GlobalSearchService()

@@ -16,7 +16,7 @@ def open_task_search_result(host, result: GlobalSearchResult) -> bool:
     if not isinstance(page_widgets, dict):
         return False
 
-    page = page_widgets.get("ukoly")
+    page = page_widgets.get("agenda")
     if page is None:
         return False
 
@@ -26,7 +26,7 @@ def open_task_search_result(host, result: GlobalSearchResult) -> bool:
 
     show = getattr(host, "_show", None)
     if callable(show):
-        show("ukoly")
+        show("agenda")
 
     page.open_task(result.entity_id)
     return True

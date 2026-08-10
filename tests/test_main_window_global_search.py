@@ -84,14 +84,18 @@ class MainWindowGlobalSearchTestCase(unittest.TestCase):
         dialog._search_edit.setText("integrace")
 
         match = next(item for item in dialog.result_items() if item.entity_id == task.id)
-        ukoly_page = self.window._page_widgets["ukoly"]
+        agenda_page = self.window._page_widgets["agenda"]
 
-        with patch.object(ukoly_page, "open_task") as mock_open_task:
+        with patch.object(agenda_page, "open_task") as mock_open_task:
             dialog._accept_result(match)
             self.assertFalse(dialog.isVisible())
             self.window._open_global_search_result(match)
 
         mock_open_task.assert_called_once_with(task.id)
+        self.assertIs(
+            self.window.current_page_widget(),
+            agenda_page,
+        )
 
     def test_opening_legal_requirement_after_dialog_closes(self) -> None:
         requirement = legal_requirement_service.create_requirement(
@@ -155,8 +159,8 @@ class MainWindowGlobalSearchTestCase(unittest.TestCase):
         )
         dialog._results_list.setCurrentItem(item)
 
-        ukoly_page = self.window._page_widgets["ukoly"]
-        with patch.object(ukoly_page, "open_task") as mock_open_task:
+        agenda_page = self.window._page_widgets["agenda"]
+        with patch.object(agenda_page, "open_task") as mock_open_task:
             dialog._open_selected_result()
             self.assertFalse(dialog.isVisible())
             self.assertIsNotNone(dialog.selected_result)
@@ -179,13 +183,16 @@ class MainWindowGlobalSearchTestCase(unittest.TestCase):
             and row_item.data(Qt.ItemDataRole.UserRole).entity_id == task.id
         )
 
+        agenda_page = self.window._page_widgets["agenda"]
         ukoly_page = self.window._page_widgets["ukoly"]
-        with patch.object(ukoly_page, "open_task") as mock_open_task:
-            dialog._on_result_item_activated(item)
-            self.assertFalse(dialog.isVisible())
-            self.window._open_global_search_result(dialog.selected_result)
+        with patch.object(agenda_page, "open_task") as mock_open_task:
+            with patch.object(ukoly_page, "open_task") as mock_ukoly:
+                dialog._on_result_item_activated(item)
+                self.assertFalse(dialog.isVisible())
+                self.window._open_global_search_result(dialog.selected_result)
 
         mock_open_task.assert_called_once_with(task.id)
+        mock_ukoly.assert_not_called()
 
     def test_open_global_search_dialog_opens_result_after_exec(self) -> None:
         result = GlobalSearchResult(

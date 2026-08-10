@@ -697,18 +697,22 @@ class MainWindow(QMainWindow):
 
         result = self._search_results[row]
 
-        self._show(result.module_key)
         if result.record_type == "task" and result.record_id is not None:
-            page = self._page_widgets.get("ukoly")
+            self._show("agenda")
+            page = self._page_widgets.get("agenda")
             if page is not None:
                 page.open_task(result.record_id)
         elif result.record_type == "accident" and result.record_id is not None:
+            self._show(result.module_key)
             page = self._page_widgets.get("kniha_urazu")
             if page is not None:
                 page.open_accident(result.record_id)
         elif result.record_type == "worker" and result.record_id is not None:
+            self._show(result.module_key)
             page = self._page_widgets.get("nastaveni")
             if page is not None:
                 page.open_worker(result.record_id)
+        else:
+            self._show(result.module_key)
         self.search_edit.clear()
         self.statusBar().showMessage(f"Vyhledáno: {result.display}")

@@ -25,6 +25,7 @@ from moduly.agenda.constants import (
     ACTION_NEW_FROM_TEMPLATE,
     ACTION_NEW_MEETING,
     ACTION_NEW_TASK,
+    COL_TITLE,
     DEFAULT_STATUS_MODE,
     EMPTY_STATE_TEXT,
     ITEM_NOT_FOUND_MESSAGE,
@@ -33,6 +34,7 @@ from moduly.agenda.constants import (
     LIST_WINDOW_TITLE,
     ROW_LEGEND,
     STATUS_MODE_ACTIVE,
+    STATUS_MODE_ALL,
     STATUS_MODES_BOTH,
     STATUS_MODES_MEETINGS_ONLY,
     STATUS_MODES_TASKS_ONLY,
@@ -145,6 +147,10 @@ class AgendaPage(QWidget):
     def set_dashboard_refresh_callback(self, callback) -> None:
         self._dashboard_refresh_callback = callback
 
+    def open_tasks_and_meetings(self) -> None:
+        """Přepne na záložku Úkoly a události."""
+        self.tabs.setCurrentIndex(0)
+
     def open_periodic_activity(self, activity_id: int) -> None:
         """Přepne na Periodické činnosti a otevře konkrétní záznam."""
         index = self.tabs.indexOf(self.periodic_tab)
@@ -158,6 +164,47 @@ class AgendaPage(QWidget):
         if index >= 0:
             self.tabs.setCurrentIndex(index)
         self.yearly_plan_tab.set_year_month(year, month)
+
+    def open_task(self, task_id: int) -> None:
+        """Otevře úkol v Agendě (např. z globálního vyhledávání)."""
+        self.open_tasks_and_meetings()
+        self._prepare_list_for_item(ITEM_TYPE_TASK)
+        self._select_item(ITEM_TYPE_TASK, task_id)
+        self._open_task(task_id)
+        self._select_item(ITEM_TYPE_TASK, task_id)
+
+    def open_meeting(self, meeting_id: int) -> None:
+        """Otevře událost v Agendě (např. z globálního vyhledávání)."""
+        self.open_tasks_and_meetings()
+        self._prepare_list_for_item(ITEM_TYPE_MEETING)
+        self._select_item(ITEM_TYPE_MEETING, meeting_id)
+        self._open_meeting(meeting_id)
+        self._select_item(ITEM_TYPE_MEETING, meeting_id)
+
+    def _prepare_list_for_item(self, _item_type: str) -> None:
+        """Nastaví filtry tak, aby byl cílový záznam v seznamu vidět."""
+        for check in self.type_checks.values():
+            check.blockSignals(True)
+            check.setChecked(True)
+            check.blockSignals(False)
+        self._rebuild_status_filter(preferred=STATUS_MODE_ALL)
+        self.refresh()
+
+    def _select_item(self, item_type: str, source_id: int) -> None:
+        for row in range(self.table.rowCount()):
+            cell = self.table.item(row, COL_TITLE)
+            if cell is None:
+                continue
+            payload = cell.data(Qt.ItemDataRole.UserRole)
+            if (
+                payload is not None
+                and getattr(payload, "item_type", None) == item_type
+                and int(getattr(payload, "source_id", -1)) == int(source_id)
+            ):
+                self.table.selectRow(row)
+                self.table.setCurrentCell(row, COL_TITLE)
+                self._refresh_action_buttons()
+                return
 
     def apply_workspace_filters(self) -> None:
         """Výchozí filtr z pracovní plochy: oba typy + Aktivní."""
