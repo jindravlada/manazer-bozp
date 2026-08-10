@@ -171,18 +171,6 @@ class OzoPersonService:
         open_period = self.ensure_migrated(person)
         if open_period is None:
             open_period = self._create_period(person.id, fields, valid_from=None)
-        elif self._is_new_exam(open_period, fields):
-            new_from = fields["exam_date"]
-            assert new_from is not None
-            if new_from <= open_period.valid_from:
-                raise OzoPersonValidationError(
-                    "Datum nové zkoušky musí být později než začátek "
-                    "platnosti současné verze údajů OZO."
-                )
-            open_period.valid_to = new_from - timedelta(days=1)
-            # Uzavřenou verzi už jinak nepřepisovat – jen valid_to.
-            self.period_repository.update(open_period)
-            open_period = self._create_period(person.id, fields, valid_from=new_from)
         else:
             if open_period.valid_to is not None:
                 raise OzoPersonValidationError(
@@ -190,6 +178,66 @@ class OzoPersonService:
                 )
             self._apply_fields_to_period(open_period, fields)
             open_period = self.period_repository.update(open_period)
+
+        self._apply_fields_to_person(person, fields)
+        person.updated_at = datetime.now()
+        return self.repository.save(person)
+
+    def renew(
+        self,
+        *,
+        title_before: str = "",
+        first_name: str = "",
+        last_name: str = "",
+        title_after: str = "",
+        residence_address: str = "",
+        exam_date: date | None = None,
+        certificate_number: str = "",
+        certificate_valid_to: date | None = None,
+        notify_before_value: int = 0,
+        notify_before_unit: str = UNIT_DAYS,
+        note: str = "",
+    ) -> OzoPerson:
+        """Nová zkouška OZO → nová historická verze."""
+        if exam_date is None:
+            raise OzoPersonValidationError(
+                "Pro obnovení osvědčení vyplňte datum nové zkoušky."
+            )
+
+        person = self.get()
+        if person is None or person.id is None:
+            raise OzoPersonValidationError(
+                "Nejdříve uložte údaje OZO, teprve potom obnovte osvědčení."
+            )
+
+        fields = {
+            "title_before": (title_before or "").strip(),
+            "first_name": (first_name or "").strip(),
+            "last_name": (last_name or "").strip(),
+            "title_after": (title_after or "").strip(),
+            "residence_address": (residence_address or "").strip(),
+            "exam_date": exam_date,
+            "certificate_number": (certificate_number or "").strip(),
+            "certificate_valid_to": certificate_valid_to,
+            "notify_before_value": max(0, int(notify_before_value or 0)),
+            "notify_before_unit": (notify_before_unit or UNIT_DAYS).strip() or UNIT_DAYS,
+            "note": (note or "").strip(),
+        }
+
+        open_period = self.get_open_period(person)
+        if open_period is None:
+            raise OzoPersonValidationError(
+                "Nelze obnovit osvědčení OZO bez aktuální verze."
+            )
+        if exam_date <= open_period.valid_from:
+            raise OzoPersonValidationError(
+                "Datum nové zkoušky musí být později než začátek "
+                "platnosti současné verze údajů OZO."
+            )
+
+        open_period.valid_to = exam_date - timedelta(days=1)
+        self.period_repository.update(open_period)
+        self._create_period(person.id, fields, valid_from=exam_date)
 
         self._apply_fields_to_person(person, fields)
         person.updated_at = datetime.now()
@@ -242,15 +290,6 @@ class OzoPersonService:
         if period is None or not (period.certificate_number or "").strip():
             missing.append("Číslo osvědčení")
         return missing
-
-    def _is_new_exam(self, open_period: OzoPersonPeriod, fields: dict) -> bool:
-        new_exam = fields.get("exam_date")
-        if new_exam is None:
-            return False
-        previous = open_period.exam_date
-        if previous is None:
-            return new_exam > open_period.valid_from
-        return new_exam != previous and new_exam > open_period.valid_from
 
     def _initial_valid_from(self, person: OzoPerson) -> date:
         if person.exam_date is not None:

@@ -119,7 +119,7 @@ class OzoSmlouvy7TestCase(unittest.TestCase):
         tmp.write_bytes(b"%PDF-2021")
         attachment_service.add_file(ENTITY_OZO_PERSON_PERIOD, first_id, str(tmp))
 
-        ozo_person_service.save(
+        ozo_person_service.renew(
             title_before="Ing.",
             first_name="Jan",
             last_name="Novák",
@@ -157,7 +157,7 @@ class OzoSmlouvy7TestCase(unittest.TestCase):
             certificate_number="12345",
         )
         old_id = ozo_person_service.get_open_period().id
-        ozo_person_service.save(
+        ozo_person_service.renew(
             first_name="Jan",
             last_name="Novák",
             exam_date=date(2026, 4, 15),
@@ -184,7 +184,7 @@ class OzoSmlouvy7TestCase(unittest.TestCase):
             exam_date=date(2021, 5, 10),
             certificate_number="12345",
         )
-        ozo_person_service.save(
+        ozo_person_service.renew(
             first_name="Jan",
             last_name="Novák",
             exam_date=date(2028, 3, 1),
@@ -203,7 +203,7 @@ class OzoSmlouvy7TestCase(unittest.TestCase):
             exam_date=date(2021, 5, 10),
             certificate_number="12345",
         )
-        ozo_person_service.save(
+        ozo_person_service.renew(
             title_before="Ing.",
             first_name="Jan",
             last_name="Novák",
@@ -236,7 +236,7 @@ class OzoSmlouvy7TestCase(unittest.TestCase):
             exam_date=date(2021, 5, 10),
             certificate_number="12345",
         )
-        ozo_person_service.save(
+        ozo_person_service.renew(
             first_name="Jan",
             last_name="Novák",
             exam_date=date(2026, 4, 15),
@@ -252,7 +252,7 @@ class OzoSmlouvy7TestCase(unittest.TestCase):
             exam_date=date(2021, 5, 10),
             certificate_number="12345",
         )
-        ozo_person_service.save(
+        ozo_person_service.renew(
             first_name="Jan",
             last_name="Novák",
             exam_date=date(2026, 4, 15),
@@ -273,7 +273,7 @@ class OzoSmlouvy7TestCase(unittest.TestCase):
             exam_date=date(2021, 5, 10),
             certificate_number="12345",
         )
-        ozo_person_service.save(
+        ozo_person_service.renew(
             first_name="Jan",
             last_name="Novák",
             exam_date=date(2028, 1, 1),

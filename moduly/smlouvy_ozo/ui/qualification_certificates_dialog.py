@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
 from core.widgets.dialog_utils import configure_resizable_form_dialog, exec_maximized
 from moduly.smlouvy_ozo.constants import (
     ACTION_EDIT,
+    ACTION_RENEW_CERTIFICATE,
     CERTIFICATE_EMPTY_STATE,
     CERTIFICATE_NOT_FOUND_MESSAGE,
     DIALOG_TITLE_CERTIFICATE_NEW,
@@ -46,8 +47,11 @@ class QualificationCertificatesDialog(QDialog):
         self.new_btn = QPushButton(DIALOG_TITLE_CERTIFICATE_NEW)
         self.edit_btn = QPushButton(ACTION_EDIT)
         self.edit_btn.setEnabled(False)
+        self.renew_btn = QPushButton(ACTION_RENEW_CERTIFICATE)
+        self.renew_btn.setEnabled(False)
         toolbar.addWidget(self.new_btn)
         toolbar.addWidget(self.edit_btn)
+        toolbar.addWidget(self.renew_btn)
         toolbar.addStretch()
         layout.addLayout(toolbar)
 
@@ -90,6 +94,7 @@ class QualificationCertificatesDialog(QDialog):
 
         self.new_btn.clicked.connect(self.new_certificate)
         self.edit_btn.clicked.connect(self.edit_selected)
+        self.renew_btn.clicked.connect(self.renew_selected)
         self.refresh()
 
     def refresh(self) -> None:
@@ -152,7 +157,9 @@ class QualificationCertificatesDialog(QDialog):
             return None
 
     def _refresh_buttons(self, *_args) -> None:
-        self.edit_btn.setEnabled(self._selected_id() is not None)
+        has_selection = self._selected_id() is not None
+        self.edit_btn.setEnabled(has_selection)
+        self.renew_btn.setEnabled(has_selection)
 
     def new_certificate(self) -> None:
         dialog = QualificationCertificateDialog(self)
@@ -160,9 +167,27 @@ class QualificationCertificatesDialog(QDialog):
         self.refresh()
 
     def edit_selected(self) -> None:
+        certificate = self._selected_certificate()
+        if certificate is None:
+            return
+        dialog = QualificationCertificateDialog(self, certificate=certificate)
+        exec_maximized(dialog)
+        self.refresh()
+
+    def renew_selected(self) -> None:
+        certificate = self._selected_certificate()
+        if certificate is None:
+            return
+        dialog = QualificationCertificateDialog(
+            self, certificate=certificate, renew=True
+        )
+        exec_maximized(dialog)
+        self.refresh()
+
+    def _selected_certificate(self):
         certificate_id = self._selected_id()
         if certificate_id is None:
-            return
+            return None
         certificate = qualification_certificate_service.get_by_id(certificate_id)
         if certificate is None:
             from PySide6.QtWidgets import QMessageBox
@@ -171,10 +196,8 @@ class QualificationCertificatesDialog(QDialog):
                 self, DIALOG_TITLE_OTHER_CERTIFICATES, CERTIFICATE_NOT_FOUND_MESSAGE
             )
             self.refresh()
-            return
-        dialog = QualificationCertificateDialog(self, certificate=certificate)
-        exec_maximized(dialog)
-        self.refresh()
+            return None
+        return certificate
 
     def open_certificate(self, certificate_id: int) -> None:
         certificate = qualification_certificate_service.get_by_id(certificate_id)

@@ -124,8 +124,8 @@ class OzoOsvedceni2TestCase(unittest.TestCase):
             ENTITY_QUALIFICATION_CERTIFICATE_PERIOD, first.id, str(tmp)
         )
 
-        qualification_certificate_service.save(
-            certificate_id=cert.id,
+        qualification_certificate_service.renew(
+            cert.id,
             name="Báňské oprávnění",
             certificate_number="B-2",
             exam_date=date(2026, 4, 15),

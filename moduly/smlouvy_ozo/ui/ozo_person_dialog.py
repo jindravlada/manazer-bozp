@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QMessageBox,
+    QPushButton,
     QSpinBox,
     QTabWidget,
     QTableWidget,
@@ -32,7 +33,9 @@ from core.widgets.dialog_utils import (
 from core.widgets.editor_dialog_controller import EditorDialogController
 from core.widgets.nullable_date_edit import NullableDateEdit
 from moduly.smlouvy_ozo.constants import (
+    ACTION_RENEW_CERTIFICATE,
     DIALOG_TITLE_OZO_PERSON,
+    DIALOG_TITLE_OZO_RENEW,
     ENTITY_OZO_PERSON_PERIOD,
     NOTIFY_UNITS,
     TAB_OZO_DATA,
@@ -50,34 +53,57 @@ from moduly.smlouvy_ozo.ui.ozo_period_detail_dialog import OzoPeriodDetailDialog
 
 
 class OzoPersonDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, *, renew: bool = False):
         super().__init__(parent)
         self.person = ozo_person_service.get()
-        self.period = ozo_person_service.get_open_period(self.person)
-        self.setWindowTitle(DIALOG_TITLE_OZO_PERSON)
+        self._renew = bool(renew) and self.person is not None
+        self.period = (
+            None
+            if self._renew
+            else ozo_person_service.get_open_period(self.person)
+        )
+        self.setWindowTitle(
+            DIALOG_TITLE_OZO_RENEW if self._renew else DIALOG_TITLE_OZO_PERSON
+        )
         configure_resizable_form_dialog(
             self, width=640, height=620, min_width=480, min_height=440
         )
 
         layout = QVBoxLayout(self)
+        toolbar = QHBoxLayout()
+        self.renew_btn = QPushButton(ACTION_RENEW_CERTIFICATE)
+        self.renew_btn.setEnabled(
+            self.person is not None
+            and ozo_person_service.get_open_period(self.person) is not None
+            and not self._renew
+        )
+        toolbar.addWidget(self.renew_btn)
+        toolbar.addStretch()
+        layout.addLayout(toolbar)
+
         self.tabs = QTabWidget()
         self.tabs.addTab(self._build_data_tab(), TAB_OZO_DATA)
         self.tabs.addTab(self._build_history_tab(), TAB_OZO_HISTORY)
         layout.addWidget(self.tabs, 1)
 
-        buttons = create_save_cancel_box(self, is_new=self.person is None)
+        buttons = create_save_cancel_box(
+            self, is_new=self.person is None or self._renew
+        )
         layout.addWidget(buttons)
         self._editor = EditorDialogController(
             self,
             buttons,
-            is_new=self.person is None,
+            is_new=self.person is None or self._renew,
             title=self.windowTitle(),
             on_save=self._save,
         )
         self._editor.set_snapshot_provider(self.get_data)
         self._editor.install_auto_dirty_tracking()
 
-        if self.period is not None:
+        self.renew_btn.clicked.connect(self._start_renew)
+        if self._renew:
+            self._prepare_renew()
+        elif self.period is not None:
             self._load_period(self.period)
         elif self.person is not None:
             self._load_period(self.person)
@@ -128,14 +154,14 @@ class OzoPersonDialog(QDialog):
         form.addRow("Poznámka:", self.note)
         form_layout.addWidget(fields)
 
-        hint = QLabel(
-            "Nové datum zkoušky / periodické zkoušky pozdější než u současné "
-            "verze založí novou historickou verzi a uzavře předchozí. "
+        self.hint_label = QLabel(
+            "Uložení opravuje aktuální údaje (bez nové verze). Novou zkoušku "
+            "stejné odborné způsobilosti založíte akcí Obnovit osvědčení. "
             "Předstih 0 = bez upozornění předem (po platnosti se zobrazí vždy)."
         )
-        hint.setObjectName("MutedText")
-        hint.setWordWrap(True)
-        form_layout.addWidget(hint)
+        self.hint_label.setObjectName("MutedText")
+        self.hint_label.setWordWrap(True)
+        form_layout.addWidget(self.hint_label)
 
         attachments_box = QGroupBox("Přílohy")
         attachments_layout = QVBoxLayout(attachments_box)
@@ -211,9 +237,63 @@ class OzoPersonDialog(QDialog):
             self.notify_before_unit.setCurrentIndex(unit_index)
         self.note.setPlainText(source.note or "")
 
+    def _start_renew(self) -> None:
+        if self.person is None:
+            QMessageBox.warning(
+                self,
+                DIALOG_TITLE_OZO_PERSON,
+                "Nejdříve uložte údaje OZO, teprve potom obnovte osvědčení.",
+            )
+            return
+        open_period = ozo_person_service.get_open_period(self.person)
+        if open_period is None:
+            QMessageBox.warning(
+                self,
+                DIALOG_TITLE_OZO_PERSON,
+                "Nelze obnovit osvědčení OZO bez aktuální verze.",
+            )
+            return
+        self._renew = True
+        self.period = None
+        self.setWindowTitle(DIALOG_TITLE_OZO_RENEW)
+        self.renew_btn.setEnabled(False)
+        self._prepare_renew()
+        self._sync_attachments_hint()
+        self._editor.capture_baseline()
+
+    def _prepare_renew(self) -> None:
+        current = ozo_person_service.get_open_period(self.person)
+        if current is not None:
+            self._load_period(current)
+            self.notify_before_value.setValue(int(current.notify_before_value or 0))
+            unit_index = self.notify_before_unit.findData(
+                current.notify_before_unit or UNIT_DAYS
+            )
+            if unit_index >= 0:
+                self.notify_before_unit.setCurrentIndex(unit_index)
+        self.exam_date.clear_date()
+        self.certificate_number.clear()
+        self.certificate_valid_to.clear_date()
+        self.note.clear()
+        self.attachments.set_entity(ENTITY_OZO_PERSON_PERIOD, None)
+        self.hint_label.setText(
+            "Zadáte údaje nové zkoušky / nového osvědčení. Po uložení se "
+            "současná verze uzavře a vznikne nová historická verze. Přílohy "
+            "nové verze přidáte až po uložení."
+        )
+
     def _sync_attachments_hint(self) -> None:
-        has_id = self.period is not None and self.period.id is not None
+        has_id = (
+            not self._renew
+            and self.period is not None
+            and self.period.id is not None
+        )
         self.attachments_hint.setVisible(not has_id)
+        if self._renew:
+            self.attachments_hint.setText(
+                "Přílohy nové verze (např. sken osvědčení OZO) lze přidat až po uložení."
+            )
+            self.attachments_hint.setVisible(True)
 
     def _reload_history(self) -> None:
         periods = ozo_person_service.list_closed_periods(self.person)
@@ -282,17 +362,28 @@ class OzoPersonDialog(QDialog):
 
     def _save(self) -> bool:
         try:
-            self.person = ozo_person_service.save(**self.get_data())
+            if self._renew:
+                self.person = ozo_person_service.renew(**self.get_data())
+                self._renew = False
+                self.setWindowTitle(DIALOG_TITLE_OZO_PERSON)
+                self.hint_label.setText(
+                    "Uložení opravuje aktuální údaje (bez nové verze). Novou zkoušku "
+                    "stejné odborné způsobilosti založíte akcí Obnovit osvědčení. "
+                    "Předstih 0 = bez upozornění předem (po platnosti se zobrazí vždy)."
+                )
+            else:
+                self.person = ozo_person_service.save(**self.get_data())
         except OzoPersonValidationError as error:
-            QMessageBox.warning(self, DIALOG_TITLE_OZO_PERSON, str(error))
+            QMessageBox.warning(self, self.windowTitle(), str(error))
             return False
         except Exception as error:  # noqa: BLE001
-            QMessageBox.warning(self, DIALOG_TITLE_OZO_PERSON, str(error))
+            QMessageBox.warning(self, self.windowTitle(), str(error))
             return False
         self.period = ozo_person_service.get_open_period(self.person)
         if self.period is not None:
             self.attachments.set_entity(ENTITY_OZO_PERSON_PERIOD, self.period.id)
             self._load_period(self.period)
+        self.renew_btn.setEnabled(self.period is not None)
         self._sync_attachments_hint()
         self._reload_history()
         return True

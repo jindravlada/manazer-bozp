@@ -35,6 +35,7 @@ from core.widgets.nullable_date_edit import NullableDateEdit
 from moduly.smlouvy_ozo.constants import (
     DIALOG_TITLE_CERTIFICATE_EDIT,
     DIALOG_TITLE_CERTIFICATE_NEW,
+    DIALOG_TITLE_CERTIFICATE_RENEW,
     ENTITY_QUALIFICATION_CERTIFICATE_PERIOD,
     NOTIFY_UNITS,
     TAB_CERTIFICATE_DATA,
@@ -53,19 +54,22 @@ from moduly.smlouvy_ozo.ui.qualification_period_detail_dialog import (
 
 
 class QualificationCertificateDialog(QDialog):
-    def __init__(self, parent=None, certificate=None):
+    def __init__(self, parent=None, certificate=None, *, renew: bool = False):
         super().__init__(parent)
         self.certificate = certificate
+        self._renew = bool(renew) and certificate is not None
         self.period = (
             qualification_certificate_service.get_open_period(certificate)
-            if certificate is not None
+            if certificate is not None and not self._renew
             else None
         )
-        self.setWindowTitle(
-            DIALOG_TITLE_CERTIFICATE_EDIT
-            if certificate is not None
-            else DIALOG_TITLE_CERTIFICATE_NEW
-        )
+        if self._renew:
+            title = DIALOG_TITLE_CERTIFICATE_RENEW
+        elif certificate is not None:
+            title = DIALOG_TITLE_CERTIFICATE_EDIT
+        else:
+            title = DIALOG_TITLE_CERTIFICATE_NEW
+        self.setWindowTitle(title)
         configure_resizable_form_dialog(
             self, width=640, height=620, min_width=480, min_height=440
         )
@@ -76,12 +80,14 @@ class QualificationCertificateDialog(QDialog):
         self.tabs.addTab(self._build_history_tab(), TAB_CERTIFICATE_HISTORY)
         layout.addWidget(self.tabs, 1)
 
-        buttons = create_save_cancel_box(self, is_new=certificate is None)
+        buttons = create_save_cancel_box(
+            self, is_new=certificate is None or self._renew
+        )
         layout.addWidget(buttons)
         self._editor = EditorDialogController(
             self,
             buttons,
-            is_new=certificate is None,
+            is_new=certificate is None or self._renew,
             title=self.windowTitle(),
             on_save=self._save,
         )
@@ -89,12 +95,37 @@ class QualificationCertificateDialog(QDialog):
         self._editor.install_auto_dirty_tracking()
 
         self.indefinite_checkbox.toggled.connect(self._sync_validity_fields)
-        if self.period is not None:
+        if self._renew and certificate is not None:
+            self._prepare_renew(certificate)
+        elif self.period is not None:
             self._load(self.certificate, self.period)
         self._sync_validity_fields()
         self._sync_attachments_hint()
         self._reload_history()
         self._editor.capture_baseline()
+
+    def _prepare_renew(self, certificate) -> None:
+        current = qualification_certificate_service.get_open_period(certificate)
+        self.name.setText(certificate.name or "")
+        self.name.setReadOnly(True)
+        self.certificate_number.clear()
+        self.exam_date.clear_date()
+        self.indefinite_checkbox.setChecked(False)
+        self.certificate_valid_to.clear_date()
+        self.note.clear()
+        if current is not None:
+            self.notify_before_value.setValue(int(current.notify_before_value or 0))
+            unit_index = self.notify_before_unit.findData(
+                current.notify_before_unit or UNIT_DAYS
+            )
+            if unit_index >= 0:
+                self.notify_before_unit.setCurrentIndex(unit_index)
+        self.attachments.set_entity(ENTITY_QUALIFICATION_CERTIFICATE_PERIOD, None)
+        self.hint_label.setText(
+            "Zadáte údaje nové zkoušky / nového osvědčení stejné odborné "
+            "způsobilosti. Po uložení se současná verze uzavře a vznikne "
+            "nová historická verze. Přílohy nové verze přidáte až po uložení."
+        )
 
     def _build_data_tab(self) -> QWidget:
         form_host = QWidget()
@@ -135,14 +166,14 @@ class QualificationCertificateDialog(QDialog):
         form.addRow("Poznámka:", self.note)
         form_layout.addWidget(fields)
 
-        hint = QLabel(
-            "Nové datum zkoušky pozdější než u současné verze založí "
-            "novou historickou verzi a uzavře předchozí. Předstih 0 = "
+        self.hint_label = QLabel(
+            "Upravit mění jen aktuální verzi. Novou zkoušku stejné "
+            "způsobilosti založíte akcí Obnovit osvědčení. Předstih 0 = "
             "bez upozornění předem."
         )
-        hint.setObjectName("MutedText")
-        hint.setWordWrap(True)
-        form_layout.addWidget(hint)
+        self.hint_label.setObjectName("MutedText")
+        self.hint_label.setWordWrap(True)
+        form_layout.addWidget(self.hint_label)
 
         attachments_box = QGroupBox("Přílohy")
         attachments_layout = QVBoxLayout(attachments_box)
@@ -218,8 +249,17 @@ class QualificationCertificateDialog(QDialog):
             self.notify_before_value.setValue(0)
 
     def _sync_attachments_hint(self) -> None:
-        has_id = self.period is not None and self.period.id is not None
+        has_id = (
+            not self._renew
+            and self.period is not None
+            and self.period.id is not None
+        )
         self.attachments_hint.setVisible(not has_id)
+        if self._renew:
+            self.attachments_hint.setText(
+                "Přílohy nové verze (např. sken osvědčení) lze přidat až po uložení."
+            )
+            self.attachments_hint.setVisible(True)
 
     def _reload_history(self) -> None:
         if self.certificate is None:
@@ -285,7 +325,18 @@ class QualificationCertificateDialog(QDialog):
     def _save(self) -> bool:
         data = self.get_data()
         try:
-            if self.certificate is None:
+            if self._renew:
+                if self.certificate is None:
+                    raise QualificationCertificateValidationError(
+                        "Osvědčení nebylo nalezeno."
+                    )
+                self.certificate = qualification_certificate_service.renew(
+                    self.certificate.id,
+                    **data,
+                )
+                self._renew = False
+                self.name.setReadOnly(False)
+            elif self.certificate is None:
                 self.certificate = qualification_certificate_service.save(**data)
             else:
                 self.certificate = qualification_certificate_service.save(
@@ -302,6 +353,11 @@ class QualificationCertificateDialog(QDialog):
                 self.period.id,
             )
         self.setWindowTitle(DIALOG_TITLE_CERTIFICATE_EDIT)
+        self.hint_label.setText(
+            "Upravit mění jen aktuální verzi. Novou zkoušku stejné "
+            "způsobilosti založíte akcí Obnovit osvědčení. Předstih 0 = "
+            "bez upozornění předem."
+        )
         self._sync_attachments_hint()
         self._reload_history()
         return True
