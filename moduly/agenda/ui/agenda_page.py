@@ -268,7 +268,7 @@ class AgendaPage(QWidget):
 
     def new_task(self) -> None:
         dialog = TaskDialog(self)
-        if not dialog.exec():
+        if not exec_maximized(dialog):
             return
         data = dialog.get_data()
         if data["title"]:

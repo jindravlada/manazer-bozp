@@ -88,6 +88,9 @@ class MeetingTemplatePickDialog(QDialog):
         footer.addWidget(buttons)
         layout.addLayout(footer)
 
+        self.table.selectionModel().selectionChanged.connect(
+            self._refresh_action_buttons
+        )
         self.reload()
 
     def selected_template_id(self) -> int | None:
@@ -114,6 +117,9 @@ class MeetingTemplatePickDialog(QDialog):
         template_id = item.data(Qt.ItemDataRole.UserRole)
         return int(template_id) if template_id is not None else None
 
+    def _refresh_action_buttons(self, *_args) -> None:
+        self.use_btn.setEnabled(self._current_table_selection_id() is not None)
+
     def _select_template_id(self, template_id: int | None) -> bool:
         if template_id is None:
             return False
@@ -123,7 +129,6 @@ class MeetingTemplatePickDialog(QDialog):
                 continue
             if int(item.data(Qt.ItemDataRole.UserRole)) == int(template_id):
                 self.table.selectRow(row)
-                self.use_btn.setEnabled(True)
                 return True
         return False
 
@@ -147,7 +152,7 @@ class MeetingTemplatePickDialog(QDialog):
 
         if not has_rows:
             self.table.clearSelection()
-            self.use_btn.setEnabled(False)
+            self._refresh_action_buttons()
             return
 
         target_id = (
@@ -156,10 +161,16 @@ class MeetingTemplatePickDialog(QDialog):
             else previous_id
         )
         if self._select_template_id(target_id):
+            self._refresh_action_buttons()
             return
 
-        self.table.clearSelection()
-        self.use_btn.setEnabled(False)
+        if target_id is None:
+            # První otevření / bez cílového id: výchozí platná šablona.
+            self.table.selectRow(0)
+        else:
+            # Cíl (např. smazaná šablona) už v seznamu není.
+            self.table.clearSelection()
+        self._refresh_action_buttons()
 
     # Zpětná kompatibilita pro volání on_closed=self._load
     def _load(self, *_args) -> None:
