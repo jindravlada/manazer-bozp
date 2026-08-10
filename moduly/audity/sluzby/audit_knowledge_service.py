@@ -339,11 +339,15 @@ class AuditKnowledgeService:
         include_inactive: bool = False,
         ensure: bool = True,
     ) -> list[KnowledgeTreeNode]:
+        # AUDIT-HANG-FIX-1: ensure_catalogs jen jednou; per-procesní load bez ensure.
+        if ensure:
+            self.ensure_catalogs()
+
         roots: list[KnowledgeTreeNode] = []
-        for process in self.get_processes(include_inactive=include_inactive, ensure=ensure):
+        for process in self.get_processes(include_inactive=include_inactive, ensure=False):
             children: tuple[KnowledgeTreeNode, ...] = ()
             if process.has_knowledge_file:
-                knowledge = self.load_process_knowledge(process, ensure=ensure)
+                knowledge = self.load_process_knowledge(process, ensure=False)
                 if knowledge:
                     criteria = self._filter_sections(
                         knowledge.get("sekce") or [],
