@@ -884,7 +884,9 @@ class AuditKnowledgeEditorService:
                     continue
                 if str(item.get("id") or "").strip() != target_id:
                     continue
+                # Zachovej neznámá metadata; přepiš jen validovaná pole payloadu.
                 after_assertions[index] = {
+                    **item,
                     **normalized,
                     "id": target_id,
                 }

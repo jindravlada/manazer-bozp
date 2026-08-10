@@ -132,6 +132,15 @@ class AudityKnowledgeEditorTestCase(unittest.TestCase):
                     "cil_overeni": "",
                     "poradi": 1,
                     "aktivni": True,
+                    "auditni_tvrzeni": [
+                        {
+                            "id": "legacy_bez_popisu",
+                            "text": "Legacy tvrzení",
+                            "poradi": 10,
+                            "aktivni": True,
+                            "zavaznost": "stredni",
+                        }
+                    ],
                 }
             ],
         }
@@ -141,7 +150,6 @@ class AudityKnowledgeEditorTestCase(unittest.TestCase):
         section = data["sekce"][0]
         for field in (
             "navodne_otazky",
-            "auditni_tvrzeni",
             "objektivni_dukazy",
             "doporucene_rozhovory",
             "pozorovani_v_provozu",
@@ -155,6 +163,11 @@ class AudityKnowledgeEditorTestCase(unittest.TestCase):
         ):
             with self.subTest(field=field):
                 self.assertEqual(section[field], [])
+
+        assertion = section["auditni_tvrzeni"][0]
+        self.assertEqual(assertion["popis"], "")
+        self.assertEqual(assertion["verification_type"], "dokumentace")
+        self.assertEqual(assertion["text"], "Legacy tvrzení")
 
         errors = validate_knowledge_data(data, source_name="planovani_bozp.json")
         self.assertEqual(errors, [])

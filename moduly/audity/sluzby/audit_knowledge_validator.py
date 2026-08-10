@@ -57,6 +57,8 @@ SECTION_REQUIRED_FIELDS = (
 
 LIST_ITEM_FIELDS = ("id", "nazev", "poradi", "aktivni")
 ASSERTION_FIELDS = ("id", "text", "popis", "poradi", "aktivni", "zavaznost")
+ASSERTION_DEFAULT_ZAVAZNOST = "stredni"
+ASSERTION_DEFAULT_VERIFICATION_TYPE = "dokumentace"
 
 PROCESS_LEGACY_OPTIONAL_LIST_FIELDS = (
     "sekce",
@@ -99,6 +101,32 @@ def load_json_file(path: Path) -> dict:
     return payload
 
 
+def _normalize_assertion_legacy_fields(item: dict, *, index: int) -> None:
+    """Doplní chybějící nepovinná pole starších auditních tvrzení (in-place)."""
+    if not isinstance(item, dict):
+        return
+
+    if "text" not in item:
+        nazev = str(item.get("nazev") or "").strip()
+        if nazev:
+            item["text"] = nazev
+
+    if "popis" not in item:
+        item["popis"] = ""
+
+    if "poradi" not in item:
+        item["poradi"] = (index + 1) * 10
+
+    if "aktivni" not in item:
+        item["aktivni"] = True
+
+    if "zavaznost" not in item:
+        item["zavaznost"] = ASSERTION_DEFAULT_ZAVAZNOST
+
+    if "verification_type" not in item:
+        item["verification_type"] = ASSERTION_DEFAULT_VERIFICATION_TYPE
+
+
 def _normalize_section_legacy_lists(section: dict) -> None:
     if not isinstance(section, dict):
         return
@@ -107,12 +135,18 @@ def _normalize_section_legacy_lists(section: dict) -> None:
         if field not in section:
             section[field] = []
 
+    assertions = section.get("auditni_tvrzeni")
+    if isinstance(assertions, list):
+        for index, item in enumerate(assertions):
+            if isinstance(item, dict):
+                _normalize_assertion_legacy_fields(item, index=index)
+
     for nested in section.get("sekce") or []:
         _normalize_section_legacy_lists(nested)
 
 
 def normalize_legacy_knowledge_data(data: dict) -> None:
-    """Doplní chybějící volitelná listová pole prázdným seznamem (starší JSON)."""
+    """Doplní chybějící volitelná pole starších JSON metodik (in-place)."""
     if not isinstance(data, dict):
         return
 
