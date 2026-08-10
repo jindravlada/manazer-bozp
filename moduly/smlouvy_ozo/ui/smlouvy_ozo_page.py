@@ -213,7 +213,7 @@ class SmlouvyOzoPage(QWidget):
 
     def open_other_certificates(self) -> None:
         dialog = QualificationCertificatesDialog(self)
-        dialog.exec()
+        exec_maximized(dialog)
         self._notify_dashboard()
 
     def open_qualification_certificate(self, certificate_id: int) -> None:
