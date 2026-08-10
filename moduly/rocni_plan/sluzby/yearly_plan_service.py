@@ -41,6 +41,8 @@ from moduly.rocni_plan.constants import (
     STATUS_PLANNED,
     STATUS_VIA_MEETING,
     STATUS_VIA_TASK,
+    YEAR_COMBO_FUTURE_YEARS,
+    YEAR_COMBO_PAST_YEARS,
 )
 from moduly.rocni_plan.modely.yearly_plan_item import YearlyPlanItem
 from moduly.rocni_plan.modely.yearly_plan_item_move import YearlyPlanItemMove
@@ -362,6 +364,21 @@ class YearlyPlanService:
     def list_for_year(self, year: int) -> list[YearlyPlanItem]:
         self._validate_year(year)
         return self.repository.list_for_year(year)
+
+    def list_used_years(self) -> list[int]:
+        return self.repository.list_used_years()
+
+    def years_for_year_combo(self, *, today: date | None = None) -> list[int]:
+        """Roky pro combo Agendy: aktuální −5 … +10 plus skutečně použité roky."""
+        today = today or date.today()
+        years = set(
+            range(
+                today.year - YEAR_COMBO_PAST_YEARS,
+                today.year + YEAR_COMBO_FUTURE_YEARS + 1,
+            )
+        )
+        years.update(self.list_used_years())
+        return sorted(year for year in years if MIN_YEAR <= year <= MAX_YEAR)
 
     def get_move_history(self, item_id: int) -> list[YearlyPlanItemMove]:
         return self.move_repository.list_for_item(item_id)

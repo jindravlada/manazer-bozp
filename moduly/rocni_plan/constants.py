@@ -85,6 +85,11 @@ SOURCE_MODULE_YEARLY_PLAN = "yearly_plan"
 MIN_YEAR = 2000
 MAX_YEAR = 2100
 
+# Výběr roku v Agendě → Roční plán (AGENDA-ANNUAL-PLAN-UX-1).
+YEAR_COMBO_PAST_YEARS = 5
+YEAR_COMBO_FUTURE_YEARS = 10
+YEAR_COMBO_MAX_VISIBLE = 12
+
 MONTH_NAMES = (
     "leden",
     "únor",
