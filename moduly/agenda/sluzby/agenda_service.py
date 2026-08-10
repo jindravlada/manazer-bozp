@@ -21,7 +21,6 @@ from moduly.agenda.constants import (
     STATUS_MODE_CANCELLED,
     STATUS_MODE_CLOSED,
     STATUS_MODE_DONE,
-    STATUS_MODE_HELD,
     STATUS_MODE_PLANNED,
     TYPE_LABEL_MEETING,
     TYPE_LABEL_TASK,
@@ -31,7 +30,6 @@ from moduly.schuzky.constants import (
     MEETING_PRIORITIES,
     STATUS_CANCELLED,
     STATUS_CLOSED,
-    STATUS_HELD,
     STATUS_PLANNED,
 )
 from moduly.schuzky.sluzby.meeting_service import meeting_service
@@ -97,13 +95,11 @@ def _task_row_state(task, *, today: date) -> str:
 
 
 def _meeting_row_state(meeting, *, now: datetime) -> str:
-    status = (meeting.status or "").strip()
+    status = meeting_service.normalize_status(meeting.status)
     if status == STATUS_CANCELLED:
         return ROW_STATE_CANCELED
     if status == STATUS_CLOSED:
         return ROW_STATE_DONE
-    if status == STATUS_HELD:
-        return ROW_STATE_WAITING
     if status == STATUS_PLANNED:
         starts = meeting.starts_at
         if starts is not None and starts < now:
@@ -151,7 +147,7 @@ def _from_meetings(*, now: datetime) -> list[AgendaItem]:
         event_type = (getattr(meeting, "event_type", None) or "").strip()
         if event_type:
             title = f"{event_type} – {title}"
-        status = meeting.status or ""
+        status = meeting_service.normalize_status(meeting.status)
         person = (meeting.organizer_name or "").strip()
         starts = meeting.starts_at
         items.append(
@@ -210,7 +206,7 @@ def _task_matches_status_mode(item: AgendaItem, mode: str) -> bool:
 
 
 def _meeting_matches_status_mode(item: AgendaItem, mode: str) -> bool:
-    status = (item.status or "").strip()
+    status = meeting_service.normalize_status(item.status)
     if mode == STATUS_MODE_ALL:
         return True
     if mode == STATUS_MODE_ACTIVE:
@@ -218,8 +214,6 @@ def _meeting_matches_status_mode(item: AgendaItem, mode: str) -> bool:
         return status == STATUS_PLANNED
     if mode == STATUS_MODE_PLANNED:
         return status == STATUS_PLANNED
-    if mode == STATUS_MODE_HELD:
-        return status == STATUS_HELD
     if mode == STATUS_MODE_CLOSED:
         return status == STATUS_CLOSED
     if mode == STATUS_MODE_CANCELLED:

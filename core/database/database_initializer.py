@@ -259,6 +259,7 @@ def initialize_database() -> None:
     _ensure_meeting_templates_table()
     _ensure_yearly_plan_repeat_columns()
     _normalize_task_status_values()
+    _normalize_meeting_status_values()
     _normalize_accident_legacy_values()
 
 
@@ -3324,6 +3325,19 @@ def _normalize_task_status_values() -> None:
         return
     with _db_engine().connect() as connection:
         connection.execute(text("UPDATE tasks SET status = 'Aktivní' WHERE status IS NULL OR status = ''"))
+        connection.commit()
+
+
+def _normalize_meeting_status_values() -> None:
+    """AGENDA-EVENT-UX-7: historické Proběhlo → Uzavřeno."""
+    columns = _table_columns("meetings")
+    if "status" not in columns:
+        return
+    with _db_engine().connect() as connection:
+        connection.execute(
+            text("UPDATE meetings SET status = :closed WHERE status = :held"),
+            {"closed": "Uzavřeno", "held": "Proběhlo"},
+        )
         connection.commit()
 
 

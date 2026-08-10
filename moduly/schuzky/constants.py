@@ -6,13 +6,14 @@ DIALOG_WINDOW_TITLE = "Událost"
 LIST_WINDOW_TITLE = "Události"
 
 STATUS_PLANNED = "Naplánováno"
-STATUS_HELD = "Proběhlo"
 STATUS_CLOSED = "Uzavřeno"
 STATUS_CANCELLED = "Zrušeno"
 
+# Historický stav (AGENDA-EVENT-UX-7) – při načtení/migraci → Uzavřeno.
+LEGACY_STATUS_HELD = "Proběhlo"
+
 MEETING_STATUSES = (
     STATUS_PLANNED,
-    STATUS_HELD,
     STATUS_CLOSED,
     STATUS_CANCELLED,
 )

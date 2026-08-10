@@ -38,7 +38,6 @@ with patch.object(Path, "home", return_value=_TMP):
         PAST_PLANNED_START_MESSAGE,
         STATUS_CANCELLED,
         STATUS_CLOSED,
-        STATUS_HELD,
         STATUS_PLANNED,
     )
     from moduly.schuzky.sluzby.meeting_service import meeting_service
@@ -117,7 +116,7 @@ class EventsLogic1TestCase(unittest.TestCase):
         dialog._on_accept()
         self.assertEqual(dialog.result(), dialog.DialogCode.Accepted)
 
-    def test_existing_past_planned_can_change_to_held(self) -> None:
+    def test_existing_past_planned_can_change_to_closed(self) -> None:
         past = datetime.now() - timedelta(days=3)
         meeting = meeting_service.create_meeting(
             title="Stará",
@@ -134,8 +133,8 @@ class EventsLogic1TestCase(unittest.TestCase):
             )
         )
         dialog = MeetingDialog(meeting=meeting)
-        dialog.status_combo.setCurrentText(STATUS_HELD)
-        dialog._on_accept()
+        dialog.status_combo.setCurrentText(STATUS_CLOSED)
+        dialog.accept()
         self.assertEqual(dialog.result(), dialog.DialogCode.Accepted)
 
         meeting_service.update_meeting(
@@ -144,11 +143,11 @@ class EventsLogic1TestCase(unittest.TestCase):
             event_type=meeting.event_type,
             starts_at=past,
             ends_at=past + timedelta(hours=1),
-            status=STATUS_HELD,
+            status=STATUS_CLOSED,
         )
         reloaded = meeting_service.get_by_id(meeting.id)
         assert reloaded is not None
-        self.assertEqual(reloaded.status, STATUS_HELD)
+        self.assertEqual(reloaded.status, STATUS_CLOSED)
 
     def test_existing_cannot_set_new_past_term_as_planned(self) -> None:
         past = datetime.now() - timedelta(days=3)
@@ -219,7 +218,6 @@ class EventsLogic1TestCase(unittest.TestCase):
     def test_ignore_non_planned_statuses(self) -> None:
         start = datetime.now() + timedelta(days=8)
         for status, title in (
-            (STATUS_HELD, "Proběhlo"),
             (STATUS_CLOSED, "Uzavřeno"),
             (STATUS_CANCELLED, "Zrušeno"),
         ):

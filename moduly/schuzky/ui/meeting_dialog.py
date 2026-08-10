@@ -187,7 +187,7 @@ class MeetingDialog(QDialog):
         priority = meeting_service.normalize_priority(getattr(meeting, "priority", None))
         if self.priority_combo.findText(priority) >= 0:
             self.priority_combo.setCurrentText(priority)
-        status = meeting.status or DEFAULT_MEETING_STATUS
+        status = meeting_service.normalize_status(meeting.status)
         if self.status_combo.findText(status) >= 0:
             self.status_combo.setCurrentText(status)
 

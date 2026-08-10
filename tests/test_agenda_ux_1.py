@@ -48,8 +48,8 @@ with patch.object(Path, "home", return_value=_TMP):
         ROW_STATE_WAITING,
         STATUS_MODE_ACTIVE,
         STATUS_MODE_ALL,
+        STATUS_MODE_CLOSED,
         STATUS_MODE_DONE,
-        STATUS_MODE_HELD,
         STATUS_MODE_PLANNED,
         STATUS_MODES_BOTH,
         STATUS_MODES_MEETINGS_ONLY,
@@ -60,7 +60,6 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.schuzky.constants import (
         STATUS_CANCELLED,
         STATUS_CLOSED,
-        STATUS_HELD,
         STATUS_PLANNED,
     )
     from moduly.schuzky.sluzby.meeting_service import meeting_service
@@ -123,10 +122,10 @@ class AgendaUx1TestCase(unittest.TestCase):
             starts_at=datetime.now() + timedelta(days=2),
             status=STATUS_PLANNED,
         )
-        held = meeting_service.create_meeting(
-            title="Proběhlo",
+        closed = meeting_service.create_meeting(
+            title="Uzavřeno",
             starts_at=datetime.now() - timedelta(days=1),
-            status=STATUS_HELD,
+            status=STATUS_CLOSED,
         )
 
         page = AgendaPage()
@@ -142,7 +141,7 @@ class AgendaUx1TestCase(unittest.TestCase):
         self.assertIn(active_task.id, _ids())
         self.assertIn(planned.id, _ids())
         self.assertNotIn(done_task.id, _ids())
-        self.assertNotIn(held.id, _ids())
+        self.assertNotIn(closed.id, _ids())
 
         page.status_filter.setCurrentText(STATUS_MODE_DONE)
         page.type_checks[ITEM_TYPE_MEETING].setChecked(False)
@@ -151,15 +150,15 @@ class AgendaUx1TestCase(unittest.TestCase):
 
         page.type_checks[ITEM_TYPE_MEETING].setChecked(True)
         page.type_checks[ITEM_TYPE_TASK].setChecked(False)
-        page.status_filter.setCurrentText(STATUS_MODE_HELD)
+        page.status_filter.setCurrentText(STATUS_MODE_CLOSED)
         page.refresh()
-        self.assertEqual(_ids(), {held.id})
+        self.assertEqual(_ids(), {closed.id})
 
         page.type_checks[ITEM_TYPE_TASK].setChecked(True)
         page.status_filter.setCurrentText(STATUS_MODE_ALL)
         page.refresh()
         self.assertTrue(
-            {active_task.id, done_task.id, planned.id, held.id}.issubset(_ids())
+            {active_task.id, done_task.id, planned.id, closed.id}.issubset(_ids())
         )
 
     def test_status_modes_depend_on_type(self) -> None:

@@ -11,8 +11,10 @@ from moduly.schuzky.constants import (
     DEFAULT_MEETING_PRIORITY,
     DEFAULT_MEETING_STATUS,
     END_BEFORE_START_MESSAGE,
+    LEGACY_STATUS_HELD,
     MEETING_PRIORITIES,
     MEETING_STATUSES,
+    STATUS_CLOSED,
     STATUS_PLANNED,
 )
 from moduly.schuzky.modely.meeting import Meeting
@@ -53,7 +55,7 @@ class MeetingService:
         notes: str = "",
     ) -> Meeting:
         self.validate_times(starts_at, ends_at)
-        status = status if status in MEETING_STATUSES else DEFAULT_MEETING_STATUS
+        status = self.normalize_status(status)
         priority = self.normalize_priority(priority)
         externals = self.normalize_external_participants(external_participants or [])
         meeting = Meeting(
@@ -100,7 +102,7 @@ class MeetingService:
             raise MeetingValidationError("Událost nebyla nalezena.")
 
         self.validate_times(starts_at, ends_at)
-        status = status if status in MEETING_STATUSES else DEFAULT_MEETING_STATUS
+        status = self.normalize_status(status)
         priority = self.normalize_priority(priority)
 
         if external_participants is not None:
@@ -126,6 +128,15 @@ class MeetingService:
         meeting.priority = priority
         meeting.updated_at = datetime.now()
         return self.repository.update(meeting)
+
+    @staticmethod
+    def normalize_status(value: str | None) -> str:
+        text = (value or "").strip()
+        if text == LEGACY_STATUS_HELD:
+            return STATUS_CLOSED
+        if text in MEETING_STATUSES:
+            return text
+        return DEFAULT_MEETING_STATUS
 
     @staticmethod
     def normalize_priority(value: str | None) -> str:

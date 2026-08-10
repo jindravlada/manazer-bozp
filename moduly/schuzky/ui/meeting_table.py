@@ -31,6 +31,7 @@ from moduly.schuzky.constants import (
     MEETING_STATUSES,
 )
 from moduly.schuzky.sluzby.meeting_event_type_service import meeting_event_type_service
+from moduly.schuzky.sluzby.meeting_service import meeting_service
 
 
 class MeetingTable(QTableWidget):
@@ -108,7 +109,7 @@ class MeetingTable(QTableWidget):
                     COL_ORGANIZER,
                     create_typed_item(organizer, typed_text(organizer), stable_id=stable_id),
                 )
-                status = meeting.status or ""
+                status = meeting_service.normalize_status(meeting.status)
                 try:
                     status_sort = typed_status(MEETING_STATUSES.index(status), label=status)
                 except ValueError:

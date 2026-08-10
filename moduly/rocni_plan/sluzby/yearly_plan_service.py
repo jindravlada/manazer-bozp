@@ -57,11 +57,6 @@ from moduly.rocni_plan.repository.yearly_plan_repository import (
 )
 from moduly.schuzky.constants import (
     STATUS_CLOSED as MEETING_CLOSED,
-)
-from moduly.schuzky.constants import (
-    STATUS_HELD as MEETING_HELD,
-)
-from moduly.schuzky.constants import (
     STATUS_PLANNED as MEETING_PLANNED,
 )
 from moduly.schuzky.sluzby.meeting_service import meeting_service
@@ -146,10 +141,12 @@ def resolve_display_status_fields(
         base = DISPLAY_VIA_TASK
     elif meeting_id is not None:
         meeting = meeting_service.get_by_id(meeting_id)
-        meeting_status = (meeting.status if meeting is not None else "") or ""
+        meeting_status = meeting_service.normalize_status(
+            meeting.status if meeting is not None else ""
+        )
         if meeting_status == MEETING_CLOSED:
             return DISPLAY_DONE
-        if meeting_status in {MEETING_PLANNED, MEETING_HELD}:
+        if meeting_status == MEETING_PLANNED:
             base = DISPLAY_VIA_MEETING
         else:
             base = DISPLAY_PLANNED

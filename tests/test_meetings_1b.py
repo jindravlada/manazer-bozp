@@ -43,7 +43,6 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.schuzky.constants import (
         STATUS_CANCELLED,
         STATUS_CLOSED,
-        STATUS_HELD,
         STATUS_PLANNED,
     )
     from moduly.schuzky.sluzby.meeting_service import meeting_service
@@ -120,10 +119,12 @@ class Meetings1bTestCase(unittest.TestCase):
 
     def test_held_meeting_not_shown(self) -> None:
         meeting = meeting_service.create_meeting(
-            title="Proběhlá",
+            title="Proběhlá legacy",
             starts_at=datetime.now() + timedelta(days=1),
-            status=STATUS_HELD,
+            status="Proběhlo",
         )
+        # Legacy Proběhlo se normalizuje na Uzavřeno → mimo attention.
+        self.assertEqual(meeting.status, STATUS_CLOSED)
         self.assertNotIn(meeting.id, [item.source_id for item in _meeting_items()])
 
     def test_closed_meeting_not_shown(self) -> None:
@@ -264,7 +265,7 @@ class Meetings1bTestCase(unittest.TestCase):
             meeting.id,
             title="Změní se stav",
             starts_at=datetime.now() + timedelta(days=4),
-            status=STATUS_HELD,
+            status=STATUS_CLOSED,
         )
         self.assertNotIn(meeting.id, [item.source_id for item in _meeting_items()])
 

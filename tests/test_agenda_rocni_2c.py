@@ -43,14 +43,7 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.schuzky.constants import (
         STATUS_CANCELLED as MEETING_CANCELLED,
-    )
-    from moduly.schuzky.constants import (
         STATUS_CLOSED as MEETING_CLOSED,
-    )
-    from moduly.schuzky.constants import (
-        STATUS_HELD as MEETING_HELD,
-    )
-    from moduly.schuzky.constants import (
         STATUS_PLANNED as MEETING_PLANNED,
     )
     from moduly.schuzky.sluzby.meeting_service import meeting_service
@@ -118,13 +111,7 @@ class AgendaRocni2cTestCase(unittest.TestCase):
             DISPLAY_DONE,
         )
 
-    def test_held_meeting_is_via_meeting(self) -> None:
-        item = self._create_item(year=2026, month=6, title="Událost proběhla")
-        linked, _meeting = self._link_meeting(item, status=MEETING_HELD)
-        self.assertEqual(
-            resolve_display_status(linked, today=date(2026, 6, 15)),
-            DISPLAY_VIA_MEETING,
-        )
+    def test_planned_meeting_is_via_meeting(self) -> None:
         planned_item = self._create_item(year=2026, month=6, title="Událost naplánovaná")
         planned_linked, _ = self._link_meeting(planned_item, status=MEETING_PLANNED)
         self.assertEqual(
@@ -199,7 +186,7 @@ class AgendaRocni2cTestCase(unittest.TestCase):
         open_task = self._create_item(year=2026, month=9, title="S2")
         self._link_task(open_task, completed=False)
         held = self._create_item(year=2026, month=9, title="S3")
-        self._link_meeting(held, status=MEETING_HELD)
+        self._link_meeting(held, status=MEETING_PLANNED)
         cancelled = yearly_plan_service.cancel(
             self._create_item(year=2026, month=9, title="S4").id
         )
@@ -214,7 +201,7 @@ class AgendaRocni2cTestCase(unittest.TestCase):
         self.assertEqual(summary["total"], 5)
         self.assertEqual(summary["done"], 1)
         self.assertEqual(summary["in_progress"], 0)  # past month → rest, not via_*
-        self.assertEqual(summary["rest"], 3)  # open task, held meeting, plain
+        self.assertEqual(summary["rest"], 3)  # open task, planned meeting, plain
         self.assertEqual(summary["cancelled"], 1)
 
         # aktuální měsíc: řeší se se započítá
