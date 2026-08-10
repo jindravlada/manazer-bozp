@@ -243,6 +243,114 @@ class OzoPersonService:
         person.updated_at = datetime.now()
         return self.repository.save(person)
 
+    def insert_historical_period(
+        self,
+        *,
+        title_before: str = "",
+        first_name: str = "",
+        last_name: str = "",
+        title_after: str = "",
+        residence_address: str = "",
+        exam_date: date | None = None,
+        certificate_number: str = "",
+        certificate_valid_to: date | None = None,
+        notify_before_value: int = 0,
+        notify_before_unit: str = UNIT_DAYS,
+        note: str = "",
+    ) -> OzoPersonPeriod:
+        """Vloží starší / prostřední osvědčení do časové osy (bez změny aktuální OZO)."""
+        if exam_date is None:
+            raise OzoPersonValidationError(
+                "Pro doplnění historického osvědčení vyplňte datum zkoušky."
+            )
+
+        person = self.get()
+        if person is None or person.id is None:
+            raise OzoPersonValidationError(
+                "Nejdříve uložte údaje OZO, teprve potom doplňte historii."
+            )
+
+        periods = self.list_periods(person)
+        if not periods:
+            raise OzoPersonValidationError(
+                "Nelze doplnit historické osvědčení bez existující verze OZO."
+            )
+
+        for period in periods:
+            existing_exam = period.exam_date or period.valid_from
+            if existing_exam == exam_date:
+                raise OzoPersonValidationError(
+                    "Datum zkoušky se shoduje s již evidovanou verzí. "
+                    "Každá verze musí mít jiné datum zkoušky."
+                )
+
+        ordered = sorted(periods, key=self._period_exam_sort_key)
+        newest = ordered[-1]
+        newest_exam = newest.exam_date or newest.valid_from
+        if exam_date >= newest_exam:
+            raise OzoPersonValidationError(
+                "Pro novější osvědčení než aktuální verze použijte "
+                "akci Obnovit osvědčení."
+            )
+
+        next_period = None
+        prev_period = None
+        for period in ordered:
+            period_exam = period.exam_date or period.valid_from
+            if period_exam > exam_date:
+                next_period = period
+                break
+            prev_period = period
+
+        if next_period is None:
+            raise OzoPersonValidationError(
+                "Pro novější osvědčení než aktuální verze použijte "
+                "akci Obnovit osvědčení."
+            )
+
+        fields = {
+            "title_before": (title_before or "").strip(),
+            "first_name": (first_name or "").strip(),
+            "last_name": (last_name or "").strip(),
+            "title_after": (title_after or "").strip(),
+            "residence_address": (residence_address or "").strip(),
+            "exam_date": exam_date,
+            "certificate_number": (certificate_number or "").strip(),
+            "certificate_valid_to": certificate_valid_to,
+            "notify_before_value": max(0, int(notify_before_value or 0)),
+            "notify_before_unit": (notify_before_unit or UNIT_DAYS).strip() or UNIT_DAYS,
+            "note": (note or "").strip(),
+        }
+
+        new_valid_from = exam_date
+        new_valid_to = next_period.valid_from - timedelta(days=1)
+        if new_valid_to < new_valid_from:
+            raise OzoPersonValidationError(
+                "Datum zkoušky musí být dříve než začátek období používání "
+                "následující verze."
+            )
+
+        if prev_period is not None:
+            prev_valid_to = exam_date - timedelta(days=1)
+            if prev_valid_to < prev_period.valid_from:
+                raise OzoPersonValidationError(
+                    "Datum zkoušky koliduje s obdobím používání předchozí verze."
+                )
+            # certificate_valid_to předchozí verze se nemění – jen osa používání.
+            prev_period.valid_to = prev_valid_to
+            self.period_repository.update(prev_period)
+
+        period = OzoPersonPeriod(
+            ozo_person_id=person.id,
+            valid_from=new_valid_from,
+            valid_to=new_valid_to,
+        )
+        self._apply_fields_to_period(period, fields)
+        period = self.period_repository.add(period)
+
+        self._validate_timeline(person.id)
+        return period
+
     def missing_for_list_output(self, person: OzoPerson | None = None) -> list[str]:
         """Povinné u aktuální otevřené verze."""
         person = person if person is not None else self.get()
@@ -297,6 +405,42 @@ class OzoPersonService:
         if person.created_at is not None:
             return person.created_at.date()
         return date.today()
+
+    @staticmethod
+    def _period_exam_sort_key(period: OzoPersonPeriod) -> tuple:
+        exam = period.exam_date or period.valid_from
+        return (exam, period.id or 0)
+
+    def _validate_timeline(self, ozo_person_id: int) -> None:
+        periods = self.period_repository.list_for_person(ozo_person_id)
+        if not periods:
+            return
+        ordered = sorted(periods, key=lambda item: (item.valid_from, item.id or 0))
+        open_periods = [p for p in ordered if p.valid_to is None]
+        if len(open_periods) != 1:
+            raise OzoPersonValidationError(
+                "Časová osa OZO musí mít právě jednu aktuální (otevřenou) verzi."
+            )
+        if ordered[-1].valid_to is not None:
+            raise OzoPersonValidationError(
+                "Nejnovější verze OZO musí zůstat otevřená (bez konce období používání)."
+            )
+        for index, period in enumerate(ordered):
+            if period.valid_to is not None and period.valid_to < period.valid_from:
+                raise OzoPersonValidationError(
+                    "Období používání verze OZO je neplatné (do dříve než od)."
+                )
+            if index + 1 >= len(ordered):
+                continue
+            nxt = ordered[index + 1]
+            if period.valid_to is None:
+                raise OzoPersonValidationError(
+                    "Otevřená verze OZO musí být na konci časové osy."
+                )
+            if period.valid_to >= nxt.valid_from:
+                raise OzoPersonValidationError(
+                    "Období používání verzí OZO se nesmí překrývat."
+                )
 
     def _create_period(
         self,

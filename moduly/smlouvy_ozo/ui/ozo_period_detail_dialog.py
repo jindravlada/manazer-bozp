@@ -17,6 +17,9 @@ from core.widgets.dialog_utils import configure_resizable_form_dialog, wrap_in_s
 from moduly.smlouvy_ozo.constants import (
     DIALOG_TITLE_OZO_PERIOD,
     ENTITY_OZO_PERSON_PERIOD,
+    HISTORY_CERTIFICATE_VALID_TO_LABEL,
+    HISTORY_USAGE_FROM_LABEL,
+    HISTORY_USAGE_TO_LABEL,
     format_date,
     format_ozo_display_name,
 )
@@ -43,8 +46,8 @@ class OzoPeriodDetailDialog(QDialog):
             period.last_name or "",
             period.title_after or "",
         )
-        form.addRow("Platnost od:", QLabel(format_date(period.valid_from)))
-        form.addRow("Platnost do:", QLabel(format_date(period.valid_to)))
+        form.addRow(f"{HISTORY_USAGE_FROM_LABEL}:", QLabel(format_date(period.valid_from)))
+        form.addRow(f"{HISTORY_USAGE_TO_LABEL}:", QLabel(format_date(period.valid_to)))
         form.addRow("Jméno:", QLabel(full_name or "—"))
         form.addRow(
             "Adresa bydliště / trvalého pobytu:",
@@ -59,7 +62,7 @@ class OzoPeriodDetailDialog(QDialog):
             QLabel((period.certificate_number or "").strip() or "—"),
         )
         form.addRow(
-            "Platnost osvědčení do:",
+            f"{HISTORY_CERTIFICATE_VALID_TO_LABEL}:",
             QLabel(format_date(period.certificate_valid_to)),
         )
         note = (period.note or "").strip() or "—"
