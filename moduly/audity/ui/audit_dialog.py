@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+import copy
+
 from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
     QDialog,
@@ -122,6 +126,9 @@ class AuditDialog(QDialog):
 
         for button in (self._save_btn, self._save_close_btn, self._close_btn):
             button.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+            # Enter v poli formuláře nesmí samo spustit Uložit.
+            button.setAutoDefault(False)
+            button.setDefault(False)
 
         self._save_btn.clicked.connect(self._save_keep_open)
         self._save_close_btn.clicked.connect(self._save_and_close)
@@ -133,7 +140,7 @@ class AuditDialog(QDialog):
         return footer
 
     def _capture_baseline(self) -> None:
-        self._baseline = self.get_data()
+        self._baseline = copy.deepcopy(self.get_data())
 
     def _is_dirty(self) -> bool:
         return self.get_data() != self._baseline
@@ -163,10 +170,10 @@ class AuditDialog(QDialog):
 
     def _save_and_close(self) -> None:
         if self._persist():
-            self._closing = True
-            QDialog.accept(self)
+            self._done_accept()
 
     def _persist(self) -> bool:
+        """Jediné místo zápisu hlavních údajů auditu + komise do DB."""
         valid, message = self.commission_widget.validate()
         if not valid:
             QMessageBox.warning(self, "Auditní tým", message)
@@ -202,18 +209,35 @@ class AuditDialog(QDialog):
         self.conclusion_widget.load_audit(self.audit)
         self.commission_widget.set_audit_context(self.audit.id)
 
+    def _done_accept(self) -> None:
+        self._closing = True
+        QDialog.accept(self)
+
+    def _done_reject(self) -> None:
+        self._closing = True
+        QDialog.reject(self)
+
     def accept(self) -> None:
-        """Kompatibilita: validace + uložení (stejná logika jako Uložit a zavřít)."""
-        if self._persist():
-            self._closing = True
+        """Validace komise a zavření Accepted — bez zápisu do DB.
+
+        Ukládání jen přes Uložit / Uložit a zavřít / Uložit v dirty promptu.
+        """
+        if self._closing:
             QDialog.accept(self)
+            return
+        valid, message = self.commission_widget.validate()
+        if not valid:
+            QMessageBox.warning(self, "Auditní tým", message)
+            self.tabs.setCurrentWidget(self.commission_widget)
+            return
+        self._done_accept()
 
     def _request_close(self) -> None:
         if self._confirm_close():
-            self._closing = True
-            self.reject()
+            self._done_reject()
 
     def _confirm_close(self) -> bool:
+        """True = lze zavřít (čisté / Neukládat). False = zůstat otevřený."""
         if self._closing or not self._is_dirty():
             return True
         decision = confirm_unsaved_editor_close(self, title=self.windowTitle())
@@ -222,12 +246,15 @@ class AuditDialog(QDialog):
         if decision == "save":
             if not self._persist():
                 return False
-            self._closing = True
-            QDialog.accept(self)
+            self._done_accept()
             return False
+        # Neukládat — zahodit UI změny, DB netknutá.
         return True
 
     def closeEvent(self, event: QCloseEvent) -> None:
+        if self._closing:
+            event.accept()
+            return
         if self._confirm_close():
             self._closing = True
             event.accept()
@@ -235,9 +262,11 @@ class AuditDialog(QDialog):
             event.ignore()
 
     def reject(self) -> None:
-        if self._confirm_close():
-            self._closing = True
+        if self._closing:
             QDialog.reject(self)
+            return
+        if self._confirm_close():
+            self._done_reject()
 
     def get_data(self) -> dict:
         data = self.spis_widget.get_data()

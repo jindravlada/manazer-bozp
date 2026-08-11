@@ -271,18 +271,143 @@ class AuditDialogUx1TestCase(unittest.TestCase):
         audit = audit_service.create_audit(title="Clean close")
         dialog = AuditDialog(audit=audit)
         self.assertFalse(dialog._is_dirty())
-        with patch.object(dialog, "reject", wraps=dialog.reject) as mock_reject:
+        with patch(
+            "moduly.audity.ui.audit_dialog.confirm_unsaved_editor_close"
+        ) as prompt:
             dialog._request_close()
-            mock_reject.assert_called()
+            prompt.assert_not_called()
+        self.assertEqual(dialog.result(), QDialog.DialogCode.Rejected)
 
     @patch("moduly.audity.ui.audit_dialog.confirm_unsaved_editor_close", return_value="cancel")
-    def test_close_with_dirty_prompt(self, _mock_prompt) -> None:
-        audit = audit_service.create_audit(title="Dirty")
+    def test_close_with_dirty_prompt_cancel(self, mock_prompt) -> None:
+        audit = audit_service.create_audit(title="Dirty cancel")
         dialog = AuditDialog(audit=audit)
+        original = audit.audit_date
         dialog.spis_widget.audit_date_edit.set_date_value(date(2026, 8, 1))
         self.assertTrue(dialog._is_dirty())
         self.assertFalse(dialog._confirm_close())
+        mock_prompt.assert_called_once()
         self.assertTrue(dialog._is_dirty())
+        self.assertEqual(audit_service.get_by_id(audit.id).audit_date, original)
+
+    def test_a_close_dirty_shows_prompt(self) -> None:
+        audit = audit_service.create_audit(title="Prompt", audit_date=date(2026, 1, 1))
+        dialog = AuditDialog(audit=audit)
+        dialog.spis_widget.audit_date_edit.set_date_value(date(2026, 9, 9))
+        with patch(
+            "moduly.audity.ui.audit_dialog.confirm_unsaved_editor_close",
+            return_value="cancel",
+        ) as prompt:
+            dialog._request_close()
+            prompt.assert_called_once()
+        self.assertTrue(dialog._is_dirty())
+
+    def test_b_discard_keeps_original_in_db(self) -> None:
+        audit = audit_service.create_audit(title="Discard", audit_date=date(2026, 1, 1))
+        dialog = AuditDialog(audit=audit)
+        dialog.spis_widget.audit_date_edit.set_date_value(date(2026, 9, 9))
+        with patch(
+            "moduly.audity.ui.audit_dialog.confirm_unsaved_editor_close",
+            return_value="discard",
+        ):
+            dialog._request_close()
+        self.assertEqual(dialog.result(), QDialog.DialogCode.Rejected)
+        reloaded = audit_service.get_by_id(audit.id)
+        assert reloaded is not None
+        self.assertEqual(reloaded.audit_date, date(2026, 1, 1))
+
+    def test_c_cancel_keeps_dialog_and_ui_change(self) -> None:
+        audit = audit_service.create_audit(title="Cancel", audit_date=date(2026, 1, 1))
+        dialog = AuditDialog(audit=audit)
+        dialog.spis_widget.audit_date_edit.set_date_value(date(2026, 9, 9))
+        with patch(
+            "moduly.audity.ui.audit_dialog.confirm_unsaved_editor_close",
+            return_value="cancel",
+        ):
+            dialog._request_close()
+        self.assertEqual(dialog.spis_widget.audit_date_edit.get_date(), date(2026, 9, 9))
+        self.assertTrue(dialog._is_dirty())
+        self.assertEqual(audit_service.get_by_id(audit.id).audit_date, date(2026, 1, 1))
+
+    def test_d_prompt_save_persists_and_closes(self) -> None:
+        audit = audit_service.create_audit(title="Prompt save", audit_date=date(2026, 1, 1))
+        dialog = AuditDialog(audit=audit)
+        self._fill_commission(dialog)
+        dialog._capture_baseline()
+        dialog.spis_widget.audit_date_edit.set_date_value(date(2026, 9, 9))
+        with patch(
+            "moduly.audity.ui.audit_dialog.confirm_unsaved_editor_close",
+            return_value="save",
+        ):
+            dialog._request_close()
+        self.assertEqual(dialog.result(), QDialog.DialogCode.Accepted)
+        reloaded = audit_service.get_by_id(audit.id)
+        assert reloaded is not None
+        self.assertEqual(reloaded.audit_date, date(2026, 9, 9))
+
+    def test_e_save_then_close_without_prompt(self) -> None:
+        audit = audit_service.create_audit(title="Save then close")
+        dialog = AuditDialog(audit=audit)
+        self._fill_commission(dialog)
+        dialog.spis_widget.audit_date_edit.set_date_value(date(2026, 4, 4))
+        self.assertTrue(dialog._persist())
+        self.assertFalse(dialog._is_dirty())
+        with patch(
+            "moduly.audity.ui.audit_dialog.confirm_unsaved_editor_close"
+        ) as prompt:
+            dialog._request_close()
+            prompt.assert_not_called()
+        self.assertEqual(dialog.result(), QDialog.DialogCode.Rejected)
+
+    def test_f_save_and_close(self) -> None:
+        audit = audit_service.create_audit(title="Save close F")
+        dialog = AuditDialog(audit=audit)
+        self._fill_commission(dialog)
+        dialog.spis_widget.audit_date_edit.set_date_value(date(2026, 5, 5))
+        dialog._save_and_close()
+        self.assertEqual(dialog.result(), QDialog.DialogCode.Accepted)
+        self.assertEqual(audit_service.get_by_id(audit.id).audit_date, date(2026, 5, 5))
+
+    def test_g_escape_and_close_event_discard(self) -> None:
+        audit = audit_service.create_audit(title="Escape", audit_date=date(2026, 1, 1))
+        dialog = AuditDialog(audit=audit)
+        dialog.spis_widget.audit_date_edit.set_date_value(date(2026, 10, 10))
+        with patch(
+            "moduly.audity.ui.audit_dialog.confirm_unsaved_editor_close",
+            return_value="discard",
+        ):
+            dialog.reject()
+        self.assertEqual(audit_service.get_by_id(audit.id).audit_date, date(2026, 1, 1))
+
+        dialog2 = AuditDialog(audit=audit_service.get_by_id(audit.id))
+        dialog2.spis_widget.audit_date_edit.set_date_value(date(2026, 11, 11))
+        from PySide6.QtGui import QCloseEvent
+
+        with patch(
+            "moduly.audity.ui.audit_dialog.confirm_unsaved_editor_close",
+            return_value="discard",
+        ):
+            event = QCloseEvent()
+            dialog2.closeEvent(event)
+            self.assertTrue(event.isAccepted())
+        self.assertEqual(audit_service.get_by_id(audit.id).audit_date, date(2026, 1, 1))
+
+    def test_accept_does_not_write_db(self) -> None:
+        audit = audit_service.create_audit(title="Accept no save", audit_date=date(2026, 1, 1))
+        dialog = AuditDialog(audit=audit)
+        self._fill_commission(dialog)
+        dialog.spis_widget.audit_date_edit.set_date_value(date(2026, 12, 12))
+        dialog.accept()
+        self.assertEqual(dialog.result(), QDialog.DialogCode.Accepted)
+        self.assertEqual(audit_service.get_by_id(audit.id).audit_date, date(2026, 1, 1))
+
+    def test_footer_buttons_not_auto_default(self) -> None:
+        audit = audit_service.create_audit(title="No autoDefault")
+        dialog = AuditDialog(audit=audit)
+        for button in (dialog._save_btn, dialog._save_close_btn, dialog._close_btn):
+            self.assertFalse(button.autoDefault())
+            self.assertFalse(button.isDefault())
+        dialog.close()
 
     def test_no_auto_dirty_tracking(self) -> None:
         audit = audit_service.create_audit(title="No EDC")
@@ -290,7 +415,7 @@ class AuditDialogUx1TestCase(unittest.TestCase):
         self.assertFalse(hasattr(dialog, "_editor"))
         text = Path("moduly/audity/ui/audit_dialog.py").read_text(encoding="utf-8")
         self.assertNotIn("install_auto_dirty_tracking", text)
-        self.assertNotIn("EditorDialogController", text)
+        self.assertNotIn("EditorDialogController(", text)
         dialog.close()
 
 
