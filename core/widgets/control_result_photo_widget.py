@@ -37,7 +37,7 @@ class _ClickablePhotoLabel(QLabel):
 class ControlResultPhotoWidget(QWidget):
     photo_changed = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, *, auto_persist: bool = True, deferred_edits=None):
         super().__init__(parent)
 
         self._entity_type = ""
@@ -45,6 +45,9 @@ class ControlResultPhotoWidget(QWidget):
         self._context: ControlPointContext | None = None
         self._must_be_saved_message = "Záznam je nutné nejdříve uložit."
         self._photo_paths: list[str] = []
+        self._preview_absolute: Path | None = None
+        self._auto_persist = auto_persist
+        self._deferred_edits = deferred_edits
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(16, 4, 0, 0)
@@ -96,21 +99,34 @@ class ControlResultPhotoWidget(QWidget):
 
     def reload(self) -> None:
         self._photo_paths = []
+        self._preview_absolute = None
         enabled = self._entity_id is not None and self._context is not None
 
         if enabled:
-            row = control_result_service.get_for_control_point(
-                self._entity_type,
-                self._entity_id,
-                self._context,
-            )
-            if row and row.photo_path:
-                self._photo_paths = [row.photo_path]
+            if self._deferred_edits is not None and not self._auto_persist:
+                preview = self._deferred_edits.get_photo_preview_path(
+                    self._entity_type,
+                    self._entity_id,
+                    self._context,
+                )
+                if preview is not None:
+                    self._preview_absolute = preview
+                    self._photo_paths = [str(preview)]
+            else:
+                row = control_result_service.get_for_control_point(
+                    self._entity_type,
+                    self._entity_id,
+                    self._context,
+                )
+                if row and row.photo_path:
+                    self._photo_paths = [row.photo_path]
 
         self._refresh_thumbnail()
         self._update_buttons(enabled=enabled)
 
     def _current_photo_path(self) -> Path | None:
+        if self._preview_absolute is not None:
+            return self._preview_absolute if self._preview_absolute.is_file() else None
         if not self._photo_paths:
             return None
         absolute = control_result_photo_service.absolute_photo_path(self._photo_paths[0])
@@ -160,12 +176,20 @@ class ControlResultPhotoWidget(QWidget):
             return
 
         try:
-            control_result_service.attach_photo(
-                self._entity_type,
-                self._entity_id,
-                self._context,
-                Path(selected),
-            )
+            if self._deferred_edits is not None and not self._auto_persist:
+                self._deferred_edits.stage_photo_attach(
+                    self._entity_type,
+                    self._entity_id,
+                    self._context,
+                    Path(selected),
+                )
+            else:
+                control_result_service.attach_photo(
+                    self._entity_type,
+                    self._entity_id,
+                    self._context,
+                    Path(selected),
+                )
         except Exception as exc:
             QMessageBox.warning(
                 self,
@@ -191,11 +215,18 @@ class ControlResultPhotoWidget(QWidget):
         if answer != QMessageBox.Yes:
             return
 
-        control_result_service.remove_photo(
-            self._entity_type,
-            self._entity_id,
-            self._context,
-        )
+        if self._deferred_edits is not None and not self._auto_persist:
+            self._deferred_edits.stage_photo_remove(
+                self._entity_type,
+                self._entity_id,
+                self._context,
+            )
+        else:
+            control_result_service.remove_photo(
+                self._entity_type,
+                self._entity_id,
+                self._context,
+            )
         self.reload()
         self.photo_changed.emit()
 

@@ -165,6 +165,8 @@ class AuditKnowledgeCriterionWidget(QWidget):
         self._deferred_edits = deferred_edits
 
     def _overrides(self) -> dict[tuple[str, str, str], str]:
+        if self._deferred_edits is not None:
+            return self._deferred_edits.effective_overrides_map(self._audit_id)
         if self._overrides_cache is None:
             self._overrides_cache = audit_verification_service.overrides_map(self._audit_id)
         return self._overrides_cache
@@ -403,13 +405,18 @@ class AuditKnowledgeCriterionWidget(QWidget):
             result_selector.data_saved.connect(self._notify_deferred_changed)
         row_layout.addWidget(result_selector)
 
-        photo_widget = ControlResultPhotoWidget()
+        photo_widget = ControlResultPhotoWidget(
+            auto_persist=self._deferred_edits is None,
+            deferred_edits=self._deferred_edits,
+        )
         photo_widget.configure(
             entity_type=ENTITY_AUDITY,
             entity_id=self._audit_id,
             context=self._control_point_context(context),
             must_be_saved_message=AUDIT_MUST_BE_SAVED_MESSAGE,
         )
+        if self._deferred_edits is not None:
+            photo_widget.photo_changed.connect(self._notify_deferred_changed)
         row_layout.addWidget(photo_widget)
 
         move_row = QHBoxLayout()
@@ -526,6 +533,22 @@ class AuditKnowledgeCriterionWidget(QWidget):
         cp_id = str(control_point.get("id") or "").strip()
         if not cp_id:
             return
+        methodology = audit_verification_service.methodology_verification_type(control_point)
+        if self._deferred_edits is not None:
+            self._deferred_edits.stage_verification_override(
+                self._audit_id,
+                area_id=self._area_id,
+                section_id=self._section_id,
+                control_point_id=cp_id,
+                verification_type=target_type,
+                methodology_type=methodology,
+            )
+            self._overrides_cache = None
+            self._notify_deferred_changed()
+            self.verification_type_changed.emit()
+            self.refresh()
+            return
+
         audit_verification_service.set_override(
             self._audit_id,
             area_id=self._area_id,

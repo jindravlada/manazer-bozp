@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
+from core.services.control_result_photo_service import control_result_photo_service
 from core.shared.constants import (
     CONTROL_RESULT_NEKONTROLOVANO,
     ENTITY_AUDITY,
@@ -15,6 +17,7 @@ from core.shared.constants import (
 from core.shared.sluzby.control_result_service import ControlPointContext, control_result_service
 from core.shared.sluzby.finding_service import finding_service
 from core.shared.sluzby.finding_task_service import finding_task_service
+from moduly.audity.sluzby.audit_verification_service import audit_verification_service
 from moduly.ukoly.sluzby.task_service import task_service
 
 
@@ -32,6 +35,14 @@ def _control_key(
     )
 
 
+def _override_key(area_id: str, section_id: str, control_point_id: str) -> tuple[str, str, str]:
+    return (
+        str(area_id or "").strip(),
+        str(section_id or "").strip(),
+        str(control_point_id or "").strip(),
+    )
+
+
 @dataclass
 class _PendingControlResult:
     entity_type: str
@@ -43,10 +54,33 @@ class _PendingControlResult:
 
 
 @dataclass
+class _PendingPhoto:
+    entity_type: str
+    entity_id: int
+    context: ControlPointContext
+    action: str  # "attach" | "remove"
+    source_path: Path | None = None
+
+
+@dataclass
+class _PendingVerificationOverride:
+    audit_id: int
+    area_id: str
+    section_id: str
+    control_point_id: str
+    verification_type: str
+    methodology_type: str
+
+
+@dataclass
 class AuditDeferredEdits:
-    """In-memory změny zjištění / úkolů / výsledků kontroly do flush()."""
+    """In-memory změny zjištění / úkolů / výsledků kontroly / foto / Dok↔Terén do flush()."""
 
     _control_results: dict[tuple, _PendingControlResult] = field(default_factory=dict)
+    _photos: dict[tuple, _PendingPhoto] = field(default_factory=dict)
+    _verification_overrides: dict[tuple[str, str, str], _PendingVerificationOverride] = field(
+        default_factory=dict
+    )
     _finding_updates: dict[int, dict[str, Any]] = field(default_factory=dict)
     _finding_creates: dict[int, dict[str, Any]] = field(default_factory=dict)
     _finding_deletes: set[int] = field(default_factory=set)
@@ -58,6 +92,8 @@ class AuditDeferredEdits:
     def has_changes(self) -> bool:
         return bool(
             self._control_results
+            or self._photos
+            or self._verification_overrides
             or self._finding_updates
             or self._finding_creates
             or self._finding_deletes
@@ -67,6 +103,8 @@ class AuditDeferredEdits:
 
     def clear(self) -> None:
         self._control_results.clear()
+        self._photos.clear()
+        self._verification_overrides.clear()
         self._finding_updates.clear()
         self._finding_creates.clear()
         self._finding_deletes.clear()
@@ -105,13 +143,17 @@ class AuditDeferredEdits:
     ) -> Any | None:
         key = _control_key(entity_type, entity_id, context)
         pending = self._control_results.get(key)
+        stored = control_result_service.get_for_control_point(entity_type, entity_id, context)
+
         if pending is not None:
+            photo_path = getattr(stored, "photo_path", "") or ""
             return SimpleNamespace(
                 result=pending.result,
                 note=pending.note,
                 shared_experience=pending.shared_experience,
+                photo_path=photo_path,
             )
-        return control_result_service.get_for_control_point(entity_type, entity_id, context)
+        return stored
 
     def current_result(
         self,
@@ -123,6 +165,114 @@ class AuditDeferredEdits:
         if row is None:
             return CONTROL_RESULT_NEKONTROLOVANO
         return row.result
+
+    # --- fotografie výsledků kontroly --------------------------------------
+
+    def stage_photo_attach(
+        self,
+        entity_type: str,
+        entity_id: int,
+        context: ControlPointContext,
+        source_path: Path,
+    ) -> None:
+        key = _control_key(entity_type, entity_id, context)
+        self._photos[key] = _PendingPhoto(
+            entity_type=entity_type,
+            entity_id=entity_id,
+            context=context,
+            action="attach",
+            source_path=Path(source_path).resolve(),
+        )
+
+    def stage_photo_remove(
+        self,
+        entity_type: str,
+        entity_id: int,
+        context: ControlPointContext,
+    ) -> None:
+        key = _control_key(entity_type, entity_id, context)
+        pending = self._photos.get(key)
+        if pending is not None and pending.action == "attach":
+            # Zrušit odložené přidání — žádný soubor v úložišti nevznikl.
+            del self._photos[key]
+            return
+        self._photos[key] = _PendingPhoto(
+            entity_type=entity_type,
+            entity_id=entity_id,
+            context=context,
+            action="remove",
+            source_path=None,
+        )
+
+    def get_photo_preview_path(
+        self,
+        entity_type: str,
+        entity_id: int,
+        context: ControlPointContext,
+    ) -> Path | None:
+        """Absolutní cesta pro náhled (odložený zdroj nebo uložený soubor)."""
+        key = _control_key(entity_type, entity_id, context)
+        pending = self._photos.get(key)
+        if pending is not None:
+            if pending.action == "remove":
+                return None
+            if pending.action == "attach" and pending.source_path is not None:
+                return pending.source_path if pending.source_path.is_file() else None
+
+        row = control_result_service.get_for_control_point(entity_type, entity_id, context)
+        return control_result_service.resolve_photo_path(row)
+
+    def expected_stored_photo_relative_path(
+        self,
+        entity_type: str,
+        entity_id: int,
+        context: ControlPointContext,
+    ) -> str:
+        """Cílová relativní cesta souboru po attach (pro regresní kontrolu osiřelých souborů)."""
+        return control_result_photo_service.relative_photo_path(
+            entity_type,
+            entity_id,
+            area_id=context.area_id,
+            section_id=context.section_id,
+            control_point_id=context.control_point_id,
+        )
+
+    # --- Doklad ↔ Terén ----------------------------------------------------
+
+    def stage_verification_override(
+        self,
+        audit_id: int,
+        *,
+        area_id: str,
+        section_id: str,
+        control_point_id: str,
+        verification_type: str,
+        methodology_type: str,
+    ) -> None:
+        key = _override_key(area_id, section_id, control_point_id)
+        target = audit_verification_service.normalize_verification_type(verification_type)
+        methodology = audit_verification_service.normalize_verification_type(methodology_type)
+        self._verification_overrides[key] = _PendingVerificationOverride(
+            audit_id=audit_id,
+            area_id=key[0],
+            section_id=key[1],
+            control_point_id=key[2],
+            verification_type=target,
+            methodology_type=methodology,
+        )
+
+    def effective_overrides_map(self, audit_id: int | None) -> dict[tuple[str, str, str], str]:
+        mapping = dict(audit_verification_service.overrides_map(audit_id))
+        if audit_id is None:
+            return mapping
+        for key, pending in self._verification_overrides.items():
+            if pending.audit_id != audit_id:
+                continue
+            if pending.verification_type == pending.methodology_type:
+                mapping.pop(key, None)
+            else:
+                mapping[key] = pending.verification_type
+        return mapping
 
     # --- zjištění ----------------------------------------------------------
 
@@ -353,6 +503,31 @@ class AuditDeferredEdits:
                 shared_experience=pending.shared_experience,
             )
 
+        for pending in list(self._photos.values()):
+            if pending.action == "attach" and pending.source_path is not None:
+                control_result_service.attach_photo(
+                    pending.entity_type,
+                    pending.entity_id,
+                    pending.context,
+                    pending.source_path,
+                )
+            elif pending.action == "remove":
+                control_result_service.remove_photo(
+                    pending.entity_type,
+                    pending.entity_id,
+                    pending.context,
+                )
+
+        for pending in list(self._verification_overrides.values()):
+            audit_verification_service.set_override(
+                pending.audit_id,
+                area_id=pending.area_id,
+                section_id=pending.section_id,
+                control_point_id=pending.control_point_id,
+                verification_type=pending.verification_type,
+                methodology_type=pending.methodology_type,
+            )
+
         for finding_id, fields in list(self._finding_updates.items()):
             if finding_id in self._finding_deletes or finding_id < 0:
                 continue
@@ -375,14 +550,12 @@ class AuditDeferredEdits:
             if finding_id > 0:
                 finding_service.delete(finding_id)
 
-        task_id_map: dict[int, int] = {}
         for temp_id, pending in sorted(self._task_creates.items(), key=lambda item: item[0], reverse=True):
             finding_id = int(pending["finding_id"])
             real_finding_id = finding_id_map.get(finding_id, finding_id)
             if real_finding_id < 0:
                 continue
             task = finding_task_service.create_task_from_finding(real_finding_id)
-            task_id_map[temp_id] = task.id
             data = dict(pending["data"])
             task_service.update_task(task_id=task.id, **data)
 
