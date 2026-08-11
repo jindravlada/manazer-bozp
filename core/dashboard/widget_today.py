@@ -4,15 +4,18 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QLabel, QSizePolicy
 
 from core.dashboard.attention_item import (
+    ITEM_TYPE_MEETING,
     ITEM_TYPE_OZO_CONTRACT,
     ITEM_TYPE_OZO_PERSON_CERTIFICATE,
     ITEM_TYPE_QUALIFICATION_CERTIFICATE,
     ITEM_TYPE_YEARLY_PLAN_MONTH,
     AttentionItem,
 )
-from core.dashboard.attention_service import get_attention_items
+from core.dashboard.attention_service import build_sort_key, get_attention_items
 from core.dashboard.task_links import configure_task_label, task_id_from_link, task_link
 from core.dashboard.widget_base import DashboardPanel
+from moduly.schuzky.constants import STATUS_PLANNED as MEETING_STATUS_PLANNED
+from moduly.schuzky.sluzby.meeting_service import meeting_service
 from moduly.ukoly.sluzby.task_service import task_service
 
 STATUS_WAITING_CHECK = "Splněno - čeká na kontrolu"
@@ -87,6 +90,88 @@ def classify_burning_tasks(tasks, today: date):
     waiting.sort(key=lambda task: (task.check_due_date or date.max, task.id))
     return burning, due_today, waiting
 
+
+def meeting_event_date(meeting) -> date | None:
+    """Kalendářní datum události (zahájení)."""
+    starts_at = meeting.starts_at
+    if starts_at is None:
+        return None
+    return starts_at.date()
+
+
+def meeting_should_appear_in_reminders(meeting, today: date) -> bool:
+    """Má se naplánovaná událost zobrazit v panelu Připomínky?"""
+    status = meeting_service.normalize_status(getattr(meeting, "status", None))
+    if status != MEETING_STATUS_PLANNED:
+        return False
+
+    remind_from = getattr(meeting, "remind_from", None)
+    if remind_from is not None and today >= remind_from:
+        return True
+    event_date = meeting_event_date(meeting)
+    if event_date is not None and today >= event_date:
+        return True
+    return False
+
+
+def classify_reminder_meetings(meetings, today: date):
+    """Rozdělí události pro panel Připomínky (po termínu / dnes včetně předstihu)."""
+    burning = []
+    due_today = []
+
+    for meeting in meetings:
+        if not meeting_should_appear_in_reminders(meeting, today):
+            continue
+        event_date = meeting_event_date(meeting)
+        if event_date is not None and event_date < today:
+            burning.append(meeting)
+        else:
+            due_today.append(meeting)
+
+    burning.sort(key=lambda item: (meeting_event_date(item) or date.max, item.id))
+    due_today.sort(
+        key=lambda item: (
+            meeting_event_date(item) or getattr(item, "remind_from", None) or date.max,
+            item.id,
+        )
+    )
+    return burning, due_today
+
+
+def meeting_reminder_attention_item(meeting) -> AttentionItem:
+    """AttentionItem pro kliknutí na událost v Připomínkách."""
+    starts_at = meeting.starts_at
+    event_date = meeting_event_date(meeting)
+    if event_date is None:
+        event_date = getattr(meeting, "remind_from", None)
+    title = (meeting.title or "").strip() or "Bez názvu"
+    event_type = (getattr(meeting, "event_type", None) or "").strip()
+    if event_type:
+        title = f"{event_type} – {title}"
+    location = (meeting.location or "").strip() or "—"
+    return AttentionItem(
+        item_type=ITEM_TYPE_MEETING,
+        source_type=ITEM_TYPE_MEETING,
+        source_id=meeting.id,
+        title=title,
+        date=event_date,
+        subtitle=location,
+        status=meeting.status or "",
+        priority="",
+        event_at=starts_at,
+        ends_at=meeting.ends_at,
+        open_metadata={
+            "source_type": ITEM_TYPE_MEETING,
+            "source_id": meeting.id,
+        },
+        sort_key=build_sort_key(
+            event_date,
+            item_type=ITEM_TYPE_MEETING,
+            title=title,
+            source_id=meeting.id,
+            due_datetime=starts_at,
+        ),
+    )
 
 def overdue_yearly_plan_month_items(
     today: date,
@@ -239,6 +324,16 @@ class TodayWidget(DashboardPanel):
             task_service.get_all_tasks(),
             today,
         )
+        meeting_burning, meeting_due = classify_reminder_meetings(
+            meeting_service.get_all(),
+            today,
+        )
+        meeting_burning_items = [
+            meeting_reminder_attention_item(meeting) for meeting in meeting_burning
+        ]
+        meeting_due_items = [
+            meeting_reminder_attention_item(meeting) for meeting in meeting_due
+        ]
         attention_items = get_attention_items(today=today)
         overdue_months = overdue_yearly_plan_month_items(
             today, attention_items=attention_items
@@ -250,7 +345,11 @@ class TodayWidget(DashboardPanel):
             today, attention_items=attention_items
         )
         self._linked_attention = (
-            list(overdue_months) + list(overdue_contracts) + list(overdue_certs)
+            list(overdue_months)
+            + list(overdue_contracts)
+            + list(overdue_certs)
+            + meeting_burning_items
+            + meeting_due_items
         )
 
         ordered: list[str] = []
@@ -260,7 +359,9 @@ class TodayWidget(DashboardPanel):
             ordered.append(self._attention_line(item, "🔴"))
         for item in overdue_certs:
             ordered.append(self._attention_line(item, "🔴"))
+        ordered.extend(self._attention_line(item, "🔴") for item in meeting_burning_items)
         ordered.extend(self._task_line(task, "🔴") for task in burning)
+        ordered.extend(self._attention_line(item, "🔵") for item in meeting_due_items)
         ordered.extend(self._task_line(task, "🔵") for task in due_today)
         ordered.extend(self._task_line(task, "🟡") for task in waiting)
 

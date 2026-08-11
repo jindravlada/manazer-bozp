@@ -253,6 +253,7 @@ def initialize_database() -> None:
     _ensure_meeting_event_type_column()
     _ensure_meeting_priority_column()
     _ensure_meeting_external_participants_column()
+    _ensure_meeting_remind_from_column()
     _ensure_periodic_occurrence_columns()
     _ensure_meeting_event_types_table()
     _ensure_meeting_agenda_items_table()
@@ -370,6 +371,14 @@ def _ensure_meeting_external_participants_column() -> None:
         return
     if "external_participants_json" not in columns:
         _add_column("meetings", "external_participants_json TEXT DEFAULT '[]'")
+
+
+def _ensure_meeting_remind_from_column() -> None:
+    columns = _table_columns("meetings")
+    if not columns:
+        return
+    if "remind_from" not in columns:
+        _add_column("meetings", "remind_from DATE")
 
 
 def _ensure_meeting_event_types_table() -> None:

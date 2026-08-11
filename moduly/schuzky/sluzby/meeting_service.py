@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 from moduly.nastaveni.sluzby.person_service import person_service
 from moduly.schuzky.constants import (
@@ -43,6 +43,7 @@ class MeetingService:
         event_type: str = "",
         starts_at: datetime | None = None,
         ends_at: datetime | None = None,
+        remind_from: date | None = None,
         location: str = "",
         organizer_person_id: int | None = None,
         participant_ids: list[int] | None = None,
@@ -55,6 +56,7 @@ class MeetingService:
         notes: str = "",
     ) -> Meeting:
         self.validate_times(starts_at, ends_at)
+        remind_from = self._normalized_remind_from(remind_from, starts_at)
         status = self.normalize_status(status)
         priority = self.normalize_priority(priority)
         externals = self.normalize_external_participants(external_participants or [])
@@ -63,6 +65,7 @@ class MeetingService:
             event_type=meeting_event_type_service.normalize(event_type),
             starts_at=starts_at,
             ends_at=ends_at,
+            remind_from=remind_from,
             location=(location or "").strip(),
             organizer_person_id=organizer_person_id,
             organizer_name=self._person_name(organizer_person_id),
@@ -86,6 +89,7 @@ class MeetingService:
         event_type: str = "",
         starts_at: datetime | None = None,
         ends_at: datetime | None = None,
+        remind_from: date | None = None,
         location: str = "",
         organizer_person_id: int | None = None,
         participant_ids: list[int] | None = None,
@@ -102,6 +106,7 @@ class MeetingService:
             raise MeetingValidationError("Událost nebyla nalezena.")
 
         self.validate_times(starts_at, ends_at)
+        remind_from = self._normalized_remind_from(remind_from, starts_at)
         status = self.normalize_status(status)
         priority = self.normalize_priority(priority)
 
@@ -115,6 +120,7 @@ class MeetingService:
         meeting.event_type = meeting_event_type_service.normalize(event_type)
         meeting.starts_at = starts_at
         meeting.ends_at = ends_at
+        meeting.remind_from = remind_from
         meeting.location = (location or "").strip()
         meeting.organizer_person_id = organizer_person_id
         meeting.organizer_name = self._person_name(organizer_person_id)
@@ -152,6 +158,30 @@ class MeetingService:
     ) -> None:
         if starts_at is not None and ends_at is not None and ends_at < starts_at:
             raise MeetingValidationError(END_BEFORE_START_MESSAGE)
+
+    @staticmethod
+    def validate_remind_from(
+        remind_from: date | None,
+        starts_at: datetime | None,
+    ) -> str | None:
+        """Vrátí chybovou hlášku, pokud je remind_from neplatné."""
+        if remind_from is None or starts_at is None:
+            return None
+        event_date = starts_at.date() if isinstance(starts_at, datetime) else starts_at
+        if remind_from > event_date:
+            return "Připomenout od nemůže být později než datum události."
+        return None
+
+    @classmethod
+    def _normalized_remind_from(
+        cls,
+        remind_from: date | None,
+        starts_at: datetime | None,
+    ) -> date | None:
+        error = cls.validate_remind_from(remind_from, starts_at)
+        if error:
+            raise MeetingValidationError(error)
+        return remind_from
 
     @staticmethod
     def effective_ends_at(

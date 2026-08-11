@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
     QFormLayout,
+    QLabel,
     QLineEdit,
     QMessageBox,
     QTabWidget,
@@ -18,6 +19,7 @@ from PySide6.QtWidgets import (
 
 from core.widgets.dialog_utils import create_save_cancel_box
 from core.widgets.editor_dialog_controller import EditorDialogController
+from core.widgets.nullable_date_edit import NullableDateEdit
 from moduly.schuzky.constants import (
     DEFAULT_EVENT_DURATION_HOURS,
     DEFAULT_EVENT_TYPE,
@@ -93,6 +95,7 @@ class MeetingDialog(QDialog):
         self._editor.install_auto_dirty_tracking()
         self.starts_at_edit.dateTimeChanged.connect(self._editor.mark_dirty)
         self.ends_at_edit.dateTimeChanged.connect(self._editor.mark_dirty)
+        self.remind_from_edit.dateChanged.connect(self._editor.mark_dirty)
 
         self.starts_at_edit.dateTimeChanged.connect(self._on_starts_changed)
         self.ends_at_edit.dateTimeChanged.connect(self._on_ends_changed)
@@ -123,6 +126,15 @@ class MeetingDialog(QDialog):
         self.starts_at_edit = EventDateTimeFields()
         self.ends_at_edit = EventDateTimeFields()
 
+        self.remind_from_edit = NullableDateEdit()
+        _remind_hint = (
+            "Od tohoto data se událost zobrazí na Pracovní ploše\nv části Připomínky."
+        )
+        self.remind_from_edit.setToolTip(_remind_hint)
+        self.remind_from_hint = QLabel(_remind_hint)
+        self.remind_from_hint.setWordWrap(True)
+        self.remind_from_hint.setStyleSheet("color: #666;")
+
         self.location_edit = MeetingLocationTypeahead()
         self.organizer_selector = MeetingOrganizerWidget()
         self.participants_selector = MeetingParticipantsWidget()
@@ -146,6 +158,8 @@ class MeetingDialog(QDialog):
         form.addRow("Název události:", self.title_edit)
         form.addRow("Datum zahájení:", self.starts_at_edit)
         form.addRow("Datum ukončení:", self.ends_at_edit)
+        form.addRow("Připomenout od:", self.remind_from_edit)
+        form.addRow("", self.remind_from_hint)
         form.addRow("Místo:", self.location_edit)
         form.addRow("Organizátor:", self.organizer_selector)
         form.addRow("Účastníci:", self.participants_selector)
@@ -176,6 +190,8 @@ class MeetingDialog(QDialog):
         self._suppress_datetime = False
         # Existující ukončení považujeme za vědomě nastavené (nepřepisovat).
         self._ends_manually_edited = meeting.ends_at is not None
+
+        self.remind_from_edit.set_date_value(getattr(meeting, "remind_from", None))
 
         self.location_edit.set_location_text(meeting.location or "")
         self.organizer_selector.set_person_id(meeting.organizer_person_id)
@@ -211,6 +227,7 @@ class MeetingDialog(QDialog):
         self.ends_at_edit.set_datetime(None)
         self._suppress_datetime = False
         self._ends_manually_edited = False
+        self.remind_from_edit.clear_date()
 
         self.location_edit.set_location_text(data.get("location") or "")
         self.organizer_selector.set_person_id(data.get("organizer_person_id"))
@@ -238,6 +255,7 @@ class MeetingDialog(QDialog):
             "event_type": self.event_type_combo.currentText().strip(),
             "starts_at": self.starts_at_edit.get_datetime(),
             "ends_at": self.ends_at_edit.get_datetime(),
+            "remind_from": self.remind_from_edit.get_date(),
             "location": self.location_edit.display_text(),
             "organizer_person_id": self.organizer_selector.current_person_id(),
             "participant_ids": self.participants_selector.selected_person_ids(),
@@ -293,6 +311,14 @@ class MeetingDialog(QDialog):
             meeting_service.validate_times(data["starts_at"], data["ends_at"])
         except ValueError:
             QMessageBox.warning(self, DIALOG_WINDOW_TITLE, END_BEFORE_START_MESSAGE)
+            return False
+
+        remind_error = meeting_service.validate_remind_from(
+            data.get("remind_from"),
+            data.get("starts_at"),
+        )
+        if remind_error:
+            QMessageBox.warning(self, DIALOG_WINDOW_TITLE, remind_error)
             return False
 
         if meeting_service.is_planned_start_in_past_forbidden(

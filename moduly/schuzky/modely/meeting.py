@@ -1,6 +1,6 @@
-from datetime import datetime
+from datetime import date, datetime
 
-from sqlalchemy import DateTime, Integer, String, Text
+from sqlalchemy import Date, DateTime, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.database.base import Base
@@ -19,6 +19,7 @@ class Meeting(Base):
 
     starts_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     ends_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    remind_from: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     location: Mapped[str] = mapped_column(String(250), default="")
 
