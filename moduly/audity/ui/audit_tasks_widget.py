@@ -54,6 +54,7 @@ class AuditTasksWidget(QWidget):
         super().__init__(parent)
 
         self.audit_id: int | None = None
+        self._deferred_edits = None
 
         layout = QVBoxLayout(self)
 
@@ -121,10 +122,20 @@ class AuditTasksWidget(QWidget):
         self.refresh()
         self._update_state()
 
+    def set_deferred_edits(self, deferred_edits) -> None:
+        self._deferred_edits = deferred_edits
+
     def refresh(self) -> None:
         tasks = []
         if self.audit_id is not None:
             tasks = audit_service.get_tasks_for_audit(self.audit_id)
+            if self._deferred_edits is not None:
+                overlaid = []
+                for task in tasks:
+                    viewed = self._deferred_edits.get_task(int(task.id))
+                    overlaid.append(viewed if viewed is not None else task)
+                overlaid.extend(self._deferred_edits.list_pending_tasks_for_audit(self.audit_id))
+                tasks = overlaid
 
         self.content_stack.setCurrentIndex(1 if tasks else 0)
         self.empty_label.setText(
@@ -197,12 +208,25 @@ class AuditTasksWidget(QWidget):
             QMessageBox.information(self, "Úkoly", "Vyberte úkol.")
             return
 
-        task = task_service.get_task_by_id(task_id)
+        task = (
+            self._deferred_edits.get_task(task_id)
+            if self._deferred_edits is not None
+            else task_service.get_task_by_id(task_id)
+        )
         if task is None:
             QMessageBox.warning(self, "Úkoly", "Úkol nebyl nalezen.")
             self.refresh()
             return
 
-        dialog = TaskDialog(self, task=task)
+        if self._deferred_edits is not None:
+            dialog = TaskDialog(
+                self,
+                task=task,
+                persist_handler=lambda current, data: self._deferred_edits.stage_task_update(
+                    int(current.id), data
+                ),
+            )
+        else:
+            dialog = TaskDialog(self, task=task)
         dialog.exec()
         self.refresh()

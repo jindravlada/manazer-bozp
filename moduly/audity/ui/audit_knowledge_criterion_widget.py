@@ -128,6 +128,8 @@ class AuditKnowledgeCriterionWidget(QWidget):
         self._process_purpose = ""
         self._audit_id: int | None = None
         self._on_finding_saved = None
+        self._on_deferred_dirty = None
+        self._deferred_edits = None
         self._selected_control_point_id = ""
         self._control_point_frames: dict[str, _ControlPointFrame] = {}
         self._overrides_cache: dict[tuple[str, str, str], str] | None = None
@@ -158,6 +160,9 @@ class AuditKnowledgeCriterionWidget(QWidget):
         self._audit_id = audit_id
         self._overrides_cache = None
         self.refresh()
+
+    def set_deferred_edits(self, deferred_edits) -> None:
+        self._deferred_edits = deferred_edits
 
     def _overrides(self) -> dict[tuple[str, str, str], str]:
         if self._overrides_cache is None:
@@ -382,7 +387,10 @@ class AuditKnowledgeCriterionWidget(QWidget):
             description.setWordWrap(True)
             row_layout.addWidget(description)
 
-        result_selector = ControlResultSelectorWidget()
+        result_selector = ControlResultSelectorWidget(
+            auto_persist=self._deferred_edits is None,
+            deferred_edits=self._deferred_edits,
+        )
         result_selector.configure(
             entity_type=ENTITY_AUDITY,
             entity_id=self._audit_id,
@@ -391,6 +399,8 @@ class AuditKnowledgeCriterionWidget(QWidget):
             result_header=AUDIT_RESULT_HEADER_LABEL,
             note_label=AUDIT_RESULT_NOTE_LABEL,
         )
+        if self._deferred_edits is not None:
+            result_selector.data_saved.connect(self._notify_deferred_changed)
         row_layout.addWidget(result_selector)
 
         photo_widget = ControlResultPhotoWidget()
@@ -602,6 +612,14 @@ class AuditKnowledgeCriterionWidget(QWidget):
         if self._audit_id is None or not context.control_point_id:
             return None
 
+        if self._deferred_edits is not None:
+            return self._deferred_edits.finding_for_control_point(
+                self._audit_id,
+                process_label=context.area_label,
+                criterion_label=context.section_label,
+                question_id=context.control_point_id,
+            )
+
         return audit_service.finding_for_control_point(
             self._audit_id,
             process_label=context.area_label,
@@ -616,25 +634,14 @@ class AuditKnowledgeCriterionWidget(QWidget):
 
         context = self._context_for_control_point(control_point)
         point_context = self._control_point_context(context)
-        current_result = control_result_service.current_result(
-            ENTITY_AUDITY,
-            self._audit_id,
-            point_context,
+        current_result = (
+            self._deferred_edits.current_result(ENTITY_AUDITY, self._audit_id, point_context)
+            if self._deferred_edits is not None
+            else control_result_service.current_result(ENTITY_AUDITY, self._audit_id, point_context)
         )
         default_finding_type = self._default_finding_type_for_result(current_result)
         if default_finding_type is None:
             QMessageBox.information(self, "Zjištění", FINDING_REQUIRES_RESULT_MESSAGE)
-            return
-
-        existing_open = audit_service.open_finding_for_control_point(
-            self._audit_id,
-            process_label=context.area_label,
-            criterion_label=context.section_label,
-            question_id=context.control_point_id,
-        )
-        if existing_open is not None:
-            QMessageBox.information(self, "Zjištění", FINDING_DUPLICATE_MESSAGE)
-            self._open_existing_finding(existing_open, context)
             return
 
         existing_any = self._finding_for_context(context)
@@ -655,10 +662,16 @@ class AuditKnowledgeCriterionWidget(QWidget):
                 "control_point_label": context.control_point_label,
             },
         )
-        stored = control_result_service.get_for_control_point(
-            ENTITY_AUDITY,
-            self._audit_id,
-            point_context,
+        stored = (
+            self._deferred_edits.get_control_result_view(
+                ENTITY_AUDITY, self._audit_id, point_context
+            )
+            if self._deferred_edits is not None
+            else control_result_service.get_for_control_point(
+                ENTITY_AUDITY,
+                self._audit_id,
+                point_context,
+            )
         )
         note = str(stored.note or "").strip() if stored is not None else ""
         if note and allows_pkz_action(current_result):
@@ -669,29 +682,42 @@ class AuditKnowledgeCriterionWidget(QWidget):
             return
 
         data = dialog.get_data()
-        finding_service.create(
-            ENTITY_AUDITY,
-            self._audit_id,
-            finding_type=data["finding_type"],
-            reference_label=data["reference_label"] or context.question_stable_key or context.control_point_label,
-            description=data["description"],
-            recommended_action=data["recommended_action"],
-            responsible_person_id=data["responsible_person_id"],
-            responsible_person_name=data["responsible_person_name"],
-            due_date=data["due_date"],
-            status=data["status"],
-            resolution_note=data["resolution_note"],
-            source_area_label=context.area_label,
-            source_section_label=context.section_label,
-            source_control_point_id=context.control_point_id,
-            source_control_point_label=context.control_point_label,
-        )
+        create_fields = {
+            "finding_type": data["finding_type"],
+            "reference_label": data["reference_label"]
+            or context.question_stable_key
+            or context.control_point_label,
+            "description": data["description"],
+            "recommended_action": data["recommended_action"],
+            "responsible_person_id": data["responsible_person_id"],
+            "responsible_person_name": data["responsible_person_name"],
+            "due_date": data["due_date"],
+            "status": data["status"],
+            "resolution_note": data["resolution_note"],
+            "source_area_label": context.area_label,
+            "source_section_label": context.section_label,
+            "source_control_point_id": context.control_point_id,
+            "source_control_point_label": context.control_point_label,
+        }
+        if self._deferred_edits is not None:
+            self._deferred_edits.stage_finding_create(
+                ENTITY_AUDITY, self._audit_id, create_fields
+            )
+        else:
+            finding_service.create(ENTITY_AUDITY, self._audit_id, **create_fields)
         self._notify_finding_saved()
 
     def _open_existing_finding(self, finding, context: AuditFindingKnowledgeContext) -> None:
+        viewed = (
+            self._deferred_edits.get_finding(finding.id)
+            if self._deferred_edits is not None
+            else finding
+        )
+        if viewed is None:
+            return
         dialog = FindingDialog(
             self,
-            finding=finding,
+            finding=viewed,
             title=FINDING_DIALOG_TITLE,
             knowledge_source={
                 "source_label": FINDING_SOURCE_LABEL,
@@ -703,14 +729,26 @@ class AuditKnowledgeCriterionWidget(QWidget):
         if not dialog.exec():
             return
 
-        finding_service.update(finding.id, **dialog.get_data())
+        data = dialog.get_data()
+        if self._deferred_edits is not None:
+            self._deferred_edits.stage_finding_update(finding.id, data)
+        else:
+            finding_service.update(finding.id, **data)
         self._notify_finding_saved()
+
+    def _notify_deferred_changed(self) -> None:
+        handler = getattr(self, "_on_deferred_dirty", None)
+        if handler is not None:
+            handler()
+
+    def set_on_deferred_dirty(self, callback) -> None:
+        self._on_deferred_dirty = callback
 
     def _notify_finding_saved(self) -> None:
         self.refresh()
         if self._on_finding_saved is not None:
             self._on_finding_saved()
-
+        self._notify_deferred_changed()
     def _build_block(self, title: str, content: QWidget) -> QWidget:
         container = QWidget()
         block_layout = QVBoxLayout(container)

@@ -174,8 +174,14 @@ class AuditProcessKnowledgeWidget(QWidget):
         self.criterion_widget.set_audit_id(audit_id)
         self._methodology_panel.set_audit_id(audit_id)
 
+    def set_deferred_edits(self, deferred_edits) -> None:
+        self.criterion_widget.set_deferred_edits(deferred_edits)
+
     def set_on_finding_saved(self, callback) -> None:
         self.criterion_widget.set_on_finding_saved(callback)
+
+    def set_on_deferred_dirty(self, callback) -> None:
+        self.criterion_widget.set_on_deferred_dirty(callback)
 
     def refresh_findings_display(self) -> None:
         self.criterion_widget.refresh()

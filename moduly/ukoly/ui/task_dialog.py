@@ -61,16 +61,25 @@ class TaskDialog(QDialog):
         *,
         create_kwargs: dict | None = None,
         create_factory: Callable[[dict], Any] | None = None,
+        persist_handler: Callable[[Any | None, dict], Any] | None = None,
     ):
         super().__init__(parent)
 
         self.task = task
         self._create_kwargs = dict(create_kwargs or {})
         self._create_factory = create_factory
+        self._persist_handler = persist_handler
         self._baseline: object | None = None
         self._closing = False
         self._attachments_info_label: QLabel | None = None
         self._finding = finding_task_service.get_finding_for_task(task) if task is not None else None
+        # U odloženého úkolu (temp id < 0) načíst finding ze source_record_id.
+        if self._finding is None and task is not None and getattr(task, "id", 0) and int(task.id) < 0:
+            source_id = getattr(task, "source_record_id", None)
+            if source_id:
+                from core.shared.sluzby.finding_service import finding_service
+
+                self._finding = finding_service.get_by_id(int(source_id))
         self._is_investigation_action = (
             task is not None
             and getattr(task, "task_type", "") == TASK_TYPE_INVESTIGATION_ACTION
@@ -226,6 +235,15 @@ class TaskDialog(QDialog):
         if remind_error:
             QMessageBox.warning(self, self.windowTitle(), remind_error)
             return False
+
+        if self._persist_handler is not None:
+            result = self._persist_handler(self.task, data)
+            if result is False:
+                return False
+            if result is not None and result is not True:
+                self.task = result
+            self._capture_baseline()
+            return True
 
         if self.task is None:
             if self._create_factory is not None:
@@ -432,6 +450,8 @@ class TaskDialog(QDialog):
         layout = QVBoxLayout(tab)
 
         entity_id = self.task.id if self.task is not None else None
+        if entity_id is not None and int(entity_id) < 0:
+            entity_id = None
         self.attachment_widget = AttachmentWidget("task", entity_id)
 
         if entity_id is None:

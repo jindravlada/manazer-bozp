@@ -73,6 +73,7 @@ class AuditFindingsWidget(QWidget):
 
         self.audit_id: int | None = None
         self._on_task_changed = None
+        self._deferred_edits = None
 
         layout = QVBoxLayout(self)
 
@@ -158,13 +159,21 @@ class AuditFindingsWidget(QWidget):
     def set_on_task_changed(self, callback) -> None:
         self._on_task_changed = callback
 
+    def set_deferred_edits(self, deferred_edits) -> None:
+        self._deferred_edits = deferred_edits
+        self.task_actions.set_deferred_edits(deferred_edits)
+
     def refresh(self) -> None:
         findings = []
         summary = {"total": 0}
 
         if self.audit_id is not None:
-            findings = finding_service.get_for_entity(ENTITY_AUDITY, self.audit_id)
-            summary = finding_service.summarize(ENTITY_AUDITY, self.audit_id)
+            if self._deferred_edits is not None:
+                findings = self._deferred_edits.list_findings(ENTITY_AUDITY, self.audit_id)
+                summary = self._deferred_edits.summarize_findings(ENTITY_AUDITY, self.audit_id)
+            else:
+                findings = finding_service.get_for_entity(ENTITY_AUDITY, self.audit_id)
+                summary = finding_service.summarize(ENTITY_AUDITY, self.audit_id)
 
         self.summary_panel.update_summary(summary)
         self.summary_panel.setVisible(self.audit_id is not None)
@@ -268,7 +277,11 @@ class AuditFindingsWidget(QWidget):
             QMessageBox.information(self, "Zjištění", "Vyberte zjištění.")
             return
 
-        finding = finding_service.get_by_id(finding_id)
+        finding = (
+            self._deferred_edits.get_finding(finding_id)
+            if self._deferred_edits is not None
+            else finding_service.get_by_id(finding_id)
+        )
         if finding is None:
             QMessageBox.warning(self, "Zjištění", "Zjištění nebylo nalezeno.")
             self.refresh()
@@ -286,7 +299,11 @@ class AuditFindingsWidget(QWidget):
             },
         )
         if dialog.exec():
-            finding_service.update(finding_id, **dialog.get_data())
+            data = dialog.get_data()
+            if self._deferred_edits is not None:
+                self._deferred_edits.stage_finding_update(finding_id, data)
+            else:
+                finding_service.update(finding_id, **data)
             self.refresh()
 
     def delete_finding(self) -> None:
@@ -303,7 +320,10 @@ class AuditFindingsWidget(QWidget):
             QMessageBox.No,
         )
         if answer == QMessageBox.Yes:
-            finding_service.delete(finding_id)
+            if self._deferred_edits is not None:
+                self._deferred_edits.stage_finding_delete(finding_id)
+            else:
+                finding_service.delete(finding_id)
             self.refresh()
 
     @staticmethod

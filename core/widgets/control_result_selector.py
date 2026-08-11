@@ -24,7 +24,7 @@ class ControlResultSelectorWidget(QWidget):
     result_changed = Signal(str)
     data_saved = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, *, auto_persist: bool = True, deferred_edits=None):
         super().__init__(parent)
 
         self._entity_type = ""
@@ -32,6 +32,8 @@ class ControlResultSelectorWidget(QWidget):
         self._context: ControlPointContext | None = None
         self._must_be_saved_message = "Záznam je nutné nejdříve uložit."
         self._loading = False
+        self._auto_persist = auto_persist
+        self._deferred_edits = deferred_edits
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(16, 4, 0, 0)
@@ -59,6 +61,7 @@ class ControlResultSelectorWidget(QWidget):
         self._note_edit = QLineEdit()
         self._note_edit.setPlaceholderText("nepovinná")
         self._note_edit.editingFinished.connect(self._on_note_finished)
+        self._note_edit.textChanged.connect(self._on_note_text_changed)
         note_row.addWidget(self._note_edit)
         layout.addLayout(note_row)
 
@@ -104,11 +107,7 @@ class ControlResultSelectorWidget(QWidget):
                 self._set_enabled(False)
                 return
 
-            row = control_result_service.get_for_control_point(
-                self._entity_type,
-                self._entity_id,
-                self._context,
-            )
+            row = self._load_row()
             if row is None:
                 self._set_result_ui(CONTROL_RESULT_NEKONTROLOVANO)
                 self._note_edit.clear()
@@ -123,6 +122,36 @@ class ControlResultSelectorWidget(QWidget):
             self._note_edit.blockSignals(note_blocked)
             self._shared_experience_check.blockSignals(shared_blocked)
             self._loading = False
+
+    def _load_row(self):
+        if self._entity_id is None or self._context is None:
+            return None
+        if self._deferred_edits is not None and not self._auto_persist:
+            return self._deferred_edits.get_control_result_view(
+                self._entity_type,
+                self._entity_id,
+                self._context,
+            )
+        return control_result_service.get_for_control_point(
+            self._entity_type,
+            self._entity_id,
+            self._context,
+        )
+
+    def _current_stored_result(self) -> str:
+        if self._entity_id is None or self._context is None:
+            return CONTROL_RESULT_NEKONTROLOVANO
+        if self._deferred_edits is not None and not self._auto_persist:
+            return self._deferred_edits.current_result(
+                self._entity_type,
+                self._entity_id,
+                self._context,
+            )
+        return control_result_service.current_result(
+            self._entity_type,
+            self._entity_id,
+            self._context,
+        )
 
     def _set_enabled(self, enabled: bool) -> None:
         self.setEnabled(True)
@@ -147,14 +176,24 @@ class ControlResultSelectorWidget(QWidget):
         if self._entity_id is None or self._context is None:
             return
 
-        control_result_service.set_result(
-            self._entity_type,
-            self._entity_id,
-            self._context,
-            result=self.current_result(),
-            note=self._note_edit.text(),
-            shared_experience=self._shared_experience_check.isChecked(),
-        )
+        if self._deferred_edits is not None and not self._auto_persist:
+            self._deferred_edits.set_control_result(
+                self._entity_type,
+                self._entity_id,
+                self._context,
+                result=self.current_result(),
+                note=self._note_edit.text(),
+                shared_experience=self._shared_experience_check.isChecked(),
+            )
+        else:
+            control_result_service.set_result(
+                self._entity_type,
+                self._entity_id,
+                self._context,
+                result=self.current_result(),
+                note=self._note_edit.text(),
+                shared_experience=self._shared_experience_check.isChecked(),
+            )
         if emit_result_changed:
             self.result_changed.emit(self.current_result())
         self.data_saved.emit()
@@ -168,11 +207,7 @@ class ControlResultSelectorWidget(QWidget):
             self._reload_from_storage()
             return
 
-        previous = control_result_service.current_result(
-            self._entity_type,
-            self._entity_id,
-            self._context,
-        )
+        previous = self._current_stored_result()
         if previous == value:
             return
 
@@ -181,7 +216,16 @@ class ControlResultSelectorWidget(QWidget):
     def _on_note_finished(self) -> None:
         if self._loading or self._entity_id is None or self._context is None:
             return
+        # Při auto_persist ukládat na opuštění pole; deferred řeší textChanged.
+        if self._deferred_edits is not None and not self._auto_persist:
+            return
+        self._save_current_state()
 
+    def _on_note_text_changed(self, _text: str) -> None:
+        if self._loading or self._entity_id is None or self._context is None:
+            return
+        if self._deferred_edits is None or self._auto_persist:
+            return
         self._save_current_state()
 
     def _on_shared_experience_toggled(self, _checked: bool) -> None:

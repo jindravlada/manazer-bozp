@@ -26,6 +26,7 @@ from core.widgets.editor_dialog_controller import (
 )
 from moduly.audity.constants import FINDING_SOURCE_LABEL, TAB_LABELS
 from moduly.audity.sluzby.audit_commission_service import audit_commission_service
+from moduly.audity.sluzby.audit_deferred_edits import AuditDeferredEdits
 from moduly.audity.sluzby.audit_program_service import AuditVisitContext
 from moduly.audity.sluzby.audit_service import audit_service
 from moduly.audity.ui.audit_commission_widget import AuditCommissionWidget
@@ -48,6 +49,7 @@ class AuditDialog(QDialog):
         self.audit = audit
         self._baseline: object | None = None
         self._closing = False
+        self._deferred = AuditDeferredEdits()
         if visit_context is None and audit is not None:
             from moduly.audity.sluzby.audit_program_service import audit_program_service
 
@@ -85,6 +87,7 @@ class AuditDialog(QDialog):
         layout.addLayout(self._build_footer())
 
         audit_id = audit.id if audit is not None else None
+        self._wire_deferred_edits()
         self.set_audit_id(audit_id)
         if visit_context is not None:
             planned = visit_context.planned_process_ids
@@ -105,6 +108,19 @@ class AuditDialog(QDialog):
         self.conclusion_widget.load_audit(audit)
         self.commission_widget.set_audit_context(audit_id)
         self._capture_baseline()
+
+    def _wire_deferred_edits(self) -> None:
+        self.processes_widget.set_deferred_edits(self._deferred)
+        self.terrain_widget.set_deferred_edits(self._deferred)
+        self.findings_widget.set_deferred_edits(self._deferred)
+        self.tasks_widget.set_deferred_edits(self._deferred)
+        self.history_widget.set_deferred_edits(self._deferred)
+        self.processes_widget.set_on_deferred_dirty(self._on_deferred_dirty)
+        self.terrain_widget.set_on_deferred_dirty(self._on_deferred_dirty)
+
+    def _on_deferred_dirty(self) -> None:
+        # Dirty se počítá z bufferu; callback drží konzistenci s budoucími signaly.
+        return
 
     def _build_footer(self) -> QHBoxLayout:
         footer = QHBoxLayout()
@@ -143,7 +159,7 @@ class AuditDialog(QDialog):
         self._baseline = copy.deepcopy(self.get_data())
 
     def _is_dirty(self) -> bool:
-        return self.get_data() != self._baseline
+        return self.get_data() != self._baseline or self._deferred.has_changes()
 
     def set_audit_id(self, audit_id: int | None) -> None:
         self.processes_widget.set_audit_id(audit_id)
@@ -173,7 +189,7 @@ class AuditDialog(QDialog):
             self._done_accept()
 
     def _persist(self) -> bool:
-        """Jediné místo zápisu hlavních údajů auditu + komise do DB."""
+        """Zápis Spis/Závěr/komise + odložených zjištění/úkolů/výsledků kontroly."""
         valid, message = self.commission_widget.validate()
         if not valid:
             QMessageBox.warning(self, "Auditní tým", message)
@@ -189,6 +205,7 @@ class AuditDialog(QDialog):
                 return False
             self.audit = created
             self.save_commission_members(created.id, data)
+            self._deferred.flush()
             self._reload_after_persist()
         else:
             # Zápis jen podle id — ne přes mutaci self.audit drženého editorem.
@@ -196,6 +213,7 @@ class AuditDialog(QDialog):
             if updated is None:
                 return False
             self.save_commission_members(self.audit.id, data)
+            self._deferred.flush()
             self.audit = updated
             self._reload_after_persist()
 
@@ -209,6 +227,10 @@ class AuditDialog(QDialog):
         self.history_widget.load_audit(self.audit)
         self.conclusion_widget.load_audit(self.audit)
         self.commission_widget.set_audit_context(self.audit.id)
+        self.findings_widget.refresh()
+        self.tasks_widget.refresh()
+        self.processes_widget.refresh_findings_display()
+        self.terrain_widget.refresh_findings_display()
 
     def _done_accept(self) -> None:
         self._closing = True
@@ -249,7 +271,8 @@ class AuditDialog(QDialog):
                 return False
             self._done_accept()
             return False
-        # Neukládat — zahodit UI změny, DB netknutá.
+        # Neukládat — zahodit UI i odložené změny; DB netknutá.
+        self._deferred.clear()
         return True
 
     def closeEvent(self, event: QCloseEvent) -> None:
@@ -316,10 +339,15 @@ class AuditDialog(QDialog):
             self.audit.id,
             data.get("commission_members", []),
         )
+        self._deferred.flush()
 
         self.audit = updated
         self.conclusion_widget.load_audit(self.audit)
         self.history_widget.load_audit(self.audit)
         self.spis_widget.load_audit(self.audit)
+        self.findings_widget.refresh()
+        self.tasks_widget.refresh()
+        self.processes_widget.refresh_findings_display()
+        self.terrain_widget.refresh_findings_display()
         self._capture_baseline()
         return True

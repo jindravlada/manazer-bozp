@@ -70,6 +70,7 @@ class AuditWorkplaceHistoryWidget(QWidget):
 
         self._audit = None
         self._history: WorkplaceHistory | None = None
+        self._deferred_edits = None
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -164,6 +165,9 @@ class AuditWorkplaceHistoryWidget(QWidget):
     def load_audit(self, audit) -> None:
         self._audit = audit
         self.refresh()
+
+    def set_deferred_edits(self, deferred_edits) -> None:
+        self._deferred_edits = deferred_edits
 
     def refresh(self) -> None:
         workplace_id = getattr(self._audit, "workplace_id", None) if self._audit else None
@@ -338,6 +342,11 @@ class AuditWorkplaceHistoryWidget(QWidget):
             self.refresh()
             return
 
+        if self._deferred_edits is not None:
+            viewed = self._deferred_edits.get_finding(finding_id)
+            if viewed is not None:
+                finding = viewed
+
         dialog = FindingDialog(
             self,
             finding=finding,
@@ -352,7 +361,11 @@ class AuditWorkplaceHistoryWidget(QWidget):
             },
         )
         if dialog.exec():
-            finding_service.update(finding_id, **dialog.get_data())
+            data = dialog.get_data()
+            if self._deferred_edits is not None:
+                self._deferred_edits.stage_finding_update(finding_id, data)
+            else:
+                finding_service.update(finding_id, **data)
         self.refresh()
 
     def _open_selected_task(self) -> None:
@@ -360,12 +373,25 @@ class AuditWorkplaceHistoryWidget(QWidget):
         if task_id is None:
             return
 
-        task = task_service.get_task_by_id(task_id)
+        task = (
+            self._deferred_edits.get_task(task_id)
+            if self._deferred_edits is not None
+            else task_service.get_task_by_id(task_id)
+        )
         if task is None:
             QMessageBox.warning(self, TAB_WORKPLACE_HISTORY, "Úkol nebyl nalezen.")
             self.refresh()
             return
 
-        dialog = TaskDialog(self, task=task)
+        if self._deferred_edits is not None:
+            dialog = TaskDialog(
+                self,
+                task=task,
+                persist_handler=lambda current, data: self._deferred_edits.stage_task_update(
+                    int(current.id), data
+                ),
+            )
+        else:
+            dialog = TaskDialog(self, task=task)
         dialog.exec()
         self.refresh()
