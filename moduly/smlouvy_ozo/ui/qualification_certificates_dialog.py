@@ -16,7 +16,11 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-from core.widgets.dialog_utils import configure_resizable_form_dialog, exec_maximized
+from core.widgets.dialog_utils import (
+    configure_resizable_form_dialog,
+    create_close_box,
+    exec_maximized,
+)
 from moduly.smlouvy_ozo.constants import (
     ACTION_EDIT,
     ACTION_RENEW_CERTIFICATE,
@@ -86,7 +90,7 @@ class QualificationCertificatesDialog(QDialog):
         layout.addWidget(self.empty_label)
         layout.addWidget(self.table)
 
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        buttons = create_close_box(self)
         close_btn = buttons.button(QDialogButtonBox.StandardButton.Close)
         if close_btn is not None:
             close_btn.clicked.connect(self.accept)

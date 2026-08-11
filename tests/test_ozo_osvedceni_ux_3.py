@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from PySide6.QtWidgets import QApplication, QHeaderView
+from PySide6.QtWidgets import QApplication, QDialogButtonBox, QHeaderView
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -66,6 +66,11 @@ class OzoOsvedceniUx3TestCase(unittest.TestCase):
                 header.sectionResizeMode(column),
                 QHeaderView.ResizeMode.ResizeToContents,
             )
+        close_btn = dialog.findChildren(QDialogButtonBox)[0].button(
+            QDialogButtonBox.StandardButton.Close
+        )
+        self.assertIsNotNone(close_btn)
+        self.assertEqual(close_btn.text(), "Zavřít")
         dialog.close()
 
 
