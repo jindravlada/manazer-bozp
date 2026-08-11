@@ -95,6 +95,21 @@ class OzoSmlouvyYearSpinTestCase(unittest.TestCase):
             if label.text() == "Rok:"
         ]
         self.assertEqual(labels, ["Rok:"])
+        self.assertEqual(
+            page.year_all_hint.text(),
+            f"{YEAR_SPIN_ALL_VALUE} = {YEAR_FILTER_ALL}",
+        )
+        self.assertEqual(page.year_all_hint.objectName(), "MutedText")
+        self.assertFalse(page.year_all_hint.isHidden())
+        # Nápověda je hned vedle spinboxu (před checkboxem neaktivních).
+        toolbar = page.layout().itemAt(0).layout()
+        toolbar_widgets = [
+            toolbar.itemAt(i).widget()
+            for i in range(toolbar.count())
+            if toolbar.itemAt(i).widget() is not None
+        ]
+        year_idx = toolbar_widgets.index(page.year_filter)
+        self.assertEqual(toolbar_widgets[year_idx + 1], page.year_all_hint)
         # Rozsah skutečných roků je 1900–2100 (pod 1900 jen „Vše“).
         page.year_filter.setValue(YEAR_SPIN_MIN)
         self.assertEqual(page.selected_year(), YEAR_SPIN_MIN)

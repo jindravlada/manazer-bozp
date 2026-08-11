@@ -80,6 +80,9 @@ class SmlouvyOzoPage(QWidget):
         self.year_filter.setSingleStep(1)
         self.year_filter.setKeyboardTracking(False)
         toolbar.addWidget(self.year_filter)
+        self.year_all_hint = QLabel(f"{YEAR_SPIN_ALL_VALUE} = {YEAR_FILTER_ALL}")
+        self.year_all_hint.setObjectName("MutedText")
+        toolbar.addWidget(self.year_all_hint)
         # Výjimečně archivované (active=False) záznamy – ne běžné ukončení smlouvy.
         self.show_inactive = QCheckBox(SHOW_INACTIVE_LABEL)
         toolbar.addWidget(self.show_inactive)
