@@ -49,6 +49,10 @@ CERTIFICATE_NOT_FOUND_MESSAGE = "Osvědčení nebylo nalezeno."
 
 SHOW_INACTIVE_LABEL = "Zobrazit neaktivní"
 YEAR_FILTER_ALL = "Vše"
+YEAR_SPIN_MIN = 1900
+YEAR_SPIN_MAX = 2100
+# Pomocná hodnota pod YEAR_SPIN_MIN – QSpinBox specialValueText „Vše“.
+YEAR_SPIN_ALL_VALUE = YEAR_SPIN_MIN - 1
 EMPTY_STATE_TEXT = "Nejsou evidovány žádné smlouvy OZO."
 EMPTY_STATE_YEAR_TEXT = "Pro zvolený rok nejsou evidovány žádné smluvní vztahy."
 ITEM_NOT_FOUND_MESSAGE = "Smlouva OZO nebyla nalezena."

@@ -157,9 +157,8 @@ class OzoSmlouvy4TestCase(unittest.TestCase):
         )
 
         page = SmlouvyOzoPage()
-        index = page.year_filter.findData(2030)
-        self.assertGreaterEqual(index, 0)
-        page.year_filter.setCurrentIndex(index)
+        page.year_filter.setValue(2030)
+        self.assertEqual(page.selected_year(), 2030)
         names = [
             page.table.item(row, COL_EMPLOYER).text()
             for row in range(page.table.rowCount())
@@ -209,9 +208,9 @@ class OzoSmlouvy4TestCase(unittest.TestCase):
 
     def test_open_list_warns_when_year_all(self) -> None:
         page = SmlouvyOzoPage()
-        all_index = page.year_filter.findData(None)
-        page.year_filter.setCurrentIndex(all_index)
-        self.assertEqual(page.year_filter.currentText(), YEAR_FILTER_ALL)
+        page.year_filter.setValue(page.year_filter.minimum())
+        self.assertIsNone(page.selected_year())
+        self.assertEqual(page.year_filter.cleanText(), YEAR_FILTER_ALL)
         with patch.object(QMessageBox, "warning") as warning:
             page.open_chronological_list()
         warning.assert_called_once()
@@ -219,11 +218,7 @@ class OzoSmlouvy4TestCase(unittest.TestCase):
 
     def test_open_list_warns_when_ozo_missing(self) -> None:
         page = SmlouvyOzoPage()
-        index = page.year_filter.findData(date.today().year)
-        if index < 0:
-            page.year_filter.setCurrentIndex(0)
-        else:
-            page.year_filter.setCurrentIndex(index)
+        page.year_filter.setValue(date.today().year)
         with patch.object(QMessageBox, "warning") as warning:
             page.open_chronological_list()
         warning.assert_called_once()

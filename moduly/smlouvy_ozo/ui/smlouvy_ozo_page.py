@@ -8,12 +8,12 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QHideEvent, QShowEvent
 from PySide6.QtWidgets import (
     QCheckBox,
-    QComboBox,
     QHBoxLayout,
     QLabel,
     QMenu,
     QMessageBox,
     QPushButton,
+    QSpinBox,
     QVBoxLayout,
     QWidget,
 )
@@ -36,6 +36,9 @@ from moduly.smlouvy_ozo.constants import (
     SHOW_INACTIVE_LABEL,
     YEAR_FILTER_ALL,
     YEAR_REQUIRED_FOR_LIST_MESSAGE,
+    YEAR_SPIN_ALL_VALUE,
+    YEAR_SPIN_MAX,
+    YEAR_SPIN_MIN,
 )
 from moduly.smlouvy_ozo.sluzby.ozo_contract_list_service import (
     ozo_contract_list_service,
@@ -71,7 +74,11 @@ class SmlouvyOzoPage(QWidget):
         toolbar.addWidget(self.list_btn)
         toolbar.addStretch()
         toolbar.addWidget(QLabel("Rok:"))
-        self.year_filter = QComboBox()
+        self.year_filter = QSpinBox()
+        self.year_filter.setRange(YEAR_SPIN_ALL_VALUE, YEAR_SPIN_MAX)
+        self.year_filter.setSpecialValueText(YEAR_FILTER_ALL)
+        self.year_filter.setSingleStep(1)
+        self.year_filter.setKeyboardTracking(False)
         toolbar.addWidget(self.year_filter)
         # Výjimečně archivované (active=False) záznamy – ne běžné ukončení smlouvy.
         self.show_inactive = QCheckBox(SHOW_INACTIVE_LABEL)
@@ -95,7 +102,7 @@ class SmlouvyOzoPage(QWidget):
         self.ozo_person_btn.clicked.connect(self.edit_ozo_person)
         self.other_certificates_btn.clicked.connect(self.open_other_certificates)
         self.list_btn.clicked.connect(self.open_chronological_list)
-        self.year_filter.currentIndexChanged.connect(self.refresh)
+        self.year_filter.valueChanged.connect(self._on_year_filter_changed)
         self.show_inactive.toggled.connect(self.refresh)
         self.table.doubleClicked.connect(self.edit_selected)
         self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
@@ -118,43 +125,30 @@ class SmlouvyOzoPage(QWidget):
         super().hideEvent(event)
 
     def selected_year(self) -> int | None:
-        data = self.year_filter.currentData()
-        if data is None:
+        value = self.year_filter.value()
+        if value <= YEAR_SPIN_ALL_VALUE:
             return None
-        try:
-            return int(data)
-        except (TypeError, ValueError):
-            return None
+        return value
+
+    def _on_year_filter_changed(self, *_args) -> None:
+        # Při výběru roku je historie včetně archivovaných – checkbox se nepoužívá.
+        self.show_inactive.setEnabled(self.selected_year() is None)
+        self.refresh()
 
     def _populate_year_filter(self, *, select_year: int | None = None) -> None:
         previous = select_year if select_year is not None else self.selected_year()
-        years = set(ozo_contract_service.available_years())
-        years.add(date.today().year)
-        ordered = sorted(years, reverse=True)
 
         self.year_filter.blockSignals(True)
-        self.year_filter.clear()
-        for year in ordered:
-            self.year_filter.addItem(str(year), year)
-        self.year_filter.addItem(YEAR_FILTER_ALL, None)
-
-        if previous is not None:
-            index = self.year_filter.findData(previous)
-            if index >= 0:
-                self.year_filter.setCurrentIndex(index)
-            else:
-                # konkrétní rok – výchozí aktuální
-                current_index = self.year_filter.findData(date.today().year)
-                self.year_filter.setCurrentIndex(max(0, current_index))
+        if previous is None:
+            self.year_filter.setValue(YEAR_SPIN_ALL_VALUE)
+        elif YEAR_SPIN_MIN <= previous <= YEAR_SPIN_MAX:
+            self.year_filter.setValue(previous)
         else:
-            # Vše
-            all_index = self.year_filter.findData(None)
-            if all_index >= 0:
-                self.year_filter.setCurrentIndex(all_index)
+            # mimo rozsah – výchozí aktuální rok
+            self.year_filter.setValue(date.today().year)
         self.year_filter.blockSignals(False)
         # Při výběru roku je historie včetně archivovaných – checkbox se nepoužívá.
-        year_mode = self.selected_year() is not None
-        self.show_inactive.setEnabled(not year_mode)
+        self.show_inactive.setEnabled(self.selected_year() is None)
 
     def refresh(self) -> None:
         year = self.selected_year()
@@ -295,9 +289,7 @@ class SmlouvyOzoPage(QWidget):
         if rel is not None:
             self._populate_year_filter(select_year=rel.year)
         elif not contract.active:
-            index = self.year_filter.findData(None)
-            if index >= 0:
-                self.year_filter.setCurrentIndex(index)
+            self._populate_year_filter(select_year=None)
             self.show_inactive.setChecked(True)
         self.refresh()
         for row in range(self.table.rowCount()):

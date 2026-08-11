@@ -265,9 +265,8 @@ class OzoSmlouvy2TestCase(unittest.TestCase):
         self.assertTrue(activated.active)
 
     def _select_all_years(self, page: SmlouvyOzoPage) -> None:
-        index = page.year_filter.findData(None)
-        self.assertGreaterEqual(index, 0)
-        page.year_filter.setCurrentIndex(index)
+        page.year_filter.setValue(page.year_filter.minimum())
+        self.assertIsNone(page.selected_year())
 
     def test_inactive_filter_default(self) -> None:
         active = self._create(employer_name="Aktivní OZO")
