@@ -101,6 +101,12 @@ class CoordinationEmployerService:
         ) or "Hlavní zaměstnavatel"
         ico = (settings_employer.ico or "").strip() if settings_employer else ""
         address = (settings_employer.address or "").strip() if settings_employer else ""
+        # Zkratka z Nastavení; prázdná → při zobrazení resolve_abbreviation / default.
+        settings_abbr = ""
+        if settings_employer is not None:
+            settings_abbr = " ".join(
+                (getattr(settings_employer, "abbreviation", None) or "").strip().split()
+            )
 
         employer = CoordinationEmployer(
             coordination_id=coordination_id,
@@ -108,7 +114,7 @@ class CoordinationEmployerService:
             company_name=company_name,
             ico=ico,
             address=address,
-            abbreviation=default_abbreviation(company_name),
+            abbreviation=settings_abbr,
             is_main=True,
             note="",
             active=True,
@@ -238,7 +244,9 @@ class CoordinationEmployerService:
         ):
             if exclude_employer_id is not None and item.id == exclude_employer_id:
                 continue
-            if item.abbreviation.casefold() == normalized.casefold():
+            # Porovnat efektivní zkratku (ruční nebo automatická z názvu).
+            existing = employer_abbreviation(item)
+            if existing and existing.casefold() == normalized.casefold():
                 raise CoordinationEmployerError(
                     f"Zkratka „{normalized}“ je u této koordinace již použita."
                 )
