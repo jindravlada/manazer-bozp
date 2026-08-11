@@ -11,7 +11,11 @@ from core.dashboard.attention_item import (
     ITEM_TYPE_YEARLY_PLAN_MONTH,
     AttentionItem,
 )
-from core.dashboard.attention_service import build_sort_key, get_attention_items
+from core.dashboard.attention_service import (
+    build_sort_key,
+    get_attention_items,
+    get_periodic_reminder_items,
+)
 from core.dashboard.task_links import configure_task_label, task_id_from_link, task_link
 from core.dashboard.widget_base import DashboardPanel
 from moduly.schuzky.constants import STATUS_PLANNED as MEETING_STATUS_PLANNED
@@ -172,6 +176,21 @@ def meeting_reminder_attention_item(meeting) -> AttentionItem:
             due_datetime=starts_at,
         ),
     )
+
+def classify_reminder_periodics(items: list[AttentionItem], today: date):
+    """Rozdělí periodiky pro Připomínky: po termínu / dnes včetně předstihu."""
+    burning = []
+    due_today = []
+    for item in items:
+        due = item.due_date
+        if due is not None and due < today:
+            burning.append(item)
+        else:
+            due_today.append(item)
+    burning.sort(key=lambda item: (item.due_date or date.max, item.source_id))
+    due_today.sort(key=lambda item: (item.due_date or date.max, item.source_id))
+    return burning, due_today
+
 
 def overdue_yearly_plan_month_items(
     today: date,
@@ -344,10 +363,16 @@ class TodayWidget(DashboardPanel):
         overdue_certs = overdue_certificate_items(
             today, attention_items=attention_items
         )
+        periodic_burning, periodic_due = classify_reminder_periodics(
+            get_periodic_reminder_items(today=today),
+            today,
+        )
         self._linked_attention = (
             list(overdue_months)
             + list(overdue_contracts)
             + list(overdue_certs)
+            + list(periodic_burning)
+            + list(periodic_due)
             + meeting_burning_items
             + meeting_due_items
         )
@@ -359,8 +384,10 @@ class TodayWidget(DashboardPanel):
             ordered.append(self._attention_line(item, "🔴"))
         for item in overdue_certs:
             ordered.append(self._attention_line(item, "🔴"))
+        ordered.extend(self._attention_line(item, "🔴") for item in periodic_burning)
         ordered.extend(self._attention_line(item, "🔴") for item in meeting_burning_items)
         ordered.extend(self._task_line(task, "🔴") for task in burning)
+        ordered.extend(self._attention_line(item, "🔵") for item in periodic_due)
         ordered.extend(self._attention_line(item, "🔵") for item in meeting_due_items)
         ordered.extend(self._task_line(task, "🔵") for task in due_today)
         ordered.extend(self._task_line(task, "🟡") for task in waiting)

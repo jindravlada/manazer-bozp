@@ -116,7 +116,7 @@ def is_due_for_attention(
     active: bool,
     today: date | None = None,
 ) -> bool:
-    """True, pokud aktivní činnost má být na Pracovní ploše (od data upozornění)."""
+    """True, pokud aktivní činnost má být v panelu Připomínky (od data připomenutí)."""
     if not active:
         return False
     notify_on = calculate_notify_date(next_due_date, notify_every, notify_unit)

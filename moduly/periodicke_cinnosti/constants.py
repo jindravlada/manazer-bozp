@@ -120,7 +120,7 @@ COLUMN_HEADERS = [
     "Odpovědná osoba",
     "Nejbližší termín",
     "Perioda",
-    "Upozornit",
+    "Připomenout",
     "Aktivní",
 ]
 
@@ -150,5 +150,5 @@ def format_place(activity) -> str:
 
 def format_notify(every: int, unit: str) -> str:
     if every <= 0:
-        return "—"
+        return "v den termínu"
     return f"{format_interval(every, unit)} před termínem"

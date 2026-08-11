@@ -170,7 +170,7 @@ class PeriodicActivityDialog(QDialog):
         form.addRow("Odpovědná osoba:", self.responsible_selector)
         form.addRow("Nejbližší termín:", self.next_due_edit)
         form.addRow("Opakovat každých:", repeat_widget)
-        form.addRow("Upozornit:", notify_widget)
+        form.addRow("Připomenout:", notify_widget)
         form.addRow("Další termín počítat od:", self.next_from)
         form.addRow("Poznámka:", self.note_edit)
         form.addRow("", self.active_checkbox)

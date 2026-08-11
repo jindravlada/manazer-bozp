@@ -6,7 +6,7 @@ import importlib
 import os
 import tempfile
 import unittest
-from datetime import date, datetime
+from datetime import date
 from pathlib import Path
 from unittest.mock import patch
 
@@ -30,9 +30,9 @@ with patch.object(Path, "home", return_value=_TMP):
 
     initialize_database()
 
-    from core.dashboard.attention_item import ITEM_TYPE_PERIODIC, SOURCE_LABEL_PERIODIC
-    from core.dashboard.attention_service import get_attention_items
-    from core.dashboard.widget_upcoming_tasks import UpcomingTasksWidget
+    from core.dashboard.attention_item import SOURCE_LABEL_PERIODIC
+    from core.dashboard.attention_service import get_periodic_reminder_items
+    from core.dashboard.widget_today import TodayWidget
     from moduly.agenda.ui.agenda_page import AgendaPage
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from moduly.periodicke_cinnosti.constants import (
@@ -94,11 +94,7 @@ class AgendaPeriod2dTestCase(unittest.TestCase):
         )
 
     def _periodic_items(self, today: date):
-        return [
-            item
-            for item in get_attention_items(today=today)
-            if item.item_type == ITEM_TYPE_PERIODIC
-        ]
+        return get_periodic_reminder_items(today=today)
 
     def test_notify_date_calendar_months(self) -> None:
         due = date(2027, 10, 15)
@@ -150,11 +146,12 @@ class AgendaPeriod2dTestCase(unittest.TestCase):
         item = next(i for i in items if i.source_id == activity.id)
         self.assertEqual(item.date, date(2027, 10, 15))
 
-        widget = UpcomingTasksWidget()
-        due_text = widget._format_due_text(item, datetime(2027, 10, 16, 12, 0, 0))
-        self.assertIn("Po termínu", due_text)
-        self.assertIn("15. 10. 2027", due_text)
-        self.assertNotIn("15. 4. 2027", due_text)
+        widget = TodayWidget()
+        widget.refresh(today=date(2027, 10, 16))
+        text = widget.content.text()
+        self.assertIn("Po termínu", text)
+        self.assertIn("15.10.2027", text)
+        self.assertIn("🔴", text)
         widget.close()
 
     def test_inactive_never_shown(self) -> None:
