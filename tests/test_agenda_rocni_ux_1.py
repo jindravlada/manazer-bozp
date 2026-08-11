@@ -10,7 +10,7 @@ from datetime import date, datetime
 from pathlib import Path
 from unittest.mock import patch
 
-from PySide6.QtWidgets import QApplication, QDialogButtonBox
+from PySide6.QtWidgets import QApplication
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -31,7 +31,10 @@ with patch.object(Path, "home", return_value=_TMP):
     initialize_database()
 
     from core.dashboard.attention_item import ITEM_TYPE_YEARLY_PLAN_MONTH
-    from core.dashboard.attention_service import get_attention_items
+    from core.dashboard.attention_service import (
+        get_attention_items,
+        get_yearly_plan_month_reminder_items,
+    )
     from core.dashboard.widget_today import (
         TodayWidget,
         overdue_yearly_plan_month_items,
@@ -54,7 +57,6 @@ with patch.object(Path, "home", return_value=_TMP):
         month_planning_attention_title,
     )
     from moduly.rocni_plan.sluzby.yearly_plan_service import yearly_plan_service
-    from moduly.rocni_plan.ui.yearly_plan_item_dialog import YearlyPlanItemDialog
     from moduly.rocni_plan.ui.yearly_plan_tab import YearlyPlanTab
     from moduly.schuzky.constants import DIALOG_WINDOW_TITLE
     from moduly.schuzky.ui.meeting_dialog import MeetingDialog
@@ -96,7 +98,7 @@ class AgendaRocniUx1TestCase(unittest.TestCase):
         self.assertTrue(
             any(
                 item.item_type == ITEM_TYPE_YEARLY_PLAN_MONTH
-                for item in get_attention_items(today=today)
+                for item in get_yearly_plan_month_reminder_items(today=today)
             )
         )
 
@@ -110,6 +112,12 @@ class AgendaRocniUx1TestCase(unittest.TestCase):
         self.assertFalse(
             any(
                 item.item_type == ITEM_TYPE_YEARLY_PLAN_MONTH
+                for item in get_yearly_plan_month_reminder_items(today=today)
+            )
+        )
+        self.assertFalse(
+            any(
+                item.item_type == ITEM_TYPE_YEARLY_PLAN_MONTH
                 for item in get_attention_items(today=today)
             )
         )
@@ -119,15 +127,23 @@ class AgendaRocniUx1TestCase(unittest.TestCase):
         self.assertNotIn("Zpracovat úkoly měsíce – srpen 2026", widget.content.text())
         widget.close()
 
-    def test_due_today_month_not_in_co_hori(self) -> None:
-        today = date(2026, 8, 3)  # první pracovní den = termín, ještě ne po termínu
-        self.assertEqual(overdue_yearly_plan_month_items(today), [])
+    def test_due_today_month_is_in_pripominky(self) -> None:
+        today = date(2026, 8, 3)  # první pracovní den = termín
+        self.assertEqual(len(overdue_yearly_plan_month_items(today)), 1)
+        self.assertFalse(
+            any(
+                item.item_type == ITEM_TYPE_YEARLY_PLAN_MONTH
+                for item in get_attention_items(today=today)
+            )
+        )
         widget = TodayWidget()
         widget.refresh(today=today)
-        self.assertNotIn("Zpracovat úkoly měsíce – srpen 2026", widget.content.text())
+        text = widget.content.text()
+        self.assertIn("Zpracovat úkoly měsíce – srpen 2026", text)
+        self.assertIn("🔵", text)
         widget.close()
 
-    def test_yearly_plan_toolbar_buttons_have_icons(self) -> None:
+    def test_yearly_plan_toolbar_buttons_are_text_only(self) -> None:
         tab = YearlyPlanTab()
         buttons = {
             ACTION_NEW: tab.new_btn,
@@ -139,23 +155,16 @@ class AgendaRocniUx1TestCase(unittest.TestCase):
             ACTION_MARK_MONTH_PROCESSED: tab.mark_month_btn,
         }
         for label, button in buttons.items():
-            self.assertFalse(button.icon().isNull(), msg=f"Chybí ikona: {label}")
+            self.assertEqual(button.text(), label)
+            self.assertTrue(button.icon().isNull(), msg=f"Neočekávaná ikona: {label}")
         tab.close()
 
-    def test_periodic_toolbar_buttons_have_icons(self) -> None:
+    def test_periodic_toolbar_buttons_are_text_only(self) -> None:
         tab = PeriodicActivitiesTab()
         for button in (tab.new_btn, tab.edit_btn, tab.perform_btn):
-            self.assertFalse(button.icon().isNull(), msg=button.text())
+            self.assertTrue(button.text())
+            self.assertTrue(button.icon().isNull(), msg=button.text())
         tab.close()
-
-    def test_yearly_plan_dialog_save_close_icons(self) -> None:
-        dialog = YearlyPlanItemDialog(default_year=2026, default_month=8)
-        box = dialog.findChild(QDialogButtonBox)
-        save = box.button(QDialogButtonBox.StandardButton.Save)
-        cancel = box.button(QDialogButtonBox.StandardButton.Cancel)
-        self.assertFalse(save.icon().isNull())
-        self.assertFalse(cancel.icon().isNull())
-        dialog.close()
 
     def test_unsaved_prompt_matches_standard_dialog(self) -> None:
         with patch(

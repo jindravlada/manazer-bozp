@@ -34,6 +34,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from core.dashboard.attention_service import (
         get_attention_items,
         get_periodic_reminder_items,
+        get_yearly_plan_month_reminder_items,
     )
     from core.dashboard.widget_today import TodayWidget
     from moduly.periodicke_cinnosti.constants import (
@@ -198,7 +199,7 @@ class AgendaPeriodicReminder1TestCase(unittest.TestCase):
 
     def test_month_planning_reminder_unchanged(self) -> None:
         today = date(2026, 9, 16)
-        items = get_attention_items(today=today)
+        items = get_yearly_plan_month_reminder_items(today=today)
         self.assertTrue(
             any(
                 item.title == month_planning_attention_title(2026, 9)

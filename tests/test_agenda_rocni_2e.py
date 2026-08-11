@@ -34,7 +34,7 @@ with patch.object(Path, "home", return_value=_TMP):
         ITEM_TYPE_YEARLY_PLAN_MONTH,
         SOURCE_LABEL_YEARLY_PLAN,
     )
-    from core.dashboard.attention_service import get_attention_items
+    from core.dashboard.attention_service import get_yearly_plan_month_reminder_items
     from core.shared.working_days import first_working_day, is_working_day
     from moduly.agenda.ui.agenda_page import AgendaPage
     from moduly.periodicke_cinnosti.constants import NEXT_FROM_PLANNED, UNIT_YEARS
@@ -83,12 +83,7 @@ class AgendaRocni2eTestCase(unittest.TestCase):
             )
 
     def _month_items(self, today: date):
-        return [
-            item
-            for item in get_attention_items(today=today)
-            if item.item_type == ITEM_TYPE_YEARLY_PLAN_MONTH
-        ]
-
+        return get_yearly_plan_month_reminder_items(today=today)
     def test_first_working_day_weekday_month(self) -> None:
         # září 2026 začíná v úterý
         self.assertEqual(first_working_day(2026, 9), date(2026, 9, 1))

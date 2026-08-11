@@ -15,6 +15,7 @@ from core.dashboard.attention_service import (
     build_sort_key,
     get_attention_items,
     get_periodic_reminder_items,
+    get_yearly_plan_month_reminder_items,
 )
 from core.dashboard.task_links import configure_task_label, task_id_from_link, task_link
 from core.dashboard.widget_base import DashboardPanel
@@ -192,25 +193,29 @@ def classify_reminder_periodics(items: list[AttentionItem], today: date):
     return burning, due_today
 
 
+def classify_reminder_yearly_plan_months(items: list[AttentionItem], today: date):
+    """Rozdělí měsíční připomínky: po termínu / v den prvního pracovního dne."""
+    burning = []
+    due_today = []
+    for item in items:
+        due = item.due_date
+        if due is not None and due < today:
+            burning.append(item)
+        else:
+            due_today.append(item)
+    burning.sort(key=lambda item: (item.due_date or date.max, item.source_id))
+    due_today.sort(key=lambda item: (item.due_date or date.max, item.source_id))
+    return burning, due_today
+
+
 def overdue_yearly_plan_month_items(
     today: date,
     *,
     attention_items: list[AttentionItem] | None = None,
 ) -> list[AttentionItem]:
-    """Výzvy „Zpracovat úkoly měsíce“ po termínu (měsíc ještě nezpracován)."""
-    items = attention_items
-    if items is None:
-        items = get_attention_items(today=today)
-    overdue = [
-        item
-        for item in items
-        if item.item_type == ITEM_TYPE_YEARLY_PLAN_MONTH
-        and item.due_date is not None
-        and item.due_date < today
-    ]
-    overdue.sort(key=lambda item: (item.due_date or date.max, item.source_id))
-    return overdue
-
+    """Připomínka zpracování měsíce od prvního pracovního dne (Připomínky)."""
+    _ = attention_items
+    return get_yearly_plan_month_reminder_items(today=today)
 
 def overdue_ozo_contract_items(
     today: date,
@@ -354,8 +359,9 @@ class TodayWidget(DashboardPanel):
             meeting_reminder_attention_item(meeting) for meeting in meeting_due
         ]
         attention_items = get_attention_items(today=today)
-        overdue_months = overdue_yearly_plan_month_items(
-            today, attention_items=attention_items
+        month_burning, month_due = classify_reminder_yearly_plan_months(
+            get_yearly_plan_month_reminder_items(today=today),
+            today,
         )
         overdue_contracts = overdue_ozo_contract_items(
             today, attention_items=attention_items
@@ -368,7 +374,8 @@ class TodayWidget(DashboardPanel):
             today,
         )
         self._linked_attention = (
-            list(overdue_months)
+            list(month_burning)
+            + list(month_due)
             + list(overdue_contracts)
             + list(overdue_certs)
             + list(periodic_burning)
@@ -378,8 +385,7 @@ class TodayWidget(DashboardPanel):
         )
 
         ordered: list[str] = []
-        for item in overdue_months:
-            ordered.append(self._attention_line(item, "🔴"))
+        ordered.extend(self._attention_line(item, "🔴") for item in month_burning)
         for item in overdue_contracts:
             ordered.append(self._attention_line(item, "🔴"))
         for item in overdue_certs:
@@ -387,6 +393,7 @@ class TodayWidget(DashboardPanel):
         ordered.extend(self._attention_line(item, "🔴") for item in periodic_burning)
         ordered.extend(self._attention_line(item, "🔴") for item in meeting_burning_items)
         ordered.extend(self._task_line(task, "🔴") for task in burning)
+        ordered.extend(self._attention_line(item, "🔵") for item in month_due)
         ordered.extend(self._attention_line(item, "🔵") for item in periodic_due)
         ordered.extend(self._attention_line(item, "🔵") for item in meeting_due_items)
         ordered.extend(self._task_line(task, "🔵") for task in due_today)
