@@ -130,6 +130,14 @@ MOVE_VERIFICATION_TYPE_TOOLTIP = (
     "Změní typ ověření jen pro tento audit. Metodika zůstane beze změny."
 )
 
+TERRAIN_CHECKLIST_BUTTON_LABEL = "Vytisknout terénní checklist"
+TERRAIN_CHECKLIST_DIALOG_TITLE = "Terénní checklist"
+TERRAIN_CHECKLIST_TOOLTIP = (
+    "Pracovní checklist auditních tvrzení pro ověření v provozu."
+)
+TERRAIN_CHECKLIST_EMPTY = "Nejsou žádná auditní tvrzení typu Terén."
+TERRAIN_CHECKLIST_REQUIRES_SAVED = "Audit je nutné nejdříve uložit."
+
 PROCESS_PANEL_LEFT_WIDTH = 260
 METHODOLOGY_PANEL_MIN_WIDTH = 280
 WORK_PANEL_STRETCH = 65

@@ -3,6 +3,7 @@ from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
+    QMessageBox,
     QPushButton,
     QSizePolicy,
     QSplitter,
@@ -24,9 +25,17 @@ from moduly.audity.constants import (
     PROCESS_TERM_CRITERION,
     TAB_DOCUMENTACE,
     TAB_TEREN,
+    TERRAIN_CHECKLIST_BUTTON_LABEL,
+    TERRAIN_CHECKLIST_DIALOG_TITLE,
+    TERRAIN_CHECKLIST_REQUIRES_SAVED,
+    TERRAIN_CHECKLIST_TOOLTIP,
     WORK_PANEL_STRETCH,
 )
 from moduly.audity.sluzby.audit_knowledge_service import KnowledgeTreeNode, audit_knowledge_service
+from moduly.audity.sluzby.audit_service import audit_service
+from moduly.audity.sluzby.audit_terrain_checklist_service import (
+    audit_terrain_checklist_service,
+)
 from moduly.audity.ui.audit_knowledge_tree_widget import AuditKnowledgeTreeWidget
 from moduly.audity.ui.audit_methodology_panel_widget import AuditMethodologyPanelWidget
 from moduly.audity.ui.audit_process_knowledge_widget import (
@@ -60,6 +69,7 @@ class AuditProcessesWidget(QWidget):
         self._tab_title = (
             TAB_TEREN if self._verification_type == VERIFICATION_TYPE_TERRAIN else TAB_DOCUMENTACE
         )
+        self._audit_id: int | None = None
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -119,6 +129,18 @@ class AuditProcessesWidget(QWidget):
             Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop,
         )
 
+        self.checklist_btn: QPushButton | None = None
+        if self._verification_type == VERIFICATION_TYPE_TERRAIN:
+            self.checklist_btn = QPushButton(TERRAIN_CHECKLIST_BUTTON_LABEL)
+            self.checklist_btn.setToolTip(TERRAIN_CHECKLIST_TOOLTIP)
+            self.checklist_btn.setEnabled(False)
+            self.checklist_btn.clicked.connect(self._export_terrain_checklist)
+            header_row.addWidget(
+                self.checklist_btn,
+                0,
+                Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop,
+            )
+
         self.center_description_label = QLabel()
         self.center_description_label.setObjectName("InfoText")
         self.center_description_label.setWordWrap(True)
@@ -170,6 +192,7 @@ class AuditProcessesWidget(QWidget):
     def _emit_verification_type_changed(self) -> None:
         if self._on_verification_type_changed is not None:
             self._on_verification_type_changed()
+
     def _show_catalog_error(self, message: str) -> None:
         self._catalog_error_label.setText(message)
         self._catalog_error_label.setVisible(True)
@@ -177,8 +200,40 @@ class AuditProcessesWidget(QWidget):
     def _clear_catalog_error(self) -> None:
         self._catalog_error_label.clear()
         self._catalog_error_label.setVisible(False)
+
     def set_audit_id(self, audit_id: int | None) -> None:
+        self._audit_id = audit_id
         self.knowledge_widget.set_audit_id(audit_id)
+        if self.checklist_btn is not None:
+            self.checklist_btn.setEnabled(audit_id is not None)
+
+    def _export_terrain_checklist(self) -> None:
+        if self._audit_id is None:
+            QMessageBox.information(
+                self,
+                TERRAIN_CHECKLIST_DIALOG_TITLE,
+                TERRAIN_CHECKLIST_REQUIRES_SAVED,
+            )
+            return
+        audit = audit_service.get_by_id(self._audit_id)
+        if audit is None:
+            QMessageBox.warning(
+                self,
+                TERRAIN_CHECKLIST_DIALOG_TITLE,
+                "Audit nebyl nalezen.",
+            )
+            return
+        try:
+            audit_terrain_checklist_service.open_for_audit(
+                audit,
+                process_ids=self._planned_process_ids,
+            )
+        except Exception as exc:
+            QMessageBox.warning(
+                self,
+                TERRAIN_CHECKLIST_DIALOG_TITLE,
+                f"Terénní checklist se nepodařilo vygenerovat.\n\n{exc}",
+            )
 
     def set_planned_process_ids(self, process_ids: tuple[str, ...] | list[str]) -> None:
         self._planned_process_ids = set(process_ids) if process_ids else None
