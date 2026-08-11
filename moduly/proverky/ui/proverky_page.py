@@ -277,11 +277,8 @@ class ProverkyPage(QWidget):
 
     def new_inspection(self) -> None:
         dialog = BozpInspectionDialog(self)
-        if exec_maximized(dialog):
-            data = dialog.get_data()
-            inspection = bozp_inspection_service.create_inspection(**self._prepare_spis_data(data))
-            self._save_commission_members(inspection.id, data)
-            self.refresh()
+        exec_maximized(dialog)
+        self.refresh()
 
     def open_selected_inspection(self) -> None:
         inspection_id = self._selected_inspection_id()
@@ -298,14 +295,8 @@ class ProverkyPage(QWidget):
             return
 
         dialog = BozpInspectionDialog(self, inspection=inspection)
-        if exec_maximized(dialog):
-            data = dialog.get_data()
-            bozp_inspection_service.update_inspection(
-                inspection_id,
-                **self._prepare_spis_data(data),
-            )
-            self._save_commission_members(inspection_id, data)
-            self.refresh()
+        exec_maximized(dialog)
+        self.refresh()
 
     def export_selected_protocol(self) -> None:
         inspection = self._selected_inspection()

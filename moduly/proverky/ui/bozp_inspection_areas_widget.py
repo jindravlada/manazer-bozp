@@ -158,6 +158,12 @@ class BozpInspectionAreasWidget(QWidget):
     def set_on_finding_saved(self, callback) -> None:
         self.knowledge_widget.set_on_finding_saved(callback)
 
+    def set_deferred_edits(self, deferred_edits) -> None:
+        self.knowledge_widget.set_deferred_edits(deferred_edits)
+
+    def set_on_deferred_dirty(self, callback) -> None:
+        self.knowledge_widget.set_on_deferred_dirty(callback)
+
     def set_on_verification_type_changed(self, callback) -> None:
         self.knowledge_widget.section_widget.verification_type_changed.connect(callback)
 

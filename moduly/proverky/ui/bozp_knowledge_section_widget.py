@@ -130,6 +130,8 @@ class BozpKnowledgeSectionWidget(QWidget):
         self._current_section: dict | None = None
         self._inspection_id: int | None = None
         self._on_finding_saved = None
+        self._on_deferred_dirty = None
+        self._deferred_edits = None
         self._selected_control_point_id = ""
         self._control_point_frames: dict[str, _ControlPointFrame] = {}
         self._history_point_label: QLabel | None = None
@@ -176,11 +178,23 @@ class BozpKnowledgeSectionWidget(QWidget):
     def set_on_finding_saved(self, callback) -> None:
         self._on_finding_saved = callback
 
+    def set_deferred_edits(self, deferred_edits) -> None:
+        self._deferred_edits = deferred_edits
+
+    def set_on_deferred_dirty(self, callback) -> None:
+        self._on_deferred_dirty = callback
+
     def refresh(self) -> None:
         self._overrides_cache = None
         self._rebuild_content()
 
+    def _notify_deferred_changed(self) -> None:
+        if self._on_deferred_dirty is not None:
+            self._on_deferred_dirty()
+
     def _overrides(self) -> dict[tuple[str, str, str], str]:
+        if self._deferred_edits is not None:
+            return self._deferred_edits.effective_overrides_map(self._inspection_id)
         if self._overrides_cache is None:
             self._overrides_cache = inspection_verification_service.overrides_map(
                 self._inspection_id
@@ -729,22 +743,32 @@ class BozpKnowledgeSectionWidget(QWidget):
             description.setWordWrap(True)
             row_layout.addWidget(description)
 
-        result_selector = ControlResultSelectorWidget()
+        result_selector = ControlResultSelectorWidget(
+            auto_persist=self._deferred_edits is None,
+            deferred_edits=self._deferred_edits,
+        )
         result_selector.configure(
             entity_type=ENTITY_PROVERKY,
             entity_id=self._inspection_id,
             context=self._control_point_context(context),
             must_be_saved_message=INSPECTION_MUST_BE_SAVED_MESSAGE,
         )
+        if self._deferred_edits is not None:
+            result_selector.data_saved.connect(self._notify_deferred_changed)
         row_layout.addWidget(result_selector)
 
-        photo_widget = ControlResultPhotoWidget()
+        photo_widget = ControlResultPhotoWidget(
+            auto_persist=self._deferred_edits is None,
+            deferred_edits=self._deferred_edits,
+        )
         photo_widget.configure(
             entity_type=ENTITY_PROVERKY,
             entity_id=self._inspection_id,
             context=self._control_point_context(context),
             must_be_saved_message=INSPECTION_MUST_BE_SAVED_MESSAGE,
         )
+        if self._deferred_edits is not None:
+            photo_widget.photo_changed.connect(self._notify_deferred_changed)
         row_layout.addWidget(photo_widget)
 
         move_row = QHBoxLayout()
@@ -864,6 +888,22 @@ class BozpKnowledgeSectionWidget(QWidget):
         cp_id = str(control_point.get("id") or "").strip()
         if not cp_id:
             return
+        methodology = inspection_verification_service.methodology_verification_type(control_point)
+        if self._deferred_edits is not None:
+            self._deferred_edits.stage_verification_override(
+                self._inspection_id,
+                area_id=self._area_id,
+                section_id=self._section_id,
+                control_point_id=cp_id,
+                verification_type=target_type,
+                methodology_type=methodology,
+            )
+            self._overrides_cache = None
+            self._notify_deferred_changed()
+            self.verification_type_changed.emit()
+            self.refresh()
+            return
+
         inspection_verification_service.set_override(
             self._inspection_id,
             area_id=self._area_id,
@@ -930,6 +970,14 @@ class BozpKnowledgeSectionWidget(QWidget):
         if self._inspection_id is None or not context.control_point_id:
             return None
 
+        if self._deferred_edits is not None:
+            return self._deferred_edits.finding_for_control_point(
+                self._inspection_id,
+                process_label=context.area_label,
+                criterion_label=context.section_label,
+                question_id=context.control_point_id,
+            )
+
         return bozp_inspection_service.finding_for_control_point(
             self._inspection_id,
             area_label=context.area_label,
@@ -944,24 +992,17 @@ class BozpKnowledgeSectionWidget(QWidget):
 
         context = self._context_for_control_point(control_point)
         point_context = self._control_point_context(context)
-        current_result = control_result_service.current_result(
-            ENTITY_PROVERKY,
-            self._inspection_id,
-            point_context,
+        current_result = (
+            self._deferred_edits.current_result(ENTITY_PROVERKY, self._inspection_id, point_context)
+            if self._deferred_edits is not None
+            else control_result_service.current_result(
+                ENTITY_PROVERKY,
+                self._inspection_id,
+                point_context,
+            )
         )
         if not allows_finding(current_result):
             QMessageBox.information(self, "Zjištění", FINDING_REQUIRES_NONCOMPLIANCE_MESSAGE)
-            return
-
-        existing_open = bozp_inspection_service.open_finding_for_control_point(
-            self._inspection_id,
-            area_label=context.area_label,
-            section_label=context.section_label,
-            control_point_id=context.control_point_id,
-        )
-        if existing_open is not None:
-            QMessageBox.information(self, "Zjištění", FINDING_DUPLICATE_MESSAGE)
-            self._open_existing_finding(existing_open, context)
             return
 
         existing_any = self._finding_for_context(context)
@@ -984,29 +1025,40 @@ class BozpKnowledgeSectionWidget(QWidget):
             return
 
         data = dialog.get_data()
-        finding_service.create(
-            ENTITY_PROVERKY,
-            self._inspection_id,
-            finding_type=data["finding_type"],
-            reference_label=data["reference_label"] or context.control_point_label,
-            description=data["description"],
-            recommended_action=data["recommended_action"],
-            responsible_person_id=data["responsible_person_id"],
-            responsible_person_name=data["responsible_person_name"],
-            due_date=data["due_date"],
-            status=data["status"],
-            resolution_note=data["resolution_note"],
-            source_area_label=context.area_label,
-            source_section_label=context.section_label,
-            source_control_point_id=context.control_point_id,
-            source_control_point_label=context.control_point_label,
-        )
+        create_fields = {
+            "finding_type": data["finding_type"],
+            "reference_label": data["reference_label"] or context.control_point_label,
+            "description": data["description"],
+            "recommended_action": data["recommended_action"],
+            "responsible_person_id": data["responsible_person_id"],
+            "responsible_person_name": data["responsible_person_name"],
+            "due_date": data["due_date"],
+            "status": data["status"],
+            "resolution_note": data["resolution_note"],
+            "source_area_label": context.area_label,
+            "source_section_label": context.section_label,
+            "source_control_point_id": context.control_point_id,
+            "source_control_point_label": context.control_point_label,
+        }
+        if self._deferred_edits is not None:
+            self._deferred_edits.stage_finding_create(
+                ENTITY_PROVERKY, self._inspection_id, create_fields
+            )
+        else:
+            finding_service.create(ENTITY_PROVERKY, self._inspection_id, **create_fields)
         self._notify_finding_saved()
 
     def _open_existing_finding(self, finding, context: ProverkyFindingKnowledgeContext) -> None:
+        viewed = (
+            self._deferred_edits.get_finding(finding.id)
+            if self._deferred_edits is not None
+            else finding
+        )
+        if viewed is None:
+            return
         dialog = FindingDialog(
             self,
-            finding=finding,
+            finding=viewed,
             title=FINDING_DIALOG_TITLE,
             knowledge_source={
                 "source_label": FINDING_SOURCE_LABEL,
@@ -1018,13 +1070,18 @@ class BozpKnowledgeSectionWidget(QWidget):
         if not dialog.exec():
             return
 
-        finding_service.update(finding.id, **dialog.get_data())
+        data = dialog.get_data()
+        if self._deferred_edits is not None:
+            self._deferred_edits.stage_finding_update(finding.id, data)
+        else:
+            finding_service.update(finding.id, **data)
         self._notify_finding_saved()
 
     def _notify_finding_saved(self) -> None:
         self.refresh()
         if self._on_finding_saved is not None:
             self._on_finding_saved()
+        self._notify_deferred_changed()
 
     def _build_knowledge_items_list(self, items: list[dict]) -> QWidget:
         container = QWidget()
