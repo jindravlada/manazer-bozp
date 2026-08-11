@@ -461,8 +461,5 @@ class AuditProgramDashboardWidget(QFrame):
             return
 
         dialog = AuditDialog(self, audit=audit)
-        if exec_maximized(dialog):
-            data = dialog.get_data()
-            audit_service.update_audit(audit_id, **dialog.prepare_save_payload(data))
-            dialog.save_commission_members(audit_id, data)
+        exec_maximized(dialog)
         self.refresh()

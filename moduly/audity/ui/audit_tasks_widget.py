@@ -112,6 +112,7 @@ class AuditTasksWidget(QWidget):
         self.open_btn.clicked.connect(self.open_selected_task)
         self.refresh_btn.clicked.connect(self.refresh)
         self.table.doubleClicked.connect(self.open_selected_task)
+        self.table.itemSelectionChanged.connect(self._update_row_actions)
 
         self._update_state()
 
@@ -169,11 +170,18 @@ class AuditTasksWidget(QWidget):
                 for column, item in enumerate(cells):
                     self.table.setItem(row, column, item)
 
+        self._update_row_actions()
+
     def _update_state(self) -> None:
-        enabled = self.audit_id is not None
-        self.info_label.setVisible(not enabled)
-        self.open_btn.setEnabled(enabled)
-        self.refresh_btn.setEnabled(enabled)
+        has_audit = self.audit_id is not None
+        self.info_label.setVisible(not has_audit)
+        # Obnovit jen znovu načte seznam úkolů — aktivní i bez výběru řádku.
+        self.refresh_btn.setEnabled(has_audit)
+        self._update_row_actions()
+
+    def _update_row_actions(self) -> None:
+        has_row = self.audit_id is not None and self._selected_task_id() is not None
+        self.open_btn.setEnabled(has_row)
 
     def _selected_task_id(self) -> int | None:
         selected = self.table.selectionModel().selectedRows()

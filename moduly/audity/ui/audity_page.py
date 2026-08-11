@@ -241,11 +241,8 @@ class AudityPage(QWidget):
 
     def new_audit(self) -> None:
         dialog = AuditDialog(self)
-        if exec_maximized(dialog):
-            data = dialog.get_data()
-            audit = audit_service.create_audit(**dialog.prepare_save_payload(data))
-            dialog.save_commission_members(audit.id, data)
-            self.refresh()
+        exec_maximized(dialog)
+        self.refresh()
 
     def open_selected_audit(self) -> None:
         audit_id = self._selected_audit_id()
@@ -262,14 +259,8 @@ class AudityPage(QWidget):
             return
 
         dialog = AuditDialog(self, audit=audit)
-        if exec_maximized(dialog):
-            data = dialog.get_data()
-            audit_service.update_audit(
-                audit_id,
-                **dialog.prepare_save_payload(data),
-            )
-            dialog.save_commission_members(audit_id, data)
-            self.refresh()
+        exec_maximized(dialog)
+        self.refresh()
 
     def export_selected_protocol(self) -> None:
         audit = self._selected_audit()

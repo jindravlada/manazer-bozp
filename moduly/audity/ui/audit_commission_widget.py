@@ -91,6 +91,15 @@ class AuditCommissionWidget(QWidget):
         self.workplace_selector.currentIndexChanged.connect(self._on_workplace_selector_changed)
         self.union_selector.currentIndexChanged.connect(self._on_union_selector_changed)
 
+        self.members_table.itemSelectionChanged.connect(
+            lambda: self._update_list_actions("member")
+        )
+        self.invited_table.itemSelectionChanged.connect(
+            lambda: self._update_list_actions("invited")
+        )
+        self._update_list_actions("member")
+        self._update_list_actions("invited")
+
     @staticmethod
     def _selected_thp_id(selector: ThpWorkerSelector) -> int | None:
         data = selector.currentData()
@@ -138,6 +147,10 @@ class AuditCommissionWidget(QWidget):
             remove_btn.clicked.connect(self.remove_member)
             up_btn.clicked.connect(lambda: self.move_item("member", -1))
             down_btn.clicked.connect(lambda: self.move_item("member", 1))
+            self._member_edit_btn = edit_btn
+            self._member_remove_btn = remove_btn
+            self._member_up_btn = up_btn
+            self._member_down_btn = down_btn
         else:
             add_btn = QPushButton("Přizvat osobu")
             edit_btn = QPushButton("Upravit")
@@ -149,11 +162,38 @@ class AuditCommissionWidget(QWidget):
             remove_btn.clicked.connect(self.remove_invited)
             up_btn.clicked.connect(lambda: self.move_item("invited", -1))
             down_btn.clicked.connect(lambda: self.move_item("invited", 1))
+            self._invited_edit_btn = edit_btn
+            self._invited_remove_btn = remove_btn
+            self._invited_up_btn = up_btn
+            self._invited_down_btn = down_btn
 
         for button in (add_btn, edit_btn, remove_btn, up_btn, down_btn):
             row.addWidget(button)
         row.addStretch()
         return toolbar
+
+    def _update_list_actions(self, list_type: str) -> None:
+        if list_type == "member":
+            table = self.members_table
+            items = self._members
+            edit_btn = self._member_edit_btn
+            remove_btn = self._member_remove_btn
+            up_btn = self._member_up_btn
+            down_btn = self._member_down_btn
+        else:
+            table = self.invited_table
+            items = self._invited
+            edit_btn = self._invited_edit_btn
+            remove_btn = self._invited_remove_btn
+            up_btn = self._invited_up_btn
+            down_btn = self._invited_down_btn
+
+        row = self._selected_row(table)
+        has_row = row is not None
+        edit_btn.setEnabled(has_row)
+        remove_btn.setEnabled(has_row)
+        up_btn.setEnabled(has_row and row > 0)
+        down_btn.setEnabled(has_row and row < len(items) - 1)
 
     def set_audit_context(self, audit_id: int | None) -> None:
         self.audit_id = audit_id
@@ -317,6 +357,8 @@ class AuditCommissionWidget(QWidget):
     def _refresh_tables(self) -> None:
         self._fill_table(self.members_table, self._members)
         self._fill_table(self.invited_table, self._invited)
+        self._update_list_actions("member")
+        self._update_list_actions("invited")
 
     @staticmethod
     def _fill_table(table: QTableWidget, items: list[dict]) -> None:

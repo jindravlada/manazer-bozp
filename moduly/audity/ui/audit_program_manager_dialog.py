@@ -878,19 +878,16 @@ class AuditProgramManagerDialog(QDialog):
             return False
 
         dialog = AuditDialog(self, audit=audit, visit_context=visit_context)
-        completed = False
-        if exec_maximized(dialog):
-            data = dialog.get_data()
-            updated = audit_service.update_audit(
-                audit_id,
-                **dialog.prepare_save_payload(data),
-            )
-            dialog.save_commission_members(audit_id, data)
-            if updated is not None and updated.status == AUDIT_STATUS_DOKONCENO:
-                self._set_status(AUDIT_PROGRAM_STATUS_AUDIT_COMPLETED)
-                completed = True
+        exec_maximized(dialog)
+
+        updated = audit_service.get_by_id(audit_id)
+        completed = (
+            updated is not None and updated.status == AUDIT_STATUS_DOKONCENO
+        )
 
         self._refresh_selected_program_views()
+        if completed:
+            self._set_status(AUDIT_PROGRAM_STATUS_AUDIT_COMPLETED)
         return completed
 
     def _fill_detail_panel(

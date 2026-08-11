@@ -280,6 +280,7 @@ class AudityPageTestCase(unittest.TestCase):
             dialog.commission_widget.leader_selector.set_person_id(self.leader_id)
             dialog.commission_widget.workplace_selector.set_person_id(self.workplace_rep_id)
             dialog.commission_widget.union_selector.set_person_id(self.union_id)
+            self.assertTrue(dialog._persist())
             return True
 
         mock_exec.side_effect = _accept_dialog

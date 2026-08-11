@@ -26,7 +26,7 @@ with patch.object(Path, "home", return_value=_TMP):
 
     initialize_database()
 
-    from PySide6.QtWidgets import QApplication, QDialogButtonBox
+    from PySide6.QtWidgets import QApplication
 
     from core.shared.verification_type import (
         VERIFICATION_TYPE_DOCUMENTATION,
@@ -56,7 +56,14 @@ class AuditRollback1StabilityTestCase(unittest.TestCase):
     def test_audit_dialog_has_no_editor_dialog_controller(self) -> None:
         dialog = AuditDialog(audit=self._audit)
         self.assertFalse(hasattr(dialog, "_editor"))
-        self.assertIsNotNone(dialog.findChild(QDialogButtonBox))
+        self.assertFalse(
+            hasattr(dialog, "install_auto_dirty_tracking")
+            or getattr(type(dialog), "install_auto_dirty_tracking", None)
+        )
+        # Stay-open footer (bez QDialogButtonBox / bez plošného EDC).
+        self.assertEqual(dialog._save_btn.text(), "Uložit")
+        self.assertEqual(dialog._save_close_btn.text(), "Uložit a zavřít")
+        self.assertEqual(dialog._close_btn.text(), "Zavřít")
         dialog.close()
 
     def test_open_switch_tabs_documentation_terrain(self) -> None:

@@ -144,9 +144,10 @@ class AuditFindingsWidget(QWidget):
         self.edit_btn.clicked.connect(self.edit_finding)
         self.delete_btn.clicked.connect(self.delete_finding)
         self.table.doubleClicked.connect(self.edit_finding)
-        self.table.itemSelectionChanged.connect(self.task_actions.update_state)
+        self.table.itemSelectionChanged.connect(self._on_selection_changed)
 
         self._update_state()
+        self._update_row_actions()
         self.task_actions.update_state()
 
     def set_audit_id(self, audit_id: int | None) -> None:
@@ -233,17 +234,25 @@ class AuditFindingsWidget(QWidget):
                     self.table.setItem(row, column, item)
 
         self.task_actions.update_state()
+        self._update_row_actions()
 
     def _after_task_action(self) -> None:
         self.refresh()
         if self._on_task_changed is not None:
             self._on_task_changed()
 
+    def _on_selection_changed(self) -> None:
+        self._update_row_actions()
+        self.task_actions.update_state()
+
     def _update_state(self) -> None:
-        enabled = self.audit_id is not None
-        self.info_label.setVisible(not enabled)
-        self.edit_btn.setEnabled(enabled)
-        self.delete_btn.setEnabled(enabled)
+        self.info_label.setVisible(self.audit_id is None)
+        self._update_row_actions()
+
+    def _update_row_actions(self) -> None:
+        has_row = self.audit_id is not None and self._selected_finding_id() is not None
+        self.edit_btn.setEnabled(has_row)
+        self.delete_btn.setEnabled(has_row)
 
     def _selected_finding_id(self) -> int | None:
         selected = self.table.selectionModel().selectedRows()

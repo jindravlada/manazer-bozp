@@ -124,6 +124,9 @@ class AudityFindingsTaskTestCase(unittest.TestCase):
         widget = AuditFindingsWidget()
         widget.set_audit_id(audit.id)
 
+        self.assertFalse(widget.edit_btn.isEnabled())
+        self.assertFalse(widget.delete_btn.isEnabled())
+        widget.table.selectRow(0)
         self.assertTrue(widget.edit_btn.isEnabled())
         self.assertTrue(widget.delete_btn.isEnabled())
         self.assertTrue(hasattr(widget, "task_actions"))
@@ -131,6 +134,8 @@ class AudityFindingsTaskTestCase(unittest.TestCase):
         finding_service.delete(finding_id)
         widget.refresh()
         self.assertEqual(widget.table.rowCount(), 0)
+        self.assertFalse(widget.edit_btn.isEnabled())
+        self.assertFalse(widget.delete_btn.isEnabled())
 
     @patch("core.widgets.finding_task_actions.TaskDialog")
     def test_create_task_opens_task_dialog(self, mock_task_dialog) -> None:
