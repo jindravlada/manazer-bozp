@@ -41,7 +41,11 @@ def _standard_icon(pixmap: QStyle.StandardPixmap) -> QIcon:
 
 
 def confirm_unsaved_editor_close(parent: QWidget | None, *, title: str) -> UnsavedCloseDecision:
-    """Standardní dialog neuložených změn. Vrací ``save`` / ``discard`` / ``cancel``."""
+    """Standardní dialog neuložených změn. Vrací ``save`` / ``discard`` / ``cancel``.
+
+    Všechny tři akce mají ``ActionRole``, aby Enter / Accept / Escape
+    neaktivovaly omylem „Uložit“ (dříve AcceptRole).
+    """
     message = QMessageBox(parent)
     message.setWindowTitle(title)
     message.setText(EDITOR_UNSAVED_PROMPT)
@@ -49,20 +53,21 @@ def confirm_unsaved_editor_close(parent: QWidget | None, *, title: str) -> Unsav
 
     save_btn = message.addButton(
         EDITOR_UNSAVED_SAVE_LABEL,
-        QMessageBox.ButtonRole.AcceptRole,
+        QMessageBox.ButtonRole.ActionRole,
     )
     configure_editor_save_button(save_btn)
     discard_btn = message.addButton(
         EDITOR_UNSAVED_DISCARD_LABEL,
-        QMessageBox.ButtonRole.DestructiveRole,
+        QMessageBox.ButtonRole.ActionRole,
     )
     discard_btn.setIcon(_standard_icon(QStyle.StandardPixmap.SP_DialogResetButton))
     cancel_btn = message.addButton(
         EDITOR_UNSAVED_ABORT_LABEL,
-        QMessageBox.ButtonRole.RejectRole,
+        QMessageBox.ButtonRole.ActionRole,
     )
     configure_editor_close_button(cancel_btn, is_new=True)
     message.setDefaultButton(cancel_btn)
+    message.setEscapeButton(cancel_btn)
     message.exec()
 
     clicked = message.clickedButton()

@@ -75,32 +75,33 @@ class AuditService:
         return self.repository.update(saved)
 
     def update_audit(self, audit_id: int, **fields) -> Audit | None:
-        audit = self.repository.get_by_id(audit_id)
-        if audit is None:
+        existing = self.repository.get_by_id(audit_id)
+        if existing is None:
             return None
 
-        was_finished = audit.finished_at is not None
+        was_finished = existing.finished_at is not None
 
         merged = {
-            "year": audit.year,
-            "planned_month": audit.planned_month,
-            "audit_date": audit.audit_date,
-            "started_at": audit.started_at,
-            "finished_at": audit.finished_at,
-            "audit_type": audit.audit_type,
-            "workplace_id": audit.workplace_id,
-            "workplace_name": audit.workplace_name,
-            "title": audit.title,
-            "program_id": audit.program_id,
-            "program_visit_id": audit.program_visit_id,
-            "silne_stranky": audit.silne_stranky,
+            "year": existing.year,
+            "planned_month": existing.planned_month,
+            "audit_date": existing.audit_date,
+            "started_at": existing.started_at,
+            "finished_at": existing.finished_at,
+            "audit_type": existing.audit_type,
+            "workplace_id": existing.workplace_id,
+            "workplace_name": existing.workplace_name,
+            "title": existing.title,
+            "program_id": existing.program_id,
+            "program_visit_id": existing.program_visit_id,
+            "silne_stranky": existing.silne_stranky,
         }
         merged.update(fields)
         data = self._validated_fields(merged)
-        for key, value in data.items():
-            setattr(audit, key, value)
-        audit.updated_at = datetime.now()
-        updated = self.repository.update(audit)
+        data["updated_at"] = datetime.now()
+        # Zápis jen přes id v nové session — ne merge instance držené editorem.
+        updated = self.repository.update_fields(audit_id, **data)
+        if updated is None:
+            return None
 
         if not was_finished and updated.finished_at is not None:
             from moduly.audity.sluzby.audit_program_service import audit_program_service

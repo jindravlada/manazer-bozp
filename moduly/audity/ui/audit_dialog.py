@@ -191,6 +191,7 @@ class AuditDialog(QDialog):
             self.save_commission_members(created.id, data)
             self._reload_after_persist()
         else:
+            # Zápis jen podle id — ne přes mutaci self.audit drženého editorem.
             updated = audit_service.update_audit(self.audit.id, **payload)
             if updated is None:
                 return False
