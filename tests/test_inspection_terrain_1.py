@@ -301,6 +301,24 @@ class InspectionTerrain1TestCase(unittest.TestCase):
         self.assertIn("Provoz checklist", content)
         self.assertIn("Poznámka:", content)
 
+    def test_terrain_checklist_question_is_bold_area_is_not(self) -> None:
+        inspection = bozp_inspection_service.create_inspection()
+        terrain = inspection_verification_service.list_control_points(
+            inspection.id,
+            verification_type=VERIFICATION_TYPE_TERRAIN,
+        )
+        self.assertTrue(terrain)
+        content = terrain_checklist_service._checklist_content(inspection.id)
+        paragraphs = [p for p in content.paragraphs if not p.blank]
+        self.assertGreaterEqual(len(paragraphs), 2)
+        area_para = paragraphs[0]
+        question_para = paragraphs[1]
+        self.assertFalse(area_para.runs[0].bold)
+        self.assertNotEqual(area_para.style, "AuditCriterion")
+        self.assertTrue(question_para.runs[0].bold)
+        self.assertEqual(question_para.runs[0].text, terrain[0].control_point_label)
+        self.assertIn(" · ", area_para.runs[0].text)
+
     def test_template_odt_is_valid_package(self) -> None:
         template = terrain_checklist_service.template_path()
         self.assertTrue(template.exists())
