@@ -35,6 +35,7 @@ _EXPORT_IMAGE_STYLE = "ExportImage"
 _AUDIT_NOTE_STYLE = "AuditNote"
 _AUDIT_BOLD_STYLE = "AuditBold"
 _AUDIT_CRITERION_STYLE = "AuditCriterion"
+_KEEP_WITH_NEXT_STYLE = "ExportKeepWithNext"
 
 
 @dataclass(frozen=True)
@@ -53,6 +54,7 @@ class OdtParagraph:
     runs: list[OdtTextRun] = field(default_factory=list)
     image_path: Path | None = None
     blank: bool = False
+    keep_with_next: bool = False
 
     @classmethod
     def text(
@@ -61,8 +63,13 @@ class OdtParagraph:
         *,
         style: str = "Standard",
         bold: bool = False,
+        keep_with_next: bool = False,
     ) -> "OdtParagraph":
-        return cls(style=style, runs=[OdtTextRun(value, bold=bold)])
+        return cls(
+            style=style,
+            runs=[OdtTextRun(value, bold=bold)],
+            keep_with_next=keep_with_next,
+        )
 
     @classmethod
     def blank_line(cls, *, style: str = "Standard") -> "OdtParagraph":
@@ -308,7 +315,7 @@ class OdtExportEngine:
         paragraph: OdtParagraph,
         image_registry: list[tuple[str, Path]],
     ) -> str:
-        style = xml_escape(paragraph.style or "Standard")
+        style = xml_escape(self._paragraph_style_name(paragraph))
         if paragraph.blank:
             return f'<text:p text:style-name="{style}"/>'
 
@@ -333,6 +340,14 @@ class OdtExportEngine:
         if not inner:
             return f'<text:p text:style-name="{style}"/>'
         return f'<text:p text:style-name="{style}">{inner}</text:p>'
+
+    @staticmethod
+    def _paragraph_style_name(paragraph: OdtParagraph) -> str:
+        """Pro keep-with-next použije ExportKeepWithNext (Standard + fo:keep-with-next)."""
+        base = paragraph.style or "Standard"
+        if paragraph.keep_with_next and base == "Standard":
+            return _KEEP_WITH_NEXT_STYLE
+        return base
 
     def _escape_odt_text(self, value: Any, image_registry: list[tuple[str, Path]]) -> str:
         text = "" if value is None else str(value)
@@ -437,8 +452,8 @@ class OdtExportEngine:
         return xml
 
     def _inject_automatic_styles(self, content_xml: str) -> str:
-        styles = self._export_automatic_styles_xml()
-        if self._IMAGE_STYLE_NAME in content_xml and _AUDIT_NOTE_STYLE in content_xml:
+        styles = self._missing_automatic_styles_xml(content_xml)
+        if not styles:
             return content_xml
         if "</office:automatic-styles>" in content_xml:
             return content_xml.replace(
@@ -454,38 +469,62 @@ class OdtExportEngine:
             )
         return content_xml
 
+    @classmethod
+    def _missing_automatic_styles_xml(cls, content_xml: str) -> str:
+        parts: list[str] = []
+        if _EXPORT_IMAGE_STYLE not in content_xml:
+            parts.append(
+                f'<style:style style:name="{_EXPORT_IMAGE_STYLE}" style:family="graphic">'
+                "<style:graphic-properties "
+                'text:anchor-type="as-char" '
+                'style:wrap="none" '
+                'style:vertical-pos="top" '
+                'style:vertical-rel="baseline" '
+                'style:horizontal-pos="left" '
+                'style:horizontal-rel="paragraph" '
+                'fo:margin-left="0cm" fo:margin-right="0cm" '
+                'fo:margin-top="0.15cm" fo:margin-bottom="0.25cm" '
+                'style:flow-with-text="true"/>'
+                "</style:style>"
+            )
+        if _AUDIT_NOTE_STYLE not in content_xml:
+            parts.append(
+                f'<style:style style:name="{_AUDIT_NOTE_STYLE}" style:family="paragraph">'
+                "<style:paragraph-properties "
+                'fo:margin-left="0.7cm" fo:margin-right="0cm" '
+                'fo:margin-top="0.08cm" fo:margin-bottom="0.08cm"/>'
+                '<style:text-properties style:font-name="Liberation Serif" fo:font-size="11pt"/>'
+                "</style:style>"
+            )
+        if _AUDIT_CRITERION_STYLE not in content_xml:
+            parts.append(
+                f'<style:style style:name="{_AUDIT_CRITERION_STYLE}" style:family="paragraph">'
+                "<style:paragraph-properties "
+                'fo:margin-top="0.25cm" fo:margin-bottom="0.1cm"/>'
+                '<style:text-properties style:font-name="Liberation Serif" '
+                'fo:font-size="11pt" fo:font-weight="bold"/>'
+                "</style:style>"
+            )
+        if _AUDIT_BOLD_STYLE not in content_xml:
+            parts.append(
+                f'<style:style style:name="{_AUDIT_BOLD_STYLE}" style:family="text">'
+                '<style:text-properties fo:font-weight="bold"/>'
+                "</style:style>"
+            )
+        if _KEEP_WITH_NEXT_STYLE not in content_xml:
+            parts.append(
+                f'<style:style style:name="{_KEEP_WITH_NEXT_STYLE}" '
+                'style:family="paragraph" style:parent-style-name="Standard">'
+                "<style:paragraph-properties "
+                'fo:keep-with-next="always" fo:keep-together="always"/>'
+                "</style:style>"
+            )
+        return "".join(parts)
+
     @staticmethod
     def _export_automatic_styles_xml() -> str:
-        return (
-            # Samostatný grafický styl (ekvivalent běžného Graphics / bez obtékání).
-            f'<style:style style:name="{_EXPORT_IMAGE_STYLE}" style:family="graphic">'
-            "<style:graphic-properties "
-            'text:anchor-type="as-char" '
-            'style:wrap="none" '
-            'style:vertical-pos="top" '
-            'style:vertical-rel="baseline" '
-            'style:horizontal-pos="left" '
-            'style:horizontal-rel="paragraph" '
-            'fo:margin-left="0cm" fo:margin-right="0cm" '
-            'fo:margin-top="0.15cm" fo:margin-bottom="0.25cm" '
-            'style:flow-with-text="true"/>'
-            "</style:style>"
-            f'<style:style style:name="{_AUDIT_NOTE_STYLE}" style:family="paragraph">'
-            "<style:paragraph-properties "
-            'fo:margin-left="0.7cm" fo:margin-right="0cm" '
-            'fo:margin-top="0.08cm" fo:margin-bottom="0.08cm"/>'
-            '<style:text-properties style:font-name="Liberation Serif" fo:font-size="11pt"/>'
-            "</style:style>"
-            f'<style:style style:name="{_AUDIT_CRITERION_STYLE}" style:family="paragraph">'
-            "<style:paragraph-properties "
-            'fo:margin-top="0.25cm" fo:margin-bottom="0.1cm"/>'
-            '<style:text-properties style:font-name="Liberation Serif" '
-            'fo:font-size="11pt" fo:font-weight="bold"/>'
-            "</style:style>"
-            f'<style:style style:name="{_AUDIT_BOLD_STYLE}" style:family="text">'
-            '<style:text-properties fo:font-weight="bold"/>'
-            "</style:style>"
-        )
+        # Kompatibilita pro starší volání / testy – všechny styly najednou.
+        return OdtExportEngine._missing_automatic_styles_xml("")
 
     @staticmethod
     def _inject_manifest_images(

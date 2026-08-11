@@ -88,12 +88,24 @@ class TerrainChecklistService:
             if index > 0:
                 paragraphs.append(OdtParagraph.blank_line())
             paragraphs.append(
-                OdtParagraph.text(f"{ref.area_label} · {ref.section_label}")
+                OdtParagraph.text(
+                    f"{ref.area_label} · {ref.section_label}",
+                    keep_with_next=True,
+                )
             )
             paragraphs.append(
-                OdtParagraph.text(ref.control_point_label, bold=True)
+                OdtParagraph.text(
+                    ref.control_point_label,
+                    bold=True,
+                    keep_with_next=True,
+                )
             )
-            paragraphs.append(OdtParagraph.text("Poznámka: ________________________________"))
+            paragraphs.append(
+                OdtParagraph.text(
+                    "Poznámka: ________________________________",
+                    keep_with_next=True,
+                )
+            )
             paragraphs.append(OdtParagraph.text("_________________________________________"))
         return OdtRichContent(paragraphs=paragraphs)
 

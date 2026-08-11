@@ -319,6 +319,26 @@ class InspectionTerrain1TestCase(unittest.TestCase):
         self.assertEqual(question_para.runs[0].text, terrain[0].control_point_label)
         self.assertIn(" · ", area_para.runs[0].text)
 
+    def test_terrain_checklist_keeps_area_block_together(self) -> None:
+        inspection = bozp_inspection_service.create_inspection(
+            started_at=date(2026, 7, 10),
+            workplace_name="Keep together",
+        )
+        content = terrain_checklist_service._checklist_content(inspection.id)
+        blocks = [p for p in content.paragraphs if not p.blank]
+        self.assertGreaterEqual(len(blocks), 4)
+        self.assertTrue(blocks[0].keep_with_next)
+        self.assertTrue(blocks[1].keep_with_next)
+        self.assertTrue(blocks[2].keep_with_next)
+        self.assertFalse(blocks[3].keep_with_next)
+
+        path = terrain_checklist_service.generate_for_inspection(inspection)
+        with zipfile.ZipFile(path, "r") as archive:
+            xml = archive.read("content.xml").decode("utf-8")
+        self.assertIn('style:name="ExportKeepWithNext"', xml)
+        self.assertIn('fo:keep-with-next="always"', xml)
+        self.assertIn('text:style-name="ExportKeepWithNext"', xml)
+
     def test_template_odt_is_valid_package(self) -> None:
         template = terrain_checklist_service.template_path()
         self.assertTrue(template.exists())
