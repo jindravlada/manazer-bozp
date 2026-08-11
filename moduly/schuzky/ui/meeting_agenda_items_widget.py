@@ -376,6 +376,7 @@ class MeetingAgendaItemsWidget(QWidget):
                 description=data.get("description") or "",
                 priority=data.get("priority") or "Normální",
                 due_date=data.get("due_date"),
+                remind_from=data.get("remind_from"),
                 responsible_person_id=data.get("responsible_person_id"),
                 workplace_id=data.get("workplace_id"),
                 completed=bool(data.get("completed")),

@@ -145,6 +145,7 @@ class TaskDialog(QDialog):
             self.priority_combo.setCurrentText(task.priority)
             if task.due_date:
                 self.due_date_edit.set_date_iso(task.due_date.isoformat())
+            self.remind_from_edit.set_date_value(getattr(task, "remind_from", None))
             self.person_selector.set_person_id(task.responsible_person_id)
             self.workplace_selector.set_workplace_id(task.workplace_id)
 
@@ -218,9 +219,42 @@ class TaskDialog(QDialog):
             )
             return False
 
+        remind_error = task_service.validate_remind_from(
+            data.get("remind_from"),
+            data.get("due_date"),
+        )
+        if remind_error:
+            QMessageBox.warning(self, self.windowTitle(), remind_error)
+            return False
+
         if self.task is None:
             if self._create_factory is not None:
                 self.task = self._create_factory(data)
+                if self.task is None:
+                    return False
+                # Factory často nepropisuje remind_from — doplnit bez přepsání ostatních polí.
+                if getattr(self.task, "remind_from", None) != data.get("remind_from"):
+                    task_service.update_task(
+                        task_id=self.task.id,
+                        title=self.task.title,
+                        description=self.task.description or "",
+                        priority=self.task.priority or "Normální",
+                        due_date=self.task.due_date,
+                        remind_from=data.get("remind_from"),
+                        responsible_person_id=self.task.responsible_person_id,
+                        workplace_id=self.task.workplace_id,
+                        completed=bool(self.task.completed),
+                        completed_date=self.task.completed_date,
+                        requires_verification=bool(self.task.requires_verification),
+                        check_due_date=self.task.check_due_date,
+                        checked_date=self.task.checked_date,
+                        checked_by_id=self.task.checked_by_id,
+                        canceled=bool(self.task.canceled),
+                        note=self.task.note or "",
+                    )
+                    refreshed = task_service.get_task_by_id(self.task.id)
+                    if refreshed is not None:
+                        self.task = refreshed
             else:
                 self.task = task_service.create_task(**data, **self._create_kwargs)
             if self.task is None:
@@ -345,6 +379,15 @@ class TaskDialog(QDialog):
 
         self.due_date_edit = DateEdit()
 
+        self.remind_from_edit = NullableDateEdit()
+        _remind_hint = (
+            "Od tohoto data se úkol zobrazí na Pracovní ploše\nv části Připomínky."
+        )
+        self.remind_from_edit.setToolTip(_remind_hint)
+        self.remind_from_hint = QLabel(_remind_hint)
+        self.remind_from_hint.setWordWrap(True)
+        self.remind_from_hint.setStyleSheet("color: #666;")
+
         self.completed_checkbox = QCheckBox("Opatření splněno")
         self.completed_date_edit = NullableDateEdit()
 
@@ -369,6 +412,8 @@ class TaskDialog(QDialog):
         layout.addRow("Odpovídá:", self.person_selector)
         layout.addRow("Priorita:", self.priority_combo)
         layout.addRow("Termín splnění:", self.due_date_edit)
+        layout.addRow("Připomenout od:", self.remind_from_edit)
+        layout.addRow("", self.remind_from_hint)
         layout.addRow("Splnění:", self.completed_checkbox)
         layout.addRow("Splněno dne:", self.completed_date_edit)
         layout.addRow("Pracoviště:", self.workplace_selector)
@@ -454,6 +499,7 @@ class TaskDialog(QDialog):
             "description": "",
             "priority": self.priority_combo.currentText(),
             "due_date": due_date,
+            "remind_from": self.remind_from_edit.get_date(),
             "responsible_person_id": self.person_selector.current_person_id(),
             "workplace_id": self.workplace_selector.current_workplace_id(),
             "completed": self.completed_checkbox.isChecked(),

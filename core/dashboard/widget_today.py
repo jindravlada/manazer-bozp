@@ -21,10 +21,16 @@ STATUS_CANCELED = "Zrušeno"
 _CLOSED_STATUSES = {STATUS_CLOSED, STATUS_CANCELED}
 
 _ATTENTION_LINK_PREFIX = "attention:"
+PANEL_TITLE_REMINDERS = "Připomínky"
+
+_CERTIFICATE_ITEM_TYPES = {
+    ITEM_TYPE_OZO_PERSON_CERTIFICATE,
+    ITEM_TYPE_QUALIFICATION_CERTIFICATE,
+}
 
 
 def task_urgency_due_date(task) -> date | None:
-    """Rozhodný termín pro „Co hoří“ podle aktuální fáze úkolu."""
+    """Rozhodný termín pro Připomínky podle aktuální fáze úkolu."""
     status = task.computed_status
     if status in _CLOSED_STATUSES:
         return None
@@ -33,24 +39,48 @@ def task_urgency_due_date(task) -> date | None:
     return task.due_date
 
 
+def task_should_appear_in_reminders(task, today: date) -> bool:
+    """Má se aktivní / čekající úkol zobrazit v panelu Připomínky?"""
+    status = task.computed_status
+    if status in _CLOSED_STATUSES:
+        return False
+
+    if status == STATUS_WAITING_CHECK:
+        check_due = task.check_due_date
+        return check_due is not None and today >= check_due
+
+    remind_from = getattr(task, "remind_from", None)
+    if remind_from is not None and today >= remind_from:
+        return True
+    due_date = task.due_date
+    if due_date is not None and today >= due_date:
+        return True
+    return False
+
+
 def classify_burning_tasks(tasks, today: date):
-    """Rozdělí otevřené úkoly podle rozhodného termínu fáze."""
+    """Rozdělí úkoly pro panel Připomínky podle rozhodného termínu fáze."""
     burning = []
     due_today = []
     waiting = []
 
     for task in tasks:
-        status = task.computed_status
-        if status in _CLOSED_STATUSES:
+        if not task_should_appear_in_reminders(task, today):
             continue
 
+        status = task.computed_status
         decisive = task_urgency_due_date(task)
+
         if decisive is not None and decisive < today:
             burning.append(task)
         elif decisive == today:
             due_today.append(task)
         elif status == STATUS_WAITING_CHECK:
+            # Pojistka: před check_due_date už vyřazeno výše.
             waiting.append(task)
+        else:
+            # Aktivní: připomenuto přes remind_from před due_date / bez due_date.
+            due_today.append(task)
 
     burning.sort(key=lambda task: (task_urgency_due_date(task) or date.max, task.id))
     due_today.sort(key=lambda task: (task_urgency_due_date(task) or date.max, task.id))
@@ -96,12 +126,6 @@ def overdue_ozo_contract_items(
     ]
     overdue.sort(key=lambda item: (item.due_date or date.max, item.source_id))
     return overdue
-
-
-_CERTIFICATE_ITEM_TYPES = {
-    ITEM_TYPE_OZO_PERSON_CERTIFICATE,
-    ITEM_TYPE_QUALIFICATION_CERTIFICATE,
-}
 
 
 def overdue_certificate_items(
@@ -164,7 +188,7 @@ def attention_from_link(
 
 class TodayWidget(DashboardPanel):
     def __init__(self, open_task_callback=None, open_attention_callback=None):
-        super().__init__("Co hoří")
+        super().__init__(PANEL_TITLE_REMINDERS)
         self.open_task_callback = open_task_callback
         self.open_attention_callback = open_attention_callback
         self._linked_attention: list[AttentionItem] = []
@@ -181,6 +205,8 @@ class TodayWidget(DashboardPanel):
 
     def _task_line(self, task, prefix):
         decisive = task_urgency_due_date(task)
+        if decisive is None and getattr(task, "remind_from", None) is not None:
+            decisive = task.remind_from
         term = decisive.strftime("%d.%m.%Y") if decisive else "bez termínu"
         place = task.workplace_name or "—"
         title = task_link(task.id, task.title)
@@ -241,6 +267,6 @@ class TodayWidget(DashboardPanel):
         lines = ordered[:5]
 
         if not lines:
-            lines.append("Dnes není nic kritického.")
+            lines.append("Nic k připomenutí.")
 
         self.content.setText("<br>".join(lines))

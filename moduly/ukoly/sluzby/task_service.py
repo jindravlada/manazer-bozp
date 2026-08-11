@@ -36,6 +36,7 @@ class TaskService:
         description: str = "",
         priority: str = "Normální",
         due_date: date | None = None,
+        remind_from: date | None = None,
         responsible_person_id: int | None = None,
         workplace_id: int | None = None,
         completed: bool = False,
@@ -63,12 +64,15 @@ class TaskService:
         if completed and requires_verification and check_due_date is None:
             check_due_date = completed_date + timedelta(days=15)
 
+        remind_from = self._normalized_remind_from(remind_from, due_date)
+
         task = Task(
             title=title,
             description=description,
             status="Aktivní",
             priority=priority,
             due_date=due_date,
+            remind_from=remind_from,
             responsible_person_id=responsible_person_id,
             responsible_person=self._person_name(responsible_person_id),
             workplace_id=workplace_id,
@@ -98,6 +102,7 @@ class TaskService:
         description: str = "",
         priority: str = "Normální",
         due_date: date | None = None,
+        remind_from: date | None = None,
         responsible_person_id: int | None = None,
         workplace_id: int | None = None,
         completed: bool = False,
@@ -119,10 +124,13 @@ class TaskService:
         if completed and requires_verification and check_due_date is None:
             check_due_date = completed_date + timedelta(days=15)
 
+        remind_from = self._normalized_remind_from(remind_from, due_date)
+
         task.title = title
         task.description = description
         task.priority = priority
         task.due_date = due_date
+        task.remind_from = remind_from
         task.responsible_person_id = responsible_person_id
         task.responsible_person = self._person_name(responsible_person_id)
         task.workplace_id = workplace_id
@@ -141,6 +149,29 @@ class TaskService:
         saved = self.repository.update(task)
         self._resolve_linked_finding(saved)
         return saved
+
+    @staticmethod
+    def validate_remind_from(
+        remind_from: date | None,
+        due_date: date | None,
+    ) -> str | None:
+        """Vrátí chybovou hlášku, pokud je remind_from neplatné."""
+        if remind_from is None or due_date is None:
+            return None
+        if remind_from > due_date:
+            return "Připomenout od nemůže být později než termín splnění."
+        return None
+
+    @classmethod
+    def _normalized_remind_from(
+        cls,
+        remind_from: date | None,
+        due_date: date | None,
+    ) -> date | None:
+        error = cls.validate_remind_from(remind_from, due_date)
+        if error:
+            raise ValueError(error)
+        return remind_from
 
     def mark_completed(self, task_id: int) -> bool:
         task = self.repository.get_by_id(task_id)

@@ -22,6 +22,7 @@ class Task(Base):
     priority: Mapped[str] = mapped_column(String(30), default="Normální")
 
     due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    remind_from: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     responsible_person: Mapped[str] = mapped_column(String(150), default="")
     responsible_person_id: Mapped[int | None] = mapped_column(Integer, nullable=True)

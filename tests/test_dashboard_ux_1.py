@@ -1,4 +1,4 @@
-"""DASHBOARD-UX-1: naléhavost úkolu v „Co hoří“ podle aktuální fáze."""
+"""DASHBOARD-UX-1: naléhavost úkolu v Připomínkách podle aktuální fáze."""
 
 from __future__ import annotations
 
@@ -65,7 +65,7 @@ class DashboardUx1BurningTestCase(unittest.TestCase):
         self.assertEqual(waiting, [])
 
     def test_waiting_check_ignores_completion_due_date(self) -> None:
-        """Příklad: splněno před 31. 8., potvrzení do 30. 10. → 31. 8. se ignoruje."""
+        """Před check_due_date se úkol v Připomínkách nezobrazí (due_date se ignoruje)."""
         today = date(2026, 9, 1)
         task = task_service.create_task(
             title="Splněno čeká potvrzení",
@@ -81,7 +81,7 @@ class DashboardUx1BurningTestCase(unittest.TestCase):
         burning, due_today, waiting = classify_burning_tasks([task], today)
         self.assertEqual(burning, [])
         self.assertEqual(due_today, [])
-        self.assertEqual([item.id for item in waiting], [task.id])
+        self.assertEqual(waiting, [])
 
     def test_waiting_check_burns_on_confirmation_deadline(self) -> None:
         today = date(2026, 11, 1)
@@ -127,13 +127,14 @@ class DashboardUx1BurningTestCase(unittest.TestCase):
             check_due_date=date(2026, 10, 30),
         )
         widget = TodayWidget()
-        widget.refresh(today=date(2026, 9, 1))
+        # V den termínu kontroly se položka objeví s check_due_date.
+        widget.refresh(today=date(2026, 10, 30))
         text = widget.content.text()
         self.assertIn("Widget potvrzení", text)
         self.assertIn("30.10.2026", text)
         self.assertNotIn("31.08.2026", text)
-        self.assertIn("🟡", text)
-        self.assertNotIn("🔴", text)
+        self.assertIn("🔵 <b>30.10.2026</b>", text)
+        self.assertNotIn("🔴 <b>30.10.2026</b>", text)
         widget.close()
 
 

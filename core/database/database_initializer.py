@@ -520,6 +520,7 @@ def _ensure_task_columns() -> None:
         "note": "note TEXT DEFAULT ''",
         "task_type": "task_type VARCHAR(50) DEFAULT 'corrective'",
         "source_check_code": "source_check_code VARCHAR(100) DEFAULT ''",
+        "remind_from": "remind_from DATE",
     }
     for column_name, column_sql in additions.items():
         if column_name not in columns:
