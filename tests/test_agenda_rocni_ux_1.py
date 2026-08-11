@@ -130,7 +130,7 @@ class AgendaRocniUx1TestCase(unittest.TestCase):
     def test_due_today_month_is_in_pripominky(self) -> None:
         today = date(2026, 8, 3)  # první pracovní den = termín
         self.assertEqual(len(overdue_yearly_plan_month_items(today)), 1)
-        self.assertFalse(
+        self.assertTrue(
             any(
                 item.item_type == ITEM_TYPE_YEARLY_PLAN_MONTH
                 for item in get_attention_items(today=today)

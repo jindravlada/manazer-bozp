@@ -152,16 +152,16 @@ class AgendaPeriodicReminder1TestCase(unittest.TestCase):
         self.assertIn("30.09.2026", widget.content.text())
         widget.close()
 
-    def test_not_in_upcoming(self) -> None:
+    def test_also_in_upcoming(self) -> None:
         activity = self._create(
-            title="Ne v Nadcházejících",
+            title="Souběh panelů",
             due=date(2026, 9, 30),
             notify_every=14,
         )
         today = date(2026, 9, 16)
         self.assertIn(activity.id, self._ids(today))
         upcoming = get_attention_items(today=today)
-        self.assertFalse(
+        self.assertTrue(
             any(
                 item.item_type == ITEM_TYPE_PERIODIC and item.source_id == activity.id
                 for item in upcoming

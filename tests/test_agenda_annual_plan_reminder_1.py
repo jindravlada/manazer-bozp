@@ -55,6 +55,24 @@ class AgendaAnnualPlanReminder1TestCase(unittest.TestCase):
             for item in list(yearly_plan_service.list_for_year(year)):
                 if item.status != "cancelled":
                     yearly_plan_service.cancel(item.id)
+        from moduly.periodicke_cinnosti.sluzby.periodic_activity_service import (
+            periodic_activity_service,
+        )
+
+        for activity in list(periodic_activity_service.get_all()):
+            if activity.active:
+                periodic_activity_service.update_activity(
+                    activity.id,
+                    title=activity.title,
+                    active=False,
+                    next_due_date=activity.next_due_date,
+                    repeat_every=activity.repeat_every,
+                    repeat_unit=activity.repeat_unit,
+                    notify_every=activity.notify_every,
+                    notify_unit=activity.notify_unit,
+                    next_from=activity.next_from,
+                    place_kind=activity.place_kind,
+                )
 
     def _titles(self, today: date) -> list[str]:
         return [item.title for item in get_yearly_plan_month_reminder_items(today=today)]
@@ -68,7 +86,7 @@ class AgendaAnnualPlanReminder1TestCase(unittest.TestCase):
         self.assertNotIn("Zpracovat úkoly měsíce – srpen 2026", widget.content.text())
         widget.close()
 
-    def test_on_first_working_day_in_reminders_not_upcoming(self) -> None:
+    def test_on_first_working_day_in_reminders_and_upcoming(self) -> None:
         today = date(2026, 8, 3)
         title = month_planning_attention_title(2026, 8)
         items = get_yearly_plan_month_reminder_items(today=today)
@@ -77,7 +95,7 @@ class AgendaAnnualPlanReminder1TestCase(unittest.TestCase):
         self.assertEqual(items[0].item_type, ITEM_TYPE_YEARLY_PLAN_MONTH)
 
         upcoming = get_attention_items(today=today)
-        self.assertFalse(
+        self.assertTrue(
             any(item.item_type == ITEM_TYPE_YEARLY_PLAN_MONTH for item in upcoming)
         )
 

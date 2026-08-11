@@ -510,10 +510,11 @@ def get_yearly_plan_month_reminder_items(
 
 
 def get_attention_items(*, today: date | None = None) -> list[AttentionItem]:
-    """Vrátí společně seřazené úkoly, audity, prověrky, schůzky a OZO.
+    """Vrátí položky pro Nadcházející (včetně periodik a měsíčního plánu).
 
-    Periodické činnosti a měsíční plán jdou do Připomínek přes
-    get_periodic_reminder_items / get_yearly_plan_month_reminder_items.
+    Připomínky berou periodiky / měsíční plán zvlášť přes
+    get_periodic_reminder_items / get_yearly_plan_month_reminder_items —
+    souběh obou panelů je záměr.
     """
     today = today or date.today()
     items = (
@@ -521,6 +522,8 @@ def get_attention_items(*, today: date | None = None) -> list[AttentionItem]:
         + _from_audits(today)
         + _from_inspections(today)
         + _from_meetings(today)
+        + _from_periodics(today)
+        + _from_yearly_plan_month(today)
         + _from_ozo_contracts(today)
         + _from_ozo_person_certificates(today)
         + _from_qualification_certificates(today)
