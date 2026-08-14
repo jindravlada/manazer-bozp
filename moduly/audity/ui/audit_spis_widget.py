@@ -18,6 +18,9 @@ from moduly.audity.constants import (
     PLANNED_MONTH_NAMES,
     PLANNED_MONTH_NOT_SET_LABEL,
 )
+from moduly.audity.sluzby.audit_auditable_workplace_service import (
+    list_auditable_workplaces,
+)
 from moduly.audity.sluzby.audit_service import audit_service
 
 
@@ -45,7 +48,9 @@ class AuditSpisWidget(QWidget):
         self.planned_month_combo = QComboBox()
         self._populate_planned_month_combo()
 
-        self.workplace_selector = WorkplaceSelector()
+        self.workplace_selector = WorkplaceSelector(
+            workplaces_loader=list_auditable_workplaces,
+        )
 
         basic_group = QGroupBox("Základní údaje")
         basic_form = QFormLayout(basic_group)

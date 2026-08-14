@@ -289,16 +289,16 @@ class AuditProgramService:
         if self.repository.get_program(program_id) is None:
             raise ValueError(f"Program auditů {program_id} neexistuje.")
 
-        from moduly.nastaveni.sluzby.settings_service import settings_service
+        from moduly.audity.sluzby.audit_auditable_workplace_service import (
+            list_auditable_workplaces,
+        )
 
         existing_ids = {
             workplace.workplace_id
             for workplace in self.repository.list_workplaces(program_id)
         }
         created = 0
-        for workplace in settings_service.get_workplaces():
-            if not workplace.audit_enabled:
-                continue
+        for workplace in list_auditable_workplaces():
             if workplace.id in existing_ids:
                 continue
             self.add_workplace(
@@ -319,15 +319,17 @@ class AuditProgramService:
         if self.repository.get_program(program_id) is None:
             raise ValueError(f"Program auditů {program_id} neexistuje.")
 
-        from moduly.nastaveni.sluzby.settings_service import settings_service
+        from moduly.audity.sluzby.audit_auditable_workplace_service import (
+            list_auditable_workplaces,
+        )
 
         existing_ids = {
             workplace.workplace_id
             for workplace in self.repository.list_workplaces(program_id)
         }
         missing: list[MissingAuditableWorkplace] = []
-        for workplace in settings_service.get_workplaces():
-            if not workplace.audit_enabled or workplace.id in existing_ids:
+        for workplace in list_auditable_workplaces():
+            if workplace.id in existing_ids:
                 continue
             missing.append(
                 MissingAuditableWorkplace(
@@ -346,6 +348,9 @@ class AuditProgramService:
         if self.repository.get_program(program_id) is None:
             raise ValueError(f"Program auditů {program_id} neexistuje.")
 
+        from moduly.audity.sluzby.audit_auditable_workplace_service import (
+            is_auditable_workplace,
+        )
         from moduly.nastaveni.sluzby.settings_service import settings_service
 
         existing_ids = {
@@ -358,7 +363,7 @@ class AuditProgramService:
             if workplace_id in existing_ids:
                 continue
             workplace = settings_service.get_workplace_by_id(workplace_id)
-            if workplace is None or not workplace.audit_enabled:
+            if workplace is None or not is_auditable_workplace(workplace):
                 continue
             self.add_workplace(
                 program_id,
@@ -377,6 +382,7 @@ class AuditProgramService:
             only_workplace_ids=tuple(added_workplace_ids) if added_workplace_ids else None,
         )
         distribution = self.distribute_processes(
+
             program_id,
             only_workplace_ids=tuple(added_workplace_ids) if added_workplace_ids else None,
         )

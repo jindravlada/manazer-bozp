@@ -74,7 +74,13 @@ class SystemAuditWorkplaceService:
 
     def require_system_audit_workplace_id(self) -> int:
         """Vrátí ID systémového provozu nebo vyvolá jasnou chybu."""
-        from moduly.audity.constants import AUDIT_START_MISSING_SYSTEM_WORKPLACE
+        from moduly.audity.constants import (
+            AUDIT_START_MISSING_SYSTEM_WORKPLACE,
+            SYSTEM_AUDIT_WORKPLACE_INVALID_MESSAGE,
+        )
+        from moduly.audity.sluzby.audit_auditable_workplace_service import (
+            is_auditable_workplace,
+        )
 
         workplace_id = self.get_system_audit_workplace_id()
         if workplace_id is None:
@@ -82,7 +88,21 @@ class SystemAuditWorkplaceService:
         workplace = settings_service.get_workplace_by_id(workplace_id)
         if workplace is None:
             raise SystemAuditWorkplaceError(AUDIT_START_MISSING_SYSTEM_WORKPLACE)
+        if not is_auditable_workplace(workplace):
+            raise SystemAuditWorkplaceError(SYSTEM_AUDIT_WORKPLACE_INVALID_MESSAGE)
         return int(workplace.id)
+
+    def is_saved_system_workplace_valid(self) -> bool:
+        """True, pokud je uložené ID auditovatelný provoz (nebo není nastaveno)."""
+        from moduly.audity.sluzby.audit_auditable_workplace_service import (
+            is_auditable_workplace,
+        )
+
+        workplace_id = self.get_system_audit_workplace_id()
+        if workplace_id is None:
+            return True
+        workplace = settings_service.get_workplace_by_id(workplace_id)
+        return is_auditable_workplace(workplace)
 
     def set_system_audit_workplace_id(self, workplace_id: int | None) -> int | None:
         """
@@ -91,6 +111,10 @@ class SystemAuditWorkplaceService:
         Neukládá název provozu natvrdo — pouze ID.
         Před první v2 změnou vytvoří jednorázovou zálohu.
         """
+        from moduly.audity.constants import AUDITABLE_WORKPLACE_REQUIRED_MESSAGE
+        from moduly.audity.sluzby.audit_auditable_workplace_service import (
+            is_auditable_workplace,
+        )
         from moduly.audity.sluzby.audit_method_v2_backup_service import (
             AuditMethodV2BackupError,
             ensure_pre_v2_backup,
@@ -125,6 +149,8 @@ class SystemAuditWorkplaceService:
             raise SystemAuditWorkplaceError(
                 f"Systémový provoz (id={workplace_id_int}) neexistuje."
             )
+        if not is_auditable_workplace(workplace):
+            raise SystemAuditWorkplaceError(AUDITABLE_WORKPLACE_REQUIRED_MESSAGE)
 
         if current == int(workplace.id):
             return int(workplace.id)

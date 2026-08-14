@@ -36,6 +36,11 @@ from moduly.audity.constants import (
     KNOWLEDGE_EDITOR_USER_COPY_HINT,
     KNOWLEDGE_EDITOR_WINDOW_TITLE,
     PROCESS_PANEL_LEFT_WIDTH,
+    SYSTEM_AUDIT_WORKPLACE_INVALID_COMBO_SUFFIX,
+)
+from moduly.audity.sluzby.audit_auditable_workplace_service import (
+    is_auditable_workplace,
+    list_auditable_workplaces,
 )
 from moduly.audity.sluzby.audit_knowledge_editor_service import audit_knowledge_editor_service
 from moduly.audity.sluzby.audit_knowledge_service import KnowledgeTreeNode, audit_knowledge_service
@@ -239,11 +244,25 @@ class AudityKnowledgeEditorDialog(QDialog):
         self._system_workplace_combo.blockSignals(True)
         self._system_workplace_combo.clear()
         self._system_workplace_combo.addItem(KNOWLEDGE_EDITOR_SYSTEM_WORKPLACE_NONE, None)
-        for workplace in settings_service.get_workplaces(include_inactive=False):
+        for workplace in list_auditable_workplaces():
             self._system_workplace_combo.addItem(workplace.name, workplace.id)
         saved_id = system_audit_workplace_service.get_system_audit_workplace_id()
         self._saved_system_workplace_id = saved_id
         index = self._system_workplace_combo.findData(saved_id)
+        if index < 0 and saved_id is not None:
+            # Neplatné uložené nastavení: zobrazit, ale nepřepisovat ani nemazat.
+            workplace = settings_service.get_workplace_by_id(saved_id)
+            label = (
+                str(workplace.name).strip()
+                if workplace is not None and str(workplace.name or "").strip()
+                else f"#{saved_id}"
+            )
+            if workplace is not None and not is_auditable_workplace(workplace):
+                label = f"{label}{SYSTEM_AUDIT_WORKPLACE_INVALID_COMBO_SUFFIX}"
+            elif workplace is None:
+                label = f"{label}{SYSTEM_AUDIT_WORKPLACE_INVALID_COMBO_SUFFIX}"
+            self._system_workplace_combo.addItem(label, saved_id)
+            index = self._system_workplace_combo.findData(saved_id)
         if index < 0:
             index = 0
         self._system_workplace_combo.setCurrentIndex(index)

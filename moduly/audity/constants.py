@@ -611,6 +611,18 @@ EXTRAORDINARY_TEXT_LOCKED = (
 EXTRAORDINARY_CANCEL_BLOCKED = (
     "Otázku nelze zrušit, dokud má cíle ve stavu Přiřazeno nebo Ověřeno."
 )
+EXTRAORDINARY_NON_AUDITABLE_TARGET_LABEL = "Neauditovatelný cíl"
+EXTRAORDINARY_NON_AUDITABLE_RESTORE_BLOCKED = (
+    "Neauditovatelný cíl nelze obnovit. Zvolte aktivní auditovatelný provoz."
+)
+AUDITABLE_WORKPLACE_REQUIRED_MESSAGE = (
+    "Vybraná položka není aktivním auditovatelným provozem."
+)
+SYSTEM_AUDIT_WORKPLACE_INVALID_MESSAGE = (
+    "Uložený systémový provoz není aktivním auditovatelným provozem. "
+    "Vyberte platný systémový provoz."
+)
+SYSTEM_AUDIT_WORKPLACE_INVALID_COMBO_SUFFIX = " (neplatné nastavení)"
 
 
 def audit_finding_type_label(finding_type: str) -> str:

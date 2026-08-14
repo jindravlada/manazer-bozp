@@ -1,6 +1,10 @@
 from dataclasses import dataclass
 
 from moduly.audity.modely.audit_program import AuditProgramWorkplace
+from moduly.audity.sluzby.audit_auditable_workplace_service import (
+    is_auditable_workplace,
+    list_auditable_workplaces,
+)
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.nastaveni.sluzby.workplace_audit_planning import (
     parse_preferred_months_json,
@@ -40,7 +44,7 @@ class AuditProgramPlanningConfigService:
         return WorkplacePlanningConfig(
             workplace_id=workplace.id,
             workplace_name=workplace.name.strip(),
-            audit_enabled=bool(workplace.audit_enabled),
+            audit_enabled=is_auditable_workplace(workplace),
             audit_interval_months=int(workplace.audit_interval_months),
             preferred_months=parse_preferred_months_json(workplace.preferred_months_json),
         )
@@ -122,8 +126,8 @@ class AuditProgramPlanningConfigService:
                     )
                 )
 
-        for workplace in settings_service.get_workplaces():
-            if not workplace.audit_enabled or workplace.id in program_workplace_ids:
+        for workplace in list_auditable_workplaces():
+            if workplace.id in program_workplace_ids:
                 continue
 
             current = self.get_current_config(workplace.id)

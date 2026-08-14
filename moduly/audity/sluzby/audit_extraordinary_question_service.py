@@ -12,8 +12,10 @@ from sqlalchemy import select
 
 from core.database.session import get_session
 from moduly.audity.constants import (
+    AUDITABLE_WORKPLACE_REQUIRED_MESSAGE,
     EXTRAORDINARY_CANCEL_BLOCKED,
     EXTRAORDINARY_DUPLICATE_TARGET,
+    EXTRAORDINARY_NON_AUDITABLE_RESTORE_BLOCKED,
     EXTRAORDINARY_QUESTION_STATUS_ACTIVE,
     EXTRAORDINARY_QUESTION_STATUS_CANCELLED,
     EXTRAORDINARY_QUESTION_STATUS_COMPLETED,
@@ -34,6 +36,10 @@ from moduly.audity.modely.audit_extraordinary_question import (
 from moduly.audity.repository.audit_extraordinary_question_repository import (
     AuditExtraordinaryQuestionRepository,
 )
+from moduly.audity.sluzby.audit_auditable_workplace_service import (
+    is_auditable_workplace_id,
+    list_auditable_workplaces,
+)
 from moduly.audity.sluzby.system_audit_workplace_service import (
     system_audit_workplace_service,
 )
@@ -49,6 +55,7 @@ class WorkplaceChoice:
     workplace_id: int
     name: str
     is_system: bool
+    is_auditable: bool = True
 
     @property
     def display_name(self) -> str:
@@ -102,29 +109,32 @@ class AuditExtraordinaryQuestionService:
         self.repository = AuditExtraordinaryQuestionRepository()
 
     def list_selectable_workplaces(self) -> list[WorkplaceChoice]:
-        """Aktivní auditovatelné provozy + systémový provoz (označený)."""
+        """Pouze auditovatelné provozy; systémový jen pokud je auditovatelný."""
         system_id = system_audit_workplace_service.get_system_audit_workplace_id()
-        choices: dict[int, WorkplaceChoice] = {}
-        for workplace in settings_service.get_workplaces(include_inactive=False):
-            if not workplace.audit_enabled and int(workplace.id) != int(system_id or 0):
-                continue
-            choices[int(workplace.id)] = WorkplaceChoice(
-                workplace_id=int(workplace.id),
-                name=str(workplace.name or "").strip() or f"#{workplace.id}",
-                is_system=system_id is not None and int(workplace.id) == int(system_id),
-            )
-        if system_id is not None and int(system_id) not in choices:
-            workplace = settings_service.get_workplace_by_id(int(system_id))
-            if workplace is not None and bool(workplace.active):
-                choices[int(system_id)] = WorkplaceChoice(
-                    workplace_id=int(system_id),
-                    name=str(workplace.name or "").strip() or f"#{system_id}",
-                    is_system=True,
+        choices: list[WorkplaceChoice] = []
+        for workplace in list_auditable_workplaces():
+            choices.append(
+                WorkplaceChoice(
+                    workplace_id=int(workplace.id),
+                    name=str(workplace.name or "").strip() or f"#{workplace.id}",
+                    is_system=(
+                        system_id is not None and int(workplace.id) == int(system_id)
+                    ),
+                    is_auditable=True,
                 )
+            )
         return sorted(
-            choices.values(),
+            choices,
             key=lambda item: (not item.is_system, item.name.casefold(), item.workplace_id),
         )
+
+    def _validate_auditable_workplace_ids(
+        self,
+        workplace_ids: list[int],
+    ) -> None:
+        for workplace_id in workplace_ids:
+            if not is_auditable_workplace_id(workplace_id):
+                raise AuditExtraordinaryError(AUDITABLE_WORKPLACE_REQUIRED_MESSAGE)
 
     def list_overview_rows(self) -> list[ExtraordinaryQuestionOverviewRow]:
         questions = self.repository.list_questions()
@@ -214,6 +224,7 @@ class AuditExtraordinaryQuestionService:
             raise AuditExtraordinaryError(EXTRAORDINARY_TARGET_REQUIRED)
         if len(unique_ids) != len(resolved_ids):
             raise AuditExtraordinaryError(EXTRAORDINARY_DUPLICATE_TARGET)
+        self._validate_auditable_workplace_ids(unique_ids)
 
         now = datetime.now()
         on_date = assigned_on or date.today()
@@ -317,14 +328,30 @@ class AuditExtraordinaryQuestionService:
                         continue
                     if is_target_locked(target.status):
                         raise AuditExtraordinaryError(EXTRAORDINARY_TARGET_LOCKED)
+                    if not is_auditable_workplace_id(int(workplace_id)):
+                        raise AuditExtraordinaryError(
+                            EXTRAORDINARY_NON_AUDITABLE_RESTORE_BLOCKED
+                        )
                     target.status = EXTRAORDINARY_TARGET_STATUS_PENDING
                     target.updated_at = now
 
-                for workplace_id in add_workplace_ids or ():
+                add_ids = [
+                    int(workplace_id)
+                    for workplace_id in (add_workplace_ids or ())
+                    if workplace_id is not None and int(workplace_id) > 0
+                ]
+                if add_ids:
+                    self._validate_auditable_workplace_ids(add_ids)
+
+                for workplace_id in add_ids:
                     wid = int(workplace_id)
                     existing = by_workplace.get(wid)
                     if existing is not None:
                         if existing.status == EXTRAORDINARY_TARGET_STATUS_CANCELLED:
+                            if not is_auditable_workplace_id(wid):
+                                raise AuditExtraordinaryError(
+                                    EXTRAORDINARY_NON_AUDITABLE_RESTORE_BLOCKED
+                                )
                             existing.status = EXTRAORDINARY_TARGET_STATUS_PENDING
                             existing.updated_at = now
                             continue
@@ -413,9 +440,12 @@ class AuditExtraordinaryQuestionService:
                 )
                 now = datetime.now()
                 for target in targets:
-                    if target.status == EXTRAORDINARY_TARGET_STATUS_CANCELLED:
-                        target.status = EXTRAORDINARY_TARGET_STATUS_PENDING
-                        target.updated_at = now
+                    if target.status != EXTRAORDINARY_TARGET_STATUS_CANCELLED:
+                        continue
+                    if not is_auditable_workplace_id(int(target.workplace_id)):
+                        continue
+                    target.status = EXTRAORDINARY_TARGET_STATUS_PENDING
+                    target.updated_at = now
                 question.status = derive_question_status(
                     [item.status for item in targets]
                 )
@@ -476,6 +506,13 @@ class AuditExtraordinaryQuestionService:
                     )
                 if is_target_locked(target.status):
                     raise AuditExtraordinaryError(EXTRAORDINARY_TARGET_LOCKED)
+                if (
+                    new_status == EXTRAORDINARY_TARGET_STATUS_PENDING
+                    and not is_auditable_workplace_id(int(workplace_id))
+                ):
+                    raise AuditExtraordinaryError(
+                        EXTRAORDINARY_NON_AUDITABLE_RESTORE_BLOCKED
+                    )
                 now = datetime.now()
                 target.status = new_status
                 target.updated_at = now

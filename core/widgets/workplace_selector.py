@@ -1,17 +1,27 @@
+from collections.abc import Callable, Sequence
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QCompleter
 
 from core.utils.czech_sort import czech_sorted
 from core.widgets.search_combo_box import SearchComboBox
+from moduly.nastaveni.modely.workplace import Workplace
 from moduly.nastaveni.sluzby.settings_service import settings_service
 
 
 class WorkplaceSelector(SearchComboBox):
     """Výběr pracoviště z číselníku s možností ručního zadání vlastního textu."""
 
-    def __init__(self, parent=None, include_empty: bool = True, allow_custom_value: bool = True):
+    def __init__(
+        self,
+        parent=None,
+        include_empty: bool = True,
+        allow_custom_value: bool = True,
+        workplaces_loader: Callable[[], Sequence[Workplace]] | None = None,
+    ):
         super().__init__(values=[], parent=parent, allow_custom_value=allow_custom_value)
         self.include_empty = include_empty
+        self._workplaces_loader = workplaces_loader
         self.reload()
 
     def reload(self):
@@ -24,7 +34,10 @@ class WorkplaceSelector(SearchComboBox):
         if self.include_empty:
             self.addItem("", None)
 
-        workplaces = settings_service.get_workplaces(include_inactive=False)
+        if self._workplaces_loader is not None:
+            workplaces = list(self._workplaces_loader())
+        else:
+            workplaces = settings_service.get_workplaces(include_inactive=False)
         workplaces = czech_sorted(workplaces, key=lambda workplace: workplace.name)
 
         names: list[str] = []

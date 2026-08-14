@@ -33,17 +33,22 @@ from core.widgets.editor_dialog_controller import (
     confirm_unsaved_editor_close,
 )
 from moduly.audity.constants import (
+    EXTRAORDINARY_NON_AUDITABLE_TARGET_LABEL,
     EXTRAORDINARY_QUESTION_EDITOR_TITLE_EDIT,
     EXTRAORDINARY_QUESTION_EDITOR_TITLE_NEW,
     EXTRAORDINARY_TARGET_STATUS_CANCELLED,
     EXTRAORDINARY_TARGET_STATUS_LABELS,
     EXTRAORDINARY_TARGET_STATUS_PENDING,
 )
+from moduly.audity.sluzby.audit_auditable_workplace_service import (
+    is_auditable_workplace_id,
+)
 from moduly.audity.sluzby.audit_extraordinary_question_service import (
     AuditExtraordinaryError,
     audit_extraordinary_question_service,
     is_target_locked,
 )
+from moduly.nastaveni.sluzby.settings_service import settings_service
 
 
 class ExtraordinaryQuestionEditorDialog(QDialog):
@@ -139,6 +144,7 @@ class ExtraordinaryQuestionEditorDialog(QDialog):
     def _load_workplaces(self) -> None:
         self._choices = audit_extraordinary_question_service.list_selectable_workplaces()
         self.workplace_list.clear()
+        listed_ids: set[int] = set()
         for choice in self._choices:
             item = QListWidgetItem(choice.display_name)
             item.setData(Qt.ItemDataRole.UserRole, choice.workplace_id)
@@ -148,6 +154,37 @@ class ExtraordinaryQuestionEditorDialog(QDialog):
                 | Qt.ItemFlag.ItemIsEnabled
             )
             item.setCheckState(Qt.CheckState.Unchecked)
+            self.workplace_list.addItem(item)
+            listed_ids.add(int(choice.workplace_id))
+
+        # Historické neauditovatelné cíle zachovat ve výběru (bez nabídky jako nový cíl).
+        for workplace_id, status in self._existing_targets.items():
+            if int(workplace_id) in listed_ids:
+                continue
+            workplace = settings_service.get_workplace_by_id(int(workplace_id))
+            name = (
+                str(workplace.name).strip()
+                if workplace is not None and str(workplace.name or "").strip()
+                else f"#{workplace_id}"
+            )
+            item = QListWidgetItem(
+                f"{name} — {EXTRAORDINARY_NON_AUDITABLE_TARGET_LABEL}"
+            )
+            item.setData(Qt.ItemDataRole.UserRole, int(workplace_id))
+            item.setData(Qt.ItemDataRole.UserRole + 1, False)  # is_auditable
+            flags = (
+                item.flags()
+                | Qt.ItemFlag.ItemIsUserCheckable
+                | Qt.ItemFlag.ItemIsEnabled
+            )
+            item.setFlags(flags)
+            if status == EXTRAORDINARY_TARGET_STATUS_CANCELLED:
+                item.setCheckState(Qt.CheckState.Unchecked)
+                # Cancelled neauditovatelný cíl nelze obnovit zaškrtnutím.
+                item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsUserCheckable)
+                item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEnabled)
+            else:
+                item.setCheckState(Qt.CheckState.Checked)
             self.workplace_list.addItem(item)
 
     def _load_question(self) -> None:
@@ -174,6 +211,8 @@ class ExtraordinaryQuestionEditorDialog(QDialog):
                 "Lze přidávat nové provozy a spravovat pending/cancelled cíle."
             )
         self.mode_selected.setChecked(True)
+        # Znovu sestavit seznam včetně historických neauditovatelných cílů.
+        self._load_workplaces()
         for row in range(self.workplace_list.count()):
             item = self.workplace_list.item(row)
             wid = int(item.data(Qt.ItemDataRole.UserRole))
@@ -183,9 +222,17 @@ class ExtraordinaryQuestionEditorDialog(QDialog):
                 continue
             label = EXTRAORDINARY_TARGET_STATUS_LABELS.get(status, status)
             base = item.text().split(" — ")[0]
-            item.setText(f"{base} — {label}")
+            if not is_auditable_workplace_id(wid):
+                item.setText(
+                    f"{base} — {EXTRAORDINARY_NON_AUDITABLE_TARGET_LABEL} — {label}"
+                )
+            else:
+                item.setText(f"{base} — {label}")
             if status == EXTRAORDINARY_TARGET_STATUS_CANCELLED:
                 item.setCheckState(Qt.CheckState.Unchecked)
+                if not is_auditable_workplace_id(wid):
+                    item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsUserCheckable)
+                    item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEnabled)
             else:
                 item.setCheckState(Qt.CheckState.Checked)
             if is_target_locked(status):

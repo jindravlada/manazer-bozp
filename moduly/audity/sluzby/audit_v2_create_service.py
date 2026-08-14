@@ -33,6 +33,10 @@ from moduly.audity.sluzby.audit_service import audit_service
 from moduly.audity.sluzby.audit_snapshot_integrity_service import (
     apply_snapshot_integrity_manifest,
 )
+from moduly.audity.sluzby.audit_auditable_workplace_service import (
+    AUDITABLE_WORKPLACE_REQUIRED_MESSAGE,
+    require_auditable_workplace_id,
+)
 from moduly.audity.sluzby.system_audit_workplace_service import (
     SystemAuditWorkplaceError,
     system_audit_workplace_service,
@@ -61,6 +65,11 @@ def create_audit_with_v2_snapshot(
     """
     if workplace_id is None or int(workplace_id) <= 0:
         raise AuditV2CreateError("Auditovaný provoz není zvolen.")
+
+    try:
+        require_auditable_workplace_id(int(workplace_id))
+    except ValueError as exc:
+        raise AuditV2CreateError(str(exc) or AUDITABLE_WORKPLACE_REQUIRED_MESSAGE) from exc
 
     try:
         system_workplace_id = (
