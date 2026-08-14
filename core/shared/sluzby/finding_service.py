@@ -20,6 +20,15 @@ class FindingService:
         self._validate_entity(entity_type, entity_id)
         return self.repository.get_for_entity(entity_type, entity_id)
 
+    def get_for_entities(
+        self,
+        entity_type: str,
+        entity_ids: list[int] | tuple[int, ...],
+    ) -> list[Finding]:
+        if entity_type not in VALID_ENTITY_TYPES:
+            raise ValueError(f"Neplatný typ entity: {entity_type}")
+        return self.repository.get_for_entities(entity_type, entity_ids)
+
     def get_by_id(self, finding_id: int) -> Finding | None:
         return self.repository.get_by_id(finding_id)
 

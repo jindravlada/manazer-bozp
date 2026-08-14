@@ -201,7 +201,7 @@ class AuditWorkplaceHistoryServiceTestCase(unittest.TestCase):
         self.assertEqual(len(history.tasks), 1)
         self.assertIn("Doplnit revize OOPP", history.tasks[0].title)
 
-    def test_resolved_findings_are_excluded(self) -> None:
+    def test_resolved_findings_are_included(self) -> None:
         audit = self._create_completed_audit(audit_date=date(2025, 10, 15))
         finding_service.create(
             ENTITY_AUDITY,
@@ -222,7 +222,8 @@ class AuditWorkplaceHistoryServiceTestCase(unittest.TestCase):
             exclude_audit_id=current.id,
         )
 
-        self.assertEqual(len(history.findings), 0)
+        self.assertEqual(len(history.findings), 1)
+        self.assertEqual(history.findings[0].title, "Uzavřené zjištění")
 
     def test_process_history_from_control_results_and_program(self) -> None:
         self._create_completed_audit(
@@ -267,6 +268,7 @@ class AuditWorkplaceHistoryServiceTestCase(unittest.TestCase):
         history = audit_history_service.get_workplace_history(
             self.workplace.id,
             exclude_audit_id=current.id,
+            include_process_history=True,
         )
 
         by_process = {item.process_id: item for item in history.process_history}
@@ -297,6 +299,7 @@ class AuditWorkplaceHistoryServiceTestCase(unittest.TestCase):
         history = audit_history_service.get_workplace_history(
             self.workplace.id,
             exclude_audit_id=current.id,
+            include_process_history=True,
         )
 
         self.assertEqual(history.summary.last_audit_date, date(2025, 10, 15))
@@ -434,8 +437,10 @@ class AuditWorkplaceHistoryWidgetTestCase(unittest.TestCase):
         )
         dialog = AuditDialog(audit=audit)
 
+        from moduly.audity.constants import TAB_UVOD
+
         self.assertEqual(dialog.tabs.count(), 8)
-        self.assertEqual(dialog.tabs.tabText(4), TAB_WORKPLACE_HISTORY)
+        self.assertEqual(dialog.tabs.tabText(4), TAB_UVOD)
         self.assertIsNotNone(dialog.history_widget)
 
     def test_history_widget_loads_summary(self) -> None:
@@ -460,9 +465,11 @@ class AuditWorkplaceHistoryWidgetTestCase(unittest.TestCase):
 
         widget = AuditWorkplaceHistoryWidget()
         widget.load_audit(current)
+        widget.ensure_loaded()
 
-        self.assertIn("15.10.2025", widget._summary_label.text())
-        self.assertIn("Poslední audit", widget._summary_label.text())
+        self.assertFalse(widget._first_audit_label.isVisible())
+        self.assertEqual(widget._audits_table.rowCount(), 1)
+        self.assertIn("15.10.2025", widget._audits_table.item(0, 1).text())
 
 
 if __name__ == "__main__":

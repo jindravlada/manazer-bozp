@@ -14,6 +14,14 @@ class TaskRepository:
         with get_session() as session:
             return session.get(Task, task_id)
 
+    def get_by_ids(self, task_ids: list[int] | tuple[int, ...]) -> list[Task]:
+        ids = [int(value) for value in task_ids if value is not None]
+        if not ids:
+            return []
+        with get_session() as session:
+            stmt = select(Task).where(Task.id.in_(ids)).order_by(Task.id)
+            return list(session.scalars(stmt))
+
     def find_open_by_source(
         self,
         *,

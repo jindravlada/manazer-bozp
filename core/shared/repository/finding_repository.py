@@ -19,6 +19,26 @@ class FindingRepository:
             )
             return list(session.scalars(stmt))
 
+    def get_for_entities(
+        self,
+        entity_type: str,
+        entity_ids: list[int] | tuple[int, ...],
+    ) -> list[Finding]:
+        """Hromadné načtení zjištění pro více entit (AUDIT-INTRO-1, bez N+1)."""
+        ids = [int(value) for value in entity_ids if value is not None]
+        if not ids:
+            return []
+        with get_session() as session:
+            stmt = (
+                select(Finding)
+                .where(
+                    Finding.entity_type == entity_type,
+                    Finding.entity_id.in_(ids),
+                )
+                .order_by(Finding.entity_id, Finding.display_order, Finding.id)
+            )
+            return list(session.scalars(stmt))
+
     def get_by_id(self, finding_id: int) -> Finding | None:
         with get_session() as session:
             return session.get(Finding, finding_id)

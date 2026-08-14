@@ -22,6 +22,18 @@ class AuditProgramRepository:
         with get_session() as session:
             return session.get(AuditProgram, program_id)
 
+    def get_programs_by_ids(
+        self,
+        program_ids: list[int] | tuple[int, ...],
+    ) -> dict[int, AuditProgram]:
+        ids = [int(value) for value in program_ids if value is not None]
+        if not ids:
+            return {}
+        with get_session() as session:
+            stmt = select(AuditProgram).where(AuditProgram.id.in_(ids))
+            programs = list(session.scalars(stmt))
+            return {int(program.id): program for program in programs}
+
     def add_program(self, program: AuditProgram) -> AuditProgram:
         with get_session() as session:
             session.add(program)

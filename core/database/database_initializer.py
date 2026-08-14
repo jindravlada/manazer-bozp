@@ -979,12 +979,20 @@ def _ensure_audit_columns() -> None:
         "program_id": "program_id INTEGER",
         "program_visit_id": "program_visit_id INTEGER",
         "silne_stranky": "silne_stranky TEXT DEFAULT '' NOT NULL",
+        "methodology_source": "methodology_source VARCHAR(30)",
+        "questions_frozen_at": "questions_frozen_at DATETIME",
+        "methodology_generation": "methodology_generation VARCHAR(80)",
+        "changes_since_last": "changes_since_last TEXT",
         "created_at": "created_at DATETIME",
         "updated_at": "updated_at DATETIME",
     }
     for column_name, column_sql in additions.items():
         if column_name not in columns:
             _add_column("audits", column_sql)
+    _ensure_index(
+        "ix_audits_workplace_id",
+        "CREATE INDEX IF NOT EXISTS ix_audits_workplace_id ON audits (workplace_id)",
+    )
 
 
 def _ensure_legal_requirement_columns() -> None:

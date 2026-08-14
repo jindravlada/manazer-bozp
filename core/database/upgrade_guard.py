@@ -317,6 +317,18 @@ def prepare_database_for_startup(
             settings_path=settings_path,
         )
 
+    from moduly.audity.sluzby.audit_intro_schema_migration import (
+        needs_audit_intro_schema,
+        prepare_audit_intro_schema,
+    )
+
+    if needs_audit_intro_schema(database_path):
+        prepare_audit_intro_schema(
+            workspace_root=workspace_root,
+            database_path=database_path,
+            settings_path=settings_path,
+        )
+
     result: PrepareDatabaseResult
 
     # Čistá instalace / už migrovaná DB – jen idempotentní initialize.
@@ -369,6 +381,16 @@ def prepare_database_for_startup(
 
     # Po create_all (nová instalace) dokončit marker AUDIT-SNAPSHOT-0.
     prepare_audit_snapshot_schema(
+        workspace_root=workspace_root,
+        database_path=database_path,
+        settings_path=settings_path,
+    )
+
+    from moduly.audity.sluzby.audit_intro_schema_migration import (
+        prepare_audit_intro_schema,
+    )
+
+    prepare_audit_intro_schema(
         workspace_root=workspace_root,
         database_path=database_path,
         settings_path=settings_path,

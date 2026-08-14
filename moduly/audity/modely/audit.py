@@ -37,6 +37,9 @@ class Audit(Base):
     questions_frozen_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     methodology_generation: Mapped[str | None] = mapped_column(String(80), nullable=True)
 
+    # AUDIT-INTRO-1: volitelný text změn od posledního auditu (záložka Úvod).
+    changes_since_last: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,

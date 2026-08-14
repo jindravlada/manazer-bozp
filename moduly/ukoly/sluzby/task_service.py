@@ -16,6 +16,9 @@ class TaskService:
     def get_task_by_id(self, task_id: int):
         return self.repository.get_by_id(task_id)
 
+    def get_tasks_by_ids(self, task_ids: list[int] | tuple[int, ...]):
+        return self.repository.get_by_ids(task_ids)
+
     def find_open_investigation_action(
         self,
         investigation_id: int,

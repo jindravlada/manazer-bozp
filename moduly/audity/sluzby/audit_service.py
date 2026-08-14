@@ -94,6 +94,7 @@ class AuditService:
             "program_id": existing.program_id,
             "program_visit_id": existing.program_visit_id,
             "silne_stranky": existing.silne_stranky,
+            "changes_since_last": existing.changes_since_last,
         }
         merged.update(fields)
         data = self._validated_fields(merged)
@@ -278,6 +279,15 @@ class AuditService:
         data["workplace_name"] = str(data.get("workplace_name") or "").strip()
         data["title"] = str(data.get("title") or "").strip()
         data["silne_stranky"] = str(data.get("silne_stranky") or "").replace("\r\n", "\n").replace("\r", "\n").strip()
+        if "changes_since_last" in data:
+            raw_changes = data.get("changes_since_last")
+            if raw_changes is None:
+                data["changes_since_last"] = None
+            else:
+                normalized = (
+                    str(raw_changes).replace("\r\n", "\n").replace("\r", "\n")
+                )
+                data["changes_since_last"] = normalized if normalized.strip() else None
 
         started_at = data.get("started_at")
         finished_at = data.get("finished_at")
@@ -285,7 +295,7 @@ class AuditService:
         if status not in AUDIT_SPIS_STATUSES:
             raise ValueError(f"Neplatný stav auditu: {status}")
 
-        return {
+        payload = {
             "year": data.get("year"),
             "planned_month": data.get("planned_month"),
             "audit_date": data.get("audit_date"),
@@ -300,6 +310,9 @@ class AuditService:
             "program_visit_id": data.get("program_visit_id"),
             "silne_stranky": data["silne_stranky"],
         }
+        if "changes_since_last" in data:
+            payload["changes_since_last"] = data["changes_since_last"]
+        return payload
 
     @staticmethod
     def _make_number(audit_id: int, year: int | None) -> str:

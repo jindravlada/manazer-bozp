@@ -86,6 +86,7 @@ class AuditDialog(QDialog):
         self.tabs.addTab(self.findings_widget, TAB_LABELS[5])
         self.tabs.addTab(self.tasks_widget, TAB_LABELS[6])
         self.tabs.addTab(self.conclusion_widget, TAB_LABELS[7])
+        self.tabs.currentChanged.connect(self._on_tab_changed)
         layout.addWidget(self.tabs)
 
         layout.addLayout(self._build_footer())
@@ -108,10 +109,16 @@ class AuditDialog(QDialog):
         self.findings_widget.set_on_task_changed(self._on_related_data_changed)
         self.conclusion_widget.set_complete_handler(self._complete_audit)
         self.spis_widget.load_audit(audit)
+        # Úvod: jen kontext + text changes_since_last; historie lazy při otevření záložky.
         self.history_widget.load_audit(audit)
+        self.history_widget.content_modified.connect(self._on_deferred_dirty)
         self.conclusion_widget.load_audit(audit)
         self.commission_widget.set_audit_context(audit_id)
         self._capture_baseline()
+
+    def _on_tab_changed(self, index: int) -> None:
+        if self.tabs.widget(index) is self.history_widget:
+            self.history_widget.ensure_loaded()
 
     def _wire_deferred_edits(self) -> None:
         self.processes_widget.set_deferred_edits(self._deferred)
@@ -237,6 +244,8 @@ class AuditDialog(QDialog):
         self.set_audit_id(self.audit.id)
         self.spis_widget.load_audit(self.audit)
         self.history_widget.load_audit(self.audit)
+        if self.history_widget._loaded:
+            self.history_widget.refresh()
         self.conclusion_widget.load_audit(self.audit)
         self.commission_widget.set_audit_context(self.audit.id)
         self.findings_widget.refresh()
@@ -285,6 +294,11 @@ class AuditDialog(QDialog):
             return False
         # Neukládat — zahodit UI i odložené změny; DB netknutá.
         self._deferred.clear()
+        self.history_widget.discard_changes()
+        if self.audit is not None:
+            self.spis_widget.load_audit(self.audit)
+            self.conclusion_widget.load_audit(self.audit)
+            self.commission_widget.set_audit_context(self.audit.id)
         return True
 
     def closeEvent(self, event: QCloseEvent) -> None:
@@ -307,6 +321,7 @@ class AuditDialog(QDialog):
     def get_data(self) -> dict:
         data = self.spis_widget.get_data()
         data.update(self.conclusion_widget.get_data())
+        data.update(self.history_widget.get_data())
         data["commission_members"] = self.commission_widget.get_members_for_save()
         return data
 

@@ -111,18 +111,32 @@ COMMISSION_LABEL_INVITED = "Přizvané osoby"
 TAB_AUDITOVANE_PROCESY = "Řídicí procesy"
 TAB_DOCUMENTACE = "Dokumentace"
 TAB_TEREN = "Terén"
-TAB_WORKPLACE_HISTORY = "Historie pracoviště"
+TAB_UVOD = "Úvod"
+# Zpětná kompatibilita aliasu (AUDIT-INTRO-1 přejmenovalo záložku).
+TAB_WORKPLACE_HISTORY = TAB_UVOD
 
 TAB_LABELS = (
     "Spis",
     "Komise",
     TAB_DOCUMENTACE,
     TAB_TEREN,
-    TAB_WORKPLACE_HISTORY,
+    TAB_UVOD,
     "Zjištění",
     "Úkoly",
     "Závěr",
 )
+
+AUDIT_INTRO_FIRST_AUDIT_MESSAGE = (
+    "Jedná se o první audit tohoto provozu. "
+    "Historie předchozích auditů zatím není k dispozici."
+)
+AUDIT_INTRO_CHANGES_LABEL = "Změny od posledního auditu"
+AUDIT_INTRO_NO_WORKPLACE_HINT = (
+    "Úvod bude dostupný po výběru auditovaného provozu."
+)
+AUDIT_INTRO_PREVIOUS_AUDITS_GROUP = "Předchozí audity"
+AUDIT_INTRO_FINDINGS_GROUP = "Zjištění z předchozích auditů"
+AUDIT_INTRO_TASKS_GROUP = "Úkoly z předchozích auditů"
 
 MOVE_TO_TERRAIN_LABEL = "→ Terén"
 MOVE_TO_DOCUMENTATION_LABEL = "→ Dokumentace"
