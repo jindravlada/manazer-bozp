@@ -244,6 +244,7 @@ class AuditSnapshot1bTestCase(unittest.TestCase):
                         severity="stredni",
                         question_kind=AUDIT_QUESTION_KIND_LEGACY,
                         display_order=9999,
+                        is_in_scope=False,
                         created_at=datetime.now(),
                     )
                 )
@@ -352,12 +353,23 @@ class AuditSnapshot1bTestCase(unittest.TestCase):
             len(control_result_service.get_for_entity(ENTITY_AUDITY, audit.id)), 0
         )
 
-    def test_orphan_with_result_remains(self) -> None:
+    def test_orphan_with_result_remains_hidden(self) -> None:
         audit, _info, _f = self._seed_snapshot_audit(
             include_orphan=True, include_unevaluated=False
         )
         source = audit_question_source_service.resolve_for_audit(audit.id)
-        self.assertTrue(any(a.assertion_id == "orphan_q" for a in source.assertions))
+        self.assertFalse(any(a.assertion_id == "orphan_q" for a in source.assertions))
+        with get_session() as session:
+            orphan = session.scalar(
+                select(AuditQuestionSnapshot).where(
+                    AuditQuestionSnapshot.audit_id == audit.id,
+                    AuditQuestionSnapshot.assertion_id == "orphan_q",
+                )
+            )
+        self.assertIsNotNone(orphan)
+        self.assertFalse(orphan.is_in_scope)
+        crs = control_result_service.get_for_entity(ENTITY_AUDITY, audit.id)
+        self.assertTrue(any(c.source_control_point_id == "orphan_q" for c in crs))
 
     def test_documentation_terrain_from_snapshot(self) -> None:
         audit, info, _f = self._seed_snapshot_audit(
@@ -517,7 +529,7 @@ class AuditSnapshot1bTestCase(unittest.TestCase):
         with self.assertRaises(AuditQuestionSourceError):
             audit_question_source_service.resolve_for_audit(audit.id)
 
-    def test_protocol_uses_snapshot_text_and_keeps_orphan(self) -> None:
+    def test_protocol_uses_snapshot_text_and_excludes_orphan(self) -> None:
         audit, info, frozen = self._seed_snapshot_audit(
             frozen_text="PROTOKOL SNAP TEXT",
             include_orphan=True,
@@ -526,8 +538,18 @@ class AuditSnapshot1bTestCase(unittest.TestCase):
         ctx = AuditExportContext(audit=audit, config=PROTOCOL_DOCUMENT_CONFIG)
         appendix = ctx.summary_appendix_assertions().plain_text()
         self.assertIn("PROTOKOL SNAP TEXT", appendix)
-        self.assertIn("ORPHAN ZE SNAPSHOTU", appendix)
+        self.assertNotIn("ORPHAN ZE SNAPSHOTU", appendix)
         self.assertNotIn("brand_new_from_json", appendix)
+        # Orphan zůstává v DB.
+        with get_session() as session:
+            orphan = session.scalar(
+                select(AuditQuestionSnapshot).where(
+                    AuditQuestionSnapshot.audit_id == audit.id,
+                    AuditQuestionSnapshot.assertion_id == "orphan_q",
+                )
+            )
+        self.assertIsNotNone(orphan)
+        self.assertFalse(orphan.is_in_scope)
 
     def test_new_json_question_not_in_old_export(self) -> None:
         audit, _i, frozen = self._seed_snapshot_audit(

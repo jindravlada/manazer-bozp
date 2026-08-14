@@ -46,6 +46,7 @@ class SnapshotAssertionView:
     severity: str
     question_kind: str
     display_order: int
+    is_in_scope: bool = True
 
     @property
     def key(self) -> tuple[str, str, str]:
@@ -64,6 +65,8 @@ class AuditQuestionSource:
     text_by_key: dict[tuple[str, str, str], str] = field(default_factory=dict)
     severity_by_key: dict[tuple[str, str, str], str] = field(default_factory=dict)
     process_names: dict[str, str] = field(default_factory=dict)
+    # Všechny snapshot klíče včetně out-of-scope (validace CR ↔ snapshot).
+    all_assertion_keys: frozenset[tuple[str, str, str]] = field(default_factory=frozenset)
 
     @property
     def is_snapshot(self) -> bool:
@@ -71,6 +74,11 @@ class AuditQuestionSource:
 
 
 def _row_to_view(row: AuditQuestionSnapshot) -> SnapshotAssertionView:
+    if row.is_in_scope is None:
+        raise AuditQuestionSourceError(
+            f"Audit {row.audit_id}: snapshot id={row.id} má is_in_scope=NULL. "
+            "Nejdřív dokončete migraci AUDIT-SNAPSHOT-1b-fix."
+        )
     return SnapshotAssertionView(
         process_id=str(row.process_id or "").strip(),
         process_name=str(row.process_name or "").strip(),
@@ -82,6 +90,7 @@ def _row_to_view(row: AuditQuestionSnapshot) -> SnapshotAssertionView:
         severity=str(row.severity or "").strip(),
         question_kind=str(row.question_kind or "").strip(),
         display_order=int(row.display_order or 0),
+        is_in_scope=bool(row.is_in_scope),
     )
 
 
@@ -330,21 +339,24 @@ class AuditQuestionSourceService:
                 marker_audit, views=views, control_results=results
             )
 
-        roots = build_knowledge_tree_from_snapshot_views(views)
-        keys = frozenset(view.key for view in views)
+        all_keys = frozenset(view.key for view in views)
+        in_scope_views = tuple(view for view in views if view.is_in_scope)
+        roots = build_knowledge_tree_from_snapshot_views(in_scope_views)
+        keys = frozenset(view.key for view in in_scope_views)
         return AuditQuestionSource(
             mode="snapshot",
             audit_id=resolved_id,
             roots=tuple(roots),
-            assertions=tuple(views),
+            assertions=in_scope_views,
             assertion_keys=keys,
-            text_by_key={view.key: view.assertion_text for view in views},
-            severity_by_key={view.key: view.severity for view in views},
+            text_by_key={view.key: view.assertion_text for view in in_scope_views},
+            severity_by_key={view.key: view.severity for view in in_scope_views},
             process_names={
                 view.process_id: view.process_name
-                for view in views
+                for view in in_scope_views
                 if view.process_id
             },
+            all_assertion_keys=all_keys,
         )
 
     def assertion_text(

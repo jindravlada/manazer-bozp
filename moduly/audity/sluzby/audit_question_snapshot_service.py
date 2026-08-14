@@ -38,6 +38,7 @@ class AuditQuestionSnapshotDraft:
     display_order: int
     from_control_result: bool = False
     is_orphan: bool = False
+    is_in_scope: bool = True
 
 
 def snapshot_key(
@@ -178,6 +179,7 @@ class AuditQuestionSnapshotService:
                     or draft.assertion_text,
                     from_control_result=True,
                     is_orphan=False,
+                    is_in_scope=True,
                     question_kind=question_kind,
                 )
             )
@@ -226,6 +228,7 @@ class AuditQuestionSnapshotService:
                     display_order=order_base + orphan_index,
                     from_control_result=True,
                     is_orphan=True,
+                    is_in_scope=False,
                 )
             )
             orphan_index += 1

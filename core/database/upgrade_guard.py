@@ -374,12 +374,29 @@ def prepare_database_for_startup(
         settings_path=settings_path,
     )
 
-    # AUDIT-SNAPSHOT-1a: atomický backfill existujících auditů (bez změny UI/exportů).
     from moduly.audity.sluzby.audit_snapshot_backfill_service import (
         prepare_audit_snapshot_backfill,
     )
+    from moduly.audity.sluzby.audit_snapshot_schema_migration import (
+        schema_is_present as audit_snapshot_schema_present,
+    )
+    from moduly.audity.sluzby.audit_snapshot_scope_migration import (
+        ensure_scope_column,
+        prepare_audit_snapshot_scope_fix,
+    )
+
+    # Sloupec is_in_scope musí existovat před zápisem backfillu.
+    if audit_snapshot_schema_present(database_path):
+        ensure_scope_column(database_path)
 
     prepare_audit_snapshot_backfill(
+        workspace_root=workspace_root,
+        database_path=database_path,
+        settings_path=settings_path,
+    )
+
+    # AUDIT-SNAPSHOT-1b-fix: klasifikace is_in_scope (orphan mimo UI/export).
+    prepare_audit_snapshot_scope_fix(
         workspace_root=workspace_root,
         database_path=database_path,
         settings_path=settings_path,

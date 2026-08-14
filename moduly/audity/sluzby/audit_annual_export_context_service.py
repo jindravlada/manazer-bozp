@@ -4,6 +4,7 @@ from datetime import date, datetime
 
 from core.shared.constants import (
     CONTROL_RESULT_NEVYHOVUJE,
+    CONTROL_RESULT_VYHOVUJE,
     CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
     ENTITY_AUDITY,
     FINDING_STATUS_OTEVRENE,
@@ -616,6 +617,29 @@ class AuditAnnualExportContextService:
             domain=EVALUATION_DOMAIN_AUDIT_MANAGEMENT,
         )
 
+    def _control_results_in_audit_scope(self, audit: Audit):
+        """CR auditu; u snapshotu jen is_in_scope položky (orphan mimo statistiky)."""
+        rows = list(control_result_service.get_for_entity(ENTITY_AUDITY, audit.id))
+        try:
+            source = audit_question_source_service.resolve_for_audit(
+                audit.id, audit=audit
+            )
+        except AuditQuestionSourceError:
+            return rows
+        if not source.is_snapshot:
+            return rows
+        keys = source.assertion_keys
+        return [
+            row
+            for row in rows
+            if snapshot_key(
+                row.source_area_id,
+                row.source_section_id,
+                row.source_control_point_id,
+            )
+            in keys
+        ]
+
     def _compute_metrics(self, year: int, audits: list[Audit]) -> AuditAnnualMetrics:
         workplaces: set[int | str] = set()
         processes: set[str] = set()
@@ -634,16 +658,20 @@ class AuditAnnualExportContextService:
             elif audit.workplace_name:
                 workplaces.add(audit.workplace_name)
 
-            stats = control_activity_statistics_service.compute(ENTITY_AUDITY, audit.id)
-            control_points_count += stats.control_points_checked
-            ratings_vyhovuje += stats.ratings_vyhovuje
-            ratings_vyhovuje_s_doporucenim += stats.ratings_vyhovuje_s_doporucenim
-            ratings_nevyhovuje += stats.ratings_nevyhovuje
-            findings_count += stats.findings_total
-
-            for row in control_result_service.get_for_entity(ENTITY_AUDITY, audit.id):
+            rows = self._control_results_in_audit_scope(audit)
+            control_points_count += len(rows)
+            for row in rows:
                 if row.source_area_id:
                     processes.add(str(row.source_area_id))
+                if row.result == CONTROL_RESULT_VYHOVUJE:
+                    ratings_vyhovuje += 1
+                elif row.result == CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM:
+                    ratings_vyhovuje_s_doporucenim += 1
+                elif row.result == CONTROL_RESULT_NEVYHOVUJE:
+                    ratings_nevyhovuje += 1
+
+            stats = control_activity_statistics_service.compute(ENTITY_AUDITY, audit.id)
+            findings_count += stats.findings_total
 
             for task in audit_service.get_tasks_for_audit(audit.id):
                 measures_total += 1
@@ -786,7 +814,7 @@ class AuditAnnualExportContextService:
             except AuditQuestionSourceError:
                 snap_severity = {}
 
-            for row in control_result_service.get_for_entity(ENTITY_AUDITY, audit.id):
+            for row in self._control_results_in_audit_scope(audit):
                 if row.result not in (
                     CONTROL_RESULT_NEVYHOVUJE,
                     CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
@@ -797,12 +825,17 @@ class AuditAnnualExportContextService:
                     row.source_section_id,
                     row.source_control_point_id,
                 )
-                severity = snap_severity.get(key) or self._resolve_severity(
-                    process_id=str(row.source_area_id or ""),
-                    criterion_id=str(row.source_section_id or ""),
-                    control_point_id=str(row.source_control_point_id or ""),
-                    severity_index=severity_index,
-                )
+                if snap_severity:
+                    if key not in snap_severity:
+                        continue
+                    severity = snap_severity[key]
+                else:
+                    severity = self._resolve_severity(
+                        process_id=str(row.source_area_id or ""),
+                        criterion_id=str(row.source_section_id or ""),
+                        control_point_id=str(row.source_control_point_id or ""),
+                        severity_index=severity_index,
+                    )
                 counts[severity] = counts.get(severity, 0) + 1
                 weighted_score += SEVERITY_WEIGHTS.get(severity, SEVERITY_WEIGHTS[CONTROL_POINT_SEVERITY_STREDNI])
 
@@ -968,7 +1001,7 @@ class AuditAnnualExportContextService:
         grouped: dict[tuple[str, str], dict[str, object]] = {}
         for audit in audits:
             seen_in_audit: set[tuple[str, str]] = set()
-            for row in control_result_service.get_for_entity(ENTITY_AUDITY, audit.id):
+            for row in self._control_results_in_audit_scope(audit):
                 if row.result not in (
                     CONTROL_RESULT_NEVYHOVUJE,
                     CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
@@ -1042,7 +1075,7 @@ class AuditAnnualExportContextService:
         for audit in audits:
             audit_processes: set[str] = set()
             control_point_process: dict[str, str] = {}
-            for row in control_result_service.get_for_entity(ENTITY_AUDITY, audit.id):
+            for row in self._control_results_in_audit_scope(audit):
                 process_id = str(row.source_area_id or "").strip()
                 if not process_id:
                     continue

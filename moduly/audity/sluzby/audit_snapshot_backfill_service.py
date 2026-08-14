@@ -485,6 +485,10 @@ def prepare_audit_snapshot_backfill(
             skipped_reason="schema_not_ready",
         )
 
+    from moduly.audity.sluzby.audit_snapshot_scope_migration import ensure_scope_column
+
+    ensure_scope_column(database_path)
+
     if not _control_results_schema_ready(database_path):
         logger.warning(
             "AUDIT-SNAPSHOT-1a: control_results schema není připravené — backfill odložen."
@@ -830,6 +834,8 @@ def prepare_audit_snapshot_backfill(
                                 question_kind=draft.question_kind
                                 or AUDIT_QUESTION_KIND_LEGACY,
                                 display_order=draft.display_order,
+                                is_in_scope=bool(draft.is_in_scope)
+                                and not bool(draft.is_orphan),
                                 created_at=frozen_at,
                             )
                         )

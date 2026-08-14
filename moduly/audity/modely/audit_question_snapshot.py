@@ -5,7 +5,7 @@ Tabulka je připravena aditivně. V této fázi se neplní automaticky.
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, Index, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.database.base import Base
@@ -40,5 +40,8 @@ class AuditQuestionSnapshot(Base):
     severity: Mapped[str] = mapped_column(String(30), default="", nullable=False)
     question_kind: Mapped[str] = mapped_column(String(40), default="", nullable=False)
     display_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    # True = efektivní sada auditu; False = result-only orphan (zachován, nezobrazen).
+    is_in_scope: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)

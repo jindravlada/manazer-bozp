@@ -53,6 +53,7 @@ CREATE TABLE IF NOT EXISTS audit_question_snapshots (
     severity VARCHAR(30) DEFAULT '' NOT NULL,
     question_kind VARCHAR(40) DEFAULT '' NOT NULL,
     display_order INTEGER DEFAULT 0 NOT NULL,
+    is_in_scope BOOLEAN,
     created_at DATETIME,
     CONSTRAINT uq_audit_question_snapshot_key
         UNIQUE (audit_id, process_id, section_id, assertion_id)
