@@ -18,12 +18,14 @@ from core.shared.verification_type import (
     VERIFICATION_TYPE_TERRAIN,
 )
 from moduly.audity.constants import (
+    EXTRAORDINARY_TAB_EMPTY_MESSAGE,
     KNOWLEDGE_EDITOR_BUTTON_LABEL,
     METHODOLOGY_PANEL_STRETCH,
     PROCESS_NOT_IMPLEMENTED_TEXT,
     PROCESS_PANEL_LEFT_WIDTH,
     PROCESS_TERM_CRITERION,
     TAB_DOCUMENTACE,
+    TAB_MIMORADNE,
     TAB_TEREN,
     TERRAIN_CHECKLIST_BUTTON_LABEL,
     TERRAIN_CHECKLIST_DIALOG_TITLE,
@@ -36,6 +38,7 @@ from moduly.audity.sluzby.audit_question_source_service import (
     AuditQuestionSource,
     AuditQuestionSourceError,
     audit_question_source_service,
+    filter_knowledge_roots_by_question_kind,
 )
 from moduly.audity.sluzby.audit_service import audit_service
 from moduly.audity.sluzby.audit_terrain_checklist_service import (
@@ -63,17 +66,24 @@ class AuditProcessesWidget(QWidget):
         parent=None,
         *,
         verification_type: str = VERIFICATION_TYPE_DOCUMENTATION,
+        extraordinary_only: bool = False,
     ):
         super().__init__(parent)
 
+        self._extraordinary_only = bool(extraordinary_only)
         self._verification_type = (
             VERIFICATION_TYPE_TERRAIN
             if verification_type == VERIFICATION_TYPE_TERRAIN
             else VERIFICATION_TYPE_DOCUMENTATION
         )
-        self._tab_title = (
-            TAB_TEREN if self._verification_type == VERIFICATION_TYPE_TERRAIN else TAB_DOCUMENTACE
-        )
+        if self._extraordinary_only:
+            self._tab_title = TAB_MIMORADNE
+        else:
+            self._tab_title = (
+                TAB_TEREN
+                if self._verification_type == VERIFICATION_TYPE_TERRAIN
+                else TAB_DOCUMENTACE
+            )
         self._audit_id: int | None = None
 
         layout = QVBoxLayout(self)
@@ -134,9 +144,11 @@ class AuditProcessesWidget(QWidget):
             0,
             Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignTop,
         )
+        if self._extraordinary_only:
+            self.edit_knowledge_btn.setVisible(False)
 
         self.checklist_btn: QPushButton | None = None
-        if self._verification_type == VERIFICATION_TYPE_TERRAIN:
+        if self._verification_type == VERIFICATION_TYPE_TERRAIN and not self._extraordinary_only:
             self.checklist_btn = QPushButton(TERRAIN_CHECKLIST_BUTTON_LABEL)
             self.checklist_btn.setToolTip(TERRAIN_CHECKLIST_TOOLTIP)
             self.checklist_btn.setEnabled(False)
@@ -165,6 +177,7 @@ class AuditProcessesWidget(QWidget):
         self.knowledge_widget = AuditProcessKnowledgeWidget(
             self.methodology_panel,
             verification_filter=self._verification_type,
+            extraordinary_only=self._extraordinary_only,
         )
         self.knowledge_widget.verification_type_changed.connect(
             self._emit_verification_type_changed
@@ -307,12 +320,38 @@ class AuditProcessesWidget(QWidget):
         elif source is not None and source.is_snapshot:
             # Snapshot = celá sada; planned filtr z živé návštěvy se neaplikuje
             # (orphan procesy mimo plán zůstávají viditelné).
-            self.knowledge_tree.reload_tree(roots=source.roots, process_ids=None)
+            roots = filter_knowledge_roots_by_question_kind(
+                source.roots,
+                extraordinary_only=self._extraordinary_only,
+            )
+            self.knowledge_tree.reload_tree(roots=roots, process_ids=None)
+            if self._extraordinary_only and not roots:
+                self._show_extraordinary_empty()
+                return
         else:
+            if self._extraordinary_only:
+                # Mimořádné otázky jsou jen ve snapshotu — bez live JSON.
+                self.knowledge_tree.reload_tree(roots=())
+                self._show_extraordinary_empty()
+                return
             self.knowledge_tree.reload_tree(process_ids=self._planned_process_ids)
         if self.knowledge_tree.catalog_error_message:
             self._show_catalog_error(self.knowledge_tree.catalog_error_message)
         self._show_hint()
+
+    def _show_extraordinary_empty(self) -> None:
+        self._current_process_id = ""
+        self._current_process_purpose = ""
+        self._current_process_knowledge = None
+        self._current_criterion_id = ""
+        self._current_criterion_label = ""
+        self.center_title_label.setText(self._tab_title)
+        self.center_description_label.setText(EXTRAORDINARY_TAB_EMPTY_MESSAGE)
+        self.center_description_label.setVisible(True)
+        self.knowledge_widget.clear_criterion()
+        self.overview_widget.show_process(None)
+        self.methodology_panel.show_hint(EXTRAORDINARY_TAB_EMPTY_MESSAGE)
+        self.content_stack.setCurrentIndex(self._PAGE_HINT)
 
     def _build_hint_page(self) -> QWidget:
         page = QWidget()

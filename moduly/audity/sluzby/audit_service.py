@@ -106,15 +106,43 @@ class AuditService:
 
         if not was_finished and updated.finished_at is not None:
             from moduly.audity.sluzby.audit_program_service import audit_program_service
+            from moduly.audity.sluzby.audit_extraordinary_assignment_service import (
+                audit_extraordinary_assignment_service,
+            )
+            from core.database.session import get_session
 
             audit_program_service.sync_on_audit_completed(
                 updated.id,
                 finished_at=updated.finished_at,
             )
+            with get_session() as session:
+                try:
+                    audit_extraordinary_assignment_service.finalize_for_completed_audit(
+                        session, int(updated.id)
+                    )
+                    session.commit()
+                except Exception:
+                    session.rollback()
+                    raise
 
         return updated
 
     def delete_audit(self, audit_id: int) -> bool:
+        from moduly.audity.sluzby.audit_extraordinary_assignment_service import (
+            audit_extraordinary_assignment_service,
+        )
+        from core.database.session import get_session
+
+        with get_session() as session:
+            try:
+                audit_extraordinary_assignment_service.release_unverified_for_audit(
+                    session, int(audit_id)
+                )
+                session.commit()
+            except Exception:
+                session.rollback()
+                raise
+
         finding_service.delete_for_entity(ENTITY_AUDITY, audit_id)
         control_result_service.delete_for_entity(ENTITY_AUDITY, audit_id)
         audit_commission_service.delete_for_audit(audit_id)

@@ -122,6 +122,7 @@ class AuditProcessKnowledgeWidget(QWidget):
         parent=None,
         *,
         verification_filter: str = VERIFICATION_TYPE_DOCUMENTATION,
+        extraordinary_only: bool = False,
     ):
         super().__init__(parent)
 
@@ -134,6 +135,7 @@ class AuditProcessKnowledgeWidget(QWidget):
         self.criterion_widget = AuditKnowledgeCriterionWidget(
             methodology_panel=methodology_panel,
             verification_filter=verification_filter,
+            extraordinary_only=extraordinary_only,
         )
         layout.addWidget(self.criterion_widget, 1)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)

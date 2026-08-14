@@ -28,6 +28,9 @@ class AuditExtraordinaryQuestion(Base):
         default=EXTRAORDINARY_QUESTION_STATUS_ACTIVE,
         nullable=False,
     )
+    process_id: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    process_name: Mapped[str] = mapped_column(String(300), default="", nullable=False)
+    severity: Mapped[str | None] = mapped_column(String(40), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,

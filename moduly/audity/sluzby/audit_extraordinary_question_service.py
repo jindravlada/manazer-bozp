@@ -1,6 +1,6 @@
-"""Služba evidence mimořádných otázek (AUDIT-EXTRAORDINARY-1).
+"""Služba evidence mimořádných otázek (AUDIT-EXTRAORDINARY-1/2).
 
-V této fázi pouze evidence + pending cíle. Bez přiřazení do AuditDialogu.
+Evidence + pending cíle; přiřazení do auditu řeší assignment service.
 """
 
 from __future__ import annotations
@@ -13,13 +13,19 @@ from sqlalchemy import select
 from core.database.session import get_session
 from moduly.audity.constants import (
     AUDITABLE_WORKPLACE_REQUIRED_MESSAGE,
+    CONTROL_POINT_SEVERITY_KRITICKA,
+    CONTROL_POINT_SEVERITY_NIZKA,
+    CONTROL_POINT_SEVERITY_STREDNI,
+    CONTROL_POINT_SEVERITY_VYSOKA,
     EXTRAORDINARY_CANCEL_BLOCKED,
     EXTRAORDINARY_DUPLICATE_TARGET,
     EXTRAORDINARY_NON_AUDITABLE_RESTORE_BLOCKED,
+    EXTRAORDINARY_PROCESS_NONE_LABEL,
     EXTRAORDINARY_QUESTION_STATUS_ACTIVE,
     EXTRAORDINARY_QUESTION_STATUS_CANCELLED,
     EXTRAORDINARY_QUESTION_STATUS_COMPLETED,
     EXTRAORDINARY_QUESTION_TEXT_REQUIRED,
+    EXTRAORDINARY_SEVERITY_REQUIRED,
     EXTRAORDINARY_SYSTEM_WORKPLACE_MARK,
     EXTRAORDINARY_TARGET_LOCKED,
     EXTRAORDINARY_TARGET_REQUIRED,
@@ -40,14 +46,48 @@ from moduly.audity.sluzby.audit_auditable_workplace_service import (
     is_auditable_workplace_id,
     list_auditable_workplaces,
 )
+from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
 from moduly.audity.sluzby.system_audit_workplace_service import (
     system_audit_workplace_service,
 )
 from moduly.nastaveni.sluzby.settings_service import settings_service
 
+_VALID_SEVERITIES = frozenset(
+    {
+        CONTROL_POINT_SEVERITY_KRITICKA,
+        CONTROL_POINT_SEVERITY_VYSOKA,
+        CONTROL_POINT_SEVERITY_STREDNI,
+        CONTROL_POINT_SEVERITY_NIZKA,
+    }
+)
+
 
 class AuditExtraordinaryError(ValueError):
     """Validační / business chyba mimořádné otázky."""
+
+
+def require_valid_severity(value) -> str:
+    """Povinná závažnost z auditního číselníku (včetně Kritická)."""
+    text = str(value or "").strip().lower()
+    if not text:
+        raise AuditExtraordinaryError(EXTRAORDINARY_SEVERITY_REQUIRED)
+    if text not in _VALID_SEVERITIES:
+        raise AuditExtraordinaryError(EXTRAORDINARY_SEVERITY_REQUIRED)
+    return text
+
+
+def resolve_optional_process(process_id: str | None) -> tuple[str | None, str]:
+    """Vrátí (process_id, process_name); prázdné = kategorie Mimořádná ověření."""
+    raw = str(process_id or "").strip()
+    if not raw:
+        return None, ""
+    process = audit_knowledge_service.get_process_by_id(raw, ensure=True)
+    if process is None or not bool(getattr(process, "aktivni", True)):
+        raise AuditExtraordinaryError(
+            f"Vybraný auditní proces „{raw}“ neexistuje nebo není aktivní."
+        )
+    name = str(getattr(process, "nazev", "") or "").strip() or raw
+    return raw, name
 
 
 @dataclass(frozen=True)
@@ -196,6 +236,19 @@ class AuditExtraordinaryQuestionService:
         targets = self.repository.list_targets_for_question(question_id)
         return any(is_target_locked(item.status) for item in targets)
 
+    def list_process_choices(self) -> list[tuple[str | None, str]]:
+        """Volby procesu: prázdná = Mimořádná ověření + aktivní procesy."""
+        choices: list[tuple[str | None, str]] = [(None, EXTRAORDINARY_PROCESS_NONE_LABEL)]
+        for process in audit_knowledge_service.get_processes(
+            include_inactive=False, ensure=True
+        ):
+            process_id = str(getattr(process, "id", "") or "").strip()
+            if not process_id:
+                continue
+            name = str(getattr(process, "nazev", "") or "").strip() or process_id
+            choices.append((process_id, name))
+        return choices
+
     def create_question(
         self,
         *,
@@ -203,12 +256,16 @@ class AuditExtraordinaryQuestionService:
         assigned_by: str = "",
         assigned_on: date | None = None,
         note: str = "",
+        severity: str | None = None,
+        process_id: str | None = None,
         workplace_ids: list[int] | tuple[int, ...] | None = None,
         all_workplaces: bool = False,
     ) -> AuditExtraordinaryQuestion:
         text = str(question_text or "").strip()
         if not text:
             raise AuditExtraordinaryError(EXTRAORDINARY_QUESTION_TEXT_REQUIRED)
+        severity_value = require_valid_severity(severity)
+        resolved_process_id, resolved_process_name = resolve_optional_process(process_id)
 
         if all_workplaces:
             resolved_ids = [item.workplace_id for item in self.list_selectable_workplaces()]
@@ -237,6 +294,9 @@ class AuditExtraordinaryQuestionService:
                     assigned_on=on_date,
                     note=str(note or "").strip(),
                     status=EXTRAORDINARY_QUESTION_STATUS_ACTIVE,
+                    process_id=resolved_process_id,
+                    process_name=resolved_process_name,
+                    severity=severity_value,
                     created_at=now,
                     updated_at=now,
                 )
@@ -272,6 +332,8 @@ class AuditExtraordinaryQuestionService:
         assigned_by: str | None = None,
         assigned_on: date | None = None,
         note: str | None = None,
+        severity: str | None = None,
+        process_id: str | None | object = ...,
         add_workplace_ids: list[int] | tuple[int, ...] | None = None,
         cancel_workplace_ids: list[int] | tuple[int, ...] | None = None,
         restore_workplace_ids: list[int] | tuple[int, ...] | None = None,
@@ -310,6 +372,14 @@ class AuditExtraordinaryQuestionService:
                     question.assigned_on = assigned_on
                 if note is not None:
                     question.note = str(note).strip()
+                if severity is not None:
+                    question.severity = require_valid_severity(severity)
+                if process_id is not ...:
+                    resolved_process_id, resolved_process_name = resolve_optional_process(
+                        None if process_id is None else str(process_id)
+                    )
+                    question.process_id = resolved_process_id
+                    question.process_name = resolved_process_name
 
                 now = datetime.now()
 

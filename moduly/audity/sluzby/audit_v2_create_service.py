@@ -15,6 +15,7 @@ from core.database.session import get_session
 from moduly.audity.constants import (
     AUDIT_METHODOLOGY_GENERATION_V2,
     AUDIT_METHODOLOGY_SOURCE_SNAPSHOT,
+    EXTRAORDINARY_SNAPSHOT_ORDER_BASE,
 )
 from moduly.audity.modely.audit import Audit
 from moduly.audity.modely.audit_commission_member import AuditCommissionMember
@@ -36,6 +37,12 @@ from moduly.audity.sluzby.audit_snapshot_integrity_service import (
 from moduly.audity.sluzby.audit_auditable_workplace_service import (
     AUDITABLE_WORKPLACE_REQUIRED_MESSAGE,
     require_auditable_workplace_id,
+)
+from moduly.audity.sluzby.audit_extraordinary_assignment_service import (
+    audit_extraordinary_assignment_service,
+)
+from moduly.audity.sluzby.audit_extraordinary_question_service import (
+    AuditExtraordinaryError,
 )
 from moduly.audity.sluzby.system_audit_workplace_service import (
     SystemAuditWorkplaceError,
@@ -136,7 +143,28 @@ def create_audit_with_v2_snapshot(
                 ensure=False,
                 knowledge_tree=roots,
             )
-            for draft in drafts:
+            from moduly.audity.sluzby.audit_extraordinary_assignment_service import (
+                audit_extraordinary_assignment_service,
+            )
+
+            assignments = (
+                audit_extraordinary_assignment_service.require_assignable_for_workplace(
+                    session, int(workplace_id)
+                )
+            )
+            order_start = EXTRAORDINARY_SNAPSHOT_ORDER_BASE
+            if drafts:
+                order_start = max(int(d.display_order) for d in drafts) + 1
+                order_start = max(order_start, EXTRAORDINARY_SNAPSHOT_ORDER_BASE)
+            extraordinary_drafts = (
+                audit_extraordinary_assignment_service.build_snapshot_drafts(
+                    assignments,
+                    audit_id=int(audit.id),
+                    display_order_start=order_start,
+                )
+            )
+            all_drafts = list(drafts) + extraordinary_drafts
+            for draft in all_drafts:
                 session.add(
                     AuditQuestionSnapshot(
                         audit_id=audit.id,
@@ -165,6 +193,14 @@ def create_audit_with_v2_snapshot(
             )
             apply_snapshot_integrity_manifest(audit, written)
 
+            if extraordinary_drafts:
+                audit_extraordinary_assignment_service.mark_assigned(
+                    session,
+                    assignments,
+                    audit_id=int(audit.id),
+                    when=frozen_at,
+                )
+
             if validated_members is not None:
                 for member_data in validated_members:
                     session.add(
@@ -191,6 +227,9 @@ def create_audit_with_v2_snapshot(
             session.expunge(audit)
             return audit
         except (AuditV2SnapshotError, SystemAuditWorkplaceError, AuditV2CreateError):
+            session.rollback()
+            raise
+        except AuditExtraordinaryError:
             session.rollback()
             raise
         except ValueError:

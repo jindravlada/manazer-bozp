@@ -24,7 +24,7 @@ from core.widgets.editor_dialog_controller import (
     configure_editor_save_button,
     confirm_unsaved_editor_close,
 )
-from moduly.audity.constants import FINDING_SOURCE_LABEL, TAB_LABELS
+from moduly.audity.constants import FINDING_SOURCE_LABEL, TAB_LABELS, TAB_MIMORADNE
 from moduly.audity.sluzby.audit_commission_service import audit_commission_service
 from moduly.audity.sluzby.audit_deferred_edits import AuditDeferredEdits
 from moduly.audity.sluzby.audit_program_service import AuditVisitContext
@@ -47,7 +47,9 @@ from moduly.audity.ui.audit_processes_widget import AuditProcessesWidget
 from moduly.audity.ui.audit_spis_widget import AuditSpisWidget
 from moduly.audity.ui.audit_tasks_widget import AuditTasksWidget
 from moduly.audity.ui.audit_workplace_history_widget import AuditWorkplaceHistoryWidget
-
+from moduly.audity.sluzby.audit_extraordinary_question_service import (
+    AuditExtraordinaryError,
+)
 _SAVE_CLOSE_LABEL = "Uložit a zavřít"
 
 
@@ -81,6 +83,10 @@ class AuditDialog(QDialog):
         self.terrain_widget = AuditProcessesWidget(
             verification_type=VERIFICATION_TYPE_TERRAIN
         )
+        self.extraordinary_widget = AuditProcessesWidget(
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION,
+            extraordinary_only=True,
+        )
         self.history_widget = AuditWorkplaceHistoryWidget()
         self.findings_widget = AuditFindingsWidget()
         self.tasks_widget = AuditTasksWidget()
@@ -90,9 +96,10 @@ class AuditDialog(QDialog):
         self.tabs.addTab(self.history_widget, TAB_LABELS[2])
         self.tabs.addTab(self.processes_widget, TAB_LABELS[3])
         self.tabs.addTab(self.terrain_widget, TAB_LABELS[4])
-        self.tabs.addTab(self.findings_widget, TAB_LABELS[5])
-        self.tabs.addTab(self.tasks_widget, TAB_LABELS[6])
-        self.tabs.addTab(self.conclusion_widget, TAB_LABELS[7])
+        self.tabs.addTab(self.extraordinary_widget, TAB_MIMORADNE)
+        self.tabs.addTab(self.findings_widget, TAB_LABELS[6])
+        self.tabs.addTab(self.tasks_widget, TAB_LABELS[7])
+        self.tabs.addTab(self.conclusion_widget, TAB_LABELS[8])
         self.tabs.currentChanged.connect(self._on_tab_changed)
         layout.addWidget(self.tabs)
 
@@ -107,6 +114,7 @@ class AuditDialog(QDialog):
             self.terrain_widget.set_planned_process_ids(planned)
         self.processes_widget.set_on_finding_saved(self._on_finding_changed)
         self.terrain_widget.set_on_finding_saved(self._on_finding_changed)
+        self.extraordinary_widget.set_on_finding_saved(self._on_finding_changed)
         self.processes_widget.set_on_verification_type_changed(
             self._on_verification_type_changed
         )
@@ -130,11 +138,13 @@ class AuditDialog(QDialog):
     def _wire_deferred_edits(self) -> None:
         self.processes_widget.set_deferred_edits(self._deferred)
         self.terrain_widget.set_deferred_edits(self._deferred)
+        self.extraordinary_widget.set_deferred_edits(self._deferred)
         self.findings_widget.set_deferred_edits(self._deferred)
         self.tasks_widget.set_deferred_edits(self._deferred)
         self.history_widget.set_deferred_edits(self._deferred)
         self.processes_widget.set_on_deferred_dirty(self._on_deferred_dirty)
         self.terrain_widget.set_on_deferred_dirty(self._on_deferred_dirty)
+        self.extraordinary_widget.set_on_deferred_dirty(self._on_deferred_dirty)
 
     def _on_deferred_dirty(self) -> None:
         # Dirty se počítá z bufferu; callback drží konzistenci s budoucími signaly.
@@ -182,9 +192,10 @@ class AuditDialog(QDialog):
     def set_audit_id(self, audit_id: int | None) -> None:
         self.processes_widget.set_audit_id(audit_id)
         self.terrain_widget.set_audit_id(audit_id)
+        self.extraordinary_widget.set_audit_id(audit_id)
         self.findings_widget.set_audit_id(audit_id)
         self.tasks_widget.set_audit_id(audit_id)
-        # Jeden resolve pro obě záložky — snapshot bez ensure_catalogs / get_knowledge_tree.
+        # Jeden resolve pro všechny záložky — snapshot bez ensure_catalogs / get_knowledge_tree.
         try:
             source = audit_question_source_service.resolve_for_audit(audit_id)
         except AuditQuestionSourceError as exc:
@@ -192,15 +203,20 @@ class AuditDialog(QDialog):
             source = None
         self.processes_widget.set_question_source(source)
         self.terrain_widget.set_question_source(source)
+        self.extraordinary_widget.set_question_source(source)
 
     def _on_finding_changed(self) -> None:
         self._on_related_data_changed()
         self.processes_widget.refresh_findings_display()
         self.terrain_widget.refresh_findings_display()
+        self.extraordinary_widget.refresh_findings_display()
+        self.extraordinary_widget.refresh_findings_display()
 
     def _on_verification_type_changed(self) -> None:
         self.processes_widget.refresh_findings_display()
         self.terrain_widget.refresh_findings_display()
+        self.extraordinary_widget.refresh_findings_display()
+        self.extraordinary_widget.refresh_findings_display()
 
     def _on_related_data_changed(self) -> None:
         self.findings_widget.refresh()
@@ -231,7 +247,12 @@ class AuditDialog(QDialog):
                     fields=payload,
                     commission_members=data.get("commission_members"),
                 )
-            except (AuditV2CreateError, SystemAuditWorkplaceError, ValueError) as exc:
+            except (
+                AuditV2CreateError,
+                SystemAuditWorkplaceError,
+                AuditExtraordinaryError,
+                ValueError,
+            ) as exc:
                 QMessageBox.warning(self, "Nový audit", str(exc))
                 return False
             if created is None:
@@ -265,6 +286,7 @@ class AuditDialog(QDialog):
         self.tasks_widget.refresh()
         self.processes_widget.refresh_findings_display()
         self.terrain_widget.refresh_findings_display()
+        self.extraordinary_widget.refresh_findings_display()
 
     def _done_accept(self) -> None:
         self._closing = True
@@ -389,5 +411,6 @@ class AuditDialog(QDialog):
         self.tasks_widget.refresh()
         self.processes_widget.refresh_findings_display()
         self.terrain_widget.refresh_findings_display()
+        self.extraordinary_widget.refresh_findings_display()
         self._capture_baseline()
         return True

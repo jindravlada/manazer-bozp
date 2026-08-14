@@ -111,6 +111,7 @@ COMMISSION_LABEL_INVITED = "Přizvané osoby"
 TAB_AUDITOVANE_PROCESY = "Řídicí procesy"
 TAB_DOCUMENTACE = "Dokumentace"
 TAB_TEREN = "Terén"
+TAB_MIMORADNE = "Mimořádné ověření"
 TAB_UVOD = "Úvod"
 # Zpětná kompatibilita aliasu (AUDIT-INTRO-1 přejmenovalo záložku).
 TAB_WORKPLACE_HISTORY = TAB_UVOD
@@ -121,6 +122,7 @@ TAB_LABELS = (
     TAB_UVOD,
     TAB_DOCUMENTACE,
     TAB_TEREN,
+    TAB_MIMORADNE,
     "Zjištění",
     "Úkoly",
     "Závěr",
@@ -561,7 +563,7 @@ QUESTION_KIND_EDITOR_OPTIONS = (
 SYSTEM_AUDIT_WORKPLACE_SETTING_KEY = "system_audit_workplace_id"
 SYSTEM_AUDIT_WORKPLACE_SETTINGS_FILE = "audity_nastaveni.json"
 
-# AUDIT-EXTRAORDINARY-1: evidence mimořádných otázek (zatím bez AuditDialogu).
+# AUDIT-EXTRAORDINARY-1/2: evidence + přiřazení mimořádných otázek.
 EXTRAORDINARY_QUESTIONS_BUTTON_LABEL = "Mimořádné ověření"
 EXTRAORDINARY_QUESTIONS_DIALOG_TITLE = "Mimořádné ověření"
 EXTRAORDINARY_QUESTION_EDITOR_TITLE_NEW = "Nová mimořádná otázka"
@@ -600,6 +602,8 @@ EXTRAORDINARY_TARGET_STATUS_LABELS = {
 
 EXTRAORDINARY_SYSTEM_WORKPLACE_MARK = " (systémový)"
 EXTRAORDINARY_QUESTION_TEXT_REQUIRED = "Zadejte text mimořádné otázky."
+EXTRAORDINARY_SEVERITY_REQUIRED = "Vyberte závažnost mimořádné otázky."
+EXTRAORDINARY_PROCESS_NONE_LABEL = "Mimořádná ověření"
 EXTRAORDINARY_TARGET_REQUIRED = "Vyberte alespoň jeden cílový provoz."
 EXTRAORDINARY_DUPLICATE_TARGET = "Cílový provoz je v otázce už evidován."
 EXTRAORDINARY_TARGET_LOCKED = (
@@ -615,6 +619,22 @@ EXTRAORDINARY_NON_AUDITABLE_TARGET_LABEL = "Neauditovatelný cíl"
 EXTRAORDINARY_NON_AUDITABLE_RESTORE_BLOCKED = (
     "Neauditovatelný cíl nelze obnovit. Zvolte aktivní auditovatelný provoz."
 )
+EXTRAORDINARY_TAB_EMPTY_MESSAGE = (
+    "Pro tento audit nebylo mimořádné ověření zadáno."
+)
+EXTRAORDINARY_INCOMPLETE_SEVERITY_FOR_AUDIT = (
+    "Mimořádná otázka „{text}“ (id={question_id}) nemá platnou závažnost. "
+    "Doplňte závažnost v evidenci mimořádného ověření a audit znovu založte."
+)
+
+# Stabilní technické identifikátory kategorie bez procesu (ne živá JSON metodika).
+EXTRAORDINARY_CATEGORY_PROCESS_ID = "__extraordinary__"
+EXTRAORDINARY_CATEGORY_PROCESS_NAME = "Mimořádná ověření"
+EXTRAORDINARY_CATEGORY_SECTION_ID = "__extraordinary_section__"
+EXTRAORDINARY_CATEGORY_SECTION_NAME = "Mimořádná ověření"
+EXTRAORDINARY_ASSERTION_ID_PREFIX = "eq-"
+EXTRAORDINARY_SNAPSHOT_ORDER_BASE = 100_000
+
 AUDITABLE_WORKPLACE_REQUIRED_MESSAGE = (
     "Vybraná položka není aktivním auditovatelným provozem."
 )
@@ -623,6 +643,23 @@ SYSTEM_AUDIT_WORKPLACE_INVALID_MESSAGE = (
     "Vyberte platný systémový provoz."
 )
 SYSTEM_AUDIT_WORKPLACE_INVALID_COMBO_SUFFIX = " (neplatné nastavení)"
+
+
+def extraordinary_assertion_id(question_id: int) -> str:
+    return f"{EXTRAORDINARY_ASSERTION_ID_PREFIX}{int(question_id)}"
+
+
+def parse_extraordinary_question_id(assertion_id: str) -> int | None:
+    text = str(assertion_id or "").strip()
+    prefix = EXTRAORDINARY_ASSERTION_ID_PREFIX
+    if not text.startswith(prefix):
+        return None
+    raw = text[len(prefix) :]
+    try:
+        value = int(raw)
+    except ValueError:
+        return None
+    return value if value > 0 else None
 
 
 def audit_finding_type_label(finding_type: str) -> str:

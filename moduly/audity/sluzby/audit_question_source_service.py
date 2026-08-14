@@ -15,7 +15,7 @@ from sqlalchemy import select
 from core.database.session import get_session
 from core.shared.constants import ENTITY_AUDITY
 from core.shared.modely.control_result import ControlResult
-from moduly.audity.constants import AUDIT_METHODOLOGY_SOURCE_SNAPSHOT
+from moduly.audity.constants import AUDIT_METHODOLOGY_SOURCE_SNAPSHOT, AUDIT_QUESTION_KIND_EXTRAORDINARY
 from moduly.audity.modely.audit import Audit
 from moduly.audity.modely.audit_question_snapshot import AuditQuestionSnapshot
 from moduly.audity.sluzby.audit_knowledge_service import (
@@ -23,6 +23,7 @@ from moduly.audity.sluzby.audit_knowledge_service import (
     KNOWLEDGE_NODE_SECTION,
     KnowledgeTreeNode,
 )
+from moduly.audity.sluzby.audit_question_kind import interpret_question_kind
 from moduly.audity.sluzby.audit_question_snapshot_service import snapshot_key
 
 logger = logging.getLogger(__name__)
@@ -178,6 +179,55 @@ def build_knowledge_tree_from_snapshot_views(
             )
         )
     return roots
+
+
+def filter_knowledge_roots_by_question_kind(
+    roots: list[KnowledgeTreeNode] | tuple[KnowledgeTreeNode, ...],
+    *,
+    extraordinary_only: bool,
+) -> list[KnowledgeTreeNode]:
+    """Oddělí mimořádné otázky od Dokumentace/Terén (a naopak)."""
+    filtered: list[KnowledgeTreeNode] = []
+    for process in roots:
+        section_children: list[KnowledgeTreeNode] = []
+        for section_node in process.children:
+            section = dict(section_node.section or {})
+            assertions = list(section.get("auditni_tvrzeni") or [])
+            kept = []
+            for item in assertions:
+                kind = interpret_question_kind(item.get("question_kind"))
+                is_ext = kind == AUDIT_QUESTION_KIND_EXTRAORDINARY
+                if extraordinary_only and is_ext:
+                    kept.append(item)
+                elif not extraordinary_only and not is_ext:
+                    kept.append(item)
+            if not kept:
+                continue
+            new_section = dict(section)
+            new_section["auditni_tvrzeni"] = kept
+            section_children.append(
+                KnowledgeTreeNode(
+                    node_type=KNOWLEDGE_NODE_SECTION,
+                    node_id=section_node.node_id,
+                    label=section_node.label,
+                    process_id=section_node.process_id,
+                    process_label=section_node.process_label,
+                    section=new_section,
+                )
+            )
+        if not section_children:
+            continue
+        filtered.append(
+            KnowledgeTreeNode(
+                node_type=KNOWLEDGE_NODE_PROCESS,
+                node_id=process.node_id,
+                label=process.label,
+                process_id=process.process_id,
+                process_label=process.process_label,
+                children=tuple(section_children),
+            )
+        )
+    return filtered
 
 
 def _match_result_to_keys(

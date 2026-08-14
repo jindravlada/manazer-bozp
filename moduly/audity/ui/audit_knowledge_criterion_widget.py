@@ -33,6 +33,7 @@ from core.widgets.finding_dialog import FindingDialog
 from core.widgets.dialog_utils import exec_maximized
 from core.widgets.image_viewer_dialog import ImageViewerDialog
 from moduly.audity.constants import (
+    AUDIT_QUESTION_KIND_EXTRAORDINARY,
     CONTROL_POINT_SEVERITY_OPTIONS,
     FINDING_CREATE_FROM_CONTROL_POINT_LABEL,
     FINDING_CREATED_LABEL,
@@ -56,6 +57,7 @@ from moduly.audity.constants import (
     PROCESS_TERM_QUESTION,
     AuditFindingKnowledgeContext,
 )
+from moduly.audity.sluzby.audit_question_kind import interpret_question_kind
 from moduly.audity.sluzby.audit_service import audit_service
 from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
 from moduly.audity.sluzby.audit_reference_photo_service import audit_reference_photo_service
@@ -112,6 +114,7 @@ class AuditKnowledgeCriterionWidget(QWidget):
         parent=None,
         *,
         verification_filter: str = VERIFICATION_TYPE_DOCUMENTATION,
+        extraordinary_only: bool = False,
     ):
         super().__init__(parent)
 
@@ -119,6 +122,7 @@ class AuditKnowledgeCriterionWidget(QWidget):
         self._verification_filter = audit_verification_service.normalize_verification_type(
             verification_filter
         )
+        self._extraordinary_only = bool(extraordinary_only)
 
         self._area_id = ""
         self._area_label = ""
@@ -183,7 +187,24 @@ class AuditKnowledgeCriterionWidget(QWidget):
 
     def _filtered_questions(self, section: dict) -> list[dict]:
         items = audit_knowledge_service.get_audit_questions(section)
-        return [item for item in items if self._effective_type(item) == self._verification_filter]
+        if self._extraordinary_only:
+            return [
+                item
+                for item in items
+                if interpret_question_kind(item.get("question_kind"))
+                == AUDIT_QUESTION_KIND_EXTRAORDINARY
+            ]
+        standard = [
+            item
+            for item in items
+            if interpret_question_kind(item.get("question_kind"))
+            != AUDIT_QUESTION_KIND_EXTRAORDINARY
+        ]
+        return [
+            item
+            for item in standard
+            if self._effective_type(item) == self._verification_filter
+        ]
 
     def scroll_to_top(self) -> None:
         self._scroll_area.verticalScrollBar().setValue(0)

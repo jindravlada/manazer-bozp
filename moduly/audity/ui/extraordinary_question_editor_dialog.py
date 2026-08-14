@@ -9,6 +9,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
     QButtonGroup,
+    QComboBox,
     QDateEdit,
     QDialog,
     QFormLayout,
@@ -33,6 +34,7 @@ from core.widgets.editor_dialog_controller import (
     confirm_unsaved_editor_close,
 )
 from moduly.audity.constants import (
+    CONTROL_POINT_SEVERITY_OPTIONS,
     EXTRAORDINARY_NON_AUDITABLE_TARGET_LABEL,
     EXTRAORDINARY_QUESTION_EDITOR_TITLE_EDIT,
     EXTRAORDINARY_QUESTION_EDITOR_TITLE_NEW,
@@ -76,6 +78,16 @@ class ExtraordinaryQuestionEditorDialog(QDialog):
         self.question_text.setAcceptRichText(False)
         self.question_text.setMinimumHeight(90)
         form.addRow("Otázka:", self.question_text)
+
+        self.process_combo = QComboBox()
+        self._load_process_choices()
+        form.addRow("Proces:", self.process_combo)
+
+        self.severity_combo = QComboBox()
+        self.severity_combo.addItem("— vyberte závažnost —", None)
+        for value, label in CONTROL_POINT_SEVERITY_OPTIONS:
+            self.severity_combo.addItem(label, value)
+        form.addRow("Závažnost:", self.severity_combo)
 
         self.assigned_by = QLineEdit()
         self.assigned_by.setPlaceholderText("Zadal / zdroj")
@@ -141,6 +153,13 @@ class ExtraordinaryQuestionEditorDialog(QDialog):
         self._load_question()
         self._capture_baseline()
 
+    def _load_process_choices(self) -> None:
+        self.process_combo.blockSignals(True)
+        self.process_combo.clear()
+        for process_id, label in audit_extraordinary_question_service.list_process_choices():
+            self.process_combo.addItem(label, process_id)
+        self.process_combo.blockSignals(False)
+
     def _load_workplaces(self) -> None:
         self._choices = audit_extraordinary_question_service.list_selectable_workplaces()
         self.workplace_list.clear()
@@ -198,6 +217,20 @@ class ExtraordinaryQuestionEditorDialog(QDialog):
         if question.assigned_on is not None:
             self.assigned_on.setDate(question.assigned_on)
         self.note.setPlainText(question.note or "")
+        severity = str(getattr(question, "severity", None) or "").strip()
+        severity_index = self.severity_combo.findData(severity or None)
+        if severity and severity_index < 0:
+            # Historická/neznámá hodnota — zobrazit, dokud uživatel nevybere platnou.
+            self.severity_combo.addItem(severity, severity)
+            severity_index = self.severity_combo.findData(severity)
+        self.severity_combo.setCurrentIndex(max(severity_index, 0))
+        process_id = getattr(question, "process_id", None)
+        process_index = self.process_combo.findData(process_id)
+        if process_id and process_index < 0:
+            name = str(getattr(question, "process_name", "") or "").strip() or str(process_id)
+            self.process_combo.addItem(name, process_id)
+            process_index = self.process_combo.findData(process_id)
+        self.process_combo.setCurrentIndex(max(process_index, 0))
         self._existing_targets = {
             int(item.workplace_id): str(item.status or "") for item in targets
         }
@@ -264,6 +297,8 @@ class ExtraordinaryQuestionEditorDialog(QDialog):
             "assigned_by": self.assigned_by.text().strip(),
             "assigned_on": self.assigned_on.date().toPython(),
             "note": self.note.toPlainText().strip(),
+            "severity": self.severity_combo.currentData(),
+            "process_id": self.process_combo.currentData(),
             "all_mode": self.mode_all.isChecked(),
             "workplace_ids": self._selected_workplace_ids(),
         }
@@ -283,6 +318,8 @@ class ExtraordinaryQuestionEditorDialog(QDialog):
                     assigned_by=data["assigned_by"],
                     assigned_on=data["assigned_on"],
                     note=data["note"],
+                    severity=data["severity"],
+                    process_id=data["process_id"],
                     workplace_ids=data["workplace_ids"],
                     all_workplaces=bool(data["all_mode"]),
                 )
@@ -315,6 +352,8 @@ class ExtraordinaryQuestionEditorDialog(QDialog):
                     assigned_by=data["assigned_by"],
                     assigned_on=data["assigned_on"],
                     note=data["note"],
+                    severity=data["severity"],
+                    process_id=data["process_id"],
                     add_workplace_ids=add_ids,
                     cancel_workplace_ids=cancel_ids,
                     restore_workplace_ids=restore_ids,

@@ -31,14 +31,19 @@ with patch.object(Path, "home", return_value=_TMP):
 
     initialize_database()
 
+    from moduly.audity.sluzby.audit_extraordinary_2_schema_migration import (
+        apply_audit_extraordinary_2_schema_ddl,
+    )
     from moduly.audity.sluzby.audit_extraordinary_schema_migration import (
         apply_audit_extraordinary_schema_ddl,
     )
 
     apply_audit_extraordinary_schema_ddl(_DB)
+    apply_audit_extraordinary_2_schema_ddl(_DB)
 
     from core.database.session import get_session
     from moduly.audity.constants import (
+        CONTROL_POINT_SEVERITY_STREDNI,
         AUDITABLE_WORKPLACE_REQUIRED_MESSAGE,
         DEFAULT_AUDIT_PROGRAM_STANDARDS,
         EXTRAORDINARY_NON_AUDITABLE_RESTORE_BLOCKED,
@@ -195,6 +200,7 @@ class AuditableWorkplaceFilterTestCase(unittest.TestCase):
 
     def test_06_extraordinary_all_creates_only_auditable(self) -> None:
         question = audit_extraordinary_question_service.create_question(
+            severity=CONTROL_POINT_SEVERITY_STREDNI,
             question_text="Všechny AW",
             all_workplaces=True,
         )
@@ -225,13 +231,15 @@ class AuditableWorkplaceFilterTestCase(unittest.TestCase):
     def test_08_service_rejects_non_auditable_target(self) -> None:
         with self.assertRaises(AuditExtraordinaryError) as ctx:
             audit_extraordinary_question_service.create_question(
-                question_text="Špatný cíl",
+                severity=CONTROL_POINT_SEVERITY_STREDNI,
+            question_text="Špatný cíl",
                 workplace_ids=[self.workplace.id],
             )
         self.assertEqual(str(ctx.exception), AUDITABLE_WORKPLACE_REQUIRED_MESSAGE)
 
     def test_09_existing_non_auditable_target_not_deleted(self) -> None:
         question = audit_extraordinary_question_service.create_question(
+            severity=CONTROL_POINT_SEVERITY_STREDNI,
             question_text="Historie",
             workplace_ids=[self.ok.id],
         )
@@ -256,6 +264,7 @@ class AuditableWorkplaceFilterTestCase(unittest.TestCase):
 
     def test_10_pending_non_auditable_can_cancel(self) -> None:
         question = audit_extraordinary_question_service.create_question(
+            severity=CONTROL_POINT_SEVERITY_STREDNI,
             question_text="Cancel hist",
             workplace_ids=[self.ok.id],
         )
@@ -285,6 +294,7 @@ class AuditableWorkplaceFilterTestCase(unittest.TestCase):
 
     def test_11_cancelled_non_auditable_cannot_restore(self) -> None:
         question = audit_extraordinary_question_service.create_question(
+            severity=CONTROL_POINT_SEVERITY_STREDNI,
             question_text="Restore hist",
             workplace_ids=[self.ok.id],
         )

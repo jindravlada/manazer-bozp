@@ -341,6 +341,18 @@ def prepare_database_for_startup(
             settings_path=settings_path,
         )
 
+    from moduly.audity.sluzby.audit_extraordinary_2_schema_migration import (
+        needs_audit_extraordinary_2_schema,
+        prepare_audit_extraordinary_2_schema,
+    )
+
+    if needs_audit_extraordinary_2_schema(database_path):
+        prepare_audit_extraordinary_2_schema(
+            workspace_root=workspace_root,
+            database_path=database_path,
+            settings_path=settings_path,
+        )
+
     result: PrepareDatabaseResult
 
     # Čistá instalace / už migrovaná DB – jen idempotentní initialize.
@@ -413,6 +425,16 @@ def prepare_database_for_startup(
     )
 
     prepare_audit_extraordinary_schema(
+        workspace_root=workspace_root,
+        database_path=database_path,
+        settings_path=settings_path,
+    )
+
+    from moduly.audity.sluzby.audit_extraordinary_2_schema_migration import (
+        prepare_audit_extraordinary_2_schema,
+    )
+
+    prepare_audit_extraordinary_2_schema(
         workspace_root=workspace_root,
         database_path=database_path,
         settings_path=settings_path,
