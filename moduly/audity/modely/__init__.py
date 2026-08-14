@@ -6,6 +6,7 @@ from moduly.audity.modely.audit_program import (
     AuditProgramVisitProcess,
     AuditProgramWorkplace,
 )
+from moduly.audity.modely.audit_question_snapshot import AuditQuestionSnapshot
 
 __all__ = [
     "Audit",
@@ -14,4 +15,5 @@ __all__ = [
     "AuditProgramVisit",
     "AuditProgramVisitProcess",
     "AuditProgramWorkplace",
+    "AuditQuestionSnapshot",
 ]

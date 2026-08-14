@@ -458,6 +458,20 @@ CONTROL_POINT_SEVERITY_OPTIONS = (
     (CONTROL_POINT_SEVERITY_NIZKA, "Nízká"),
 )
 
+# AUDIT-SNAPSHOT-0: zdroj metodiky auditu (nullable = živá metodika / legacy).
+AUDIT_METHODOLOGY_SOURCE_LIVE = "live"
+AUDIT_METHODOLOGY_SOURCE_SNAPSHOT = "snapshot"
+AUDIT_METHODOLOGY_SOURCES = (
+    AUDIT_METHODOLOGY_SOURCE_LIVE,
+    AUDIT_METHODOLOGY_SOURCE_SNAPSHOT,
+)
+DEFAULT_AUDIT_METHODOLOGY_SOURCE = AUDIT_METHODOLOGY_SOURCE_LIVE
+
+# Rezervováno pro budoucí Systém / Provoz / Mimořádné (zatím prázdné).
+AUDIT_QUESTION_KIND_SYSTEM = "system"
+AUDIT_QUESTION_KIND_WORKPLACE = "provoz"
+AUDIT_QUESTION_KIND_EXTRAORDINARY = "mimoradne"
+
 
 def audit_finding_type_label(finding_type: str) -> str:
     return AUDIT_FINDING_TYPE_LABELS.get(finding_type, finding_type)

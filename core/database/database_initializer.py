@@ -72,6 +72,9 @@ def initialize_database() -> None:
     from moduly.audity.modely.audit_verification_override import (  # noqa: F401
         AuditVerificationOverride,
     )
+    from moduly.audity.modely.audit_question_snapshot import (  # noqa: F401
+        AuditQuestionSnapshot,
+    )
     from moduly.smlouvy_ozo.modely.ozo_contract import OzoContract  # noqa: F401
     from moduly.smlouvy_ozo.modely.ozo_person import OzoPerson  # noqa: F401
     from moduly.smlouvy_ozo.modely.ozo_person_period import OzoPersonPeriod  # noqa: F401

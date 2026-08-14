@@ -115,12 +115,42 @@ def mark_migration_complete(
         completed.append(transition_id)
     state["completed_transitions"] = completed
     state["in_progress"] = None
+    state["last_failed"] = None
     state["last_completed"] = {
         "transition_id": transition_id,
         "completed_at": datetime.now().isoformat(timespec="seconds"),
         "pre_migration_backup": str(backup_path) if backup_path else None,
     }
     write_migration_state(workspace_root, state)
+
+
+def mark_migration_failed(
+    workspace_root: Path,
+    *,
+    backup_path: Path | None,
+    error: str,
+    transition_id: str = TRANSITION_ID,
+) -> None:
+    """Označí migraci jako selhanou (ne dokončenou). Uvolní in_progress po rollbacku."""
+    state = read_migration_state(workspace_root)
+    active = state.get("in_progress")
+    if isinstance(active, dict) and active.get("transition_id") == transition_id:
+        state["in_progress"] = None
+    state["last_failed"] = {
+        "transition_id": transition_id,
+        "failed_at": datetime.now().isoformat(timespec="seconds"),
+        "pre_migration_backup": str(backup_path) if backup_path else None,
+        "error": str(error or "").strip(),
+    }
+    write_migration_state(workspace_root, state)
+
+
+def is_migration_failed(
+    workspace_root: Path, transition_id: str = TRANSITION_ID
+) -> bool:
+    state = read_migration_state(workspace_root)
+    failed = state.get("last_failed")
+    return isinstance(failed, dict) and failed.get("transition_id") == transition_id
 
 
 def sqlite_table_exists(db_path: Path, table_name: str) -> bool:
@@ -225,13 +255,19 @@ def prepare_database_for_startup(
     Spouštěcí příprava DB: případná předmigrační záloha, pak ``initialize_database``.
 
     Pořadí:
-    1. Odmítnout pokračování při ``in_progress`` markeru.
-    2. Pokud legacy DB bez Registru rizik → záloha + ověření + marker.
-    3. Spustit migrace / ``create_all``.
-    4. Označit přechod jako dokončený (záloha se nemaže).
+    1. Odmítnout pokračování při ``in_progress`` markeru (MIGRATION-0).
+    2. AUDIT-SNAPSHOT-0: pokud chybí schema na existující DB → záloha + DDL.
+    3. Pokud legacy DB bez Registru rizik → záloha + ověření + marker.
+    4. Spustit migrace / ``create_all``.
+    5. Dokončit AUDIT-SNAPSHOT-0 marker (čistá instalace).
+    6. Označit přechod 3.1→3.2 jako dokončený (záloha se nemaže).
     """
     from core.database.database_initializer import initialize_database
     from core.services.storage_service import storage_service
+    from moduly.audity.sluzby.audit_snapshot_schema_migration import (
+        needs_audit_snapshot_schema,
+        prepare_audit_snapshot_schema,
+    )
 
     if workspace_root is None or database_path is None:
         storage_service.ensure_structure()
@@ -255,6 +291,16 @@ def prepare_database_for_startup(
             f"Záloha: {backup or '(nenalezena)'}"
         )
 
+    # AUDIT-SNAPSHOT-0 před create_all — zabrání vzniku tabulky bez zálohy.
+    if needs_audit_snapshot_schema(database_path):
+        prepare_audit_snapshot_schema(
+            workspace_root=workspace_root,
+            database_path=database_path,
+            settings_path=settings_path,
+        )
+
+    result: PrepareDatabaseResult
+
     # Čistá instalace / už migrovaná DB – jen idempotentní initialize.
     if not needs_legacy_upgrade_to_risk_registry(database_path):
         init()
@@ -267,23 +313,60 @@ def prepare_database_for_startup(
             mark_migration_complete(
                 workspace_root, backup_path=None, transition_id=transition_id
             )
-        return PrepareDatabaseResult(
+        result = PrepareDatabaseResult(
             migrated=False,
             pre_migration_backup_path=None,
             skipped_reason="no_legacy_upgrade_needed",
         )
+    elif (
+        is_transition_complete(workspace_root, transition_id)
+        and not needs_legacy_upgrade_to_risk_registry(database_path)
+    ):
+        # Defenzivní větev (prakticky nedosažitelná po prvním if).
+        init()
+        result = PrepareDatabaseResult(
+            migrated=False,
+            pre_migration_backup_path=None,
+            skipped_reason="transition_already_complete",
+        )
+    elif is_transition_complete(workspace_root, transition_id):
+        # Marker hotovo, ale legacy tabulka stále chybí → znovu zálohovat a migrovat.
+        result = _run_legacy_upgrade(
+            workspace_root=workspace_root,
+            database_path=database_path,
+            settings_path=settings_path,
+            backups_dir=backups_dir,
+            init=init,
+            transition_id=transition_id,
+        )
+    else:
+        result = _run_legacy_upgrade(
+            workspace_root=workspace_root,
+            database_path=database_path,
+            settings_path=settings_path,
+            backups_dir=backups_dir,
+            init=init,
+            transition_id=transition_id,
+        )
 
-    # Opakovaný start po úspěchu: transition complete + stále by nemělo být legacy.
-    if is_transition_complete(workspace_root, transition_id):
-        # Defenzivně: marker říká hotovo, ale tabulka chybí → přesto zálohovat.
-        if not needs_legacy_upgrade_to_risk_registry(database_path):
-            init()
-            return PrepareDatabaseResult(
-                migrated=False,
-                pre_migration_backup_path=None,
-                skipped_reason="transition_already_complete",
-            )
+    # Po create_all (nová instalace) dokončit marker AUDIT-SNAPSHOT-0.
+    prepare_audit_snapshot_schema(
+        workspace_root=workspace_root,
+        database_path=database_path,
+        settings_path=settings_path,
+    )
+    return result
 
+
+def _run_legacy_upgrade(
+    *,
+    workspace_root: Path,
+    database_path: Path,
+    settings_path: Path | None,
+    backups_dir: Path,
+    init: InitializeFn,
+    transition_id: str,
+) -> PrepareDatabaseResult:
     target = allocate_pre_migration_backup_path(
         backups_dir, transition_id=transition_id
     )

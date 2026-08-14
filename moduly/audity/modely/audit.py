@@ -32,6 +32,11 @@ class Audit(Base):
     program_visit_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     silne_stranky: Mapped[str] = mapped_column(Text, default="", nullable=False)
 
+    # AUDIT-SNAPSHOT-0: nullable označení snapshotované metodiky (zatím nepoužíváno).
+    methodology_source: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    questions_frozen_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    methodology_generation: Mapped[str | None] = mapped_column(String(80), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,
