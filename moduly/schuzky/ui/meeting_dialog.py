@@ -194,9 +194,9 @@ class MeetingDialog(QDialog):
         self.remind_from_edit.set_date_value(getattr(meeting, "remind_from", None))
 
         self.location_edit.set_location_text(meeting.location or "")
-        self.organizer_selector.set_person_id(meeting.organizer_person_id)
+        self.organizer_selector.set_ref(meeting_service.organizer_ref(meeting))
         self.participants_selector.set_participants(
-            person_ids=meeting_service.parse_participant_ids(meeting),
+            participant_refs=meeting_service.parse_participant_refs(meeting),
             external_participants=meeting_service.parse_external_participants(meeting),
         )
         self.agenda_edit.setPlainText(meeting.agenda or "")
@@ -230,9 +230,9 @@ class MeetingDialog(QDialog):
         self.remind_from_edit.clear_date()
 
         self.location_edit.set_location_text(data.get("location") or "")
-        self.organizer_selector.set_person_id(data.get("organizer_person_id"))
+        self.organizer_selector.set_ref(data.get("organizer_ref"))
         self.participants_selector.set_participants(
-            person_ids=data.get("participant_ids") or [],
+            participant_refs=data.get("participant_refs") or [],
             external_participants=data.get("external_participants") or [],
         )
         self.agenda_edit.setPlainText("")
@@ -257,8 +257,8 @@ class MeetingDialog(QDialog):
             "ends_at": self.ends_at_edit.get_datetime(),
             "remind_from": self.remind_from_edit.get_date(),
             "location": self.location_edit.display_text(),
-            "organizer_person_id": self.organizer_selector.current_person_id(),
-            "participant_ids": self.participants_selector.selected_person_ids(),
+            "organizer_ref": self.organizer_selector.current_ref(),
+            "participant_refs": self.participants_selector.selected_refs(),
             "external_participants": self.participants_selector.external_participants(),
             "agenda": self.agenda_edit.toPlainText(),
             "status": self.status_combo.currentText(),

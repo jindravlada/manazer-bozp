@@ -41,10 +41,12 @@ from core.widgets.thp_worker_selector import ThpWorkerSelector
 from moduly.externi_audity.constants import (
     EXTERNAL_AUDIT_EDITOR_TITLE_EDIT,
     EXTERNAL_AUDIT_EDITOR_TITLE_NEW,
+    EXTERNAL_AUDIT_INVALID_AUDITOR_LABEL_PREFIX,
     EXTERNAL_AUDIT_PARTICIPANT_ROLE_COMPANY_REPRESENTATIVE,
     EXTERNAL_AUDIT_PARTICIPANT_ROLE_EXTERNAL_AUDITOR,
     EXTERNAL_AUDIT_PARTICIPANT_ROLE_INVITED_PERSON,
     EXTERNAL_AUDIT_PARTICIPANT_ROLE_LABELS,
+    EXTERNAL_AUDIT_SOURCE_LEGACY_INVALID,
     EXTERNAL_AUDIT_SOURCE_PERSON,
     EXTERNAL_AUDIT_SOURCE_THP_WORKER,
     EXTERNAL_AUDIT_STATUS_LABELS,
@@ -244,7 +246,7 @@ class ExternalAuditEditorDialog(QDialog):
         self.invited_box, self.invited_list, self.invited_selector = (
             self._participant_group(
                 EXTERNAL_AUDIT_PARTICIPANT_ROLE_INVITED_PERSON,
-                source="person",
+                source="combined",
             )
         )
         layout.addWidget(self.auditor_box)
@@ -258,7 +260,16 @@ class ExternalAuditEditorDialog(QDialog):
         layout = QVBoxLayout(box)
         row = QHBoxLayout()
         if source == "person":
-            selector = PersonSelector(self, include_empty=True, allow_add_new=False)
+            selector = PersonSelector(
+                self,
+                include_empty=True,
+                allow_add_new=False,
+                exclude_thp_linked=True,
+            )
+        elif source == "combined":
+            from moduly.schuzky.ui.meeting_people_widgets import MeetingPersonTypeahead
+
+            selector = MeetingPersonTypeahead(self, include_empty=True)
         else:
             selector = ThpWorkerSelector(self)
         add_btn = QPushButton("Přidat")
@@ -338,7 +349,14 @@ class ExternalAuditEditorDialog(QDialog):
         for role, widget in mapping.items():
             widget.clear()
             for participant in self._draft.participants_for_role(role):
-                item = QListWidgetItem(participant.display_name_snapshot)
+                label = participant.display_name_snapshot or ""
+                if participant.source_type == EXTERNAL_AUDIT_SOURCE_LEGACY_INVALID:
+                    label = (
+                        f"{EXTERNAL_AUDIT_INVALID_AUDITOR_LABEL_PREFIX}: {label}"
+                        if label
+                        else EXTERNAL_AUDIT_INVALID_AUDITOR_LABEL_PREFIX
+                    )
+                item = QListWidgetItem(label)
                 item.setData(Qt.ItemDataRole.UserRole, participant.client_key)
                 widget.addItem(item)
 
@@ -491,7 +509,17 @@ class ExternalAuditEditorDialog(QDialog):
     def _add_participant(
         self, role: str, source: str, selector, list_widget: QListWidget
     ) -> None:
-        if source == "person":
+        if source == "combined":
+            ref = selector.current_ref()
+            if ref is None:
+                return
+            source_type = ref["source_type"]
+            source_id = int(ref["source_id"])
+            from moduly.schuzky.sluzby.meeting_service import meeting_service
+
+            display = meeting_service.resolve_ref_display_name(ref)
+            selector.clear_selection()
+        elif source == "person":
             source_id = selector.current_person_id()
             source_type = EXTERNAL_AUDIT_SOURCE_PERSON
             if source_id is None:

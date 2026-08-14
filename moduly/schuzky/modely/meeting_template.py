@@ -23,6 +23,9 @@ class MeetingTemplate(Base):
     priority: Mapped[str] = mapped_column(String(30), default="Normální", nullable=False)
 
     organizer_person_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    organizer_source_type: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    organizer_source_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # JSON: legacy [person_id, ...] nebo [{"source_type","source_id"}, ...]
     participant_ids_json: Mapped[str] = mapped_column(Text, default="[]")
     external_participants_json: Mapped[str] = mapped_column(Text, default="[]")
 

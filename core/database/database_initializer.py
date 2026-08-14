@@ -272,10 +272,12 @@ def initialize_database() -> None:
     _ensure_meeting_priority_column()
     _ensure_meeting_external_participants_column()
     _ensure_meeting_remind_from_column()
+    _ensure_meeting_organizer_source_columns()
     _ensure_periodic_occurrence_columns()
     _ensure_meeting_event_types_table()
     _ensure_meeting_agenda_items_table()
     _ensure_meeting_templates_table()
+    _ensure_meeting_template_organizer_source_columns()
     _ensure_yearly_plan_repeat_columns()
     _normalize_task_status_values()
     _normalize_meeting_status_values()
@@ -397,6 +399,26 @@ def _ensure_meeting_remind_from_column() -> None:
         return
     if "remind_from" not in columns:
         _add_column("meetings", "remind_from DATE")
+
+
+def _ensure_meeting_organizer_source_columns() -> None:
+    columns = _table_columns("meetings")
+    if not columns:
+        return
+    if "organizer_source_type" not in columns:
+        _add_column("meetings", "organizer_source_type VARCHAR(40)")
+    if "organizer_source_id" not in columns:
+        _add_column("meetings", "organizer_source_id INTEGER")
+
+
+def _ensure_meeting_template_organizer_source_columns() -> None:
+    columns = _table_columns("meeting_templates")
+    if not columns:
+        return
+    if "organizer_source_type" not in columns:
+        _add_column("meeting_templates", "organizer_source_type VARCHAR(40)")
+    if "organizer_source_id" not in columns:
+        _add_column("meeting_templates", "organizer_source_id INTEGER")
 
 
 def _ensure_meeting_event_types_table() -> None:

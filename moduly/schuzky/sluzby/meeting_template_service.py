@@ -41,7 +41,9 @@ class MeetingTemplateService:
         location: str = "",
         priority: str = DEFAULT_MEETING_PRIORITY,
         organizer_person_id: int | None = None,
+        organizer_ref: dict | None = None,
         participant_ids: list[int] | None = None,
+        participant_refs: list[dict] | None = None,
         external_participants: list[dict] | None = None,
         agenda_items: list[dict] | None = None,
     ) -> MeetingTemplate:
@@ -49,14 +51,24 @@ class MeetingTemplateService:
         if not template_name:
             raise MeetingTemplateValidationError("Zadejte název šablony.")
 
+        org = meeting_service._resolve_organizer_input(
+            organizer_ref=organizer_ref,
+            organizer_person_id=organizer_person_id,
+        )
+        refs = meeting_service._resolve_participant_input(
+            participant_refs=participant_refs,
+            participant_ids=participant_ids,
+        )
         template = MeetingTemplate(
             name=template_name,
             event_type=meeting_event_type_service.normalize(event_type),
             title=template_name,
             location=(location or "").strip(),
             priority=meeting_service.normalize_priority(priority),
-            organizer_person_id=organizer_person_id,
-            participant_ids_json=meeting_service._encode_ids(participant_ids),
+            organizer_person_id=org["legacy_person_id"],
+            organizer_source_type=org["source_type"],
+            organizer_source_id=org["source_id"],
+            participant_ids_json=meeting_service._encode_participant_refs(refs),
             external_participants_json=meeting_service._encode_externals(
                 external_participants or []
             ),
@@ -74,7 +86,9 @@ class MeetingTemplateService:
         location: str = "",
         priority: str = DEFAULT_MEETING_PRIORITY,
         organizer_person_id: int | None = None,
+        organizer_ref: dict | None = None,
         participant_ids: list[int] | None = None,
+        participant_refs: list[dict] | None = None,
         external_participants: list[dict] | None = None,
         agenda_items: list[dict] | None = None,
     ) -> MeetingTemplate:
@@ -86,13 +100,24 @@ class MeetingTemplateService:
         if not template_name:
             raise MeetingTemplateValidationError("Zadejte název šablony.")
 
+        org = meeting_service._resolve_organizer_input(
+            organizer_ref=organizer_ref,
+            organizer_person_id=organizer_person_id,
+        )
+        refs = meeting_service._resolve_participant_input(
+            participant_refs=participant_refs,
+            participant_ids=participant_ids,
+        )
+
         template.name = template_name
         template.event_type = meeting_event_type_service.normalize(event_type)
         template.title = template_name
         template.location = (location or "").strip()
         template.priority = meeting_service.normalize_priority(priority)
-        template.organizer_person_id = organizer_person_id
-        template.participant_ids_json = meeting_service._encode_ids(participant_ids)
+        template.organizer_person_id = org["legacy_person_id"]
+        template.organizer_source_type = org["source_type"]
+        template.organizer_source_id = org["source_id"]
+        template.participant_ids_json = meeting_service._encode_participant_refs(refs)
         template.external_participants_json = meeting_service._encode_externals(
             external_participants or []
         )
@@ -109,6 +134,28 @@ class MeetingTemplateService:
     def parse_participant_ids(self, template: MeetingTemplate) -> list[int]:
         return meeting_service.parse_participant_ids(
             type("Obj", (), {"participant_ids_json": template.participant_ids_json})()
+        )
+
+    def parse_participant_refs(self, template: MeetingTemplate) -> list[dict]:
+        return meeting_service.parse_participant_refs(
+            type("Obj", (), {"participant_ids_json": template.participant_ids_json})()
+        )
+
+    def organizer_ref(self, template: MeetingTemplate) -> dict | None:
+        return meeting_service.organizer_ref(
+            type(
+                "Obj",
+                (),
+                {
+                    "organizer_source_type": getattr(
+                        template, "organizer_source_type", None
+                    ),
+                    "organizer_source_id": getattr(
+                        template, "organizer_source_id", None
+                    ),
+                    "organizer_person_id": template.organizer_person_id,
+                },
+            )()
         )
 
     def parse_external_participants(self, template: MeetingTemplate) -> list[dict]:
@@ -168,8 +215,8 @@ class MeetingTemplateService:
             "starts_at": None,
             "ends_at": None,
             "location": template.location or "",
-            "organizer_person_id": template.organizer_person_id,
-            "participant_ids": self.parse_participant_ids(template),
+            "organizer_ref": self.organizer_ref(template),
+            "participant_refs": self.parse_participant_refs(template),
             "external_participants": self.parse_external_participants(template),
             "agenda": "",
             "status": DEFAULT_MEETING_STATUS,

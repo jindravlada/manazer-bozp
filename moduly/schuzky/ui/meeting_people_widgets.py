@@ -1,4 +1,4 @@
-"""Výběr organizátora a účastníků události (našeptávač THP + Osoby → person_id)."""
+"""Výběr organizátora a účastníků události (THP + Osoby → source_type + source_id)."""
 
 from __future__ import annotations
 
@@ -14,58 +14,70 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from PySide6.QtWidgets import QCompleter
 
 from core.utils.czech_sort import czech_sorted, person_display_name_sort_key
 from core.widgets.person_selector import PersonSelector
 from core.widgets.search_combo_box import SearchComboBox
 from moduly.nastaveni.sluzby.person_service import person_service
+from moduly.nastaveni.sluzby.person_thp_link import (
+    find_thp_worker_for_person,
+    person_list_label,
+)
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.schuzky.constants import (
     ACTION_ADD_EXTERNAL_PARTICIPANT,
     ACTION_EDIT,
     ACTION_REMOVE,
 )
-from moduly.schuzky.sluzby.meeting_person_link import (
-    ensure_person_for_thp_worker,
-    person_list_label,
+from moduly.schuzky.sluzby.meeting_participant_ref import (
+    MEETING_SOURCE_PERSON,
+    MEETING_SOURCE_THP_WORKER,
+    normalize_participant_ref,
+    ref_key,
 )
 from moduly.schuzky.sluzby.meeting_service import meeting_service
-from moduly.schuzky.ui.external_participant_dialog import ExternalParticipantDialog
-from PySide6.QtWidgets import QCompleter
 
 
 class MeetingPersonTypeahead(SearchComboBox):
-    """Našeptávač současně nad aktivními THP i Osobami; ukládá person_id."""
+    """Našeptávač nad aktivními THP i skutečnými Osobami; ukládá source_type + source_id.
+
+    Read-only načtení: nevytváří Person záznamy z THP.
+    """
 
     def __init__(self, parent=None, *, include_empty: bool = True):
         super().__init__(values=[], parent=parent, allow_custom_value=False)
         self.include_empty = include_empty
-        self._person_ids_by_label: dict[str, int] = {}
+        self._refs_by_label: dict[str, dict] = {}
         self.reload()
 
     def reload(self) -> None:
-        current_id = self.current_person_id()
+        current = self.current_ref()
         self.clear()
-        self._person_ids_by_label = {}
+        self._refs_by_label = {}
 
         if self.include_empty:
             self.addItem("", None)
 
-        seen_ids: set[int] = set()
-        candidates: list[tuple[str, int]] = []
+        candidates: list[tuple[str, dict]] = []
 
         for worker in settings_service.get_workers(include_inactive=False):
-            person = ensure_person_for_thp_worker(worker)
-            if person.id in seen_ids:
-                continue
-            seen_ids.add(person.id)
-            candidates.append((worker.display_name or person.display_name, person.id))
+            ref = {
+                "source_type": MEETING_SOURCE_THP_WORKER,
+                "source_id": int(worker.id),
+            }
+            label = worker.display_name or f"THP #{worker.id}"
+            candidates.append((label, ref))
 
         for person in person_service.get_all(include_inactive=False):
-            if person.id in seen_ids:
+            # Nezobrazovat mirror THP v persons – jen skutečné externí/samostatné osoby.
+            if find_thp_worker_for_person(person) is not None:
                 continue
-            seen_ids.add(person.id)
-            candidates.append((person.display_name, person.id))
+            ref = {
+                "source_type": MEETING_SOURCE_PERSON,
+                "source_id": int(person.id),
+            }
+            candidates.append((person.display_name, ref))
 
         candidates = czech_sorted(
             candidates,
@@ -73,9 +85,9 @@ class MeetingPersonTypeahead(SearchComboBox):
         )
 
         names: list[str] = []
-        for label, person_id in candidates:
-            self._person_ids_by_label[label] = person_id
-            self.addItem(label, person_id)
+        for label, ref in candidates:
+            self._refs_by_label[label] = ref
+            self.addItem(label, ref)
             names.append(label)
 
         completer = QCompleter(names, self)
@@ -84,52 +96,55 @@ class MeetingPersonTypeahead(SearchComboBox):
         completer.setCompletionMode(QCompleter.PopupCompletion)
         self.setCompleter(completer)
 
-        if current_id is not None:
-            self.set_person_id(current_id)
+        if current is not None:
+            self.set_ref(current)
         elif self.include_empty:
             self.setCurrentIndex(0)
 
-    def current_person_id(self) -> int | None:
+    def current_ref(self) -> dict | None:
         data = self.currentData()
-        if isinstance(data, int):
-            return data
+        ref = normalize_participant_ref(data) if data is not None else None
+        if ref is not None:
+            return ref
         text = self.currentText().strip()
-        person_id = self._person_ids_by_label.get(text)
-        if person_id is not None:
-            return person_id
-        for i in range(self.count()):
-            if self.itemText(i).strip() == text:
-                item_data = self.itemData(i)
-                return item_data if isinstance(item_data, int) else None
-        return None
+        mapped = self._refs_by_label.get(text)
+        return normalize_participant_ref(mapped) if mapped else None
+
+    def current_person_id(self) -> int | None:
+        """Zpětná kompatibilita: Person ID, pokud je zdroj person."""
+        ref = self.current_ref()
+        if ref is None or ref["source_type"] != MEETING_SOURCE_PERSON:
+            return None
+        return int(ref["source_id"])
+
+    def set_ref(self, ref: dict | None) -> None:
+        normalized = normalize_participant_ref(ref) if ref else None
+        if normalized is None:
+            if self.include_empty:
+                self.setCurrentIndex(0)
+            else:
+                self.setCurrentText("")
+            return
+
+        for index in range(self.count()):
+            item_ref = normalize_participant_ref(self.itemData(index))
+            if item_ref and ref_key(item_ref) == ref_key(normalized):
+                self.setCurrentIndex(index)
+                return
+
+        label = meeting_service.resolve_ref_display_name(normalized)
+        self._refs_by_label[label] = normalized
+        self.addItem(label, normalized)
+        self.setCurrentIndex(self.count() - 1)
 
     def set_person_id(self, person_id: int | None) -> None:
+        """Legacy: nastaví Person ref."""
         if person_id is None:
-            if self.include_empty:
-                self.setCurrentIndex(0)
-            else:
-                self.setCurrentText("")
+            self.set_ref(None)
             return
-
-        index = self.findData(person_id)
-        if index >= 0:
-            self.setCurrentIndex(index)
-            return
-
-        person = person_service.get_by_id(person_id)
-        if person is None:
-            if self.include_empty:
-                self.setCurrentIndex(0)
-            else:
-                self.setCurrentText("")
-            return
-
-        label = person.display_name
-        if not person.active:
-            label = f"{label} (neaktivní)"
-        self._person_ids_by_label[label] = person.id
-        self.addItem(label, person.id)
-        self.setCurrentIndex(self.count() - 1)
+        self.set_ref(
+            {"source_type": MEETING_SOURCE_PERSON, "source_id": int(person_id)}
+        )
 
     def clear_selection(self) -> None:
         if self.include_empty:
@@ -153,30 +168,48 @@ class MeetingOrganizerWidget(QWidget):
         layout.addWidget(self.typeahead, 1)
         layout.addWidget(self.from_persons_btn)
 
-        # Zpětná kompatibilita testů UX-3.
         self.thp_selector = self.typeahead
         self.person_label = QLabel("")
         self.person_label.setVisible(False)
 
         self.from_persons_btn.clicked.connect(self._pick_from_persons)
 
+    def current_ref(self) -> dict | None:
+        return self.typeahead.current_ref()
+
     def current_person_id(self) -> int | None:
         return self.typeahead.current_person_id()
+
+    def set_ref(self, ref: dict | None) -> None:
+        self.typeahead.set_ref(ref)
 
     def set_person_id(self, person_id: int | None) -> None:
         self.typeahead.set_person_id(person_id)
 
     def _pick_from_persons(self) -> None:
-        dialog = _SinglePersonPickDialog(self, current_id=self.current_person_id())
+        current = self.current_ref()
+        current_person_id = (
+            int(current["source_id"])
+            if current and current["source_type"] == MEETING_SOURCE_PERSON
+            else None
+        )
+        dialog = _SinglePersonPickDialog(self, current_id=current_person_id)
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return
-        self.set_person_id(dialog.selected_person_id())
+        person_id = dialog.selected_person_id()
+        if person_id is None:
+            self.set_ref(None)
+        else:
+            self.set_ref(
+                {"source_type": MEETING_SOURCE_PERSON, "source_id": int(person_id)}
+            )
 
 
 class MeetingParticipantsWidget(QWidget):
     """Jeden seznam účastníků; interní (THP/Osoby) + externí."""
 
-    _KIND_PERSON = "person"
+    _KIND_REF = "ref"
+    _KIND_PERSON = "person"  # legacy payload
     _KIND_EXTERNAL = "external"
 
     def __init__(self, parent=None):
@@ -210,14 +243,20 @@ class MeetingParticipantsWidget(QWidget):
         self.remove_btn.clicked.connect(self.remove_selected)
         self.list_widget.itemDoubleClicked.connect(self._on_item_double_clicked)
 
-        # Zpětná kompatibilita starších akcí.
         self.add_thp_btn = QPushButton("Přidat THP")
         self.add_person_btn = QPushButton("Přidat osobu")
         self.add_thp_btn.setVisible(False)
         self.add_person_btn.setVisible(False)
 
+    def selected_refs(self) -> list[dict]:
+        return self._list_refs()
+
     def selected_person_ids(self) -> list[int]:
-        return self._list_person_ids()
+        return [
+            int(ref["source_id"])
+            for ref in self._list_refs()
+            if ref["source_type"] == MEETING_SOURCE_PERSON
+        ]
 
     def external_participants(self) -> list[dict]:
         return meeting_service.normalize_external_participants(self._list_externals())
@@ -229,15 +268,29 @@ class MeetingParticipantsWidget(QWidget):
         self,
         *,
         person_ids: list[int] | tuple[int, ...] | None = None,
+        participant_refs: list[dict] | None = None,
         external_participants: list[dict] | None = None,
     ) -> None:
         self.list_widget.clear()
-        for person_id in person_ids or ():
-            self._append_person_id(int(person_id))
-        for item in meeting_service.normalize_external_participants(external_participants):
+        if participant_refs is not None:
+            for ref in participant_refs:
+                self._append_ref(ref)
+        else:
+            for person_id in person_ids or ():
+                self._append_ref(
+                    {
+                        "source_type": MEETING_SOURCE_PERSON,
+                        "source_id": int(person_id),
+                    }
+                )
+        for item in meeting_service.normalize_external_participants(
+            external_participants
+        ):
             self._append_external(item)
 
     def add_external(self) -> None:
+        from moduly.schuzky.ui.external_participant_dialog import ExternalParticipantDialog
+
         dialog = ExternalParticipantDialog(self)
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return
@@ -257,6 +310,8 @@ class MeetingParticipantsWidget(QWidget):
         self._edit_item(item)
 
     def _edit_item(self, item: QListWidgetItem) -> None:
+        from moduly.schuzky.ui.external_participant_dialog import ExternalParticipantDialog
+
         payload = item.data(Qt.ItemDataRole.UserRole)
         if not isinstance(payload, dict) or payload.get("kind") != self._KIND_EXTERNAL:
             return
@@ -277,31 +332,35 @@ class MeetingParticipantsWidget(QWidget):
         self._add_current()
 
     def _add_current(self) -> None:
-        person_id = self.typeahead.current_person_id()
-        if person_id is None:
+        ref = self.typeahead.current_ref()
+        if ref is None:
             return
-        self._append_person_id(person_id)
+        self._append_ref(ref)
         self.typeahead.clear_selection()
 
-    def _list_person_ids(self) -> list[int]:
-        ids: list[int] = []
+    def _list_refs(self) -> list[dict]:
+        refs: list[dict] = []
         for index in range(self.list_widget.count()):
             item = self.list_widget.item(index)
             payload = item.data(Qt.ItemDataRole.UserRole)
-            if isinstance(payload, dict):
-                if payload.get("kind") != self._KIND_PERSON:
-                    continue
+            if not isinstance(payload, dict):
+                continue
+            kind = payload.get("kind")
+            if kind == self._KIND_REF:
+                ref = normalize_participant_ref(payload.get("ref"))
+                if ref:
+                    refs.append(ref)
+            elif kind == self._KIND_PERSON:
                 try:
-                    ids.append(int(payload.get("person_id")))
+                    refs.append(
+                        {
+                            "source_type": MEETING_SOURCE_PERSON,
+                            "source_id": int(payload.get("person_id")),
+                        }
+                    )
                 except (TypeError, ValueError):
                     continue
-            elif payload is not None:
-                # Legacy: přímo person_id
-                try:
-                    ids.append(int(payload))
-                except (TypeError, ValueError):
-                    continue
-        return ids
+        return refs
 
     def _list_externals(self) -> list[dict]:
         result: list[dict] = []
@@ -315,16 +374,36 @@ class MeetingParticipantsWidget(QWidget):
                 result.append(data)
         return result
 
-    def _append_person_id(self, person_id: int) -> None:
-        if person_id in self._list_person_ids():
+    def _append_ref(self, ref: dict | None) -> None:
+        normalized = normalize_participant_ref(ref)
+        if normalized is None:
             return
-        person = person_service.get_by_id(person_id)
-        item = QListWidgetItem(person_list_label(person, fallback_id=person_id))
+        key = ref_key(normalized)
+        if key in {ref_key(existing) for existing in self._list_refs()}:
+            return
+        label = meeting_service.resolve_ref_display_name(normalized)
+        if normalized["source_type"] == MEETING_SOURCE_PERSON:
+            person = person_service.get_by_id(normalized["source_id"])
+            label = person_list_label(person, fallback_id=normalized["source_id"])
+        elif normalized["source_type"] == MEETING_SOURCE_THP_WORKER:
+            worker = settings_service.get_worker_by_id(normalized["source_id"])
+            if worker is not None:
+                parts = [worker.display_name]
+                detail = (worker.position or "").strip()
+                if detail:
+                    parts.append(detail)
+                label = " – ".join(parts)
+        item = QListWidgetItem(label)
         item.setData(
             Qt.ItemDataRole.UserRole,
-            {"kind": self._KIND_PERSON, "person_id": int(person_id)},
+            {"kind": self._KIND_REF, "ref": normalized},
         )
         self.list_widget.addItem(item)
+
+    def _append_person_id(self, person_id: int) -> None:
+        self._append_ref(
+            {"source_type": MEETING_SOURCE_PERSON, "source_id": int(person_id)}
+        )
 
     def _append_external(self, data: dict) -> None:
         normalized = meeting_service.normalize_external_participants([data])
@@ -349,6 +428,7 @@ class _SinglePersonPickDialog(QDialog):
             include_empty=True,
             allow_add_new=True,
             include_inactive=False,
+            exclude_thp_linked=True,
         )
         if current_id is not None:
             self.selector.set_person_id(current_id)

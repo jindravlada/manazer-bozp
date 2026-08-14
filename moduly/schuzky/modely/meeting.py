@@ -24,8 +24,12 @@ class Meeting(Base):
     location: Mapped[str] = mapped_column(String(250), default="")
 
     organizer_person_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # PERSON-THP-SEPARATION-1: přímý polymorfní odkaz (person | thp_worker).
+    organizer_source_type: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    organizer_source_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     organizer_name: Mapped[str] = mapped_column(String(200), default="")
 
+    # JSON: legacy [person_id, ...] nebo [{"source_type","source_id"}, ...]
     participant_ids_json: Mapped[str] = mapped_column(Text, default="[]")
     participant_names: Mapped[str] = mapped_column(Text, default="")
     # Externí účastníci jen k této události (JSON pole objektů).

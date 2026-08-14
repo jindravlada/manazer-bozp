@@ -405,6 +405,18 @@ def prepare_database_for_startup(
             settings_path=settings_path,
         )
 
+    from moduly.nastaveni.sluzby.person_thp_separation_migration import (
+        needs_person_thp_separation,
+        prepare_person_thp_separation,
+    )
+
+    if needs_person_thp_separation(database_path):
+        prepare_person_thp_separation(
+            workspace_root=workspace_root,
+            database_path=database_path,
+            settings_path=settings_path,
+        )
+
     result: PrepareDatabaseResult
 
     # Čistá instalace / už migrovaná DB – jen idempotentní initialize.
@@ -527,6 +539,16 @@ def prepare_database_for_startup(
     )
 
     prepare_external_audit_ea_0_schema(
+        workspace_root=workspace_root,
+        database_path=database_path,
+        settings_path=settings_path,
+    )
+
+    from moduly.nastaveni.sluzby.person_thp_separation_migration import (
+        prepare_person_thp_separation,
+    )
+
+    prepare_person_thp_separation(
         workspace_root=workspace_root,
         database_path=database_path,
         settings_path=settings_path,

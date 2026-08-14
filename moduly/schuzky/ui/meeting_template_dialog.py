@@ -112,9 +112,11 @@ class MeetingTemplateDialog(QDialog):
             self.priority_combo.setCurrentText(priority)
 
         self.location_edit.set_location_text(template.location or "")
-        self.organizer_selector.set_person_id(template.organizer_person_id)
+        self.organizer_selector.set_ref(
+            meeting_template_service.organizer_ref(template)
+        )
         self.participants_selector.set_participants(
-            person_ids=meeting_template_service.parse_participant_ids(template),
+            participant_refs=meeting_template_service.parse_participant_refs(template),
             external_participants=meeting_template_service.parse_external_participants(
                 template
             ),
@@ -131,8 +133,8 @@ class MeetingTemplateDialog(QDialog):
             "title": name,
             "location": self.location_edit.display_text(),
             "priority": self.priority_combo.currentText(),
-            "organizer_person_id": self.organizer_selector.current_person_id(),
-            "participant_ids": self.participants_selector.selected_person_ids(),
+            "organizer_ref": self.organizer_selector.current_ref(),
+            "participant_refs": self.participants_selector.selected_refs(),
             "external_participants": self.participants_selector.external_participants(),
             "agenda_items": self.agenda_items_widget.get_items(),
         }

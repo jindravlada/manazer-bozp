@@ -479,13 +479,14 @@ class ExternalAuditEa0ServiceTestCase(unittest.TestCase):
                 source_type=EXTERNAL_AUDIT_SOURCE_PERSON,
                 source_id=self.person.id,
             )
-        with self.assertRaises(ExternalAuditError):
-            external_audit_service.add_participant(
-                audit.id,
-                role=EXTERNAL_AUDIT_PARTICIPANT_ROLE_INVITED_PERSON,
-                source_type=EXTERNAL_AUDIT_SOURCE_THP_WORKER,
-                source_id=self.thp.id,
-            )
+        # Přizvaná osoba může být i THP (PERSON-THP-SEPARATION-1)
+        invited_thp = external_audit_service.add_participant(
+            audit.id,
+            role=EXTERNAL_AUDIT_PARTICIPANT_ROLE_INVITED_PERSON,
+            source_type=EXTERNAL_AUDIT_SOURCE_THP_WORKER,
+            source_id=self.thp.id,
+        )
+        self.assertEqual(invited_thp.source_type, EXTERNAL_AUDIT_SOURCE_THP_WORKER)
 
         foreign = external_audit_service.add_participant(
             other.id,

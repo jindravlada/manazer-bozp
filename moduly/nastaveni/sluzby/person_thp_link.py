@@ -34,6 +34,11 @@ def find_person_matching_thp(worker: ThpWorker) -> Person | None:
 
 
 def ensure_person_for_thp_worker(worker: ThpWorker) -> Person:
+    """LEGACY – nevytvářet z produkčního UI.
+
+    Zachováno pro starší testy / jednorázovou diagnostiku.
+    PERSON-THP-SEPARATION-1: Schůzky už tuto funkci nevolají.
+    """
     existing = find_person_matching_thp(worker)
     if existing is not None:
         return existing

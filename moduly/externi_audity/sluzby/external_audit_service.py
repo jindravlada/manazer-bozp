@@ -24,8 +24,12 @@ from moduly.externi_audity.constants import (
     EXTERNAL_AUDIT_FINDING_TYPE_NONCONFORMITY,
     EXTERNAL_AUDIT_FINDING_TYPE_STRENGTH,
     EXTERNAL_AUDIT_FINDING_TYPES,
+    EXTERNAL_AUDIT_INVALID_AUDITOR_LABEL_PREFIX,
+    EXTERNAL_AUDIT_INVALID_AUDITOR_SAVE_MESSAGE,
+    EXTERNAL_AUDIT_PARTICIPANT_ROLE_EXTERNAL_AUDITOR,
     EXTERNAL_AUDIT_PARTICIPANT_ROLES,
     EXTERNAL_AUDIT_ROLE_SOURCE_TYPES,
+    EXTERNAL_AUDIT_SOURCE_LEGACY_INVALID,
     EXTERNAL_AUDIT_SOURCE_PERSON,
     EXTERNAL_AUDIT_SOURCE_THP_WORKER,
     EXTERNAL_AUDIT_STATUS_LABELS,
@@ -188,17 +192,31 @@ def _resolve_participant_source(
     role: str,
     source_type: str,
     source_id: int,
+    display_name_snapshot: str | None = None,
+    allow_legacy_invalid: bool = False,
 ) -> tuple[str, int, str]:
     role_value = str(role or "").strip()
     if role_value not in EXTERNAL_AUDIT_PARTICIPANT_ROLES:
         raise ExternalAuditError(f"Neplatná role účastníka: {role!r}")
-    expected_source = EXTERNAL_AUDIT_ROLE_SOURCE_TYPES[role_value]
+    allowed = EXTERNAL_AUDIT_ROLE_SOURCE_TYPES[role_value]
     source_value = str(source_type or "").strip()
-    if source_value != expected_source:
+    if source_value not in allowed:
         raise ExternalAuditError(
-            f"Role {role_value} vyžaduje zdroj {expected_source}, "
+            f"Role {role_value} vyžaduje zdroj z {sorted(allowed)}, "
             f"dostáno {source_value!r}."
         )
+
+    if source_value == EXTERNAL_AUDIT_SOURCE_LEGACY_INVALID:
+        if not allow_legacy_invalid:
+            raise ExternalAuditError(
+                "Neplatný externí auditor musí být nahrazen skutečnou Osobou."
+            )
+        snapshot = str(display_name_snapshot or "").strip()
+        if not snapshot:
+            snapshot = EXTERNAL_AUDIT_INVALID_AUDITOR_LABEL_PREFIX
+        # source_id 0 = žádný živý odkaz
+        return source_value, 0, snapshot
+
     sid = int(source_id)
     if sid <= 0:
         raise ExternalAuditError("Neplatné source_id účastníka.")
@@ -207,6 +225,14 @@ def _resolve_participant_source(
         person = person_service.get_by_id(sid)
         if person is None:
             raise ExternalAuditError(f"Osoba id={sid} neexistuje.")
+        # Externí auditor nesmí být mirror THP (ochrana runtime)
+        if role_value == EXTERNAL_AUDIT_PARTICIPANT_ROLE_EXTERNAL_AUDITOR:
+            from moduly.nastaveni.sluzby.person_thp_link import find_thp_worker_for_person
+
+            if find_thp_worker_for_person(person) is not None:
+                raise ExternalAuditError(
+                    "Externí auditor musí být skutečná Osoba, ne THP pracovník."
+                )
         display = str(getattr(person, "display_name", None) or person.full_name or "").strip()
         if not display:
             display = f"Osoba #{sid}"
@@ -1054,6 +1080,12 @@ class ExternalAuditService:
         # Validace účastníků (role/zdroj) a duplicit ve skupině.
         seen_role_source: set[tuple[str, str, int]] = set()
         for participant in draft.participants:
+            if str(participant.source_type or "").strip() == EXTERNAL_AUDIT_SOURCE_LEGACY_INVALID:
+                raise ExternalAuditError(
+                    EXTERNAL_AUDIT_INVALID_AUDITOR_SAVE_MESSAGE.format(
+                        name=str(participant.display_name_snapshot or "").strip() or "—"
+                    )
+                )
             source_type, source_id, display = _resolve_participant_source(
                 role=participant.role,
                 source_type=participant.source_type,
