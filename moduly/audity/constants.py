@@ -131,12 +131,19 @@ AUDIT_INTRO_FIRST_AUDIT_MESSAGE = (
     "Historie předchozích auditů zatím není k dispozici."
 )
 AUDIT_INTRO_CHANGES_LABEL = "Změny od posledního auditu"
+AUDIT_INTRO_CHANGES_EMPTY = "Změny od posledního auditu nebyly uvedeny."
 AUDIT_INTRO_NO_WORKPLACE_HINT = (
     "Úvod bude dostupný po výběru auditovaného provozu."
 )
 AUDIT_INTRO_PREVIOUS_AUDITS_GROUP = "Předchozí audity"
 AUDIT_INTRO_FINDINGS_GROUP = "Zjištění z předchozích auditů"
 AUDIT_INTRO_TASKS_GROUP = "Úkoly z předchozích auditů"
+AUDIT_INTRO_NO_HISTORICAL_FINDINGS = "Žádná zjištění z předchozích auditů."
+AUDIT_INTRO_NO_HISTORICAL_TASKS = (
+    "Žádné úkoly navázané na zjištění z předchozích auditů."
+)
+AUDIT_INTRO_CONTINUITY_SECTION = "Návaznost na předchozí audity"
+AUDIT_INTRO_EXPORT_SECTION = "Úvod"
 
 MOVE_TO_TERRAIN_LABEL = "→ Terén"
 MOVE_TO_DOCUMENTATION_LABEL = "→ Dokumentace"

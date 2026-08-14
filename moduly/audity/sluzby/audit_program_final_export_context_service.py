@@ -27,6 +27,7 @@ from moduly.audity.sluzby.audit_annual_export_context_service import (
     audit_annual_export_context_service,
 )
 from moduly.audity.sluzby.audit_annual_program_service import audit_annual_program_service
+from moduly.audity.sluzby.audit_intro_export_service import audit_intro_export_service
 from moduly.audity.sluzby.audit_process_maturity_history_service import (
     TREND_DECLINING,
     TREND_IMPROVING,
@@ -116,6 +117,7 @@ class AuditProgramFinalReportContext:
     corrective_measures_text: str
     previous_program_comparison_text: str
     continuity_text: str
+    continuity_previous_audits_text: str = ""
     appendices: dict[str, str] = field(default_factory=dict)
 
     def placeholder_values(self) -> dict[str, str]:
@@ -131,6 +133,7 @@ class AuditProgramFinalReportContext:
             "datum_vytvoreni": datetime.now().strftime("%d.%m.%Y"),
             "datum_vygenerovani": datetime.now().strftime("%d.%m.%Y"),
             "navaznost_programu_text": self.continuity_text,
+            "navaznost_predchozi_audity_text": self.continuity_previous_audits_text,
             "celkove_hodnoceni_nadpis": _overall_rating_heading(self.overall_rating_emoji),
             "celkove_hodnoceni_text": self.overall_assessment_text,
             "splneni_programu_text": self.program_fulfillment_text,
@@ -240,6 +243,9 @@ class AuditProgramFinalExportContextService:
                 years,
             ),
             continuity_text=self._build_continuity_text(program),
+            continuity_previous_audits_text=(
+                audit_intro_export_service.build_continuity_text_for_audits(audits)
+            ),
             appendices=appendices.to_placeholders(),
         )
 

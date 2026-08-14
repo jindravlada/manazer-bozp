@@ -43,6 +43,7 @@ from moduly.audity.constants import (
 from moduly.audity.modely.audit import Audit
 from moduly.audity.repository.audit_program_repository import AuditProgramRepository
 from moduly.audity.sluzby.audit_commission_service import audit_commission_service
+from moduly.audity.sluzby.audit_intro_export_service import audit_intro_export_service
 from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
 from moduly.audity.sluzby.audit_program_service import audit_program_service
 from moduly.audity.sluzby.audit_question_source_service import (
@@ -1043,6 +1044,10 @@ class AuditExportContext:
             )
         return sentence
 
+    def intro_text(self) -> str:
+        """Sekce Úvod — pouze podrobná zpráva (AUDIT-INTRO-2)."""
+        return audit_intro_export_service.build_detailed_intro_text(self.audit)
+
     def placeholder_values(self) -> dict[str, Any]:
         executive_summary = self.executive_summary_text()
         results_overview = self.results_overview_text()
@@ -1057,7 +1062,7 @@ class AuditExportContext:
             signatures = ""
             union_signature = ""
 
-        return {
+        values: dict[str, Any] = {
             "cislo_auditu": _text(self.audit.number),
             "zamestnavatel_nazev": self.employer_name(),
             "pracoviste": _text(self.audit.workplace_name),
@@ -1107,6 +1112,10 @@ class AuditExportContext:
             "souhrn_text": executive_summary,
             "datum_vygenerovani": datetime.now().strftime("%d.%m.%Y"),
         }
+        # Úvod jen do podrobné zprávy — Protokol / checklist se nepropisují.
+        if self.config.detailed_assertions_appendix:
+            values["uvod_text"] = self.intro_text()
+        return values
 
 
 class AuditExportContextService:

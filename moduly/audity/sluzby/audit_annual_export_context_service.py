@@ -35,6 +35,7 @@ from core.shared.sluzby.performance_evaluation_methodology_service import (
 )
 from moduly.audity.sluzby.audit_attention_problem_normalizer import normalize_attention_problem
 from moduly.audity.sluzby.audit_annual_program_service import audit_annual_program_service
+from moduly.audity.sluzby.audit_intro_export_service import audit_intro_export_service
 from moduly.audity.sluzby.audit_process_maturity_history_service import (
     audit_process_maturity_history_service,
 )
@@ -468,6 +469,7 @@ class AuditAnnualReportContext:
     manual: AuditAnnualManualContent
     attention_areas_text: str
     overall_assessment_text: str
+    continuity_previous_audits_text: str = ""
     extension_placeholders: dict[str, str] = field(default_factory=dict)
 
     def placeholder_values(self) -> dict[str, str]:
@@ -497,6 +499,7 @@ class AuditAnnualReportContext:
             "slabe_procesy_text": self.process_maturity.weak_processes_text() or "—",
             "auditni_program_nazev": self.audit_program_name or "—",
             "trendy_procesu_text": self.process_maturity.trends_text,
+            "navaznost_predchozi_audity_text": self.continuity_previous_audits_text,
         }
         values.update(
             self.metrics.to_placeholders(
@@ -570,6 +573,9 @@ class AuditAnnualExportContextService:
             process_maturity=process_maturity,
             history=history,
         )
+        continuity_previous_audits_text = (
+            audit_intro_export_service.build_continuity_text_for_audits(audits)
+        )
         return AuditAnnualReportContext(
             year=year,
             audit_program_id=program_id,
@@ -593,6 +599,7 @@ class AuditAnnualExportContextService:
             overall_assessment_text=self._overall_assessment_text(
                 severity, overall_rating, methodology, process_maturity
             ),
+            continuity_previous_audits_text=continuity_previous_audits_text,
             extension_placeholders=self._reserved_extension_placeholders(history),
         )
 

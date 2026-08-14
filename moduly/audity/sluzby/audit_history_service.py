@@ -1,4 +1,4 @@
-"""Historie provozu pro záložku Úvod (AUDIT-INTRO-1).
+"""Historie provozu pro záložku Úvod (AUDIT-INTRO-1 / AUDIT-INTRO-2).
 
 Bez N+1: audity jedním dotazem, zjištění a úkoly hromadně.
 Nevolá ensure_catalogs / get_knowledge_tree.
@@ -6,6 +6,7 @@ Nevolá ensure_catalogs / get_knowledge_tree.
 
 from __future__ import annotations
 
+from collections.abc import Collection, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime
 
@@ -108,6 +109,28 @@ class WorkplaceHistory:
     is_first_audit: bool = False
 
 
+@dataclass(frozen=True)
+class WorkplaceHistoryContinuityAggregate:
+    """Souhrnné počty historie pro roční / závěrečnou zprávu (AUDIT-INTRO-2).
+
+    Entity se sčítají podle ID pouze jednou (bez duplicit napříč provozy).
+    Připraveno na budoucí rozšíření o provozní zjištění z externích auditů.
+    """
+
+    previous_audits_count: int
+    findings_total_count: int
+    findings_open_count: int
+    findings_resolved_count: int
+    tasks_total_count: int
+    tasks_active_count: int
+    tasks_completed_count: int
+    tasks_canceled_count: int
+
+
+_TASK_STATUS_COMPLETED = "Ukončeno"
+_TASK_STATUS_CANCELED = "Zrušeno"
+
+
 class AuditHistoryService:
     def __init__(self) -> None:
         self.audit_repository = AuditRepository()
@@ -118,6 +141,7 @@ class AuditHistoryService:
         workplace_id: int | None,
         *,
         exclude_audit_id: int | None = None,
+        exclude_audit_ids: Collection[int] | None = None,
         program_id: int | None = None,
         include_process_history: bool = False,
     ) -> WorkplaceHistory:
@@ -127,6 +151,7 @@ class AuditHistoryService:
         audits = self.audit_repository.list_for_workplace(
             workplace_id,
             exclude_audit_id=exclude_audit_id,
+            exclude_audit_ids=exclude_audit_ids,
         )
         if program_id is not None:
             audits = self._filter_audits_for_program(audits, program_id)
@@ -158,6 +183,69 @@ class AuditHistoryService:
             process_history=tuple(process_history),
             summary=summary,
             is_first_audit=is_first,
+        )
+
+    def aggregate_continuity_for_audits(
+        self,
+        audits: Sequence,
+    ) -> WorkplaceHistoryContinuityAggregate:
+        """Agregace historie pro reportované audity — jedno volání na provoz, bez N+1.
+
+        Aktuální audity ze vstupu (a jejich zjištění/úkoly) se do historie nezapočítávají.
+        Stejná entita se napříč provozy započte jen jednou podle ID.
+        """
+        exclude_by_workplace: dict[int, set[int]] = {}
+        for audit in audits:
+            workplace_id = getattr(audit, "workplace_id", None)
+            audit_id = getattr(audit, "id", None)
+            if workplace_id is None or audit_id is None:
+                continue
+            exclude_by_workplace.setdefault(int(workplace_id), set()).add(int(audit_id))
+
+        previous_audit_ids: set[int] = set()
+        finding_ids: set[int] = set()
+        open_finding_ids: set[int] = set()
+        resolved_finding_ids: set[int] = set()
+        task_ids: set[int] = set()
+        active_task_ids: set[int] = set()
+        completed_task_ids: set[int] = set()
+        canceled_task_ids: set[int] = set()
+        resolved_label = finding_status_label(FINDING_STATUS_VYPORADANO)
+
+        for workplace_id, excluded in exclude_by_workplace.items():
+            history = self.get_workplace_history(
+                workplace_id,
+                exclude_audit_ids=excluded,
+                include_process_history=False,
+            )
+            for item in history.previous_audits:
+                previous_audit_ids.add(int(item.audit_id))
+            for item in history.findings:
+                finding_id = int(item.finding_id)
+                finding_ids.add(finding_id)
+                if item.status_label == resolved_label:
+                    resolved_finding_ids.add(finding_id)
+                else:
+                    open_finding_ids.add(finding_id)
+            for item in history.tasks:
+                task_id = int(item.task_id)
+                task_ids.add(task_id)
+                if item.status_label == _TASK_STATUS_COMPLETED:
+                    completed_task_ids.add(task_id)
+                elif item.status_label == _TASK_STATUS_CANCELED:
+                    canceled_task_ids.add(task_id)
+                else:
+                    active_task_ids.add(task_id)
+
+        return WorkplaceHistoryContinuityAggregate(
+            previous_audits_count=len(previous_audit_ids),
+            findings_total_count=len(finding_ids),
+            findings_open_count=len(open_finding_ids),
+            findings_resolved_count=len(resolved_finding_ids),
+            tasks_total_count=len(task_ids),
+            tasks_active_count=len(active_task_ids),
+            tasks_completed_count=len(completed_task_ids),
+            tasks_canceled_count=len(canceled_task_ids),
         )
 
     def _empty_history(self) -> WorkplaceHistory:

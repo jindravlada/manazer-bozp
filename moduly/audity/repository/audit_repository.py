@@ -1,3 +1,4 @@
+from collections.abc import Collection
 from datetime import datetime
 
 from sqlalchemy import select
@@ -36,11 +37,17 @@ class AuditRepository:
         workplace_id: int,
         *,
         exclude_audit_id: int | None = None,
+        exclude_audit_ids: Collection[int] | None = None,
     ) -> list[Audit]:
+        excluded: set[int] = set()
+        if exclude_audit_id is not None:
+            excluded.add(int(exclude_audit_id))
+        if exclude_audit_ids:
+            excluded.update(int(item) for item in exclude_audit_ids)
         with get_session() as session:
             stmt = select(Audit).where(Audit.workplace_id == workplace_id)
-            if exclude_audit_id is not None:
-                stmt = stmt.where(Audit.id != exclude_audit_id)
+            if excluded:
+                stmt = stmt.where(Audit.id.notin_(sorted(excluded)))
             stmt = stmt.order_by(
                 Audit.audit_date.desc(),
                 Audit.finished_at.desc(),

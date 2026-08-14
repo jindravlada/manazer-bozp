@@ -274,6 +274,7 @@ class RocniZpravaAudituExportTestCase(unittest.TestCase):
             "grafy_text",
             "historie_roky_text",
             "program_zprava_rezerva_text",
+            "navaznost_predchozi_audity_text",
         }
         self.assertEqual(set(values.keys()), expected_keys)
 
@@ -301,6 +302,7 @@ class RocniZpravaAudituExportTestCase(unittest.TestCase):
             "Opakované systémové problémy",
             "Účinnost nápravných opatření",
             "Plnění auditního programu",
+            "Návaznost na předchozí audity",
             "Silné stránky systému",
             "Oblasti vyžadující pozornost",
             "Vývoj oproti minulému roku",
