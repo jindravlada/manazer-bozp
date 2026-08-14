@@ -987,6 +987,7 @@ def _ensure_audit_columns() -> None:
         "questions_frozen_at": "questions_frozen_at DATETIME",
         "methodology_generation": "methodology_generation VARCHAR(80)",
         "changes_since_last": "changes_since_last TEXT",
+        "conclusion_text": "conclusion_text TEXT",
         "created_at": "created_at DATETIME",
         "updated_at": "updated_at DATETIME",
     }

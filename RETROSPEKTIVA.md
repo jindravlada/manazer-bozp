@@ -47,6 +47,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 Nové záznamy přidávat níže (nejnovější nahoře).
 
+### 2026-08-14 – AUDIT-CONCLUSION-1
+
+**Co se povedlo:** Povinný uživatelský závěr při business dokončení; podmíněné silné stránky v ODT bez prázdných nadpisů; validace na servisní vrstvě.
+
+**Co už bychom dnes udělali jinak:** Oddělit generovaný `zaver_text` od uživatelského `conclusion_text` dříve, aby nevznikala kolize názvů.
+
+**Co bylo zbytečně složité:** Statický nadpis Silné stránky v ODT vs. podmíněné zobrazení — řešeno OdtRichContent se zabudovaným nadpisem.
+
+**Nové pravidlo:** Závěr je povinný jen při přechodu do dokončeného stavu; historické dokončené audity bez závěru se neblokují.
+
+**Aktualizované dokumenty:** —
+
 ### 2026-08-14 – AUDIT-EXTRAORDINARY-3
 
 **Co se povedlo:** Typ ověření Dokumentace/Terén u mimořádných otázek se znovupoužil ze stávajících konstant; snapshot zmrazuje typ; výstupy (checklist, protokol, podrobná, roční, závěrečná) čtou jen snapshot a legacy bez typu nerozbíjí staré audity.

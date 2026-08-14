@@ -44,6 +44,9 @@ class Audit(Base):
     # AUDIT-INTRO-1: volitelný text změn od posledního auditu (záložka Úvod).
     changes_since_last: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # AUDIT-CONCLUSION-1: uživatelský závěr auditu (povinný při dokončení).
+    conclusion_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,

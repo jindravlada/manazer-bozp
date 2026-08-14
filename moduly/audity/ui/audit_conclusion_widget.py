@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QMessageBox,
     QPushButton,
+    QSizePolicy,
     QTextEdit,
     QVBoxLayout,
     QWidget,
@@ -15,12 +16,14 @@ from PySide6.QtWidgets import (
 from core.widgets.nullable_date_edit import NullableDateEdit
 from moduly.audity.constants import (
     AUDIT_COMPLETION_CONFIRM_MESSAGE,
+    AUDIT_CONCLUSION_LABEL,
+    AUDIT_CONCLUSION_REQUIRED_MESSAGE,
     AUDIT_DETAILED_REPORT_BUTTON_LABEL,
     AUDIT_DETAILED_REPORT_DIALOG_TITLE,
     AUDIT_PROTOCOL_BUTTON_LABEL,
     AUDIT_PROTOCOL_DIALOG_TITLE,
 )
-from moduly.audity.sluzby.audit_service import audit_service
+from moduly.audity.sluzby.audit_service import AuditCompletionError, audit_service
 from moduly.audity.sluzby.protokol_audit_service import protokol_audit_service
 
 
@@ -48,6 +51,21 @@ class AuditConclusionWidget(QWidget):
         summary_form.addRow("Úkoly celkem:", self.tasks_total_label)
         summary_form.addRow("Aktivní úkoly:", self.tasks_active_label)
         layout.addWidget(summary_group)
+
+        conclusion_group = QGroupBox(AUDIT_CONCLUSION_LABEL)
+        conclusion_layout = QVBoxLayout(conclusion_group)
+        conclusion_layout.addWidget(QLabel(f"{AUDIT_CONCLUSION_LABEL}:"))
+        self.conclusion_edit = QTextEdit()
+        self.conclusion_edit.setPlaceholderText(
+            "Shrnutí průběhu a výsledků auditu. Při dokončení auditu je závěr povinný."
+        )
+        self.conclusion_edit.setMinimumHeight(160)
+        self.conclusion_edit.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Expanding,
+        )
+        conclusion_layout.addWidget(self.conclusion_edit, stretch=1)
+        layout.addWidget(conclusion_group, stretch=1)
 
         strengths_group = QGroupBox("Silné stránky systému")
         strengths_layout = QVBoxLayout(strengths_group)
@@ -80,8 +98,6 @@ class AuditConclusionWidget(QWidget):
         self.detailed_report_btn.clicked.connect(self._export_detailed_report)
         layout.addWidget(self.detailed_report_btn)
 
-        layout.addStretch()
-
         self._update_state()
 
     def set_complete_handler(self, handler) -> None:
@@ -97,6 +113,7 @@ class AuditConclusionWidget(QWidget):
         if self.audit is None:
             self.finished_at_edit.clear_date()
             self.silne_stranky_edit.clear()
+            self.conclusion_edit.clear()
             return
 
         finished_at = getattr(self.audit, "finished_at", None)
@@ -107,6 +124,9 @@ class AuditConclusionWidget(QWidget):
 
         self.silne_stranky_edit.setPlainText(
             getattr(self.audit, "silne_stranky", "") or ""
+        )
+        self.conclusion_edit.setPlainText(
+            getattr(self.audit, "conclusion_text", None) or ""
         )
 
     def refresh(self) -> None:
@@ -139,6 +159,7 @@ class AuditConclusionWidget(QWidget):
         return {
             "finished_at": self.finished_at_edit.get_date(),
             "silne_stranky": self.silne_stranky_edit.toPlainText().strip(),
+            "conclusion_text": self.conclusion_edit.toPlainText(),
         }
 
     def _update_state(self) -> None:
@@ -196,6 +217,11 @@ class AuditConclusionWidget(QWidget):
             QMessageBox.information(self, "Závěr", "Audit je nutné nejdříve uložit.")
             return
 
+        if audit_service.is_conclusion_blank(self.conclusion_edit.toPlainText()):
+            QMessageBox.warning(self, "Závěr", AUDIT_CONCLUSION_REQUIRED_MESSAGE)
+            self.conclusion_edit.setFocus()
+            return
+
         audit_id = self.audit.id
         blockers = audit_service.get_completion_blockers(audit_id)
         if blockers.has_blockers():
@@ -217,6 +243,16 @@ class AuditConclusionWidget(QWidget):
         if self._on_complete is None:
             return
 
-        saved = self._on_complete(finished_at=finished_at)
+        try:
+            saved = self._on_complete(finished_at=finished_at)
+        except AuditCompletionError as exc:
+            QMessageBox.warning(self, "Závěr", str(exc) or AUDIT_CONCLUSION_REQUIRED_MESSAGE)
+            self._load_editor_fields()
+            self.refresh()
+            return
+
         if saved:
+            self.refresh()
+        else:
+            self._load_editor_fields()
             self.refresh()

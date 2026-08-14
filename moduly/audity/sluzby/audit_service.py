@@ -11,6 +11,7 @@ from core.shared.modely.finding import Finding
 from core.shared.sluzby.control_result_service import control_result_service
 from core.shared.sluzby.finding_service import finding_service
 from moduly.audity.constants import (
+    AUDIT_CONCLUSION_REQUIRED_MESSAGE,
     AUDIT_SPIS_STATUSES,
     AUDIT_STATUS_DOKONCENO,
     AUDIT_STATUS_PLANOVANO,
@@ -24,6 +25,10 @@ from moduly.audity.sluzby.audit_commission_service import audit_commission_servi
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.ukoly.modely.task import Task
 from moduly.ukoly.sluzby.task_service import task_service
+
+
+class AuditCompletionError(ValueError):
+    """Business chyba při dokončení auditu (např. chybí závěr)."""
 
 
 @dataclass(frozen=True)
@@ -95,9 +100,18 @@ class AuditService:
             "program_visit_id": existing.program_visit_id,
             "silne_stranky": existing.silne_stranky,
             "changes_since_last": existing.changes_since_last,
+            "conclusion_text": getattr(existing, "conclusion_text", None),
         }
         merged.update(fields)
         data = self._validated_fields(merged)
+
+        # Povinný závěr jen při novém přechodu do dokončeného stavu.
+        becoming_finished = (
+            not was_finished and data.get("finished_at") is not None
+        )
+        if becoming_finished and self.is_conclusion_blank(data.get("conclusion_text")):
+            raise AuditCompletionError(AUDIT_CONCLUSION_REQUIRED_MESSAGE)
+
         data["updated_at"] = datetime.now()
         # Zápis jen přes id v nové session — ne merge instance držené editorem.
         updated = self.repository.update_fields(audit_id, **data)
@@ -274,6 +288,22 @@ class AuditService:
         )
 
     @staticmethod
+    def is_conclusion_blank(value) -> bool:
+        """NULL, prázdný řetězec, jen mezery / prázdné řádky → prázdný závěr."""
+        if value is None:
+            return True
+        return not str(value).strip()
+
+    @staticmethod
+    def normalize_conclusion_text(value) -> str | None:
+        if value is None:
+            return None
+        text = str(value).replace("\r\n", "\n").replace("\r", "\n")
+        if not text.strip():
+            return None
+        return text
+
+    @staticmethod
     def derive_status(
         started_at: date | None,
         finished_at: date | None,
@@ -320,6 +350,10 @@ class AuditService:
                     str(raw_changes).replace("\r\n", "\n").replace("\r", "\n")
                 )
                 data["changes_since_last"] = normalized if normalized.strip() else None
+        if "conclusion_text" in data:
+            data["conclusion_text"] = self.normalize_conclusion_text(
+                data.get("conclusion_text")
+            )
 
         started_at = data.get("started_at")
         finished_at = data.get("finished_at")
@@ -344,6 +378,8 @@ class AuditService:
         }
         if "changes_since_last" in data:
             payload["changes_since_last"] = data["changes_since_last"]
+        if "conclusion_text" in data:
+            payload["conclusion_text"] = data["conclusion_text"]
         return payload
 
     @staticmethod

@@ -114,6 +114,7 @@ class AuditRepository:
             "program_visit_id": audit.program_visit_id,
             "silne_stranky": audit.silne_stranky,
             "changes_since_last": getattr(audit, "changes_since_last", None),
+            "conclusion_text": getattr(audit, "conclusion_text", None),
             "updated_at": getattr(audit, "updated_at", None) or datetime.now(),
         }
         updated = self.update_fields(audit.id, **payload)

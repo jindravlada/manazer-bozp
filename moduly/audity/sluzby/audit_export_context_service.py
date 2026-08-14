@@ -32,7 +32,9 @@ from core.shared.sluzby.control_activity_statistics_service import (
 from core.shared.sluzby.control_result_service import control_result_service
 from core.shared.sluzby.finding_service import finding_service
 from moduly.audity.constants import (
+    AUDIT_CONCLUSION_EXPORT_SECTION,
     AUDIT_QUESTION_KIND_EXTRAORDINARY,
+    AUDIT_STRENGTHS_EXPORT_SECTION,
     COMMISSION_RECORD_INVITED,
     COMMISSION_RECORD_LEADER,
     COMMISSION_RECORD_MEMBER,
@@ -770,9 +772,14 @@ class AuditExportContext:
         return f"{first_sentence}\n{second_sentence}"
 
     def strengths_text(self) -> str:
+        """Zpětná kompatibilita — plain text se ✔; prázdné → prázdný řetězec."""
+        lines = self._strength_lines()
+        return "\n".join(lines) if lines else ""
+
+    def _strength_lines(self) -> list[str]:
         raw = _text(getattr(self.audit, "silne_stranky", ""))
         if not raw:
-            return "—"
+            return []
         lines: list[str] = []
         for line in raw.split("\n"):
             text = line.strip()
@@ -782,7 +789,19 @@ class AuditExportContext:
                 lines.append(text)
             else:
                 lines.append(f"✔ {text}")
-        return "\n".join(lines) if lines else "—"
+        return lines
+
+    def strengths_section_text(self) -> OdtRichContent:
+        """Sekce Silné stránky — nadpis jen při alespoň jedné vyplněné stránce."""
+        lines = self._strength_lines()
+        if not lines:
+            return OdtRichContent()
+        paragraphs: list[OdtParagraph] = [
+            OdtParagraph.text(AUDIT_STRENGTHS_EXPORT_SECTION, style="H"),
+        ]
+        for line in lines:
+            paragraphs.append(OdtParagraph.text(line))
+        return OdtRichContent(paragraphs=paragraphs)
 
     def attention_areas_text(self) -> str:
         results = control_result_service.get_for_entity(ENTITY_AUDITY, self.audit_id)
@@ -1019,6 +1038,7 @@ class AuditExportContext:
         return self.executive_summary_text()
 
     def conclusion_text(self) -> str:
+        """Automatický souhrn pro legacy placeholder zaver_text (ne uživatelský závěr)."""
         summary = audit_service.get_conclusion_summary(self.audit_id)
         stats = self._activity_statistics()
 
@@ -1053,6 +1073,23 @@ class AuditExportContext:
                 "odpovídající nápravná opatření."
             )
         return sentence
+
+    def audit_conclusion_section_text(self) -> OdtRichContent:
+        """Uživatelský závěr auditu — nadpis jen při neprázdném textu."""
+        raw = getattr(self.audit, "conclusion_text", None)
+        if audit_service.is_conclusion_blank(raw):
+            return OdtRichContent()
+        text = audit_service.normalize_conclusion_text(raw) or ""
+        paragraphs: list[OdtParagraph] = [
+            OdtParagraph.text(AUDIT_CONCLUSION_EXPORT_SECTION, style="H"),
+        ]
+        for block in text.split("\n"):
+            # Prázdný řádek = oddělovač odstavců; zachovat strukturu.
+            if not block.strip():
+                paragraphs.append(OdtParagraph.blank_line())
+            else:
+                paragraphs.append(OdtParagraph.text(block))
+        return OdtRichContent(paragraphs=paragraphs)
 
     def intro_text(self) -> str:
         """Sekce Úvod — pouze podrobná zpráva (AUDIT-INTRO-2)."""
@@ -1219,7 +1256,7 @@ class AuditExportContext:
             "podpis_zastupce_odborove_organizace": self.union_representative_raw_name(),
             "podpis_odboru_blok": union_signature,
             "doporuceni_auditora": self.auditor_recommendation_text(),
-            "silne_stranky_text": self.strengths_text(),
+            "silne_stranky_text": self.strengths_section_text(),
             "oblasti_pozornosti_text": self.attention_areas_text(),
             "rozsah_auditu_text": self.audit_scope_text(),
             "executive_summary_text": executive_summary,
@@ -1232,6 +1269,7 @@ class AuditExportContext:
             "zjisteni_text": findings_detail,
             "ukoly_text": accepted_measures,
             "zaver_text": conclusion,
+            "zaver_auditu_text": self.audit_conclusion_section_text(),
             "statistika_text": results_overview,
             "souhrn_text": executive_summary,
             "datum_vygenerovani": datetime.now().strftime("%d.%m.%Y"),

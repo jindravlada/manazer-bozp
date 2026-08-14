@@ -24,6 +24,13 @@ AUDIT_COMPLETION_CONFIRM_MESSAGE = (
     "Přesto ho chcete označit jako dokončený?"
 )
 
+AUDIT_CONCLUSION_LABEL = "Závěr auditu"
+AUDIT_CONCLUSION_REQUIRED_MESSAGE = (
+    "Audit nelze dokončit. Vyplňte závěr auditu."
+)
+AUDIT_CONCLUSION_EXPORT_SECTION = "Závěr auditu"
+AUDIT_STRENGTHS_EXPORT_SECTION = "Silné stránky systému"
+
 AUDIT_TYPE_RADNY = "Řádný"
 AUDIT_TYPE_MIMORADNY = "Mimořádný"
 

@@ -142,10 +142,14 @@ class AudityCompletionTestCase(unittest.TestCase):
 
         self.assertFalse(blockers.has_blockers())
 
+    def _fill_conclusion(self, dialog, text: str = "Závěr testovacího auditu.") -> None:
+        dialog.conclusion_widget.conclusion_edit.setPlainText(text)
+
     @patch("moduly.audity.ui.audit_conclusion_widget.QMessageBox.question")
     def test_complete_without_blockers_saves_completed(self, mock_question) -> None:
         audit = self._create_audit_with_team()
         dialog = self._open_dialog(audit)
+        self._fill_conclusion(dialog)
 
         dialog.conclusion_widget._complete_audit()
 
@@ -163,6 +167,7 @@ class AudityCompletionTestCase(unittest.TestCase):
         audit = self._create_audit_with_team()
         self._create_open_finding(audit.id)
         dialog = self._open_dialog(audit)
+        self._fill_conclusion(dialog)
         mock_question.return_value = QMessageBox.No
 
         dialog.conclusion_widget._complete_audit()
@@ -183,6 +188,7 @@ class AudityCompletionTestCase(unittest.TestCase):
         audit = self._create_audit_with_team()
         self._create_open_finding(audit.id)
         dialog = self._open_dialog(audit)
+        self._fill_conclusion(dialog)
         mock_question.return_value = QMessageBox.Yes
 
         dialog.conclusion_widget._complete_audit()
@@ -198,6 +204,7 @@ class AudityCompletionTestCase(unittest.TestCase):
         audit = self._create_audit_with_team()
         self._create_open_finding(audit.id)
         dialog = self._open_dialog(audit)
+        self._fill_conclusion(dialog)
         dialog.conclusion_widget.finished_at_edit.clear_date()
         mock_question.return_value = QMessageBox.Yes
 
@@ -215,6 +222,7 @@ class AudityCompletionTestCase(unittest.TestCase):
         finding_id = self._create_open_finding(audit.id)
         finding_task_service.create_task_from_finding(finding_id)
         dialog = self._open_dialog(audit)
+        self._fill_conclusion(dialog)
         existing_date = date(2026, 4, 15)
         dialog.conclusion_widget.finished_at_edit.set_date_value(existing_date)
         mock_question.return_value = QMessageBox.Yes
@@ -234,6 +242,7 @@ class AudityCompletionTestCase(unittest.TestCase):
         finding_task_service.create_task_from_finding(finding_id)
         finding_service.update(finding_id, status=FINDING_STATUS_VYPORADANO)
         dialog = self._open_dialog(audit)
+        self._fill_conclusion(dialog)
         mock_question.return_value = QMessageBox.Yes
 
         dialog.conclusion_widget._complete_audit()
@@ -247,6 +256,7 @@ class AudityCompletionTestCase(unittest.TestCase):
         audit = self._create_audit_with_team()
         self._create_open_finding(audit.id)
         dialog = self._open_dialog(audit)
+        self._fill_conclusion(dialog)
         mock_question.return_value = QMessageBox.Yes
         dialog.conclusion_widget._complete_audit()
 

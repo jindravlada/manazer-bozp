@@ -32,7 +32,7 @@ from moduly.audity.sluzby.audit_question_source_service import (
     AuditQuestionSourceError,
     audit_question_source_service,
 )
-from moduly.audity.sluzby.audit_service import audit_service
+from moduly.audity.sluzby.audit_service import AuditCompletionError, audit_service
 from moduly.audity.sluzby.audit_v2_create_service import (
     AuditV2CreateError,
     create_manual_audit_with_v2_snapshot,
@@ -262,7 +262,12 @@ class AuditDialog(QDialog):
             self._reload_after_persist()
         else:
             # Zápis jen podle id — ne přes mutaci self.audit drženého editorem.
-            updated = audit_service.update_audit(self.audit.id, **payload)
+            try:
+                updated = audit_service.update_audit(self.audit.id, **payload)
+            except AuditCompletionError as exc:
+                QMessageBox.warning(self, "Závěr", str(exc))
+                self.tabs.setCurrentWidget(self.conclusion_widget)
+                return False
             if updated is None:
                 return False
             self.save_commission_members(self.audit.id, data)
@@ -393,7 +398,12 @@ class AuditDialog(QDialog):
         data["finished_at"] = finished_at
         payload = self.prepare_save_payload(data)
 
-        updated = audit_service.update_audit(self.audit.id, **payload)
+        try:
+            updated = audit_service.update_audit(self.audit.id, **payload)
+        except AuditCompletionError as exc:
+            QMessageBox.warning(self, "Závěr", str(exc))
+            self.tabs.setCurrentWidget(self.conclusion_widget)
+            return False
         if updated is None:
             return False
 

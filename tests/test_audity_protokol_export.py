@@ -461,6 +461,7 @@ class AudityProtokolExportTestCase(unittest.TestCase):
             "zjisteni_text",
             "ukoly_text",
             "zaver_text",
+            "zaver_auditu_text",
             "statistika_text",
             "souhrn_text",
             "datum_vygenerovani",
@@ -471,6 +472,11 @@ class AudityProtokolExportTestCase(unittest.TestCase):
 
     def test_management_reporting_structure_in_output(self) -> None:
         audit = self._create_audit()
+        assert audit is not None
+        audit = audit_service.update_audit(
+            audit.id,
+            silne_stranky="Stabilní řízení dokumentace.",
+        )
         assert audit is not None
 
         path = protokol_audit_service.generate_for_audit(audit)

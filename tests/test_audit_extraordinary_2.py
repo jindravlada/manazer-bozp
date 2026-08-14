@@ -417,7 +417,9 @@ class Extraordinary2TestCase(unittest.TestCase):
             note="",
         )
         updated = audit_service.update_audit(
-            audit.id, finished_at=date(2026, 5, 2)
+            audit.id,
+            finished_at=date(2026, 5, 2),
+            conclusion_text="Závěr ověření E2.",
         )
         assert updated is not None
         targets = audit_extraordinary_question_service.repository.list_targets_for_question(
@@ -446,7 +448,11 @@ class Extraordinary2TestCase(unittest.TestCase):
             ensure_knowledge=False,
         )
         # bez výsledku = nekontrolováno → pending
-        audit_service.update_audit(audit2.id, finished_at=date(2026, 5, 4))
+        audit_service.update_audit(
+            audit2.id,
+            finished_at=date(2026, 5, 4),
+            conclusion_text="Závěr návratu E2.",
+        )
         targets2 = audit_extraordinary_question_service.repository.list_targets_for_question(
             q2.id
         )

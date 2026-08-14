@@ -140,7 +140,11 @@ class AuditProgramVisitAuditTestCase(unittest.TestCase):
         audit = audit_program_service.create_audit_from_visit(visit.id)
         finished_at = date(2026, 4, 22)
 
-        updated = audit_service.update_audit(audit.id, finished_at=finished_at)
+        updated = audit_service.update_audit(
+            audit.id,
+            finished_at=finished_at,
+            conclusion_text="Závěr programu návštěvy.",
+        )
 
         assert updated is not None
         self.assertEqual(updated.status, AUDIT_STATUS_DOKONCENO)
@@ -161,7 +165,11 @@ class AuditProgramVisitAuditTestCase(unittest.TestCase):
     def test_coverage_counts_completed_visits_and_processes(self) -> None:
         program, visit = self._create_program_with_visit()
         audit = audit_program_service.create_audit_from_visit(visit.id)
-        audit_service.update_audit(audit.id, finished_at=date(2026, 4, 22))
+        audit_service.update_audit(
+            audit.id,
+            finished_at=date(2026, 4, 22),
+            conclusion_text="Závěr coverage.",
+        )
 
         coverage = audit_program_service.get_program_coverage(program.id)
 
