@@ -74,17 +74,14 @@ class SystemAuditWorkplaceService:
 
     def require_system_audit_workplace_id(self) -> int:
         """Vrátí ID systémového provozu nebo vyvolá jasnou chybu."""
+        from moduly.audity.constants import AUDIT_START_MISSING_SYSTEM_WORKPLACE
+
         workplace_id = self.get_system_audit_workplace_id()
         if workplace_id is None:
-            raise SystemAuditWorkplaceError(
-                "Není nastaven systémový provoz auditu "
-                f"({SYSTEM_AUDIT_WORKPLACE_SETTING_KEY})."
-            )
+            raise SystemAuditWorkplaceError(AUDIT_START_MISSING_SYSTEM_WORKPLACE)
         workplace = settings_service.get_workplace_by_id(workplace_id)
         if workplace is None:
-            raise SystemAuditWorkplaceError(
-                f"Systémový provoz (id={workplace_id}) neexistuje."
-            )
+            raise SystemAuditWorkplaceError(AUDIT_START_MISSING_SYSTEM_WORKPLACE)
         return int(workplace.id)
 
     def set_system_audit_workplace_id(self, workplace_id: int | None) -> int | None:
@@ -92,8 +89,21 @@ class SystemAuditWorkplaceService:
         Uloží odkaz na existující Workplace, nebo vymaže nastavení (None).
 
         Neukládá název provozu natvrdo — pouze ID.
+        Před první v2 změnou vytvoří jednorázovou zálohu.
         """
+        from moduly.audity.sluzby.audit_method_v2_backup_service import (
+            AuditMethodV2BackupError,
+            ensure_pre_v2_backup,
+        )
+
+        current = self.get_system_audit_workplace_id()
         if workplace_id is None or workplace_id == 0:
+            if current is None:
+                return None
+            try:
+                ensure_pre_v2_backup()
+            except AuditMethodV2BackupError:
+                raise
             payload = self._load()
             payload[SYSTEM_AUDIT_WORKPLACE_SETTING_KEY] = None
             self._save(payload)
@@ -115,6 +125,14 @@ class SystemAuditWorkplaceService:
             raise SystemAuditWorkplaceError(
                 f"Systémový provoz (id={workplace_id_int}) neexistuje."
             )
+
+        if current == int(workplace.id):
+            return int(workplace.id)
+
+        try:
+            ensure_pre_v2_backup()
+        except AuditMethodV2BackupError:
+            raise
 
         payload = self._load()
         payload[SYSTEM_AUDIT_WORKPLACE_SETTING_KEY] = int(workplace.id)

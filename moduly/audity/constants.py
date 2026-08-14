@@ -391,6 +391,32 @@ KNOWLEDGE_EDITOR_ASSERTIONS_PLACEHOLDER = (
 KNOWLEDGE_EDITOR_TAB_PLACEHOLDER = (
     "Tato část bude implementována v dalších commitech."
 )
+
+# AUDIT-METHOD-V2b: systémový provoz a druh otázky v editoru.
+KNOWLEDGE_EDITOR_SYSTEM_WORKPLACE_LABEL = "Systémový provoz:"
+KNOWLEDGE_EDITOR_SYSTEM_WORKPLACE_NONE = "Nevybráno"
+KNOWLEDGE_EDITOR_SYSTEM_WORKPLACE_HINT = (
+    "Otázky typu Systém se použijí pouze při auditu tohoto provozu."
+)
+KNOWLEDGE_EDITOR_QUESTION_KIND_LABEL = "Druh otázky:"
+KNOWLEDGE_EDITOR_UNCLASSIFIED_COUNT_LABEL = "Nezařazené otázky: {count}"
+KNOWLEDGE_EDITOR_QUESTION_KIND_REQUIRED = (
+    "Vyberte druh otázky Systém nebo Provoz. Nezařazeno nelze uložit."
+)
+
+QUESTION_KIND_EDITOR_LABEL_UNCLASSIFIED = "Nezařazeno"
+QUESTION_KIND_EDITOR_LABEL_SYSTEM = "Systém"
+QUESTION_KIND_EDITOR_LABEL_OPERATION = "Provoz"
+
+AUDIT_START_MISSING_SYSTEM_WORKPLACE = (
+    "Nejdříve v editoru auditních otázek vyberte systémový provoz."
+)
+AUDIT_START_UNCLASSIFIED_QUESTIONS = (
+    "Audit nelze zahájit. V plánovaných procesech zůstávají nezařazené auditní otázky."
+)
+AUDIT_START_UNCLASSIFIED_MAX_ITEMS = 12
+
+PRE_AUDIT_METHOD_V2_BACKUP_PREFIX = "pre_audit_method_v2"
 KNOWLEDGE_EDITOR_SECTION_TABS = (
     "Auditní tvrzení",
     "Objektivní důkazy",
@@ -502,6 +528,12 @@ AUDIT_QUESTION_KINDS_LIVE_METHODOLOGY = (
 AUDIT_QUESTION_KINDS_V2_SNAPSHOT = (
     AUDIT_QUESTION_KIND_SYSTEM,
     AUDIT_QUESTION_KIND_OPERATION,
+)
+
+QUESTION_KIND_EDITOR_OPTIONS = (
+    (AUDIT_QUESTION_KIND_UNCLASSIFIED, QUESTION_KIND_EDITOR_LABEL_UNCLASSIFIED),
+    (AUDIT_QUESTION_KIND_SYSTEM, QUESTION_KIND_EDITOR_LABEL_SYSTEM),
+    (AUDIT_QUESTION_KIND_OPERATION, QUESTION_KIND_EDITOR_LABEL_OPERATION),
 )
 
 # Globální nastavení systémového provozu (AUDIT-METHOD-V2a).

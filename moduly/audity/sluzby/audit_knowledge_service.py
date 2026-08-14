@@ -1305,6 +1305,40 @@ class AuditKnowledgeService:
                 return self.get_active_items(items)
         return []
 
+    def count_unclassified_active_assertions(
+        self,
+        *,
+        ensure: bool = False,
+        knowledge_tree: list | None = None,
+    ) -> int:
+        """Počet aktivních otázek bez zařazení Systém/Provoz (AUDIT-METHOD-V2b)."""
+        from moduly.audity.sluzby.audit_question_kind import interpret_question_kind
+        from moduly.audity.constants import AUDIT_QUESTION_KIND_UNCLASSIFIED
+
+        roots = knowledge_tree
+        if roots is None:
+            roots = self.get_knowledge_tree(ensure=ensure)
+
+        count = 0
+
+        def walk(nodes) -> None:
+            nonlocal count
+            for node in nodes:
+                section = getattr(node, "section", None)
+                if isinstance(section, dict):
+                    for raw in self.get_audit_questions(section):
+                        if not isinstance(raw, dict):
+                            continue
+                        kind = interpret_question_kind(raw.get("question_kind"))
+                        if kind == AUDIT_QUESTION_KIND_UNCLASSIFIED:
+                            count += 1
+                children = getattr(node, "children", ()) or ()
+                if children:
+                    walk(children)
+
+        walk(roots)
+        return count
+
     @staticmethod
     def question_stable_key(process_id: str, criterion_id: str, question_id: str) -> str:
         return f"{process_id}/{criterion_id}/{question_id}"

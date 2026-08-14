@@ -14,20 +14,31 @@ from PySide6.QtWidgets import (
 )
 
 from core.shared.verification_type import VERIFICATION_TYPE_OPTIONS
-from moduly.audity.constants import CONTROL_POINT_SEVERITY_OPTIONS
+from moduly.audity.constants import (
+    AUDIT_QUESTION_KIND_OPERATION,
+    AUDIT_QUESTION_KIND_SYSTEM,
+    AUDIT_QUESTION_KIND_UNCLASSIFIED,
+    CONTROL_POINT_SEVERITY_OPTIONS,
+    QUESTION_KIND_EDITOR_LABEL_UNCLASSIFIED,
+)
 from moduly.audity.sluzby.audit_knowledge_editor_service import audit_knowledge_editor_service
 from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
+from moduly.audity.sluzby.audit_question_kind import (
+    interpret_question_kind,
+    question_kind_editor_label,
+)
 from moduly.audity.ui.audity_knowledge_assertion_dialog import AudityKnowledgeAssertionDialog
 
 _SEVERITY_LABELS = dict(CONTROL_POINT_SEVERITY_OPTIONS)
 
 _COL_ID = 0
 _COL_TEXT = 1
-_COL_POPIS = 2
-_COL_SEVERITY = 3
-_COL_VERIFICATION = 4
-_COL_PORADI = 5
-_COL_AKTIVNI = 6
+_COL_KIND = 2
+_COL_POPIS = 3
+_COL_SEVERITY = 4
+_COL_VERIFICATION = 5
+_COL_PORADI = 6
+_COL_AKTIVNI = 7
 
 _VERIFICATION_COMBO_TOOLTIP = (
     "Závazné pro všechny audity. Ad hoc přesun v jednom auditu metodiku nemění."
@@ -69,9 +80,18 @@ class AudityKnowledgeAssertionsWidget(QWidget):
         toolbar.addStretch()
 
         self._table = QTableWidget()
-        self._table.setColumnCount(7)
+        self._table.setColumnCount(8)
         self._table.setHorizontalHeaderLabels(
-            ["ID", "Text tvrzení", "Popis", "Závažnost", "Typ ověření", "Pořadí", "Aktivní"]
+            [
+                "ID",
+                "Text tvrzení",
+                "Druh",
+                "Popis",
+                "Závažnost",
+                "Typ ověření",
+                "Pořadí",
+                "Aktivní",
+            ]
         )
         self._table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self._table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
@@ -86,6 +106,7 @@ class AudityKnowledgeAssertionsWidget(QWidget):
         header.setSectionResizeMode(_COL_TEXT, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(_COL_POPIS, QHeaderView.ResizeMode.Stretch)
         self._table.setColumnHidden(_COL_ID, True)
+        self._table.setColumnWidth(_COL_KIND, 100)
         self._table.setColumnWidth(_COL_SEVERITY, 110)
         self._table.setColumnWidth(_COL_VERIFICATION, 140)
         self._table.setColumnWidth(_COL_PORADI, 70)
@@ -131,6 +152,15 @@ class AudityKnowledgeAssertionsWidget(QWidget):
         self._reload_from_section(section)
         self.content_saved.emit()
 
+    def count_unclassified_active_in_section(self) -> int:
+        return sum(
+            1
+            for item in self._assertions
+            if item.get("aktivni", True)
+            and interpret_question_kind(item.get("question_kind"))
+            == AUDIT_QUESTION_KIND_UNCLASSIFIED
+        )
+
     def _reload_from_section(self, section: dict) -> None:
         raw_items = section.get("auditni_tvrzeni") or []
         self._assertions = audit_knowledge_service.normalize_auditni_tvrzeni(raw_items)
@@ -140,9 +170,12 @@ class AudityKnowledgeAssertionsWidget(QWidget):
     def _populate_table(self) -> None:
         self._table.setRowCount(len(self._assertions))
         for row, item in enumerate(self._assertions):
+            kind = interpret_question_kind(item.get("question_kind"))
+            kind_label = question_kind_editor_label(kind)
             values = {
                 _COL_ID: item.get("id", ""),
                 _COL_TEXT: item.get("text", ""),
+                _COL_KIND: kind_label,
                 _COL_POPIS: item.get("popis", ""),
                 _COL_SEVERITY: _SEVERITY_LABELS.get(
                     item.get("zavaznost", ""), item.get("zavaznost", "")
@@ -155,6 +188,9 @@ class AudityKnowledgeAssertionsWidget(QWidget):
                 cell.setData(Qt.ItemDataRole.UserRole, item.get("id", ""))
                 if not item.get("aktivni", True):
                     cell.setForeground(Qt.GlobalColor.gray)
+                elif kind == AUDIT_QUESTION_KIND_UNCLASSIFIED and column == _COL_KIND:
+                    cell.setForeground(Qt.GlobalColor.darkYellow)
+                    cell.setToolTip(QUESTION_KIND_EDITOR_LABEL_UNCLASSIFIED)
                 self._table.setItem(row, column, cell)
 
             self._table.setCellWidget(
@@ -219,6 +255,10 @@ class AudityKnowledgeAssertionsWidget(QWidget):
             "poradi": assertion.get("poradi", 0),
             "aktivni": bool(assertion.get("aktivni", True)),
         }
+        # Druh nepřepisuj při rychlé změně typu ověření — nezařazené zůstanou.
+        existing_kind = interpret_question_kind(assertion.get("question_kind"))
+        if existing_kind in (AUDIT_QUESTION_KIND_SYSTEM, AUDIT_QUESTION_KIND_OPERATION):
+            payload["question_kind"] = existing_kind
 
         self.content_modified.emit()
         errors = audit_knowledge_editor_service.save_assertion(

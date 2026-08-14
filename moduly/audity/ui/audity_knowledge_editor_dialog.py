@@ -3,6 +3,7 @@
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
+    QComboBox,
     QDialog,
     QFrame,
     QHBoxLayout,
@@ -28,12 +29,20 @@ from core.widgets.knowledge_editor_actions import (
 from moduly.audity.constants import (
     KNOWLEDGE_EDITOR_ADD_PROCESS_BUTTON,
     KNOWLEDGE_EDITOR_SELECT_PROCESS_HINT,
+    KNOWLEDGE_EDITOR_SYSTEM_WORKPLACE_HINT,
+    KNOWLEDGE_EDITOR_SYSTEM_WORKPLACE_LABEL,
+    KNOWLEDGE_EDITOR_SYSTEM_WORKPLACE_NONE,
+    KNOWLEDGE_EDITOR_UNCLASSIFIED_COUNT_LABEL,
     KNOWLEDGE_EDITOR_USER_COPY_HINT,
     KNOWLEDGE_EDITOR_WINDOW_TITLE,
     PROCESS_PANEL_LEFT_WIDTH,
 )
 from moduly.audity.sluzby.audit_knowledge_editor_service import audit_knowledge_editor_service
 from moduly.audity.sluzby.audit_knowledge_service import KnowledgeTreeNode, audit_knowledge_service
+from moduly.audity.sluzby.system_audit_workplace_service import (
+    SystemAuditWorkplaceError,
+    system_audit_workplace_service,
+)
 from moduly.audity.ui.audit_knowledge_tree_widget import AuditKnowledgeTreeWidget
 from moduly.audity.ui.audity_knowledge_process_create_dialog import (
     AudityKnowledgeProcessCreateDialog,
@@ -45,7 +54,7 @@ from moduly.audity.ui.audity_knowledge_section_dialog import AudityKnowledgeSect
 from moduly.audity.ui.audity_knowledge_section_editor_widget import (
     AudityKnowledgeSectionEditorWidget,
 )
-
+from moduly.nastaveni.sluzby.settings_service import settings_service
 
 class AudityKnowledgeEditorDialog(QDialog):
     """Editor metodiky auditora — editace metadat procesu a oblastí ověření."""
@@ -71,6 +80,8 @@ class AudityKnowledgeEditorDialog(QDialog):
         self._current_section_id = ""
         self._modified = False
         self._current_dirty = False
+        self._system_workplace_dirty = False
+        self._saved_system_workplace_id: int | None = None
         self._process_drafts: dict[str, dict] = {}
         self._section_drafts: dict[tuple[str, str], dict] = {}
 
@@ -84,6 +95,28 @@ class AudityKnowledgeEditorDialog(QDialog):
         hint_label.setObjectName("InfoText")
         hint_label.setWordWrap(True)
         root.addWidget(hint_label)
+
+        system_row = QHBoxLayout()
+        system_row.setSpacing(8)
+        system_label = QLabel(KNOWLEDGE_EDITOR_SYSTEM_WORKPLACE_LABEL)
+        self._system_workplace_combo = QComboBox()
+        self._system_workplace_combo.setMinimumWidth(260)
+        self._system_workplace_combo.currentIndexChanged.connect(
+            self._on_system_workplace_changed
+        )
+        self._unclassified_count_label = QLabel(
+            KNOWLEDGE_EDITOR_UNCLASSIFIED_COUNT_LABEL.format(count=0)
+        )
+        self._unclassified_count_label.setObjectName("InfoText")
+        system_row.addWidget(system_label)
+        system_row.addWidget(self._system_workplace_combo, 1)
+        system_row.addWidget(self._unclassified_count_label)
+        root.addLayout(system_row)
+
+        system_hint = QLabel(KNOWLEDGE_EDITOR_SYSTEM_WORKPLACE_HINT)
+        system_hint.setObjectName("InfoText")
+        system_hint.setWordWrap(True)
+        root.addWidget(system_hint)
 
         self._catalog_error_label = QLabel()
         self._catalog_error_label.setObjectName("WarningText")
@@ -186,6 +219,8 @@ class AudityKnowledgeEditorDialog(QDialog):
         )
         root.addWidget(footer_host, 0)
 
+        self._load_system_workplace_combo()
+        self._refresh_unclassified_count()
         self.knowledge_tree.reload_tree(include_inactive=True)
         if self.knowledge_tree.catalog_error_message:
             self._show_catalog_error(self.knowledge_tree.catalog_error_message)
@@ -196,6 +231,41 @@ class AudityKnowledgeEditorDialog(QDialog):
             )
         else:
             self._show_hint()
+
+    def _load_system_workplace_combo(self) -> None:
+        self._system_workplace_combo.blockSignals(True)
+        self._system_workplace_combo.clear()
+        self._system_workplace_combo.addItem(KNOWLEDGE_EDITOR_SYSTEM_WORKPLACE_NONE, None)
+        for workplace in settings_service.get_workplaces(include_inactive=False):
+            self._system_workplace_combo.addItem(workplace.name, workplace.id)
+        saved_id = system_audit_workplace_service.get_system_audit_workplace_id()
+        self._saved_system_workplace_id = saved_id
+        index = self._system_workplace_combo.findData(saved_id)
+        if index < 0:
+            index = 0
+        self._system_workplace_combo.setCurrentIndex(index)
+        self._system_workplace_dirty = False
+        self._system_workplace_combo.blockSignals(False)
+
+    def _pending_system_workplace_id(self) -> int | None:
+        value = self._system_workplace_combo.currentData()
+        if value in (None, ""):
+            return None
+        return int(value)
+
+    def _on_system_workplace_changed(self, _index: int = 0) -> None:
+        pending = self._pending_system_workplace_id()
+        self._system_workplace_dirty = pending != self._saved_system_workplace_id
+        if self._system_workplace_dirty:
+            self._mark_modified()
+        else:
+            self._refresh_dirty_status()
+
+    def _refresh_unclassified_count(self) -> None:
+        count = audit_knowledge_service.count_unclassified_active_assertions(ensure=False)
+        self._unclassified_count_label.setText(
+            KNOWLEDGE_EDITOR_UNCLASSIFIED_COUNT_LABEL.format(count=count)
+        )
 
     def _show_catalog_error(self, message: str) -> None:
         self._catalog_error_label.setText(message)
@@ -210,9 +280,9 @@ class AudityKnowledgeEditorDialog(QDialog):
         return False
 
     def _update_action_buttons(self) -> None:
-        enabled = self._can_save_current()
-        self._apply_btn.setEnabled(enabled)
-        self._save_close_btn.setEnabled(enabled or self._has_unsaved_changes())
+        can_act = self._can_save_current() or self._has_unsaved_changes()
+        self._apply_btn.setEnabled(can_act)
+        self._save_close_btn.setEnabled(can_act)
 
     def _mark_modified(self) -> None:
         self._modified = True
@@ -223,10 +293,12 @@ class AudityKnowledgeEditorDialog(QDialog):
     def _mark_saved(self) -> None:
         self._modified = False
         self._current_dirty = False
+        self._system_workplace_dirty = False
 
     def _has_unsaved_changes(self) -> bool:
         return (
             self._current_dirty
+            or self._system_workplace_dirty
             or bool(self._process_drafts)
             or bool(self._section_drafts)
         )
@@ -257,12 +329,33 @@ class AudityKnowledgeEditorDialog(QDialog):
     def _discard_all_drafts(self) -> None:
         self._process_drafts.clear()
         self._section_drafts.clear()
+        self._load_system_workplace_combo()
         self._mark_saved()
         clear_save_status(self._status_label)
         self._update_action_buttons()
 
+    def _save_system_workplace_if_needed(self) -> bool:
+        if not self._system_workplace_dirty:
+            return True
+        from moduly.audity.sluzby.audit_method_v2_backup_service import (
+            AuditMethodV2BackupError,
+        )
+
+        pending = self._pending_system_workplace_id()
+        try:
+            system_audit_workplace_service.set_system_audit_workplace_id(pending)
+        except (SystemAuditWorkplaceError, AuditMethodV2BackupError) as exc:
+            self._clear_save_status()
+            QMessageBox.warning(self, self.windowTitle(), str(exc))
+            return False
+        self._saved_system_workplace_id = pending
+        self._system_workplace_dirty = False
+        return True
+
     def _save_all_pending(self) -> bool:
         self._stash_current_editor()
+        if not self._save_system_workplace_if_needed():
+            return False
         for process_id, metadata in list(self._process_drafts.items()):
             errors = audit_knowledge_editor_service.save_process_metadata(
                 process_id,
@@ -320,23 +413,33 @@ class AudityKnowledgeEditorDialog(QDialog):
                         section=refreshed,
                     )
 
+        self._refresh_unclassified_count()
         self._mark_saved()
         return True
 
     def _on_section_content_saved(self) -> None:
         # Seznamy v sekci se ukládají okamžitě; metadata může zůstat dirty.
+        self._refresh_unclassified_count()
         self._refresh_dirty_status()
         if not self._has_unsaved_changes():
             show_save_status(self._status_label)
 
     def _apply_changes(self) -> None:
-        if self._save_current():
-            self._current_dirty = False
-            self._refresh_dirty_status()
-            if not self._has_unsaved_changes():
-                show_save_status(self._status_label)
-            else:
-                show_unsaved_status(self._status_label)
+        if not self._save_system_workplace_if_needed():
+            return
+        if self._can_save_current():
+            if not self._save_current():
+                return
+        elif self._process_drafts or self._section_drafts:
+            if not self._save_all_pending():
+                return
+        self._current_dirty = False
+        self._refresh_unclassified_count()
+        self._refresh_dirty_status()
+        if not self._has_unsaved_changes():
+            show_save_status(self._status_label)
+        else:
+            show_unsaved_status(self._status_label)
 
     def _save_and_close(self) -> None:
         if not self._has_unsaved_changes() and not self._can_save_current():

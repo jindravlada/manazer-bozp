@@ -98,23 +98,49 @@ def target_kind_for_workplace(
 
 def format_unclassified_diagnostics(
     items: list[tuple[str, str, str, str, str]],
+    *,
+    max_items: int | None = None,
 ) -> str:
     """
-    ``items``: (process_id, process_name, section_id/section_name, assertion_id, assertion_text)
+    ``items``: (process_id, process_name, section_label, assertion_id, assertion_text)
     """
-    lines = [
-        "Audit nelze založit: v plánovaných procesech jsou nezařazené otázky "
-        f"({AUDIT_QUESTION_KIND_UNCLASSIFIED}):"
-    ]
-    for process_id, process_name, section_label, assertion_id, assertion_text in items:
+    from moduly.audity.constants import (
+        AUDIT_START_UNCLASSIFIED_MAX_ITEMS,
+        AUDIT_START_UNCLASSIFIED_QUESTIONS,
+    )
+
+    limit = (
+        AUDIT_START_UNCLASSIFIED_MAX_ITEMS if max_items is None else int(max_items)
+    )
+    lines = [AUDIT_START_UNCLASSIFIED_QUESTIONS]
+    shown = items[: max(0, limit)]
+    for process_id, process_name, section_label, assertion_id, assertion_text in shown:
         process_label = process_name or process_id
         text_preview = (assertion_text or "").strip()
         if len(text_preview) > 80:
             text_preview = text_preview[:77] + "…"
+        detail = text_preview or assertion_id
         lines.append(
-            f"- proces „{process_label}“ ({process_id}), "
-            f"sekce „{section_label}“, "
+            f"- proces „{process_label}“, sekce „{section_label}“, "
             f"otázka „{assertion_id}“"
-            + (f": {text_preview}" if text_preview else "")
+            + (f": {detail}" if detail and detail != assertion_id else "")
         )
+    remaining = len(items) - len(shown)
+    if remaining > 0:
+        lines.append(f"… a dalších {remaining}.")
     return "\n".join(lines)
+
+
+def question_kind_editor_label(kind: str) -> str:
+    from moduly.audity.constants import (
+        QUESTION_KIND_EDITOR_LABEL_OPERATION,
+        QUESTION_KIND_EDITOR_LABEL_SYSTEM,
+        QUESTION_KIND_EDITOR_LABEL_UNCLASSIFIED,
+    )
+
+    mapping = {
+        AUDIT_QUESTION_KIND_SYSTEM: QUESTION_KIND_EDITOR_LABEL_SYSTEM,
+        AUDIT_QUESTION_KIND_OPERATION: QUESTION_KIND_EDITOR_LABEL_OPERATION,
+        AUDIT_QUESTION_KIND_UNCLASSIFIED: QUESTION_KIND_EDITOR_LABEL_UNCLASSIFIED,
+    }
+    return mapping.get(kind, QUESTION_KIND_EDITOR_LABEL_UNCLASSIFIED)

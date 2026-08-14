@@ -785,6 +785,17 @@ class AuditKnowledgeEditorService:
 
     @staticmethod
     def _validate_assertion_payload(payload: dict, *, require_id: bool) -> tuple[dict | None, list[str]]:
+        from moduly.audity.constants import (
+            AUDIT_QUESTION_KIND_OPERATION,
+            AUDIT_QUESTION_KIND_SYSTEM,
+            KNOWLEDGE_EDITOR_QUESTION_KIND_REQUIRED,
+        )
+        from moduly.audity.sluzby.audit_question_kind import (
+            AuditQuestionKindError,
+            interpret_question_kind,
+            validate_question_kind,
+        )
+
         item_id = str(payload.get("id") or "").strip()
         if require_id and not item_id:
             return None, ["Chybí identifikátor auditního tvrzení."]
@@ -819,6 +830,23 @@ class AuditKnowledgeEditorService:
         }
         if item_id:
             normalized["id"] = item_id
+
+        # AUDIT-METHOD-V2b: druh jen při explicitním uložení z dialogu / nové otázky.
+        # Částečné update (např. typ ověření) key nevyžadují — nezařazené zůstávají.
+        if "question_kind" in payload:
+            try:
+                kind = validate_question_kind(
+                    payload.get("question_kind"),
+                    allow_legacy=False,
+                    allow_missing=True,
+                )
+            except AuditQuestionKindError as exc:
+                return None, [str(exc)]
+            kind = interpret_question_kind(payload.get("question_kind"))
+            if kind not in (AUDIT_QUESTION_KIND_SYSTEM, AUDIT_QUESTION_KIND_OPERATION):
+                return None, [KNOWLEDGE_EDITOR_QUESTION_KIND_REQUIRED]
+            normalized["question_kind"] = kind
+
         return normalized, []
 
     def _save_section_assertions(
@@ -829,6 +857,7 @@ class AuditKnowledgeEditorService:
         section: dict,
         before_assertions: list,
         after_assertions: list,
+        require_pre_v2_backup: bool = False,
     ) -> list[str]:
         removal_errors = self.validate_no_list_items_removed(
             before_assertions,
@@ -837,6 +866,17 @@ class AuditKnowledgeEditorService:
         )
         if removal_errors:
             return removal_errors
+
+        if require_pre_v2_backup:
+            from moduly.audity.sluzby.audit_method_v2_backup_service import (
+                AuditMethodV2BackupError,
+                ensure_pre_v2_backup,
+            )
+
+            try:
+                ensure_pre_v2_backup()
+            except AuditMethodV2BackupError as exc:
+                return [str(exc)]
 
         section["auditni_tvrzeni"] = after_assertions
         return self.save_user_json(relative_path, data)
@@ -909,6 +949,7 @@ class AuditKnowledgeEditorService:
             section=section,
             before_assertions=before_assertions,
             after_assertions=after_assertions,
+            require_pre_v2_backup=True,
         )
 
     def set_assertion_active(
