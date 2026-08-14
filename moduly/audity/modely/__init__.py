@@ -7,10 +7,16 @@ from moduly.audity.modely.audit_program import (
     AuditProgramWorkplace,
 )
 from moduly.audity.modely.audit_question_snapshot import AuditQuestionSnapshot
+from moduly.audity.modely.audit_extraordinary_question import (
+    AuditExtraordinaryQuestion,
+    AuditExtraordinaryQuestionTarget,
+)
 
 __all__ = [
     "Audit",
     "AuditCommissionMember",
+    "AuditExtraordinaryQuestion",
+    "AuditExtraordinaryQuestionTarget",
     "AuditProgram",
     "AuditProgramVisit",
     "AuditProgramVisitProcess",

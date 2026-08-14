@@ -29,6 +29,7 @@ from moduly.audity.constants import (
     AUDIT_PROTOCOL_BUTTON_LABEL,
     AUDIT_PROTOCOL_DIALOG_TITLE,
     DEFAULT_AUDIT_STATUS_FILTER,
+    EXTRAORDINARY_QUESTIONS_BUTTON_LABEL,
     KNOWLEDGE_EDITOR_BUTTON_LABEL,
     MODULE_NAME,
     YEAR_FILTER_VSE,
@@ -41,6 +42,7 @@ from moduly.audity.ui.audit_program_manager_banner_widget import (
 )
 from moduly.audity.ui.audit_program_manager_dialog import AuditProgramManagerDialog
 from moduly.audity.ui.audity_knowledge_editor_dialog import AudityKnowledgeEditorDialog
+from moduly.audity.ui.extraordinary_questions_dialog import ExtraordinaryQuestionsDialog
 from moduly.audity.ui.audit_table import AuditTable
 from moduly.audity.ui.rocni_zprava_auditu_dialog import RocniZpravaAudituDialog
 
@@ -57,6 +59,7 @@ class AudityPage(QWidget):
 
         self.new_btn = QPushButton("Nový audit")
         self.program_btn = QPushButton(AUDIT_PROGRAM_BUTTON_LABEL)
+        self.extraordinary_btn = QPushButton(EXTRAORDINARY_QUESTIONS_BUTTON_LABEL)
         self.edit_btn = QPushButton("Upravit")
         self.delete_btn = QPushButton("Smazat")
         self.protocol_btn = QPushButton(AUDIT_PROTOCOL_BUTTON_LABEL)
@@ -93,6 +96,7 @@ class AudityPage(QWidget):
 
         toolbar.addWidget(self.new_btn)
         toolbar.addWidget(self.program_btn)
+        toolbar.addWidget(self.extraordinary_btn)
         toolbar.addWidget(self.edit_btn)
         toolbar.addWidget(self.delete_btn)
         toolbar.addWidget(self.protocol_btn)
@@ -117,6 +121,7 @@ class AudityPage(QWidget):
 
         self.new_btn.clicked.connect(self.new_audit)
         self.program_btn.clicked.connect(self.open_program_manager)
+        self.extraordinary_btn.clicked.connect(self.open_extraordinary_questions)
         self.edit_btn.clicked.connect(self.open_selected_audit)
         self.delete_btn.clicked.connect(self.delete_selected_audit)
         self.protocol_btn.clicked.connect(self.export_selected_protocol)
@@ -313,6 +318,9 @@ class AudityPage(QWidget):
 
     def open_program_manager(self) -> None:
         exec_maximized(AuditProgramManagerDialog(self))
+
+    def open_extraordinary_questions(self) -> None:
+        exec_maximized(ExtraordinaryQuestionsDialog(self))
 
     def open_annual_report(self) -> None:
         year_value = self.year_filter.currentData()
