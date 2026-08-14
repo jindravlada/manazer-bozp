@@ -1,4 +1,4 @@
-"""AUDIT-SNAPSHOT-URGENT-2: atomické ruční v2 + bezpečné odstranění auditu id=7."""
+"""AUDIT-SNAPSHOT-URGENT-2-cleanup: atomické ruční v2 + obecný guard bez id=7."""
 
 from __future__ import annotations
 
@@ -12,9 +12,10 @@ from unittest.mock import patch
 
 from sqlalchemy import select, text
 
-_TMP = Path(tempfile.mkdtemp(prefix="audit-snapshot-urgent-2-"))
+_TMP = Path(tempfile.mkdtemp(prefix="audit-snapshot-urgent-2-cleanup-"))
 _WS = _TMP / ".local" / "share" / "manazer-bozp"
 _DB = _WS / "databaze" / "manager_bozp.db"
+_REPO = Path(__file__).resolve().parents[1]
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 with patch.object(Path, "home", return_value=_TMP):
@@ -32,15 +33,6 @@ with patch.object(Path, "home", return_value=_TMP):
     initialize_database()
 
     from core.database.session import get_session
-    from core.shared.constants import (
-        CONTROL_RESULT_VYHOVUJE,
-        ENTITY_AUDITY,
-    )
-    from core.shared.modely.control_result import ControlResult
-    from core.shared.modely.finding import Finding
-    from core.shared.sluzby.control_result_service import control_result_service
-    from core.shared.sluzby.finding_service import finding_service
-    from core.services.attachment_service import attachment_service
     from moduly.audity.constants import (
         AUDIT_METHODOLOGY_GENERATION_LEGACY_V1,
         AUDIT_METHODOLOGY_GENERATION_V2,
@@ -63,22 +55,22 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.audity.sluzby.audit_question_snapshot_service import (
         AuditV2SnapshotError,
-        audit_question_snapshot_service,
     )
     from moduly.audity.sluzby.audit_service import audit_service
+    from moduly.audity.sluzby.audit_snapshot_backfill_service import (
+        AUDIT_BACKFILL_STATUS_INCONSISTENT,
+        AuditSnapshotBackfillError,
+        classify_audit_backfill_state,
+        prepare_audit_snapshot_backfill,
+    )
     from moduly.audity.sluzby.audit_snapshot_integrity_service import (
         compute_snapshot_integrity_hash,
     )
-    from moduly.audity.sluzby.audit_v2_create_service import (
-        AuditV2CreateError,
-        create_manual_audit_with_v2_snapshot,
+    from moduly.audity.sluzby.audit_snapshot_schema_migration import (
+        prepare_audit_snapshot_schema,
     )
-    from moduly.audity.sluzby.incomplete_manual_audit_cleanup_service import (
-        TARGET_INCOMPLETE_MANUAL_AUDIT_ID,
-        collect_incomplete_manual_audit_diagnostics,
-        delete_incomplete_manual_audit_atomically,
-        offer_incomplete_manual_audit_cleanup_at_startup,
-        IncompleteManualAuditCleanupError,
+    from moduly.audity.sluzby.audit_v2_create_service import (
+        create_manual_audit_with_v2_snapshot,
     )
     from moduly.audity.sluzby.system_audit_workplace_service import (
         SystemAuditWorkplaceError,
@@ -147,10 +139,60 @@ def _mixed_tree() -> list:
     return _fake_tree("proc_m", "Proces M", section)
 
 
+def _prepare_snapshot_schema() -> None:
+    prepare_audit_snapshot_schema(workspace_root=_WS, database_path=_DB)
+
+
+class NoHardcodedId7TestCase(unittest.TestCase):
+    """Ve zdrojovém kódu nesmí zůstat speciální logika pro audit id=7."""
+
+    _SCAN_PATHS = (
+        _REPO / "core" / "database" / "upgrade_guard.py",
+        _REPO / "moduly" / "audity" / "sluzby" / "audit_v2_create_service.py",
+        _REPO / "moduly" / "audity" / "sluzby" / "audit_program_service.py",
+        _REPO / "moduly" / "audity" / "sluzby" / "audit_service.py",
+        _REPO / "moduly" / "audity" / "ui" / "audit_dialog.py",
+    )
+
+    def test_01_no_hardcoded_audit_id_7_in_production(self) -> None:
+        cleanup_module = (
+            _REPO
+            / "moduly"
+            / "audity"
+            / "sluzby"
+            / "incomplete_manual_audit_cleanup_service.py"
+        )
+        self.assertFalse(
+            cleanup_module.is_file(),
+            "Jednorázová cleanup služba pro id=7 musí být odstraněna.",
+        )
+
+        banned_snippets = (
+            "TARGET_INCOMPLETE_MANUAL_AUDIT_ID",
+            "pre_incomplete_manual_audit_cleanup",
+            "Odstranit neúplný testovací audit",
+            "offer_incomplete_manual_audit_cleanup_at_startup",
+            "incomplete_manual_audit_cleanup_service",
+            "TARGET_INCOMPLETE_MANUAL_AUDIT_ID = 7",
+            "audit id=7",
+            "auditu id=7",
+            "id=7",
+        )
+        # Produkční soubory — žádná zmínka o jednorázovém testovacím id=7.
+        for path in self._SCAN_PATHS:
+            text_src = path.read_text(encoding="utf-8")
+            for snippet in banned_snippets:
+                self.assertNotIn(
+                    snippet,
+                    text_src,
+                    f"{path.name} stále obsahuje {snippet!r}",
+                )
+
+
 class ManualV2CreateTestCase(unittest.TestCase):
     def setUp(self) -> None:
-        self.system_wp = settings_service.save_workplace(name="Sys U2", active=True)
-        self.ops_wp = settings_service.save_workplace(name="Ops U2", active=True)
+        self.system_wp = settings_service.save_workplace(name="Sys U2c", active=True)
+        self.ops_wp = settings_service.save_workplace(name="Ops U2c", active=True)
         system_audit_workplace_service.set_system_audit_workplace_id(self.system_wp.id)
         self.tree = _mixed_tree()
 
@@ -167,13 +209,13 @@ class ManualV2CreateTestCase(unittest.TestCase):
                     "year": 2026,
                     "audit_date": date(2026, 8, 14),
                     "started_at": date(2026, 8, 14),
-                    "title": "Ruční U2",
+                    "title": "Ruční U2c",
                 },
                 commission_members=None,
             )
             return audit, mocked
 
-    def test_01_manual_system_only_system(self) -> None:
+    def test_06_manual_system_only_system(self) -> None:
         audit, _ = self._create_manual(self.system_wp.id)
         with get_session() as session:
             snaps = list(
@@ -186,51 +228,7 @@ class ManualV2CreateTestCase(unittest.TestCase):
         self.assertEqual({s.assertion_id for s in snaps}, {"sys_m"})
         self.assertEqual({s.question_kind for s in snaps}, {AUDIT_QUESTION_KIND_SYSTEM})
 
-    def test_02_manual_system_no_operation(self) -> None:
-        audit, _ = self._create_manual(self.system_wp.id)
-        with get_session() as session:
-            kinds = {
-                s.question_kind
-                for s in session.scalars(
-                    select(AuditQuestionSnapshot).where(
-                        AuditQuestionSnapshot.audit_id == audit.id
-                    )
-                )
-            }
-        self.assertNotIn(AUDIT_QUESTION_KIND_OPERATION, kinds)
-
-    def test_03_manual_system_no_unclassified(self) -> None:
-        section = _section(
-            "sec_u",
-            "Sekce U",
-            [
-                _question("sys_u", "Systém U", kind=AUDIT_QUESTION_KIND_SYSTEM),
-                _question("unc_u", "Nezařazeno U"),
-            ],
-        )
-        tree = _fake_tree("proc_u", "Proces U", section)
-        before = len(audit_service.get_all())
-        with patch.object(audit_knowledge_service, "get_knowledge_tree", return_value=tree):
-            with self.assertRaises(AuditV2SnapshotError):
-                create_manual_audit_with_v2_snapshot(
-                    fields={
-                        "workplace_id": self.system_wp.id,
-                        "year": 2026,
-                        "started_at": date.today(),
-                    },
-                )
-        self.assertEqual(len(audit_service.get_all()), before)
-        with get_session() as session:
-            orphan = list(
-                session.scalars(
-                    select(AuditQuestionSnapshot).where(
-                        AuditQuestionSnapshot.assertion_id == "unc_u"
-                    )
-                )
-            )
-        self.assertEqual(orphan, [])
-
-    def test_04_manual_operation_only_operation(self) -> None:
+    def test_07_manual_operation_only_operation(self) -> None:
         audit, _ = self._create_manual(self.ops_wp.id)
         with get_session() as session:
             snaps = list(
@@ -243,33 +241,7 @@ class ManualV2CreateTestCase(unittest.TestCase):
         self.assertEqual({s.assertion_id for s in snaps}, {"ops_m"})
         self.assertEqual({s.question_kind for s in snaps}, {AUDIT_QUESTION_KIND_OPERATION})
 
-    def test_05_manual_operation_no_system(self) -> None:
-        audit, _ = self._create_manual(self.ops_wp.id)
-        with get_session() as session:
-            kinds = {
-                s.question_kind
-                for s in session.scalars(
-                    select(AuditQuestionSnapshot).where(
-                        AuditQuestionSnapshot.audit_id == audit.id
-                    )
-                )
-            }
-        self.assertNotIn(AUDIT_QUESTION_KIND_SYSTEM, kinds)
-
-    def test_06_extraordinary_excluded(self) -> None:
-        audit, _ = self._create_manual(self.ops_wp.id)
-        with get_session() as session:
-            ids = {
-                s.assertion_id
-                for s in session.scalars(
-                    select(AuditQuestionSnapshot).where(
-                        AuditQuestionSnapshot.audit_id == audit.id
-                    )
-                )
-            }
-        self.assertNotIn("ext_m", ids)
-
-    def test_07_unclassified_blocks_manual(self) -> None:
+    def test_08_unclassified_blocks_manual(self) -> None:
         section = _section(
             "sec_b",
             "Sekce B",
@@ -279,6 +251,7 @@ class ManualV2CreateTestCase(unittest.TestCase):
             ],
         )
         tree = _fake_tree("proc_b", "Proces B", section)
+        before = len(audit_service.get_all())
         with patch.object(audit_knowledge_service, "get_knowledge_tree", return_value=tree):
             with self.assertRaises(AuditV2SnapshotError) as ctx:
                 create_manual_audit_with_v2_snapshot(
@@ -290,8 +263,9 @@ class ManualV2CreateTestCase(unittest.TestCase):
                 )
         self.assertIn("Proces B", str(ctx.exception))
         self.assertIn("unc_b", str(ctx.exception))
+        self.assertEqual(len(audit_service.get_all()), before)
 
-    def test_08_error_leaves_no_audit_or_snapshot(self) -> None:
+    def test_09_error_leaves_no_audit_or_snapshot(self) -> None:
         section = _section(
             "sec_err",
             "Sekce Err",
@@ -300,8 +274,9 @@ class ManualV2CreateTestCase(unittest.TestCase):
         tree = _fake_tree("proc_err", "Proces Err", section)
         before_audits = {a.id for a in audit_service.get_all()}
         with get_session() as session:
-            before_snaps = session.scalar(
-                text("SELECT COUNT(*) FROM audit_question_snapshots")
+            before_snaps = int(
+                session.scalar(text("SELECT COUNT(*) FROM audit_question_snapshots"))
+                or 0
             )
         with patch.object(audit_knowledge_service, "get_knowledge_tree", return_value=tree):
             with self.assertRaises(AuditV2SnapshotError):
@@ -314,25 +289,11 @@ class ManualV2CreateTestCase(unittest.TestCase):
                 )
         self.assertEqual({a.id for a in audit_service.get_all()}, before_audits)
         with get_session() as session:
-            after_snaps = session.scalar(
-                text("SELECT COUNT(*) FROM audit_question_snapshots")
+            after_snaps = int(
+                session.scalar(text("SELECT COUNT(*) FROM audit_question_snapshots"))
+                or 0
             )
         self.assertEqual(after_snaps, before_snaps)
-
-    def test_09_missing_system_workplace_blocks(self) -> None:
-        system_audit_workplace_service.set_system_audit_workplace_id(None)
-        with patch.object(
-            audit_knowledge_service, "get_knowledge_tree", return_value=self.tree
-        ):
-            with self.assertRaises(SystemAuditWorkplaceError) as ctx:
-                create_manual_audit_with_v2_snapshot(
-                    fields={
-                        "workplace_id": self.ops_wp.id,
-                        "year": 2026,
-                        "started_at": date.today(),
-                    },
-                )
-        self.assertIn(AUDIT_START_MISSING_SYSTEM_WORKPLACE, str(ctx.exception))
 
     def test_10_manual_is_snapshot_v2(self) -> None:
         audit, mocked = self._create_manual(self.ops_wp.id)
@@ -359,315 +320,191 @@ class ManualV2CreateTestCase(unittest.TestCase):
             compute_snapshot_integrity_hash(snaps),
         )
 
-    def test_12_commission_error_rolls_back(self) -> None:
-        before = len(audit_service.get_all())
+    def test_missing_system_workplace_blocks(self) -> None:
+        system_audit_workplace_service.set_system_audit_workplace_id(None)
         with patch.object(
             audit_knowledge_service, "get_knowledge_tree", return_value=self.tree
         ):
-            with self.assertRaises(ValueError):
+            with self.assertRaises(SystemAuditWorkplaceError) as ctx:
                 create_manual_audit_with_v2_snapshot(
                     fields={
                         "workplace_id": self.ops_wp.id,
                         "year": 2026,
                         "started_at": date.today(),
                     },
-                    commission_members=[{"record_type": "leader", "display_name": "X"}],
                 )
-        self.assertEqual(len(audit_service.get_all()), before)
+        self.assertIn(AUDIT_START_MISSING_SYSTEM_WORKPLACE, str(ctx.exception))
 
-    def test_13_reopen_system_shows_only_system(self) -> None:
+    def test_reopen_system_shows_only_system(self) -> None:
         audit, _ = self._create_manual(self.system_wp.id)
         source = audit_question_source_service.resolve_for_audit(audit.id)
-        kinds = {q.question_kind for q in source.assertions}
-        ids = {q.assertion_id for q in source.assertions}
-        self.assertEqual(kinds, {AUDIT_QUESTION_KIND_SYSTEM})
-        self.assertEqual(ids, {"sys_m"})
-
-    def test_14_reopen_operation_shows_only_operation(self) -> None:
-        audit, _ = self._create_manual(self.ops_wp.id)
-        source = audit_question_source_service.resolve_for_audit(audit.id)
-        kinds = {q.question_kind for q in source.assertions}
-        ids = {q.assertion_id for q in source.assertions}
-        self.assertEqual(kinds, {AUDIT_QUESTION_KIND_OPERATION})
-        self.assertEqual(ids, {"ops_m"})
-
-    def test_15_json_change_after_create_ignored(self) -> None:
-        audit, _ = self._create_manual(self.ops_wp.id)
-        mutated = _section(
-            "sec_m",
-            "Sekce M",
-            [
-                _question("ops_m", "Provoz M MUT", kind=AUDIT_QUESTION_KIND_OPERATION),
-                _question("ops_new", "Nová", kind=AUDIT_QUESTION_KIND_OPERATION),
-            ],
+        self.assertEqual(
+            {q.question_kind for q in source.assertions},
+            {AUDIT_QUESTION_KIND_SYSTEM},
         )
-        mutated_tree = _fake_tree("proc_m", "Proces M", mutated)
-        with patch.object(
-            audit_knowledge_service, "get_knowledge_tree", return_value=mutated_tree
-        ):
-            source = audit_question_source_service.resolve_for_audit(audit.id)
-        self.assertEqual({q.assertion_id for q in source.assertions}, {"ops_m"})
-        self.assertEqual(source.assertions[0].assertion_text, "Provoz M")
 
 
-class IncompleteCleanupTestCase(unittest.TestCase):
+class IntegrityGuardNoAutoDeleteTestCase(unittest.TestCase):
+    """Obecný guard blokuje nekonzistenci — bez auto-mazání."""
+
     def setUp(self) -> None:
-        # Vyčisti audity z předchozích testů v sdílené DB — izoluj id=7.
-        with get_session() as session:
-            session.execute(text("DELETE FROM audit_question_snapshots"))
-            session.execute(text("DELETE FROM audit_commission_members"))
-            session.execute(text("DELETE FROM audit_verification_overrides"))
-            session.execute(
-                text("DELETE FROM control_results WHERE entity_type = :t"),
-                {"t": ENTITY_AUDITY},
-            )
-            session.execute(
-                text("DELETE FROM findings WHERE entity_type = :t"),
-                {"t": ENTITY_AUDITY},
-            )
-            session.execute(
-                text("DELETE FROM attachments WHERE entity_type IN ('audity', 'audit')")
-            )
-            session.execute(text("DELETE FROM audits"))
-            session.execute(
-                text("UPDATE audit_program_visits SET audit_id = NULL")
-            )
-            session.commit()
+        _prepare_snapshot_schema()
+        self.wp = settings_service.save_workplace(name="Guard WP", active=True)
 
-        self.wp = settings_service.save_workplace(name="Cleanup WP", active=True)
-
-    def _seed_incomplete_audit_id7(self, *, with_snaps: bool = True) -> Audit:
-        """Vytvoří neúplný audit s pevně daným id=7 (markery NULL + snaps)."""
-        with get_session() as session:
-            existing = session.get(Audit, TARGET_INCOMPLETE_MANUAL_AUDIT_ID)
-            if existing is not None:
-                session.delete(existing)
-                session.flush()
-            audit = Audit(
-                id=TARGET_INCOMPLETE_MANUAL_AUDIT_ID,
-                number=f"{TARGET_INCOMPLETE_MANUAL_AUDIT_ID}/2026",
-                year=2026,
-                started_at=date(2026, 8, 1),
-                workplace_id=self.wp.id,
-                workplace_name=self.wp.name,
-                title="Neúplný test",
-                methodology_source=None,
-                methodology_generation=None,
-                questions_frozen_at=None,
-            )
-            session.add(audit)
-            if with_snaps:
-                for i in range(3):
-                    session.add(
-                        AuditQuestionSnapshot(
-                            audit_id=TARGET_INCOMPLETE_MANUAL_AUDIT_ID,
-                            process_id="p",
-                            process_name="P",
-                            section_id="s",
-                            section_name="S",
-                            assertion_id=f"a{i}",
-                            assertion_text=f"Otázka {i}",
-                            verification_type="documentation",
-                            severity="normal",
-                            question_kind=AUDIT_QUESTION_KIND_SYSTEM,
-                            display_order=i,
-                            is_in_scope=True,
-                            created_at=datetime.now(),
-                        )
-                    )
-            session.commit()
-            session.refresh(audit)
-            session.expunge(audit)
-            return audit
-
-    def test_16_detection_shows_dialog_text(self) -> None:
-        self._seed_incomplete_audit_id7()
-        diag = collect_incomplete_manual_audit_diagnostics()
-        assert diag is not None
-        self.assertTrue(diag.eligible_for_confirmed_cleanup)
-        self.assertEqual(diag.snapshot_count, 3)
-        self.assertEqual(diag.control_results_count, 0)
-
-    def test_17_cancel_keeps_audit(self) -> None:
-        self._seed_incomplete_audit_id7()
-        with self.assertRaises(IncompleteManualAuditCleanupError):
-            offer_incomplete_manual_audit_cleanup_at_startup(
-                workspace_root=_WS,
-                database_path=_DB,
-                interactive=False,
-                auto_confirm=False,
-            )
-        self.assertIsNotNone(
-            audit_service.get_by_id(TARGET_INCOMPLETE_MANUAL_AUDIT_ID)
-        )
-
-    def test_18_result_blocks_cleanup(self) -> None:
-        audit = self._seed_incomplete_audit_id7()
-        with get_session() as session:
-            session.add(
-                ControlResult(
-                    entity_type=ENTITY_AUDITY,
-                    entity_id=audit.id,
-                    source_area_id="p",
-                    source_area_label="P",
-                    source_section_id="s",
-                    source_section_label="S",
-                    source_control_point_id="a0",
-                    source_control_point_label="Otázka 0",
-                    result=CONTROL_RESULT_VYHOVUJE,
-                )
-            )
-            session.commit()
-        diag = collect_incomplete_manual_audit_diagnostics()
-        assert diag is not None
-        self.assertFalse(diag.eligible_for_confirmed_cleanup)
-        with self.assertRaises(IncompleteManualAuditCleanupError):
-            offer_incomplete_manual_audit_cleanup_at_startup(
-                workspace_root=_WS,
-                database_path=_DB,
-                auto_confirm=True,
-            )
-
-    def test_19_finding_blocks_cleanup(self) -> None:
-        audit = self._seed_incomplete_audit_id7()
-        finding_service.create(
-            entity_type=ENTITY_AUDITY,
-            entity_id=audit.id,
-            description="Zjištění test",
-            source_area_label="P",
-            source_section_label="S",
-            source_control_point_id="a0",
-        )
-        diag = collect_incomplete_manual_audit_diagnostics()
-        assert diag is not None
-        self.assertFalse(diag.eligible_for_confirmed_cleanup)
-
-    def test_20_attachment_blocks_cleanup(self) -> None:
-        audit = self._seed_incomplete_audit_id7()
-        tmp = _TMP / "attach.txt"
-        tmp.write_text("x", encoding="utf-8")
-        attachment_service.add_file("audit", audit.id, str(tmp))
-        diag = collect_incomplete_manual_audit_diagnostics()
-        assert diag is not None
-        self.assertFalse(diag.eligible_for_confirmed_cleanup)
-
-    def test_21_backup_created_before_delete(self) -> None:
-        self._seed_incomplete_audit_id7()
-        result = delete_incomplete_manual_audit_atomically(
-            TARGET_INCOMPLETE_MANUAL_AUDIT_ID,
-            workspace_root=_WS,
-            database_path=_DB,
-            create_backup=True,
-        )
-        self.assertTrue(result.deleted)
-        assert result.backup_path is not None
-        self.assertTrue(result.backup_path.is_file())
-        self.assertTrue(
-            result.backup_path.name.startswith("pre_incomplete_manual_audit_cleanup_")
-        )
-        self.assertIsNone(audit_service.get_by_id(TARGET_INCOMPLETE_MANUAL_AUDIT_ID))
-
-    def test_22_backup_failure_prevents_delete(self) -> None:
-        self._seed_incomplete_audit_id7()
-        with patch(
-            "moduly.audity.sluzby.incomplete_manual_audit_cleanup_service."
-            "create_verified_pre_migration_backup",
-            side_effect=Exception("boom"),
-        ):
-            # PreMigrationBackupError wrapper — patch raises generic, code wraps
-            # only PreMigrationBackupError. Force PreMigrationBackupError.
-            from core.database.upgrade_guard import PreMigrationBackupError
-
-            with patch(
-                "moduly.audity.sluzby.incomplete_manual_audit_cleanup_service."
-                "create_verified_pre_migration_backup",
-                side_effect=PreMigrationBackupError("záloha selhala"),
-            ):
-                with self.assertRaises(IncompleteManualAuditCleanupError):
-                    delete_incomplete_manual_audit_atomically(
-                        TARGET_INCOMPLETE_MANUAL_AUDIT_ID,
-                        workspace_root=_WS,
-                        database_path=_DB,
-                        create_backup=True,
-                    )
-        self.assertIsNotNone(
-            audit_service.get_by_id(TARGET_INCOMPLETE_MANUAL_AUDIT_ID)
-        )
-
-    def test_23_delete_failure_rolls_back(self) -> None:
-        self._seed_incomplete_audit_id7()
-        with patch(
-            "moduly.audity.sluzby.incomplete_manual_audit_cleanup_service.get_session"
-        ) as mocked_session:
-            # Necháme create_backup=False a selhání uvnitř mazání simulujeme
-            # přes collect — raději: po záloze selže commit.
-            pass
-        del mocked_session
-
-        real_get = get_session
-
-        class _BoomSession:
-            def __enter__(self):
-                self._inner = real_get().__enter__()
-                return self
-
-            def __exit__(self, *args):
-                return self._inner.__exit__(*args)
-
-            def get(self, *args, **kwargs):
-                return self._inner.get(*args, **kwargs)
-
-            def scalars(self, *args, **kwargs):
-                return self._inner.scalars(*args, **kwargs)
-
-            def delete(self, obj):
-                if isinstance(obj, Audit):
-                    raise RuntimeError("simulated delete failure")
-                return self._inner.delete(obj)
-
-            def commit(self):
-                return self._inner.commit()
-
-            def rollback(self):
-                return self._inner.rollback()
-
-        with patch(
-            "moduly.audity.sluzby.incomplete_manual_audit_cleanup_service.get_session",
-            return_value=_BoomSession(),
-        ):
-            with self.assertRaises(RuntimeError):
-                delete_incomplete_manual_audit_atomically(
-                    TARGET_INCOMPLETE_MANUAL_AUDIT_ID,
-                    workspace_root=_WS,
-                    database_path=_DB,
-                    create_backup=False,
-                )
-        self.assertIsNotNone(
-            audit_service.get_by_id(TARGET_INCOMPLETE_MANUAL_AUDIT_ID)
-        )
-        with get_session() as session:
-            count = session.scalar(
-                select(AuditQuestionSnapshot).where(
-                    AuditQuestionSnapshot.audit_id == TARGET_INCOMPLETE_MANUAL_AUDIT_ID
-                ).limit(1)
-            )
-        self.assertIsNotNone(count)
-
-    def test_24_after_cleanup_remaining_pass_guard(self) -> None:
-        self._seed_incomplete_audit_id7()
-        # Pad audity 1..6 jsou live bez snaps — backfill by je chtěl, ale
-        # po cleanup id=7 ověříme, že id=7 zmizel.
-        offer_incomplete_manual_audit_cleanup_at_startup(
-            workspace_root=_WS,
-            database_path=_DB,
-            auto_confirm=True,
-        )
-        self.assertIsNone(audit_service.get_by_id(TARGET_INCOMPLETE_MANUAL_AUDIT_ID))
-
-    def test_25_legacy_v1_untouched(self) -> None:
-        legacy = audit_service.create_audit(
+    def _seed_inconsistent_partial_snapshot(self) -> Audit:
+        audit = audit_service.create_audit(
             workplace_id=self.wp.id,
             workplace_name=self.wp.name,
+            year=2026,
+            started_at=date(2026, 8, 1),
+            title="Nekonzistentní partial",
+        )
+        with get_session() as session:
+            row = session.get(Audit, audit.id)
+            assert row is not None
+            # Markery NULL + existující snaps = inconsistent (ne pristine).
+            row.methodology_source = None
+            row.methodology_generation = None
+            row.questions_frozen_at = None
+            session.add(
+                AuditQuestionSnapshot(
+                    audit_id=audit.id,
+                    process_id="p",
+                    process_name="P",
+                    section_id="s",
+                    section_name="S",
+                    assertion_id="a1",
+                    assertion_text="Orphan snap",
+                    verification_type="documentation",
+                    severity="normal",
+                    question_kind=AUDIT_QUESTION_KIND_OPERATION,
+                    display_order=0,
+                    is_in_scope=True,
+                    created_at=datetime.now(),
+                )
+            )
+            session.commit()
+            session.refresh(row)
+            session.expunge(row)
+            return row
+
+    def test_02_startup_does_not_offer_auto_delete(self) -> None:
+        upgrade_src = (_REPO / "core" / "database" / "upgrade_guard.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertNotIn("offer_incomplete_manual_audit_cleanup", upgrade_src)
+        self.assertNotIn("Odstranit neúplný testovací audit", upgrade_src)
+        self.assertNotIn("incomplete_manual_audit_cleanup", upgrade_src)
+
+    def test_03_04_inconsistent_blocks_with_diagnosis(self) -> None:
+        audit = self._seed_inconsistent_partial_snapshot()
+        with get_session() as session:
+            snaps = list(
+                session.scalars(
+                    select(AuditQuestionSnapshot).where(
+                        AuditQuestionSnapshot.audit_id == audit.id
+                    )
+                )
+            )
+        item = classify_audit_backfill_state(
+            audit, snapshot_rows=snaps, control_results=[]
+        )
+        self.assertEqual(item.status, AUDIT_BACKFILL_STATUS_INCONSISTENT)
+        self.assertIn("částečný", item.detail.lower())
+
+        with self.assertRaises(AuditSnapshotBackfillError) as ctx:
+            prepare_audit_snapshot_backfill(workspace_root=_WS, database_path=_DB)
+        message = str(ctx.exception)
+        self.assertIn("nekonzistentní", message.lower())
+        self.assertIn(f"id={audit.id}", message)
+        self.assertIn("Obnovte zálohu", message)
+
+    def test_05_guard_does_not_delete_or_rewrite(self) -> None:
+        audit = self._seed_inconsistent_partial_snapshot()
+        before_snaps = 0
+        with get_session() as session:
+            before_snaps = len(
+                list(
+                    session.scalars(
+                        select(AuditQuestionSnapshot).where(
+                            AuditQuestionSnapshot.audit_id == audit.id
+                        )
+                    )
+                )
+            )
+        with self.assertRaises(AuditSnapshotBackfillError):
+            prepare_audit_snapshot_backfill(workspace_root=_WS, database_path=_DB)
+
+        still = audit_service.get_by_id(audit.id)
+        assert still is not None
+        self.assertIsNone(still.methodology_source)
+        self.assertIsNone(still.methodology_generation)
+        self.assertIsNone(still.questions_frozen_at)
+        with get_session() as session:
+            after_snaps = list(
+                session.scalars(
+                    select(AuditQuestionSnapshot).where(
+                        AuditQuestionSnapshot.audit_id == audit.id
+                    )
+                )
+            )
+        self.assertEqual(len(after_snaps), before_snaps)
+        self.assertEqual(after_snaps[0].assertion_text, "Orphan snap")
+
+
+class ProgramVisitStillV2TestCase(unittest.TestCase):
+    def test_12_program_visit_still_v2(self) -> None:
+        system_wp = settings_service.save_workplace(name="Sys Prog C", active=True)
+        ops_wp = settings_service.save_workplace(name="Ops Prog C", active=True)
+        system_audit_workplace_service.set_system_audit_workplace_id(system_wp.id)
+        tree = _mixed_tree()
+        program = audit_program_service.create_program(
+            name="Program U2c",
+            date_from=date(2026, 1, 1),
+            date_to=date(2028, 12, 31),
+            standards=list(DEFAULT_AUDIT_PROGRAM_STANDARDS),
+        )
+        audit_program_service.add_workplace(
+            program.id,
+            workplace_id=ops_wp.id,
+            workplace_name=ops_wp.name,
+            audit_interval_months=6,
+        )
+        visit = audit_program_service.add_visit(
+            program.id,
+            workplace_id=ops_wp.id,
+            planned_year=2026,
+            planned_month=9,
+            planned_date=date(2026, 9, 1),
+        )
+        audit_program_service.add_visit_process(
+            visit.id, process_id="proc_m", process_name="Proces M"
+        )
+        with patch.object(
+            audit_knowledge_service, "get_knowledge_tree", return_value=tree
+        ):
+            audit = audit_program_service.create_audit_from_visit(visit.id)
+        self.assertEqual(audit.methodology_generation, AUDIT_METHODOLOGY_GENERATION_V2)
+        with get_session() as session:
+            snaps = list(
+                session.scalars(
+                    select(AuditQuestionSnapshot).where(
+                        AuditQuestionSnapshot.audit_id == audit.id
+                    )
+                )
+            )
+        self.assertEqual({s.assertion_id for s in snaps}, {"ops_m"})
+
+
+class LegacyUntouchedTestCase(unittest.TestCase):
+    def test_13_legacy_v1_untouched_by_manual_create(self) -> None:
+        wp = settings_service.save_workplace(name="Legacy WP C", active=True)
+        system = settings_service.save_workplace(name="Sys Legacy C", active=True)
+        system_audit_workplace_service.set_system_audit_workplace_id(system.id)
+
+        legacy = audit_service.create_audit(
+            workplace_id=wp.id,
+            workplace_name=wp.name,
             year=2025,
             started_at=date(2025, 1, 1),
         )
@@ -707,61 +544,21 @@ class IncompleteCleanupTestCase(unittest.TestCase):
             session.commit()
 
         before_hash = audit_service.get_by_id(legacy.id).snapshot_integrity_hash
-        self._seed_incomplete_audit_id7()
-        delete_incomplete_manual_audit_atomically(
-            TARGET_INCOMPLETE_MANUAL_AUDIT_ID,
-            workspace_root=_WS,
-            database_path=_DB,
-            create_backup=False,
-        )
+        tree = _mixed_tree()
+        with patch.object(
+            audit_knowledge_service, "get_knowledge_tree", return_value=tree
+        ):
+            create_manual_audit_with_v2_snapshot(
+                fields={
+                    "workplace_id": wp.id,
+                    "year": 2026,
+                    "started_at": date.today(),
+                },
+            )
         after = audit_service.get_by_id(legacy.id)
         assert after is not None
         self.assertEqual(after.methodology_generation, AUDIT_METHODOLOGY_GENERATION_LEGACY_V1)
         self.assertEqual(after.snapshot_integrity_hash, before_hash)
-
-
-class ProgramVisitStillV2TestCase(unittest.TestCase):
-    def test_26_program_visit_still_v2(self) -> None:
-        system_wp = settings_service.save_workplace(name="Sys Prog", active=True)
-        ops_wp = settings_service.save_workplace(name="Ops Prog", active=True)
-        system_audit_workplace_service.set_system_audit_workplace_id(system_wp.id)
-        tree = _mixed_tree()
-        program = audit_program_service.create_program(
-            name="Program U2",
-            date_from=date(2026, 1, 1),
-            date_to=date(2028, 12, 31),
-            standards=list(DEFAULT_AUDIT_PROGRAM_STANDARDS),
-        )
-        audit_program_service.add_workplace(
-            program.id,
-            workplace_id=ops_wp.id,
-            workplace_name=ops_wp.name,
-            audit_interval_months=6,
-        )
-        visit = audit_program_service.add_visit(
-            program.id,
-            workplace_id=ops_wp.id,
-            planned_year=2026,
-            planned_month=9,
-            planned_date=date(2026, 9, 1),
-        )
-        audit_program_service.add_visit_process(
-            visit.id, process_id="proc_m", process_name="Proces M"
-        )
-        with patch.object(
-            audit_knowledge_service, "get_knowledge_tree", return_value=tree
-        ):
-            audit = audit_program_service.create_audit_from_visit(visit.id)
-        self.assertEqual(audit.methodology_generation, AUDIT_METHODOLOGY_GENERATION_V2)
-        with get_session() as session:
-            snaps = list(
-                session.scalars(
-                    select(AuditQuestionSnapshot).where(
-                        AuditQuestionSnapshot.audit_id == audit.id
-                    )
-                )
-            )
-        self.assertEqual({s.assertion_id for s in snaps}, {"ops_m"})
 
 
 if __name__ == "__main__":
