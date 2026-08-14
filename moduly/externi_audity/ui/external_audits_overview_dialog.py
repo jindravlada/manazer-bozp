@@ -13,12 +13,17 @@ from PySide6.QtWidgets import (
     QPushButton,
     QSpinBox,
     QTableWidget,
-    QTableWidgetItem,
     QVBoxLayout,
 )
 
 from core.widgets.dialog_utils import configure_close_push_button, exec_maximized
 from core.widgets.filter_bar import FilterBar
+from core.widgets.typed_table_sort import (
+    create_typed_item,
+    enable_typed_sorting,
+    typed_date,
+    typed_text,
+)
 from moduly.externi_audity.constants import (
     EXTERNAL_AUDITS_OVERVIEW_TITLE,
     EXTERNAL_AUDIT_STATUS_FILTER_ALL,
@@ -27,6 +32,7 @@ from moduly.externi_audity.constants import (
     EXTERNAL_AUDIT_YEAR_SPIN_ALL_VALUE,
     EXTERNAL_AUDIT_YEAR_SPIN_MAX,
     EXTERNAL_AUDIT_YEAR_SPIN_MIN,
+    format_display_date,
 )
 from moduly.externi_audity.sluzby.external_audit_service import (
     ExternalAuditOverviewRow,
@@ -103,6 +109,7 @@ class ExternalAuditsOverviewDialog(QDialog):
         self.table.verticalHeader().setVisible(False)
         self.table.doubleClicked.connect(self.edit_selected)
         self.table.itemSelectionChanged.connect(self._refresh_actions)
+        enable_typed_sorting(self.table)
 
         self.text_filter = FilterBar(self.table)
         layout.addWidget(self.text_filter)
@@ -135,18 +142,55 @@ class ExternalAuditsOverviewDialog(QDialog):
         self._rows = self._filtered_rows(external_audit_service.list_overview_rows())
         self.table.setRowCount(len(self._rows))
         for index, row in enumerate(self._rows):
-            values = [
-                row.date_from.isoformat() if row.date_from else "Bez termínu",
-                row.date_to.isoformat() if row.date_to else "",
-                row.audit_type_label,
-                row.organization_name,
-                row.organization_ico,
-                row.workplaces_label,
-                row.status_label,
-                row.remind_from.isoformat() if row.remind_from else "",
+            cells = [
+                create_typed_item(
+                    format_display_date(row.date_from)
+                    if row.date_from is not None
+                    else "—",
+                    typed_date(row.date_from),
+                    stable_id=row.audit_id,
+                ),
+                create_typed_item(
+                    format_display_date(row.date_to)
+                    if row.date_to is not None
+                    else "",
+                    typed_date(row.date_to),
+                    stable_id=row.audit_id,
+                ),
+                create_typed_item(
+                    row.audit_type_label,
+                    typed_text(row.audit_type_label),
+                    stable_id=row.audit_id,
+                ),
+                create_typed_item(
+                    row.organization_name,
+                    typed_text(row.organization_name),
+                    stable_id=row.audit_id,
+                ),
+                create_typed_item(
+                    row.organization_ico,
+                    typed_text(row.organization_ico),
+                    stable_id=row.audit_id,
+                ),
+                create_typed_item(
+                    row.workplaces_label,
+                    typed_text(row.workplaces_label),
+                    stable_id=row.audit_id,
+                ),
+                create_typed_item(
+                    row.status_label,
+                    typed_text(row.status_label),
+                    stable_id=row.audit_id,
+                ),
+                create_typed_item(
+                    format_display_date(row.remind_from)
+                    if row.remind_from is not None
+                    else "",
+                    typed_date(row.remind_from),
+                    stable_id=row.audit_id,
+                ),
             ]
-            for col, value in enumerate(values):
-                item = QTableWidgetItem(value)
+            for col, item in enumerate(cells):
                 if col == COL_ORG:
                     item.setData(Qt.ItemDataRole.UserRole, row.audit_id)
                 self.table.setItem(index, col, item)

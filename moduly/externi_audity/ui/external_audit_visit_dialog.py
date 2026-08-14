@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, time
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
@@ -12,7 +12,6 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QHBoxLayout,
     QLabel,
-    QLineEdit,
     QListWidget,
     QListWidgetItem,
     QMessageBox,
@@ -22,6 +21,7 @@ from PySide6.QtWidgets import (
 
 from core.widgets.dialog_utils import configure_resizable_form_dialog
 from core.widgets.nullable_date_edit import NullableDateEdit
+from core.widgets.nullable_time_edit import NullableTimeEdit, parse_czech_time
 from moduly.audity.sluzby.audit_auditable_workplace_service import (
     list_auditable_workplaces,
 )
@@ -40,6 +40,20 @@ from moduly.externi_audity.sluzby.external_audit_service import (
     ExternalAuditError,
     _validate_time_range,
 )
+
+
+def _time_to_stored(value: time | None) -> str | None:
+    if value is None:
+        return None
+    return f"{value.hour:02d}:{value.minute:02d}"
+
+
+def _apply_stored_time(widget: NullableTimeEdit, stored: str | None) -> None:
+    if not stored:
+        widget.clear_time()
+        return
+    parsed = parse_czech_time(stored)
+    widget.set_time_value(parsed)
 
 
 class ExternalAuditVisitDialog(QDialog):
@@ -70,10 +84,10 @@ class ExternalAuditVisitDialog(QDialog):
         form.addRow("Datum *:", self.visit_date)
 
         time_row = QHBoxLayout()
-        self.time_from = QLineEdit(visit.time_from if visit and visit.time_from else "")
-        self.time_from.setPlaceholderText("HH:MM")
-        self.time_to = QLineEdit(visit.time_to if visit and visit.time_to else "")
-        self.time_to.setPlaceholderText("HH:MM")
+        self.time_from = NullableTimeEdit()
+        self.time_to = NullableTimeEdit()
+        _apply_stored_time(self.time_from, visit.time_from if visit else None)
+        _apply_stored_time(self.time_to, visit.time_to if visit else None)
         time_row.addWidget(self.time_from)
         time_row.addWidget(QLabel("–"))
         time_row.addWidget(self.time_to)
@@ -188,7 +202,25 @@ class ExternalAuditVisitDialog(QDialog):
                 keys.append(str(item.data(Qt.ItemDataRole.UserRole)))
         return keys
 
+    def _finish_pending_edits(self) -> None:
+        """Dokončí rozpracovanou editaci data/času před sběrem hodnot."""
+        self.visit_date._normalize_input()
+        self.time_from._normalize_input()
+        self.time_to._normalize_input()
+
+    def _read_optional_time(self, widget: NullableTimeEdit, label: str) -> str | None:
+        text = widget.line_edit.text().strip()
+        if not text:
+            return None
+        parsed = widget.get_time()
+        if parsed is None:
+            raise ExternalAuditError(
+                f"Neplatný {label} „{text}“. Použijte např. 800 nebo 8:00."
+            )
+        return _time_to_stored(parsed)
+
     def _accept(self) -> None:
+        self._finish_pending_edits()
         visit_date = self.visit_date.get_date()
         if visit_date is None:
             QMessageBox.warning(self, "Návštěva", "Datum je povinné.")
@@ -198,9 +230,9 @@ class ExternalAuditVisitDialog(QDialog):
             QMessageBox.warning(self, "Návštěva", "Vyberte auditovatelný provoz.")
             return
         try:
-            time_from, time_to = _validate_time_range(
-                self.time_from.text(), self.time_to.text()
-            )
+            time_from = self._read_optional_time(self.time_from, "čas od")
+            time_to = self._read_optional_time(self.time_to, "čas do")
+            time_from, time_to = _validate_time_range(time_from, time_to)
         except ExternalAuditError as exc:
             QMessageBox.warning(self, "Návštěva", str(exc))
             return

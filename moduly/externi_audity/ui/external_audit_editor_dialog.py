@@ -22,7 +22,6 @@ from PySide6.QtWidgets import (
     QSizePolicy,
     QTabWidget,
     QTableWidget,
-    QTableWidgetItem,
     QTextEdit,
     QVBoxLayout,
     QWidget,
@@ -54,6 +53,7 @@ from moduly.externi_audity.constants import (
     EXTERNAL_AUDIT_TYPE_LABELS,
     EXTERNAL_AUDIT_TYPES,
     EXTERNAL_AUDIT_TYPE_SURVEILLANCE,
+    format_display_date,
 )
 from moduly.externi_audity.sluzby.external_audit_draft import (
     ExternalAuditDraft,
@@ -216,6 +216,9 @@ class ExternalAuditEditorDialog(QDialog):
         self.visits_table.verticalHeader().setVisible(False)
         self.visits_table.itemSelectionChanged.connect(self._refresh_visit_actions)
         self.visits_table.doubleClicked.connect(self._edit_visit)
+        from core.widgets.typed_table_sort import enable_typed_sorting
+
+        enable_typed_sorting(self.visits_table)
         layout.addWidget(self.visits_table, 1)
 
         self.visit_add_btn.clicked.connect(self._add_visit)
@@ -323,8 +326,8 @@ class ExternalAuditEditorDialog(QDialog):
 
     def _refresh_dates(self) -> None:
         date_from, date_to = self._draft.derived_date_range()
-        self.date_from.setText(date_from.isoformat() if date_from else "—")
-        self.date_to.setText(date_to.isoformat() if date_to else "—")
+        self.date_from.setText(format_display_date(date_from))
+        self.date_to.setText(format_display_date(date_to))
 
     def _refresh_participant_lists(self) -> None:
         mapping = {
@@ -348,27 +351,44 @@ class ExternalAuditEditorDialog(QDialog):
         return ", ".join(names)
 
     def _refresh_visits_table(self) -> None:
+        from core.widgets.typed_table_sort import create_typed_item, typed_date, typed_text
+
         visits = list(self._draft.visits)
         self.visits_table.setRowCount(len(visits))
         for row, visit in enumerate(visits):
             values = [
-                visit.visit_date.isoformat(),
-                visit.time_from or "",
-                visit.time_to or "",
-                visit.workplace_name_snapshot,
-                self._participant_names_for_visit(
-                    visit, EXTERNAL_AUDIT_PARTICIPANT_ROLE_EXTERNAL_AUDITOR
+                (format_display_date(visit.visit_date), typed_date(visit.visit_date)),
+                (visit.time_from or "", typed_text(visit.time_from or "")),
+                (visit.time_to or "", typed_text(visit.time_to or "")),
+                (
+                    visit.workplace_name_snapshot,
+                    typed_text(visit.workplace_name_snapshot),
                 ),
-                self._participant_names_for_visit(
-                    visit, EXTERNAL_AUDIT_PARTICIPANT_ROLE_COMPANY_REPRESENTATIVE
+                (
+                    self._participant_names_for_visit(
+                        visit, EXTERNAL_AUDIT_PARTICIPANT_ROLE_EXTERNAL_AUDITOR
+                    ),
+                    None,
                 ),
-                self._participant_names_for_visit(
-                    visit, EXTERNAL_AUDIT_PARTICIPANT_ROLE_INVITED_PERSON
+                (
+                    self._participant_names_for_visit(
+                        visit, EXTERNAL_AUDIT_PARTICIPANT_ROLE_COMPANY_REPRESENTATIVE
+                    ),
+                    None,
                 ),
-                visit.note or "",
+                (
+                    self._participant_names_for_visit(
+                        visit, EXTERNAL_AUDIT_PARTICIPANT_ROLE_INVITED_PERSON
+                    ),
+                    None,
+                ),
+                (visit.note or "", typed_text(visit.note or "")),
             ]
-            for col, value in enumerate(values):
-                item = QTableWidgetItem(value)
+            for col, (text, sort_value) in enumerate(values):
+                if sort_value is None:
+                    item = create_typed_item(text, typed_text(text))
+                else:
+                    item = create_typed_item(text, sort_value)
                 if col == 0:
                     item.setData(Qt.ItemDataRole.UserRole, visit.client_key)
                 self.visits_table.setItem(row, col, item)
@@ -590,6 +610,8 @@ class ExternalAuditEditorDialog(QDialog):
         self._draft.organization_extra = {"source": "ares"}
 
     def _collect_draft_from_widgets(self) -> ExternalAuditDraft:
+        # Dokončit rozpracovanou editaci Připomenout od před snapshotem.
+        self.remind_from._normalize_input()
         draft = self._draft
         draft.audit_type = str(self.audit_type.currentData() or draft.audit_type)
         draft.status = str(self.status.currentData() or draft.status)

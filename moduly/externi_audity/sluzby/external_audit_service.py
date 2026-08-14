@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import re
 from dataclasses import dataclass, field
 from datetime import date, datetime, time
 from typing import Any, Sequence
@@ -58,8 +57,6 @@ from moduly.nastaveni.sluzby.person_service import person_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.ukoly.sluzby.task_service import task_service
 
-_TIME_RE = re.compile(r"^([01]?\d|2[0-3]):([0-5]\d)$")
-
 
 class ExternalAuditError(ValueError):
     """Validační / business chyba externího auditu."""
@@ -103,13 +100,17 @@ class ExternalAuditOverviewRow:
 
 
 def _parse_time(value: str | None) -> time | None:
+    from core.widgets.nullable_time_edit import parse_czech_time
+
     raw = str(value or "").strip()
     if not raw:
         return None
-    match = _TIME_RE.match(raw)
-    if not match:
-        raise ExternalAuditError(f"Neplatný čas „{raw}“. Použijte formát HH:MM.")
-    return time(int(match.group(1)), int(match.group(2)))
+    parsed = parse_czech_time(raw)
+    if parsed is None:
+        raise ExternalAuditError(
+            f"Neplatný čas „{raw}“. Použijte např. 800 nebo 8:00."
+        )
+    return parsed
 
 
 def _normalize_time(value: str | None) -> str | None:

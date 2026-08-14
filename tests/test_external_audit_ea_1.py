@@ -88,6 +88,16 @@ class ExternalAuditEa1TestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls._app = QApplication.instance() or QApplication([])
+        cls._home = patch.object(Path, "home", return_value=_TMP)
+        cls._home.start()
+        importlib.reload(storage_module)
+        storage_module.storage_service.ensure_structure()
+        importlib.reload(session_module)
+        session_module.reconfigure_database_engine(force=True)
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls._home.stop()
 
     def setUp(self) -> None:
         suffix = uuid.uuid4().hex[:6]

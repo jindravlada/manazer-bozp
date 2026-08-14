@@ -114,3 +114,12 @@ EXTERNAL_AUDIT_YEAR_SPIN_MIN = 1900
 EXTERNAL_AUDIT_YEAR_SPIN_MAX = 2100
 EXTERNAL_AUDIT_YEAR_SPIN_ALL_VALUE = EXTERNAL_AUDIT_YEAR_SPIN_MIN - 1  # 1899
 EXTERNAL_AUDIT_STATUS_FILTER_ALL = "Vše"
+
+
+def format_display_date(value) -> str:
+    """České zobrazení data dd.MM.yyyy; prázdné → „—“ (stejně jako OZO/format_date)."""
+    if value is None:
+        return "—"
+    if hasattr(value, "strftime"):
+        return value.strftime("%d.%m.%Y")
+    return str(value)
