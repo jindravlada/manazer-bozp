@@ -440,7 +440,7 @@ class AuditWorkplaceHistoryWidgetTestCase(unittest.TestCase):
         from moduly.audity.constants import TAB_UVOD
 
         self.assertEqual(dialog.tabs.count(), 8)
-        self.assertEqual(dialog.tabs.tabText(4), TAB_UVOD)
+        self.assertEqual(dialog.tabs.tabText(2), TAB_UVOD)
         self.assertIsNotNone(dialog.history_widget)
 
     def test_history_widget_loads_summary(self) -> None:

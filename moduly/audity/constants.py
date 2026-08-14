@@ -118,9 +118,9 @@ TAB_WORKPLACE_HISTORY = TAB_UVOD
 TAB_LABELS = (
     "Spis",
     "Komise",
+    TAB_UVOD,
     TAB_DOCUMENTACE,
     TAB_TEREN,
-    TAB_UVOD,
     "Zjištění",
     "Úkoly",
     "Závěr",

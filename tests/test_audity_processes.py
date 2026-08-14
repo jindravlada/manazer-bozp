@@ -129,9 +129,10 @@ class AudityProcessesTestCase(unittest.TestCase):
         dialog = AuditDialog(audit=audit)
 
         self.assertEqual(dialog.tabs.count(), 8)
-        self.assertEqual(dialog.tabs.tabText(2), TAB_DOCUMENTACE)
-        self.assertEqual(dialog.tabs.tabText(3), TAB_TEREN)
-        self.assertEqual(dialog.tabs.tabText(4), "Úvod")
+        self.assertEqual(dialog.tabs.tabText(1), "Komise")
+        self.assertEqual(dialog.tabs.tabText(2), "Úvod")
+        self.assertEqual(dialog.tabs.tabText(3), TAB_DOCUMENTACE)
+        self.assertEqual(dialog.tabs.tabText(4), TAB_TEREN)
         self.assertEqual(dialog.tabs.tabText(5), "Zjištění")
         self.assertEqual(dialog.tabs.tabText(6), "Úkoly")
         self.assertEqual(dialog.tabs.tabText(7), "Závěr")

@@ -102,8 +102,15 @@ class AuditIntroHistoryTestCase(unittest.TestCase):
             planned_month=4,
         )
         dialog = AuditDialog(audit=audit)
-        self.assertEqual(dialog.tabs.tabText(4), TAB_UVOD)
-        self.assertEqual(dialog.tabs.tabText(4), "Úvod")
+        self.assertEqual(dialog.tabs.tabText(2), TAB_UVOD)
+        self.assertEqual(dialog.tabs.tabText(2), "Úvod")
+        self.assertEqual(
+            [dialog.tabs.tabText(i) for i in range(4)],
+            ["Spis", "Komise", "Úvod", "Dokumentace"],
+        )
+        self.assertEqual(dialog.tabs.tabText(4), "Terén")
+        # Výchozí aktivní záložka zůstává Spis (ne Úvod).
+        self.assertEqual(dialog.tabs.currentIndex(), 0)
 
     def test_first_audit_message_and_no_crash(self) -> None:
         audit = audit_service.create_audit(

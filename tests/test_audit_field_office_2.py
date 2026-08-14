@@ -294,8 +294,8 @@ class AuditFieldOffice2TestCase(unittest.TestCase):
         dialog = AuditDialog(audit=audit)
         dialog.show()
         QApplication.processEvents()
-        self.assertEqual(dialog.tabs.tabText(2), TAB_DOCUMENTACE)
-        self.assertEqual(dialog.tabs.tabText(3), TAB_TEREN)
+        self.assertEqual(dialog.tabs.tabText(3), TAB_DOCUMENTACE)
+        self.assertEqual(dialog.tabs.tabText(4), TAB_TEREN)
 
         docs = dialog.processes_widget
         terrain = dialog.terrain_widget
