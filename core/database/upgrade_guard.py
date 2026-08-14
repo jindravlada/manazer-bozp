@@ -377,6 +377,18 @@ def prepare_database_for_startup(
             settings_path=settings_path,
         )
 
+    from moduly.audity.sluzby.audit_method_support_snapshot_1_schema_migration import (
+        needs_method_support_snapshot_1_schema,
+        prepare_method_support_snapshot_1_schema,
+    )
+
+    if needs_method_support_snapshot_1_schema(database_path):
+        prepare_method_support_snapshot_1_schema(
+            workspace_root=workspace_root,
+            database_path=database_path,
+            settings_path=settings_path,
+        )
+
     result: PrepareDatabaseResult
 
     # Čistá instalace / už migrovaná DB – jen idempotentní initialize.
@@ -479,6 +491,26 @@ def prepare_database_for_startup(
     )
 
     prepare_audit_conclusion_1_schema(
+        workspace_root=workspace_root,
+        database_path=database_path,
+        settings_path=settings_path,
+    )
+
+    from moduly.audity.sluzby.audit_method_support_snapshot_1_schema_migration import (
+        prepare_method_support_snapshot_1_schema,
+    )
+
+    prepare_method_support_snapshot_1_schema(
+        workspace_root=workspace_root,
+        database_path=database_path,
+        settings_path=settings_path,
+    )
+
+    from moduly.audity.sluzby.audit_method_support_backfill_service import (
+        prepare_method_support_backfill,
+    )
+
+    prepare_method_support_backfill(
         workspace_root=workspace_root,
         database_path=database_path,
         settings_path=settings_path,

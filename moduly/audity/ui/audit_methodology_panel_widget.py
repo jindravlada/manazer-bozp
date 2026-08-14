@@ -18,6 +18,7 @@ from moduly.audity.constants import (
     GUIDE_LABEL_PROCESS_LINKS,
     GUIDE_LABEL_RECOMMENDED_INTERVIEWS,
     GUIDE_LABEL_TYPICAL_NONCONFORMITIES,
+    METHOD_SUPPORT_UNAVAILABLE_MESSAGE,
     METHODOLOGY_PANEL_MIN_WIDTH,
     METHODOLOGY_PANEL_TITLE,
     AuditFindingKnowledgeContext,
@@ -148,11 +149,17 @@ class AuditMethodologyPanelWidget(QFrame):
             return
 
         has_content = False
-        for title, field in _CRITERION_LIST_BLOCKS:
-            block = self._build_merged_list_block(title, section, field)
-            if block is not None:
-                self._content_layout.addWidget(block)
-                has_content = True
+        if section.get("_support_unavailable"):
+            self._content_layout.addWidget(
+                self._info_label(METHOD_SUPPORT_UNAVAILABLE_MESSAGE)
+            )
+            has_content = True
+        else:
+            for title, field in _CRITERION_LIST_BLOCKS:
+                block = self._build_merged_list_block(title, section, field)
+                if block is not None:
+                    self._content_layout.addWidget(block)
+                    has_content = True
 
         self._content_layout.addWidget(self._build_historie_block("Historie"))
         has_content = True

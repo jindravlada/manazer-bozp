@@ -20,6 +20,8 @@ from core.shared.verification_type import (
 from moduly.audity.constants import (
     EXTRAORDINARY_TAB_EMPTY_MESSAGE,
     KNOWLEDGE_EDITOR_BUTTON_LABEL,
+    METHOD_SUPPORT_STATUS_UNAVAILABLE,
+    METHOD_SUPPORT_UNAVAILABLE_MESSAGE,
     METHODOLOGY_PANEL_STRETCH,
     PROCESS_NOT_IMPLEMENTED_TEXT,
     PROCESS_PANEL_LEFT_WIDTH,
@@ -403,7 +405,12 @@ class AuditProcessesWidget(QWidget):
         )
         if snapshot_mode:
             self._current_process_purpose = ""
-            self._current_process_knowledge = None
+            process_support = {}
+            if self._question_source is not None:
+                process_support = dict(
+                    self._question_source.process_support.get(node.process_id) or {}
+                )
+            self._current_process_knowledge = process_support or None
             self.center_title_label.setText(node.process_label)
             self.center_description_label.setText(
                 f"Vyberte {PROCESS_TERM_CRITERION.lower()} pod tímto procesem "
@@ -411,11 +418,16 @@ class AuditProcessesWidget(QWidget):
             )
             self.center_description_label.setVisible(True)
             self.knowledge_widget.clear_criterion()
-            self.overview_widget.show_process(None)
-            self.methodology_panel.show_hint(
-                "Metodika tohoto auditu je zmrazená ve snapshotu."
-            )
-            self.content_stack.setCurrentIndex(self._PAGE_PLACEHOLDER)
+            if process_support:
+                self.overview_widget.show_process(process_support)
+                self.methodology_panel.show_process(process_support)
+                self.content_stack.setCurrentIndex(self._PAGE_OVERVIEW)
+            else:
+                self.overview_widget.show_process(None)
+                self.methodology_panel.show_hint(
+                    "Pro tento proces zatím není metodická podpora."
+                )
+                self.content_stack.setCurrentIndex(self._PAGE_PLACEHOLDER)
             return
 
         process_def = audit_knowledge_service.get_process_by_id(node.process_id)
@@ -466,9 +478,22 @@ class AuditProcessesWidget(QWidget):
         snapshot_mode = (
             self._question_source is not None and self._question_source.is_snapshot
         )
+        status = "live"
         if snapshot_mode:
             self._current_process_purpose = ""
-            self._current_process_knowledge = None
+            process_id = node.process_id
+            section_id = node.node_id
+            status = "missing"
+            if self._question_source is not None:
+                status = self._question_source.section_support_status.get(
+                    (process_id, section_id), "missing"
+                )
+                self._current_process_knowledge = dict(
+                    self._question_source.process_support.get(process_id) or {}
+                ) or None
+            if status == METHOD_SUPPORT_STATUS_UNAVAILABLE:
+                criterion = dict(criterion)
+                criterion["_support_unavailable"] = True
         elif not self._current_process_purpose or self._current_process_knowledge is None:
             process_def = audit_knowledge_service.get_process_by_id(node.process_id)
             if process_def is not None:
@@ -482,12 +507,10 @@ class AuditProcessesWidget(QWidget):
         self.center_title_label.setText(section_label)
 
         section_popis = str(criterion.get("popis") or "").strip()
-        cil_overeni = (
-            ""
-            if snapshot_mode
-            else audit_knowledge_service.get_text_field(criterion, "cil_overeni")
-        )
-        if cil_overeni:
+        cil_overeni = audit_knowledge_service.get_text_field(criterion, "cil_overeni")
+        if snapshot_mode and not cil_overeni and not section_popis:
+            self.center_description_label.setVisible(False)
+        elif cil_overeni:
             self.center_description_label.setText(cil_overeni)
             self.center_description_label.setVisible(True)
         elif section_popis:

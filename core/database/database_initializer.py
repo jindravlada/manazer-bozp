@@ -75,6 +75,9 @@ def initialize_database() -> None:
     from moduly.audity.modely.audit_question_snapshot import (  # noqa: F401
         AuditQuestionSnapshot,
     )
+    from moduly.audity.modely.audit_question_support_snapshot import (  # noqa: F401
+        AuditQuestionSupportSnapshot,
+    )
     from moduly.audity.modely.audit_extraordinary_question import (  # noqa: F401
         AuditExtraordinaryQuestion,
         AuditExtraordinaryQuestionTarget,
@@ -988,6 +991,8 @@ def _ensure_audit_columns() -> None:
         "methodology_generation": "methodology_generation VARCHAR(80)",
         "changes_since_last": "changes_since_last TEXT",
         "conclusion_text": "conclusion_text TEXT",
+        "support_snapshot_count": "support_snapshot_count INTEGER",
+        "support_integrity_hash": "support_integrity_hash VARCHAR(64)",
         "created_at": "created_at DATETIME",
         "updated_at": "updated_at DATETIME",
     }

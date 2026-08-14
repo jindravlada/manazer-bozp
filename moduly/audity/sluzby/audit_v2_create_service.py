@@ -193,6 +193,18 @@ def create_audit_with_v2_snapshot(
             )
             apply_snapshot_integrity_manifest(audit, written)
 
+            from moduly.audity.sluzby.audit_method_support_snapshot_service import (
+                audit_method_support_snapshot_service,
+            )
+
+            audit_method_support_snapshot_service.build_rows_for_new_audit(
+                session,
+                audit=audit,
+                question_rows=written,
+                knowledge_tree=roots,
+                when=frozen_at,
+            )
+
             if extraordinary_drafts:
                 audit_extraordinary_assignment_service.mark_assigned(
                     session,

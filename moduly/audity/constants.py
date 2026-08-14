@@ -634,6 +634,43 @@ EXTRAORDINARY_NON_AUDITABLE_RESTORE_BLOCKED = (
 EXTRAORDINARY_TAB_EMPTY_MESSAGE = (
     "Pro tento audit nebylo mimořádné ověření zadáno."
 )
+
+# AUDIT-METHOD-SUPPORT-SNAPSHOT-1
+METHOD_SUPPORT_PAYLOAD_VERSION = 1
+METHOD_SUPPORT_SOURCE_SNAPSHOT_AT_CREATION = "snapshot-at-creation"
+METHOD_SUPPORT_SOURCE_LIVE_AT_LEGACY_BACKFILL = "live-at-legacy-backfill"
+METHOD_SUPPORT_SOURCE_UNAVAILABLE = "unavailable"
+METHOD_SUPPORT_STATUS_AVAILABLE = "available"
+METHOD_SUPPORT_STATUS_EMPTY = "empty"
+METHOD_SUPPORT_STATUS_UNAVAILABLE = "unavailable"
+METHOD_SUPPORT_UNAVAILABLE_MESSAGE = (
+    "Metodická podpora není pro tento starší audit dostupná."
+)
+METHOD_SUPPORT_SECTION_KEYS: tuple[str, ...] = (
+    "objektivni_dukazy",
+    "doporucene_rozhovory",
+    "pozorovani_v_provozu",
+    "typicke_neshody",
+    "pkz",
+    "pozorovani",
+    "vazby_procesy",
+    "pozadavky_normy",
+    "postup_kontroly",
+    "referencni_fotografie",
+    "typicke_zavady",
+    "doporucene_postupy",
+    "legislativa",
+    "poznamky_auditora",
+)
+METHOD_SUPPORT_SECTION_TEXT_KEYS: tuple[str, ...] = (
+    "cil_overeni",
+    "popis",
+)
+METHOD_SUPPORT_PROCESS_KEYS: tuple[str, ...] = (
+    "vazby_procesy",
+    "pozadavky_norem",
+)
+
 EXTRAORDINARY_INCOMPLETE_SEVERITY_FOR_AUDIT = (
     "Mimořádná otázka „{text}“ (id={question_id}) nemá platnou závažnost. "
     "Doplňte závažnost v evidenci mimořádného ověření a audit znovu založte."

@@ -22,6 +22,11 @@ class AuditReferencePhotoService:
     def absolute_photo_path(self, relative_path: str) -> Path:
         if not relative_path:
             return Path()
+        rel = str(relative_path).strip()
+        if rel.startswith("snapshot_support_photos/"):
+            from core.services.storage_service import storage_service
+
+            return storage_service.base / rel
         return audit_knowledge_service.audity_dir / relative_path
 
     def save_optimized(

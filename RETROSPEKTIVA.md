@@ -47,6 +47,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 Nové záznamy přidávat níže (nejnovější nahoře).
 
+### 2026-08-14 – AUDIT-METHOD-SUPPORT-SNAPSHOT-1
+
+**Co se povedlo:** Samostatná 1:1 tabulka `audit_question_support_snapshots` zmrazí statickou metodickou podporu bez zásahu do `snapshot_integrity_hash` a bez živého JSON fallbacku v AuditDialogu; batch načtení + jedno `get_knowledge_tree` při backfillu.
+
+**Co už bychom dnes udělali jinak:** Support payload zahrnout už do prvního snapshotového sprintu spolu s textem otázky.
+
+**Co bylo zbytečně složité:** Oddělení content-addressed referenčních fotografií od živých cest při zachování historie/sdílených zkušeností dynamicky.
+
+**Nové pravidlo:** Statická metodická podpora patří do support snapshotu; dynamická historie provozu a sdílené zkušenosti zůstávají DB službami. Snapshotový audit nesmí číst živý JSON metodiky.
+
+**Aktualizované dokumenty:** —
+
 ### 2026-08-14 – AUDIT-CONCLUSION-1
 
 **Co se povedlo:** Povinný uživatelský závěr při business dokončení; podmíněné silné stránky v ODT bez prázdných nadpisů; validace na servisní vrstvě.

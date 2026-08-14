@@ -68,6 +68,10 @@ class AuditQuestionSource:
     process_names: dict[str, str] = field(default_factory=dict)
     # Všechny snapshot klíče včetně out-of-scope (validace CR ↔ snapshot).
     all_assertion_keys: frozenset[tuple[str, str, str]] = field(default_factory=frozenset)
+    # Metodická podpora ze support snapshotů (batch): process_id → process dict.
+    process_support: dict[str, dict] = field(default_factory=dict)
+    # (process_id, section_id) → status available|empty|unavailable|missing
+    section_support_status: dict[tuple[str, str], str] = field(default_factory=dict)
 
     @property
     def is_snapshot(self) -> bool:
@@ -389,14 +393,101 @@ class AuditQuestionSourceService:
                 marker_audit, views=views, control_results=results
             )
 
+            from moduly.audity.constants import (
+                AUDIT_QUESTION_KIND_EXTRAORDINARY,
+            )
+            from moduly.audity.sluzby.audit_question_kind import interpret_question_kind
+            from moduly.audity.sluzby.audit_method_support_snapshot_service import (
+                audit_method_support_snapshot_service,
+            )
+
+            support_by_qid = (
+                audit_method_support_snapshot_service.map_by_question_snapshot_id(
+                    session, resolved_id
+                )
+            )
+            # Jedna podpora na sekci — status + payload dict (bez ORM mimo session).
+            support_payload_by_section: dict[tuple[str, str], tuple[str, dict]] = {}
+            for row in rows:
+                if row.is_in_scope is False:
+                    continue
+                if (
+                    interpret_question_kind(row.question_kind)
+                    == AUDIT_QUESTION_KIND_EXTRAORDINARY
+                ):
+                    continue
+                key = (str(row.process_id), str(row.section_id))
+                if key in support_payload_by_section:
+                    continue
+                support_row = support_by_qid.get(int(row.id))
+                if support_row is None:
+                    support_payload_by_section[key] = ("missing", {})
+                    continue
+                status = str(support_row.status or "missing")
+                payload = audit_method_support_snapshot_service.load_payload(support_row)
+                support_payload_by_section[key] = (status, payload)
+
         all_keys = frozenset(view.key for view in views)
         in_scope_views = tuple(view for view in views if view.is_in_scope)
         roots = build_knowledge_tree_from_snapshot_views(in_scope_views)
+
+        from moduly.audity.constants import METHOD_SUPPORT_STATUS_UNAVAILABLE
+        from moduly.audity.sluzby.audit_method_support_payload_service import (
+            process_knowledge_from_payload,
+            section_dict_from_payload,
+        )
+
+        process_support: dict[str, dict] = {}
+        section_support_status: dict[tuple[str, str], str] = {}
+        enriched_roots: list[KnowledgeTreeNode] = []
+        for process_node in roots:
+            new_children: list[KnowledgeTreeNode] = []
+            for section_node in process_node.children:
+                base_section = dict(section_node.section or {})
+                key = (
+                    str(section_node.process_id or process_node.node_id),
+                    str(section_node.node_id),
+                )
+                status, payload = support_payload_by_section.get(key, ("missing", {}))
+                section_support_status[key] = status
+                if status == METHOD_SUPPORT_STATUS_UNAVAILABLE or status == "missing":
+                    section = base_section
+                    proc_knowledge = None
+                else:
+                    section = section_dict_from_payload(
+                        payload, base_section=base_section
+                    )
+                    proc_knowledge = process_knowledge_from_payload(payload)
+                if proc_knowledge and key[0] not in process_support:
+                    process_support[key[0]] = proc_knowledge
+                new_children.append(
+                    KnowledgeTreeNode(
+                        node_type=section_node.node_type,
+                        node_id=section_node.node_id,
+                        label=section_node.label,
+                        process_id=section_node.process_id,
+                        process_label=section_node.process_label,
+                        section=section,
+                        children=section_node.children,
+                    )
+                )
+            enriched_roots.append(
+                KnowledgeTreeNode(
+                    node_type=process_node.node_type,
+                    node_id=process_node.node_id,
+                    label=process_node.label,
+                    process_id=process_node.process_id,
+                    process_label=process_node.process_label,
+                    section=process_node.section,
+                    children=tuple(new_children),
+                )
+            )
+
         keys = frozenset(view.key for view in in_scope_views)
         return AuditQuestionSource(
             mode="snapshot",
             audit_id=resolved_id,
-            roots=tuple(roots),
+            roots=tuple(enriched_roots),
             assertions=in_scope_views,
             assertion_keys=keys,
             text_by_key={view.key: view.assertion_text for view in in_scope_views},
@@ -407,6 +498,8 @@ class AuditQuestionSourceService:
                 if view.process_id
             },
             all_assertion_keys=all_keys,
+            process_support=process_support,
+            section_support_status=section_support_status,
         )
 
     def assertion_text(

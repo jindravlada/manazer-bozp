@@ -42,10 +42,14 @@ with patch.object(Path, "home", return_value=_TMP):
         needs_audit_extraordinary_3_schema,
         schema_is_present as schema3_present,
     )
+    from moduly.audity.sluzby.audit_method_support_snapshot_1_schema_migration import (
+        apply_method_support_snapshot_1_schema_ddl,
+    )
 
     apply_audit_extraordinary_schema_ddl(_DB)
     apply_audit_extraordinary_2_schema_ddl(_DB)
     apply_audit_extraordinary_3_schema_ddl(_DB)
+    apply_method_support_snapshot_1_schema_ddl(_DB)
 
     from core.database.session import get_session
     from core.shared.constants import (
@@ -163,6 +167,7 @@ class Extraordinary3TestCase(unittest.TestCase):
         with get_session() as session:
             session.execute(text("DELETE FROM audit_extraordinary_question_targets"))
             session.execute(text("DELETE FROM audit_extraordinary_questions"))
+            session.execute(text("DELETE FROM audit_question_support_snapshots"))
             session.execute(text("DELETE FROM audit_question_snapshots"))
             session.execute(text("DELETE FROM control_results"))
             session.execute(text("DELETE FROM findings"))
