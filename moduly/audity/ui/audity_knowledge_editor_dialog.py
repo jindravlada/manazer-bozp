@@ -183,6 +183,9 @@ class AudityKnowledgeEditorDialog(QDialog):
         self.section_editor = AudityKnowledgeSectionEditorWidget()
         self.section_editor.content_modified.connect(self._mark_modified)
         self.section_editor.content_saved.connect(self._on_section_content_saved)
+        self.section_editor.question_kinds_modified.connect(
+            self._on_assertion_kinds_modified
+        )
         self.content_stack.addWidget(self.section_editor)
 
         center_layout.addWidget(self.center_title_label)
@@ -262,10 +265,20 @@ class AudityKnowledgeEditorDialog(QDialog):
             self._refresh_dirty_status()
 
     def _refresh_unclassified_count(self) -> None:
-        count = audit_knowledge_service.count_unclassified_active_assertions(ensure=False)
+        count = audit_knowledge_service.count_unclassified_active_assertions(
+            ensure=False,
+            kind_overrides=self.section_editor.pending_question_kind_overrides(),
+        )
         self._unclassified_count_label.setText(
             KNOWLEDGE_EDITOR_UNCLASSIFIED_COUNT_LABEL.format(count=count)
         )
+
+    def _on_assertion_kinds_modified(self) -> None:
+        # Druh v tabulce jen pracovní kopie — ne stashuj metadata sekce.
+        self._refresh_unclassified_count()
+        self._refresh_dirty_status()
+        if self._has_unsaved_changes():
+            show_unsaved_status(self._status_label)
 
     def _show_catalog_error(self, message: str) -> None:
         self._catalog_error_label.setText(message)
@@ -299,6 +312,7 @@ class AudityKnowledgeEditorDialog(QDialog):
         return (
             self._current_dirty
             or self._system_workplace_dirty
+            or self.section_editor.has_pending_assertion_kinds()
             or bool(self._process_drafts)
             or bool(self._section_drafts)
         )
@@ -329,10 +343,41 @@ class AudityKnowledgeEditorDialog(QDialog):
     def _discard_all_drafts(self) -> None:
         self._process_drafts.clear()
         self._section_drafts.clear()
+        self.section_editor.discard_pending_assertion_kinds()
         self._load_system_workplace_combo()
+        if (
+            self.content_stack.isVisible()
+            and self.content_stack.currentIndex() == self._PAGE_SECTION
+            and self.section_editor.has_section()
+        ):
+            process_id = self.section_editor.process_id
+            section_id = self.section_editor.section_id
+            refreshed = audit_knowledge_service.get_criterion(
+                process_id,
+                section_id,
+                ensure=False,
+            )
+            if refreshed is not None:
+                self.section_editor.load_section(
+                    process_id=process_id,
+                    section_id=section_id,
+                    section=refreshed,
+                )
         self._mark_saved()
+        self._refresh_unclassified_count()
         clear_save_status(self._status_label)
         self._update_action_buttons()
+
+    def _flush_pending_assertion_kinds(self) -> bool:
+        if not self.section_editor.has_pending_assertion_kinds():
+            return True
+        errors = self.section_editor.flush_pending_assertion_kinds()
+        if errors:
+            self._clear_save_status()
+            QMessageBox.warning(self, self.windowTitle(), "\n".join(errors))
+            return False
+        self._refresh_unclassified_count()
+        return True
 
     def _save_system_workplace_if_needed(self) -> bool:
         if not self._system_workplace_dirty:
@@ -355,6 +400,8 @@ class AudityKnowledgeEditorDialog(QDialog):
     def _save_all_pending(self) -> bool:
         self._stash_current_editor()
         if not self._save_system_workplace_if_needed():
+            return False
+        if not self._flush_pending_assertion_kinds():
             return False
         for process_id, metadata in list(self._process_drafts.items()):
             errors = audit_knowledge_editor_service.save_process_metadata(
@@ -426,6 +473,8 @@ class AudityKnowledgeEditorDialog(QDialog):
 
     def _apply_changes(self) -> None:
         if not self._save_system_workplace_if_needed():
+            return
+        if not self._flush_pending_assertion_kinds():
             return
         if self._can_save_current():
             if not self._save_current():

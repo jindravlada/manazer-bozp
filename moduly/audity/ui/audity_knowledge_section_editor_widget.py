@@ -43,6 +43,7 @@ class AudityKnowledgeSectionEditorWidget(QWidget):
 
     content_modified = Signal()
     content_saved = Signal()
+    question_kinds_modified = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -141,6 +142,21 @@ class AudityKnowledgeSectionEditorWidget(QWidget):
         for child in child_widgets:
             child.content_modified.connect(self.content_modified.emit)
             child.content_saved.connect(self.content_saved.emit)
+        self._assertions_widget.question_kinds_modified.connect(
+            self.question_kinds_modified.emit
+        )
+
+    def has_pending_assertion_kinds(self) -> bool:
+        return self._assertions_widget.has_pending_question_kinds()
+
+    def pending_question_kind_overrides(self) -> dict[str, str]:
+        return self._assertions_widget.pending_question_kind_overrides()
+
+    def flush_pending_assertion_kinds(self) -> list[str]:
+        return self._assertions_widget.flush_pending_question_kinds()
+
+    def discard_pending_assertion_kinds(self) -> None:
+        self._assertions_widget.discard_pending_question_kinds()
 
     @property
     def process_id(self) -> str:

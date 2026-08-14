@@ -20,13 +20,11 @@ from moduly.audity.constants import (
     AUDIT_QUESTION_KIND_UNCLASSIFIED,
     CONTROL_POINT_SEVERITY_OPTIONS,
     QUESTION_KIND_EDITOR_LABEL_UNCLASSIFIED,
+    QUESTION_KIND_EDITOR_OPTIONS,
 )
 from moduly.audity.sluzby.audit_knowledge_editor_service import audit_knowledge_editor_service
 from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
-from moduly.audity.sluzby.audit_question_kind import (
-    interpret_question_kind,
-    question_kind_editor_label,
-)
+from moduly.audity.sluzby.audit_question_kind import interpret_question_kind
 from moduly.audity.ui.audity_knowledge_assertion_dialog import AudityKnowledgeAssertionDialog
 
 _SEVERITY_LABELS = dict(CONTROL_POINT_SEVERITY_OPTIONS)
@@ -43,6 +41,10 @@ _COL_AKTIVNI = 7
 _VERIFICATION_COMBO_TOOLTIP = (
     "Závazné pro všechny audity. Ad hoc přesun v jednom auditu metodiku nemění."
 )
+_KIND_COMBO_TOOLTIP = (
+    "Systém = pouze u systémového provozu; Provoz = u ostatních provozů. "
+    "Změna se uloží až přes Uložit v editoru metodiky."
+)
 
 
 class AudityKnowledgeAssertionsWidget(QWidget):
@@ -50,6 +52,7 @@ class AudityKnowledgeAssertionsWidget(QWidget):
 
     content_modified = Signal()
     content_saved = Signal()
+    question_kinds_modified = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -57,6 +60,9 @@ class AudityKnowledgeAssertionsWidget(QWidget):
         self._process_id = ""
         self._section_id = ""
         self._assertions: list[dict] = []
+        # Pracovní kopie druhů: (process_id, section_id, assertion_id) → kind
+        self._pending_kinds: dict[tuple[str, str, str], str] = {}
+        self._disk_kinds: dict[tuple[str, str, str], str] = {}
 
         root = QVBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
@@ -106,7 +112,7 @@ class AudityKnowledgeAssertionsWidget(QWidget):
         header.setSectionResizeMode(_COL_TEXT, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(_COL_POPIS, QHeaderView.ResizeMode.Stretch)
         self._table.setColumnHidden(_COL_ID, True)
-        self._table.setColumnWidth(_COL_KIND, 100)
+        self._table.setColumnWidth(_COL_KIND, 120)
         self._table.setColumnWidth(_COL_SEVERITY, 110)
         self._table.setColumnWidth(_COL_VERIFICATION, 140)
         self._table.setColumnWidth(_COL_PORADI, 70)
@@ -119,6 +125,50 @@ class AudityKnowledgeAssertionsWidget(QWidget):
 
     def has_section(self) -> bool:
         return bool(self._process_id and self._section_id)
+
+    def has_pending_question_kinds(self) -> bool:
+        return bool(self._pending_kinds)
+
+    def pending_question_kind_overrides(self) -> dict[str, str]:
+        """Mapa ``question_stable_key → kind`` pro počítadlo nezařazených."""
+        return {
+            audit_knowledge_service.question_stable_key(process_id, section_id, assertion_id): kind
+            for (process_id, section_id, assertion_id), kind in self._pending_kinds.items()
+        }
+
+    def discard_pending_question_kinds(self) -> None:
+        self._pending_kinds.clear()
+        if not self.has_section():
+            return
+        section = audit_knowledge_service.get_criterion(
+            self._process_id,
+            self._section_id,
+            ensure=False,
+        )
+        if section is None:
+            self.clear_section()
+            return
+        self._reload_from_section(section)
+
+    def flush_pending_question_kinds(self) -> list[str]:
+        if not self._pending_kinds:
+            return []
+        for (process_id, section_id, assertion_id), kind in list(self._pending_kinds.items()):
+            errors = audit_knowledge_editor_service.set_assertion_question_kind(
+                process_id,
+                section_id,
+                assertion_id,
+                kind,
+            )
+            if errors:
+                return errors
+            self._pending_kinds.pop((process_id, section_id, assertion_id), None)
+            self._disk_kinds[(process_id, section_id, assertion_id)] = kind
+        if self.has_section():
+            self.reload_assertions()
+        else:
+            self.question_kinds_modified.emit()
+        return []
 
     def load_section(
         self,
@@ -161,21 +211,30 @@ class AudityKnowledgeAssertionsWidget(QWidget):
             == AUDIT_QUESTION_KIND_UNCLASSIFIED
         )
 
+    def _pending_key(self, assertion_id: str) -> tuple[str, str, str]:
+        return (self._process_id, self._section_id, assertion_id)
+
     def _reload_from_section(self, section: dict) -> None:
         raw_items = section.get("auditni_tvrzeni") or []
         self._assertions = audit_knowledge_service.normalize_auditni_tvrzeni(raw_items)
         self._assertions.sort(key=lambda item: (item.get("poradi", 0), item.get("id", "")))
+        for item in self._assertions:
+            assertion_id = str(item.get("id") or "").strip()
+            if not assertion_id:
+                continue
+            key = self._pending_key(assertion_id)
+            self._disk_kinds[key] = interpret_question_kind(item.get("question_kind"))
+            if key in self._pending_kinds:
+                item["question_kind"] = self._pending_kinds[key]
         self._populate_table()
 
     def _populate_table(self) -> None:
         self._table.setRowCount(len(self._assertions))
         for row, item in enumerate(self._assertions):
             kind = interpret_question_kind(item.get("question_kind"))
-            kind_label = question_kind_editor_label(kind)
             values = {
                 _COL_ID: item.get("id", ""),
                 _COL_TEXT: item.get("text", ""),
-                _COL_KIND: kind_label,
                 _COL_POPIS: item.get("popis", ""),
                 _COL_SEVERITY: _SEVERITY_LABELS.get(
                     item.get("zavaznost", ""), item.get("zavaznost", "")
@@ -188,17 +247,54 @@ class AudityKnowledgeAssertionsWidget(QWidget):
                 cell.setData(Qt.ItemDataRole.UserRole, item.get("id", ""))
                 if not item.get("aktivni", True):
                     cell.setForeground(Qt.GlobalColor.gray)
-                elif kind == AUDIT_QUESTION_KIND_UNCLASSIFIED and column == _COL_KIND:
-                    cell.setForeground(Qt.GlobalColor.darkYellow)
-                    cell.setToolTip(QUESTION_KIND_EDITOR_LABEL_UNCLASSIFIED)
                 self._table.setItem(row, column, cell)
 
+            # Placeholder buňka pod combem (pro výběr řádku / UserRole).
+            kind_cell = QTableWidgetItem("")
+            kind_cell.setData(Qt.ItemDataRole.UserRole, item.get("id", ""))
+            if not item.get("aktivni", True):
+                kind_cell.setForeground(Qt.GlobalColor.gray)
+            elif kind == AUDIT_QUESTION_KIND_UNCLASSIFIED:
+                kind_cell.setToolTip(QUESTION_KIND_EDITOR_LABEL_UNCLASSIFIED)
+            self._table.setItem(row, _COL_KIND, kind_cell)
+
+            self._table.setCellWidget(
+                row,
+                _COL_KIND,
+                self._build_kind_combo(item),
+            )
             self._table.setCellWidget(
                 row,
                 _COL_VERIFICATION,
                 self._build_verification_combo(item),
             )
         self._update_buttons()
+
+    def _build_kind_combo(self, item: dict) -> QComboBox:
+        combo = QComboBox()
+        combo.setFixedWidth(112)
+        combo.setToolTip(_KIND_COMBO_TOOLTIP)
+        for value, label in QUESTION_KIND_EDITOR_OPTIONS:
+            combo.addItem(label, value)
+
+        current = interpret_question_kind(item.get("question_kind"))
+        index = combo.findData(current)
+        if index >= 0:
+            combo.blockSignals(True)
+            combo.setCurrentIndex(index)
+            combo.blockSignals(False)
+
+        assertion_id = str(item.get("id") or "").strip()
+        combo.setProperty("assertion_id", assertion_id)
+        combo.setEnabled(bool(item.get("aktivni", True)))
+        if current == AUDIT_QUESTION_KIND_UNCLASSIFIED and item.get("aktivni", True):
+            combo.setStyleSheet("QComboBox { color: #8a6d00; }")
+        else:
+            combo.setStyleSheet("")
+        combo.currentIndexChanged.connect(
+            lambda _index, c=combo: self._on_kind_combo_changed(c)
+        )
+        return combo
 
     def _build_verification_combo(self, item: dict) -> QComboBox:
         combo = QComboBox()
@@ -220,6 +316,46 @@ class AudityKnowledgeAssertionsWidget(QWidget):
             lambda _index, c=combo: self._on_verification_combo_changed(c)
         )
         return combo
+
+    def _on_kind_combo_changed(self, combo: QComboBox) -> None:
+        if not self.has_section():
+            return
+        assertion_id = str(combo.property("assertion_id") or "").strip()
+        if not assertion_id:
+            return
+
+        assertion = next(
+            (
+                item
+                for item in self._assertions
+                if str(item.get("id") or "").strip() == assertion_id
+            ),
+            None,
+        )
+        if assertion is None:
+            return
+
+        new_kind = interpret_question_kind(combo.currentData())
+        current_kind = interpret_question_kind(assertion.get("question_kind"))
+        if new_kind == current_kind:
+            return
+
+        assertion["question_kind"] = new_kind
+        key = self._pending_key(assertion_id)
+        disk_kind = self._disk_kinds.get(key, AUDIT_QUESTION_KIND_UNCLASSIFIED)
+        if new_kind == disk_kind:
+            self._pending_kinds.pop(key, None)
+        else:
+            self._pending_kinds[key] = new_kind
+
+        if new_kind == AUDIT_QUESTION_KIND_UNCLASSIFIED and assertion.get("aktivni", True):
+            combo.setStyleSheet("QComboBox { color: #8a6d00; }")
+            combo.setToolTip(QUESTION_KIND_EDITOR_LABEL_UNCLASSIFIED)
+        else:
+            combo.setStyleSheet("")
+            combo.setToolTip(_KIND_COMBO_TOOLTIP)
+
+        self.question_kinds_modified.emit()
 
     def _on_verification_combo_changed(self, combo: QComboBox) -> None:
         if not self.has_section():
@@ -255,10 +391,13 @@ class AudityKnowledgeAssertionsWidget(QWidget):
             "poradi": assertion.get("poradi", 0),
             "aktivni": bool(assertion.get("aktivni", True)),
         }
-        # Druh nepřepisuj při rychlé změně typu ověření — nezařazené zůstanou.
+        # Druh nepřepisuj při rychlé změně typu ověření — nezařazené / pending zůstanou.
         existing_kind = interpret_question_kind(assertion.get("question_kind"))
         if existing_kind in (AUDIT_QUESTION_KIND_SYSTEM, AUDIT_QUESTION_KIND_OPERATION):
-            payload["question_kind"] = existing_kind
+            # Pending druh má přednost; na disk zatím neukládej pending.
+            key = self._pending_key(assertion_id)
+            if key not in self._pending_kinds:
+                payload["question_kind"] = existing_kind
 
         self.content_modified.emit()
         errors = audit_knowledge_editor_service.save_assertion(
@@ -333,16 +472,23 @@ class AudityKnowledgeAssertionsWidget(QWidget):
         if dialog.exec() != AudityKnowledgeAssertionDialog.DialogCode.Accepted:
             return
 
+        payload = dialog.assertion_payload()
+        assertion_id = dialog.editing_assertion_id or str(selected.get("id") or "")
         self.content_modified.emit()
         errors = audit_knowledge_editor_service.save_assertion(
             self._process_id,
             self._section_id,
-            dialog.assertion_payload(),
-            assertion_id=dialog.editing_assertion_id,
+            payload,
+            assertion_id=assertion_id,
         )
         if errors:
             self._show_errors(errors)
             return
+        # Detail zapisuje ihned — synchronizuj disk/pending pro danou otázku.
+        key = self._pending_key(str(assertion_id).strip())
+        saved_kind = interpret_question_kind(payload.get("question_kind"))
+        self._pending_kinds.pop(key, None)
+        self._disk_kinds[key] = saved_kind
         self.reload_assertions()
 
     def _deactivate_selected_assertion(self) -> None:

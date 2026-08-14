@@ -952,6 +952,75 @@ class AuditKnowledgeEditorService:
             require_pre_v2_backup=True,
         )
 
+    def set_assertion_question_kind(
+        self,
+        process_id: str,
+        section_id: str,
+        assertion_id: str,
+        question_kind: str,
+    ) -> list[str]:
+        """Zapíše ``question_kind`` (včetně Nezařazeno) — flush pracovní kopie UX1."""
+        from moduly.audity.constants import (
+            AUDIT_QUESTION_KIND_OPERATION,
+            AUDIT_QUESTION_KIND_SYSTEM,
+            AUDIT_QUESTION_KIND_UNCLASSIFIED,
+        )
+        from moduly.audity.sluzby.audit_question_kind import (
+            AuditQuestionKindError,
+            interpret_question_kind,
+            validate_question_kind,
+        )
+
+        target_id = str(assertion_id or "").strip()
+        if not target_id:
+            return ["Chybí identifikátor auditního tvrzení."]
+
+        try:
+            kind = validate_question_kind(
+                question_kind,
+                allow_legacy=False,
+                allow_missing=True,
+            )
+        except AuditQuestionKindError as exc:
+            return [str(exc)]
+        kind = interpret_question_kind(question_kind)
+        if kind not in (
+            AUDIT_QUESTION_KIND_SYSTEM,
+            AUDIT_QUESTION_KIND_OPERATION,
+            AUDIT_QUESTION_KIND_UNCLASSIFIED,
+        ):
+            return [f"Neplatný druh otázky pro editor: {question_kind!r}"]
+
+        context, errors = self._resolve_section_context(process_id, section_id)
+        if errors:
+            return errors
+        assert context is not None
+
+        relative_path, data, _parent_list, _index, section = context
+        before_assertions = deepcopy(section.get("auditni_tvrzeni") or [])
+        after_assertions = deepcopy(before_assertions)
+
+        updated = False
+        for index, item in enumerate(after_assertions):
+            if not isinstance(item, dict):
+                continue
+            if str(item.get("id") or "").strip() != target_id:
+                continue
+            after_assertions[index] = {**item, "question_kind": kind}
+            updated = True
+            break
+        if not updated:
+            return [f"Auditní tvrzení '{target_id}' nebylo nalezeno."]
+
+        return self._save_section_assertions(
+            relative_path=relative_path,
+            data=data,
+            section=section,
+            before_assertions=before_assertions,
+            after_assertions=after_assertions,
+            require_pre_v2_backup=True,
+        )
+
     def set_assertion_active(
         self,
         process_id: str,

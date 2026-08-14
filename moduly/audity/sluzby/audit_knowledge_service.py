@@ -1310,8 +1310,13 @@ class AuditKnowledgeService:
         *,
         ensure: bool = False,
         knowledge_tree: list | None = None,
+        kind_overrides: dict[str, str] | None = None,
     ) -> int:
-        """Počet aktivních otázek bez zařazení Systém/Provoz (AUDIT-METHOD-V2b)."""
+        """Počet aktivních otázek bez zařazení Systém/Provoz (AUDIT-METHOD-V2b).
+
+        ``kind_overrides``: volitelně ``question_stable_key → question_kind``
+        z pracovní kopie editoru (AUDIT-METHOD-V2b-UX1).
+        """
         from moduly.audity.sluzby.audit_question_kind import interpret_question_kind
         from moduly.audity.constants import AUDIT_QUESTION_KIND_UNCLASSIFIED
 
@@ -1319,6 +1324,7 @@ class AuditKnowledgeService:
         if roots is None:
             roots = self.get_knowledge_tree(ensure=ensure)
 
+        overrides = kind_overrides or {}
         count = 0
 
         def walk(nodes) -> None:
@@ -1326,10 +1332,21 @@ class AuditKnowledgeService:
             for node in nodes:
                 section = getattr(node, "section", None)
                 if isinstance(section, dict):
+                    process_id = str(getattr(node, "process_id", "") or "").strip()
+                    section_id = str(getattr(node, "node_id", "") or "").strip()
                     for raw in self.get_audit_questions(section):
                         if not isinstance(raw, dict):
                             continue
-                        kind = interpret_question_kind(raw.get("question_kind"))
+                        assertion_id = str(raw.get("id") or "").strip()
+                        override_key = self.question_stable_key(
+                            process_id,
+                            section_id,
+                            assertion_id,
+                        )
+                        if override_key in overrides:
+                            kind = interpret_question_kind(overrides[override_key])
+                        else:
+                            kind = interpret_question_kind(raw.get("question_kind"))
                         if kind == AUDIT_QUESTION_KIND_UNCLASSIFIED:
                             count += 1
                 children = getattr(node, "children", ()) or ()
