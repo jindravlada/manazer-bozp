@@ -467,6 +467,10 @@ AUDIT_METHODOLOGY_SOURCES = (
 )
 DEFAULT_AUDIT_METHODOLOGY_SOURCE = AUDIT_METHODOLOGY_SOURCE_LIVE
 
+# AUDIT-SNAPSHOT-1a: generace a druh otázky pro historický backfill.
+AUDIT_METHODOLOGY_GENERATION_LEGACY_V1 = "legacy-v1"
+AUDIT_QUESTION_KIND_LEGACY = "legacy"
+
 # Rezervováno pro budoucí Systém / Provoz / Mimořádné (zatím prázdné).
 AUDIT_QUESTION_KIND_SYSTEM = "system"
 AUDIT_QUESTION_KIND_WORKPLACE = "provoz"

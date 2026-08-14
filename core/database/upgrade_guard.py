@@ -124,6 +124,24 @@ def mark_migration_complete(
     write_migration_state(workspace_root, state)
 
 
+def clear_transition_complete(
+    workspace_root: Path,
+    transition_id: str = TRANSITION_ID,
+) -> None:
+    """Odstraní transition z completed (např. po obnově starší DB)."""
+    state = read_migration_state(workspace_root)
+    completed = [
+        item
+        for item in (state.get("completed_transitions") or [])
+        if item != transition_id
+    ]
+    state["completed_transitions"] = completed
+    last = state.get("last_completed")
+    if isinstance(last, dict) and last.get("transition_id") == transition_id:
+        state["last_completed"] = None
+    write_migration_state(workspace_root, state)
+
+
 def mark_migration_failed(
     workspace_root: Path,
     *,
@@ -351,6 +369,17 @@ def prepare_database_for_startup(
 
     # Po create_all (nová instalace) dokončit marker AUDIT-SNAPSHOT-0.
     prepare_audit_snapshot_schema(
+        workspace_root=workspace_root,
+        database_path=database_path,
+        settings_path=settings_path,
+    )
+
+    # AUDIT-SNAPSHOT-1a: atomický backfill existujících auditů (bez změny UI/exportů).
+    from moduly.audity.sluzby.audit_snapshot_backfill_service import (
+        prepare_audit_snapshot_backfill,
+    )
+
+    prepare_audit_snapshot_backfill(
         workspace_root=workspace_root,
         database_path=database_path,
         settings_path=settings_path,

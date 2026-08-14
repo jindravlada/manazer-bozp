@@ -15,6 +15,7 @@ from core.backup.constants import BACKUP_EXTENSION
 from core.database.upgrade_guard import (
     MigrationGuardError,
     PreMigrationBackupError,
+    clear_transition_complete,
     create_verified_pre_migration_backup,
     is_migration_in_progress,
     is_transition_complete,
@@ -215,8 +216,12 @@ def prepare_audit_snapshot_schema(
 
     if is_transition_complete(workspace_root, TRANSITION_ID):
         if needs_audit_snapshot_schema(database_path):
-            # Defenzivně: marker říká hotovo, ale schema chybí → znovu migrovat.
-            pass
+            # Stav completed nestačí — po obnově starší DB schema chybí.
+            logger.warning(
+                "AUDIT-SNAPSHOT-0: migration_state tvrdí completed, ale schema chybí. "
+                "Spouštím znovu bezpečnou schema migraci."
+            )
+            clear_transition_complete(workspace_root, TRANSITION_ID)
         else:
             return AuditSnapshotSchemaResult(
                 migrated=False,

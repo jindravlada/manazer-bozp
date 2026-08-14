@@ -684,11 +684,27 @@ def _ensure_finding_columns() -> None:
 
 def _ensure_control_result_columns() -> None:
     columns = _table_columns("control_results")
-    if "shared_experience" not in columns:
-        _add_column("control_results", "shared_experience BOOLEAN DEFAULT 0 NOT NULL")
-    if "photo_path" not in columns:
-        _add_column("control_results", "photo_path VARCHAR(500) DEFAULT ''")
-
+    if not columns:
+        return
+    additions = {
+        "source_area_id": "source_area_id VARCHAR(80) DEFAULT ''",
+        "source_area_label": "source_area_label VARCHAR(150) DEFAULT ''",
+        "source_section_id": "source_section_id VARCHAR(80) DEFAULT ''",
+        "source_section_label": "source_section_label VARCHAR(150) DEFAULT ''",
+        "source_control_point_id": "source_control_point_id VARCHAR(80) DEFAULT ''",
+        "source_control_point_label": "source_control_point_label VARCHAR(200) DEFAULT ''",
+        "result": "result VARCHAR(40) DEFAULT 'nekontrolovano' NOT NULL",
+        "shared_experience": "shared_experience BOOLEAN DEFAULT 0 NOT NULL",
+        "photo_path": "photo_path VARCHAR(500) DEFAULT ''",
+        "note": "note TEXT DEFAULT ''",
+        "recorded_by_name": "recorded_by_name VARCHAR(150) DEFAULT ''",
+        "recorded_at": "recorded_at DATETIME",
+        "created_at": "created_at DATETIME",
+        "updated_at": "updated_at DATETIME",
+    }
+    for column_name, column_sql in additions.items():
+        if column_name not in columns:
+            _add_column("control_results", column_sql)
 
 def _ensure_bozp_inspection_commission_table() -> None:
     columns = _table_columns("bozp_inspection_commission_members")
