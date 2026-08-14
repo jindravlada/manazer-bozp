@@ -531,4 +531,27 @@ class AuditQuestionSnapshotService:
         return order_counter
 
 
+    def delete_for_audit(self, audit_id: int) -> int:
+        """Odstraní všechny snapshotové řádky auditu. Vrací počet smazaných."""
+        from core.database.session import get_session
+        from sqlalchemy import select
+
+        from moduly.audity.modely.audit_question_snapshot import AuditQuestionSnapshot
+
+        if audit_id is None or int(audit_id) <= 0:
+            return 0
+        with get_session() as session:
+            rows = list(
+                session.scalars(
+                    select(AuditQuestionSnapshot).where(
+                        AuditQuestionSnapshot.audit_id == int(audit_id)
+                    )
+                )
+            )
+            for row in rows:
+                session.delete(row)
+            session.commit()
+            return len(rows)
+
+
 audit_question_snapshot_service = AuditQuestionSnapshotService()

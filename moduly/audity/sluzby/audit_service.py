@@ -121,8 +121,12 @@ class AuditService:
         from moduly.audity.sluzby.audit_verification_service import (
             audit_verification_service,
         )
+        from moduly.audity.sluzby.audit_question_snapshot_service import (
+            audit_question_snapshot_service,
+        )
 
         audit_verification_service.repository.delete_for_audit(audit_id)
+        audit_question_snapshot_service.delete_for_audit(audit_id)
         return self.repository.delete(audit_id)
 
     def resolve_workplace_name(self, workplace_id: int | None) -> str:

@@ -558,27 +558,10 @@ class AuditProgramService:
 
         Při chybě ROLLBACK — nezůstane audit, snapshot ani ``visit.audit_id``.
         """
-        from datetime import datetime as dt
-
-        from core.database.session import get_session
-        from moduly.audity.constants import (
-            AUDIT_METHODOLOGY_GENERATION_V2,
-            AUDIT_METHODOLOGY_SOURCE_SNAPSHOT,
+        from moduly.audity.sluzby.audit_v2_create_service import (
+            AuditV2CreateError,
+            create_audit_with_v2_snapshot,
         )
-        from moduly.audity.modely.audit_question_snapshot import AuditQuestionSnapshot
-        from moduly.audity.sluzby.audit_question_snapshot_service import (
-            AuditV2SnapshotError,
-            audit_question_snapshot_service,
-        )
-        from moduly.audity.sluzby.audit_service import audit_service
-        from moduly.audity.sluzby.audit_snapshot_integrity_service import (
-            apply_snapshot_integrity_manifest,
-        )
-        from moduly.audity.sluzby.system_audit_workplace_service import (
-            SystemAuditWorkplaceError,
-            system_audit_workplace_service,
-        )
-        from sqlalchemy import select
 
         visit = self.repository.get_visit(visit_id)
         if visit is None:
@@ -602,102 +585,34 @@ class AuditProgramService:
             if str(item.process_id or "").strip()
         }
 
-        try:
-            system_workplace_id = (
-                system_audit_workplace_service.require_system_audit_workplace_id()
-            )
-        except SystemAuditWorkplaceError:
-            raise
-
         # Metodika max. jednou (ensure_catalogs uvnitř get_knowledge_tree).
         knowledge_tree = audit_knowledge_service.get_knowledge_tree(ensure=True)
 
         workplace_name = self._resolve_workplace_name(visit)
-        fields = audit_service._validated_fields(
-            {
-                "workplace_id": visit.workplace_id,
-                "workplace_name": workplace_name,
-                "year": visit.planned_year or date.today().year,
-                "planned_month": visit.planned_month,
-                "audit_date": visit.planned_date,
-                "started_at": date.today(),
-                "title": self._build_audit_title(program, visit, workplace_name),
-                "program_id": program.id,
-                "program_visit_id": visit.id,
-            }
-        )
+        fields = {
+            "workplace_id": visit.workplace_id,
+            "workplace_name": workplace_name,
+            "year": visit.planned_year or date.today().year,
+            "planned_month": visit.planned_month,
+            "audit_date": visit.planned_date,
+            "started_at": date.today(),
+            "title": self._build_audit_title(program, visit, workplace_name),
+            "program_id": program.id,
+            "program_visit_id": visit.id,
+        }
 
-        frozen_at = dt.now()
-        with get_session() as session:
-            try:
-                # Znovu ověř návštěvu v transakci (race: už má audit).
-                visit_db = session.get(AuditProgramVisit, visit_id)
-                if visit_db is None:
-                    raise ValueError(f"Návštěva {visit_id} neexistuje.")
-                if visit_db.audit_id is not None:
-                    raise ValueError(AUDIT_PROGRAM_VISIT_HAS_AUDIT)
-
-                audit = Audit(**fields)
-                audit.methodology_source = AUDIT_METHODOLOGY_SOURCE_SNAPSHOT
-                audit.questions_frozen_at = frozen_at
-                audit.methodology_generation = AUDIT_METHODOLOGY_GENERATION_V2
-                audit.created_at = frozen_at
-                audit.updated_at = frozen_at
-                session.add(audit)
-                session.flush()
-
-                audit.number = audit_service._make_number(audit.id, audit.year)
-
-                drafts = audit_question_snapshot_service.build_v2_snapshot_for_audit(
-                    audit.id,
-                    workplace_id=int(visit_db.workplace_id),
-                    system_workplace_id=int(system_workplace_id),
-                    planned_process_ids=planned_process_ids,
-                    ensure=False,
-                    knowledge_tree=knowledge_tree,
-                )
-                for draft in drafts:
-                    session.add(
-                        AuditQuestionSnapshot(
-                            audit_id=audit.id,
-                            process_id=draft.process_id,
-                            process_name=draft.process_name,
-                            section_id=draft.section_id,
-                            section_name=draft.section_name,
-                            assertion_id=draft.assertion_id,
-                            assertion_text=draft.assertion_text,
-                            verification_type=draft.verification_type,
-                            severity=draft.severity,
-                            question_kind=draft.question_kind,
-                            display_order=draft.display_order,
-                            is_in_scope=True,
-                            created_at=frozen_at,
-                        )
-                    )
-
-                session.flush()
-                written = list(
-                    session.scalars(
-                        select(AuditQuestionSnapshot).where(
-                            AuditQuestionSnapshot.audit_id == audit.id
-                        )
-                    )
-                )
-                apply_snapshot_integrity_manifest(audit, written)
-
-                visit_db.audit_id = audit.id
-                session.commit()
-                session.refresh(audit)
-                session.expunge(audit)
-                return audit
-            except (AuditV2SnapshotError, SystemAuditWorkplaceError, ValueError):
-                session.rollback()
-                raise
-            except Exception as exc:
-                session.rollback()
-                raise ValueError(
-                    f"Nepodařilo se založit audit ze návštěvy: {exc}"
-                ) from exc
+        try:
+            return create_audit_with_v2_snapshot(
+                fields=fields,
+                workplace_id=int(visit.workplace_id),
+                planned_process_ids=planned_process_ids,
+                commission_members=None,
+                link_visit_id=int(visit_id),
+                knowledge_tree=knowledge_tree,
+                ensure_knowledge=False,
+            )
+        except AuditV2CreateError as exc:
+            raise ValueError(str(exc)) from exc
 
     def sync_on_audit_completed(self, audit_id: int, *, finished_at: date) -> None:
         visit = self.repository.get_visit_by_audit_id(audit_id)

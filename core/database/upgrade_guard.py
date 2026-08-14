@@ -429,6 +429,17 @@ def prepare_database_for_startup(
         settings_path=settings_path,
     )
 
+    from moduly.audity.sluzby.incomplete_manual_audit_cleanup_service import (
+        offer_incomplete_manual_audit_cleanup_at_startup,
+    )
+
+    # AUDIT-SNAPSHOT-URGENT-2: výslovně potvrzené odstranění neúplného testu id=7.
+    offer_incomplete_manual_audit_cleanup_at_startup(
+        workspace_root=workspace_root,
+        database_path=database_path,
+        settings_path=settings_path,
+    )
+
     prepare_audit_snapshot_backfill(
         workspace_root=workspace_root,
         database_path=database_path,

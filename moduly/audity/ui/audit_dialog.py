@@ -33,6 +33,13 @@ from moduly.audity.sluzby.audit_question_source_service import (
     audit_question_source_service,
 )
 from moduly.audity.sluzby.audit_service import audit_service
+from moduly.audity.sluzby.audit_v2_create_service import (
+    AuditV2CreateError,
+    create_manual_audit_with_v2_snapshot,
+)
+from moduly.audity.sluzby.system_audit_workplace_service import (
+    SystemAuditWorkplaceError,
+)
 from moduly.audity.ui.audit_commission_widget import AuditCommissionWidget
 from moduly.audity.ui.audit_conclusion_widget import AuditConclusionWidget
 from moduly.audity.ui.audit_findings_widget import AuditFindingsWidget
@@ -219,11 +226,17 @@ class AuditDialog(QDialog):
         payload = self.prepare_save_payload(data)
 
         if self.audit is None:
-            created = audit_service.create_audit(**payload)
+            try:
+                created = create_manual_audit_with_v2_snapshot(
+                    fields=payload,
+                    commission_members=data.get("commission_members"),
+                )
+            except (AuditV2CreateError, SystemAuditWorkplaceError, ValueError) as exc:
+                QMessageBox.warning(self, "Nový audit", str(exc))
+                return False
             if created is None:
                 return False
             self.audit = created
-            self.save_commission_members(created.id, data)
             self._deferred.flush()
             self._reload_after_persist()
         else:
