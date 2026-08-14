@@ -47,6 +47,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 Nové záznamy přidávat níže (nejnovější nahoře).
 
+### 2026-08-14 – AUDIT-METHOD-SUPPORT-SNAPSHOT-1-PERF
+
+**Co se povedlo:** Rychlý DB-only integrity guard (~60 ms) místo domnělé úplné kontroly; odstraněn opakovaný `get_knowledge_tree` ve snapshot backfill fast-path.
+
+**Co už bychom dnes udělali jinak:** Hned při zavádění support snapshotů oddělit fast/full kontrolu a early-exit completed migrací.
+
+**Co bylo zbytečně složité:** Skutečná ~0,3 s režie byla ve snapshot-1a inventuře, ne v method-support payload hashi.
+
+**Nové pravidlo:** Completed migration guard smí na startu jen levné agregované SQL; JSON/SHA souborů jen při migraci, create nebo zjištěném nesouladu.
+
+**Aktualizované dokumenty:** —
+
 ### 2026-08-14 – AUDIT-METHOD-SUPPORT-SNAPSHOT-1
 
 **Co se povedlo:** Samostatná 1:1 tabulka `audit_question_support_snapshots` zmrazí statickou metodickou podporu bez zásahu do `snapshot_integrity_hash` a bez živého JSON fallbacku v AuditDialogu; batch načtení + jedno `get_knowledge_tree` při backfillu.

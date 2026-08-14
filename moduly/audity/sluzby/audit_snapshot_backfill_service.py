@@ -436,6 +436,63 @@ def _control_results_schema_ready(db_path: Path) -> bool:
     return required.issubset(cols)
 
 
+def _cheap_needs_legacy_backfill(db_path: Path) -> bool:
+    """
+    Levná detekce pristine auditů bez snapshotu (bez živé metodiky).
+
+    Obnovená starší DB se completed markerem → True → plná inventura.
+    """
+    path = Path(db_path)
+    if not path.is_file() or not sqlite_table_exists(path, "audits"):
+        return False
+    conn = sqlite3.connect(f"file:{path.resolve()}?mode=ro", uri=True)
+    try:
+        if not sqlite_table_exists(path, "audit_question_snapshots"):
+            row = conn.execute("SELECT COUNT(*) FROM audits").fetchone()
+            return int(row[0] or 0) > 0
+        missing = conn.execute(
+            """
+            SELECT COUNT(*)
+            FROM audits a
+            WHERE IFNULL(a.methodology_source, '') = ''
+              AND IFNULL(a.methodology_generation, '') = ''
+              AND a.questions_frozen_at IS NULL
+              AND NOT EXISTS (
+                SELECT 1 FROM audit_question_snapshots q WHERE q.audit_id = a.id
+              )
+            """
+        ).fetchone()
+        return int(missing[0] or 0) > 0
+    finally:
+        conn.close()
+
+
+def _count_visits_without_audit(db_path: Path) -> int:
+    path = Path(db_path)
+    if not path.is_file() or not sqlite_table_exists(path, "audit_program_visits"):
+        return 0
+    conn = sqlite3.connect(f"file:{path.resolve()}?mode=ro", uri=True)
+    try:
+        row = conn.execute(
+            "SELECT COUNT(*) FROM audit_program_visits WHERE audit_id IS NULL"
+        ).fetchone()
+        return int(row[0] or 0)
+    finally:
+        conn.close()
+
+
+def _count_audits(db_path: Path) -> int:
+    path = Path(db_path)
+    if not path.is_file() or not sqlite_table_exists(path, "audits"):
+        return 0
+    conn = sqlite3.connect(f"file:{path.resolve()}?mode=ro", uri=True)
+    try:
+        row = conn.execute("SELECT COUNT(*) FROM audits").fetchone()
+        return int(row[0] or 0)
+    finally:
+        conn.close()
+
+
 def prepare_audit_snapshot_backfill(
     *,
     workspace_root: Path | None = None,
@@ -504,6 +561,23 @@ def prepare_audit_snapshot_backfill(
         logger.warning(
             "AUDIT-SNAPSHOT-1a: nedokončený backfill uvolněn pro opakování. Záloha: %s",
             backup or "(nenalezena)",
+        )
+
+    # Rychlá cesta: completed + žádný pristine audit bez snapshotu → bez živé metodiky.
+    claimed_complete_early = is_transition_complete(workspace_root, TRANSITION_ID)
+    if claimed_complete_early and not _cheap_needs_legacy_backfill(database_path):
+        visits_without_audit = _count_visits_without_audit(database_path)
+        logger.info(
+            "AUDIT-SNAPSHOT-1a fast-path: transition complete, bez get_knowledge_tree"
+        )
+        return AuditSnapshotBackfillResult(
+            migrated=False,
+            pre_migration_backup_path=None,
+            processed_audits=0,
+            skipped_audits=_count_audits(database_path),
+            visits_without_audit=visits_without_audit,
+            report=(),
+            skipped_reason="transition_already_complete",
         )
 
     # --- Inventura + ověření skutečného stavu DB (ne jen migration_state) ---

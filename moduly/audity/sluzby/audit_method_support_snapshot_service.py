@@ -60,23 +60,41 @@ def _is_regular_in_scope(row: AuditQuestionSnapshot) -> bool:
     return kind != AUDIT_QUESTION_KIND_EXTRAORDINARY
 
 
-def compute_audit_support_integrity_hash(
-    rows: Collection[AuditQuestionSupportSnapshot],
+def compute_audit_support_integrity_hash_from_rows(
+    rows: Collection[tuple],
 ) -> str:
+    """
+    rows: (audit_question_snapshot_id, status, source, integrity_hash,
+           payload_version, id)
+    """
     lines: list[str] = []
     ordered = sorted(
         rows,
-        key=lambda item: (
-            int(item.audit_question_snapshot_id),
-            int(item.id or 0),
-        ),
+        key=lambda item: (int(item[0]), int(item[5] if len(item) > 5 else 0)),
     )
     for row in ordered:
         lines.append(
-            f"{row.audit_question_snapshot_id}|{row.status}|{row.source}|"
-            f"{row.integrity_hash}|{row.payload_version}"
+            f"{int(row[0])}|{row[1]}|{row[2]}|{row[3]}|{int(row[4])}"
         )
     return hashlib.sha256("\n".join(lines).encode("utf-8")).hexdigest()
+
+
+def compute_audit_support_integrity_hash(
+    rows: Collection[AuditQuestionSupportSnapshot],
+) -> str:
+    return compute_audit_support_integrity_hash_from_rows(
+        [
+            (
+                int(row.audit_question_snapshot_id),
+                str(row.status or ""),
+                str(row.source or ""),
+                str(row.integrity_hash or ""),
+                int(row.payload_version or 0),
+                int(row.id or 0),
+            )
+            for row in rows
+        ]
+    )
 
 
 class AuditMethodSupportSnapshotService:
@@ -206,6 +224,9 @@ class AuditMethodSupportSnapshotService:
         audit: Audit,
         question_rows: list[AuditQuestionSnapshot],
         support_rows: list[AuditQuestionSupportSnapshot],
+        *,
+        check_payloads: bool = True,
+        check_photos: bool = True,
     ) -> None:
         expected_ids = {
             int(row.id)
@@ -222,53 +243,6 @@ class AuditMethodSupportSnapshotService:
                 f"Nekonzistentní metodická podpora auditu {audit.id}: "
                 f"chybí={missing[:10]} navíc={extra[:10]}"
             )
-        from moduly.audity.sluzby.audit_method_support_photo_service import (
-            absolute_support_photo_path,
-            _sha256_file,
-        )
-
-        for row in support_rows:
-            canonical = str(row.support_payload_json or "")
-            expected_hash = payload_integrity_hash(canonical)
-            if row.integrity_hash != expected_hash:
-                raise MethodSupportSnapshotError(
-                    f"Neplatný integrity_hash support id={row.id}"
-                )
-            try:
-                payload = json.loads(canonical)
-            except json.JSONDecodeError as exc:
-                raise MethodSupportSnapshotError(
-                    f"Neplatný JSON support id={row.id}"
-                ) from exc
-            if not isinstance(payload, dict):
-                raise MethodSupportSnapshotError(
-                    f"Neplatný payload support id={row.id}"
-                )
-            section = payload.get("section") if isinstance(payload, dict) else None
-            photos = (
-                section.get("referencni_fotografie")
-                if isinstance(section, dict)
-                else None
-            )
-            if isinstance(photos, list):
-                for photo in photos:
-                    if not isinstance(photo, dict) or photo.get("missing"):
-                        continue
-                    rel = str(photo.get("soubor") or "").strip()
-                    if not rel:
-                        continue
-                    abs_path = absolute_support_photo_path(rel)
-                    if not abs_path.is_file():
-                        raise MethodSupportSnapshotError(
-                            f"Chybí zmrazená referenční fotografie {rel} "
-                            f"(support id={row.id})"
-                        )
-                    expected_photo_hash = str(photo.get("file_sha256") or "").strip()
-                    if expected_photo_hash and _sha256_file(abs_path) != expected_photo_hash:
-                        raise MethodSupportSnapshotError(
-                            f"Hash referenční fotografie nesouhlasí {rel} "
-                            f"(support id={row.id})"
-                        )
 
         expected_count = len(expected_ids)
         stored_count = getattr(audit, "support_snapshot_count", None)
@@ -282,6 +256,73 @@ class AuditMethodSupportSnapshotService:
             raise MethodSupportSnapshotError(
                 f"support_integrity_hash nesouhlasí u auditu {audit.id}"
             )
+
+        if not check_payloads and not check_photos:
+            return
+
+        from moduly.audity.sluzby.audit_method_support_photo_service import (
+            absolute_support_photo_path,
+            _sha256_file,
+        )
+
+        for row in support_rows:
+            canonical = str(row.support_payload_json or "")
+            if check_payloads:
+                expected_hash = payload_integrity_hash(canonical)
+                if row.integrity_hash != expected_hash:
+                    raise MethodSupportSnapshotError(
+                        f"Neplatný integrity_hash support id={row.id}"
+                    )
+                try:
+                    payload = json.loads(canonical)
+                except json.JSONDecodeError as exc:
+                    raise MethodSupportSnapshotError(
+                        f"Neplatný JSON support id={row.id}"
+                    ) from exc
+                if not isinstance(payload, dict):
+                    raise MethodSupportSnapshotError(
+                        f"Neplatný payload support id={row.id}"
+                    )
+            else:
+                payload = None
+
+            if not check_photos:
+                continue
+            if payload is None:
+                try:
+                    payload = json.loads(canonical)
+                except json.JSONDecodeError as exc:
+                    raise MethodSupportSnapshotError(
+                        f"Neplatný JSON support id={row.id}"
+                    ) from exc
+            if not isinstance(payload, dict):
+                continue
+            section = payload.get("section")
+            photos = (
+                section.get("referencni_fotografie")
+                if isinstance(section, dict)
+                else None
+            )
+            if not isinstance(photos, list):
+                continue
+            for photo in photos:
+                if not isinstance(photo, dict) or photo.get("missing"):
+                    continue
+                rel = str(photo.get("soubor") or "").strip()
+                if not rel:
+                    continue
+                abs_path = absolute_support_photo_path(rel)
+                if not abs_path.is_file():
+                    raise MethodSupportSnapshotError(
+                        f"Chybí zmrazená referenční fotografie {rel} "
+                        f"(support id={row.id})"
+                    )
+                expected_photo_hash = str(photo.get("file_sha256") or "").strip()
+                if expected_photo_hash and _sha256_file(abs_path) != expected_photo_hash:
+                    raise MethodSupportSnapshotError(
+                        f"Hash referenční fotografie nesouhlasí {rel} "
+                        f"(support id={row.id})"
+                    )
 
     def enrich_section_from_support(
         self,

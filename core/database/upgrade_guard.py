@@ -8,11 +8,15 @@ otevřít napůl změněná data (automatický rollback schématu zatím není).
 from __future__ import annotations
 
 import json
+import logging
 import sqlite3
+import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Callable
+
+logger = logging.getLogger(__name__)
 
 from core.backup import (
     BACKUP_EXTENSION,
@@ -510,11 +514,25 @@ def prepare_database_for_startup(
         prepare_method_support_backfill,
     )
 
+    t_ms = time.perf_counter()
     prepare_method_support_backfill(
         workspace_root=workspace_root,
         database_path=database_path,
         settings_path=settings_path,
     )
+    method_support_backfill_ms = (time.perf_counter() - t_ms) * 1000
+
+    from moduly.audity.sluzby.audit_method_support_integrity_guard import (
+        prepare_method_support_integrity_guard,
+    )
+
+    t_ms = time.perf_counter()
+    prepare_method_support_integrity_guard(
+        workspace_root=workspace_root,
+        database_path=database_path,
+        settings_path=settings_path,
+    )
+    method_support_integrity_ms = (time.perf_counter() - t_ms) * 1000
 
     from moduly.audity.sluzby.audit_snapshot_backfill_service import (
         prepare_audit_snapshot_backfill,
@@ -549,17 +567,26 @@ def prepare_database_for_startup(
         settings_path=settings_path,
     )
 
+    t_ms = time.perf_counter()
     prepare_audit_snapshot_backfill(
         workspace_root=workspace_root,
         database_path=database_path,
         settings_path=settings_path,
     )
+    snapshot_backfill_ms = (time.perf_counter() - t_ms) * 1000
 
     # Idempotentní doběh klasifikace po backfillu.
     prepare_audit_snapshot_scope_fix(
         workspace_root=workspace_root,
         database_path=database_path,
         settings_path=settings_path,
+    )
+    logger.info(
+        "upgrade_guard: method_support_backfill=%.0fms "
+        "method_support_integrity=%.0fms snapshot_backfill=%.0fms",
+        method_support_backfill_ms,
+        method_support_integrity_ms,
+        snapshot_backfill_ms,
     )
     return result
 
