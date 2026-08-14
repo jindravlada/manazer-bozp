@@ -42,6 +42,12 @@ from moduly.audity.sluzby.audit_question_snapshot_service import (
     audit_question_snapshot_service,
     snapshot_key,
 )
+from moduly.audity.sluzby.audit_snapshot_integrity_service import (
+    apply_snapshot_integrity_manifest,
+    diagnose_frozen_snapshot_db_only,
+    match_result_to_snapshot_drafts,
+    snapshot_rows_as_drafts,
+)
 from moduly.audity.sluzby.audit_snapshot_schema_migration import schema_is_present
 
 logger = logging.getLogger(__name__)
@@ -125,22 +131,7 @@ def _snapshot_rows_as_drafts(
     audit_id: int,
     snapshot_rows: list[AuditQuestionSnapshot],
 ) -> list[AuditQuestionSnapshotDraft]:
-    return [
-        AuditQuestionSnapshotDraft(
-            audit_id=audit_id,
-            process_id=row.process_id,
-            process_name=row.process_name,
-            section_id=row.section_id,
-            section_name=row.section_name,
-            assertion_id=row.assertion_id,
-            assertion_text=row.assertion_text,
-            verification_type=row.verification_type,
-            severity=row.severity,
-            question_kind=row.question_kind,
-            display_order=row.display_order,
-        )
-        for row in snapshot_rows
-    ]
+    return snapshot_rows_as_drafts(audit_id, snapshot_rows)
 
 
 def _is_audit_snapshot_complete(
@@ -148,30 +139,59 @@ def _is_audit_snapshot_complete(
     *,
     snapshot_rows: list[AuditQuestionSnapshot],
     control_results: list[ControlResult],
-    methodology_drafts: list[AuditQuestionSnapshotDraft],
+    methodology_drafts: list[AuditQuestionSnapshotDraft] | None = None,
 ) -> bool:
+    """DB-only: živá metodika se neporovnává (AUDIT-SNAPSHOT-URGENT-1)."""
+    del methodology_drafts  # záměrně ignorováno — snapshot je zdroj pravdy
     if audit.methodology_source != AUDIT_METHODOLOGY_SOURCE_SNAPSHOT:
         return False
     if audit.methodology_generation != AUDIT_METHODOLOGY_GENERATION_LEGACY_V1:
         return False
     if audit.questions_frozen_at is None:
         return False
-    if not snapshot_rows and (methodology_drafts or control_results):
-        return False
+    reasons = diagnose_frozen_snapshot_db_only(
+        audit,
+        snapshot_rows=snapshot_rows,
+        control_results=control_results,
+        require_manifest=True,
+    )
+    return not reasons
 
-    snap_keys = {
-        snapshot_key(row.process_id, row.section_id, row.assertion_id)
-        for row in snapshot_rows
-    }
-    for draft in methodology_drafts:
-        if snapshot_key(draft.process_id, draft.section_id, draft.assertion_id) not in snap_keys:
-            return False
 
-    drafts = _snapshot_rows_as_drafts(audit.id, snapshot_rows)
-    for result in control_results:
-        if _match_result_to_drafts(result, drafts) is None:
-            return False
-    return True
+def _diagnose_incomplete_legacy_snapshot(
+    audit: Audit,
+    *,
+    snapshot_rows: list[AuditQuestionSnapshot],
+    control_results: list[ControlResult],
+) -> str:
+    """Přesný důvod nekonzistence pro legacy snapshot / částečný stav."""
+    source = str(audit.methodology_source or "").strip()
+    generation = str(audit.methodology_generation or "").strip()
+    parts: list[str] = [
+        f"source={source or 'NULL'}",
+        f"generation={generation or 'NULL'}",
+        f"frozen_at={'set' if audit.questions_frozen_at else 'NULL'}",
+        f"snapshots={len(snapshot_rows)}",
+        f"control_results={len(control_results)}",
+    ]
+    if (
+        source == AUDIT_METHODOLOGY_SOURCE_SNAPSHOT
+        and generation == AUDIT_METHODOLOGY_GENERATION_LEGACY_V1
+        and audit.questions_frozen_at is not None
+    ):
+        reasons = diagnose_frozen_snapshot_db_only(
+            audit,
+            snapshot_rows=snapshot_rows,
+            control_results=control_results,
+            require_manifest=True,
+        )
+        if reasons:
+            parts.append("důvody=" + " | ".join(reasons))
+        else:
+            parts.append("důvody=neznámé")
+    elif source or generation or audit.questions_frozen_at is not None or snapshot_rows:
+        parts.append("důvody=částečný / nekonzistentní stav markerů a snapshotů")
+    return " ".join(parts)
 
 
 AUDIT_BACKFILL_STATUS_LEGACY_COMPLETE = "legacy_complete"
@@ -205,9 +225,10 @@ def classify_audit_backfill_state(
     *,
     snapshot_rows: list[AuditQuestionSnapshot],
     control_results: list[ControlResult],
-    methodology_drafts: list[AuditQuestionSnapshotDraft],
+    methodology_drafts: list[AuditQuestionSnapshotDraft] | None = None,
 ) -> AuditBackfillIntegrityItem:
     """Klasifikace auditu vůči legacy backfillu — jiné generace se nemění."""
+    del methodology_drafts
     generation = str(audit.methodology_generation or "").strip()
     source = str(audit.methodology_source or "").strip()
 
@@ -222,7 +243,6 @@ def classify_audit_backfill_state(
         audit,
         snapshot_rows=snapshot_rows,
         control_results=control_results,
-        methodology_drafts=methodology_drafts,
     ):
         return AuditBackfillIntegrityItem(
             audit_id=audit.id,
@@ -245,10 +265,10 @@ def classify_audit_backfill_state(
     return AuditBackfillIntegrityItem(
         audit_id=audit.id,
         status=AUDIT_BACKFILL_STATUS_INCONSISTENT,
-        detail=(
-            f"source={source or 'NULL'} generation={generation or 'NULL'} "
-            f"frozen_at={'set' if audit.questions_frozen_at else 'NULL'} "
-            f"snapshots={len(snapshot_rows)} control_results={len(control_results)}"
+        detail=_diagnose_incomplete_legacy_snapshot(
+            audit,
+            snapshot_rows=snapshot_rows,
+            control_results=control_results,
         ),
     )
 
@@ -327,43 +347,7 @@ def _match_result_to_drafts(
     result: ControlResult,
     drafts: list[AuditQuestionSnapshotDraft],
 ) -> AuditQuestionSnapshotDraft | None:
-    id_key = snapshot_key(
-        result.source_area_id,
-        result.source_section_id,
-        result.source_control_point_id,
-    )
-    by_key = {
-        snapshot_key(d.process_id, d.section_id, d.assertion_id): d for d in drafts
-    }
-    if id_key[2] and id_key in by_key:
-        return by_key[id_key]
-
-    label_area = str(result.source_area_label or "").strip()
-    label_section = str(result.source_section_label or "").strip()
-    cp = str(result.source_control_point_id or "").strip()
-    for draft in drafts:
-        if draft.assertion_id != cp:
-            continue
-        if (
-            draft.process_name.strip() == label_area
-            and draft.section_name.strip() == label_section
-        ):
-            return draft
-
-    process_id = str(result.source_area_id or "").strip() or f"orphan_process_{result.id}"
-    section_id = (
-        str(result.source_section_id or "").strip() or f"orphan_section_{result.id}"
-    )
-    assertion_id = cp or f"orphan_cr_{result.id}"
-    for candidate_assertion in (
-        assertion_id,
-        f"{cp}__cr{result.id}" if cp else f"orphan_cr_{result.id}",
-        f"orphan_cr_{result.id}",
-    ):
-        key = snapshot_key(process_id, section_id, candidate_assertion)
-        if key in by_key:
-            return by_key[key]
-    return None
+    return match_result_to_snapshot_drafts(result, drafts)
 
 
 def _validate_audit_snapshot(
@@ -486,8 +470,13 @@ def prepare_audit_snapshot_backfill(
         )
 
     from moduly.audity.sluzby.audit_snapshot_scope_migration import ensure_scope_column
+    from moduly.audity.sluzby.audit_snapshot_integrity_service import (
+        ensure_integrity_columns,
+    )
 
     ensure_scope_column(database_path)
+    if ensure_integrity_columns(database_path):
+        reconfigure_database_engine(force=True)
 
     if not _control_results_schema_ready(database_path):
         logger.warning(
@@ -844,6 +833,15 @@ def prepare_audit_snapshot_backfill(
                     audit.questions_frozen_at = frozen_at
                     audit.methodology_generation = AUDIT_METHODOLOGY_GENERATION_LEGACY_V1
                     audit.updated_at = frozen_at
+                    session.flush()
+                    written_snaps = list(
+                        session.scalars(
+                            select(AuditQuestionSnapshot).where(
+                                AuditQuestionSnapshot.audit_id == audit.id
+                            )
+                        )
+                    )
+                    apply_snapshot_integrity_manifest(audit, written_snaps)
 
                     report_items.append(
                         AuditBackfillReportItem(

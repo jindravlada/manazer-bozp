@@ -411,13 +411,31 @@ def prepare_database_for_startup(
     if audit_snapshot_schema_present(database_path):
         ensure_scope_column(database_path)
 
+    # Klasifikace is_in_scope před zapečetěním (NULL by zablokovalo seal).
+    prepare_audit_snapshot_scope_fix(
+        workspace_root=workspace_root,
+        database_path=database_path,
+        settings_path=settings_path,
+    )
+
+    from moduly.audity.sluzby.audit_snapshot_integrity_service import (
+        prepare_audit_snapshot_integrity_seal,
+    )
+
+    # AUDIT-SNAPSHOT-URGENT-1: DB-only zapečetění před backfill guardem (bez live JSON).
+    prepare_audit_snapshot_integrity_seal(
+        workspace_root=workspace_root,
+        database_path=database_path,
+        settings_path=settings_path,
+    )
+
     prepare_audit_snapshot_backfill(
         workspace_root=workspace_root,
         database_path=database_path,
         settings_path=settings_path,
     )
 
-    # AUDIT-SNAPSHOT-1b-fix: klasifikace is_in_scope (orphan mimo UI/export).
+    # Idempotentní doběh klasifikace po backfillu.
     prepare_audit_snapshot_scope_fix(
         workspace_root=workspace_root,
         database_path=database_path,

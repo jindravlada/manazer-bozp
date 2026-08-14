@@ -571,10 +571,14 @@ class AuditProgramService:
             audit_question_snapshot_service,
         )
         from moduly.audity.sluzby.audit_service import audit_service
+        from moduly.audity.sluzby.audit_snapshot_integrity_service import (
+            apply_snapshot_integrity_manifest,
+        )
         from moduly.audity.sluzby.system_audit_workplace_service import (
             SystemAuditWorkplaceError,
             system_audit_workplace_service,
         )
+        from sqlalchemy import select
 
         visit = self.repository.get_visit(visit_id)
         if visit is None:
@@ -670,6 +674,16 @@ class AuditProgramService:
                             created_at=frozen_at,
                         )
                     )
+
+                session.flush()
+                written = list(
+                    session.scalars(
+                        select(AuditQuestionSnapshot).where(
+                            AuditQuestionSnapshot.audit_id == audit.id
+                        )
+                    )
+                )
+                apply_snapshot_integrity_manifest(audit, written)
 
                 visit_db.audit_id = audit.id
                 session.commit()
