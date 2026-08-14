@@ -15,6 +15,7 @@ from core.database.session import get_session, reconfigure_database_engine
 from core.database.upgrade_guard import (
     MigrationGuardError,
     PreMigrationBackupError,
+    clear_transition_complete,
     create_verified_pre_migration_backup,
     is_migration_in_progress,
     is_transition_complete,
@@ -42,6 +43,7 @@ from moduly.audity.sluzby.audit_question_snapshot_service import (
     snapshot_key,
 )
 from moduly.audity.sluzby.audit_snapshot_schema_migration import schema_is_present
+
 logger = logging.getLogger(__name__)
 
 TRANSITION_ID = "audit-snapshot-1a"
@@ -119,6 +121,28 @@ def _planned_process_ids_for_audit(audit: Audit) -> tuple[str, ...] | None:
     return context.planned_process_ids
 
 
+def _snapshot_rows_as_drafts(
+    audit_id: int,
+    snapshot_rows: list[AuditQuestionSnapshot],
+) -> list[AuditQuestionSnapshotDraft]:
+    return [
+        AuditQuestionSnapshotDraft(
+            audit_id=audit_id,
+            process_id=row.process_id,
+            process_name=row.process_name,
+            section_id=row.section_id,
+            section_name=row.section_name,
+            assertion_id=row.assertion_id,
+            assertion_text=row.assertion_text,
+            verification_type=row.verification_type,
+            severity=row.severity,
+            question_kind=row.question_kind,
+            display_order=row.display_order,
+        )
+        for row in snapshot_rows
+    ]
+
+
 def _is_audit_snapshot_complete(
     audit: Audit,
     *,
@@ -143,44 +167,160 @@ def _is_audit_snapshot_complete(
         if snapshot_key(draft.process_id, draft.section_id, draft.assertion_id) not in snap_keys:
             return False
 
+    drafts = _snapshot_rows_as_drafts(audit.id, snapshot_rows)
     for result in control_results:
-        id_key = snapshot_key(
-            result.source_area_id,
-            result.source_section_id,
-            result.source_control_point_id,
-        )
-        if id_key[2] and id_key in snap_keys:
-            continue
-        # Orphan / label fallback: stačí assertion_id shoda + area/section text/id.
-        matched = False
-        for row in snapshot_rows:
-            if str(row.assertion_id or "").strip() != str(
-                result.source_control_point_id or ""
-            ).strip():
-                continue
-            if (
-                str(row.process_id or "").strip()
-                in {
-                    str(result.source_area_id or "").strip(),
-                    f"orphan_process_{result.id}",
-                }
-                or str(row.process_name or "").strip()
-                == str(result.source_area_label or "").strip()
-            ):
-                matched = True
-                break
-        if not matched:
-            # synthetic orphan key
-            synthetic = snapshot_key(
-                str(result.source_area_id or "").strip() or f"orphan_process_{result.id}",
-                str(result.source_section_id or "").strip()
-                or f"orphan_section_{result.id}",
-                str(result.source_control_point_id or "").strip()
-                or f"orphan_cr_{result.id}",
-            )
-            if synthetic not in snap_keys:
-                return False
+        if _match_result_to_drafts(result, drafts) is None:
+            return False
     return True
+
+
+AUDIT_BACKFILL_STATUS_LEGACY_COMPLETE = "legacy_complete"
+AUDIT_BACKFILL_STATUS_OTHER_GENERATION = "other_generation"
+AUDIT_BACKFILL_STATUS_NEEDS_BACKFILL = "needs_backfill"
+AUDIT_BACKFILL_STATUS_INCONSISTENT = "inconsistent"
+
+
+@dataclass(frozen=True)
+class AuditBackfillIntegrityItem:
+    audit_id: int
+    status: str
+    detail: str = ""
+
+
+@dataclass(frozen=True)
+class AuditBackfillIntegrityReport:
+    items: tuple[AuditBackfillIntegrityItem, ...]
+    needs_backfill_ids: tuple[int, ...]
+    inconsistent_ids: tuple[int, ...]
+    other_generation_ids: tuple[int, ...]
+    legacy_complete_ids: tuple[int, ...]
+
+    @property
+    def all_satisfied(self) -> bool:
+        return not self.needs_backfill_ids and not self.inconsistent_ids
+
+
+def classify_audit_backfill_state(
+    audit: Audit,
+    *,
+    snapshot_rows: list[AuditQuestionSnapshot],
+    control_results: list[ControlResult],
+    methodology_drafts: list[AuditQuestionSnapshotDraft],
+) -> AuditBackfillIntegrityItem:
+    """Klasifikace auditu vůči legacy backfillu — jiné generace se nemění."""
+    generation = str(audit.methodology_generation or "").strip()
+    source = str(audit.methodology_source or "").strip()
+
+    if generation and generation != AUDIT_METHODOLOGY_GENERATION_LEGACY_V1:
+        return AuditBackfillIntegrityItem(
+            audit_id=audit.id,
+            status=AUDIT_BACKFILL_STATUS_OTHER_GENERATION,
+            detail=f"methodology_generation={generation}",
+        )
+
+    if _is_audit_snapshot_complete(
+        audit,
+        snapshot_rows=snapshot_rows,
+        control_results=control_results,
+        methodology_drafts=methodology_drafts,
+    ):
+        return AuditBackfillIntegrityItem(
+            audit_id=audit.id,
+            status=AUDIT_BACKFILL_STATUS_LEGACY_COMPLETE,
+        )
+
+    pristine = (
+        not source
+        and not generation
+        and audit.questions_frozen_at is None
+        and not snapshot_rows
+    )
+    if pristine:
+        return AuditBackfillIntegrityItem(
+            audit_id=audit.id,
+            status=AUDIT_BACKFILL_STATUS_NEEDS_BACKFILL,
+            detail="pre_backfill",
+        )
+
+    return AuditBackfillIntegrityItem(
+        audit_id=audit.id,
+        status=AUDIT_BACKFILL_STATUS_INCONSISTENT,
+        detail=(
+            f"source={source or 'NULL'} generation={generation or 'NULL'} "
+            f"frozen_at={'set' if audit.questions_frozen_at else 'NULL'} "
+            f"snapshots={len(snapshot_rows)} control_results={len(control_results)}"
+        ),
+    )
+
+
+def assess_legacy_backfill_integrity(
+    *,
+    knowledge_tree=None,
+) -> AuditBackfillIntegrityReport:
+    """Ověří skutečný stav DB vůči legacy backfillu (ne jen migration_state)."""
+    if knowledge_tree is None:
+        knowledge_tree = audit_knowledge_service.get_knowledge_tree(ensure=True)
+
+    items: list[AuditBackfillIntegrityItem] = []
+    with get_session() as session:
+        audits = list(session.scalars(select(Audit).order_by(Audit.id)))
+        for audit in audits:
+            results = list(
+                session.scalars(
+                    select(ControlResult)
+                    .where(
+                        ControlResult.entity_type == ENTITY_AUDITY,
+                        ControlResult.entity_id == audit.id,
+                    )
+                    .order_by(ControlResult.id)
+                )
+            )
+            planned = _planned_process_ids_for_audit(audit)
+            methodology = audit_question_snapshot_service.build_snapshot_for_audit(
+                audit.id,
+                planned_process_ids=planned,
+                ensure=False,
+                knowledge_tree=knowledge_tree,
+            )
+            snaps = list(
+                session.scalars(
+                    select(AuditQuestionSnapshot).where(
+                        AuditQuestionSnapshot.audit_id == audit.id
+                    )
+                )
+            )
+            items.append(
+                classify_audit_backfill_state(
+                    audit,
+                    snapshot_rows=snaps,
+                    control_results=results,
+                    methodology_drafts=methodology,
+                )
+            )
+
+    return AuditBackfillIntegrityReport(
+        items=tuple(items),
+        needs_backfill_ids=tuple(
+            i.audit_id
+            for i in items
+            if i.status == AUDIT_BACKFILL_STATUS_NEEDS_BACKFILL
+        ),
+        inconsistent_ids=tuple(
+            i.audit_id
+            for i in items
+            if i.status == AUDIT_BACKFILL_STATUS_INCONSISTENT
+        ),
+        other_generation_ids=tuple(
+            i.audit_id
+            for i in items
+            if i.status == AUDIT_BACKFILL_STATUS_OTHER_GENERATION
+        ),
+        legacy_complete_ids=tuple(
+            i.audit_id
+            for i in items
+            if i.status == AUDIT_BACKFILL_STATUS_LEGACY_COMPLETE
+        ),
+    )
 
 
 def _match_result_to_drafts(
@@ -260,6 +400,32 @@ def _validate_audit_snapshot(
 
 def _count_table(session, table: str) -> int:
     return int(session.execute(text(f'SELECT COUNT(*) FROM "{table}"')).scalar() or 0)
+
+
+def _control_results_fingerprint(session) -> tuple[tuple, ...]:
+    """Hodnotový otisk control_results (bez změny po aditivním backfillu)."""
+    rows = list(
+        session.scalars(select(ControlResult).order_by(ControlResult.id))
+    )
+    return tuple(
+        (
+            int(row.id),
+            str(row.entity_type or ""),
+            int(row.entity_id or 0),
+            str(row.source_area_id or ""),
+            str(row.source_area_label or ""),
+            str(row.source_section_id or ""),
+            str(row.source_section_label or ""),
+            str(row.source_control_point_id or ""),
+            str(row.source_control_point_label or ""),
+            str(row.result or ""),
+            bool(row.shared_experience),
+            str(row.photo_path or ""),
+            str(row.note or ""),
+            str(row.recorded_by_name or ""),
+        )
+        for row in rows
+    )
 
 
 def _control_results_schema_ready(db_path: Path) -> bool:
@@ -347,33 +513,7 @@ def prepare_audit_snapshot_backfill(
             backup or "(nenalezena)",
         )
 
-    if is_transition_complete(workspace_root, TRANSITION_ID):
-        # Idempotentní no-op, pokud jsou všechny audity kompletní.
-        with get_session() as session:
-            audits = list(session.scalars(select(Audit).order_by(Audit.id)))
-            incomplete = [
-                audit.id
-                for audit in audits
-                if audit.methodology_source != AUDIT_METHODOLOGY_SOURCE_SNAPSHOT
-                or audit.methodology_generation != AUDIT_METHODOLOGY_GENERATION_LEGACY_V1
-                or audit.questions_frozen_at is None
-            ]
-        if not incomplete:
-            return AuditSnapshotBackfillResult(
-                migrated=False,
-                pre_migration_backup_path=None,
-                processed_audits=0,
-                skipped_audits=len(audits),
-                visits_without_audit=0,
-                report=(),
-                skipped_reason="transition_already_complete",
-            )
-        logger.warning(
-            "AUDIT-SNAPSHOT-1a: stav completed, ale %s auditů není kompletních — opakuji.",
-            len(incomplete),
-        )
-
-    # --- Inventura (read-only) ---
+    # --- Inventura + ověření skutečného stavu DB (ne jen migration_state) ---
     reconfigure_database_engine(force=True)
     knowledge_tree = audit_knowledge_service.get_knowledge_tree(ensure=True)
 
@@ -396,9 +536,10 @@ def prepare_audit_snapshot_backfill(
                 list[AuditQuestionSnapshotDraft],
                 list[AuditQuestionSnapshotDraft],
                 list[ControlResult],
-                bool,
+                str,
             ]
         ] = []
+        integrity_items: list[AuditBackfillIntegrityItem] = []
 
         baseline = {
             "audits": _count_table(session, "audits"),
@@ -414,10 +555,7 @@ def prepare_audit_snapshot_backfill(
                 session, "audit_verification_overrides"
             ),
         }
-        photo_paths_before = {
-            int(row.id): str(row.photo_path or "")
-            for row in session.scalars(select(ControlResult)).all()
-        }
+        control_results_fingerprint_before = _control_results_fingerprint(session)
 
         for audit in audits:
             results = list(
@@ -452,12 +590,13 @@ def prepare_audit_snapshot_backfill(
                     )
                 )
             )
-            complete = _is_audit_snapshot_complete(
+            classification = classify_audit_backfill_state(
                 audit,
                 snapshot_rows=existing_snaps,
                 control_results=results,
                 methodology_drafts=methodology,
             )
+            integrity_items.append(classification)
             orphan_count = sum(1 for item in historical if item.is_orphan)
             inventory.append(
                 AuditBackfillInventoryItem(
@@ -470,18 +609,51 @@ def prepare_audit_snapshot_backfill(
                     planned_process_count=len(planned or ()),
                     methodology_question_count=len(methodology),
                     orphan_result_count=orphan_count,
-                    already_complete=complete,
+                    already_complete=(
+                        classification.status == AUDIT_BACKFILL_STATUS_LEGACY_COMPLETE
+                    ),
                 )
             )
             for row in results:
                 session.expunge(row)
             session.expunge(audit)
-            prepared.append((audit, methodology, historical, results, complete))
+            prepared.append(
+                (audit, methodology, historical, results, classification.status)
+            )
+
+    integrity = AuditBackfillIntegrityReport(
+        items=tuple(integrity_items),
+        needs_backfill_ids=tuple(
+            i.audit_id
+            for i in integrity_items
+            if i.status == AUDIT_BACKFILL_STATUS_NEEDS_BACKFILL
+        ),
+        inconsistent_ids=tuple(
+            i.audit_id
+            for i in integrity_items
+            if i.status == AUDIT_BACKFILL_STATUS_INCONSISTENT
+        ),
+        other_generation_ids=tuple(
+            i.audit_id
+            for i in integrity_items
+            if i.status == AUDIT_BACKFILL_STATUS_OTHER_GENERATION
+        ),
+        legacy_complete_ids=tuple(
+            i.audit_id
+            for i in integrity_items
+            if i.status == AUDIT_BACKFILL_STATUS_LEGACY_COMPLETE
+        ),
+    )
 
     logger.info(
-        "AUDIT-SNAPSHOT-1a inventura: audits=%s visits_without_audit=%s",
+        "AUDIT-SNAPSHOT-1a inventura: audits=%s visits_without_audit=%s "
+        "legacy_complete=%s needs_backfill=%s inconsistent=%s other_generation=%s",
         len(inventory),
         visits_without_audit,
+        len(integrity.legacy_complete_ids),
+        len(integrity.needs_backfill_ids),
+        len(integrity.inconsistent_ids),
+        len(integrity.other_generation_ids),
     )
     for item in inventory:
         logger.info(
@@ -499,23 +671,39 @@ def prepare_audit_snapshot_backfill(
             item.already_complete,
         )
 
-    to_write = [row for row in prepared if not row[4]]
-    if not to_write:
-        mark_migration_complete(
-            workspace_root, backup_path=None, transition_id=TRANSITION_ID
+    if integrity.inconsistent_ids:
+        details = "; ".join(
+            f"id={item.audit_id} ({item.detail})"
+            for item in integrity.items
+            if item.status == AUDIT_BACKFILL_STATUS_INCONSISTENT
         )
+        raise AuditSnapshotBackfillError(
+            "AUDIT-SNAPSHOT-1a: nekonzistentní / částečný snapshot. "
+            "Automatická destruktivní oprava se nespouští. "
+            f"Audity: {details}. Obnovte zálohu nebo opravte data ručně."
+        )
+
+    claimed_complete = is_transition_complete(workspace_root, TRANSITION_ID)
+
+    if not integrity.needs_backfill_ids:
+        if not claimed_complete:
+            mark_migration_complete(
+                workspace_root, backup_path=None, transition_id=TRANSITION_ID
+            )
         report = tuple(
             AuditBackfillReportItem(
                 audit_id=audit.id,
                 status=str(audit.status or ""),
                 snapshot_question_count=len(historical),
-                questions_with_result=sum(1 for d in historical if d.from_control_result),
+                questions_with_result=sum(
+                    1 for d in historical if d.from_control_result
+                ),
                 orphan_count=sum(1 for d in historical if d.is_orphan),
                 validation_ok=True,
                 skipped=True,
-                detail="already_complete",
+                detail=status,
             )
-            for audit, _method, historical, _results, _complete in prepared
+            for audit, _method, historical, _results, status in prepared
         )
         return AuditSnapshotBackfillResult(
             migrated=False,
@@ -524,11 +712,29 @@ def prepare_audit_snapshot_backfill(
             skipped_audits=len(prepared),
             visits_without_audit=visits_without_audit,
             report=report,
-            skipped_reason="all_audits_already_complete",
+            skipped_reason=(
+                "transition_already_complete"
+                if claimed_complete
+                else "all_audits_already_complete"
+            ),
         )
 
-    # Validace před zápisem (v paměti).
-    for audit, methodology, historical, results, _complete in to_write:
+    if claimed_complete:
+        logger.warning(
+            "AUDIT-SNAPSHOT-1a: stav completed, ale DB postrádá backfill "
+            "pro audity %s — zneplatňuji complete a opakuji.",
+            list(integrity.needs_backfill_ids),
+        )
+        clear_transition_complete(workspace_root, TRANSITION_ID)
+
+    to_write = [
+        row
+        for row in prepared
+        if row[4] == AUDIT_BACKFILL_STATUS_NEEDS_BACKFILL
+    ]
+
+    # Validace před zápisem (v paměti) — jen pristine audity.
+    for audit, methodology, historical, results, _status in to_write:
         try:
             _validate_audit_snapshot(
                 audit,
@@ -566,18 +772,19 @@ def prepare_audit_snapshot_backfill(
 
     frozen_at = datetime.now()
     report_items: list[AuditBackfillReportItem] = []
+    write_ids = {audit.id for audit, *_rest in to_write}
 
     try:
         with get_session() as session:
             try:
-                for audit_detached, methodology, historical, results, complete in prepared:
+                for audit_detached, methodology, historical, results, status in prepared:
                     audit = session.get(Audit, audit_detached.id)
                     if audit is None:
                         raise AuditSnapshotBackfillError(
                             f"Audit {audit_detached.id} zmizel během backfille."
                         )
 
-                    if complete:
+                    if audit_detached.id not in write_ids:
                         report_items.append(
                             AuditBackfillReportItem(
                                 audit_id=audit.id,
@@ -589,12 +796,12 @@ def prepare_audit_snapshot_backfill(
                                 orphan_count=sum(1 for d in historical if d.is_orphan),
                                 validation_ok=True,
                                 skipped=True,
-                                detail="already_complete",
+                                detail=status,
                             )
                         )
                         continue
 
-                    # Neúplný stav — nahradit snapshot řádky atomicky.
+                    # Pristine pre-backfill: jen INSERT (žádné mazání existujících snapshotů).
                     existing = list(
                         session.scalars(
                             select(AuditQuestionSnapshot).where(
@@ -602,9 +809,11 @@ def prepare_audit_snapshot_backfill(
                             )
                         )
                     )
-                    for row in existing:
-                        session.delete(row)
-                    session.flush()
+                    if existing:
+                        raise AuditSnapshotBackfillError(
+                            f"Audit {audit.id}: očekáván prázdný snapshot před backfillem, "
+                            f"nalezeno {len(existing)} řádků. Destruktivní přepis se neprovádí."
+                        )
 
                     for draft in historical:
                         session.add(
@@ -647,7 +856,6 @@ def prepare_audit_snapshot_backfill(
 
                 session.flush()
 
-                # Povinná validace počtů před COMMIT.
                 after = {
                     "audits": _count_table(session, "audits"),
                     "control_results": _count_table(session, "control_results"),
@@ -667,18 +875,14 @@ def prepare_audit_snapshot_backfill(
                         f"Počty entit se změnily během backfille: before={baseline} after={after}"
                     )
 
-                photo_paths_after = {
-                    int(row.id): str(row.photo_path or "")
-                    for row in session.scalars(select(ControlResult)).all()
-                }
-                if photo_paths_after != photo_paths_before:
+                fingerprint_after = _control_results_fingerprint(session)
+                if fingerprint_after != control_results_fingerprint_before:
                     raise AuditSnapshotBackfillError(
-                        "Cesty fotografií control_results se změnily během backfille."
+                        "Hodnoty control_results se změnily během backfille."
                     )
 
-                # Každý zapsaný audit: snapshot pokrývá CR.
-                for audit_detached, methodology, historical, results, complete in prepared:
-                    if complete:
+                for audit_detached, methodology, historical, results, status in prepared:
+                    if audit_detached.id not in write_ids:
                         continue
                     snaps = list(
                         session.scalars(
@@ -687,6 +891,11 @@ def prepare_audit_snapshot_backfill(
                             )
                         )
                     )
+                    orphan_keys = {
+                        snapshot_key(d.process_id, d.section_id, d.assertion_id)
+                        for d in historical
+                        if d.is_orphan
+                    }
                     snap_drafts = [
                         AuditQuestionSnapshotDraft(
                             audit_id=audit_detached.id,
@@ -701,36 +910,12 @@ def prepare_audit_snapshot_backfill(
                             question_kind=row.question_kind,
                             display_order=row.display_order,
                             from_control_result=True,
-                            is_orphan=False,
-                        )
-                        for row in snaps
-                    ]
-                    # Obnov is_orphan podle historical
-                    orphan_keys = {
-                        snapshot_key(d.process_id, d.section_id, d.assertion_id)
-                        for d in historical
-                        if d.is_orphan
-                    }
-                    snap_drafts = [
-                        AuditQuestionSnapshotDraft(
-                            audit_id=d.audit_id,
-                            process_id=d.process_id,
-                            process_name=d.process_name,
-                            section_id=d.section_id,
-                            section_name=d.section_name,
-                            assertion_id=d.assertion_id,
-                            assertion_text=d.assertion_text,
-                            verification_type=d.verification_type,
-                            severity=d.severity,
-                            question_kind=d.question_kind,
-                            display_order=d.display_order,
-                            from_control_result=True,
                             is_orphan=snapshot_key(
-                                d.process_id, d.section_id, d.assertion_id
+                                row.process_id, row.section_id, row.assertion_id
                             )
                             in orphan_keys,
                         )
-                        for d in snap_drafts
+                        for row in snaps
                     ]
                     _validate_audit_snapshot(
                         audit_detached,

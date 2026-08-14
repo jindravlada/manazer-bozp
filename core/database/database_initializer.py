@@ -683,6 +683,14 @@ def _ensure_finding_columns() -> None:
 
 
 def _ensure_control_result_columns() -> None:
+    """
+    Aditivně doplní chybějící sloupce control_results (nullable / DEFAULT).
+
+    Potřeba pro AUDIT-SNAPSHOT-1a: ORM dotazy při backfillu vyžadují source_* a
+    result i na neúplných legacy schématech (MIGRATION-0 test DB). Na běžné
+    produkční DB jsou sloupce již přítomné — ADD je no-op. Existující hodnoty
+    řádků se nemění; stará AppImage neznámé sloupce ignoruje.
+    """
     columns = _table_columns("control_results")
     if not columns:
         return
