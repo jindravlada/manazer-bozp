@@ -471,10 +471,42 @@ DEFAULT_AUDIT_METHODOLOGY_SOURCE = AUDIT_METHODOLOGY_SOURCE_LIVE
 AUDIT_METHODOLOGY_GENERATION_LEGACY_V1 = "legacy-v1"
 AUDIT_QUESTION_KIND_LEGACY = "legacy"
 
-# Rezervováno pro budoucí Systém / Provoz / Mimořádné (zatím prázdné).
+# AUDIT-METHOD-V2a: generace a druhy otázek nové metodiky.
+AUDIT_METHODOLOGY_GENERATION_V2 = "v2"
+
 AUDIT_QUESTION_KIND_SYSTEM = "system"
-AUDIT_QUESTION_KIND_WORKPLACE = "provoz"
-AUDIT_QUESTION_KIND_EXTRAORDINARY = "mimoradne"
+AUDIT_QUESTION_KIND_OPERATION = "operation"
+AUDIT_QUESTION_KIND_EXTRAORDINARY = "extraordinary"
+AUDIT_QUESTION_KIND_UNCLASSIFIED = "unclassified"
+
+# Zpětná kompatibilita rezervovaného názvu (dříve „provoz“).
+AUDIT_QUESTION_KIND_WORKPLACE = AUDIT_QUESTION_KIND_OPERATION
+
+AUDIT_QUESTION_KINDS_V2 = (
+    AUDIT_QUESTION_KIND_SYSTEM,
+    AUDIT_QUESTION_KIND_OPERATION,
+    AUDIT_QUESTION_KIND_EXTRAORDINARY,
+    AUDIT_QUESTION_KIND_UNCLASSIFIED,
+    AUDIT_QUESTION_KIND_LEGACY,
+)
+
+# Druhy povolené v nové JSON metodice (legacy jen historické snapshoty).
+AUDIT_QUESTION_KINDS_LIVE_METHODOLOGY = (
+    AUDIT_QUESTION_KIND_SYSTEM,
+    AUDIT_QUESTION_KIND_OPERATION,
+    AUDIT_QUESTION_KIND_EXTRAORDINARY,
+    AUDIT_QUESTION_KIND_UNCLASSIFIED,
+)
+
+# Efektivní sada standardního snapshotu v2 (bez extraordinary / unclassified).
+AUDIT_QUESTION_KINDS_V2_SNAPSHOT = (
+    AUDIT_QUESTION_KIND_SYSTEM,
+    AUDIT_QUESTION_KIND_OPERATION,
+)
+
+# Globální nastavení systémového provozu (AUDIT-METHOD-V2a).
+SYSTEM_AUDIT_WORKPLACE_SETTING_KEY = "system_audit_workplace_id"
+SYSTEM_AUDIT_WORKPLACE_SETTINGS_FILE = "audity_nastaveni.json"
 
 
 def audit_finding_type_label(finding_type: str) -> str:

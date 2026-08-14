@@ -31,6 +31,7 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.audity.sluzby.audit_program_service import audit_program_service
     from moduly.audity.sluzby.audit_service import audit_service
+    from tests.audit_v2a_test_support import prepare_v2_audit_create
 
 
 class AuditProgramVisitAuditTestCase(unittest.TestCase):
@@ -39,6 +40,13 @@ class AuditProgramVisitAuditTestCase(unittest.TestCase):
         from PySide6.QtWidgets import QApplication
 
         cls._app = QApplication.instance() or QApplication([])
+
+    def setUp(self) -> None:
+        self._v2 = prepare_v2_audit_create()
+        self._system_wp, self._operation_wp = self._v2.__enter__()
+
+    def tearDown(self) -> None:
+        self._v2.__exit__(None, None, None)
 
     def _create_program_with_visit(self):
         program = audit_program_service.create_program(
@@ -49,13 +57,13 @@ class AuditProgramVisitAuditTestCase(unittest.TestCase):
         )
         audit_program_service.add_workplace(
             program.id,
-            workplace_id=10,
-            workplace_name="Provoz Gamma",
+            workplace_id=self._operation_wp.id,
+            workplace_name=self._operation_wp.name,
             audit_interval_months=6,
         )
         visit = audit_program_service.add_visit(
             program.id,
-            workplace_id=10,
+            workplace_id=self._operation_wp.id,
             planned_year=2026,
             planned_month=4,
             planned_date=date(2026, 4, 15),
@@ -81,7 +89,7 @@ class AuditProgramVisitAuditTestCase(unittest.TestCase):
 
         self.assertEqual(audit.program_id, program.id)
         self.assertEqual(audit.program_visit_id, visit.id)
-        self.assertEqual(audit.workplace_id, 10)
+        self.assertEqual(audit.workplace_id, self._operation_wp.id)
         self.assertEqual(audit.planned_month, 4)
         self.assertEqual(audit.year, 2026)
         self.assertEqual(audit.audit_date, date(2026, 4, 15))

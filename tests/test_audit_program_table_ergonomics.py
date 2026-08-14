@@ -35,6 +35,7 @@ with patch.object(Path, "home", return_value=_TMP):
         _COLUMN_AUDIT_MIN_WIDTH,
     )
     from moduly.audity.ui.audit_table import AuditTable
+    from tests.audit_v2a_test_support import prepare_v2_audit_create
 
 
 class AuditTableErgonomicsTestCase(unittest.TestCase):
@@ -112,6 +113,13 @@ class PlannedVisitsTableErgonomicsTestCase(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls._app = QApplication.instance() or QApplication([])
 
+    def setUp(self) -> None:
+        self._v2 = prepare_v2_audit_create(operation_name="Provoz A")
+        self._system_wp, self._operation_wp = self._v2.__enter__()
+
+    def tearDown(self) -> None:
+        self._v2.__exit__(None, None, None)
+
     def _create_program_with_processes(self, process_names: tuple[str, ...]):
         program = audit_program_service.create_program(
             name="Interní audity 2026–2029",
@@ -121,13 +129,13 @@ class PlannedVisitsTableErgonomicsTestCase(unittest.TestCase):
         )
         audit_program_service.add_workplace(
             program.id,
-            workplace_id=10,
-            workplace_name="Provoz A",
+            workplace_id=self._operation_wp.id,
+            workplace_name=self._operation_wp.name,
             audit_interval_months=6,
         )
         visit = audit_program_service.add_visit(
             program.id,
-            workplace_id=10,
+            workplace_id=self._operation_wp.id,
             planned_year=2026,
             planned_month=4,
             planned_date=date(2026, 4, 15),
@@ -174,13 +182,13 @@ class PlannedVisitsTableErgonomicsTestCase(unittest.TestCase):
         )
         audit_program_service.add_workplace(
             program.id,
-            workplace_id=10,
-            workplace_name="Provoz A",
+            workplace_id=self._operation_wp.id,
+            workplace_name=self._operation_wp.name,
             audit_interval_months=6,
         )
         visit = audit_program_service.add_visit(
             program.id,
-            workplace_id=10,
+            workplace_id=self._operation_wp.id,
             planned_year=2026,
             planned_month=10,
         )

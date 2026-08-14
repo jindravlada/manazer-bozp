@@ -1067,6 +1067,8 @@ class AuditKnowledgeService:
 
     @classmethod
     def normalize_auditni_tvrzeni(cls, items: list[dict]) -> list[dict]:
+        from moduly.audity.sluzby.audit_question_kind import validate_question_kind
+
         normalized: list[dict] = []
         for index, raw in enumerate(items):
             if not isinstance(raw, dict):
@@ -1076,20 +1078,28 @@ class AuditKnowledgeService:
             if not item_id or not text:
                 continue
             poradi = raw.get("poradi")
-            normalized.append(
-                {
-                    "id": item_id,
-                    "text": text,
-                    "nazev": text,
-                    "popis": str(raw.get("popis") or "").strip(),
-                    "poradi": poradi if poradi is not None else (index + 1) * 10,
-                    "aktivni": bool(raw.get("aktivni", True)),
-                    "zavaznost": cls.normalize_control_point_severity(raw.get("zavaznost")),
-                    "verification_type": cls.normalize_verification_type(
-                        raw.get("verification_type")
-                    ),
-                }
-            )
+            item = {
+                "id": item_id,
+                "text": text,
+                "nazev": text,
+                "popis": str(raw.get("popis") or "").strip(),
+                "poradi": poradi if poradi is not None else (index + 1) * 10,
+                "aktivni": bool(raw.get("aktivni", True)),
+                "zavaznost": cls.normalize_control_point_severity(raw.get("zavaznost")),
+                "verification_type": cls.normalize_verification_type(
+                    raw.get("verification_type")
+                ),
+            }
+            # AUDIT-METHOD-V2a: druh zachovat jen pokud je v JSON uveden —
+            # chybějící se při čtení interpretuje jako unclassified, soubory se nedoplňují.
+            if "question_kind" in raw and raw.get("question_kind") not in (None, ""):
+                # Načtení zachová i legacy (historické); v2 create legacy odmítne.
+                item["question_kind"] = validate_question_kind(
+                    raw.get("question_kind"),
+                    allow_legacy=True,
+                    allow_missing=False,
+                )
+            normalized.append(item)
         return normalized
 
     @classmethod

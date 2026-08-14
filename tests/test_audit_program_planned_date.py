@@ -32,6 +32,7 @@ with patch.object(Path, "home", return_value=_TMP):
         AuditProgramPlannedVisitsWidget,
     )
     from moduly.audity.ui.audit_program_plan_tree_widget import AuditProgramPlanTreeWidget
+    from tests.audit_v2a_test_support import prepare_v2_audit_create
 
 
 class AuditProgramPlannedDateTestCase(unittest.TestCase):
@@ -40,6 +41,15 @@ class AuditProgramPlannedDateTestCase(unittest.TestCase):
         from PySide6.QtWidgets import QApplication
 
         cls._app = QApplication.instance() or QApplication([])
+
+    def setUp(self) -> None:
+        self._v2 = prepare_v2_audit_create(
+            operation_name="Provoz A",
+        )
+        self._system_wp, self._operation_wp = self._v2.__enter__()
+
+    def tearDown(self) -> None:
+        self._v2.__exit__(None, None, None)
 
     def _create_program_with_visit(self, *, planned_date: date | None = date(2026, 4, 15)):
         program = audit_program_service.create_program(
@@ -50,13 +60,13 @@ class AuditProgramPlannedDateTestCase(unittest.TestCase):
         )
         audit_program_service.add_workplace(
             program.id,
-            workplace_id=10,
-            workplace_name="Provoz A",
+            workplace_id=self._operation_wp.id,
+            workplace_name=self._operation_wp.name,
             audit_interval_months=6,
         )
         visit = audit_program_service.add_visit(
             program.id,
-            workplace_id=10,
+            workplace_id=self._operation_wp.id,
             planned_year=2026,
             planned_month=4,
             planned_date=planned_date,

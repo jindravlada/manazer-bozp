@@ -340,6 +340,17 @@ class AuditWorkplaceHistoryServiceTestCase(unittest.TestCase):
         self.assertEqual(history.tasks[0].completed_date, date(2025, 11, 1))
 
     def test_program_history_limits_to_program_audits(self) -> None:
+        from moduly.audity.sluzby.system_audit_workplace_service import (
+            system_audit_workplace_service,
+        )
+        from tests.audit_v2a_test_support import classify_methodology_questions
+
+        system_wp = settings_service.save_workplace(
+            name=f"Systém {uuid.uuid4().hex[:6]}",
+            active=True,
+        )
+        system_audit_workplace_service.set_system_audit_workplace_id(system_wp.id)
+
         program_a = audit_program_service.create_program(
             name="Program A",
             date_from=date(2026, 4, 1),
@@ -350,27 +361,28 @@ class AuditWorkplaceHistoryServiceTestCase(unittest.TestCase):
             date_from=date(2026, 4, 1),
             date_to=date(2029, 3, 31),
         )
-        for program in (program_a, program_b):
-            audit_program_service.add_workplace(
-                program.id,
-                workplace_id=self.workplace.id,
-                workplace_name=self.workplace.name,
-                audit_interval_months=6,
-            )
-            visit = audit_program_service.add_visit(
-                program.id,
-                workplace_id=self.workplace.id,
-                planned_year=2026,
-                planned_month=4,
-            )
-            audit = audit_program_service.create_audit_from_visit(visit.id)
-            finding_service.create(
-                ENTITY_AUDITY,
-                audit.id,
-                finding_type=FINDING_TYPE_NESHODA,
-                description=f"Zjištění programu {program.id}",
-                status=FINDING_STATUS_OTEVRENE,
-            )
+        with classify_methodology_questions():
+            for program in (program_a, program_b):
+                audit_program_service.add_workplace(
+                    program.id,
+                    workplace_id=self.workplace.id,
+                    workplace_name=self.workplace.name,
+                    audit_interval_months=6,
+                )
+                visit = audit_program_service.add_visit(
+                    program.id,
+                    workplace_id=self.workplace.id,
+                    planned_year=2026,
+                    planned_month=4,
+                )
+                audit = audit_program_service.create_audit_from_visit(visit.id)
+                finding_service.create(
+                    ENTITY_AUDITY,
+                    audit.id,
+                    finding_type=FINDING_TYPE_NESHODA,
+                    description=f"Zjištění programu {program.id}",
+                    status=FINDING_STATUS_OTEVRENE,
+                )
 
         current = audit_service.create_audit(
             workplace_id=self.workplace.id,

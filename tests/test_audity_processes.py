@@ -709,15 +709,21 @@ class AudityProcessesTestCase(unittest.TestCase):
 
         from moduly.audity.constants import DEFAULT_AUDIT_PROGRAM_STANDARDS
         from moduly.audity.sluzby.audit_program_service import audit_program_service
+        from moduly.audity.sluzby.system_audit_workplace_service import (
+            system_audit_workplace_service,
+        )
         from moduly.audity.ui.audit_dialog import AuditDialog
 
         from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
+        from tests.audit_v2a_test_support import classify_methodology_questions
 
         audit_knowledge_service.ensure_catalogs()
         process_ids = [process.id for process in audit_knowledge_service.get_processes()[:2]]
         self.assertEqual(len(process_ids), 2)
 
+        system_wp = settings_service.save_workplace(name="Filtr systém")
         workplace = settings_service.save_workplace(name="Filtr provoz")
+        system_audit_workplace_service.set_system_audit_workplace_id(system_wp.id)
         program = audit_program_service.create_program(
             name="Program filtrace",
             date_from=date(2026, 4, 1),
@@ -746,7 +752,8 @@ class AudityProcessesTestCase(unittest.TestCase):
             process_id=process_ids[1],
             process_name="Proces 2",
         )
-        audit = audit_program_service.create_audit_from_visit(visit.id)
+        with classify_methodology_questions():
+            audit = audit_program_service.create_audit_from_visit(visit.id)
 
         dialog = AuditDialog(audit=audit)
 

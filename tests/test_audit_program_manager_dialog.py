@@ -44,6 +44,9 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
     from moduly.audity.sluzby.audit_program_service import audit_program_service
     from moduly.audity.sluzby.audit_service import audit_service
+    from moduly.audity.sluzby.system_audit_workplace_service import (
+        system_audit_workplace_service,
+    )
     from moduly.audity.ui.audit_program_plan_tree_widget import (
         NODE_PROCESS,
         NODE_VISIT,
@@ -52,6 +55,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.audity.ui.audit_program_manager_dialog import AuditProgramManagerDialog
 
     from moduly.nastaveni.sluzby.settings_service import settings_service
+    from tests.audit_v2a_test_support import classify_methodology_questions
 
 
 class AuditProgramManagerDialogTestCase(unittest.TestCase):
@@ -61,12 +65,26 @@ class AuditProgramManagerDialogTestCase(unittest.TestCase):
         audit_knowledge_service.ensure_catalogs()
 
     def setUp(self) -> None:
+        self._system_workplace = settings_service.save_workplace(
+            name="Systémový provoz manager",
+            address="",
+            note="",
+            active=True,
+        )
         self._workplace = settings_service.save_workplace(
             name="Testovací provoz",
             address="",
             note="",
             active=True,
         )
+        system_audit_workplace_service.set_system_audit_workplace_id(
+            self._system_workplace.id
+        )
+        self._classify = classify_methodology_questions()
+        self._classify.__enter__()
+
+    def tearDown(self) -> None:
+        self._classify.__exit__(None, None, None)
 
     def _create_dialog(self) -> AuditProgramManagerDialog:
         from core.widgets.dialog_utils import prepare_work_dialog_maximized

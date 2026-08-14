@@ -1,6 +1,6 @@
-"""Sestavení snapshotu auditních tvrzení (AUDIT-SNAPSHOT-0 / 1a).
+"""Sestavení snapshotu auditních tvrzení (AUDIT-SNAPSHOT-0 / 1a / METHOD-V2a).
 
-Nespouští se automaticky při otevření auditu. Persist řeší backfill služba.
+Nespouští se automaticky při otevření auditu. Persist řeší backfill / create v2.
 """
 
 from __future__ import annotations
@@ -9,12 +9,22 @@ from dataclasses import dataclass, replace
 
 from core.shared.modely.control_result import ControlResult
 from moduly.audity.constants import (
+    AUDIT_QUESTION_KIND_EXTRAORDINARY,
     AUDIT_QUESTION_KIND_LEGACY,
+    AUDIT_QUESTION_KIND_OPERATION,
+    AUDIT_QUESTION_KIND_SYSTEM,
+    AUDIT_QUESTION_KIND_UNCLASSIFIED,
     CONTROL_POINT_SEVERITY_DEFAULT,
 )
 from moduly.audity.sluzby.audit_knowledge_service import (
     KnowledgeTreeNode,
     audit_knowledge_service,
+)
+from moduly.audity.sluzby.audit_question_kind import (
+    AuditQuestionKindError,
+    format_unclassified_diagnostics,
+    target_kind_for_workplace,
+    validate_question_kind,
 )
 from moduly.audity.sluzby.audit_verification_service import (
     audit_verification_service,
@@ -41,6 +51,10 @@ class AuditQuestionSnapshotDraft:
     is_in_scope: bool = True
 
 
+class AuditV2SnapshotError(ValueError):
+    """Chyba sestavení snapshotu metodiky v2."""
+
+
 def snapshot_key(
     process_id: str,
     section_id: str,
@@ -65,7 +79,7 @@ class AuditQuestionSnapshotService:
         knowledge_tree: list[KnowledgeTreeNode] | None = None,
     ) -> list[AuditQuestionSnapshotDraft]:
         """
-        Sestaví snapshot z aktuální metodiky.
+        Sestaví snapshot z aktuální metodiky (legacy backfill režim).
 
         - respektuje ``planned_process_ids`` (None = všechny aktivní procesy);
         - jen aktivní tvrzení;
@@ -86,7 +100,79 @@ class AuditQuestionSnapshotService:
             roots=roots,
             allowed=allowed,
             overrides=overrides,
+            mode="legacy",
+            target_kind=None,
         )
+
+    def build_v2_snapshot_for_audit(
+        self,
+        audit_id: int,
+        *,
+        workplace_id: int,
+        system_workplace_id: int,
+        planned_process_ids: set[str] | tuple[str, ...] | list[str] | None = None,
+        ensure: bool = True,
+        knowledge_tree: list[KnowledgeTreeNode] | None = None,
+    ) -> list[AuditQuestionSnapshotDraft]:
+        """
+        Snapshot nové metodiky v2: filtr Systém / Provoz.
+
+        - systémový provoz → jen ``system``;
+        - jiný provoz → jen ``operation``;
+        - ``extraordinary`` se do standardního stromu nezahrnuje;
+        - ``unclassified`` v plánovaných procesech → chyba s diagnostikou;
+        - všechny řádky ``is_in_scope=True``; žádné orphan result-only.
+        """
+        if audit_id is None or int(audit_id) <= 0:
+            raise ValueError("audit_id musí být kladné číslo.")
+        if workplace_id is None or int(workplace_id) <= 0:
+            raise AuditV2SnapshotError("workplace_id auditu musí být kladné číslo.")
+        if system_workplace_id is None or int(system_workplace_id) <= 0:
+            raise AuditV2SnapshotError(
+                "system_audit_workplace_id musí být kladné číslo."
+            )
+
+        allowed = self._normalize_planned_ids(planned_process_ids)
+        roots = knowledge_tree
+        if roots is None:
+            roots = audit_knowledge_service.get_knowledge_tree(ensure=ensure)
+
+        target_kind = target_kind_for_workplace(
+            workplace_id=int(workplace_id),
+            system_workplace_id=int(system_workplace_id),
+        )
+        # Nový audit nemá override — prázdná mapa (bez N+1).
+        overrides = audit_verification_service.overrides_map(audit_id)
+
+        drafts, unclassified = self._build_from_tree_v2(
+            int(audit_id),
+            roots=roots,
+            allowed=allowed,
+            overrides=overrides,
+            target_kind=target_kind,
+        )
+        if unclassified:
+            raise AuditV2SnapshotError(format_unclassified_diagnostics(unclassified))
+
+        for draft in drafts:
+            if draft.question_kind not in (
+                AUDIT_QUESTION_KIND_SYSTEM,
+                AUDIT_QUESTION_KIND_OPERATION,
+            ):
+                raise AuditV2SnapshotError(
+                    f"Snapshot v2 obsahuje nepovolený question_kind: {draft.question_kind!r}"
+                )
+            if draft.question_kind != target_kind:
+                raise AuditV2SnapshotError(
+                    f"Snapshot v2 obsahuje otázku druhu {draft.question_kind!r}, "
+                    f"očekáváno {target_kind!r}."
+                )
+            if not draft.is_in_scope or draft.is_orphan:
+                raise AuditV2SnapshotError(
+                    "Snapshot v2 nesmí obsahovat orphan / mimo rozsah."
+                )
+
+        return drafts
 
     def build_historical_snapshot_for_audit(
         self,
@@ -206,7 +292,9 @@ class AuditQuestionSnapshotService:
                 assertion_text = f"(historický výsledek #{row.id})"
 
             orphan_key = snapshot_key(process_id, section_id, assertion_id)
-            if orphan_key in {snapshot_key(m.process_id, m.section_id, m.assertion_id) for m in merged}:
+            if orphan_key in {
+                snapshot_key(m.process_id, m.section_id, m.assertion_id) for m in merged
+            }:
                 # Kolize s metodikou — použij unikátní assertion_id.
                 assertion_id = f"{assertion_id}__cr{row.id}"
                 orphan_key = snapshot_key(process_id, section_id, assertion_id)
@@ -244,8 +332,8 @@ class AuditQuestionSnapshotService:
         )
         return merged
 
-    @staticmethod
     def _normalize_planned_ids(
+        self,
         planned_process_ids: set[str] | tuple[str, ...] | list[str] | None,
     ) -> set[str] | None:
         if planned_process_ids is None:
@@ -263,6 +351,8 @@ class AuditQuestionSnapshotService:
         roots: list[KnowledgeTreeNode],
         allowed: set[str] | None,
         overrides: dict[tuple[str, str, str], str],
+        mode: str = "legacy",
+        target_kind: str | None = None,
     ) -> list[AuditQuestionSnapshotDraft]:
         drafts: list[AuditQuestionSnapshotDraft] = []
         order_counter = 0
@@ -281,8 +371,44 @@ class AuditQuestionSnapshotService:
                 overrides=overrides,
                 drafts=drafts,
                 order_counter=order_counter,
+                mode=mode,
+                target_kind=target_kind,
+                unclassified=None,
             )
         return drafts
+
+    def _build_from_tree_v2(
+        self,
+        audit_id: int,
+        *,
+        roots: list[KnowledgeTreeNode],
+        allowed: set[str] | None,
+        overrides: dict[tuple[str, str, str], str],
+        target_kind: str,
+    ) -> tuple[list[AuditQuestionSnapshotDraft], list[tuple[str, str, str, str, str]]]:
+        drafts: list[AuditQuestionSnapshotDraft] = []
+        unclassified: list[tuple[str, str, str, str, str]] = []
+        order_counter = 0
+        for process_node in roots:
+            process_id = str(process_node.process_id or "").strip()
+            if allowed is not None and process_id not in allowed:
+                continue
+            process_name = str(
+                process_node.process_label or process_node.label or ""
+            ).strip()
+            order_counter = self._collect_from_nodes(
+                process_node.children,
+                audit_id=audit_id,
+                process_id=process_id,
+                process_name=process_name,
+                overrides=overrides,
+                drafts=drafts,
+                order_counter=order_counter,
+                mode="v2",
+                target_kind=target_kind,
+                unclassified=unclassified,
+            )
+        return drafts, unclassified
 
     def _collect_from_nodes(
         self,
@@ -294,6 +420,9 @@ class AuditQuestionSnapshotService:
         overrides: dict[tuple[str, str, str], str],
         drafts: list[AuditQuestionSnapshotDraft],
         order_counter: int,
+        mode: str = "legacy",
+        target_kind: str | None = None,
+        unclassified: list[tuple[str, str, str, str, str]] | None = None,
     ) -> int:
         for node in nodes:
             section = node.section
@@ -310,6 +439,43 @@ class AuditQuestionSnapshotService:
                     if not assertion_id or not assertion_text:
                         continue
 
+                    if mode == "v2":
+                        try:
+                            kind = validate_question_kind(
+                                raw.get("question_kind"),
+                                allow_legacy=False,
+                                allow_missing=True,
+                            )
+                        except AuditQuestionKindError as exc:
+                            raise AuditV2SnapshotError(str(exc)) from exc
+
+                        if kind == AUDIT_QUESTION_KIND_LEGACY:
+                            raise AuditV2SnapshotError(
+                                "question_kind „legacy“ není povolen v nové metodice "
+                                f"(proces {process_id}, sekce {section_id}, "
+                                f"otázka {assertion_id})."
+                            )
+                        if kind == AUDIT_QUESTION_KIND_EXTRAORDINARY:
+                            # Samostatná evidence v další fázi — standardní strom vynechá.
+                            continue
+                        if kind == AUDIT_QUESTION_KIND_UNCLASSIFIED:
+                            if unclassified is not None:
+                                unclassified.append(
+                                    (
+                                        process_id,
+                                        process_name,
+                                        section_name or section_id,
+                                        assertion_id,
+                                        assertion_text,
+                                    )
+                                )
+                            continue
+                        if kind != target_kind:
+                            continue
+                        question_kind = kind
+                    else:
+                        question_kind = str(raw.get("question_kind") or "").strip()
+
                     methodology = audit_verification_service.methodology_verification_type(
                         raw
                     )
@@ -322,7 +488,6 @@ class AuditQuestionSnapshotService:
                         overrides=overrides,
                     )
                     severity = audit_knowledge_service.get_control_point_severity(raw)
-                    question_kind = str(raw.get("question_kind") or "").strip()
                     raw_order = raw.get("poradi")
                     try:
                         display_order = (
@@ -345,6 +510,8 @@ class AuditQuestionSnapshotService:
                             severity=severity,
                             question_kind=question_kind,
                             display_order=display_order,
+                            is_in_scope=True,
+                            is_orphan=False,
                         )
                     )
 
@@ -357,6 +524,9 @@ class AuditQuestionSnapshotService:
                     overrides=overrides,
                     drafts=drafts,
                     order_counter=order_counter,
+                    mode=mode,
+                    target_kind=target_kind,
+                    unclassified=unclassified,
                 )
         return order_counter
 
