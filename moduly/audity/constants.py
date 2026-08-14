@@ -603,7 +603,12 @@ EXTRAORDINARY_TARGET_STATUS_LABELS = {
 EXTRAORDINARY_SYSTEM_WORKPLACE_MARK = " (systémový)"
 EXTRAORDINARY_QUESTION_TEXT_REQUIRED = "Zadejte text mimořádné otázky."
 EXTRAORDINARY_SEVERITY_REQUIRED = "Vyberte závažnost mimořádné otázky."
+EXTRAORDINARY_VERIFICATION_TYPE_REQUIRED = "Vyberte typ ověření (Dokumentace nebo Terén)."
+EXTRAORDINARY_VERIFICATION_TYPE_LEGACY_LABEL = "Neuvedeno"
 EXTRAORDINARY_PROCESS_NONE_LABEL = "Mimořádná ověření"
+EXTRAORDINARY_CHECKLIST_SECTION_TITLE = "Mimořádné ověření"
+EXTRAORDINARY_EXPORT_SECTION_TITLE = "Mimořádné ověření"
+EXTRAORDINARY_ANNUAL_SUMMARY_TITLE = "Mimořádná ověření"
 EXTRAORDINARY_TARGET_REQUIRED = "Vyberte alespoň jeden cílový provoz."
 EXTRAORDINARY_DUPLICATE_TARGET = "Cílový provoz je v otázce už evidován."
 EXTRAORDINARY_TARGET_LOCKED = (
@@ -625,6 +630,11 @@ EXTRAORDINARY_TAB_EMPTY_MESSAGE = (
 EXTRAORDINARY_INCOMPLETE_SEVERITY_FOR_AUDIT = (
     "Mimořádná otázka „{text}“ (id={question_id}) nemá platnou závažnost. "
     "Doplňte závažnost v evidenci mimořádného ověření a audit znovu založte."
+)
+EXTRAORDINARY_INCOMPLETE_VERIFICATION_TYPE_FOR_AUDIT = (
+    "Mimořádná otázka „{text}“ (id={question_id}) nemá platný typ ověření "
+    "(Dokumentace/Terén). Doplňte typ ověření v evidenci mimořádného ověření "
+    "a audit znovu založte."
 )
 
 # Stabilní technické identifikátory kategorie bez procesu (ne živá JSON metodika).

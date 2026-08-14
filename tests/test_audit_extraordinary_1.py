@@ -35,6 +35,9 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.audity.sluzby.audit_extraordinary_2_schema_migration import (
         apply_audit_extraordinary_2_schema_ddl,
     )
+    from moduly.audity.sluzby.audit_extraordinary_3_schema_migration import (
+        apply_audit_extraordinary_3_schema_ddl,
+    )
     from moduly.audity.sluzby.audit_extraordinary_schema_migration import (
         EXPECTED_INDEXES,
         EXPECTED_TABLES,
@@ -45,8 +48,10 @@ with patch.object(Path, "home", return_value=_TMP):
 
     apply_audit_extraordinary_schema_ddl(_DB)
     apply_audit_extraordinary_2_schema_ddl(_DB)
+    apply_audit_extraordinary_3_schema_ddl(_DB)
 
     from core.database.session import get_session
+    from core.shared.verification_type import VERIFICATION_TYPE_DOCUMENTATION, VERIFICATION_TYPE_TERRAIN
     from moduly.audity.constants import (
         CONTROL_POINT_SEVERITY_STREDNI,
         AUDIT_METHODOLOGY_GENERATION_V2,
@@ -185,6 +190,7 @@ class ExtraordinaryServiceTestCase(unittest.TestCase):
         with self.assertRaises(AuditExtraordinaryError) as ctx:
             audit_extraordinary_question_service.create_question(
                 severity=CONTROL_POINT_SEVERITY_STREDNI,
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION,
             question_text="  ",
                 workplace_ids=[self.wp_a.id],
             )
@@ -194,6 +200,7 @@ class ExtraordinaryServiceTestCase(unittest.TestCase):
         with self.assertRaises(AuditExtraordinaryError) as ctx:
             audit_extraordinary_question_service.create_question(
                 severity=CONTROL_POINT_SEVERITY_STREDNI,
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION,
             question_text="Otázka bez cíle",
                 workplace_ids=[],
             )
@@ -202,6 +209,7 @@ class ExtraordinaryServiceTestCase(unittest.TestCase):
     def test_05_all_workplaces_creates_concrete_rows(self) -> None:
         question = audit_extraordinary_question_service.create_question(
             severity=CONTROL_POINT_SEVERITY_STREDNI,
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION,
             question_text="Pro všechny",
             assigned_by="Vedoucí",
             all_workplaces=True,
@@ -219,6 +227,7 @@ class ExtraordinaryServiceTestCase(unittest.TestCase):
     def test_06_selected_workplaces_only(self) -> None:
         question = audit_extraordinary_question_service.create_question(
             severity=CONTROL_POINT_SEVERITY_STREDNI,
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION,
             question_text="Jen A",
             workplace_ids=[self.wp_a.id],
         )
@@ -234,6 +243,7 @@ class ExtraordinaryServiceTestCase(unittest.TestCase):
         self.assertIn(EXTRAORDINARY_SYSTEM_WORKPLACE_MARK, system_choice.display_name)
         question = audit_extraordinary_question_service.create_question(
             severity=CONTROL_POINT_SEVERITY_STREDNI,
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION,
             question_text="Systém",
             workplace_ids=[self.system_wp.id],
         )
@@ -245,6 +255,7 @@ class ExtraordinaryServiceTestCase(unittest.TestCase):
     def test_08_duplicate_target_blocked(self) -> None:
         question = audit_extraordinary_question_service.create_question(
             severity=CONTROL_POINT_SEVERITY_STREDNI,
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION,
             question_text="Dup",
             workplace_ids=[self.wp_a.id],
         )
@@ -266,6 +277,7 @@ class ExtraordinaryServiceTestCase(unittest.TestCase):
         with self.assertRaises(AuditExtraordinaryError):
             audit_extraordinary_question_service.create_question(
                 severity=CONTROL_POINT_SEVERITY_STREDNI,
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION,
             question_text="Atom",
                 workplace_ids=[self.wp_a.id, self.wp_a.id],
             )
@@ -281,6 +293,7 @@ class ExtraordinaryServiceTestCase(unittest.TestCase):
     def test_11_12_new_pending_and_active(self) -> None:
         question = audit_extraordinary_question_service.create_question(
             severity=CONTROL_POINT_SEVERITY_STREDNI,
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION,
             question_text="Stav",
             workplace_ids=[self.wp_a.id, self.wp_b.id],
         )
@@ -295,6 +308,7 @@ class ExtraordinaryServiceTestCase(unittest.TestCase):
     def test_13_14_cancel_and_restore_target(self) -> None:
         question = audit_extraordinary_question_service.create_question(
             severity=CONTROL_POINT_SEVERITY_STREDNI,
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION,
             question_text="Cíl cancel",
             workplace_ids=[self.wp_a.id, self.wp_b.id],
         )
@@ -322,6 +336,7 @@ class ExtraordinaryServiceTestCase(unittest.TestCase):
     def test_15_assigned_verified_locked(self) -> None:
         question = audit_extraordinary_question_service.create_question(
             severity=CONTROL_POINT_SEVERITY_STREDNI,
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION,
             question_text="Locked",
             workplace_ids=[self.wp_a.id],
         )
@@ -356,6 +371,7 @@ class ExtraordinaryServiceTestCase(unittest.TestCase):
     def test_16_cancel_question_soft(self) -> None:
         question = audit_extraordinary_question_service.create_question(
             severity=CONTROL_POINT_SEVERITY_STREDNI,
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION,
             question_text="Zruš otázku",
             workplace_ids=[self.wp_a.id],
         )
@@ -372,6 +388,7 @@ class ExtraordinaryServiceTestCase(unittest.TestCase):
     def test_17_overview_counts(self) -> None:
         question = audit_extraordinary_question_service.create_question(
             severity=CONTROL_POINT_SEVERITY_STREDNI,
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION,
             question_text="Counts",
             assigned_by="Zdroj",
             workplace_ids=[self.wp_a.id, self.wp_b.id],
@@ -389,6 +406,7 @@ class ExtraordinaryServiceTestCase(unittest.TestCase):
         before = len(audit_extraordinary_question_service.repository.list_questions())
         audit_extraordinary_question_service.create_question(
             severity=CONTROL_POINT_SEVERITY_STREDNI,
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION,
             question_text="Jedna",
             workplace_ids=[self.wp_a.id],
         )
@@ -405,6 +423,7 @@ class ExtraordinaryServiceTestCase(unittest.TestCase):
         )
         question = audit_extraordinary_question_service.create_question(
             severity=CONTROL_POINT_SEVERITY_STREDNI,
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION,
             question_text="Bez vazby",
             workplace_ids=[self.wp_a.id],
         )
@@ -447,12 +466,14 @@ class ExtraordinaryUiTestCase(unittest.TestCase):
 
         q1 = audit_extraordinary_question_service.create_question(
             severity=CONTROL_POINT_SEVERITY_STREDNI,
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION,
             question_text="Hledaná alpha",
             assigned_by="Inspector X",
             workplace_ids=[self.wp.id],
         )
         q2 = audit_extraordinary_question_service.create_question(
             severity=CONTROL_POINT_SEVERITY_STREDNI,
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION,
             question_text="Jiná beta",
             assigned_by="Jiný",
             workplace_ids=[self.wp.id],

@@ -34,14 +34,22 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.audity.sluzby.audit_extraordinary_2_schema_migration import (
         apply_audit_extraordinary_2_schema_ddl,
     )
+    from moduly.audity.sluzby.audit_extraordinary_3_schema_migration import (
+        apply_audit_extraordinary_3_schema_ddl,
+    )
     from moduly.audity.sluzby.audit_extraordinary_schema_migration import (
         apply_audit_extraordinary_schema_ddl,
     )
 
     apply_audit_extraordinary_schema_ddl(_DB)
     apply_audit_extraordinary_2_schema_ddl(_DB)
+    apply_audit_extraordinary_3_schema_ddl(_DB)
 
     from core.database.session import get_session
+    from core.shared.verification_type import (
+        VERIFICATION_TYPE_DOCUMENTATION,
+        VERIFICATION_TYPE_TERRAIN,
+    )
     from moduly.audity.constants import (
         CONTROL_POINT_SEVERITY_STREDNI,
         AUDITABLE_WORKPLACE_REQUIRED_MESSAGE,
@@ -201,6 +209,7 @@ class AuditableWorkplaceFilterTestCase(unittest.TestCase):
     def test_06_extraordinary_all_creates_only_auditable(self) -> None:
         question = audit_extraordinary_question_service.create_question(
             severity=CONTROL_POINT_SEVERITY_STREDNI,
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION,
             question_text="Všechny AW",
             all_workplaces=True,
         )
@@ -232,6 +241,7 @@ class AuditableWorkplaceFilterTestCase(unittest.TestCase):
         with self.assertRaises(AuditExtraordinaryError) as ctx:
             audit_extraordinary_question_service.create_question(
                 severity=CONTROL_POINT_SEVERITY_STREDNI,
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION,
             question_text="Špatný cíl",
                 workplace_ids=[self.workplace.id],
             )
@@ -240,6 +250,7 @@ class AuditableWorkplaceFilterTestCase(unittest.TestCase):
     def test_09_existing_non_auditable_target_not_deleted(self) -> None:
         question = audit_extraordinary_question_service.create_question(
             severity=CONTROL_POINT_SEVERITY_STREDNI,
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION,
             question_text="Historie",
             workplace_ids=[self.ok.id],
         )
@@ -265,6 +276,7 @@ class AuditableWorkplaceFilterTestCase(unittest.TestCase):
     def test_10_pending_non_auditable_can_cancel(self) -> None:
         question = audit_extraordinary_question_service.create_question(
             severity=CONTROL_POINT_SEVERITY_STREDNI,
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION,
             question_text="Cancel hist",
             workplace_ids=[self.ok.id],
         )
@@ -295,6 +307,7 @@ class AuditableWorkplaceFilterTestCase(unittest.TestCase):
     def test_11_cancelled_non_auditable_cannot_restore(self) -> None:
         question = audit_extraordinary_question_service.create_question(
             severity=CONTROL_POINT_SEVERITY_STREDNI,
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION,
             question_text="Restore hist",
             workplace_ids=[self.ok.id],
         )

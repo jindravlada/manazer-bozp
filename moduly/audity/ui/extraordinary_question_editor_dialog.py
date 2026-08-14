@@ -51,6 +51,7 @@ from moduly.audity.sluzby.audit_extraordinary_question_service import (
     is_target_locked,
 )
 from moduly.nastaveni.sluzby.settings_service import settings_service
+from core.shared.verification_type import VERIFICATION_TYPE_OPTIONS
 
 
 class ExtraordinaryQuestionEditorDialog(QDialog):
@@ -88,6 +89,12 @@ class ExtraordinaryQuestionEditorDialog(QDialog):
         for value, label in CONTROL_POINT_SEVERITY_OPTIONS:
             self.severity_combo.addItem(label, value)
         form.addRow("Závažnost:", self.severity_combo)
+
+        self.verification_type_combo = QComboBox()
+        self.verification_type_combo.addItem("— vyberte typ ověření —", None)
+        for value, label in VERIFICATION_TYPE_OPTIONS:
+            self.verification_type_combo.addItem(label, value)
+        form.addRow("Typ ověření:", self.verification_type_combo)
 
         self.assigned_by = QLineEdit()
         self.assigned_by.setPlaceholderText("Zadal / zdroj")
@@ -224,6 +231,12 @@ class ExtraordinaryQuestionEditorDialog(QDialog):
             self.severity_combo.addItem(severity, severity)
             severity_index = self.severity_combo.findData(severity)
         self.severity_combo.setCurrentIndex(max(severity_index, 0))
+        verification = str(getattr(question, "verification_type", None) or "").strip()
+        verification_index = self.verification_type_combo.findData(verification or None)
+        if verification and verification_index < 0:
+            self.verification_type_combo.addItem(verification, verification)
+            verification_index = self.verification_type_combo.findData(verification)
+        self.verification_type_combo.setCurrentIndex(max(verification_index, 0))
         process_id = getattr(question, "process_id", None)
         process_index = self.process_combo.findData(process_id)
         if process_id and process_index < 0:
@@ -298,6 +311,7 @@ class ExtraordinaryQuestionEditorDialog(QDialog):
             "assigned_on": self.assigned_on.date().toPython(),
             "note": self.note.toPlainText().strip(),
             "severity": self.severity_combo.currentData(),
+            "verification_type": self.verification_type_combo.currentData(),
             "process_id": self.process_combo.currentData(),
             "all_mode": self.mode_all.isChecked(),
             "workplace_ids": self._selected_workplace_ids(),
@@ -320,6 +334,7 @@ class ExtraordinaryQuestionEditorDialog(QDialog):
                     note=data["note"],
                     severity=data["severity"],
                     process_id=data["process_id"],
+                    verification_type=data["verification_type"],
                     workplace_ids=data["workplace_ids"],
                     all_workplaces=bool(data["all_mode"]),
                 )
@@ -354,6 +369,7 @@ class ExtraordinaryQuestionEditorDialog(QDialog):
                     note=data["note"],
                     severity=data["severity"],
                     process_id=data["process_id"],
+                    verification_type=data["verification_type"],
                     add_workplace_ids=add_ids,
                     cancel_workplace_ids=cancel_ids,
                     restore_workplace_ids=restore_ids,

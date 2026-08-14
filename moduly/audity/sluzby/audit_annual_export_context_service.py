@@ -513,6 +513,9 @@ class AuditAnnualReportContext:
         values.update(self.manual.to_placeholders())
         values.update(self.methodology.to_placeholders())
         values.update(self.extension_placeholders)
+        values["mimoradna_overeni_souhrn_text"] = self.extension_placeholders.get(
+            "mimoradna_overeni_souhrn_text", ""
+        )
         return values
 
 
@@ -576,6 +579,13 @@ class AuditAnnualExportContextService:
         continuity_previous_audits_text = (
             audit_intro_export_service.build_continuity_text_for_audits(audits)
         )
+        from moduly.audity.sluzby.audit_extraordinary_summary_service import (
+            build_extraordinary_summary_text,
+        )
+
+        extraordinary_summary = build_extraordinary_summary_text(audits)
+        extension = dict(self._reserved_extension_placeholders(history))
+        extension["mimoradna_overeni_souhrn_text"] = extraordinary_summary
         return AuditAnnualReportContext(
             year=year,
             audit_program_id=program_id,
@@ -600,7 +610,7 @@ class AuditAnnualExportContextService:
                 severity, overall_rating, methodology, process_maturity
             ),
             continuity_previous_audits_text=continuity_previous_audits_text,
-            extension_placeholders=self._reserved_extension_placeholders(history),
+            extension_placeholders=extension,
         )
 
     def build_evaluation_explanation(

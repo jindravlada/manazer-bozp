@@ -9,11 +9,21 @@ from core.export import OdtExportEngine, OdtParagraph, OdtRichContent, open_expo
 from core.services.storage_service import storage_service
 from core.shared.verification_type import VERIFICATION_TYPE_TERRAIN
 from moduly.audity.constants import (
+    AUDIT_QUESTION_KIND_EXTRAORDINARY,
+    CONTROL_POINT_SEVERITY_OPTIONS,
+    EXTRAORDINARY_CHECKLIST_SECTION_TITLE,
     TERRAIN_CHECKLIST_DIALOG_TITLE,
     TERRAIN_CHECKLIST_EMPTY,
 )
 from moduly.audity.modely.audit import Audit
+from moduly.audity.sluzby.audit_question_kind import interpret_question_kind
+from moduly.audity.sluzby.audit_question_source_service import (
+    AuditQuestionSourceError,
+    audit_question_source_service,
+)
 from moduly.audity.sluzby.audit_verification_service import audit_verification_service
+
+_SEVERITY_LABELS = dict(CONTROL_POINT_SEVERITY_OPTIONS)
 
 
 def _text(value) -> str:
@@ -26,6 +36,11 @@ def _format_date(value) -> str:
     if hasattr(value, "strftime"):
         return value.strftime("%d.%m.%Y")
     return _text(value) or "—"
+
+
+def _severity_label(value) -> str:
+    raw = _text(value).lower()
+    return _SEVERITY_LABELS.get(raw, _text(value) or "—")
 
 
 class AuditTerrainChecklistService:
@@ -97,11 +112,20 @@ class AuditTerrainChecklistService:
             verification_type=VERIFICATION_TYPE_TERRAIN,
             process_ids=process_ids,
         )
-        if not points:
+        # Standardní terén: bez mimořádných (ty mají vlastní sekci dle zmrazeného typu).
+        standard = [
+            ref
+            for ref in points
+            if interpret_question_kind((ref.control_point or {}).get("question_kind"))
+            != AUDIT_QUESTION_KIND_EXTRAORDINARY
+        ]
+        extraordinary_terrain = self._extraordinary_terrain_from_snapshot(audit_id)
+
+        if not standard and not extraordinary_terrain:
             return OdtRichContent(paragraphs=[OdtParagraph.text(TERRAIN_CHECKLIST_EMPTY)])
 
         paragraphs: list[OdtParagraph] = []
-        for index, ref in enumerate(points):
+        for index, ref in enumerate(standard):
             if index > 0:
                 paragraphs.append(OdtParagraph.blank_line())
             paragraphs.append(
@@ -124,7 +148,76 @@ class AuditTerrainChecklistService:
                 )
             )
             paragraphs.append(OdtParagraph.text("_________________________________________"))
+
+        if extraordinary_terrain:
+            if paragraphs:
+                paragraphs.append(OdtParagraph.blank_line())
+            paragraphs.append(
+                OdtParagraph.text(
+                    EXTRAORDINARY_CHECKLIST_SECTION_TITLE,
+                    bold=True,
+                    keep_with_next=True,
+                )
+            )
+            for index, item in enumerate(extraordinary_terrain):
+                paragraphs.append(OdtParagraph.blank_line())
+                process_label = _text(item.get("process_name")) or "—"
+                severity = _severity_label(item.get("severity"))
+                paragraphs.append(
+                    OdtParagraph.text(
+                        f"{process_label} · závažnost: {severity}",
+                        keep_with_next=True,
+                    )
+                )
+                paragraphs.append(
+                    OdtParagraph.text(
+                        _text(item.get("assertion_text")) or "—",
+                        bold=True,
+                        keep_with_next=True,
+                    )
+                )
+                paragraphs.append(
+                    OdtParagraph.text(
+                        "Poznámka: ________________________________",
+                        keep_with_next=True,
+                    )
+                )
+                paragraphs.append(
+                    OdtParagraph.text("_________________________________________")
+                )
+
         return OdtRichContent(paragraphs=paragraphs)
+
+    def _extraordinary_terrain_from_snapshot(self, audit_id: int) -> list[dict]:
+        """Jen mimořádné se zmrazeným verification_type=teren; legacy bez typu vynechat."""
+        try:
+            source = audit_question_source_service.resolve_for_audit(audit_id)
+        except AuditQuestionSourceError:
+            return []
+        if not source.is_snapshot:
+            return []
+        items: list[dict] = []
+        for view in source.assertions:
+            if interpret_question_kind(view.question_kind) != AUDIT_QUESTION_KIND_EXTRAORDINARY:
+                continue
+            frozen = _text(view.verification_type)
+            if frozen != VERIFICATION_TYPE_TERRAIN:
+                continue
+            items.append(
+                {
+                    "assertion_text": view.assertion_text,
+                    "process_name": view.process_name,
+                    "severity": view.severity,
+                    "display_order": view.display_order,
+                }
+            )
+        items.sort(
+            key=lambda row: (
+                int(row.get("display_order") or 0),
+                _text(row.get("assertion_text")).lower(),
+            )
+        )
+        return items
 
 
 audit_terrain_checklist_service = AuditTerrainChecklistService()

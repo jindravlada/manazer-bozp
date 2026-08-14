@@ -39,9 +39,13 @@ with patch.object(Path, "home", return_value=_TMP):
         needs_audit_extraordinary_2_schema,
         schema_is_present as schema2_present,
     )
+    from moduly.audity.sluzby.audit_extraordinary_3_schema_migration import (
+        apply_audit_extraordinary_3_schema_ddl,
+    )
 
     apply_audit_extraordinary_schema_ddl(_DB)
     apply_audit_extraordinary_2_schema_ddl(_DB)
+    apply_audit_extraordinary_3_schema_ddl(_DB)
 
     from core.database.session import get_session
     from core.shared.constants import (
@@ -53,6 +57,7 @@ with patch.object(Path, "home", return_value=_TMP):
         ControlPointContext,
         control_result_service,
     )
+    from core.shared.verification_type import VERIFICATION_TYPE_DOCUMENTATION, VERIFICATION_TYPE_TERRAIN
     from moduly.audity.constants import (
         AUDIT_QUESTION_KIND_EXTRAORDINARY,
         AUDIT_QUESTION_KIND_OPERATION,
@@ -171,12 +176,14 @@ class Extraordinary2TestCase(unittest.TestCase):
             audit_extraordinary_question_service.create_question(
                 question_text="Bez závažnosti",
                 workplace_ids=[self.wp_a.id],
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION,
             )
         self.assertEqual(str(ctx.exception), EXTRAORDINARY_SEVERITY_REQUIRED)
 
         q = audit_extraordinary_question_service.create_question(
             question_text="Kritická",
             severity=CONTROL_POINT_SEVERITY_KRITICKA,
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION,
             workplace_ids=[self.wp_a.id],
         )
         self.assertEqual(q.severity, CONTROL_POINT_SEVERITY_KRITICKA)
@@ -185,6 +192,7 @@ class Extraordinary2TestCase(unittest.TestCase):
         none_q = audit_extraordinary_question_service.create_question(
             question_text="Bez procesu",
             severity=CONTROL_POINT_SEVERITY_STREDNI,
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION,
             process_id=None,
             workplace_ids=[self.wp_a.id],
         )
@@ -206,6 +214,7 @@ class Extraordinary2TestCase(unittest.TestCase):
         q = audit_extraordinary_question_service.create_question(
             question_text="Přiřadit A",
             severity=CONTROL_POINT_SEVERITY_STREDNI,
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION,
             workplace_ids=[self.wp_a.id, self.wp_b.id],
         )
         audit = create_audit_with_v2_snapshot(
@@ -264,6 +273,7 @@ class Extraordinary2TestCase(unittest.TestCase):
         q = audit_extraordinary_question_service.create_question(
             question_text="Jednou",
             severity=CONTROL_POINT_SEVERITY_STREDNI,
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION,
             workplace_ids=[self.wp_a.id],
         )
         create_audit_with_v2_snapshot(
@@ -304,6 +314,7 @@ class Extraordinary2TestCase(unittest.TestCase):
         incomplete = audit_extraordinary_question_service.create_question(
             question_text="Doplnit",
             severity=CONTROL_POINT_SEVERITY_STREDNI,
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION,
             workplace_ids=[self.wp_b.id],
         )
         with get_session() as session:
@@ -376,6 +387,7 @@ class Extraordinary2TestCase(unittest.TestCase):
         q = audit_extraordinary_question_service.create_question(
             question_text="Vyhodnotit",
             severity=CONTROL_POINT_SEVERITY_STREDNI,
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION,
             workplace_ids=[self.wp_a.id],
         )
         audit = create_audit_with_v2_snapshot(
@@ -418,6 +430,7 @@ class Extraordinary2TestCase(unittest.TestCase):
         q2 = audit_extraordinary_question_service.create_question(
             question_text="Vrátit",
             severity=CONTROL_POINT_SEVERITY_STREDNI,
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION,
             workplace_ids=[self.wp_a.id],
         )
         audit2 = create_audit_with_v2_snapshot(
@@ -444,6 +457,7 @@ class Extraordinary2TestCase(unittest.TestCase):
         q = audit_extraordinary_question_service.create_question(
             question_text="Smazat audit",
             severity=CONTROL_POINT_SEVERITY_STREDNI,
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION,
             workplace_ids=[self.wp_a.id],
         )
         audit = create_audit_with_v2_snapshot(
@@ -469,6 +483,7 @@ class Extraordinary2TestCase(unittest.TestCase):
         q = audit_extraordinary_question_service.create_question(
             question_text="Starý záznam",
             severity=CONTROL_POINT_SEVERITY_STREDNI,
+            verification_type=VERIFICATION_TYPE_DOCUMENTATION,
             workplace_ids=[self.wp_a.id],
         )
         with get_session() as session:

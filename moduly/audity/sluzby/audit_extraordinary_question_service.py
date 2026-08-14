@@ -34,6 +34,8 @@ from moduly.audity.constants import (
     EXTRAORDINARY_TARGET_STATUS_PENDING,
     EXTRAORDINARY_TARGET_STATUS_VERIFIED,
     EXTRAORDINARY_TEXT_LOCKED,
+    EXTRAORDINARY_VERIFICATION_TYPE_LEGACY_LABEL,
+    EXTRAORDINARY_VERIFICATION_TYPE_REQUIRED,
 )
 from moduly.audity.modely.audit_extraordinary_question import (
     AuditExtraordinaryQuestion,
@@ -51,6 +53,11 @@ from moduly.audity.sluzby.system_audit_workplace_service import (
     system_audit_workplace_service,
 )
 from moduly.nastaveni.sluzby.settings_service import settings_service
+from core.shared.verification_type import (
+    VERIFICATION_TYPE_DOCUMENTATION,
+    VERIFICATION_TYPE_LABELS,
+    VERIFICATION_TYPE_TERRAIN,
+)
 
 _VALID_SEVERITIES = frozenset(
     {
@@ -58,6 +65,13 @@ _VALID_SEVERITIES = frozenset(
         CONTROL_POINT_SEVERITY_VYSOKA,
         CONTROL_POINT_SEVERITY_STREDNI,
         CONTROL_POINT_SEVERITY_NIZKA,
+    }
+)
+
+_VALID_VERIFICATION_TYPES = frozenset(
+    {
+        VERIFICATION_TYPE_DOCUMENTATION,
+        VERIFICATION_TYPE_TERRAIN,
     }
 )
 
@@ -74,6 +88,39 @@ def require_valid_severity(value) -> str:
     if text not in _VALID_SEVERITIES:
         raise AuditExtraordinaryError(EXTRAORDINARY_SEVERITY_REQUIRED)
     return text
+
+
+def require_valid_verification_type(value) -> str:
+    """Povinný typ ověření Dokumentace/Terén (stávající interní hodnoty)."""
+    text = str(value or "").strip().casefold()
+    if not text:
+        raise AuditExtraordinaryError(EXTRAORDINARY_VERIFICATION_TYPE_REQUIRED)
+    aliases = {
+        VERIFICATION_TYPE_DOCUMENTATION: VERIFICATION_TYPE_DOCUMENTATION,
+        "dokumentace": VERIFICATION_TYPE_DOCUMENTATION,
+        "documentation": VERIFICATION_TYPE_DOCUMENTATION,
+        VERIFICATION_TYPE_TERRAIN: VERIFICATION_TYPE_TERRAIN,
+        "teren": VERIFICATION_TYPE_TERRAIN,
+        "terén": VERIFICATION_TYPE_TERRAIN,
+        "terrain": VERIFICATION_TYPE_TERRAIN,
+        "field": VERIFICATION_TYPE_TERRAIN,
+    }
+    normalized = aliases.get(text)
+    if normalized is None or normalized not in _VALID_VERIFICATION_TYPES:
+        raise AuditExtraordinaryError(EXTRAORDINARY_VERIFICATION_TYPE_REQUIRED)
+    return normalized
+
+
+def format_verification_type_label(value) -> str:
+    """Popisek pro UI/export; prázdné/legacy → Neuvedeno (bez přepisu dat)."""
+    text = str(value or "").strip()
+    if not text:
+        return EXTRAORDINARY_VERIFICATION_TYPE_LEGACY_LABEL
+    try:
+        kind = require_valid_verification_type(text)
+    except AuditExtraordinaryError:
+        return EXTRAORDINARY_VERIFICATION_TYPE_LEGACY_LABEL
+    return VERIFICATION_TYPE_LABELS.get(kind, EXTRAORDINARY_VERIFICATION_TYPE_LEGACY_LABEL)
 
 
 def resolve_optional_process(process_id: str | None) -> tuple[str | None, str]:
@@ -111,6 +158,8 @@ class ExtraordinaryQuestionOverviewRow:
     assigned_by: str
     assigned_on: date | None
     status: str
+    verification_type: str | None
+    verification_type_label: str
     targets_total: int
     pending_count: int
     assigned_count: int
@@ -213,6 +262,10 @@ class AuditExtraordinaryQuestionService:
                     assigned_by=str(question.assigned_by or ""),
                     assigned_on=question.assigned_on,
                     status=str(question.status or ""),
+                    verification_type=getattr(question, "verification_type", None),
+                    verification_type_label=format_verification_type_label(
+                        getattr(question, "verification_type", None)
+                    ),
                     targets_total=len(q_targets),
                     pending_count=pending,
                     assigned_count=assigned,
@@ -258,6 +311,7 @@ class AuditExtraordinaryQuestionService:
         note: str = "",
         severity: str | None = None,
         process_id: str | None = None,
+        verification_type: str | None = None,
         workplace_ids: list[int] | tuple[int, ...] | None = None,
         all_workplaces: bool = False,
     ) -> AuditExtraordinaryQuestion:
@@ -265,6 +319,7 @@ class AuditExtraordinaryQuestionService:
         if not text:
             raise AuditExtraordinaryError(EXTRAORDINARY_QUESTION_TEXT_REQUIRED)
         severity_value = require_valid_severity(severity)
+        verification_value = require_valid_verification_type(verification_type)
         resolved_process_id, resolved_process_name = resolve_optional_process(process_id)
 
         if all_workplaces:
@@ -297,6 +352,7 @@ class AuditExtraordinaryQuestionService:
                     process_id=resolved_process_id,
                     process_name=resolved_process_name,
                     severity=severity_value,
+                    verification_type=verification_value,
                     created_at=now,
                     updated_at=now,
                 )
@@ -334,6 +390,7 @@ class AuditExtraordinaryQuestionService:
         note: str | None = None,
         severity: str | None = None,
         process_id: str | None | object = ...,
+        verification_type: str | None | object = ...,
         add_workplace_ids: list[int] | tuple[int, ...] | None = None,
         cancel_workplace_ids: list[int] | tuple[int, ...] | None = None,
         restore_workplace_ids: list[int] | tuple[int, ...] | None = None,
@@ -374,6 +431,10 @@ class AuditExtraordinaryQuestionService:
                     question.note = str(note).strip()
                 if severity is not None:
                     question.severity = require_valid_severity(severity)
+                if verification_type is not ...:
+                    question.verification_type = require_valid_verification_type(
+                        verification_type
+                    )
                 if process_id is not ...:
                     resolved_process_id, resolved_process_name = resolve_optional_process(
                         None if process_id is None else str(process_id)

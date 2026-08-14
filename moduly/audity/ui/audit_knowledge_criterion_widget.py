@@ -57,6 +57,9 @@ from moduly.audity.constants import (
     PROCESS_TERM_QUESTION,
     AuditFindingKnowledgeContext,
 )
+from moduly.audity.sluzby.audit_extraordinary_question_service import (
+    format_verification_type_label,
+)
 from moduly.audity.sluzby.audit_question_kind import interpret_question_kind
 from moduly.audity.sluzby.audit_service import audit_service
 from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
@@ -396,6 +399,15 @@ class AuditKnowledgeCriterionWidget(QWidget):
         header_row.setContentsMargins(0, 0, 0, 0)
         header_row.setSpacing(10)
         header_row.addWidget(_ControlPointSeverityBadge(severity), 0, Qt.AlignmentFlag.AlignTop)
+        if self._extraordinary_only or interpret_question_kind(
+            item.get("question_kind")
+        ) == AUDIT_QUESTION_KIND_EXTRAORDINARY:
+            # Zmrazený typ ze snapshotu (bez přepisu); legacy bez typu → Neuvedeno.
+            type_label = format_verification_type_label(item.get("verification_type"))
+            type_badge = QLabel(type_label)
+            type_badge.setObjectName("InfoText")
+            type_badge.setToolTip("Typ ověření")
+            header_row.addWidget(type_badge, 0, Qt.AlignmentFlag.AlignTop)
         nazev = context.control_point_label
         title_label = QLabel(nazev)
         title_label.setObjectName("ControlPointTitle")
@@ -442,20 +454,22 @@ class AuditKnowledgeCriterionWidget(QWidget):
 
         move_row = QHBoxLayout()
         move_row.setContentsMargins(0, 0, 0, 0)
-        if self._verification_filter == VERIFICATION_TYPE_TERRAIN:
-            move_label = MOVE_TO_DOCUMENTATION_LABEL
-            move_target = VERIFICATION_TYPE_DOCUMENTATION
-        else:
-            move_label = MOVE_TO_TERRAIN_LABEL
-            move_target = VERIFICATION_TYPE_TERRAIN
-        move_btn = QPushButton(move_label)
-        move_btn.setToolTip(MOVE_VERIFICATION_TYPE_TOOLTIP)
-        move_btn.clicked.connect(
-            lambda _checked=False, cp=item, target=move_target, label=move_label: (
-                self._move_verification_type(cp, target, label)
+        # Mimořádné otázky zůstávají v záložce Mimořádné ověření — nepřesouvat Dok/Terén.
+        if not self._extraordinary_only:
+            if self._verification_filter == VERIFICATION_TYPE_TERRAIN:
+                move_label = MOVE_TO_DOCUMENTATION_LABEL
+                move_target = VERIFICATION_TYPE_DOCUMENTATION
+            else:
+                move_label = MOVE_TO_TERRAIN_LABEL
+                move_target = VERIFICATION_TYPE_TERRAIN
+            move_btn = QPushButton(move_label)
+            move_btn.setToolTip(MOVE_VERIFICATION_TYPE_TOOLTIP)
+            move_btn.clicked.connect(
+                lambda _checked=False, cp=item, target=move_target, label=move_label: (
+                    self._move_verification_type(cp, target, label)
+                )
             )
-        )
-        move_row.addWidget(move_btn)
+            move_row.addWidget(move_btn)
         move_row.addStretch()
         row_layout.addLayout(move_row)
 

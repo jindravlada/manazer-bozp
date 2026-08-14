@@ -437,6 +437,7 @@ class AudityProtokolExportTestCase(unittest.TestCase):
             "priloha_procesy_text",
             "priloha_auditni_tvrzeni_text",
             "priloha_auditni_tvrzeni_souhrn",
+            "mimoradne_overeni_text",
             "celkove_hodnoceni",
             "celkove_hodnoceni_text",
             "auditovany_provoz",

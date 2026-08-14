@@ -275,6 +275,7 @@ class RocniZpravaAudituExportTestCase(unittest.TestCase):
             "historie_roky_text",
             "program_zprava_rezerva_text",
             "navaznost_predchozi_audity_text",
+            "mimoradna_overeni_souhrn_text",
         }
         self.assertEqual(set(values.keys()), expected_keys)
 

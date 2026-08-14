@@ -147,6 +147,7 @@ class AuditProgramFinalReportContext:
         }
         values.update(self.manual.to_placeholders())
         values.update(self.appendices)
+        values.setdefault("mimoradna_overeni_souhrn_text", "")
         return values
 
 
@@ -208,6 +209,14 @@ class AuditProgramFinalExportContextService:
                 f"{methodology.appendix_text}\n\n{_MATURITY_LEGEND}"
             ),
         )
+        from moduly.audity.sluzby.audit_extraordinary_summary_service import (
+            build_extraordinary_summary_text,
+        )
+
+        appendix_values = appendices.to_placeholders()
+        appendix_values["mimoradna_overeni_souhrn_text"] = build_extraordinary_summary_text(
+            audits
+        )
         return AuditProgramFinalReportContext(
             program=program,
             years=years,
@@ -246,7 +255,7 @@ class AuditProgramFinalExportContextService:
             continuity_previous_audits_text=(
                 audit_intro_export_service.build_continuity_text_for_audits(audits)
             ),
-            appendices=appendices.to_placeholders(),
+            appendices=appendix_values,
         )
 
     def _audits_for_program(self, program_id: int) -> list[Audit]:

@@ -37,11 +37,12 @@ COL_TEXT = 0
 COL_SOURCE = 1
 COL_DATE = 2
 COL_STATUS = 3
-COL_TARGETS = 4
-COL_PENDING = 5
-COL_ASSIGNED = 6
-COL_VERIFIED = 7
-COL_CANCELLED = 8
+COL_VERIFICATION = 4
+COL_TARGETS = 5
+COL_PENDING = 6
+COL_ASSIGNED = 7
+COL_VERIFIED = 8
+COL_CANCELLED = 9
 
 STATUS_FILTER_ALL = "Vše"
 STATUS_FILTER_ACTIVE = "Aktivní"
@@ -92,13 +93,14 @@ class ExtraordinaryQuestionsDialog(QDialog):
         layout.addLayout(toolbar)
 
         self.table = QTableWidget()
-        self.table.setColumnCount(9)
+        self.table.setColumnCount(10)
         self.table.setHorizontalHeaderLabels(
             [
                 "Otázka",
                 "Zadal / zdroj",
                 "Datum",
                 "Stav",
+                "Typ ověření",
                 "Cíle",
                 "Čeká",
                 "Přiřazeno",
@@ -152,6 +154,7 @@ class ExtraordinaryQuestionsDialog(QDialog):
                 row.assigned_by,
                 row.assigned_on.isoformat() if row.assigned_on else "",
                 EXTRAORDINARY_QUESTION_STATUS_LABELS.get(row.status, row.status),
+                row.verification_type_label,
                 str(row.targets_total),
                 str(row.pending_count),
                 str(row.assigned_count),

@@ -32,20 +32,28 @@ from core.shared.sluzby.control_activity_statistics_service import (
 from core.shared.sluzby.control_result_service import control_result_service
 from core.shared.sluzby.finding_service import finding_service
 from moduly.audity.constants import (
+    AUDIT_QUESTION_KIND_EXTRAORDINARY,
     COMMISSION_RECORD_INVITED,
     COMMISSION_RECORD_LEADER,
     COMMISSION_RECORD_MEMBER,
     COMMISSION_RECORD_UNION,
     COMMISSION_RECORD_WORKPLACE,
+    CONTROL_POINT_SEVERITY_OPTIONS,
+    EXTRAORDINARY_CATEGORY_PROCESS_NAME,
+    EXTRAORDINARY_EXPORT_SECTION_TITLE,
     PLANNED_MONTH_NAMES,
     PLANNED_MONTH_NOT_SET_LABEL,
 )
 from moduly.audity.modely.audit import Audit
 from moduly.audity.repository.audit_program_repository import AuditProgramRepository
 from moduly.audity.sluzby.audit_commission_service import audit_commission_service
+from moduly.audity.sluzby.audit_extraordinary_question_service import (
+    format_verification_type_label,
+)
 from moduly.audity.sluzby.audit_intro_export_service import audit_intro_export_service
 from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
 from moduly.audity.sluzby.audit_program_service import audit_program_service
+from moduly.audity.sluzby.audit_question_kind import interpret_question_kind
 from moduly.audity.sluzby.audit_question_source_service import (
     AuditQuestionSourceError,
     audit_question_source_service,
@@ -53,6 +61,8 @@ from moduly.audity.sluzby.audit_question_source_service import (
 from moduly.audity.sluzby.audit_question_snapshot_service import snapshot_key
 from moduly.audity.sluzby.audit_service import audit_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
+
+_SEVERITY_LABELS = dict(CONTROL_POINT_SEVERITY_OPTIONS)
 
 
 def _fmt_date(value) -> str:
@@ -1048,6 +1058,115 @@ class AuditExportContext:
         """Sekce Úvod — pouze podrobná zpráva (AUDIT-INTRO-2)."""
         return audit_intro_export_service.build_detailed_intro_text(self.audit)
 
+    def extraordinary_section_text(self, *, detailed: bool = False) -> OdtRichContent:
+        """Samostatná sekce Mimořádné ověření ze snapshotu (prázdné = žádná sekce)."""
+        source = self.question_source()
+        if not source.is_snapshot:
+            return OdtRichContent()
+
+        extraordinary = [
+            view
+            for view in source.assertions
+            if interpret_question_kind(view.question_kind)
+            == AUDIT_QUESTION_KIND_EXTRAORDINARY
+        ]
+        if not extraordinary:
+            return OdtRichContent()
+
+        results_by_id: dict[str, Any] = {}
+        for row in control_result_service.get_for_entity(ENTITY_AUDITY, self.audit_id):
+            cp_id = str(row.source_control_point_id or "").strip()
+            if cp_id:
+                results_by_id[cp_id] = row
+
+        findings = list(finding_service.get_for_entity(ENTITY_AUDITY, self.audit_id))
+        tasks = list(audit_service.get_tasks_for_audit(self.audit_id))
+        findings_by_cp: dict[str, list] = {}
+        for finding in findings:
+            cp_id = str(finding.source_control_point_id or "").strip()
+            if cp_id:
+                findings_by_cp.setdefault(cp_id, []).append(finding)
+
+        paragraphs: list[OdtParagraph] = [
+            OdtParagraph.text(EXTRAORDINARY_EXPORT_SECTION_TITLE, bold=True),
+        ]
+        extraordinary.sort(
+            key=lambda view: (
+                int(view.display_order or 0),
+                str(view.assertion_text or "").lower(),
+            )
+        )
+        for view in extraordinary:
+            paragraphs.append(OdtParagraph.blank_line())
+            process_label = (
+                _text(view.process_name)
+                or EXTRAORDINARY_CATEGORY_PROCESS_NAME
+            )
+            type_label = format_verification_type_label(view.verification_type)
+            severity = _SEVERITY_LABELS.get(
+                _text(view.severity).lower(),
+                _text(view.severity) or "—",
+            )
+            paragraphs.append(
+                OdtParagraph.text(_text(view.assertion_text) or "—", bold=True)
+            )
+            paragraphs.append(
+                OdtParagraph.text(
+                    f"Proces/kategorie: {process_label} · Typ ověření: {type_label} · "
+                    f"Závažnost: {severity}"
+                )
+            )
+            result = results_by_id.get(_text(view.assertion_id))
+            if result is not None:
+                paragraphs.append(
+                    OdtParagraph.text(
+                        f"Výsledek: {control_result_label(result.result)}"
+                    )
+                )
+                note = _text(getattr(result, "note", ""))
+                if note:
+                    paragraphs.append(OdtParagraph.text(f"Poznámka: {note}"))
+            else:
+                paragraphs.append(OdtParagraph.text("Výsledek: Nekontrolováno"))
+
+            if not detailed:
+                continue
+
+            linked_findings = findings_by_cp.get(_text(view.assertion_id), [])
+            if linked_findings:
+                paragraphs.append(OdtParagraph.text("Související zjištění:"))
+                for finding in linked_findings:
+                    paragraphs.append(
+                        OdtParagraph.text(
+                            f"• {finding_type_label(finding.finding_type)} — "
+                            f"{finding_status_label(finding.status)}: "
+                            f"{_text(finding.description) or '—'}"
+                        )
+                    )
+                finding_task_ids = {
+                    int(f.task_id)
+                    for f in linked_findings
+                    if getattr(f, "task_id", None)
+                }
+                linked_tasks = [
+                    task
+                    for task in tasks
+                    if int(getattr(task, "id", 0) or 0) in finding_task_ids
+                ]
+                if linked_tasks:
+                    paragraphs.append(OdtParagraph.text("Související úkoly:"))
+                    for task in linked_tasks:
+                        status = _text(getattr(task, "computed_status", None)) or _text(
+                            getattr(task, "status", None)
+                        ) or "—"
+                        paragraphs.append(
+                            OdtParagraph.text(
+                                f"• {_text(task.title) or '—'} ({status})"
+                            )
+                        )
+
+        return OdtRichContent(paragraphs=paragraphs)
+
     def placeholder_values(self) -> dict[str, Any]:
         executive_summary = self.executive_summary_text()
         results_overview = self.results_overview_text()
@@ -1061,6 +1180,10 @@ class AuditExportContext:
         else:
             signatures = ""
             union_signature = ""
+
+        extraordinary = self.extraordinary_section_text(
+            detailed=bool(self.config.detailed_assertions_appendix)
+        )
 
         values: dict[str, Any] = {
             "cislo_auditu": _text(self.audit.number),
@@ -1084,6 +1207,7 @@ class AuditExportContext:
             "priloha_procesy_text": self.appendix_processes_text(),
             "priloha_auditni_tvrzeni_text": self.appendix_assertions_text(),
             "priloha_auditni_tvrzeni_souhrn": self.appendix_assertions_summary_text(),
+            "mimoradne_overeni_text": extraordinary,
             "celkove_hodnoceni": self.overall_rating_label(),
             "celkove_hodnoceni_text": self.overall_assessment_text(),
             "auditovany_provoz": _text(self.audit.workplace_name),

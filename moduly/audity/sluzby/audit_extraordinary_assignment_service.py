@@ -13,7 +13,6 @@ from core.shared.constants import (
     ENTITY_AUDITY,
 )
 from core.shared.modely.control_result import ControlResult
-from core.shared.verification_type import VERIFICATION_TYPE_DOCUMENTATION
 from moduly.audity.constants import (
     AUDIT_QUESTION_KIND_EXTRAORDINARY,
     EXTRAORDINARY_ASSERTION_ID_PREFIX,
@@ -22,6 +21,7 @@ from moduly.audity.constants import (
     EXTRAORDINARY_CATEGORY_SECTION_ID,
     EXTRAORDINARY_CATEGORY_SECTION_NAME,
     EXTRAORDINARY_INCOMPLETE_SEVERITY_FOR_AUDIT,
+    EXTRAORDINARY_INCOMPLETE_VERIFICATION_TYPE_FOR_AUDIT,
     EXTRAORDINARY_QUESTION_STATUS_ACTIVE,
     EXTRAORDINARY_SNAPSHOT_ORDER_BASE,
     EXTRAORDINARY_TARGET_STATUS_ASSIGNED,
@@ -41,6 +41,7 @@ from moduly.audity.sluzby.audit_extraordinary_question_service import (
     AuditExtraordinaryError,
     derive_question_status,
     require_valid_severity,
+    require_valid_verification_type,
 )
 from moduly.audity.sluzby.audit_question_snapshot_service import (
     AuditQuestionSnapshotDraft,
@@ -91,16 +92,16 @@ class AuditExtraordinaryAssignmentService:
         session: Session,
         workplace_id: int,
     ) -> list[PendingExtraordinaryAssignment]:
-        """Vrátí přiřaditelné pending cíle; bez platné závažnosti vyvolá chybu."""
+        """Vrátí přiřaditelné pending cíle; bez platné závažnosti/typu ověření chyba."""
         if not is_auditable_workplace_id(workplace_id):
             return []
         pending = self.list_pending_for_workplace(session, workplace_id)
         assignable: list[PendingExtraordinaryAssignment] = []
         for item in pending:
+            text = str(item.question.question_text or "").strip() or "—"
+            preview = text if len(text) <= 80 else f"{text[:77]}…"
             severity = str(item.question.severity or "").strip()
             if not severity:
-                text = str(item.question.question_text or "").strip() or "—"
-                preview = text if len(text) <= 80 else f"{text[:77]}…"
                 raise AuditExtraordinaryError(
                     EXTRAORDINARY_INCOMPLETE_SEVERITY_FOR_AUDIT.format(
                         text=preview,
@@ -108,6 +109,25 @@ class AuditExtraordinaryAssignmentService:
                     )
                 )
             require_valid_severity(severity)
+            verification = str(
+                getattr(item.question, "verification_type", None) or ""
+            ).strip()
+            if not verification:
+                raise AuditExtraordinaryError(
+                    EXTRAORDINARY_INCOMPLETE_VERIFICATION_TYPE_FOR_AUDIT.format(
+                        text=preview,
+                        question_id=int(item.question.id),
+                    )
+                )
+            try:
+                require_valid_verification_type(verification)
+            except AuditExtraordinaryError as exc:
+                raise AuditExtraordinaryError(
+                    EXTRAORDINARY_INCOMPLETE_VERIFICATION_TYPE_FOR_AUDIT.format(
+                        text=preview,
+                        question_id=int(item.question.id),
+                    )
+                ) from exc
             assignable.append(item)
         return assignable
 
@@ -123,6 +143,9 @@ class AuditExtraordinaryAssignmentService:
         for item in assignments:
             question = item.question
             severity = require_valid_severity(question.severity)
+            verification_type = require_valid_verification_type(
+                getattr(question, "verification_type", None)
+            )
             process_id = str(question.process_id or "").strip()
             process_name = str(question.process_name or "").strip()
             if process_id:
@@ -140,7 +163,7 @@ class AuditExtraordinaryAssignmentService:
                     section_name=EXTRAORDINARY_CATEGORY_SECTION_NAME,
                     assertion_id=extraordinary_assertion_id(int(question.id)),
                     assertion_text=str(question.question_text or "").strip(),
-                    verification_type=VERIFICATION_TYPE_DOCUMENTATION,
+                    verification_type=verification_type,
                     severity=severity,
                     question_kind=AUDIT_QUESTION_KIND_EXTRAORDINARY,
                     display_order=order,
