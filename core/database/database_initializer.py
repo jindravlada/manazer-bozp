@@ -82,6 +82,14 @@ def initialize_database() -> None:
         AuditExtraordinaryQuestion,
         AuditExtraordinaryQuestionTarget,
     )
+    from moduly.externi_audity.modely import (  # noqa: F401
+        ExternalAudit,
+        ExternalAuditFinding,
+        ExternalAuditFindingTaskLink,
+        ExternalAuditParticipant,
+        ExternalAuditVisit,
+        ExternalAuditVisitParticipant,
+    )
     from moduly.smlouvy_ozo.modely.ozo_contract import OzoContract  # noqa: F401
     from moduly.smlouvy_ozo.modely.ozo_person import OzoPerson  # noqa: F401
     from moduly.smlouvy_ozo.modely.ozo_person_period import OzoPersonPeriod  # noqa: F401

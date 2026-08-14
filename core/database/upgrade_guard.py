@@ -393,6 +393,18 @@ def prepare_database_for_startup(
             settings_path=settings_path,
         )
 
+    from moduly.externi_audity.sluzby.external_audit_ea_0_schema_migration import (
+        needs_external_audit_ea_0_schema,
+        prepare_external_audit_ea_0_schema,
+    )
+
+    if needs_external_audit_ea_0_schema(database_path):
+        prepare_external_audit_ea_0_schema(
+            workspace_root=workspace_root,
+            database_path=database_path,
+            settings_path=settings_path,
+        )
+
     result: PrepareDatabaseResult
 
     # Čistá instalace / už migrovaná DB – jen idempotentní initialize.
@@ -505,6 +517,16 @@ def prepare_database_for_startup(
     )
 
     prepare_method_support_snapshot_1_schema(
+        workspace_root=workspace_root,
+        database_path=database_path,
+        settings_path=settings_path,
+    )
+
+    from moduly.externi_audity.sluzby.external_audit_ea_0_schema_migration import (
+        prepare_external_audit_ea_0_schema,
+    )
+
+    prepare_external_audit_ea_0_schema(
         workspace_root=workspace_root,
         database_path=database_path,
         settings_path=settings_path,

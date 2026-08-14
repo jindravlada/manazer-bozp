@@ -16,6 +16,7 @@ ENTITY_DIRECTIVE = "directive"
 ENTITY_TRAINING = "training"
 ENTITY_PPE = "ppe"
 ENTITY_CHEMICAL = "chemical"
+ENTITY_EXTERNAL_AUDIT = "external_audit"
 
 LINK_RELATED = "related"
 LINK_REQUIRES = "requires"
@@ -40,6 +41,7 @@ VALID_ENTITY_TYPES = frozenset(
         ENTITY_TRAINING,
         ENTITY_PPE,
         ENTITY_CHEMICAL,
+        ENTITY_EXTERNAL_AUDIT,
     }
 )
 
@@ -80,6 +82,7 @@ ENTITY_TYPE_LABELS: dict[str, str] = {
     ENTITY_TRAINING: "Školení",
     ENTITY_PPE: "OOPP",
     ENTITY_CHEMICAL: "Chemická látka",
+    ENTITY_EXTERNAL_AUDIT: "Externí audit",
     ENTITY_ACCIDENT: "Úraz",
     ENTITY_AUDITY: "Audit systému",
     ENTITY_PROVERKY: "Prověrka BOZP",
