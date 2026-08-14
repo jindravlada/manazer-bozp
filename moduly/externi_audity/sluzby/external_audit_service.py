@@ -1,4 +1,4 @@
-"""Business služby Externích auditů (EA-0) — bez UI."""
+"""Business služby Externích auditů (EA-0/EA-1)."""
 
 from __future__ import annotations
 
@@ -29,11 +29,14 @@ from moduly.externi_audity.constants import (
     EXTERNAL_AUDIT_ROLE_SOURCE_TYPES,
     EXTERNAL_AUDIT_SOURCE_PERSON,
     EXTERNAL_AUDIT_SOURCE_THP_WORKER,
+    EXTERNAL_AUDIT_STATUS_LABELS,
     EXTERNAL_AUDIT_STATUSES,
     EXTERNAL_AUDIT_STATUS_CANCELLED,
     EXTERNAL_AUDIT_STATUS_CLOSED,
     EXTERNAL_AUDIT_STATUS_IN_PROGRESS,
     EXTERNAL_AUDIT_STATUS_PLANNED,
+    EXTERNAL_AUDIT_TYPE_LABELS,
+    EXTERNAL_AUDIT_TYPE_SURVEILLANCE,
     EXTERNAL_AUDIT_TYPES,
 )
 from moduly.externi_audity.modely import (
@@ -43,6 +46,13 @@ from moduly.externi_audity.modely import (
     ExternalAuditParticipant,
     ExternalAuditVisit,
     ExternalAuditVisitParticipant,
+)
+from moduly.externi_audity.sluzby.external_audit_draft import (
+    AttachmentStagingState,
+    ExternalAuditDraft,
+    ParticipantDraft,
+    VisitDraft,
+    new_client_key,
 )
 from moduly.nastaveni.sluzby.person_service import person_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
@@ -75,6 +85,21 @@ class ExternalAuditDetail:
     finding_task_ids: dict[int, list[int]] = field(default_factory=dict)
     date_from: date | None = None
     date_to: date | None = None
+
+
+@dataclass(frozen=True)
+class ExternalAuditOverviewRow:
+    audit_id: int
+    date_from: date | None
+    date_to: date | None
+    audit_type: str
+    audit_type_label: str
+    organization_name: str
+    organization_ico: str
+    workplaces_label: str
+    status: str
+    status_label: str
+    remind_from: date | None
 
 
 def _parse_time(value: str | None) -> time | None:
@@ -879,6 +904,335 @@ class ExternalAuditService:
 
         self.get_by_id(audit_id)
         return attachment_service.get_for_entity(ENTITY_EXTERNAL_AUDIT, int(audit_id))
+
+    def list_overview_rows(self) -> list[ExternalAuditOverviewRow]:
+        """Batch přehled bez N+1 (audity + termíny + snapshoty provozů)."""
+        with get_session() as session:
+            audits = list(
+                session.scalars(select(ExternalAudit).order_by(ExternalAudit.id.desc()))
+            )
+            if not audits:
+                return []
+            audit_ids = [int(audit.id) for audit in audits]
+            visit_rows = list(
+                session.scalars(
+                    select(ExternalAuditVisit)
+                    .where(ExternalAuditVisit.external_audit_id.in_(audit_ids))
+                    .order_by(
+                        ExternalAuditVisit.visit_date,
+                        ExternalAuditVisit.display_order,
+                        ExternalAuditVisit.id,
+                    )
+                )
+            )
+            range_map: dict[int, tuple[date | None, date | None]] = {}
+            workplace_map: dict[int, list[str]] = {aid: [] for aid in audit_ids}
+            seen_names: dict[int, set[str]] = {aid: set() for aid in audit_ids}
+            for visit in visit_rows:
+                aid = int(visit.external_audit_id)
+                current = range_map.get(aid)
+                if current is None:
+                    range_map[aid] = (visit.visit_date, visit.visit_date)
+                else:
+                    range_map[aid] = (
+                        min(current[0], visit.visit_date),
+                        max(current[1], visit.visit_date),
+                    )
+                name = str(visit.workplace_name_snapshot or "").strip()
+                if name and name not in seen_names[aid]:
+                    seen_names[aid].add(name)
+                    workplace_map[aid].append(name)
+
+            rows: list[ExternalAuditOverviewRow] = []
+            for audit in audits:
+                date_from, date_to = range_map.get(int(audit.id), (None, None))
+                rows.append(
+                    ExternalAuditOverviewRow(
+                        audit_id=int(audit.id),
+                        date_from=date_from,
+                        date_to=date_to,
+                        audit_type=str(audit.audit_type),
+                        audit_type_label=EXTERNAL_AUDIT_TYPE_LABELS.get(
+                            audit.audit_type, audit.audit_type
+                        ),
+                        organization_name=str(audit.organization_name or ""),
+                        organization_ico=str(audit.organization_ico or ""),
+                        workplaces_label=", ".join(workplace_map.get(int(audit.id), [])),
+                        status=str(audit.status),
+                        status_label=EXTERNAL_AUDIT_STATUS_LABELS.get(
+                            audit.status, audit.status
+                        ),
+                        remind_from=audit.remind_from,
+                    )
+                )
+
+            dated = [row for row in rows if row.date_from is not None]
+            undated = [row for row in rows if row.date_from is None]
+            dated.sort(key=lambda row: (row.date_from, row.audit_id), reverse=True)
+            undated.sort(key=lambda row: row.audit_id, reverse=True)
+            return dated + undated
+
+    def load_draft(self, audit_id: int | None = None) -> ExternalAuditDraft:
+        if audit_id is None:
+            return ExternalAuditDraft(
+                audit_id=None,
+                audit_type=EXTERNAL_AUDIT_TYPE_SURVEILLANCE,
+                status=EXTERNAL_AUDIT_STATUS_PLANNED,
+                organization_ico="",
+                organization_name="",
+                organization_address="",
+            )
+        detail = self.get_detail(int(audit_id))
+        participants: list[ParticipantDraft] = []
+        id_to_key: dict[int, str] = {}
+        for item in detail.participants:
+            key = new_client_key()
+            id_to_key[int(item.id)] = key
+            participants.append(
+                ParticipantDraft(
+                    client_key=key,
+                    role=str(item.role),
+                    source_type=str(item.source_type),
+                    source_id=int(item.source_id),
+                    display_name_snapshot=str(item.display_name_snapshot or ""),
+                    display_order=int(item.display_order or 0),
+                    db_id=int(item.id),
+                )
+            )
+        visits: list[VisitDraft] = []
+        for visit in detail.visits:
+            keys = [
+                id_to_key[pid]
+                for pid in detail.visit_participant_ids.get(int(visit.id), [])
+                if pid in id_to_key
+            ]
+            visits.append(
+                VisitDraft(
+                    client_key=new_client_key(),
+                    visit_date=visit.visit_date,
+                    workplace_id=int(visit.workplace_id),
+                    workplace_name_snapshot=str(visit.workplace_name_snapshot or ""),
+                    workplace_address_snapshot=str(
+                        visit.workplace_address_snapshot or ""
+                    ),
+                    time_from=visit.time_from,
+                    time_to=visit.time_to,
+                    note=visit.note,
+                    display_order=int(visit.display_order or 0),
+                    participant_keys=keys,
+                    db_id=int(visit.id),
+                )
+            )
+        return ExternalAuditDraft(
+            audit_id=int(detail.audit.id),
+            audit_type=str(detail.audit.audit_type),
+            status=str(detail.audit.status),
+            organization_ico=str(detail.audit.organization_ico or ""),
+            organization_name=str(detail.audit.organization_name or ""),
+            organization_address=str(detail.audit.organization_address or ""),
+            remind_from=detail.audit.remind_from,
+            note=detail.audit.note,
+            organization_extra={},
+            participants=participants,
+            visits=visits,
+            attachments=AttachmentStagingState(),
+        )
+
+    def save_bundle(self, draft: ExternalAuditDraft) -> ExternalAudit:
+        """Atomicky uloží spis + účastníky + program (bez zjištění)."""
+        audit_type = _require_audit_type(draft.audit_type)
+        status = _require_audit_status(draft.status)
+        ico = str(draft.organization_ico or "").strip()
+        name = str(draft.organization_name or "").strip()
+        address = str(draft.organization_address or "").strip()
+        if not ico:
+            raise ExternalAuditError("IČ organizace je povinné.")
+        if not name:
+            raise ExternalAuditError("Název organizace je povinný.")
+
+        # Validace účastníků (role/zdroj) a duplicit ve skupině.
+        seen_role_source: set[tuple[str, str, int]] = set()
+        for participant in draft.participants:
+            source_type, source_id, display = _resolve_participant_source(
+                role=participant.role,
+                source_type=participant.source_type,
+                source_id=participant.source_id,
+            )
+            key = (participant.role, source_type, source_id)
+            if key in seen_role_source:
+                raise ExternalAuditError(
+                    "Stejná osoba je v této roli už přidaná."
+                )
+            seen_role_source.add(key)
+            participant.source_type = source_type
+            participant.source_id = source_id
+            if not str(participant.display_name_snapshot or "").strip():
+                participant.display_name_snapshot = display
+
+        participant_keys = {item.client_key for item in draft.participants}
+        for visit in draft.visits:
+            tf, tt = _validate_time_range(visit.time_from, visit.time_to)
+            visit.time_from, visit.time_to = tf, tt
+            workplace = self._require_workplace(visit.workplace_id)
+            # Snapshot při změně provozu obnovit z aktuálních dat, pokud ID sedí.
+            if int(visit.workplace_id) == int(workplace.id):
+                if not str(visit.workplace_name_snapshot or "").strip():
+                    visit.workplace_name_snapshot = str(workplace.name or "").strip()
+                if not str(visit.workplace_address_snapshot or "").strip():
+                    visit.workplace_address_snapshot = str(
+                        workplace.address or ""
+                    ).strip()
+            for pkey in visit.participant_keys:
+                if pkey not in participant_keys:
+                    raise ExternalAuditError(
+                        "Účastník návštěvy musí patřit stejnému externímu auditu."
+                    )
+                participant = draft.participant_by_key(pkey)
+                if participant is None:
+                    raise ExternalAuditError(
+                        "Účastník návštěvy musí patřit stejnému externímu auditu."
+                    )
+
+        with get_session() as session:
+            now = datetime.now()
+            if draft.audit_id is None:
+                audit = ExternalAudit(
+                    audit_type=audit_type,
+                    status=status,
+                    remind_from=draft.remind_from,
+                    organization_ico=ico,
+                    organization_name=name,
+                    organization_address=address,
+                    organization_snapshot_json=_organization_snapshot_payload(
+                        ico=ico,
+                        name=name,
+                        address=address,
+                        extra=draft.organization_extra,
+                    ),
+                    note=(str(draft.note).strip() if draft.note else None) or None,
+                    created_at=now,
+                    updated_at=now,
+                )
+                session.add(audit)
+                session.flush()
+            else:
+                audit = self._get_audit(session, int(draft.audit_id))
+                audit.audit_type = audit_type
+                audit.status = status
+                audit.remind_from = draft.remind_from
+                audit.organization_ico = ico
+                audit.organization_name = name
+                audit.organization_address = address
+                audit.organization_snapshot_json = _organization_snapshot_payload(
+                    ico=ico,
+                    name=name,
+                    address=address,
+                    extra=draft.organization_extra,
+                )
+                audit.note = (str(draft.note).strip() if draft.note else None) or None
+                audit.updated_at = now
+
+                existing_visits = list(
+                    session.scalars(
+                        select(ExternalAuditVisit).where(
+                            ExternalAuditVisit.external_audit_id == audit.id
+                        )
+                    )
+                )
+                visit_ids = [int(item.id) for item in existing_visits]
+                if visit_ids:
+                    for link in session.scalars(
+                        select(ExternalAuditVisitParticipant).where(
+                            ExternalAuditVisitParticipant.visit_id.in_(visit_ids)
+                        )
+                    ):
+                        session.delete(link)
+                    session.flush()
+                for visit in existing_visits:
+                    session.delete(visit)
+                session.flush()
+                for participant in session.scalars(
+                    select(ExternalAuditParticipant).where(
+                        ExternalAuditParticipant.external_audit_id == audit.id
+                    )
+                ):
+                    session.delete(participant)
+                session.flush()
+
+            key_to_db_id: dict[str, int] = {}
+            for index, participant in enumerate(draft.participants):
+                row = ExternalAuditParticipant(
+                    external_audit_id=int(audit.id),
+                    role=participant.role,
+                    source_type=participant.source_type,
+                    source_id=int(participant.source_id),
+                    display_name_snapshot=str(
+                        participant.display_name_snapshot or ""
+                    ).strip(),
+                    display_order=int(participant.display_order or (index + 1) * 10),
+                    created_at=now,
+                    updated_at=now,
+                )
+                session.add(row)
+                session.flush()
+                key_to_db_id[participant.client_key] = int(row.id)
+                participant.db_id = int(row.id)
+
+            for index, visit in enumerate(draft.visits):
+                row = ExternalAuditVisit(
+                    external_audit_id=int(audit.id),
+                    visit_date=visit.visit_date,
+                    time_from=visit.time_from,
+                    time_to=visit.time_to,
+                    workplace_id=int(visit.workplace_id),
+                    workplace_name_snapshot=str(
+                        visit.workplace_name_snapshot or ""
+                    ).strip(),
+                    workplace_address_snapshot=str(
+                        visit.workplace_address_snapshot or ""
+                    ).strip(),
+                    display_order=int(visit.display_order or (index + 1) * 10),
+                    note=(str(visit.note).strip() if visit.note else None) or None,
+                    created_at=now,
+                    updated_at=now,
+                )
+                session.add(row)
+                session.flush()
+                visit.db_id = int(row.id)
+                for pkey in visit.participant_keys:
+                    session.add(
+                        ExternalAuditVisitParticipant(
+                            visit_id=int(row.id),
+                            participant_id=key_to_db_id[pkey],
+                            created_at=now,
+                        )
+                    )
+
+            session.commit()
+            session.refresh(audit)
+            draft.audit_id = int(audit.id)
+            session.expunge(audit)
+            return audit
+
+    def flush_attachment_staging(
+        self,
+        audit_id: int,
+        staging: AttachmentStagingState,
+    ) -> None:
+        """Aplikuje odložené přílohy po úspěšném DB uložení spisu."""
+        from core.services.attachment_service import attachment_service
+        from moduly.externi_audity.constants import ENTITY_EXTERNAL_AUDIT
+
+        entity_type = ENTITY_EXTERNAL_AUDIT
+        for attachment_id in list(staging.pending_remove_ids):
+            attachment_service.delete(int(attachment_id))
+        for path in list(staging.pending_add_paths):
+            created = attachment_service.add_file(entity_type, int(audit_id), path)
+            if created is None:
+                raise ExternalAuditError(
+                    f"Nepodařilo se uložit přílohu: {path}"
+                )
+        staging.clear()
 
     @staticmethod
     def _require_workplace(workplace_id: int):
