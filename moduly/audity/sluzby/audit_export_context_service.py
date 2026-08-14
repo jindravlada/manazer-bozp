@@ -45,6 +45,11 @@ from moduly.audity.repository.audit_program_repository import AuditProgramReposi
 from moduly.audity.sluzby.audit_commission_service import audit_commission_service
 from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
 from moduly.audity.sluzby.audit_program_service import audit_program_service
+from moduly.audity.sluzby.audit_question_source_service import (
+    AuditQuestionSourceError,
+    audit_question_source_service,
+)
+from moduly.audity.sluzby.audit_question_snapshot_service import snapshot_key
 from moduly.audity.sluzby.audit_service import audit_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
 
@@ -163,6 +168,20 @@ class AuditExportContext:
     @property
     def audit_id(self) -> int:
         return self.audit.id
+
+    def question_source(self):
+        """Snapshot/live zdroj — cache na kontextu přes object.__setattr__."""
+        cached = getattr(self, "_question_source_cache", None)
+        if cached is not None:
+            return cached
+        try:
+            source = audit_question_source_service.resolve_for_audit(
+                self.audit_id, audit=self.audit
+            )
+        except AuditQuestionSourceError:
+            raise
+        object.__setattr__(self, "_question_source_cache", source)
+        return source
 
     def is_completed(self) -> bool:
         return self.audit.finished_at is not None
@@ -320,6 +339,19 @@ class AuditExportContext:
         return visit_context.planned_process_ids
 
     def processes_lines(self) -> list[str]:
+        source = self.question_source()
+        if source.is_snapshot:
+            names = [
+                name
+                for _pid, name in sorted(
+                    source.process_names.items(),
+                    key=lambda item: (item[1].casefold(), item[0]),
+                )
+                if name
+            ]
+            if names:
+                return names
+
         planned_ids = set(self.planned_process_ids())
         process_names: list[str] = []
         for process in audit_knowledge_service.get_processes():
@@ -411,12 +443,17 @@ class AuditExportContext:
     def _assertion_control_results(self):
         """Výsledky ze spisu auditu bez osiřelých tvrzení ze starší metodiky.
 
-        Text tvrzení vždy bere z uloženého ``control_results`` (spis).
-        Metodika slouží jen jako filtr platných ID — nikoli jako zdroj textů.
+        Text tvrzení vždy bere z uloženého ``control_results`` (spis), případně
+        ze snapshotu. Živá metodika slouží jen jako filtr platných ID u live auditů.
+        Snapshotované audity filtrují proti snapshotu (orphan zůstane).
         """
         results = control_result_service.get_for_entity(ENTITY_AUDITY, self.audit_id)
         if not results:
             return []
+
+        source = self.question_source()
+        if source.is_snapshot:
+            return self._assertion_control_results_from_snapshot(results, source)
 
         planned_ids = set(self.planned_process_ids())
         known_process_ids = {
@@ -452,6 +489,67 @@ class AuditExportContext:
                 continue
             # Sekce v metodice je, ale toto tvrzení už ne (osiřelý záznam).
 
+        return filtered
+
+    def _assertion_control_results_from_snapshot(self, results, source):
+        """Filtr výsledků proti snapshotovým klíčům; text ze snapshotu."""
+        from types import SimpleNamespace
+
+        filtered = []
+        for row in results:
+            key = snapshot_key(
+                row.source_area_id,
+                row.source_section_id,
+                row.source_control_point_id,
+            )
+            snap_text = source.text_by_key.get(key)
+            if snap_text is None:
+                # Zkus orphan varianty přes assertion mapu.
+                matched = False
+                for snap_key, text in source.text_by_key.items():
+                    if snap_key[2] == str(row.source_control_point_id or "").strip():
+                        if (
+                            snap_key[0]
+                            in {
+                                str(row.source_area_id or "").strip(),
+                                f"orphan_process_{row.id}",
+                            }
+                            or source.process_names.get(snap_key[0])
+                            == str(row.source_area_label or "").strip()
+                        ):
+                            key = snap_key
+                            snap_text = text
+                            matched = True
+                            break
+                if not matched:
+                    # Výsledek mimo snapshot — u snapshotového auditu neexportovat
+                    # (nekonzistence by měla být odhalena při otevření).
+                    continue
+
+            # Preferuj snapshotový text otázky; labely procesů/sekcí ze snapshotu.
+            process_name = source.process_names.get(key[0]) or row.source_area_label
+            section_name = row.source_section_label
+            for view in source.assertions:
+                if view.key == key:
+                    process_name = view.process_name or process_name
+                    section_name = view.section_name or section_name
+                    break
+
+            filtered.append(
+                SimpleNamespace(
+                    id=row.id,
+                    source_area_id=row.source_area_id,
+                    source_area_label=process_name,
+                    source_section_id=row.source_section_id,
+                    source_section_label=section_name,
+                    source_control_point_id=row.source_control_point_id,
+                    source_control_point_label=snap_text or row.source_control_point_label,
+                    result=row.result,
+                    note=getattr(row, "note", ""),
+                    photo_path=getattr(row, "photo_path", ""),
+                    _original=row,
+                )
+            )
         return filtered
 
     def appendix_assertions_text(self) -> str | OdtRichContent:
@@ -530,7 +628,9 @@ class AuditExportContext:
             area = _text(row.source_section_label) or _text(row.source_area_label)
             if not area:
                 continue
-            photo_path = control_result_service.resolve_photo_path(row)
+            photo_path = control_result_service.resolve_photo_path(
+                getattr(row, "_original", row)
+            )
             items.append(
                 ControlPointAppendixItem(
                     area_label=area,

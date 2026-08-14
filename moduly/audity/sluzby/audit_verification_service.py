@@ -171,8 +171,17 @@ class AuditVerificationService:
         *,
         verification_type: str | None = None,
         process_ids: set[str] | tuple[str, ...] | list[str] | None = None,
+        question_source=None,
     ) -> list[AuditAssertionRef]:
-        """Aktivní auditní tvrzení metodiky s efektivním typem pro audit."""
+        """Aktivní auditní tvrzení s efektivním typem pro audit.
+
+        Při ``question_source.is_snapshot`` bere výhradně snapshot (bez živé metodiky).
+        """
+        from moduly.audity.sluzby.audit_question_source_service import (
+            AuditQuestionSourceError,
+            audit_question_source_service,
+        )
+
         wanted = (
             self.normalize_verification_type(verification_type)
             if verification_type is not None
@@ -184,6 +193,24 @@ class AuditVerificationService:
             else None
         )
         overrides = self.overrides_map(audit_id)
+
+        source = question_source
+        if source is None and audit_id is not None:
+            try:
+                source = audit_question_source_service.resolve_for_audit(audit_id)
+            except AuditQuestionSourceError:
+                raise
+
+        if source is not None and source.is_snapshot:
+            return self._list_assertions_from_snapshot(
+                source,
+                audit_id=audit_id,
+                overrides=overrides,
+                wanted=wanted,
+                # Snapshot už je kompletní sada — planned filtr neaplikovat.
+                allowed=None,
+            )
+
         items: list[AuditAssertionRef] = []
         for process_node in audit_knowledge_service.get_knowledge_tree():
             process_id = str(process_node.process_id or "").strip()
@@ -197,6 +224,55 @@ class AuditVerificationService:
                 overrides=overrides,
                 wanted=wanted,
                 sink=items,
+            )
+        return items
+
+    def _list_assertions_from_snapshot(
+        self,
+        source,
+        *,
+        audit_id: int | None,
+        overrides: dict[tuple[str, str, str], str],
+        wanted: str | None,
+        allowed: set[str] | None,
+    ) -> list[AuditAssertionRef]:
+        items: list[AuditAssertionRef] = []
+        for view in source.assertions:
+            if allowed is not None and view.process_id not in allowed:
+                continue
+            methodology = self.normalize_verification_type(view.verification_type)
+            effective = self.effective_verification_type(
+                audit_id,
+                area_id=view.process_id,
+                section_id=view.section_id,
+                control_point_id=view.assertion_id,
+                methodology_type=methodology,
+                overrides=overrides,
+            )
+            if wanted is not None and effective != wanted:
+                continue
+            raw = {
+                "id": view.assertion_id,
+                "text": view.assertion_text,
+                "nazev": view.assertion_text,
+                "zavaznost": view.severity,
+                "verification_type": view.verification_type,
+                "question_kind": view.question_kind,
+                "poradi": view.display_order,
+                "aktivni": True,
+            }
+            items.append(
+                AuditAssertionRef(
+                    area_id=view.process_id,
+                    area_label=view.process_name,
+                    section_id=view.section_id,
+                    section_label=view.section_name,
+                    control_point_id=view.assertion_id,
+                    control_point_label=view.assertion_text,
+                    control_point=raw,
+                    methodology_verification_type=methodology,
+                    effective_verification_type=effective,
+                )
             )
         return items
 

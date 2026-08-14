@@ -45,15 +45,20 @@ class AuditKnowledgeTreeWidget(QTreeWidget):
         include_inactive: bool = False,
         ensure: bool = True,
         process_ids: set[str] | None = None,
+        roots: list[KnowledgeTreeNode] | tuple[KnowledgeTreeNode, ...] | None = None,
     ) -> None:
         self._include_inactive = include_inactive
         self._process_filter = process_ids
         self._catalog_error = None
         try:
-            self._roots = audit_knowledge_service.get_knowledge_tree(
-                include_inactive=include_inactive,
-                ensure=ensure,
-            )
+            if roots is not None:
+                # Snapshot / přednačtený strom — bez živé metodiky.
+                self._roots = list(roots)
+            else:
+                self._roots = audit_knowledge_service.get_knowledge_tree(
+                    include_inactive=include_inactive,
+                    ensure=ensure,
+                )
         except AuditCatalogError as exc:
             self._roots = []
             self._catalog_error = str(exc)

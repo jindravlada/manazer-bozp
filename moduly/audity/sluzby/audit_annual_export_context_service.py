@@ -52,6 +52,11 @@ from moduly.audity.repository.audit_program_repository import AuditProgramReposi
 from moduly.audity.sluzby.audit_annual_report_service import audit_annual_report_service
 from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
 from moduly.audity.sluzby.audit_program_service import audit_program_service
+from moduly.audity.sluzby.audit_question_source_service import (
+    AuditQuestionSourceError,
+    audit_question_source_service,
+)
+from moduly.audity.sluzby.audit_question_snapshot_service import snapshot_key
 from moduly.audity.sluzby.audit_service import audit_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.ukoly.sluzby.task_service import task_service
@@ -771,13 +776,28 @@ class AuditAnnualExportContextService:
         seen_overdue_task_ids: set[int] = set()
 
         for audit in audits:
+            snap_severity: dict[tuple[str, str, str], str] = {}
+            try:
+                source = audit_question_source_service.resolve_for_audit(
+                    audit.id, audit=audit
+                )
+                if source.is_snapshot:
+                    snap_severity = dict(source.severity_by_key)
+            except AuditQuestionSourceError:
+                snap_severity = {}
+
             for row in control_result_service.get_for_entity(ENTITY_AUDITY, audit.id):
                 if row.result not in (
                     CONTROL_RESULT_NEVYHOVUJE,
                     CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
                 ):
                     continue
-                severity = self._resolve_severity(
+                key = snapshot_key(
+                    row.source_area_id,
+                    row.source_section_id,
+                    row.source_control_point_id,
+                )
+                severity = snap_severity.get(key) or self._resolve_severity(
                     process_id=str(row.source_area_id or ""),
                     criterion_id=str(row.source_section_id or ""),
                     control_point_id=str(row.source_control_point_id or ""),

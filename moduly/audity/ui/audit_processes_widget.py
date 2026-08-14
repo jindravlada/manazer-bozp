@@ -32,6 +32,11 @@ from moduly.audity.constants import (
     WORK_PANEL_STRETCH,
 )
 from moduly.audity.sluzby.audit_knowledge_service import KnowledgeTreeNode, audit_knowledge_service
+from moduly.audity.sluzby.audit_question_source_service import (
+    AuditQuestionSource,
+    AuditQuestionSourceError,
+    audit_question_source_service,
+)
 from moduly.audity.sluzby.audit_service import audit_service
 from moduly.audity.sluzby.audit_terrain_checklist_service import (
     audit_terrain_checklist_service,
@@ -111,6 +116,7 @@ class AuditProcessesWidget(QWidget):
         self._current_criterion_label = ""
         self._planned_process_ids: set[str] | None = None
         self._on_verification_type_changed = None
+        self._question_source: AuditQuestionSource | None = None
 
         header_row = QHBoxLayout()
         header_row.setContentsMargins(0, 0, 0, 0)
@@ -184,7 +190,7 @@ class AuditProcessesWidget(QWidget):
 
         layout.addWidget(main_splitter, 1)
 
-        self.reload_processes()
+        # Strom se načte až po set_question_source / set_audit_id (AuditDialog).
 
     def set_on_verification_type_changed(self, callback) -> None:
         self._on_verification_type_changed = callback
@@ -206,6 +212,11 @@ class AuditProcessesWidget(QWidget):
         self.knowledge_widget.set_audit_id(audit_id)
         if self.checklist_btn is not None:
             self.checklist_btn.setEnabled(audit_id is not None)
+
+    def set_question_source(self, source: AuditQuestionSource | None) -> None:
+        """Nastaví přednačtený zdroj otázek (snapshot/live) a obnoví strom."""
+        self._question_source = source
+        self.reload_processes()
 
     def _export_terrain_checklist(self) -> None:
         if self._audit_id is None:
@@ -269,7 +280,16 @@ class AuditProcessesWidget(QWidget):
     def _refresh_after_knowledge_edit(self) -> None:
         process_id = self._current_process_id
         criterion_id = self._current_criterion_id
-        self.knowledge_tree.reload_tree(process_ids=self._planned_process_ids)
+        if self._question_source is None or not self._question_source.is_snapshot:
+            if self._audit_id is not None:
+                try:
+                    self._question_source = audit_question_source_service.resolve_for_audit(
+                        self._audit_id
+                    )
+                except AuditQuestionSourceError as exc:
+                    self._show_catalog_error(str(exc))
+                    return
+        self.reload_processes()
         if process_id and criterion_id:
             self.knowledge_tree.select_node(process_id, criterion_id)
         elif process_id:
@@ -280,7 +300,16 @@ class AuditProcessesWidget(QWidget):
 
     def reload_processes(self) -> None:
         self._clear_catalog_error()
-        self.knowledge_tree.reload_tree(process_ids=self._planned_process_ids)
+        source = self._question_source
+        if source is None and self._audit_id is not None:
+            # Nekonzistentní snapshot (dialog nastavil None) — bez JSON fallbacku.
+            self.knowledge_tree.reload_tree(roots=())
+        elif source is not None and source.is_snapshot:
+            # Snapshot = celá sada; planned filtr z živé návštěvy se neaplikuje
+            # (orphan procesy mimo plán zůstávají viditelné).
+            self.knowledge_tree.reload_tree(roots=source.roots, process_ids=None)
+        else:
+            self.knowledge_tree.reload_tree(process_ids=self._planned_process_ids)
         if self.knowledge_tree.catalog_error_message:
             self._show_catalog_error(self.knowledge_tree.catalog_error_message)
         self._show_hint()
@@ -330,6 +359,26 @@ class AuditProcessesWidget(QWidget):
         self._current_criterion_id = ""
         self._current_criterion_label = ""
 
+        snapshot_mode = (
+            self._question_source is not None and self._question_source.is_snapshot
+        )
+        if snapshot_mode:
+            self._current_process_purpose = ""
+            self._current_process_knowledge = None
+            self.center_title_label.setText(node.process_label)
+            self.center_description_label.setText(
+                f"Vyberte {PROCESS_TERM_CRITERION.lower()} pod tímto procesem "
+                "(zmrazená sada otázek auditu)."
+            )
+            self.center_description_label.setVisible(True)
+            self.knowledge_widget.clear_criterion()
+            self.overview_widget.show_process(None)
+            self.methodology_panel.show_hint(
+                "Metodika tohoto auditu je zmrazená ve snapshotu."
+            )
+            self.content_stack.setCurrentIndex(self._PAGE_PLACEHOLDER)
+            return
+
         process_def = audit_knowledge_service.get_process_by_id(node.process_id)
         self.center_title_label.setText(node.process_label)
 
@@ -375,20 +424,30 @@ class AuditProcessesWidget(QWidget):
         self._current_criterion_id = node.node_id
         self._current_criterion_label = str(criterion.get("nazev") or "").strip()
 
-        if not self._current_process_purpose or self._current_process_knowledge is None:
+        snapshot_mode = (
+            self._question_source is not None and self._question_source.is_snapshot
+        )
+        if snapshot_mode:
+            self._current_process_purpose = ""
+            self._current_process_knowledge = None
+        elif not self._current_process_purpose or self._current_process_knowledge is None:
             process_def = audit_knowledge_service.get_process_by_id(node.process_id)
             if process_def is not None:
                 self._current_process_purpose = process_def.ucel_procesu
                 if process_def.has_knowledge_file:
-                    self._current_process_knowledge = audit_knowledge_service.load_process_knowledge(
-                        process_def
+                    self._current_process_knowledge = (
+                        audit_knowledge_service.load_process_knowledge(process_def)
                     )
 
         section_label = str(criterion.get("nazev") or "").strip()
         self.center_title_label.setText(section_label)
 
         section_popis = str(criterion.get("popis") or "").strip()
-        cil_overeni = audit_knowledge_service.get_text_field(criterion, "cil_overeni")
+        cil_overeni = (
+            ""
+            if snapshot_mode
+            else audit_knowledge_service.get_text_field(criterion, "cil_overeni")
+        )
         if cil_overeni:
             self.center_description_label.setText(cil_overeni)
             self.center_description_label.setVisible(True)

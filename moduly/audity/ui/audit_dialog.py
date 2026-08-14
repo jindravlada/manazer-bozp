@@ -28,6 +28,10 @@ from moduly.audity.constants import FINDING_SOURCE_LABEL, TAB_LABELS
 from moduly.audity.sluzby.audit_commission_service import audit_commission_service
 from moduly.audity.sluzby.audit_deferred_edits import AuditDeferredEdits
 from moduly.audity.sluzby.audit_program_service import AuditVisitContext
+from moduly.audity.sluzby.audit_question_source_service import (
+    AuditQuestionSourceError,
+    audit_question_source_service,
+)
 from moduly.audity.sluzby.audit_service import audit_service
 from moduly.audity.ui.audit_commission_widget import AuditCommissionWidget
 from moduly.audity.ui.audit_conclusion_widget import AuditConclusionWidget
@@ -166,6 +170,14 @@ class AuditDialog(QDialog):
         self.terrain_widget.set_audit_id(audit_id)
         self.findings_widget.set_audit_id(audit_id)
         self.tasks_widget.set_audit_id(audit_id)
+        # Jeden resolve pro obě záložky — snapshot bez ensure_catalogs / get_knowledge_tree.
+        try:
+            source = audit_question_source_service.resolve_for_audit(audit_id)
+        except AuditQuestionSourceError as exc:
+            QMessageBox.warning(self, FINDING_SOURCE_LABEL, str(exc))
+            source = None
+        self.processes_widget.set_question_source(source)
+        self.terrain_widget.set_question_source(source)
 
     def _on_finding_changed(self) -> None:
         self._on_related_data_changed()
