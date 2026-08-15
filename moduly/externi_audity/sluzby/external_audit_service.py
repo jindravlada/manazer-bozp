@@ -53,6 +53,7 @@ from moduly.externi_audity.modely import (
 from moduly.externi_audity.sluzby.external_audit_draft import (
     AttachmentStagingState,
     ExternalAuditDraft,
+    FindingDraft,
     ParticipantDraft,
     VisitDraft,
     new_client_key,
@@ -101,6 +102,14 @@ class ExternalAuditOverviewRow:
     status: str
     status_label: str
     remind_from: date | None
+    nonconformity_open: int = 0
+    nonconformity_resolved: int = 0
+    improvement_open: int = 0
+    improvement_resolved: int = 0
+    strength_count: int = 0
+    tasks_active: int = 0
+    tasks_done: int = 0
+    tasks_canceled: int = 0
 
 
 def _parse_time(value: str | None) -> time | None:
@@ -165,6 +174,66 @@ def _require_actionable_finding_status(status: str) -> str:
     if value not in EXTERNAL_AUDIT_FINDING_ACTIONABLE_STATUSES:
         raise ExternalAuditError(f"Neplatný stav zjištění: {status!r}")
     return value
+
+
+def normalize_finding_draft_fields(
+    *,
+    finding_type: str,
+    description: str,
+    status: str | None,
+    due_date: date | None,
+    resolution_text: str | None,
+    previous_status: str | None = None,
+    previous_resolved_at: datetime | None = None,
+    now: datetime | None = None,
+) -> dict[str, Any]:
+    """Validace a normalizace zjištění pro draft i save_bundle."""
+    finding_type_value = _require_finding_type(finding_type)
+    text = str(description or "").strip()
+    if not text:
+        raise ExternalAuditError("Popis zjištění je povinný.")
+
+    resolution = (str(resolution_text).strip() if resolution_text else "") or None
+    stamp = now or datetime.now()
+
+    if finding_type_value == EXTERNAL_AUDIT_FINDING_TYPE_STRENGTH:
+        if due_date is not None:
+            raise ExternalAuditError("Silná stránka nemá termín vypořádání.")
+        if resolution:
+            raise ExternalAuditError("Silná stránka nemá vypořádání.")
+        return {
+            "finding_type": finding_type_value,
+            "description": text,
+            "status": EXTERNAL_AUDIT_FINDING_STATUS_RECORDED,
+            "due_date": None,
+            "resolution_text": None,
+            "resolved_at": None,
+        }
+
+    status_value = _require_actionable_finding_status(
+        status or EXTERNAL_AUDIT_FINDING_STATUS_OPEN
+    )
+    resolved_at = previous_resolved_at
+    if status_value == EXTERNAL_AUDIT_FINDING_STATUS_RESOLVED:
+        if not resolution:
+            raise ExternalAuditError(
+                "Pro stav Vypořádáno je povinný způsob vypořádání."
+            )
+        if previous_status != EXTERNAL_AUDIT_FINDING_STATUS_RESOLVED:
+            resolved_at = stamp
+        elif resolved_at is None:
+            resolved_at = stamp
+    else:
+        resolved_at = None
+
+    return {
+        "finding_type": finding_type_value,
+        "description": text,
+        "status": status_value,
+        "due_date": due_date,
+        "resolution_text": resolution,
+        "resolved_at": resolved_at,
+    }
 
 
 def _touch(audit: ExternalAudit) -> None:
@@ -632,42 +701,36 @@ class ExternalAuditService:
         description: str | None = None,
         status: str | None = None,
         due_date: date | None | object = ...,
+        resolution_text: str | None | object = ...,
         display_order: int | None = None,
     ) -> ExternalAuditFinding:
         with get_session() as session:
             finding = self._get_finding(session, finding_id)
             audit = self._get_audit(session, finding.external_audit_id)
-            if finding.finding_type == EXTERNAL_AUDIT_FINDING_TYPE_STRENGTH:
-                if status is not None and status != EXTERNAL_AUDIT_FINDING_STATUS_RECORDED:
-                    raise ExternalAuditError(
-                        "Silná stránka nemá stavy otevřené neshody."
-                    )
-                if due_date is not ... and due_date is not None:
-                    raise ExternalAuditError("Silná stránka nemá termín vypořádání.")
-            else:
-                if status is not None:
-                    new_status = _require_actionable_finding_status(status)
-                    if new_status == EXTERNAL_AUDIT_FINDING_STATUS_RESOLVED:
-                        raise ExternalAuditError(
-                            "Pro vypořádání použijte resolve_finding s textem."
-                        )
-                    if (
-                        finding.status == EXTERNAL_AUDIT_FINDING_STATUS_RESOLVED
-                        and new_status
-                        in (
-                            EXTERNAL_AUDIT_FINDING_STATUS_OPEN,
-                            EXTERNAL_AUDIT_FINDING_STATUS_IN_PROGRESS,
-                        )
-                    ):
-                        finding.resolved_at = None
-                    finding.status = new_status
-            if description is not None:
-                text = str(description).strip()
-                if not text:
-                    raise ExternalAuditError("Popis zjištění je povinný.")
-                finding.description = text
-            if due_date is not ...:
-                finding.due_date = due_date  # type: ignore[assignment]
+            next_description = (
+                finding.description if description is None else description
+            )
+            next_status = finding.status if status is None else status
+            next_due = finding.due_date if due_date is ... else due_date
+            next_resolution = (
+                finding.resolution_text
+                if resolution_text is ...
+                else resolution_text
+            )
+            normalized = normalize_finding_draft_fields(
+                finding_type=finding.finding_type,
+                description=str(next_description or ""),
+                status=str(next_status or ""),
+                due_date=next_due,  # type: ignore[arg-type]
+                resolution_text=next_resolution,  # type: ignore[arg-type]
+                previous_status=finding.status,
+                previous_resolved_at=finding.resolved_at,
+            )
+            finding.description = normalized["description"]
+            finding.status = normalized["status"]
+            finding.due_date = normalized["due_date"]
+            finding.resolution_text = normalized["resolution_text"]
+            finding.resolved_at = normalized["resolved_at"]
             if display_order is not None:
                 finding.display_order = int(display_order)
             finding.updated_at = datetime.now()
@@ -680,23 +743,11 @@ class ExternalAuditService:
     def resolve_finding(
         self, finding_id: int, *, resolution_text: str
     ) -> ExternalAuditFinding:
-        text = str(resolution_text or "").strip()
-        if not text:
-            raise ExternalAuditError("Text vypořádání je povinný.")
-        with get_session() as session:
-            finding = self._get_finding(session, finding_id)
-            if finding.finding_type == EXTERNAL_AUDIT_FINDING_TYPE_STRENGTH:
-                raise ExternalAuditError("Silná stránka se nevypořádává.")
-            audit = self._get_audit(session, finding.external_audit_id)
-            finding.status = EXTERNAL_AUDIT_FINDING_STATUS_RESOLVED
-            finding.resolution_text = text
-            finding.resolved_at = datetime.now()
-            finding.updated_at = datetime.now()
-            _touch(audit)
-            session.commit()
-            session.refresh(finding)
-            session.expunge(finding)
-            return finding
+        return self.update_finding(
+            finding_id,
+            status=EXTERNAL_AUDIT_FINDING_STATUS_RESOLVED,
+            resolution_text=resolution_text,
+        )
 
     def reopen_finding(
         self,
@@ -707,19 +758,7 @@ class ExternalAuditService:
         status_value = _require_actionable_finding_status(status)
         if status_value == EXTERNAL_AUDIT_FINDING_STATUS_RESOLVED:
             raise ExternalAuditError("Nelze znovuotevřít do stavu Vypořádáno.")
-        with get_session() as session:
-            finding = self._get_finding(session, finding_id)
-            if finding.finding_type == EXTERNAL_AUDIT_FINDING_TYPE_STRENGTH:
-                raise ExternalAuditError("Silná stránka se znovu neotevírá.")
-            audit = self._get_audit(session, finding.external_audit_id)
-            finding.status = status_value
-            finding.resolved_at = None
-            finding.updated_at = datetime.now()
-            _touch(audit)
-            session.commit()
-            session.refresh(finding)
-            session.expunge(finding)
-            return finding
+        return self.update_finding(finding_id, status=status_value)
 
     def link_task(self, finding_id: int, task_id: int) -> ExternalAuditFindingTaskLink:
         task = task_service.get_task_by_id(int(task_id))
@@ -765,6 +804,37 @@ class ExternalAuditService:
                 )
             )
             return [int(value) for value in rows]
+
+    def list_tasks_for_findings(
+        self, finding_ids: list[int] | tuple[int, ...]
+    ) -> dict[int, list[Any]]:
+        """Batch: finding_id → seznam Task (všechny stavy)."""
+        ids = [int(value) for value in finding_ids if value]
+        if not ids:
+            return {}
+        with get_session() as session:
+            links = list(
+                session.scalars(
+                    select(ExternalAuditFindingTaskLink)
+                    .where(ExternalAuditFindingTaskLink.finding_id.in_(ids))
+                    .order_by(ExternalAuditFindingTaskLink.id)
+                )
+            )
+        by_finding: dict[int, list[int]] = {fid: [] for fid in ids}
+        all_task_ids: list[int] = []
+        for link in links:
+            fid = int(link.finding_id)
+            tid = int(link.task_id)
+            by_finding.setdefault(fid, []).append(tid)
+            all_task_ids.append(tid)
+        tasks = {
+            int(task.id): task
+            for task in task_service.get_tasks_by_ids(all_task_ids)
+        }
+        return {
+            fid: [tasks[tid] for tid in task_ids if tid in tasks]
+            for fid, task_ids in by_finding.items()
+        }
 
     def derived_date_range(
         self, audit_id: int
@@ -970,12 +1040,96 @@ class ExternalAuditService:
                     seen_names[aid].add(name)
                     workplace_map[aid].append(name)
 
+            finding_rows = list(
+                session.scalars(
+                    select(ExternalAuditFinding).where(
+                        ExternalAuditFinding.external_audit_id.in_(audit_ids)
+                    )
+                )
+            )
+            finding_stats: dict[int, dict[str, int]] = {
+                aid: {
+                    "nc_open": 0,
+                    "nc_resolved": 0,
+                    "pkz_open": 0,
+                    "pkz_resolved": 0,
+                    "strength": 0,
+                }
+                for aid in audit_ids
+            }
+            finding_ids: list[int] = []
+            finding_to_audit: dict[int, int] = {}
+            for finding in finding_rows:
+                aid = int(finding.external_audit_id)
+                fid = int(finding.id)
+                finding_ids.append(fid)
+                finding_to_audit[fid] = aid
+                stats = finding_stats[aid]
+                ftype = str(finding.finding_type)
+                fstatus = str(finding.status)
+                if ftype == EXTERNAL_AUDIT_FINDING_TYPE_STRENGTH:
+                    stats["strength"] += 1
+                elif ftype == EXTERNAL_AUDIT_FINDING_TYPE_NONCONFORMITY:
+                    if fstatus == EXTERNAL_AUDIT_FINDING_STATUS_RESOLVED:
+                        stats["nc_resolved"] += 1
+                    else:
+                        stats["nc_open"] += 1
+                elif ftype == EXTERNAL_AUDIT_FINDING_TYPE_IMPROVEMENT:
+                    if fstatus == EXTERNAL_AUDIT_FINDING_STATUS_RESOLVED:
+                        stats["pkz_resolved"] += 1
+                    else:
+                        stats["pkz_open"] += 1
+
+            task_stats: dict[int, dict[str, int]] = {
+                aid: {"active": 0, "done": 0, "canceled": 0} for aid in audit_ids
+            }
+            if finding_ids:
+                links = list(
+                    session.scalars(
+                        select(ExternalAuditFindingTaskLink).where(
+                            ExternalAuditFindingTaskLink.finding_id.in_(finding_ids)
+                        )
+                    )
+                )
+                task_ids = sorted({int(link.task_id) for link in links})
+                tasks_by_id = {
+                    int(task.id): task
+                    for task in task_service.get_tasks_by_ids(task_ids)
+                }
+                # Každý úkol počítat jednou na audit (i při více linkách)
+                seen_audit_task: set[tuple[int, int]] = set()
+                for link in links:
+                    fid = int(link.finding_id)
+                    tid = int(link.task_id)
+                    aid = finding_to_audit.get(fid)
+                    if aid is None:
+                        continue
+                    key = (aid, tid)
+                    if key in seen_audit_task:
+                        continue
+                    seen_audit_task.add(key)
+                    task = tasks_by_id.get(tid)
+                    if task is None:
+                        continue
+                    computed = str(
+                        getattr(task, "computed_status", None) or task.status or ""
+                    )
+                    if computed == "Zrušeno":
+                        task_stats[aid]["canceled"] += 1
+                    elif computed == "Ukončeno":
+                        task_stats[aid]["done"] += 1
+                    else:
+                        task_stats[aid]["active"] += 1
+
             rows: list[ExternalAuditOverviewRow] = []
             for audit in audits:
-                date_from, date_to = range_map.get(int(audit.id), (None, None))
+                aid = int(audit.id)
+                date_from, date_to = range_map.get(aid, (None, None))
+                fstats = finding_stats[aid]
+                tstats = task_stats[aid]
                 rows.append(
                     ExternalAuditOverviewRow(
-                        audit_id=int(audit.id),
+                        audit_id=aid,
                         date_from=date_from,
                         date_to=date_to,
                         audit_type=str(audit.audit_type),
@@ -984,12 +1138,20 @@ class ExternalAuditService:
                         ),
                         organization_name=str(audit.organization_name or ""),
                         organization_ico=str(audit.organization_ico or ""),
-                        workplaces_label=", ".join(workplace_map.get(int(audit.id), [])),
+                        workplaces_label=", ".join(workplace_map.get(aid, [])),
                         status=str(audit.status),
                         status_label=EXTERNAL_AUDIT_STATUS_LABELS.get(
                             audit.status, audit.status
                         ),
                         remind_from=audit.remind_from,
+                        nonconformity_open=fstats["nc_open"],
+                        nonconformity_resolved=fstats["nc_resolved"],
+                        improvement_open=fstats["pkz_open"],
+                        improvement_resolved=fstats["pkz_resolved"],
+                        strength_count=fstats["strength"],
+                        tasks_active=tstats["active"],
+                        tasks_done=tstats["done"],
+                        tasks_canceled=tstats["canceled"],
                     )
                 )
 
@@ -1062,11 +1224,28 @@ class ExternalAuditService:
             organization_extra={},
             participants=participants,
             visits=visits,
+            findings=[
+                FindingDraft(
+                    client_key=new_client_key(),
+                    finding_type=str(finding.finding_type),
+                    description=str(finding.description or ""),
+                    status=str(finding.status),
+                    due_date=finding.due_date,
+                    resolution_text=finding.resolution_text,
+                    resolved_at=finding.resolved_at,
+                    display_order=int(finding.display_order or 0),
+                    db_id=int(finding.id),
+                    linked_task_ids=list(
+                        detail.finding_task_ids.get(int(finding.id), [])
+                    ),
+                )
+                for finding in detail.findings
+            ],
             attachments=AttachmentStagingState(),
         )
 
     def save_bundle(self, draft: ExternalAuditDraft) -> ExternalAudit:
-        """Atomicky uloží spis + účastníky + program (bez zjištění)."""
+        """Atomicky uloží spis + účastníky + program + zjištění."""
         audit_type = _require_audit_type(draft.audit_type)
         status = _require_audit_status(draft.status)
         ico = str(draft.organization_ico or "").strip()
@@ -1126,8 +1305,28 @@ class ExternalAuditService:
                         "Účastník návštěvy musí patřit stejnému externímu auditu."
                     )
 
+        now = datetime.now()
+        normalized_findings: list[tuple[FindingDraft, dict[str, Any]]] = []
+        for finding in draft.findings:
+            normalized = normalize_finding_draft_fields(
+                finding_type=finding.finding_type,
+                description=finding.description,
+                status=finding.status,
+                due_date=finding.due_date,
+                resolution_text=finding.resolution_text,
+                previous_status=finding.status if finding.db_id else None,
+                previous_resolved_at=finding.resolved_at,
+                now=now,
+            )
+            # Pro nové položky s resolved: previous_status None → nastaví resolved_at
+            if (
+                finding.db_id is None
+                and normalized["status"] == EXTERNAL_AUDIT_FINDING_STATUS_RESOLVED
+            ):
+                normalized["resolved_at"] = now
+            normalized_findings.append((finding, normalized))
+
         with get_session() as session:
-            now = datetime.now()
             if draft.audit_id is None:
                 audit = ExternalAudit(
                     audit_type=audit_type,
@@ -1240,6 +1439,64 @@ class ExternalAuditService:
                             created_at=now,
                         )
                     )
+
+            existing_findings = {
+                int(item.id): item
+                for item in session.scalars(
+                    select(ExternalAuditFinding).where(
+                        ExternalAuditFinding.external_audit_id == int(audit.id)
+                    )
+                )
+            }
+            for index, (finding_draft, normalized) in enumerate(normalized_findings):
+                order = int(finding_draft.display_order or (index + 1) * 10)
+                if finding_draft.db_id is not None:
+                    row = existing_findings.get(int(finding_draft.db_id))
+                    if row is None or int(row.external_audit_id) != int(audit.id):
+                        raise ExternalAuditError(
+                            f"Zjištění id={finding_draft.db_id} nepatří tomuto auditu."
+                        )
+                    # Přepočítat resolved_at vůči DB stavu
+                    normalized = normalize_finding_draft_fields(
+                        finding_type=normalized["finding_type"],
+                        description=normalized["description"],
+                        status=normalized["status"],
+                        due_date=normalized["due_date"],
+                        resolution_text=normalized["resolution_text"],
+                        previous_status=row.status,
+                        previous_resolved_at=row.resolved_at,
+                        now=now,
+                    )
+                    row.description = normalized["description"]
+                    row.status = normalized["status"]
+                    row.due_date = normalized["due_date"]
+                    row.resolution_text = normalized["resolution_text"]
+                    row.resolved_at = normalized["resolved_at"]
+                    row.display_order = order
+                    row.updated_at = now
+                    finding_draft.db_id = int(row.id)
+                    finding_draft.status = row.status
+                    finding_draft.due_date = row.due_date
+                    finding_draft.resolution_text = row.resolution_text
+                    finding_draft.resolved_at = row.resolved_at
+                else:
+                    row = ExternalAuditFinding(
+                        external_audit_id=int(audit.id),
+                        finding_type=normalized["finding_type"],
+                        description=normalized["description"],
+                        status=normalized["status"],
+                        due_date=normalized["due_date"],
+                        resolution_text=normalized["resolution_text"],
+                        resolved_at=normalized["resolved_at"],
+                        display_order=order,
+                        created_at=now,
+                        updated_at=now,
+                    )
+                    session.add(row)
+                    session.flush()
+                    finding_draft.db_id = int(row.id)
+                    finding_draft.status = row.status
+                    finding_draft.resolved_at = row.resolved_at
 
             session.commit()
             session.refresh(audit)

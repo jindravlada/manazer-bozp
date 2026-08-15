@@ -1,4 +1,4 @@
-"""Editor externího auditu — Spis / Program / Účastníci / Přílohy (EA-1)."""
+"""Editor externího auditu — Spis / Program / Účastníci / Zjištění / Přílohy (EA-2)."""
 
 from __future__ import annotations
 
@@ -69,6 +69,9 @@ from moduly.externi_audity.sluzby.external_audit_service import (
 from moduly.externi_audity.ui.external_audit_attachment_staging_widget import (
     ExternalAuditAttachmentStagingWidget,
 )
+from moduly.externi_audity.ui.external_audit_findings_widget import (
+    ExternalAuditFindingsWidget,
+)
 from moduly.externi_audity.ui.external_audit_visit_dialog import ExternalAuditVisitDialog
 from moduly.nastaveni.sluzby.person_service import person_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
@@ -76,7 +79,8 @@ from moduly.nastaveni.sluzby.settings_service import settings_service
 TAB_SPIS = 0
 TAB_PROGRAM = 1
 TAB_PARTICIPANTS = 2
-TAB_ATTACHMENTS = 3
+TAB_FINDINGS = 3
+TAB_ATTACHMENTS = 4
 
 
 class ExternalAuditEditorDialog(QDialog):
@@ -97,6 +101,7 @@ class ExternalAuditEditorDialog(QDialog):
         self.tabs.addTab(self._build_spis_tab(), "Spis")
         self.tabs.addTab(self._build_program_tab(), "Program")
         self.tabs.addTab(self._build_participants_tab(), "Účastníci")
+        self.tabs.addTab(self._build_findings_tab(), "Zjištění")
         self.tabs.addTab(self._build_attachments_tab(), "Přílohy")
         layout.addWidget(self.tabs, 1)
 
@@ -300,6 +305,29 @@ class ExternalAuditEditorDialog(QDialog):
         self.attachments = ExternalAuditAttachmentStagingWidget()
         return self.attachments
 
+    def _build_findings_tab(self) -> QWidget:
+        self.findings = ExternalAuditFindingsWidget(
+            self,
+            get_draft=lambda: self._draft,
+            ensure_saved=self._ensure_saved_for_tasks,
+        )
+        return self.findings
+
+    def _ensure_saved_for_tasks(self) -> bool:
+        """Úkol vyžaduje uložený audit + zjištění; při dirty nejdřív Uložit."""
+        if not self._is_dirty():
+            return self._draft.audit_id is not None
+        answer = QMessageBox.question(
+            self,
+            EXTERNAL_AUDIT_EDITOR_TITLE_EDIT,
+            "Externí audit má neuložené změny. Uložit nyní a pokračovat vytvořením úkolu?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.Yes,
+        )
+        if answer != QMessageBox.StandardButton.Yes:
+            return False
+        return self._persist()
+
     def _load_draft_into_widgets(self) -> None:
         draft = self._draft
         type_index = self.audit_type.findData(draft.audit_type)
@@ -322,6 +350,7 @@ class ExternalAuditEditorDialog(QDialog):
         self._refresh_dates()
         self._refresh_participant_lists()
         self._refresh_visits_table()
+        self.findings.refresh()
         self.attachments.set_audit_id(draft.audit_id)
         self.attachments.reset_staging()
         # staging state lives on draft
@@ -685,6 +714,20 @@ class ExternalAuditEditorDialog(QDialog):
                     v.note,
                 )
                 for v in draft.visits
+            ],
+            "findings": [
+                (
+                    f.client_key,
+                    f.finding_type,
+                    f.description,
+                    f.status,
+                    f.due_date,
+                    f.resolution_text,
+                    f.resolved_at,
+                    f.display_order,
+                    f.db_id,
+                )
+                for f in draft.findings
             ],
             "attachments_add": list(draft.attachments.pending_add_paths),
             "attachments_remove": list(draft.attachments.pending_remove_ids),

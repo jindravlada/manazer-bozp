@@ -61,6 +61,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.externi_audity.ui.external_audit_editor_dialog import (
         ExternalAuditEditorDialog,
         TAB_ATTACHMENTS,
+        TAB_FINDINGS,
         TAB_PARTICIPANTS,
         TAB_PROGRAM,
         TAB_SPIS,
@@ -240,7 +241,10 @@ class ExternalAuditEa1TestCase(unittest.TestCase):
         self.assertEqual(editor.tabs.tabText(TAB_SPIS), "Spis")
         self.assertEqual(editor.tabs.tabText(TAB_PROGRAM), "Program")
         self.assertEqual(editor.tabs.tabText(TAB_PARTICIPANTS), "Účastníci")
+        self.assertEqual(editor.tabs.tabText(TAB_FINDINGS), "Zjištění")
         self.assertEqual(editor.tabs.tabText(TAB_ATTACHMENTS), "Přílohy")
+        self.assertEqual(TAB_FINDINGS, 3)
+        self.assertEqual(TAB_ATTACHMENTS, 4)
         from moduly.externi_audity.constants import EXTERNAL_AUDIT_ATTACHMENTS_NEED_SAVE
 
         self.assertFalse(editor.attachments.btn_add.isEnabled())

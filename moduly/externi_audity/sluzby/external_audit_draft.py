@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime
 from typing import Any
 
 
@@ -39,6 +39,21 @@ class VisitDraft:
 
 
 @dataclass
+class FindingDraft:
+    client_key: str
+    finding_type: str
+    description: str
+    status: str
+    due_date: date | None = None
+    resolution_text: str | None = None
+    resolved_at: datetime | None = None
+    display_order: int = 0
+    db_id: int | None = None
+    # Jen pro UI snapshot navázaných úkolů (neukládá se v save_bundle)
+    linked_task_ids: list[int] = field(default_factory=list)
+
+
+@dataclass
 class AttachmentStagingState:
     """Odložené přílohy — fyzika/DB až při hlavním Uložit."""
 
@@ -66,6 +81,7 @@ class ExternalAuditDraft:
     organization_extra: dict[str, Any] = field(default_factory=dict)
     participants: list[ParticipantDraft] = field(default_factory=list)
     visits: list[VisitDraft] = field(default_factory=list)
+    findings: list[FindingDraft] = field(default_factory=list)
     attachments: AttachmentStagingState = field(default_factory=AttachmentStagingState)
 
     def derived_date_range(self) -> tuple[date | None, date | None]:
@@ -82,3 +98,12 @@ class ExternalAuditDraft:
 
     def participants_for_role(self, role: str) -> list[ParticipantDraft]:
         return [item for item in self.participants if item.role == role]
+
+    def findings_for_type(self, finding_type: str) -> list[FindingDraft]:
+        return [item for item in self.findings if item.finding_type == finding_type]
+
+    def finding_by_key(self, key: str) -> FindingDraft | None:
+        for item in self.findings:
+            if item.client_key == key:
+                return item
+        return None

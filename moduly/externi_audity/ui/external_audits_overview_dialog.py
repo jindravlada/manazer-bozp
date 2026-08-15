@@ -50,13 +50,17 @@ COL_ICO = 4
 COL_WP = 5
 COL_STATUS = 6
 COL_REMIND = 7
+COL_NC = 8
+COL_PKZ = 9
+COL_STRENGTH = 10
+COL_TASKS = 11
 
 
 class ExternalAuditsOverviewDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle(EXTERNAL_AUDITS_OVERVIEW_TITLE)
-        self.resize(1100, 620)
+        self.resize(1280, 620)
 
         layout = QVBoxLayout(self)
         toolbar = QHBoxLayout()
@@ -90,7 +94,7 @@ class ExternalAuditsOverviewDialog(QDialog):
         toolbar.addWidget(self.year_all_hint)
         layout.addLayout(toolbar)
 
-        self.table = QTableWidget(0, 8)
+        self.table = QTableWidget(0, 12)
         self.table.setHorizontalHeaderLabels(
             [
                 "Termín od",
@@ -101,6 +105,10 @@ class ExternalAuditsOverviewDialog(QDialog):
                 "Provozy",
                 "Stav",
                 "Připomenout od",
+                "Neshody O/V",
+                "PKZ O/V",
+                "Silné stránky",
+                "Úkoly A/D/Z",
             ]
         )
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
@@ -110,6 +118,21 @@ class ExternalAuditsOverviewDialog(QDialog):
         self.table.doubleClicked.connect(self.edit_selected)
         self.table.itemSelectionChanged.connect(self._refresh_actions)
         enable_typed_sorting(self.table)
+        header = self.table.horizontalHeader()
+        header.setToolTip("")
+        self.table.horizontalHeaderItem(COL_NC).setToolTip(
+            "Neshody: otevřené / vypořádané (O/V)"
+        )
+        self.table.horizontalHeaderItem(COL_PKZ).setToolTip(
+            "PKZ: otevřené / vypořádané (O/V)"
+        )
+        self.table.horizontalHeaderItem(COL_STRENGTH).setToolTip(
+            "Počet silných stránek"
+        )
+        self.table.horizontalHeaderItem(COL_TASKS).setToolTip(
+            "Úkoly: aktivní / dokončené / zrušené (A/D/Z). "
+            "Aktivní zahrnuje i „Splněno – čeká na kontrolu“."
+        )
 
         self.text_filter = FilterBar(self.table)
         layout.addWidget(self.text_filter)
@@ -189,7 +212,39 @@ class ExternalAuditsOverviewDialog(QDialog):
                     typed_date(row.remind_from),
                     stable_id=row.audit_id,
                 ),
+                create_typed_item(
+                    f"{row.nonconformity_open}/{row.nonconformity_resolved}",
+                    typed_text(
+                        f"{row.nonconformity_open:05d}/{row.nonconformity_resolved:05d}"
+                    ),
+                    stable_id=row.audit_id,
+                ),
+                create_typed_item(
+                    f"{row.improvement_open}/{row.improvement_resolved}",
+                    typed_text(
+                        f"{row.improvement_open:05d}/{row.improvement_resolved:05d}"
+                    ),
+                    stable_id=row.audit_id,
+                ),
+                create_typed_item(
+                    str(row.strength_count),
+                    typed_text(f"{row.strength_count:05d}"),
+                    stable_id=row.audit_id,
+                ),
+                create_typed_item(
+                    f"{row.tasks_active}/{row.tasks_done}/{row.tasks_canceled}",
+                    typed_text(
+                        f"{row.tasks_active:05d}/{row.tasks_done:05d}/{row.tasks_canceled:05d}"
+                    ),
+                    stable_id=row.audit_id,
+                ),
             ]
+            cells[COL_NC].setToolTip("Neshody: otevřené / vypořádané")
+            cells[COL_PKZ].setToolTip("PKZ: otevřené / vypořádané")
+            cells[COL_STRENGTH].setToolTip("Počet silných stránek")
+            cells[COL_TASKS].setToolTip(
+                "Úkoly: aktivní / dokončené / zrušené"
+            )
             for col, item in enumerate(cells):
                 if col == COL_ORG:
                     item.setData(Qt.ItemDataRole.UserRole, row.audit_id)
