@@ -431,26 +431,56 @@ class _FindingTypePanel(QWidget):
 
         title = f"{_task_title_prefix(finding.finding_type)}: {_short_text(finding.description)}"
         task_description = _task_description(draft, finding)
-        create_kwargs: dict = {"description": task_description}
-        if workplace_id is not None:
-            create_kwargs["workplace_id"] = workplace_id
+        finding_db_id = int(finding.db_id)
 
-        dialog = TaskDialog(self, create_kwargs=create_kwargs)
+        def _create_task(data: dict):
+            # TaskDialog.get_data() vrací description="" — předvyplněný text
+            # musí jít sem, nikoli do create_kwargs (duplicitní kwargs).
+            payload = dict(data)
+            payload["description"] = task_description
+            try:
+                return task_service.create_task(**payload)
+            except Exception as exc:  # noqa: BLE001
+                QMessageBox.warning(
+                    self,
+                    TITLE_FINDINGS,
+                    f"Úkol se nepodařilo vytvořit.\n\n{exc}",
+                )
+                return None
+
+        dialog = TaskDialog(self, create_factory=_create_task)
         dialog.title_edit.setPlainText(title)
         if workplace_id is not None:
             dialog.workplace_selector.set_workplace_id(workplace_id)
         dialog._capture_baseline()
         dialog.exec()
+
         task = dialog.task
         if task is None or getattr(task, "id", None) is None:
             return
-        try:
-            external_audit_service.link_task(int(finding.db_id), int(task.id))
-        except ExternalAuditError as exc:
-            QMessageBox.warning(self, TITLE_FINDINGS, str(exc))
-            return
-        if int(task.id) not in finding.linked_task_ids:
-            finding.linked_task_ids.append(int(task.id))
+        task_id = int(task.id)
+        # Vazba po prvním úspěšném vytvoření — nezávisí na Accepted
+        # (Uložit → Zavřít musí také navázat).
+        already = set(
+            external_audit_service.list_finding_task_ids(finding_db_id)
+        )
+        if task_id not in already:
+            try:
+                external_audit_service.link_task(finding_db_id, task_id)
+            except ExternalAuditError as exc:
+                QMessageBox.warning(self, TITLE_FINDINGS, str(exc))
+                return
+        # Obnovit finding v aktuálním draftu (po případném reloadu)
+        current = next(
+            (
+                item
+                for item in self._get_draft().findings
+                if item.db_id == finding_db_id
+            ),
+            None,
+        )
+        if current is not None and task_id not in current.linked_task_ids:
+            current.linked_task_ids.append(task_id)
         self.refresh()
 
     def open_selected_task(self) -> None:

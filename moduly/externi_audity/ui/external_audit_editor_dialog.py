@@ -64,6 +64,7 @@ from moduly.externi_audity.sluzby.external_audit_draft import (
 )
 from moduly.externi_audity.sluzby.external_audit_service import (
     ExternalAuditError,
+    _resolve_participant_source,
     external_audit_service,
 )
 from moduly.externi_audity.ui.external_audit_attachment_staging_widget import (
@@ -126,10 +127,17 @@ class ExternalAuditEditorDialog(QDialog):
         self._save_btn.clicked.connect(self._save_keep_open)
         self._save_close_btn.clicked.connect(self._save_and_close)
         self._close_btn.clicked.connect(self._request_close)
+        self.tabs.currentChanged.connect(self._on_tab_changed)
 
         self._load_draft_into_widgets()
         self._capture_baseline()
         self._refresh_attachment_gate()
+
+    def _on_tab_changed(self, index: int) -> None:
+        if index == TAB_PARTICIPANTS:
+            # Nově založené Osoby se projeví v selektoru auditora.
+            if hasattr(self.auditor_selector, "reload"):
+                self.auditor_selector.reload()
 
     def _build_spis_tab(self) -> QWidget:
         page = QWidget()
@@ -552,6 +560,11 @@ class ExternalAuditEditorDialog(QDialog):
             source_id = selector.current_person_id()
             source_type = EXTERNAL_AUDIT_SOURCE_PERSON
             if source_id is None:
+                QMessageBox.information(
+                    self,
+                    "Účastníci",
+                    "Vyberte osobu ze seznamu (nestačí jen opsat jméno).",
+                )
                 return
             person = person_service.get_by_id(source_id)
             display = person.display_name if person else f"Osoba #{source_id}"
@@ -564,6 +577,19 @@ class ExternalAuditEditorDialog(QDialog):
             worker = settings_service.get_worker_by_id(source_id)
             display = worker.display_name if worker else f"THP #{source_id}"
             selector.set_person_id(None)
+
+        try:
+            source_type, source_id, resolved_display = _resolve_participant_source(
+                role=role,
+                source_type=source_type,
+                source_id=int(source_id),
+                display_name_snapshot=str(display or "").strip() or None,
+            )
+            if not str(display or "").strip():
+                display = resolved_display
+        except ExternalAuditError as exc:
+            QMessageBox.warning(self, "Účastníci", str(exc))
+            return
 
         for existing in self._draft.participants_for_role(role):
             if (

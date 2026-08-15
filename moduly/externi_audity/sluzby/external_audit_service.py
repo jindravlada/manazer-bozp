@@ -1383,32 +1383,58 @@ class ExternalAuditService:
                 for visit in existing_visits:
                     session.delete(visit)
                 session.flush()
-                for participant in session.scalars(
-                    select(ExternalAuditParticipant).where(
-                        ExternalAuditParticipant.external_audit_id == audit.id
-                    )
-                ):
-                    session.delete(participant)
-                session.flush()
 
-            key_to_db_id: dict[str, int] = {}
-            for index, participant in enumerate(draft.participants):
-                row = ExternalAuditParticipant(
-                    external_audit_id=int(audit.id),
-                    role=participant.role,
-                    source_type=participant.source_type,
-                    source_id=int(participant.source_id),
-                    display_name_snapshot=str(
-                        participant.display_name_snapshot or ""
-                    ).strip(),
-                    display_order=int(participant.display_order or (index + 1) * 10),
-                    created_at=now,
-                    updated_at=now,
+            # Účastníky upsertovat (ne mazat všechny najednou) — ochrana proti
+            # tichému zahození platných řádků při chybě později v transakci.
+            existing_participants = {
+                int(item.id): item
+                for item in session.scalars(
+                    select(ExternalAuditParticipant).where(
+                        ExternalAuditParticipant.external_audit_id == int(audit.id)
+                    )
                 )
-                session.add(row)
-                session.flush()
-                key_to_db_id[participant.client_key] = int(row.id)
-                participant.db_id = int(row.id)
+            }
+            key_to_db_id: dict[str, int] = {}
+            kept_participant_ids: set[int] = set()
+            for index, participant in enumerate(draft.participants):
+                order = int(participant.display_order or (index + 1) * 10)
+                snapshot = str(participant.display_name_snapshot or "").strip()
+                if participant.db_id is not None:
+                    row = existing_participants.get(int(participant.db_id))
+                    if row is None or int(row.external_audit_id) != int(audit.id):
+                        raise ExternalAuditError(
+                            f"Účastník id={participant.db_id} nepatří tomuto auditu."
+                        )
+                    row.role = participant.role
+                    row.source_type = participant.source_type
+                    row.source_id = int(participant.source_id)
+                    row.display_name_snapshot = snapshot
+                    row.display_order = order
+                    row.updated_at = now
+                    kept_participant_ids.add(int(row.id))
+                    key_to_db_id[participant.client_key] = int(row.id)
+                    participant.db_id = int(row.id)
+                else:
+                    row = ExternalAuditParticipant(
+                        external_audit_id=int(audit.id),
+                        role=participant.role,
+                        source_type=participant.source_type,
+                        source_id=int(participant.source_id),
+                        display_name_snapshot=snapshot,
+                        display_order=order,
+                        created_at=now,
+                        updated_at=now,
+                    )
+                    session.add(row)
+                    session.flush()
+                    kept_participant_ids.add(int(row.id))
+                    key_to_db_id[participant.client_key] = int(row.id)
+                    participant.db_id = int(row.id)
+
+            for pid, row in existing_participants.items():
+                if pid not in kept_participant_ids:
+                    session.delete(row)
+            session.flush()
 
             for index, visit in enumerate(draft.visits):
                 row = ExternalAuditVisit(
