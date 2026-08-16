@@ -14,6 +14,8 @@ from core.dashboard.attention_item import (
 from core.dashboard.attention_service import (
     build_sort_key,
     get_attention_items,
+    get_external_audit_reminder_items,
+    get_external_finding_reminder_items,
     get_periodic_reminder_items,
     get_yearly_plan_month_reminder_items,
 )
@@ -208,6 +210,21 @@ def classify_reminder_yearly_plan_months(items: list[AttentionItem], today: date
     return burning, due_today
 
 
+def classify_reminder_attention_items(items: list[AttentionItem], today: date):
+    """Rozdělí obecné AttentionItem pro Připomínky: po termínu / dnes včetně."""
+    burning = []
+    due_today = []
+    for item in items:
+        due = item.due_date
+        if due is not None and due < today:
+            burning.append(item)
+        else:
+            due_today.append(item)
+    burning.sort(key=lambda item: (item.due_date or date.max, item.source_id))
+    due_today.sort(key=lambda item: (item.due_date or date.max, item.source_id))
+    return burning, due_today
+
+
 def overdue_yearly_plan_month_items(
     today: date,
     *,
@@ -373,6 +390,14 @@ class TodayWidget(DashboardPanel):
             get_periodic_reminder_items(today=today),
             today,
         )
+        ea_audit_burning, ea_audit_due = classify_reminder_attention_items(
+            get_external_audit_reminder_items(today=today),
+            today,
+        )
+        ea_finding_burning, ea_finding_due = classify_reminder_attention_items(
+            get_external_finding_reminder_items(today=today),
+            today,
+        )
         self._linked_attention = (
             list(month_burning)
             + list(month_due)
@@ -382,6 +407,10 @@ class TodayWidget(DashboardPanel):
             + list(periodic_due)
             + meeting_burning_items
             + meeting_due_items
+            + list(ea_audit_burning)
+            + list(ea_audit_due)
+            + list(ea_finding_burning)
+            + list(ea_finding_due)
         )
 
         ordered: list[str] = []
@@ -392,10 +421,14 @@ class TodayWidget(DashboardPanel):
             ordered.append(self._attention_line(item, "🔴"))
         ordered.extend(self._attention_line(item, "🔴") for item in periodic_burning)
         ordered.extend(self._attention_line(item, "🔴") for item in meeting_burning_items)
+        ordered.extend(self._attention_line(item, "🔴") for item in ea_audit_burning)
+        ordered.extend(self._attention_line(item, "🔴") for item in ea_finding_burning)
         ordered.extend(self._task_line(task, "🔴") for task in burning)
         ordered.extend(self._attention_line(item, "🔵") for item in month_due)
         ordered.extend(self._attention_line(item, "🔵") for item in periodic_due)
         ordered.extend(self._attention_line(item, "🔵") for item in meeting_due_items)
+        ordered.extend(self._attention_line(item, "🔵") for item in ea_audit_due)
+        ordered.extend(self._attention_line(item, "🔵") for item in ea_finding_due)
         ordered.extend(self._task_line(task, "🔵") for task in due_today)
         ordered.extend(self._task_line(task, "🟡") for task in waiting)
 

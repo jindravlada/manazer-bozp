@@ -417,6 +417,9 @@ class MainWindow(QMainWindow):
     def _open_attention_item(self, item) -> None:
         from core.dashboard.attention_item import (
             ITEM_TYPE_AUDIT,
+            ITEM_TYPE_EXTERNAL_AUDIT,
+            ITEM_TYPE_EXTERNAL_AUDIT_NC,
+            ITEM_TYPE_EXTERNAL_AUDIT_PKZ,
             ITEM_TYPE_INSPECTION,
             ITEM_TYPE_MEETING,
             ITEM_TYPE_OZO_CONTRACT,
@@ -433,6 +436,35 @@ class MainWindow(QMainWindow):
             entity_id = getattr(item, "entity_id", None)
         if item_type == ITEM_TYPE_TASK and entity_id is not None:
             self._open_task_by_id(entity_id)
+            return
+        if item_type == ITEM_TYPE_EXTERNAL_AUDIT and entity_id is not None:
+            metadata = getattr(item, "open_metadata", None) or {}
+            self._open_external_audit_by_id(
+                int(entity_id),
+                focus_tab=metadata.get("focus_tab") or "spis",
+                focus_visit_date=metadata.get("visit_date"),
+            )
+            return
+        if item_type in {
+            ITEM_TYPE_EXTERNAL_AUDIT_NC,
+            ITEM_TYPE_EXTERNAL_AUDIT_PKZ,
+        } and entity_id is not None:
+            metadata = getattr(item, "open_metadata", None) or {}
+            audit_id = metadata.get("audit_id")
+            if audit_id is None:
+                QMessageBox.information(
+                    self,
+                    "Externí audity",
+                    "Zjištění už není dostupné. Seznam bude obnoven.",
+                )
+                self._refresh_dashboard_and_agenda()
+                return
+            self._open_external_audit_by_id(
+                int(audit_id),
+                focus_tab="findings",
+                focus_finding_id=int(entity_id),
+                focus_finding_type=metadata.get("finding_type"),
+            )
             return
         if item_type == ITEM_TYPE_AUDIT and entity_id is not None:
             self._open_audit_by_id(entity_id)
@@ -464,6 +496,48 @@ class MainWindow(QMainWindow):
                 year = today.year
                 month = today.month
             self._open_yearly_plan_month(int(year), int(month))
+
+    def _open_external_audit_by_id(
+        self,
+        audit_id: int,
+        *,
+        focus_tab: str | None = None,
+        focus_visit_date=None,
+        focus_finding_id: int | None = None,
+        focus_finding_type: str | None = None,
+    ) -> None:
+        from core.widgets.dialog_utils import exec_maximized
+        from moduly.externi_audity.sluzby.external_audit_service import (
+            ExternalAuditError,
+            external_audit_service,
+        )
+        from moduly.externi_audity.ui.external_audit_editor_dialog import (
+            ExternalAuditEditorDialog,
+        )
+
+        try:
+            external_audit_service.get_by_id(int(audit_id))
+        except ExternalAuditError:
+            QMessageBox.information(
+                self,
+                "Externí audity",
+                "Externí audit už není dostupný. Seznam bude obnoven.",
+            )
+            self._refresh_dashboard_and_agenda()
+            return
+
+        dashboard = self._page_widgets.get("dashboard")
+        parent = dashboard if dashboard is not None else self
+        dialog = ExternalAuditEditorDialog(
+            parent,
+            audit_id=int(audit_id),
+            focus_tab=focus_tab,
+            focus_visit_date=focus_visit_date,
+            focus_finding_id=focus_finding_id,
+            focus_finding_type=focus_finding_type,
+        )
+        exec_maximized(dialog)
+        self._refresh_dashboard_and_agenda()
 
     def _open_audit_by_id(self, audit_id: int) -> None:
         from moduly.audity.sluzby.audit_service import audit_service

@@ -18,6 +18,9 @@ from PySide6.QtWidgets import (
 
 from core.dashboard.attention_item import (
     ITEM_TYPE_AUDIT,
+    ITEM_TYPE_EXTERNAL_AUDIT,
+    ITEM_TYPE_EXTERNAL_AUDIT_NC,
+    ITEM_TYPE_EXTERNAL_AUDIT_PKZ,
     ITEM_TYPE_INSPECTION,
     ITEM_TYPE_MEETING,
     ITEM_TYPE_OZO_CONTRACT,
@@ -51,6 +54,9 @@ _TYPE_STABLE_PREFIX = {
     ITEM_TYPE_OZO_CONTRACT: 7,
     ITEM_TYPE_OZO_PERSON_CERTIFICATE: 8,
     ITEM_TYPE_QUALIFICATION_CERTIFICATE: 9,
+    ITEM_TYPE_EXTERNAL_AUDIT: 10,
+    ITEM_TYPE_EXTERNAL_AUDIT_NC: 11,
+    ITEM_TYPE_EXTERNAL_AUDIT_PKZ: 12,
 }
 
 _EMPTY_TEXT = "Nejsou evidovány žádné nadcházející události ani úkoly."
@@ -207,9 +213,19 @@ class UpcomingTasksWidget(DashboardPanel):
             self.table.setRowCount(len(items))
 
             for row, attention in enumerate(items):
+                visit_extra = 0
+                visit_raw = (attention.open_metadata or {}).get("visit_date")
+                if visit_raw:
+                    try:
+                        from datetime import date as _date
+
+                        visit_extra = _date.fromisoformat(str(visit_raw)).toordinal() % 100_000
+                    except ValueError:
+                        visit_extra = abs(hash(str(visit_raw))) % 100_000
                 stable_id = (
                     _TYPE_STABLE_PREFIX.get(attention.item_type, 9) * 1_000_000_000
-                    + int(attention.entity_id)
+                    + int(attention.entity_id) * 100_000
+                    + visit_extra
                 )
                 type_item = create_typed_item(
                     attention.type_label,
@@ -242,6 +258,11 @@ class UpcomingTasksWidget(DashboardPanel):
                     typed_text(attention.title),
                     stable_id=stable_id,
                 )
+                tooltip = (attention.detail_tooltip or "").strip()
+                if tooltip:
+                    title_item.setToolTip(tooltip)
+                    type_item.setToolTip(tooltip)
+                    due_item.setToolTip(tooltip)
 
                 priority_rank = PRIORITY_RANK.get(attention.priority) if attention.priority else None
                 priority_sort = (

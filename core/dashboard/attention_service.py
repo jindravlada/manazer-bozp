@@ -6,6 +6,9 @@ from datetime import date, datetime, time
 
 from core.dashboard.attention_item import (
     ITEM_TYPE_AUDIT,
+    ITEM_TYPE_EXTERNAL_AUDIT,
+    ITEM_TYPE_EXTERNAL_AUDIT_NC,
+    ITEM_TYPE_EXTERNAL_AUDIT_PKZ,
     ITEM_TYPE_INSPECTION,
     ITEM_TYPE_MEETING,
     ITEM_TYPE_OZO_CONTRACT,
@@ -15,6 +18,7 @@ from core.dashboard.attention_item import (
     ITEM_TYPE_TASK,
     ITEM_TYPE_YEARLY_PLAN_MONTH,
     SOURCE_LABEL_AUDIT,
+    SOURCE_LABEL_EXTERNAL_AUDIT,
     SOURCE_LABEL_INSPECTION,
     SOURCE_LABEL_OZO_CONTRACT,
     SOURCE_LABEL_OZO_PERSON,
@@ -52,6 +56,17 @@ from moduly.smlouvy_ozo.sluzby.qualification_certificate_service import (
     qualification_certificate_service,
 )
 from moduly.ukoly.sluzby.task_service import task_service
+from moduly.externi_audity.constants import (
+    EXTERNAL_AUDIT_FINDING_STATUS_LABELS,
+    EXTERNAL_AUDIT_FINDING_TYPE_IMPROVEMENT,
+    EXTERNAL_AUDIT_STATUS_LABELS,
+    format_display_date,
+)
+from moduly.externi_audity.sluzby.external_audit_reminder_read_service import (
+    audit_type_label,
+    external_audit_reminder_read_service,
+)
+from moduly.externi_audity.sluzby.external_audit_text import shorten_finding_title
 
 
 def build_sort_key(
@@ -494,6 +509,230 @@ def _from_qualification_certificates(today: date) -> list[AttentionItem]:
     return items
 
 
+def _external_audit_status_label(audit) -> str:
+    return EXTERNAL_AUDIT_STATUS_LABELS.get(
+        str(audit.status), str(audit.status or "")
+    )
+
+
+def _external_finding_item_type(finding_type: str) -> str:
+    if finding_type == EXTERNAL_AUDIT_FINDING_TYPE_IMPROVEMENT:
+        return ITEM_TYPE_EXTERNAL_AUDIT_PKZ
+    return ITEM_TYPE_EXTERNAL_AUDIT_NC
+
+
+def _external_audit_day_tooltip(item) -> str:
+    audit = item.audit
+    workplaces = ", ".join(item.workplace_names) if item.workplace_names else "—"
+    times = ", ".join(item.time_labels) if item.time_labels else "—"
+    return "\n".join(
+        [
+            audit_type_label(audit),
+            f"Organizace: {audit.organization_name or '—'}",
+            f"IČ: {audit.organization_ico or '—'}",
+            f"Provozy: {workplaces}",
+            f"Čas: {times}",
+            f"Stav: {_external_audit_status_label(audit)}",
+        ]
+    )
+
+
+def _external_audit_reminder_tooltip(item) -> str:
+    audit = item.audit
+    workplaces = ", ".join(item.workplace_names) if item.workplace_names else "—"
+    date_range = (
+        f"{format_display_date(item.date_from)} – {format_display_date(item.date_to)}"
+        if item.date_from is not None
+        else "—"
+    )
+    return "\n".join(
+        [
+            audit_type_label(audit),
+            f"Organizace: {audit.organization_name or '—'}",
+            f"IČ: {audit.organization_ico or '—'}",
+            f"Termín: {date_range}",
+            f"Provozy: {workplaces}",
+            f"Stav: {_external_audit_status_label(audit)}",
+        ]
+    )
+
+
+def _external_finding_tooltip(finding, audit) -> str:
+    resolution = str(getattr(finding, "resolution_text", None) or "").strip()
+    lines = [
+        str(finding.description or "").strip() or "—",
+        "",
+        f"Typ auditu: {audit_type_label(audit)}",
+        f"Organizace: {audit.organization_name or '—'}",
+        f"Stav zjištění: {EXTERNAL_AUDIT_FINDING_STATUS_LABELS.get(str(finding.status), finding.status)}",
+        f"Termín: {format_display_date(finding.due_date)}",
+    ]
+    if resolution:
+        lines.append(f"Způsob vypořádání: {resolution}")
+    return "\n".join(lines)
+
+
+def _from_external_audit_days(today: date) -> list[AttentionItem]:
+    items: list[AttentionItem] = []
+    for day in external_audit_reminder_read_service.list_upcoming(as_of=today):
+        audit_id = int(day.audit.id)
+        identity = f"external-audit:{audit_id}:{day.visit_date.isoformat()}"
+        items.append(
+            AttentionItem(
+                item_type=ITEM_TYPE_EXTERNAL_AUDIT,
+                source_type=ITEM_TYPE_EXTERNAL_AUDIT,
+                source_id=audit_id,
+                title="Externí audit",
+                date=day.visit_date,
+                subtitle=SOURCE_LABEL_EXTERNAL_AUDIT,
+                status=_external_audit_status_label(day.audit),
+                priority="",
+                open_metadata={
+                    "source_type": ITEM_TYPE_EXTERNAL_AUDIT,
+                    "source_id": audit_id,
+                    "visit_date": day.visit_date.isoformat(),
+                    "focus_tab": "program",
+                    "identity": identity,
+                },
+                sort_key=build_sort_key(
+                    day.visit_date,
+                    item_type=ITEM_TYPE_EXTERNAL_AUDIT,
+                    title="Externí audit",
+                    source_id=audit_id,
+                ),
+                detail_tooltip=_external_audit_day_tooltip(day),
+                identity_key=identity,
+            )
+        )
+    return items
+
+
+def _from_external_findings_upcoming(today: date) -> list[AttentionItem]:
+    items: list[AttentionItem] = []
+    for row in external_audit_reminder_read_service.list_upcoming_findings(as_of=today):
+        finding = row.finding
+        audit = row.audit
+        finding_id = int(finding.id)
+        item_type = _external_finding_item_type(str(finding.finding_type))
+        title = shorten_finding_title(finding.description) or "—"
+        identity = f"external-audit-finding:{finding_id}"
+        items.append(
+            AttentionItem(
+                item_type=item_type,
+                source_type=item_type,
+                source_id=finding_id,
+                title=title,
+                date=row.due_date,
+                subtitle=SOURCE_LABEL_EXTERNAL_AUDIT,
+                status=EXTERNAL_AUDIT_FINDING_STATUS_LABELS.get(
+                    str(finding.status), str(finding.status or "")
+                ),
+                priority="",
+                open_metadata={
+                    "source_type": item_type,
+                    "source_id": finding_id,
+                    "audit_id": int(audit.id),
+                    "finding_type": str(finding.finding_type),
+                    "focus_tab": "findings",
+                    "identity": identity,
+                },
+                sort_key=build_sort_key(
+                    row.due_date,
+                    item_type=item_type,
+                    title=title,
+                    source_id=finding_id,
+                ),
+                detail_tooltip=_external_finding_tooltip(finding, audit),
+                identity_key=identity,
+            )
+        )
+    return items
+
+
+def get_external_audit_reminder_items(
+    *, today: date | None = None
+) -> list[AttentionItem]:
+    """Připomínky externích auditů — jeden řádek za audit."""
+    today = today or date.today()
+    items: list[AttentionItem] = []
+    for row in external_audit_reminder_read_service.list_audit_reminders(as_of=today):
+        audit_id = int(row.audit.id)
+        identity = f"external-audit:{audit_id}"
+        items.append(
+            AttentionItem(
+                item_type=ITEM_TYPE_EXTERNAL_AUDIT,
+                source_type=ITEM_TYPE_EXTERNAL_AUDIT,
+                source_id=audit_id,
+                title="Externí audit",
+                date=row.date_from,
+                subtitle=SOURCE_LABEL_EXTERNAL_AUDIT,
+                status=_external_audit_status_label(row.audit),
+                priority="",
+                open_metadata={
+                    "source_type": ITEM_TYPE_EXTERNAL_AUDIT,
+                    "source_id": audit_id,
+                    "focus_tab": "spis",
+                    "identity": identity,
+                },
+                sort_key=build_sort_key(
+                    row.date_from,
+                    item_type=ITEM_TYPE_EXTERNAL_AUDIT,
+                    title="Externí audit",
+                    source_id=audit_id,
+                ),
+                detail_tooltip=_external_audit_reminder_tooltip(row),
+                identity_key=identity,
+            )
+        )
+    return items
+
+
+def get_external_finding_reminder_items(
+    *, today: date | None = None
+) -> list[AttentionItem]:
+    """Připomínky Neshod/PKZ od termínu do Vypořádáno."""
+    today = today or date.today()
+    items: list[AttentionItem] = []
+    for row in external_audit_reminder_read_service.list_finding_reminders(as_of=today):
+        finding = row.finding
+        audit = row.audit
+        finding_id = int(finding.id)
+        item_type = _external_finding_item_type(str(finding.finding_type))
+        title = shorten_finding_title(finding.description) or "—"
+        identity = f"external-audit-finding:{finding_id}"
+        items.append(
+            AttentionItem(
+                item_type=item_type,
+                source_type=item_type,
+                source_id=finding_id,
+                title=title,
+                date=row.due_date,
+                subtitle=SOURCE_LABEL_EXTERNAL_AUDIT,
+                status=EXTERNAL_AUDIT_FINDING_STATUS_LABELS.get(
+                    str(finding.status), str(finding.status or "")
+                ),
+                priority="",
+                open_metadata={
+                    "source_type": item_type,
+                    "source_id": finding_id,
+                    "audit_id": int(audit.id),
+                    "finding_type": str(finding.finding_type),
+                    "focus_tab": "findings",
+                    "identity": identity,
+                },
+                sort_key=build_sort_key(
+                    row.due_date,
+                    item_type=item_type,
+                    title=title,
+                    source_id=finding_id,
+                ),
+                detail_tooltip=_external_finding_tooltip(finding, audit),
+                identity_key=identity,
+            )
+        )
+    return items
+
+
 def get_periodic_reminder_items(*, today: date | None = None) -> list[AttentionItem]:
     """Periodické činnosti od data připomenutí — pro panel Připomínky."""
     today = today or date.today()
@@ -520,6 +759,8 @@ def get_attention_items(*, today: date | None = None) -> list[AttentionItem]:
     items = (
         _from_tasks(today)
         + _from_audits(today)
+        + _from_external_audit_days(today)
+        + _from_external_findings_upcoming(today)
         + _from_inspections(today)
         + _from_meetings(today)
         + _from_periodics(today)

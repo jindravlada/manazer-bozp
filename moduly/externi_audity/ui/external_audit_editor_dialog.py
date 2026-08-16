@@ -85,10 +85,23 @@ TAB_ATTACHMENTS = 4
 
 
 class ExternalAuditEditorDialog(QDialog):
-    def __init__(self, parent=None, *, audit_id: int | None = None):
+    def __init__(
+        self,
+        parent=None,
+        *,
+        audit_id: int | None = None,
+        focus_tab: str | None = None,
+        focus_visit_date: date | str | None = None,
+        focus_finding_id: int | None = None,
+        focus_finding_type: str | None = None,
+    ):
         super().__init__(parent)
         self._closing = False
         self._baseline: dict | None = None
+        self._focus_tab = focus_tab
+        self._focus_visit_date = focus_visit_date
+        self._focus_finding_id = focus_finding_id
+        self._focus_finding_type = focus_finding_type
         self._draft = external_audit_service.load_draft(audit_id)
         self.setWindowTitle(
             EXTERNAL_AUDIT_EDITOR_TITLE_EDIT
@@ -132,6 +145,40 @@ class ExternalAuditEditorDialog(QDialog):
         self._load_draft_into_widgets()
         self._capture_baseline()
         self._refresh_attachment_gate()
+        self._apply_initial_focus()
+
+    def _apply_initial_focus(self) -> None:
+        focus = str(self._focus_tab or "").strip().lower()
+        if focus in {"program", "program"}:
+            self.tabs.setCurrentIndex(TAB_PROGRAM)
+            self._select_visit_date(self._focus_visit_date)
+        elif focus in {"findings", "zjištění", "zjisteni"}:
+            self.tabs.setCurrentIndex(TAB_FINDINGS)
+            if self._focus_finding_id is not None:
+                self.findings.focus_finding(
+                    int(self._focus_finding_id),
+                    self._focus_finding_type,
+                )
+        elif focus in {"spis", "file"}:
+            self.tabs.setCurrentIndex(TAB_SPIS)
+        elif focus in {"participants", "účastníci", "ucastnici"}:
+            self.tabs.setCurrentIndex(TAB_PARTICIPANTS)
+
+    def _select_visit_date(self, visit_date: date | str | None) -> None:
+        if visit_date is None:
+            return
+        if isinstance(visit_date, str):
+            try:
+                visit_date = date.fromisoformat(visit_date)
+            except ValueError:
+                return
+        for row, visit in enumerate(self._draft.visits):
+            if visit.visit_date == visit_date:
+                self.visits_table.selectRow(row)
+                item = self.visits_table.item(row, 0)
+                if item is not None:
+                    self.visits_table.scrollToItem(item)
+                return
 
     def _on_tab_changed(self, index: int) -> None:
         if index == TAB_PARTICIPANTS:

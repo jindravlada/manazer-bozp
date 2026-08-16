@@ -9,6 +9,9 @@ from typing import Any
 
 ITEM_TYPE_TASK = "task"
 ITEM_TYPE_AUDIT = "audit"
+ITEM_TYPE_EXTERNAL_AUDIT = "external_audit"
+ITEM_TYPE_EXTERNAL_AUDIT_NC = "external_audit_nonconformity"
+ITEM_TYPE_EXTERNAL_AUDIT_PKZ = "external_audit_improvement"
 ITEM_TYPE_INSPECTION = "inspection"
 ITEM_TYPE_MEETING = "meeting"
 ITEM_TYPE_PERIODIC = "periodic"
@@ -22,6 +25,9 @@ ITEM_TYPE_BOZP_INSPECTION = ITEM_TYPE_INSPECTION
 TYPE_LABELS = {
     ITEM_TYPE_TASK: "Úkol",
     ITEM_TYPE_AUDIT: "Audit",
+    ITEM_TYPE_EXTERNAL_AUDIT: "Audit",
+    ITEM_TYPE_EXTERNAL_AUDIT_NC: "Neshoda",
+    ITEM_TYPE_EXTERNAL_AUDIT_PKZ: "PKZ",
     ITEM_TYPE_INSPECTION: "Prověrka",
     ITEM_TYPE_MEETING: "Událost",
     ITEM_TYPE_PERIODIC: "Periodická činnost",
@@ -32,6 +38,7 @@ TYPE_LABELS = {
 }
 
 SOURCE_LABEL_AUDIT = "Audit systému řízení"
+SOURCE_LABEL_EXTERNAL_AUDIT = "Externí audit"
 SOURCE_LABEL_INSPECTION = "Prověrka BOZP"
 SOURCE_LABEL_PERIODIC = "Periodická činnost"
 SOURCE_LABEL_YEARLY_PLAN = "Roční plán"
@@ -61,6 +68,8 @@ class AttentionItem:
     ends_at: datetime | None = None
     open_metadata: dict[str, Any] = field(default_factory=dict)
     sort_key: tuple = ()
+    detail_tooltip: str = ""
+    identity_key: str = ""
 
     @property
     def type_label(self) -> str:

@@ -317,7 +317,14 @@ class ExternalAuditEa2Fix1Tests(unittest.TestCase):
                 self.task = None
                 self._create_kwargs = dict(create_kwargs or {})
                 self._create_factory = create_factory
-                self.title_edit = type("T", (), {"setPlainText": lambda *a, **k: None})()
+                self._title = ""
+                self.title_edit = type(
+                    "T",
+                    (),
+                    {
+                        "setPlainText": lambda _s, text: setattr(self, "_title", text),
+                    },
+                )()
                 self.workplace_selector = type(
                     "W", (), {"set_workplace_id": lambda *a, **k: None}
                 )()
@@ -330,7 +337,7 @@ class ExternalAuditEa2Fix1Tests(unittest.TestCase):
             def exec(self):
                 # Simulace TaskDialog.get_data() + create_factory (bez create_kwargs)
                 data = {
-                    "title": "Externí audit – neshoda: Neshoda pro úkol",
+                    "title": self._title or "Neshoda pro úkol",
                     "description": "",
                     "priority": "Normální",
                     "due_date": date.today(),
@@ -348,6 +355,7 @@ class ExternalAuditEa2Fix1Tests(unittest.TestCase):
                 }
                 assert self._create_kwargs == {}
                 assert set(data) & set(self._create_kwargs) == set()
+                captured["title"] = data["title"]
                 self.task = self._create_factory(data)
                 return QDialog.DialogCode.Rejected  # Uložit → Zavřít bez Accepted
 
@@ -359,12 +367,16 @@ class ExternalAuditEa2Fix1Tests(unittest.TestCase):
 
         self.assertTrue(captured["has_factory"])
         self.assertEqual(captured["create_kwargs"], {})
+        self.assertEqual(captured.get("title"), "Neshoda pro úkol")
+        self.assertNotIn("Externí audit", captured.get("title") or "")
         links = external_audit_service.list_finding_task_ids(finding_id)
         self.assertEqual(len(links), 1)
         task = task_service.get_task_by_id(links[0])
         self.assertIsNotNone(task)
+        self.assertEqual(task.title, "Neshoda pro úkol")
         self.assertIn("Typ auditu:", task.description)
         self.assertIn("Neshoda pro úkol", task.description)
+        self.assertIn("Vzniklo z externího auditu", task.description)
 
     def test_07_task_save_then_close_links_once_for_nc_and_pkz(self) -> None:
         for finding_type, panel_attr in (

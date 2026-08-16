@@ -44,6 +44,7 @@ from moduly.externi_audity.sluzby.external_audit_service import (
     ExternalAuditError,
     external_audit_service,
 )
+from moduly.externi_audity.sluzby.external_audit_text import shorten_finding_title
 from moduly.externi_audity.ui.external_audit_finding_dialog import (
     ExternalAuditFindingDialog,
 )
@@ -52,20 +53,6 @@ from moduly.ukoly.ui.task_dialog import TaskDialog
 
 FILTER_ALL = "__all__"
 TITLE_FINDINGS = "Zjištění"
-TASK_TITLE_MAX = 80
-
-
-def _short_text(value: str, limit: int = TASK_TITLE_MAX) -> str:
-    text = " ".join(str(value or "").split())
-    if len(text) <= limit:
-        return text
-    return text[: max(0, limit - 1)].rstrip() + "…"
-
-
-def _task_title_prefix(finding_type: str) -> str:
-    if finding_type == EXTERNAL_AUDIT_FINDING_TYPE_NONCONFORMITY:
-        return "Externí audit – neshoda"
-    return "Externí audit – PKZ"
 
 
 def _task_description(draft: ExternalAuditDraft, finding: FindingDraft) -> str:
@@ -73,9 +60,14 @@ def _task_description(draft: ExternalAuditDraft, finding: FindingDraft) -> str:
         draft.audit_type, draft.audit_type or "—"
     )
     org = str(draft.organization_name or "").strip() or "—"
+    finding_label = EXTERNAL_AUDIT_FINDING_TYPE_LABELS.get(
+        finding.finding_type, finding.finding_type or "—"
+    )
     return (
+        "Vzniklo z externího auditu.\n"
         f"Typ auditu: {audit_type}\n"
-        f"Externí organizace: {org}\n\n"
+        f"Externí organizace: {org}\n"
+        f"Typ zjištění: {finding_label}\n\n"
         f"Zjištění:\n{finding.description.strip()}"
     )
 
@@ -429,7 +421,7 @@ class _FindingTypePanel(QWidget):
         if len(workplace_ids) == 1:
             workplace_id = next(iter(workplace_ids))
 
-        title = f"{_task_title_prefix(finding.finding_type)}: {_short_text(finding.description)}"
+        title = shorten_finding_title(finding.description) or "Úkol"
         task_description = _task_description(draft, finding)
         finding_db_id = int(finding.db_id)
 
@@ -591,6 +583,29 @@ class _FindingTypePanel(QWidget):
         self.open_task_btn.setEnabled(self._selected_task_id() is not None)
         self.refresh_tasks_btn.setEnabled(True)
 
+    def select_finding_db_id(self, finding_id: int) -> bool:
+        """Označí zjištění podle DB ID; vrátí True při úspěchu."""
+        target = None
+        for item in self._get_draft().findings_for_type(self._finding_type):
+            if item.db_id is not None and int(item.db_id) == int(finding_id):
+                target = item
+                break
+        if target is None:
+            return False
+        if self.status_filter is not None:
+            index = self.status_filter.findData(FILTER_ALL)
+            if index >= 0:
+                self.status_filter.setCurrentIndex(index)
+        self.refresh()
+        for row, key in enumerate(self._visible_keys):
+            if key == target.client_key:
+                self.table.selectRow(row)
+                item = self.table.item(row, 0)
+                if item is not None:
+                    self.table.scrollToItem(item)
+                return True
+        return False
+
 
 class ExternalAuditFindingsWidget(QWidget):
     def __init__(
@@ -639,3 +654,21 @@ class ExternalAuditFindingsWidget(QWidget):
         self.nc_panel.refresh()
         self.pkz_panel.refresh()
         self.strength_panel.refresh()
+
+    def focus_finding(self, finding_id: int, finding_type: str | None = None) -> bool:
+        """Přepne podzáložku a označí zjištění."""
+        ftype = str(finding_type or "")
+        if ftype == EXTERNAL_AUDIT_FINDING_TYPE_IMPROVEMENT:
+            self.subtabs.setCurrentWidget(self.pkz_panel)
+            return self.pkz_panel.select_finding_db_id(int(finding_id))
+        if ftype == EXTERNAL_AUDIT_FINDING_TYPE_STRENGTH:
+            self.subtabs.setCurrentWidget(self.strength_panel)
+            return self.strength_panel.select_finding_db_id(int(finding_id))
+        # Výchozí / neshoda
+        self.subtabs.setCurrentWidget(self.nc_panel)
+        if self.nc_panel.select_finding_db_id(int(finding_id)):
+            return True
+        if self.pkz_panel.select_finding_db_id(int(finding_id)):
+            self.subtabs.setCurrentWidget(self.pkz_panel)
+            return True
+        return False
