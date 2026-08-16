@@ -15,8 +15,10 @@ from PySide6.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QMessageBox,
+    QSizePolicy,
     QTextEdit,
     QVBoxLayout,
+    QWidget,
 )
 
 from core.widgets.dialog_utils import configure_resizable_form_dialog
@@ -75,6 +77,14 @@ class ExternalAuditVisitDialog(QDialog):
 
         layout = QVBoxLayout(self)
         form = QFormLayout()
+        form.setVerticalSpacing(12)
+        form.setHorizontalSpacing(10)
+        form.setLabelAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        )
+        form.setFieldGrowthPolicy(
+            QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow
+        )
 
         self.visit_date = NullableDateEdit()
         if visit is not None:
@@ -83,15 +93,36 @@ class ExternalAuditVisitDialog(QDialog):
             self.visit_date.set_date_value(date.today())
         form.addRow("Datum *:", self.visit_date)
 
-        time_row = QHBoxLayout()
+        # Wrapper widget (ne holý QHBoxLayout) — jinak QFormLayout těsně ořízne
+        # spodní rámeček NullableTimeEdit (min. výška line editu 34 px).
+        time_wrap = QWidget()
+        time_row = QHBoxLayout(time_wrap)
+        time_row.setContentsMargins(0, 4, 0, 4)
+        time_row.setSpacing(8)
+        time_row.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         self.time_from = NullableTimeEdit()
         self.time_to = NullableTimeEdit()
         _apply_stored_time(self.time_from, visit.time_from if visit else None)
         _apply_stored_time(self.time_to, visit.time_to if visit else None)
+        self.time_from.setSizePolicy(
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred
+        )
+        self.time_to.setSizePolicy(
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred
+        )
+        separator = QLabel("–")
+        separator.setAlignment(Qt.AlignmentFlag.AlignCenter)
         time_row.addWidget(self.time_from)
-        time_row.addWidget(QLabel("–"))
+        time_row.addWidget(separator)
         time_row.addWidget(self.time_to)
-        form.addRow("Čas od / do:", time_row)
+        time_row.addStretch(1)
+        min_h = max(
+            self.time_from.sizeHint().height(),
+            self.time_to.sizeHint().height(),
+            34,
+        )
+        time_wrap.setMinimumHeight(min_h + 8)
+        form.addRow("Čas od / do:", time_wrap)
 
         self.workplace = QComboBox()
         self.workplace.addItem("— vyberte provoz —", None)

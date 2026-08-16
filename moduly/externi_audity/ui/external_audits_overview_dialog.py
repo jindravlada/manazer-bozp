@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
 
 from core.widgets.dialog_utils import configure_close_push_button, exec_maximized
 from core.widgets.filter_bar import FilterBar
+from core.widgets.table_utils import apply_cell_tooltip, configure_table_columns
 from core.widgets.typed_table_sort import (
     create_typed_item,
     enable_typed_sorting,
@@ -115,9 +116,14 @@ class ExternalAuditsOverviewDialog(QDialog):
         self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.verticalHeader().setVisible(False)
+        self.table.setTextElideMode(Qt.TextElideMode.ElideRight)
+        self.table.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded
+        )
         self.table.doubleClicked.connect(self.edit_selected)
         self.table.itemSelectionChanged.connect(self._refresh_actions)
         enable_typed_sorting(self.table)
+        configure_table_columns(self.table, "external_audits_overview")
         header = self.table.horizontalHeader()
         header.setToolTip("")
         self.table.horizontalHeaderItem(COL_NC).setToolTip(
@@ -245,11 +251,12 @@ class ExternalAuditsOverviewDialog(QDialog):
             cells[COL_TASKS].setToolTip(
                 "Úkoly: aktivní / dokončené / zrušené"
             )
+            apply_cell_tooltip(cells[COL_ORG], row.organization_name)
+            apply_cell_tooltip(cells[COL_WP], row.workplaces_label)
             for col, item in enumerate(cells):
                 if col == COL_ORG:
                     item.setData(Qt.ItemDataRole.UserRole, row.audit_id)
                 self.table.setItem(index, col, item)
-        self.table.resizeColumnsToContents()
         self.text_filter.apply_filter()
         self._refresh_actions()
 

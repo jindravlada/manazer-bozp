@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.widgets.table_utils import apply_cell_tooltip, configure_table_columns
 from core.widgets.typed_table_sort import (
     create_typed_item,
     enable_typed_sorting,
@@ -141,9 +142,19 @@ class _FindingTypePanel(QWidget):
         self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.verticalHeader().setVisible(False)
+        self.table.setTextElideMode(Qt.TextElideMode.ElideRight)
+        self.table.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded
+        )
         self.table.doubleClicked.connect(self.edit_selected)
         self.table.itemSelectionChanged.connect(self._on_finding_selection_changed)
         enable_typed_sorting(self.table)
+        configure_table_columns(
+            self.table,
+            "external_audit_findings_strength"
+            if self._is_strength
+            else "external_audit_findings",
+        )
         layout.addWidget(self.table, 1)
 
         if not self._is_strength:
@@ -264,8 +275,8 @@ class _FindingTypePanel(QWidget):
             for col, cell in enumerate(cells):
                 if col == 0:
                     cell.setData(Qt.ItemDataRole.UserRole, item.client_key)
+                    apply_cell_tooltip(cell, item.description)
                 self.table.setItem(row, col, cell)
-        self.table.resizeColumnsToContents()
         self._refresh_actions()
         if not self._is_strength:
             self.refresh_tasks()

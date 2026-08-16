@@ -276,11 +276,17 @@ class ExternalAuditEditorDialog(QDialog):
         self.visits_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.visits_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.visits_table.verticalHeader().setVisible(False)
+        self.visits_table.setTextElideMode(Qt.TextElideMode.ElideRight)
+        self.visits_table.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded
+        )
         self.visits_table.itemSelectionChanged.connect(self._refresh_visit_actions)
         self.visits_table.doubleClicked.connect(self._edit_visit)
+        from core.widgets.table_utils import configure_table_columns
         from core.widgets.typed_table_sort import enable_typed_sorting
 
         enable_typed_sorting(self.visits_table)
+        configure_table_columns(self.visits_table, "external_audit_program")
         layout.addWidget(self.visits_table, 1)
 
         self.visit_add_btn.clicked.connect(self._add_visit)
@@ -453,6 +459,7 @@ class ExternalAuditEditorDialog(QDialog):
         return ", ".join(names)
 
     def _refresh_visits_table(self) -> None:
+        from core.widgets.table_utils import apply_cell_tooltip
         from core.widgets.typed_table_sort import create_typed_item, typed_date, typed_text
 
         visits = list(self._draft.visits)
@@ -493,8 +500,9 @@ class ExternalAuditEditorDialog(QDialog):
                     item = create_typed_item(text, sort_value)
                 if col == 0:
                     item.setData(Qt.ItemDataRole.UserRole, visit.client_key)
+                if col >= 3:
+                    apply_cell_tooltip(item, text)
                 self.visits_table.setItem(row, col, item)
-        self.visits_table.resizeColumnsToContents()
         self._refresh_visit_actions()
         self._refresh_dates()
 

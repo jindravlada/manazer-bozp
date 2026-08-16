@@ -1137,6 +1137,35 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             table.setColumnWidth(column, 62)
         table.setAlternatingRowColors(False)
 
+    elif profile == "external_audits_overview":
+        # Kompaktní sloupce podle obsahu; organizace + provozy vyplní zbývající šířku.
+        for column in range(table.columnCount()):
+            header.setSectionResizeMode(column, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(3, QHeaderView.Stretch)  # Externí organizace
+        header.setSectionResizeMode(5, QHeaderView.Stretch)  # Provozy
+        header.setMinimumSectionSize(56)
+        header.setStretchLastSection(False)
+
+    elif profile == "external_audit_program":
+        for column in range(table.columnCount()):
+            header.setSectionResizeMode(column, QHeaderView.ResizeToContents)
+        for column in (3, 4, 5, 6, 7):  # Provoz, role, poznámka
+            header.setSectionResizeMode(column, QHeaderView.Stretch)
+        header.setMinimumSectionSize(56)
+        header.setStretchLastSection(False)
+
+    elif profile == "external_audit_findings":
+        for column in range(table.columnCount()):
+            header.setSectionResizeMode(column, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(0, QHeaderView.Stretch)  # Text zjištění
+        header.setMinimumSectionSize(56)
+        header.setStretchLastSection(False)
+
+    elif profile == "external_audit_findings_strength":
+        header.setSectionResizeMode(0, QHeaderView.Stretch)
+        header.setMinimumSectionSize(56)
+        header.setStretchLastSection(True)
+
     table.verticalHeader().setVisible(False)
     if profile not in ("controls_year_matrix", "yearly_plan"):
         table.setAlternatingRowColors(True)
