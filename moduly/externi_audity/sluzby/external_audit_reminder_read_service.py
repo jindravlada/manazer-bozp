@@ -78,13 +78,6 @@ class ReminderExternalFindingItem:
     due_date: date
 
 
-@dataclass(frozen=True)
-class UpcomingExternalFindingItem:
-    finding: ExternalAuditFinding
-    audit: ExternalAudit
-    due_date: date
-
-
 @dataclass
 class _AuditBundle:
     audit: ExternalAudit
@@ -196,33 +189,13 @@ class ExternalAuditReminderReadService:
         )
         return items
 
-    def list_upcoming_findings(
-        self, *, as_of: date | None = None
-    ) -> list[UpcomingExternalFindingItem]:
-        """Neshoda/PKZ s due_date >= today, stavy Otevřeno/Řeší se; ne Zrušený audit."""
-        today = as_of or date.today()
-        items: list[UpcomingExternalFindingItem] = []
-        for finding, audit in self._load_open_findings():
-            if str(audit.status) == EXTERNAL_AUDIT_STATUS_CANCELLED:
-                continue
-            due = finding.due_date
-            if due is None or due < today:
-                continue
-            items.append(
-                UpcomingExternalFindingItem(
-                    finding=finding,
-                    audit=audit,
-                    due_date=due,
-                )
-            )
-        items.sort(key=lambda item: (item.due_date, int(item.finding.id)))
-        return items
-
     def list_finding_reminders(
         self, *, as_of: date | None = None
     ) -> list[ReminderExternalFindingItem]:
         """
-        Neshoda/PKZ: od due_date (včetně) do Vypořádáno.
+        Připomínky Neshoda/PKZ: od due_date (včetně) do Vypořádáno.
+
+        Neshody/PKZ se do Nadcházejících neposílají — konkrétní práce jde přes úkoly Agendy.
         Zrušený audit → nezobrazovat. Uzavřený audit otevřené zjištění ponechá.
         """
         today = as_of or date.today()

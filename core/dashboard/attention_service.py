@@ -607,48 +607,6 @@ def _from_external_audit_days(today: date) -> list[AttentionItem]:
     return items
 
 
-def _from_external_findings_upcoming(today: date) -> list[AttentionItem]:
-    items: list[AttentionItem] = []
-    for row in external_audit_reminder_read_service.list_upcoming_findings(as_of=today):
-        finding = row.finding
-        audit = row.audit
-        finding_id = int(finding.id)
-        item_type = _external_finding_item_type(str(finding.finding_type))
-        title = shorten_finding_title(finding.description) or "—"
-        identity = f"external-audit-finding:{finding_id}"
-        items.append(
-            AttentionItem(
-                item_type=item_type,
-                source_type=item_type,
-                source_id=finding_id,
-                title=title,
-                date=row.due_date,
-                subtitle=SOURCE_LABEL_EXTERNAL_AUDIT,
-                status=EXTERNAL_AUDIT_FINDING_STATUS_LABELS.get(
-                    str(finding.status), str(finding.status or "")
-                ),
-                priority="",
-                open_metadata={
-                    "source_type": item_type,
-                    "source_id": finding_id,
-                    "audit_id": int(audit.id),
-                    "finding_type": str(finding.finding_type),
-                    "focus_tab": "findings",
-                    "identity": identity,
-                },
-                sort_key=build_sort_key(
-                    row.due_date,
-                    item_type=item_type,
-                    title=title,
-                    source_id=finding_id,
-                ),
-                detail_tooltip=_external_finding_tooltip(finding, audit),
-                identity_key=identity,
-            )
-        )
-    return items
-
-
 def get_external_audit_reminder_items(
     *, today: date | None = None
 ) -> list[AttentionItem]:
@@ -751,16 +709,14 @@ def get_yearly_plan_month_reminder_items(
 def get_attention_items(*, today: date | None = None) -> list[AttentionItem]:
     """Vrátí položky pro Nadcházející (včetně periodik a měsíčního plánu).
 
-    Připomínky berou periodiky / měsíční plán zvlášť přes
-    get_periodic_reminder_items / get_yearly_plan_month_reminder_items —
-    souběh obou panelů je záměr.
+    Externí Neshody/PKZ sem nepatří — jen dny programu auditu a úkoly Agendy.
+    Připomínky findings berou get_external_finding_reminder_items.
     """
     today = today or date.today()
     items = (
         _from_tasks(today)
         + _from_audits(today)
         + _from_external_audit_days(today)
-        + _from_external_findings_upcoming(today)
         + _from_inspections(today)
         + _from_meetings(today)
         + _from_periodics(today)

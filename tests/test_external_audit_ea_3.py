@@ -162,7 +162,11 @@ class ExternalAuditEa3Tests(unittest.TestCase):
         days = [item.visit_date for item in upcoming if item.audit.id == audit.id]
         self.assertEqual(days, [date(2026, 9, 10), date(2026, 9, 11), date(2026, 9, 12)])
 
-        day11 = next(item for item in upcoming if item.visit_date == date(2026, 9, 11))
+        day11 = next(
+            item
+            for item in upcoming
+            if item.audit.id == audit.id and item.visit_date == date(2026, 9, 11)
+        )
         self.assertEqual(len(day11.workplace_names), 2)
         self.assertTrue(any("09:00" in t for t in day11.time_labels))
 
@@ -361,41 +365,30 @@ class ExternalAuditEa3Tests(unittest.TestCase):
         )
         as_of = date(2026, 9, 10)
 
-        upcoming = {
-            int(item.finding.id): item
-            for item in external_audit_reminder_read_service.list_upcoming_findings(
-                as_of=as_of
-            )
-        }
         reminders = {
             int(item.finding.id): item
             for item in external_audit_reminder_read_service.list_finding_reminders(
                 as_of=as_of
             )
         }
-        self.assertIn(future.id, upcoming)
-        self.assertNotIn(future.id, reminders)
-        self.assertIn(today_f.id, upcoming)
-        self.assertIn(today_f.id, reminders)
-        self.assertNotIn(past.id, upcoming)
-        self.assertIn(past.id, reminders)
-        self.assertNotIn(no_due.id, upcoming)
-        self.assertNotIn(no_due.id, reminders)
-        self.assertNotIn(strength.id, upcoming)
-        self.assertNotIn(strength.id, reminders)
-
+        # FIX1: findings nejsou v Nadcházejících (ani přes read API upcoming findings)
         attention = get_attention_items(today=as_of)
-        nc = next(
-            item
-            for item in attention
-            if item.item_type == ITEM_TYPE_EXTERNAL_AUDIT_NC
-            and item.source_id == future.id
+        finding_types = {
+            ITEM_TYPE_EXTERNAL_AUDIT_NC,
+            ITEM_TYPE_EXTERNAL_AUDIT_PKZ,
+        }
+        self.assertFalse(
+            any(
+                item.item_type in finding_types
+                and item.source_id in {future.id, today_f.id, past.id, no_due.id}
+                for item in attention
+            )
         )
-        self.assertEqual(nc.title, "Budoucí neshoda text")
-        self.assertEqual(nc.subtitle, SOURCE_LABEL_EXTERNAL_AUDIT)
-        self.assertEqual(nc.priority, "")
-        self.assertNotIn("Externí audit –", nc.title)
-        self.assertEqual(nc.identity_key, f"external-audit-finding:{future.id}")
+        self.assertNotIn(future.id, reminders)
+        self.assertIn(today_f.id, reminders)
+        self.assertIn(past.id, reminders)
+        self.assertNotIn(no_due.id, reminders)
+        self.assertNotIn(strength.id, reminders)
 
         pkz = next(
             item
@@ -404,6 +397,9 @@ class ExternalAuditEa3Tests(unittest.TestCase):
         )
         self.assertEqual(pkz.item_type, ITEM_TYPE_EXTERNAL_AUDIT_PKZ)
         self.assertEqual(pkz.title, "Dnešní PKZ text")
+        self.assertEqual(pkz.subtitle, SOURCE_LABEL_EXTERNAL_AUDIT)
+        self.assertNotIn("Externí audit –", pkz.title)
+        self.assertEqual(pkz.identity_key, f"external-audit-finding:{today_f.id}")
         self.assertIn("Dnešní PKZ text", pkz.detail_tooltip)
 
         external_audit_service.resolve_finding(past.id, resolution_text="Hotovo")
@@ -468,10 +464,9 @@ class ExternalAuditEa3Tests(unittest.TestCase):
         )
         self.assertFalse(
             any(
-                int(item.finding.id) == cf.id
-                for item in external_audit_reminder_read_service.list_upcoming_findings(
-                    as_of=as_of
-                )
+                item.item_type == ITEM_TYPE_EXTERNAL_AUDIT_NC
+                and item.source_id == cf.id
+                for item in get_attention_items(today=as_of)
             )
         )
 
@@ -605,7 +600,7 @@ class ExternalAuditEa3Tests(unittest.TestCase):
         reloaded = task_service.get_task_by_id(existing.id)
         self.assertEqual(reloaded.title, old_title)
 
-        # Úkol se neobjeví podruhé jako EA položka (jen jako task)
+        # Úkol se zobrazí přes Agendu; Neshoda/PKZ v Nadcházejících není
         attention = get_attention_items(today=date(2026, 9, 15))
         ea_finding_ids = {
             item.source_id
@@ -613,7 +608,7 @@ class ExternalAuditEa3Tests(unittest.TestCase):
             if item.item_type
             in {ITEM_TYPE_EXTERNAL_AUDIT_NC, ITEM_TYPE_EXTERNAL_AUDIT_PKZ}
         }
-        self.assertIn(finding_id, ea_finding_ids)
+        self.assertNotIn(finding_id, ea_finding_ids)
         task_items = [
             item
             for item in attention
@@ -670,7 +665,7 @@ class ExternalAuditEa3Tests(unittest.TestCase):
         finally:
             conn.close()
 
-        # Počet SELECT přes session: list_upcoming + list_upcoming_findings
+        # Počet SELECT přes session: list_upcoming + reminders (audit + findings)
         # musí být O(1) rel. k počtu auditů (ne 1 SELECT na audit).
         with patch.object(
             session_module,
@@ -681,16 +676,21 @@ class ExternalAuditEa3Tests(unittest.TestCase):
             external_audit_reminder_read_service.list_audit_reminders(
                 as_of=date(2026, 9, 15)
             )
-            external_audit_reminder_read_service.list_upcoming_findings(
-                as_of=date(2026, 9, 15)
-            )
             external_audit_reminder_read_service.list_finding_reminders(
                 as_of=date(2026, 9, 15)
             )
-            # Každá metoda = 1 session (bundles 1×, findings 1×) → ≤ 4
-            self.assertLessEqual(wrapped.call_count, 4)
+            # Každá metoda = 1 session → ≤ 3
+            self.assertLessEqual(wrapped.call_count, 3)
 
-        get_attention_items(today=date(2026, 9, 15))
+        # Nadcházející nenačítá findings
+        attention = get_attention_items(today=date(2026, 9, 15))
+        self.assertFalse(
+            any(
+                item.item_type
+                in {ITEM_TYPE_EXTERNAL_AUDIT_NC, ITEM_TYPE_EXTERNAL_AUDIT_PKZ}
+                for item in attention
+            )
+        )
         get_external_audit_reminder_items(today=date(2026, 9, 15))
         get_external_finding_reminder_items(today=date(2026, 9, 15))
 
@@ -714,7 +714,7 @@ class ExternalAuditEa3Tests(unittest.TestCase):
         finding = external_audit_service.add_finding(
             audit.id,
             finding_type=EXTERNAL_AUDIT_FINDING_TYPE_NONCONFORMITY,
-            description="Dnes oboje",
+            description="Dnes jen připomínka",
             due_date=date(2026, 9, 10),
         )
         as_of = date(2026, 9, 10)
@@ -728,9 +728,14 @@ class ExternalAuditEa3Tests(unittest.TestCase):
                 + get_external_finding_reminder_items(today=as_of)
             )
         }
-        self.assertIn(f"external-audit:{audit.id}:{date(2026, 9, 10).isoformat()}", upcoming_ids)
+        # Auditní den může být v obou (Nadcházející den + Připomínka auditu)
+        self.assertIn(
+            f"external-audit:{audit.id}:{date(2026, 9, 10).isoformat()}",
+            upcoming_ids,
+        )
         self.assertIn(f"external-audit:{audit.id}", reminder_ids)
-        self.assertIn(f"external-audit-finding:{finding.id}", upcoming_ids)
+        # Finding jen v Připomínkách (FIX1)
+        self.assertNotIn(f"external-audit-finding:{finding.id}", upcoming_ids)
         self.assertIn(f"external-audit-finding:{finding.id}", reminder_ids)
 
 
