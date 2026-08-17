@@ -192,14 +192,16 @@ class _MethodologyPdfRenderer:
         self._header_font = self._font(8)
         self._group_font = self._font(11, bold=True)
         self._section_font = self._font(10, bold=True)
-        self._question_font = self._font(9)
-        self._param_font = self._font(8)
+        self._question_font = self._font(9, bold=True)
+        self._param_font = self._font(8, bold=False)
         self._muted = QColor(70, 70, 70)
 
     def _font(self, size: float, *, bold: bool = False) -> QFont:
         font = QFont(self._family)
         font.setPointSizeF(size)
         font.setBold(bold)
+        if bold:
+            font.setWeight(QFont.Weight.Bold)
         return font
 
     def render(self) -> None:
@@ -310,33 +312,33 @@ class _MethodologyPdfRenderer:
         self._new_page()
 
     def _heading_height(self, text: str, font: QFont) -> float:
+        return self._paragraph_height(text, font) + _mm_to_pt(0.6)
+
+    def _paragraph_height(self, text: str, font: QFont) -> float:
         lines = _wrap_text(text, font, self._width)
         metrics = QFontMetricsF(font)
-        return len(lines) * metrics.lineSpacing() + _mm_to_pt(0.6)
+        return len(lines) * metrics.lineSpacing()
 
     def _draw_heading(self, text: str, font: QFont) -> None:
         self._draw_paragraph(text, font)
 
     def _question_height(self, question: MethodologyQuestion) -> float:
-        height = self._heading_height(question.text, self._question_font)
-        if question.params:
-            param_line = "   ".join(f"{label}: {value}" for label, value in question.params)
-            height += self._heading_height(param_line, self._param_font)
-        height += _mm_to_pt(1.1)
+        height = self._paragraph_height(question.text, self._question_font)
+        param_line = _param_line(question)
+        if param_line:
+            height += self._paragraph_height(param_line, self._param_font)
+        height += _mm_to_pt(1.0)
         return height
 
     def _draw_question(self, question: MethodologyQuestion) -> None:
         first_line = QFontMetricsF(self._question_font).lineSpacing()
         self._ensure_space(first_line + _mm_to_pt(0.4))
-        self._draw_flowing_paragraph(question.text, self._question_font)
-        if question.params:
-            param_line = "   ".join(
-                f"{label}: {value}" for label, value in question.params if value
-            )
-            if param_line:
-                self._painter.setPen(self._muted)
-                self._draw_flowing_paragraph(param_line, self._param_font)
-                self._painter.setPen(QColor(0, 0, 0))
+        self._draw_paragraph(question.text, self._question_font)
+        param_line = _param_line(question)
+        if param_line:
+            self._painter.setPen(self._muted)
+            self._draw_paragraph(param_line, self._param_font)
+            self._painter.setPen(QColor(0, 0, 0))
         self._y += _mm_to_pt(1.0)
 
     def _draw_paragraph(self, text: str, font: QFont) -> None:
@@ -355,8 +357,11 @@ class _MethodologyPdfRenderer:
             )
             self._y += line_h
 
-    def _draw_flowing_paragraph(self, text: str, font: QFont) -> None:
-        self._draw_paragraph(text, font)
+
+def _param_line(question: MethodologyQuestion) -> str:
+    return "   ".join(
+        f"{label}: {value}" for label, value in question.params if value
+    )
 
 
 def _wrap_text(text: str, font: QFont, width: float) -> list[str]:
