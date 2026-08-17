@@ -61,6 +61,10 @@ from moduly.audity.sluzby.audit_question_source_service import (
     audit_question_source_service,
 )
 from moduly.audity.sluzby.audit_question_snapshot_service import snapshot_key
+from moduly.audity.sluzby.audit_export_task_order import (
+    load_audit_export_task_items,
+    ordered_audit_export_findings,
+)
 from moduly.audity.sluzby.audit_service import audit_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
 
@@ -969,16 +973,34 @@ class AuditExportContext:
     def significant_findings_text(self) -> str:
         return self.evaluation_text()
 
+    def _export_findings(self):
+        cached = getattr(self, "_export_findings_cache", None)
+        if cached is not None:
+            return cached
+        findings = ordered_audit_export_findings(
+            finding_service.get_for_entity(ENTITY_AUDITY, self.audit_id)
+        )
+        object.__setattr__(self, "_export_findings_cache", findings)
+        return findings
+
+    def _export_task_items(self):
+        cached = getattr(self, "_export_task_items_cache", None)
+        if cached is not None:
+            return cached
+        items = load_audit_export_task_items(
+            self.audit_id,
+            findings=self._export_findings(),
+        )
+        object.__setattr__(self, "_export_task_items_cache", items)
+        return items
+
     def findings_lines(self) -> list[str]:
-        findings = finding_service.get_for_entity(ENTITY_AUDITY, self.audit_id)
+        findings = self._export_findings()
         if not findings:
             return []
 
         lines: list[str] = []
-        for index, finding in enumerate(
-            sorted(findings, key=lambda item: (item.display_order, item.id)),
-            start=1,
-        ):
+        for index, finding in enumerate(findings, start=1):
             lines.append(
                 _format_labeled_block(
                     index,
@@ -1004,15 +1026,16 @@ class AuditExportContext:
         return self.findings_text()
 
     def tasks_lines(self) -> list[str]:
-        tasks = audit_service.get_tasks_for_audit(self.audit_id)
-        if not tasks:
+        items = self._export_task_items()
+        if not items:
             return []
 
         lines: list[str] = []
-        for index, task in enumerate(tasks, start=1):
+        for item in items:
+            task = item.task
             lines.append(
                 _format_labeled_block(
-                    index,
+                    item.export_number,
                     task.title or "Úkol",
                     [
                         ("Odpovídá", task.responsible_person),

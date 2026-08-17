@@ -64,6 +64,26 @@ class TaskRepository:
             )
             return list(session.scalars(stmt))
 
+    def list_by_sources(
+        self,
+        *,
+        source_module: str,
+        source_record_ids: list[int] | tuple[int, ...],
+    ) -> list[Task]:
+        ids = [int(value) for value in source_record_ids if value is not None]
+        if not ids:
+            return []
+        with get_session() as session:
+            stmt = (
+                select(Task)
+                .where(
+                    Task.source_module == source_module,
+                    Task.source_record_id.in_(ids),
+                )
+                .order_by(Task.due_date, Task.id)
+            )
+            return list(session.scalars(stmt))
+
     def add(self, task: Task) -> Task:
         with get_session() as session:
             session.add(task)

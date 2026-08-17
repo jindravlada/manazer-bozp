@@ -19,6 +19,22 @@ class TaskService:
     def get_tasks_by_ids(self, task_ids: list[int] | tuple[int, ...]):
         return self.repository.get_by_ids(task_ids)
 
+    def list_by_source(self, source_module: str, source_record_id: int):
+        return self.repository.list_by_source(
+            source_module=source_module,
+            source_record_id=source_record_id,
+        )
+
+    def list_by_sources(
+        self,
+        source_module: str,
+        source_record_ids: list[int] | tuple[int, ...],
+    ):
+        return self.repository.list_by_sources(
+            source_module=source_module,
+            source_record_ids=source_record_ids,
+        )
+
     def find_open_investigation_action(
         self,
         investigation_id: int,
