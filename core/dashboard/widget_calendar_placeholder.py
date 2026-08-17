@@ -8,6 +8,12 @@ from PySide6.QtCore import QDate, QEvent, QPoint, QRect, Qt
 from PySide6.QtGui import QColor, QPainter, QTextCharFormat
 from PySide6.QtWidgets import QCalendarWidget, QSizePolicy, QTableView, QToolTip
 
+from core.widgets.persistent_tooltips import (
+    TOOLTIP_DISPLAY_MS,
+    hide_persistent_tooltip,
+    show_persistent_tooltip,
+)
+
 from core.dashboard.widget_base import DashboardPanel
 from moduly.agenda.constants import (
     ITEM_TYPE_MEETING,
@@ -29,8 +35,8 @@ _DAY_FONT_POINT_SIZE = 12
 _DAY_NUMBER_HEIGHT = 18
 _WEEK_ROW_MIN_HEIGHT = 38
 
-# Doba zobrazení tooltipu dne – dostatečná pro delší obsah.
-_TOOLTIP_DURATION_MS = 15_000
+# Stejná výdrž jako globální tooltipy (UX-TASK-TOOLTIP-1).
+_TOOLTIP_DURATION_MS = TOOLTIP_DISPLAY_MS
 
 # Model QCalendarWidget při NoVerticalHeader:
 # řádek 0 = názvy dnů, sloupce 0–6 = po–ne (bez sloupce čísla týdne).
@@ -101,7 +107,7 @@ class TaskCalendarWidget(QCalendarWidget):
     def set_day_events(self, day_events: dict[date, list[str]] | None) -> None:
         self._day_events = day_events or {}
         self._tooltip_date = None
-        QToolTip.hideText()
+        hide_persistent_tooltip()
 
     def showEvent(self, event):
         super().showEvent(event)
@@ -137,7 +143,7 @@ class TaskCalendarWidget(QCalendarWidget):
                         self._update_day_tooltip(pos)
                     elif etype == QEvent.Type.Leave:
                         self._tooltip_date = None
-                        QToolTip.hideText()
+                        hide_persistent_tooltip()
         return super().eventFilter(obj, event)
 
     def _date_at(self, pos: QPoint) -> date | None:
@@ -183,7 +189,7 @@ class TaskCalendarWidget(QCalendarWidget):
         self._tooltip_date = day
         events = self._day_events.get(day, []) if day is not None else []
         if not events:
-            QToolTip.hideText()
+            hide_persistent_tooltip()
             return
         # Text tooltipu vždy z aktuálních dat daného dne (žádná stará cache textu).
         text = "\n".join([day.strftime("%d.%m.%Y"), ""] + events)
@@ -195,16 +201,10 @@ class TaskCalendarWidget(QCalendarWidget):
             index = view.indexAt(pos)
             cell_rect = view.visualRect(index) if index.isValid() else QRect()
             global_pos = viewport.mapToGlobal(pos)
-            QToolTip.showText(
-                global_pos,
-                text,
-                viewport,
-                cell_rect,
-                _TOOLTIP_DURATION_MS,
-            )
+            show_persistent_tooltip(global_pos, text, viewport, cell_rect)
         except RuntimeError:
             self._view = None
-            QToolTip.hideText()
+            hide_persistent_tooltip()
 
     def paintCell(self, painter: QPainter, rect: QRect, qdate: QDate):
         inset_y = 2

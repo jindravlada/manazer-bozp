@@ -50,6 +50,27 @@ from core.widgets.workplace_selector import WorkplaceSelector
 _SAVE_CLOSE_LABEL = "Uložit a zavřít"
 _ATTACHMENTS_INFO = "Přílohy lze přidat až po prvním uložení opatření."
 
+TASK_EDITOR_TITLE = "Úkol"
+TASK_EDITOR_TITLE_FINDING = "Nápravné opatření"
+TASK_EDITOR_TITLE_INVESTIGATION = "Vyšetřovací úkon"
+
+
+def resolve_task_editor_window_title(
+    *,
+    window_title: str | None = None,
+    is_investigation_action: bool = False,
+    has_finding: bool = False,
+) -> str:
+    """Titul okna editoru: běžný úkol vs. kontext finding / vyšetřovací úkon."""
+    explicit = (window_title or "").strip()
+    if explicit:
+        return explicit
+    if is_investigation_action:
+        return TASK_EDITOR_TITLE_INVESTIGATION
+    if has_finding:
+        return TASK_EDITOR_TITLE_FINDING
+    return TASK_EDITOR_TITLE
+
 
 class TaskDialog(QDialog):
     """Editor úkolu / opatření se stay-open ukládáním (AGENDA-TASK-UX-6)."""
@@ -62,6 +83,7 @@ class TaskDialog(QDialog):
         create_kwargs: dict | None = None,
         create_factory: Callable[[dict], Any] | None = None,
         persist_handler: Callable[[Any | None, dict], Any] | None = None,
+        window_title: str | None = None,
     ):
         super().__init__(parent)
 
@@ -85,10 +107,13 @@ class TaskDialog(QDialog):
             and getattr(task, "task_type", "") == TASK_TYPE_INVESTIGATION_ACTION
         )
 
-        if self._is_investigation_action:
-            self.setWindowTitle("Vyšetřovací úkon")
-        else:
-            self.setWindowTitle("Nápravné opatření")
+        self.setWindowTitle(
+            resolve_task_editor_window_title(
+                window_title=window_title,
+                is_investigation_action=self._is_investigation_action,
+                has_finding=self._finding is not None,
+            )
+        )
         configure_resizable_form_dialog(self, width=720, height=640, min_width=520, min_height=420)
 
         main_layout = QVBoxLayout(self)

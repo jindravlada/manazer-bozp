@@ -12,6 +12,7 @@ from core.dialogs.message_box import (
     show_critical,
 )
 from core.widgets.no_wheel_guards import install_form_wheel_guards
+from core.widgets.persistent_tooltips import install_persistent_tooltips
 from core.services.app_runtime_service import mark_application_started
 from core.settings.settings_manager import settings
 from core.theme import theme
@@ -53,6 +54,8 @@ def main():
     install_unified_message_boxes(app)
     # UX-FORMS-1: kolečko myši nemění hodnoty combo/spin při rolování formuláře.
     install_form_wheel_guards(app)
+    # UX-TASK-TOOLTIP-1: tooltip zůstane, dokud kurzor zůstává nad prvkem.
+    install_persistent_tooltips(app)
     apply_app_style(app)
 
     app_icon = load_app_icon()

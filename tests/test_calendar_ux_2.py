@@ -36,6 +36,7 @@ with patch.object(Path, "home", return_value=_TMP):
         _TOOLTIP_DURATION_MS,
         build_calendar_day_data,
     )
+    from core.widgets.persistent_tooltips import TOOLTIP_DISPLAY_MS
     from moduly.schuzky.constants import STATUS_CANCELLED, STATUS_PLANNED
     from moduly.schuzky.sluzby.meeting_service import meeting_service
     from moduly.ukoly.sluzby.task_service import task_service
@@ -113,6 +114,7 @@ class CalendarUx2TestCase(unittest.TestCase):
         self.fail(f"cell for day {day_number} not found")
 
     def test_tooltip_duration_at_least_15_seconds(self) -> None:
+        self.assertEqual(_TOOLTIP_DURATION_MS, TOOLTIP_DISPLAY_MS)
         self.assertGreaterEqual(_TOOLTIP_DURATION_MS, 15_000)
         cal = self._calendar_with_events()
         pos = self._center_for_day(cal, 10)
