@@ -47,6 +47,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 Nové záznamy přidávat níže (nejnovější nahoře).
 
+### 2026-08-17 – METHODOLOGY-PDF-1
+
+**Co se povedlo:** Přímý PDF přehled živé metodiky (QPdfWriter) z editorů Auditů a Prověrek, včetně pracovní neuložené podoby bez stash/zápisu.
+
+**Co už bychom dnes udělali jinak:** Sjednotit `ensure=False` u stromu metodiky prověrek hned při AUDIT-HANG-FIX, ať export nemusí dohánět jednorázové načtení.
+
+**Co bylo zbytečně složité:** Nic zásadního — stačil existující QPdfWriter vzor a stromy editorů.
+
+**Nové pravidlo:** Přehled živé metodiky se tiskne přímo do PDF, ne přes ODT; export čte pracovní stav editoru a metodiku nejvýše jednou.
+
+**Aktualizované dokumenty:** —
+
 ### 2026-08-14 – AUDIT-METHOD-SUPPORT-SNAPSHOT-1-PERF
 
 **Co se povedlo:** Rychlý DB-only integrity guard (~60 ms) místo domnělé úplné kontroly; odstraněn opakovaný `get_knowledge_tree` ve snapshot backfill fast-path.

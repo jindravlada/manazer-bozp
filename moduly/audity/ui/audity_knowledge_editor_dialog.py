@@ -1,5 +1,7 @@
 """Dialog editoru metodiky auditora."""
 
+import logging
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
@@ -19,7 +21,16 @@ from PySide6.QtWidgets import (
 
 from core.widgets.dialog_utils import configure_resizable_form_dialog
 
+from core.export.methodology_questions_pdf import (
+    METHODOLOGY_PDF_DIALOG_TITLE,
+    METHODOLOGY_PDF_FAILED,
+    METHODOLOGY_PDF_SAVED,
+    choose_pdf_save_path,
+    default_audit_pdf_filename,
+    write_methodology_questions_pdf,
+)
 from core.widgets.knowledge_editor_actions import (
+    KNOWLEDGE_EDITOR_EXPORT_PDF_BUTTON,
     clear_save_status,
     confirm_close_with_unsaved_changes,
     create_knowledge_editor_footer,
@@ -44,6 +55,9 @@ from moduly.audity.sluzby.audit_auditable_workplace_service import (
 )
 from moduly.audity.sluzby.audit_knowledge_editor_service import audit_knowledge_editor_service
 from moduly.audity.sluzby.audit_knowledge_service import KnowledgeTreeNode, audit_knowledge_service
+from moduly.audity.sluzby.audit_methodology_questions_export import (
+    build_audit_methodology_questions_document_from_editor,
+)
 from moduly.audity.sluzby.system_audit_workplace_service import (
     SystemAuditWorkplaceError,
     system_audit_workplace_service,
@@ -60,6 +74,9 @@ from moduly.audity.ui.audity_knowledge_section_editor_widget import (
     AudityKnowledgeSectionEditorWidget,
 )
 from moduly.nastaveni.sluzby.settings_service import settings_service
+
+logger = logging.getLogger(__name__)
+
 
 class AudityKnowledgeEditorDialog(QDialog):
     """Editor metodiky auditora — editace metadat procesu a oblastí ověření."""
@@ -219,6 +236,9 @@ class AudityKnowledgeEditorDialog(QDialog):
                 apply_enabled=False,
             )
         )
+        self._export_pdf_btn = QPushButton(KNOWLEDGE_EDITOR_EXPORT_PDF_BUTTON)
+        self._export_pdf_btn.clicked.connect(self._export_questions_pdf)
+        footer.insertWidget(0, self._export_pdf_btn)
         footer_host = QWidget()
         footer_host.setLayout(footer)
         footer_host.setSizePolicy(
@@ -239,6 +259,30 @@ class AudityKnowledgeEditorDialog(QDialog):
             )
         else:
             self._show_hint()
+
+    def _export_questions_pdf(self) -> None:
+        try:
+            document = build_audit_methodology_questions_document_from_editor(self)
+            path = choose_pdf_save_path(
+                self,
+                default_filename=default_audit_pdf_filename(document.created_on),
+            )
+            if not path:
+                return
+            write_methodology_questions_pdf(document, path)
+        except Exception:
+            logger.exception("Export přehledu auditních otázek do PDF selhal.")
+            QMessageBox.warning(
+                self,
+                METHODOLOGY_PDF_DIALOG_TITLE,
+                METHODOLOGY_PDF_FAILED,
+            )
+            return
+        QMessageBox.information(
+            self,
+            METHODOLOGY_PDF_DIALOG_TITLE,
+            METHODOLOGY_PDF_SAVED,
+        )
 
     def _load_system_workplace_combo(self) -> None:
         self._system_workplace_combo.blockSignals(True)

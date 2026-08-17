@@ -39,6 +39,10 @@ class AuditKnowledgeTreeWidget(QTreeWidget):
     def catalog_error_message(self) -> str | None:
         return self._catalog_error
 
+    @property
+    def tree_roots(self) -> list[KnowledgeTreeNode]:
+        return list(self._roots)
+
     def reload_tree(
         self,
         *,

@@ -211,8 +211,14 @@ class ProverkyKnowledgeService:
     def proverky_dir(self) -> Path:
         return self.ciselniky_dir / _CATALOG_DIR
 
-    def get_areas(self, *, include_inactive: bool = False) -> list[InspectionAreaDefinition]:
-        self.ensure_catalogs()
+    def get_areas(
+        self,
+        *,
+        include_inactive: bool = False,
+        ensure: bool = True,
+    ) -> list[InspectionAreaDefinition]:
+        if ensure:
+            self.ensure_catalogs()
         payload = self._load_json(self.proverky_dir / "oblasti.json")
         raw_areas = payload.get("oblasti") or []
 
@@ -236,12 +242,19 @@ class ProverkyKnowledgeService:
                 return area
         return None
 
-    def get_knowledge_tree(self, *, include_inactive: bool = False) -> list[KnowledgeTreeNode]:
+    def get_knowledge_tree(
+        self,
+        *,
+        include_inactive: bool = False,
+        ensure: bool = True,
+    ) -> list[KnowledgeTreeNode]:
+        if ensure:
+            self.ensure_catalogs()
         roots: list[KnowledgeTreeNode] = []
-        for area in self.get_areas(include_inactive=include_inactive):
+        for area in self.get_areas(include_inactive=include_inactive, ensure=False):
             children: tuple[KnowledgeTreeNode, ...] = ()
             if area.has_knowledge_file:
-                knowledge = self.load_area_knowledge(area)
+                knowledge = self.load_area_knowledge(area, ensure=False)
                 if knowledge:
                     if include_inactive:
                         sections = [
@@ -350,11 +363,17 @@ class ProverkyKnowledgeService:
                     return found
         return None
 
-    def load_area_knowledge(self, area: InspectionAreaDefinition) -> dict | None:
+    def load_area_knowledge(
+        self,
+        area: InspectionAreaDefinition,
+        *,
+        ensure: bool = True,
+    ) -> dict | None:
         if not area.soubor_znalosti:
             return None
 
-        self.ensure_catalogs()
+        if ensure:
+            self.ensure_catalogs()
         path = self.proverky_dir / area.soubor_znalosti
         if not path.is_file():
             return None
