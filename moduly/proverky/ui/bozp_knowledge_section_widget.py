@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.shared.constants import ENTITY_PROVERKY
-from core.shared.control_result_display import allows_finding, control_result_label
+from core.shared.control_result_display import allows_create_finding, control_result_label
 from core.shared.finding_display import finding_status_label
 from core.shared.sluzby.control_result_service import ControlPointContext, control_result_service
 from core.shared.sluzby.finding_service import finding_service
@@ -43,7 +43,7 @@ from moduly.proverky.constants import (
     FINDING_DIALOG_TITLE,
     FINDING_DUPLICATE_MESSAGE,
     FINDING_OPEN_EXISTING_LABEL,
-    FINDING_REQUIRES_NONCOMPLIANCE_MESSAGE,
+    FINDING_REQUIRES_RESULT_MESSAGE,
     FINDING_SOURCE_LABEL,
     INSPECTION_MUST_BE_SAVED_MESSAGE,
     KNOWLEDGE_BLOCK_NOT_IMPLEMENTED_TEXT,
@@ -840,7 +840,7 @@ class BozpKnowledgeSectionWidget(QWidget):
             layout.addWidget(self._build_linked_finding_block(finding, context))
             return
 
-        if allows_finding(result):
+        if allows_create_finding(result):
             actions = QHBoxLayout()
             actions.setContentsMargins(0, 4, 0, 0)
             actions.addWidget(self._build_create_finding_button(control_point))
@@ -1001,8 +1001,8 @@ class BozpKnowledgeSectionWidget(QWidget):
                 point_context,
             )
         )
-        if not allows_finding(current_result):
-            QMessageBox.information(self, "Zjištění", FINDING_REQUIRES_NONCOMPLIANCE_MESSAGE)
+        if not allows_create_finding(current_result):
+            QMessageBox.information(self, "Zjištění", FINDING_REQUIRES_RESULT_MESSAGE)
             return
 
         existing_any = self._finding_for_context(context)

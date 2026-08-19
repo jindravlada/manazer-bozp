@@ -146,6 +146,10 @@ FINDING_CREATED_LABEL = "Zjištění založeno"
 FINDING_DUPLICATE_MESSAGE = "Pro tento kontrolní bod už existuje zjištění. Otevře se existující záznam."
 INSPECTION_MUST_BE_SAVED_MESSAGE = "Prověrku je nutné nejdříve uložit."
 FINDING_REQUIRES_NONCOMPLIANCE_MESSAGE = "Zjištění lze založit pouze u kontrolního bodu s výsledkem „Nevyhovuje“."
+FINDING_REQUIRES_RESULT_MESSAGE = (
+    "Zjištění lze založit pouze u kontrolního bodu s výsledkem "
+    "„Nevyhovuje“ nebo „Vyhovuje s doporučením“."
+)
 
 INSPECTION_PROTOCOL_BUTTON_LABEL = "Zpráva z prověrky BOZP"
 INSPECTION_PROTOCOL_DIALOG_TITLE = "Zpráva z prověrky BOZP"
