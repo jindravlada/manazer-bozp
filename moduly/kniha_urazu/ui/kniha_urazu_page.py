@@ -207,13 +207,40 @@ class KnihaUrazuPage(QWidget):
             return
 
         try:
-            vypis_urazu_service.open_for_accident(accident)
+            vypis_urazu_service.open_for_accident(
+                accident,
+                confirm_replace_custom=self._confirm_replace_vypis_template,
+            )
         except Exception as exc:
             QMessageBox.warning(
                 self,
                 "Výpis o pracovním úrazu",
                 f"Výpis o pracovním úrazu se nepodařilo vygenerovat.\n\n{exc}",
             )
+
+    def _confirm_replace_vypis_template(self) -> bool:
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Information)
+        box.setWindowTitle("Výpis o pracovním úrazu")
+        box.setText(
+            "Používá se uživatelsky upravená nebo starší šablona Výpisu "
+            "o pracovním úrazu. Novou výchozí šablonu nelze použít automaticky."
+        )
+        box.setInformativeText(
+            "Chcete nyní použít novou výchozí šablonu?\n"
+            "Původní soubor se před nahrazením zálohuje."
+        )
+        box.setStandardButtons(
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        box.setDefaultButton(QMessageBox.StandardButton.No)
+        yes_button = box.button(QMessageBox.StandardButton.Yes)
+        no_button = box.button(QMessageBox.StandardButton.No)
+        if yes_button is not None:
+            yes_button.setText("Ano")
+        if no_button is not None:
+            no_button.setText("Ne")
+        return box.exec() == QMessageBox.StandardButton.Yes
 
     def generate_final_report(self):
         accident_id = self._selected_accident_id()
