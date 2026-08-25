@@ -31,6 +31,7 @@ from core.dashboard.attention_item import (
     ITEM_TYPE_YEARLY_PLAN_MONTH,
     PRIORITY_RANK,
     AttentionItem,
+    attention_item_is_overdue,
 )
 from core.dashboard.attention_service import get_attention_items
 from core.dashboard.widget_base import DashboardPanel
@@ -148,25 +149,19 @@ class UpcomingTasksWidget(DashboardPanel):
         self.refresh()
 
     def _is_overdue(self, attention: AttentionItem, now: datetime) -> bool:
-        if attention.event_at is not None:
-            return attention.event_at < now
-        if attention.due_date is None:
-            return False
-        return attention.due_date < now.date()
+        return attention_item_is_overdue(attention, today=now.date())
 
     def _due_color(self, attention: AttentionItem, now: datetime) -> QColor | None:
+        today = now.date()
+        if attention_item_is_overdue(attention, today=today):
+            return _COLOR_OVERDUE
         if attention.event_at is not None:
-            if attention.event_at < now:
-                return _COLOR_OVERDUE
-            if attention.event_at.date() <= now.date() + timedelta(days=_APPROACHING_DAYS):
+            if attention.event_at.date() <= today + timedelta(days=_APPROACHING_DAYS):
                 return _COLOR_APPROACHING
             return _COLOR_FUTURE
         due_date = attention.due_date
         if due_date is None:
             return None
-        today = now.date()
-        if due_date < today:
-            return _COLOR_OVERDUE
         if due_date <= today + timedelta(days=_APPROACHING_DAYS):
             return _COLOR_APPROACHING
         return _COLOR_FUTURE

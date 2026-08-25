@@ -40,6 +40,9 @@ with patch.object(Path, "home", return_value=_TMP):
     from core.windows.main_window import MainWindow
     from moduly.audity.sluzby.audit_service import audit_service
     from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
+    from moduly.rocni_plan.sluzby.yearly_plan_service import yearly_plan_service
+    from moduly.schuzky.constants import STATUS_CANCELLED, STATUS_PLANNED
+    from moduly.schuzky.sluzby.meeting_service import meeting_service
     from moduly.ukoly.sluzby.task_service import task_service
 
 
@@ -56,6 +59,23 @@ class Dashboard1UpcomingItemsTestCase(unittest.TestCase):
             audit_service.delete_audit(audit.id)
         for inspection in list(bozp_inspection_service.get_all()):
             bozp_inspection_service.delete_inspection(inspection.id)
+        for meeting in list(meeting_service.get_all()):
+            if (meeting.status or "") != STATUS_PLANNED:
+                continue
+            meeting_service.update_meeting(
+                meeting.id,
+                title=meeting.title or "",
+                starts_at=meeting.starts_at,
+                ends_at=meeting.ends_at,
+                location=meeting.location or "",
+                organizer_person_id=meeting.organizer_person_id,
+                participant_ids=meeting_service.parse_participant_ids(meeting),
+                agenda=meeting.agenda or "",
+                status=STATUS_CANCELLED,
+            )
+        today = date.today()
+        if not yearly_plan_service.is_month_processed(today.year, today.month):
+            yearly_plan_service.mark_month_processed(today.year, today.month)
 
     def test_common_list_contains_audit_inspection_task(self) -> None:
         started = date.today() + timedelta(days=3)

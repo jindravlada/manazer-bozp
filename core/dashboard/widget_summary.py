@@ -2,8 +2,11 @@ from datetime import date
 
 from PySide6.QtWidgets import QHBoxLayout, QWidget
 
+from core.dashboard.attention_service import count_overdue_attention_items
 from core.dashboard.widget_base import DashboardCard
 from moduly.ukoly.sluzby.task_service import task_service
+
+OVERDUE_CARD_SUBTITLE = "položky po termínu"
 
 
 class SummaryWidget(QWidget):
@@ -14,7 +17,7 @@ class SummaryWidget(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(12)
 
-        self.overdue = DashboardCard("🔴 Po termínu", "0", "úkoly po termínu")
+        self.overdue = DashboardCard("🔴 Po termínu", "0", OVERDUE_CARD_SUBTITLE)
         self.today = DashboardCard("🔵 Dnes", "0", "úkoly na dnes")
         self.waiting = DashboardCard("🟡 Čeká kontrolu", "0", "splněno, čeká na ověření")
         self.open_total = DashboardCard("📋 Otevřeno", "0", "celkem otevřených úkolů")
@@ -30,7 +33,6 @@ class SummaryWidget(QWidget):
         tasks = task_service.get_all_tasks()
         today = date.today()
 
-        overdue = 0
         waiting = 0
         due_today = 0
         open_total = 0
@@ -41,16 +43,14 @@ class SummaryWidget(QWidget):
             if status not in ["Ukončeno", "Zrušeno"]:
                 open_total += 1
 
-            if task.due_date and task.due_date < today and status not in ["Ukončeno", "Zrušeno"]:
-                overdue += 1
-
             if status == "Splněno - čeká na kontrolu":
                 waiting += 1
 
             if task.due_date == today and status not in ["Ukončeno", "Zrušeno"]:
                 due_today += 1
 
-        self.overdue.set_value(str(overdue), "úkoly po termínu")
+        overdue = count_overdue_attention_items(today=today)
+        self.overdue.set_value(str(overdue), OVERDUE_CARD_SUBTITLE)
         self.today.set_value(str(due_today), "úkoly na dnes")
         self.waiting.set_value(str(waiting), "čeká na kontrolu účinnosti")
         self.open_total.set_value(str(open_total), "celkem otevřených úkolů")

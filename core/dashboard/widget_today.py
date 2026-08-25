@@ -1,7 +1,13 @@
 from datetime import date
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QLabel, QSizePolicy
+from PySide6.QtGui import QWheelEvent
+from PySide6.QtWidgets import (
+    QFrame,
+    QLabel,
+    QScrollArea,
+    QSizePolicy,
+)
 
 from core.dashboard.attention_item import (
     ITEM_TYPE_MEETING,
@@ -312,6 +318,39 @@ def attention_from_link(
     return None
 
 
+class _ReminderContentLabel(QLabel):
+    """QLabel, který hlásí výšku obsahu, aby QScrollArea mohla rolovat svisle."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        configure_task_label(self)
+        self.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Minimum)
+        self.setMinimumWidth(1)
+
+    def setText(self, text: str) -> None:  # noqa: N802 - Qt API
+        super().setText(text)
+        self._update_min_height()
+
+    def resizeEvent(self, event) -> None:  # noqa: N802 - Qt API
+        super().resizeEvent(event)
+        self._update_min_height()
+
+    def _update_min_height(self) -> None:
+        width = self.width()
+        if width <= 1:
+            parent = self.parentWidget()
+            if parent is not None:
+                width = parent.width()
+        if width <= 1:
+            return
+        height = self.heightForWidth(width)
+        if height < 0:
+            height = self.sizeHint().height()
+        if self.minimumHeight() != height:
+            self.setMinimumHeight(height)
+
+
 class TodayWidget(DashboardPanel):
     def __init__(self, open_task_callback=None, open_attention_callback=None):
         super().__init__(PANEL_TITLE_REMINDERS)
@@ -319,13 +358,20 @@ class TodayWidget(DashboardPanel):
         self.open_attention_callback = open_attention_callback
         self._linked_attention: list[AttentionItem] = []
 
-        self.content = QLabel()
-        configure_task_label(self.content)
-        self.content.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
-        self.content.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.content = _ReminderContentLabel()
         self.content.linkActivated.connect(self._on_link_clicked)
 
-        self.layout.addWidget(self.content, 1)
+        self._scroll = QScrollArea()
+        self._scroll.setObjectName("RemindersScroll")
+        self._scroll.setWidgetResizable(True)
+        self._scroll.setFrameShape(QFrame.Shape.NoFrame)
+        self._scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self._scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self._scroll.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        self._scroll.setFocusPolicy(Qt.FocusPolicy.WheelFocus)
+        self._scroll.setWidget(self.content)
+
+        self.layout.addWidget(self._scroll, 1)
         self.setFixedHeight(170)
         self.refresh()
 
@@ -432,9 +478,20 @@ class TodayWidget(DashboardPanel):
         ordered.extend(self._task_line(task, "🔵") for task in due_today)
         ordered.extend(self._task_line(task, "🟡") for task in waiting)
 
-        lines = ordered[:5]
+        if not ordered:
+            ordered.append("Nic k připomenutí.")
 
-        if not lines:
-            lines.append("Nic k připomenutí.")
+        self.content.setText("<br>".join(ordered))
+        self._clamp_scroll_position()
 
-        self.content.setText("<br>".join(lines))
+    def _clamp_scroll_position(self) -> None:
+        bar = self._scroll.verticalScrollBar()
+        bar.setValue(min(max(bar.value(), 0), bar.maximum()))
+
+    def wheelEvent(self, event: QWheelEvent) -> None:  # noqa: N802 - Qt API
+        bar = self._scroll.verticalScrollBar()
+        if bar.maximum() > 0:
+            bar.setValue(bar.value() - event.angleDelta().y())
+            event.accept()
+            return
+        super().wheelEvent(event)

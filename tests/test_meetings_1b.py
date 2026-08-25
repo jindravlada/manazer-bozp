@@ -144,7 +144,8 @@ class Meetings1bTestCase(unittest.TestCase):
         self.assertNotIn(meeting.id, [item.source_id for item in _meeting_items()])
 
     def test_past_planned_meeting_marked_overdue(self) -> None:
-        starts = datetime.now() - timedelta(hours=2)
+        starts = datetime.combine(date.today() - timedelta(days=1), datetime.min.time())
+        starts = starts.replace(hour=10)
         meeting = meeting_service.create_meeting(
             title="Po termínu schůzka",
             starts_at=starts,
@@ -162,6 +163,25 @@ class Meetings1bTestCase(unittest.TestCase):
                 break
         self.assertIsNotNone(due_text)
         self.assertIn("Po termínu", due_text)
+
+    def test_today_planned_meeting_not_marked_overdue(self) -> None:
+        starts = datetime.now() - timedelta(minutes=1)
+        if starts.date() != date.today():
+            starts = datetime.combine(date.today(), datetime.min.time())
+        meeting = meeting_service.create_meeting(
+            title="Dnešní schůzka",
+            starts_at=starts,
+            status=STATUS_PLANNED,
+        )
+        widget = UpcomingTasksWidget()
+        due_text = None
+        for row in range(widget.table.rowCount()):
+            payload = widget.table.item(row, 0).data(Qt.ItemDataRole.UserRole)
+            if payload is not None and payload.source_id == meeting.id:
+                due_text = widget.table.item(row, 1).text()
+                break
+        self.assertIsNotNone(due_text)
+        self.assertNotIn("Po termínu", due_text)
 
     def test_meeting_sorted_chronologically_with_tasks(self) -> None:
         today = date.today()
@@ -275,6 +295,9 @@ class Meetings1bTestCase(unittest.TestCase):
         window = MagicMock(spec=MainWindow)
         window._page_widgets = {"dashboard": MagicMock()}
         window._page_widgets["dashboard"].refresh = MagicMock()
+        window._refresh_dashboard_and_agenda.side_effect = (
+            lambda: window._page_widgets["dashboard"].refresh()
+        )
 
         with patch(
             "moduly.schuzky.sluzby.meeting_service.meeting_service.get_by_id",
@@ -284,6 +307,7 @@ class Meetings1bTestCase(unittest.TestCase):
 
         warning.assert_called_once()
         window._page_widgets["dashboard"].refresh.assert_called_once()
+        window._refresh_dashboard_and_agenda.assert_called_once()
 
 
 if __name__ == "__main__":

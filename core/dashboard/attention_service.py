@@ -26,6 +26,8 @@ from core.dashboard.attention_item import (
     SOURCE_LABEL_QUALIFICATION,
     SOURCE_LABEL_YEARLY_PLAN,
     AttentionItem,
+    attention_item_identity,
+    attention_item_is_overdue,
 )
 from core.shared.task_source_display import task_source_short_label
 from core.shared.working_days import first_working_day
@@ -727,3 +729,34 @@ def get_attention_items(*, today: date | None = None) -> list[AttentionItem]:
     )
     items.sort(key=lambda item: item.sort_key)
     return items
+
+
+def overdue_attention_items(
+    items: list[AttentionItem] | None = None,
+    *,
+    today: date | None = None,
+) -> list[AttentionItem]:
+    """Neukončené termínové položky, které Nadcházející označují „Po termínu“."""
+    today = today or date.today()
+    if items is None:
+        items = get_attention_items(today=today)
+    seen: set[tuple] = set()
+    overdue: list[AttentionItem] = []
+    for item in items:
+        if not attention_item_is_overdue(item, today=today):
+            continue
+        key = attention_item_identity(item)
+        if key in seen:
+            continue
+        seen.add(key)
+        overdue.append(item)
+    return overdue
+
+
+def count_overdue_attention_items(
+    items: list[AttentionItem] | None = None,
+    *,
+    today: date | None = None,
+) -> int:
+    """Počet unikátních řádků „Po termínu“ ze stejné kolekce jako Nadcházející."""
+    return len(overdue_attention_items(items, today=today))

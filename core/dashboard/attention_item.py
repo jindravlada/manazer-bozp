@@ -89,3 +89,31 @@ class AttentionItem:
     def source_label(self) -> str:
         """Zpětná kompatibilita pro starší volání."""
         return self.subtitle
+
+
+def attention_item_is_overdue(
+    item: AttentionItem,
+    *,
+    today: date | None = None,
+) -> bool:
+    """Kalendářní „Po termínu“: termín dříve než dnes; dnešek není po termínu."""
+    today = today or date.today()
+    if item.event_at is not None:
+        due = item.event_at.date()
+    else:
+        due = item.due_date
+    if due is None:
+        return False
+    return due < today
+
+
+def attention_item_identity(item: AttentionItem) -> tuple:
+    """Stabilní identita řádku Nadcházejících (vícedenní položka = samostatné dny)."""
+    if item.identity_key:
+        return ("identity_key", item.identity_key)
+    visit = ""
+    metadata = item.open_metadata or {}
+    raw_visit = metadata.get("visit_date")
+    if raw_visit:
+        visit = str(raw_visit)
+    return (item.item_type, int(item.source_id), visit)
