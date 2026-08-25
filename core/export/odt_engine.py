@@ -113,6 +113,7 @@ class OdtRichContent:
     """Bohatý ODT obsah, který nahradí celý odstavec s placeholdérem."""
 
     paragraphs: list[OdtParagraph] = field(default_factory=list)
+    omit_when_empty: bool = False
 
     def plain_text(self) -> str:
         """Textová reprezentace pro testy a ladění (bez ODF markup)."""
@@ -180,7 +181,8 @@ class OdtExportEngine:
                 normalized_values[key_text] = self._render_rich_content(
                     value, image_registry
                 )
-                needs_export_styles = True
+                if value.paragraphs:
+                    needs_export_styles = True
             else:
                 escaped = self._escape_odt_text(value, image_registry)
                 normalized_values[key_text] = escaped
@@ -307,6 +309,8 @@ class OdtExportEngine:
         for paragraph in content.paragraphs:
             parts.append(self._render_paragraph(paragraph, image_registry))
         if not parts:
+            if content.omit_when_empty:
+                return _ODT_FRAGMENT_PREFIX
             parts.append('<text:p text:style-name="Standard"/>')
         return _ODT_FRAGMENT_PREFIX + "".join(parts)
 
