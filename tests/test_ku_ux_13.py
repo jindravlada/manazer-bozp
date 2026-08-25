@@ -137,13 +137,14 @@ class KuUx13ReportingTasksTestCase(unittest.TestCase):
             add_workdays(accident_date, 15),
         )
         for label_part in (
-            "Vyhotovení Záznamu",
-            "OIP / OBÚ",
+            "Vyhotovení + zaslání záznamu o pracovním úrazu",
             "EZOP",
             "Postižený zaměstnanec",
             "Odborová organizace",
         ):
             self.assertIn(label_part, zaznam[0].description)
+        self.assertNotIn("Vyhotovení Záznamu o pracovním úrazu", zaznam[0].description)
+        self.assertNotIn("OIP / OBÚ – zaslání záznamu o pracovním úrazu", zaznam[0].description)
 
     def test_no_duplicate_summary_tasks_on_resync(self) -> None:
         with patch(

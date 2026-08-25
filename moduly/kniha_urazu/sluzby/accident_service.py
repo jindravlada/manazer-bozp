@@ -94,6 +94,7 @@ class AccidentService:
         saved.number = self._make_number(saved.id, saved.year)
         saved = self.repository.update(saved)
         self._create_verify_kind_task(saved)
+        self._stamp_combined_record_duty_generation(saved)
         self._sync_reporting_tasks(saved)
         return saved
 
@@ -120,6 +121,44 @@ class AccidentService:
         )
 
         accident_reporting_task_service.sync_for_accident(accident)
+
+    def _stamp_combined_record_duty_generation(self, accident: Accident) -> None:
+        """Označí nový úraz společnou povinností záznamu. Existující JSON nemění."""
+        import json
+
+        from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
+            LEGACY_RECORD_DUTY_KEYS,
+            RECORD_DUTY_GENERATION_COMBINED,
+            RECORD_DUTY_GENERATION_KEY,
+            collect_obligation_rows_from_saved_data,
+            obligation_key_from_row,
+        )
+        from moduly.kniha_urazu.sluzby.investigation_service import investigation_service
+
+        if accident is None or getattr(accident, "id", None) is None:
+            return
+
+        investigation = investigation_service.get_or_create(accident.id)
+        raw = getattr(investigation, "zajisteni_dukazu_json", "") or ""
+        try:
+            data = json.loads(raw) if raw.strip() else {}
+        except Exception:
+            data = {}
+        if not isinstance(data, dict):
+            data = {}
+        if str(data.get(RECORD_DUTY_GENERATION_KEY) or "").strip():
+            return
+        keys = {
+            obligation_key_from_row(row)
+            for row in collect_obligation_rows_from_saved_data(data)
+        }
+        if keys & LEGACY_RECORD_DUTY_KEYS:
+            return
+        data[RECORD_DUTY_GENERATION_KEY] = RECORD_DUTY_GENERATION_COMBINED
+        investigation_service.save_zajisteni_dukazu(
+            accident.id,
+            json.dumps(data, ensure_ascii=False),
+        )
 
     def should_create_verify_kind_task(
         self,

@@ -17,6 +17,7 @@ OBLIGATION_OIP_OBU_OHLASENI = "oip_obu_ohlaseni"
 OBLIGATION_POLICIE_OHLASENI = "policie_ohlaseni"
 OBLIGATION_ZP_OHLASENI = "zp_ohlaseni"
 OBLIGATION_VYHOTOVENI_ZAZNAMU = "vyhotoveni_zaznamu"
+OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU = "vyhotoveni_zaslani_zaznamu"
 OBLIGATION_OIP_OBU_ZASLANI = "oip_obu_zaslani"
 OBLIGATION_POLICIE_ZASLANI = "policie_zaslani"
 OBLIGATION_ZP_ZASLANI = "zp_zaslani"
@@ -42,6 +43,7 @@ OBLIGATION_LABELS: dict[str, str] = {
     OBLIGATION_POLICIE_OHLASENI: "Policie ČR – ohlášení smrtelného pracovního úrazu / podezření na trestný čin",
     OBLIGATION_ZP_OHLASENI: "Zdravotní pojišťovna postiženého – ohlášení smrtelného pracovního úrazu",
     OBLIGATION_VYHOTOVENI_ZAZNAMU: "Vyhotovení Záznamu o pracovním úrazu",
+    OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU: "Vyhotovení + zaslání záznamu o pracovním úrazu",
     OBLIGATION_OIP_OBU_ZASLANI: "OIP / OBÚ – zaslání záznamu o pracovním úrazu",
     OBLIGATION_POLICIE_ZASLANI: "Policie ČR – zaslání záznamu o pracovním úrazu",
     OBLIGATION_ZP_ZASLANI: "Zdravotní pojišťovna postiženého – zaslání záznamu o pracovním úrazu",
@@ -62,6 +64,15 @@ _RECORD_MATRIX_CATEGORIES = frozenset({
     CATEGORY_PN_OVER_3,
     CATEGORY_SERIOUS,
     CATEGORY_FATAL,
+})
+
+RECORD_DUTY_GENERATION_KEY = "record_duty_generation"
+RECORD_DUTY_GENERATION_LEGACY = "legacy"
+RECORD_DUTY_GENERATION_COMBINED = "combined"
+
+LEGACY_RECORD_DUTY_KEYS = frozenset({
+    OBLIGATION_VYHOTOVENI_ZAZNAMU,
+    OBLIGATION_OIP_OBU_ZASLANI,
 })
 
 
@@ -328,6 +339,8 @@ def obligation_key_from_row(row: dict[str, Any]) -> str:
         return OBLIGATION_ZP_OHLASENI
     if "EZOP" in nazev:
         return OBLIGATION_EZOP
+    if "Vyhotovení + zaslání" in nazev:
+        return OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU
     if "Vyhotovení Záznamu" in nazev or ("Záznam o pracovním úrazu" in nazev and "Portál SÚIP" in nazev):
         return OBLIGATION_VYHOTOVENI_ZAZNAMU
     if "OIP / OBÚ" in nazev and "zaslání" in nazev:
@@ -350,6 +363,8 @@ def is_obligation_relevant(
     obligation_key: str,
     *,
     union_organization_active: bool | None = None,
+    saved_data: dict[str, Any] | None = None,
+    record_duty_generation: str | None = None,
 ) -> bool:
     if not obligation_key:
         return False
@@ -359,6 +374,10 @@ def is_obligation_relevant(
         employer_union_organization_active()
         if union_organization_active is None
         else union_organization_active
+    )
+    generation = resolve_record_duty_generation(
+        saved_data,
+        record_duty_generation=record_duty_generation,
     )
 
     if obligation_key == OBLIGATION_OO_OHLASENI:
@@ -373,9 +392,18 @@ def is_obligation_relevant(
     if obligation_key == OBLIGATION_ZP_OHLASENI:
         return category == CATEGORY_FATAL
 
+    if obligation_key == OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU:
+        return (
+            generation == RECORD_DUTY_GENERATION_COMBINED
+            and category in _RECORD_MATRIX_CATEGORIES
+        )
+
+    if obligation_key in LEGACY_RECORD_DUTY_KEYS:
+        if generation == RECORD_DUTY_GENERATION_COMBINED:
+            return False
+        return category in _RECORD_MATRIX_CATEGORIES
+
     if obligation_key in {
-        OBLIGATION_VYHOTOVENI_ZAZNAMU,
-        OBLIGATION_OIP_OBU_ZASLANI,
         OBLIGATION_ZP_ZASLANI,
         OBLIGATION_EZOP,
     }:
@@ -401,16 +429,20 @@ def is_row_relevant(
     row: dict[str, Any],
     *,
     union_organization_active: bool | None = None,
+    saved_data: dict[str, Any] | None = None,
+    record_duty_generation: str | None = None,
 ) -> bool:
     return is_obligation_relevant(
         accident,
         obligation_key_from_row(row),
         union_organization_active=union_organization_active,
+        saved_data=saved_data,
+        record_duty_generation=record_duty_generation,
     )
 
 
 def _section_for_key(key: str) -> str:
-    if key == OBLIGATION_VYHOTOVENI_ZAZNAMU:
+    if key in {OBLIGATION_VYHOTOVENI_ZAZNAMU, OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU}:
         return SECTION_ZAZNAM
     if key in {
         OBLIGATION_OIP_OBU_ZASLANI,
@@ -432,6 +464,8 @@ def applicable_obligations(
     accident: AccidentLike | None,
     *,
     union_organization_active: bool | None = None,
+    saved_data: dict[str, Any] | None = None,
+    record_duty_generation: str | None = None,
 ) -> list[ReportingObligation]:
     items: list[ReportingObligation] = []
     for key, label in OBLIGATION_LABELS.items():
@@ -439,6 +473,8 @@ def applicable_obligations(
             accident,
             key,
             union_organization_active=union_organization_active,
+            saved_data=saved_data,
+            record_duty_generation=record_duty_generation,
         ):
             continue
         items.append(
@@ -458,6 +494,26 @@ def all_obligation_definitions() -> list[ReportingObligation]:
     ]
 
 
+def obligation_definitions_for_accident(
+    accident: AccidentLike | None = None,
+    saved_data: dict[str, Any] | None = None,
+    *,
+    record_duty_generation: str | None = None,
+) -> list[ReportingObligation]:
+    """Definice widgetů pro konkrétní úraz: bez klíčů druhé generace záznamu."""
+    del accident  # kategorie se filtruje až v is_row_relevant
+    generation = resolve_record_duty_generation(
+        saved_data,
+        record_duty_generation=record_duty_generation,
+    )
+    skip = record_duty_keys_hidden_for_generation(generation)
+    return [
+        item
+        for item in all_obligation_definitions()
+        if item.key not in skip
+    ]
+
+
 def collect_obligation_rows_from_saved_data(data: dict[str, Any] | None) -> list[dict[str, Any]]:
     if not data:
         return []
@@ -465,6 +521,43 @@ def collect_obligation_rows_from_saved_data(data: dict[str, Any] | None) -> list
     rows.extend(data.get("admin_ohlaseni") or [])
     rows.extend(data.get("admin_zaslani") or [])
     return rows
+
+
+def record_duty_keys_hidden_for_generation(generation: str) -> frozenset[str]:
+    if generation == RECORD_DUTY_GENERATION_COMBINED:
+        return LEGACY_RECORD_DUTY_KEYS
+    return frozenset({OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU})
+
+
+def resolve_record_duty_generation(
+    saved_data: dict[str, Any] | None = None,
+    *,
+    record_duty_generation: str | None = None,
+) -> str:
+    """Určí generaci záznamu. Bez značky a bez nových klíčů zůstává legacy sada."""
+    if record_duty_generation in {
+        RECORD_DUTY_GENERATION_LEGACY,
+        RECORD_DUTY_GENERATION_COMBINED,
+    }:
+        return record_duty_generation
+
+    data = saved_data or {}
+    explicit = str(data.get(RECORD_DUTY_GENERATION_KEY) or "").strip()
+    if explicit == RECORD_DUTY_GENERATION_COMBINED:
+        return RECORD_DUTY_GENERATION_COMBINED
+    if explicit == RECORD_DUTY_GENERATION_LEGACY:
+        return RECORD_DUTY_GENERATION_LEGACY
+
+    keys = {
+        obligation_key_from_row(row)
+        for row in collect_obligation_rows_from_saved_data(data)
+    }
+    keys.discard("")
+    if keys & LEGACY_RECORD_DUTY_KEYS:
+        return RECORD_DUTY_GENERATION_LEGACY
+    if OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU in keys:
+        return RECORD_DUTY_GENERATION_COMBINED
+    return RECORD_DUTY_GENERATION_LEGACY
 
 
 def add_workdays(start_date: date, days: int) -> date:
@@ -506,16 +599,42 @@ def obligation_default_deadline(
     if "Kooperativa" in label or "Zákonná pojišťovna" in label:
         return None
 
+    if obligation_key == OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU:
+        return combined_record_duty_deadline(notification_date)
+
     if section == SECTION_OHLASENI or agenda == "ohlaseni":
         return add_workdays(notification_date, 1)
 
     if section in {SECTION_ZAZNAM, SECTION_ODESLANI, SECTION_PREDANI}:
         return add_workdays(notification_date, 15)
 
+    if "Vyhotovení + zaslání" in label:
+        return combined_record_duty_deadline(notification_date)
+
     if "Vyhotovení Záznamu" in label or "Záznam o pracovním úrazu" in label:
         return add_workdays(notification_date, 15)
 
     return None
+
+
+def combined_record_duty_deadline(notification_date: date | None) -> date | None:
+    """Dřívější z termínů vyhotovení a zaslání (dnes oba 15 pracovních dnů)."""
+    vyhotoveni = obligation_default_deadline(
+        notification_date,
+        obligation_key=OBLIGATION_VYHOTOVENI_ZAZNAMU,
+        section=SECTION_ZAZNAM,
+        label=OBLIGATION_LABELS[OBLIGATION_VYHOTOVENI_ZAZNAMU],
+    )
+    zaslani = obligation_default_deadline(
+        notification_date,
+        obligation_key=OBLIGATION_OIP_OBU_ZASLANI,
+        section=SECTION_ODESLANI,
+        label=OBLIGATION_LABELS[OBLIGATION_OIP_OBU_ZASLANI],
+    )
+    dates = [item for item in (vyhotoveni, zaslani) if item is not None]
+    if not dates:
+        return None
+    return min(dates)
 
 
 def obligation_rows_for_summary(
@@ -537,6 +656,7 @@ def obligation_rows_for_summary(
     for obligation in applicable_obligations(
         accident,
         union_organization_active=union_organization_active,
+        saved_data=saved_data,
     ):
         row = dict(rows_by_key.get(obligation.key, {}))
         row.setdefault("key", obligation.key)
@@ -601,10 +721,18 @@ def obligations_summary_state(
     today: date,
     *,
     union_organization_active: bool | None = None,
+    saved_data: dict[str, Any] | None = None,
+    record_duty_generation: str | None = None,
 ) -> str | None:
     applicable = applicable_obligations(
         accident,
         union_organization_active=union_organization_active,
+        saved_data=(
+            saved_data
+            if saved_data is not None
+            else ({"admin_zaslani": rows} if rows else None)
+        ),
+        record_duty_generation=record_duty_generation,
     )
     if not applicable:
         return None

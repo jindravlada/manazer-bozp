@@ -63,7 +63,7 @@ class AccidentReportingTaskService:
             return
 
         data = saved_data if saved_data is not None else self._load_saved_data(accident.id)
-        obligations = applicable_obligations(accident)
+        obligations = applicable_obligations(accident, saved_data=data)
         rows = obligation_rows_for_summary(accident, data)
         rows_by_key = {
             (row.get("key") or "").strip(): row

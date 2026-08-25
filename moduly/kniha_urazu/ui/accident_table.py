@@ -101,7 +101,8 @@ class AccidentTable(QTableWidget):
             for row, accident in enumerate(accidents):
                 record_id = int(accident.id)
                 investigation = investigations_by_accident.get(accident.id)
-                obligation_rows = self._obligation_rows(investigation, accident)
+                saved_data = self._investigation_saved_data(investigation)
+                obligation_rows = obligation_rows_for_summary(accident, saved_data)
                 zou_state = self._zou_summary_state(accident, obligation_rows, today)
                 zou_color = self._zou_color(accident, obligation_rows, today)
                 injury_key = self._injury_severity_key(accident.druh_urazu or "")
@@ -174,7 +175,8 @@ class AccidentTable(QTableWidget):
 
         for accident in accidents:
             investigation = investigations_by_accident.get(accident.id)
-            obligation_rows = self._obligation_rows(investigation, accident)
+            saved_data = self._investigation_saved_data(investigation)
+            obligation_rows = obligation_rows_for_summary(accident, saved_data)
             zou_state = self._zou_summary_state(accident, obligation_rows, today)
             if zou_state == "done":
                 zou_done += 1
@@ -214,15 +216,20 @@ class AccidentTable(QTableWidget):
                 tasks_by_accident.setdefault(task.source_record_id, []).append(task)
         return tasks_by_accident
 
-    def _obligation_rows(self, investigation, accident):
+    def _investigation_saved_data(self, investigation):
         if investigation is None or not investigation.zajisteni_dukazu_json:
-            data = {}
-        else:
-            try:
-                data = json.loads(investigation.zajisteni_dukazu_json or "{}")
-            except Exception:
-                data = {}
-        return obligation_rows_for_summary(accident, data)
+            return {}
+        try:
+            data = json.loads(investigation.zajisteni_dukazu_json or "{}")
+        except Exception:
+            return {}
+        return data if isinstance(data, dict) else {}
+
+    def _obligation_rows(self, investigation, accident):
+        return obligation_rows_for_summary(
+            accident,
+            self._investigation_saved_data(investigation),
+        )
 
     def _zou_summary_state(self, accident, obligation_rows, today):
         return obligations_summary_state(accident, obligation_rows, today)

@@ -37,21 +37,24 @@ from core.widgets.dialog_utils import create_save_cancel_box, configure_form_tab
 from moduly.kniha_urazu.ui.setreni.accident_findings_widget import AccidentFindingsWidget
 from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
     OBLIGATION_OO_OHLASENI,
+    OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU,
     SECTION_ODESLANI,
     SECTION_OHLASENI,
     SECTION_PREDANI,
     SECTION_ZAZNAM,
     INVESTIGATION_BEFORE_ACCIDENT_WARNING,
-    all_obligation_definitions,
     is_fatal_accident,
     is_investigation_before_accident,
     is_row_relevant,
     is_serious_or_fatal_accident,
     has_pn_over_3_days,
     obligation_default_deadline,
+    obligation_definitions_for_accident,
     obligation_notification_date,
+    record_duty_keys_hidden_for_generation,
     requires_accident_record,
     requires_police_obligation,
+    resolve_record_duty_generation,
     row_status,
 )
 from moduly.kniha_urazu.sluzby.accident_service import accident_service
@@ -2727,7 +2730,11 @@ class SetreniDialog(QDialog):
         )
 
     def _admin_row_relevant(self, row):
-        return is_row_relevant(self.accident, row)
+        return is_row_relevant(
+            self.accident,
+            row,
+            saved_data=self._zajisteni_saved_data,
+        )
 
     def _refresh_admin_setreni_funkce(self):
         if not hasattr(self, "admin_setreni_jmeno") or not hasattr(self, "admin_setreni_funkce"):
@@ -2752,10 +2759,16 @@ class SetreniDialog(QDialog):
             self.admin_setreni_funkce.setText(position)
 
     def _admin_rows_data(self, rows):
+        hidden_keys = record_duty_keys_hidden_for_generation(
+            resolve_record_duty_generation(self._zajisteni_saved_data)
+        )
         data = []
         for row in rows:
+            key = row.get("key", "")
+            if key in hidden_keys:
+                continue
             data.append({
-                "key": row.get("key", ""),
+                "key": key,
                 "nazev": row.get("nazev", ""),
                 "agenda": row.get("agenda", ""),
                 "section": row.get("section", ""),
@@ -2858,14 +2871,18 @@ class SetreniDialog(QDialog):
         self.admin_odeslani_rows = []
         self.admin_predani_rows = []
 
-        for definition in all_obligation_definitions():
+        for definition in obligation_definitions_for_accident(
+            self.accident,
+            saved,
+        ):
             saved_data = saved_row(
                 saved_ohlaseni + saved_zaslani,
                 key=definition.key,
                 name=definition.label,
             )
+            display_name = (saved_data.get("nazev") or "").strip() or definition.label
             row = self._make_admin_row(
-                definition.label,
+                display_name,
                 saved_data,
                 agenda="ohlaseni" if definition.section == SECTION_OHLASENI else "zaznam",
                 section=definition.section,
@@ -2885,7 +2902,13 @@ class SetreniDialog(QDialog):
     def _make_admin_row(self, nazev, data=None, agenda="", section="", key=""):
         data = data or {}
 
-        if "Portál SÚIP" in nazev or "Vyhotovení Záznamu" in nazev or "OIP / OBÚ" in nazev:
+        if (
+            key == OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU
+            or "Portál SÚIP" in nazev
+            or "Vyhotovení Záznamu" in nazev
+            or "Vyhotovení + zaslání" in nazev
+            or "OIP / OBÚ" in nazev
+        ):
             zpusoby = ["Portál SÚIP", "Datová schránka", "Jiný způsob"]
         elif (
             "Odborová organizace" in nazev
@@ -3165,7 +3188,9 @@ class SetreniDialog(QDialog):
             zaznam = QGroupBox("ZÁZNAM O PRACOVNÍM ÚRAZU")
             zaznam_layout = QVBoxLayout(zaznam)
             for row in visible_zaznam_rows:
-                if row.get("section") == SECTION_ZAZNAM:
+                if row.get("key") == OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU:
+                    mode = "vyhotovení / odeslání"
+                elif row.get("section") == SECTION_ZAZNAM:
                     mode = "vyhotovení"
                 elif row.get("key") == "ezop":
                     mode = "ohlášení"
