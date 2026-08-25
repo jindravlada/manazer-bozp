@@ -43,7 +43,7 @@ OBLIGATION_LABELS: dict[str, str] = {
     OBLIGATION_POLICIE_OHLASENI: "Policie ČR – ohlášení smrtelného pracovního úrazu / podezření na trestný čin",
     OBLIGATION_ZP_OHLASENI: "Zdravotní pojišťovna postiženého – ohlášení smrtelného pracovního úrazu",
     OBLIGATION_VYHOTOVENI_ZAZNAMU: "Vyhotovení Záznamu o pracovním úrazu",
-    OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU: "Vyhotovení + zaslání záznamu o pracovním úrazu",
+    OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU: "Vyhotovení + zaslání záznamu o pracovním úrazu – OIP/OBÚ",
     OBLIGATION_OIP_OBU_ZASLANI: "OIP / OBÚ – zaslání záznamu o pracovním úrazu",
     OBLIGATION_POLICIE_ZASLANI: "Policie ČR – zaslání záznamu o pracovním úrazu",
     OBLIGATION_ZP_ZASLANI: "Zdravotní pojišťovna postiženého – zaslání záznamu o pracovním úrazu",
@@ -74,6 +74,8 @@ LEGACY_RECORD_DUTY_KEYS = frozenset({
     OBLIGATION_VYHOTOVENI_ZAZNAMU,
     OBLIGATION_OIP_OBU_ZASLANI,
 })
+
+METHOD_PORTAL_SUIP = "Portál SÚIP"
 
 
 @dataclass(frozen=True)
@@ -660,7 +662,10 @@ def obligation_rows_for_summary(
     ):
         row = dict(rows_by_key.get(obligation.key, {}))
         row.setdefault("key", obligation.key)
-        row.setdefault("nazev", obligation.label)
+        if obligation.key == OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU:
+            row["nazev"] = obligation.label
+        else:
+            row.setdefault("nazev", obligation.label)
         row.setdefault("section", obligation.section)
 
         if row_is_done(row):

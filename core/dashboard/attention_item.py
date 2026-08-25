@@ -54,6 +54,14 @@ PRIORITY_RANK = {
 }
 
 
+def meeting_dashboard_source_label(meeting) -> str:
+    """Zdroj události pro Dashboard: provoz/místo, bez organizátora."""
+    location = (getattr(meeting, "location", None) or "").strip()
+    if location:
+        return location
+    return TYPE_LABELS[ITEM_TYPE_MEETING]
+
+
 @dataclass(frozen=True)
 class AttentionItem:
     item_type: str

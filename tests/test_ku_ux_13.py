@@ -137,7 +137,7 @@ class KuUx13ReportingTasksTestCase(unittest.TestCase):
             add_workdays(accident_date, 15),
         )
         for label_part in (
-            "Vyhotovení + zaslání záznamu o pracovním úrazu",
+            "Vyhotovení + zaslání záznamu o pracovním úrazu – OIP/OBÚ",
             "EZOP",
             "Postižený zaměstnanec",
             "Odborová organizace",

@@ -76,7 +76,7 @@ with patch.object(Path, "home", return_value=_TMP):
 
 
 KIND_OVER_3 = "pracovní úraz s pracovní neschopností delší než 3 kalendářní dny"
-COMBINED_LABEL = "Vyhotovení + zaslání záznamu o pracovním úrazu"
+COMBINED_LABEL = "Vyhotovení + zaslání záznamu o pracovním úrazu – OIP/OBÚ"
 LEGACY_VYHOTOVENI_LABEL = "Vyhotovení Záznamu o pracovním úrazu"
 LEGACY_ZASLANI_LABEL = "OIP / OBÚ – zaslání záznamu o pracovním úrazu"
 

@@ -38,6 +38,7 @@ from moduly.kniha_urazu.ui.setreni.accident_findings_widget import AccidentFindi
 from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
     OBLIGATION_OO_OHLASENI,
     OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU,
+    METHOD_PORTAL_SUIP,
     SECTION_ODESLANI,
     SECTION_OHLASENI,
     SECTION_PREDANI,
@@ -2767,6 +2768,9 @@ class SetreniDialog(QDialog):
             key = row.get("key", "")
             if key in hidden_keys:
                 continue
+            zpusob = self._radio_choice_value(row["zpusob"])
+            if key == OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU:
+                zpusob = zpusob or METHOD_PORTAL_SUIP
             data.append({
                 "key": key,
                 "nazev": row.get("nazev", ""),
@@ -2777,7 +2781,7 @@ class SetreniDialog(QDialog):
                 "lhuta": self._date_to_json(row["lhuta"]) if row.get("lhuta") is not None else "",
                 "datum": self._date_to_json(row["datum"]),
                 "cas": row["cas"].text().strip(),
-                "zpusob": self._radio_choice_value(row["zpusob"]),
+                "zpusob": zpusob,
                 "upresneni": row["upresneni"].text().strip(),
             })
         return data
@@ -2880,7 +2884,9 @@ class SetreniDialog(QDialog):
                 key=definition.key,
                 name=definition.label,
             )
-            display_name = (saved_data.get("nazev") or "").strip() or definition.label
+            display_name = definition.label
+            if definition.key != OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU:
+                display_name = (saved_data.get("nazev") or "").strip() or definition.label
             row = self._make_admin_row(
                 display_name,
                 saved_data,
@@ -2902,14 +2908,14 @@ class SetreniDialog(QDialog):
     def _make_admin_row(self, nazev, data=None, agenda="", section="", key=""):
         data = data or {}
 
-        if (
-            key == OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU
-            or "Portál SÚIP" in nazev
+        if key == OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU:
+            zpusoby = [METHOD_PORTAL_SUIP]
+        elif (
+            "Portál SÚIP" in nazev
             or "Vyhotovení Záznamu" in nazev
-            or "Vyhotovení + zaslání" in nazev
             or "OIP / OBÚ" in nazev
         ):
-            zpusoby = ["Portál SÚIP", "Datová schránka", "Jiný způsob"]
+            zpusoby = [METHOD_PORTAL_SUIP, "Datová schránka", "Jiný způsob"]
         elif (
             "Odborová organizace" in nazev
             or "Postižený zaměstnanec" in nazev
@@ -2958,7 +2964,12 @@ class SetreniDialog(QDialog):
             self._set_date_widget(row["datum"], data.get("datum"))
 
         # Způsob nevybírat automaticky – potvrzuje ho uživatel až po provedení.
-        self._set_radio_choice(row["zpusob"], data.get("zpusob") or "")
+        saved_method = (data.get("zpusob") or "").strip()
+        if key == OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU:
+            self._set_radio_choice(row["zpusob"], METHOD_PORTAL_SUIP)
+            row["fixed_sending_method"] = METHOD_PORTAL_SUIP
+        else:
+            self._set_radio_choice(row["zpusob"], saved_method)
 
         # Osobní předání u ohlášení OO: ponechat v UI, ale aktuálně nepřípustné.
         if (
@@ -3032,8 +3043,9 @@ class SetreniDialog(QDialog):
             form.addRow("Lhůta do:", row["lhuta"])
         form.addRow(f"Datum {mode}:", row["datum"])
         form.addRow(f"Čas {mode}:", row["cas"])
-        # EZOP se pouze zapisuje do systému – neřeší se způsob ohlášení.
-        if "EZOP" not in row["nazev"]:
+        if row.get("fixed_sending_method"):
+            form.addRow(f"Způsob {mode}:", QLabel(row["fixed_sending_method"]))
+        elif "EZOP" not in row["nazev"]:
             form.addRow(f"Způsob {mode}:", row["zpusob"])
             form.addRow("Upřesnění:", row["upresneni"])
         return group

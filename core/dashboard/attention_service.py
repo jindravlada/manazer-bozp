@@ -28,6 +28,7 @@ from core.dashboard.attention_item import (
     AttentionItem,
     attention_item_identity,
     attention_item_is_overdue,
+    meeting_dashboard_source_label,
 )
 from core.shared.task_source_display import task_source_short_label
 from core.shared.working_days import first_working_day
@@ -224,14 +225,7 @@ def _from_inspections(_today: date) -> list[AttentionItem]:
 
 
 def _meeting_subtitle(meeting) -> str:
-    parts: list[str] = []
-    location = (meeting.location or "").strip()
-    organizer = (meeting.organizer_name or "").strip()
-    if location:
-        parts.append(location)
-    if organizer:
-        parts.append(organizer)
-    return " · ".join(parts)
+    return meeting_dashboard_source_label(meeting)
 
 
 def _from_meetings(_today: date) -> list[AttentionItem]:

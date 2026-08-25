@@ -98,7 +98,8 @@ class Meetings1bTestCase(unittest.TestCase):
         self.assertEqual(item.event_at, starts)
         self.assertEqual(item.ends_at, ends)
         self.assertIn("Místnost 1", item.subtitle)
-        self.assertIn(self.organizer.display_name, item.subtitle)
+        self.assertNotIn(self.organizer.display_name, item.subtitle)
+        self.assertNotIn(" · ", item.subtitle)
 
         widget = UpcomingTasksWidget()
         found = False

@@ -16,6 +16,7 @@ from core.dashboard.attention_item import (
     ITEM_TYPE_QUALIFICATION_CERTIFICATE,
     ITEM_TYPE_YEARLY_PLAN_MONTH,
     AttentionItem,
+    meeting_dashboard_source_label,
 )
 from core.dashboard.attention_service import (
     build_sort_key,
@@ -161,14 +162,13 @@ def meeting_reminder_attention_item(meeting) -> AttentionItem:
     event_type = (getattr(meeting, "event_type", None) or "").strip()
     if event_type:
         title = f"{event_type} – {title}"
-    location = (meeting.location or "").strip() or "—"
     return AttentionItem(
         item_type=ITEM_TYPE_MEETING,
         source_type=ITEM_TYPE_MEETING,
         source_id=meeting.id,
         title=title,
         date=event_date,
-        subtitle=location,
+        subtitle=meeting_dashboard_source_label(meeting),
         status=meeting.status or "",
         priority="",
         event_at=starts_at,
