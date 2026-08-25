@@ -440,10 +440,9 @@ class DashboardEventSourceAccidentDutyUx1TestCase(unittest.TestCase):
             ["Datová schránka", "E-mail", "Listinná podoba", "Jiný způsob"],
         )
         oip_notice = self._row_by_key(dialog, OBLIGATION_OIP_OBU_OHLASENI)
-        self.assertEqual(
-            self._method_labels(oip_notice),
-            [METHOD_PORTAL_SUIP, "Datová schránka", "Jiný způsob"],
-        )
+        self.assertEqual(self._method_labels(oip_notice), [METHOD_PORTAL_SUIP])
+        self.assertEqual(oip_notice.get("fixed_sending_method"), METHOD_PORTAL_SUIP)
+        self.assertTrue(oip_notice.get("show_method_upresneni"))
         police = self._row_by_key(dialog, OBLIGATION_POLICIE_ZASLANI)
         self.assertEqual(
             self._method_labels(police),

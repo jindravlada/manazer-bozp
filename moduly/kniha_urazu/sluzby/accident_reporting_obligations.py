@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import Any, Protocol
 
 
@@ -10,6 +10,7 @@ class AccidentLike(Protocol):
     podezreni_trestny_cin: str
     dpn_od: date | None
     dpn_do: date | None
+    accident_date: date | None
 
 
 OBLIGATION_OO_OHLASENI = "oo_ohlaseni"
@@ -76,6 +77,7 @@ LEGACY_RECORD_DUTY_KEYS = frozenset({
 })
 
 METHOD_PORTAL_SUIP = "Portál SÚIP"
+PORTAL_SUIP_OIP_NOTICE_FROM = date(2026, 1, 1)
 
 
 @dataclass(frozen=True)
@@ -111,7 +113,36 @@ def is_criminal_suspicion(accident: AccidentLike | None) -> bool:
 
 
 def requires_police_obligation(accident: AccidentLike | None) -> bool:
-    return is_fatal_accident(accident) or is_criminal_suspicion(accident)
+    """Povinnosti vůči Policii ČR.
+
+    U smrtelného pracovního úrazu vznikají vždy, bez ohledu na pole
+    podezření na trestný čin. U ostatních druhů úrazu jen při ručně
+    zadaném podezření (hodnota ANO).
+    """
+    if is_fatal_accident(accident):
+        return True
+    return is_criminal_suspicion(accident)
+
+
+def accident_event_date(accident: AccidentLike | None) -> date | None:
+    if accident is None:
+        return None
+    raw = getattr(accident, "accident_date", None)
+    if raw is None:
+        return None
+    if isinstance(raw, datetime):
+        return raw.date()
+    if isinstance(raw, date):
+        return raw
+    return None
+
+
+def oip_notice_uses_fixed_portal_suip(accident: AccidentLike | None) -> bool:
+    """Ohlášení OIP/OBÚ od 1. 1. 2026 jen Portálem SÚIP (NV č. 322/2025 Sb.)."""
+    event_date = accident_event_date(accident)
+    if event_date is None:
+        return True
+    return event_date >= PORTAL_SUIP_OIP_NOTICE_FROM
 
 
 def pn_calendar_days(accident: AccidentLike | None) -> int | None:

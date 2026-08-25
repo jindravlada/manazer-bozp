@@ -1,8 +1,16 @@
 import json
 from datetime import date, datetime, time
 
-from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QTableWidget
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QBrush, QColor, QPainter, QPen
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QHeaderView,
+    QStyle,
+    QStyledItemDelegate,
+    QStyleOptionViewItem,
+    QTableWidget,
+)
 from sqlalchemy import select
 
 from core.database.session import get_session
@@ -21,17 +29,34 @@ from core.widgets.typed_table_sort import (
 )
 from moduly.kniha_urazu.modely.investigation import AccidentInvestigation
 from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
+    CATEGORY_FATAL,
+    CATEGORY_PN_OVER_3,
+    CATEGORY_PN_UP_TO_3,
+    CATEGORY_SERIOUS,
+    accident_category,
     obligation_rows_for_summary,
     obligations_summary_state,
 )
 from moduly.ukoly.sluzby.task_service import task_service
 
 _OPATRENI_SOURCE = "kniha_urazu_opatreni"
-_INJURY_COLOR_FATAL = "#222222"
+_INJURY_COLOR_FATAL = "#000000"
 _INJURY_COLOR_SERIOUS = "#d32f2f"
 _INJURY_COLOR_OVER_3_DAYS = "#ff9800"
 _INJURY_COLOR_UP_TO_3_DAYS = "#2e7d32"
 _INJURY_COLOR_DEFAULT = "#e0e0e0"
+
+_INJURY_COLOR_LEGEND = (
+    "Indikátor druhu úrazu: černá = smrtelný, červená = závažný, "
+    "oranžová = PN delší než 3 dny, zelená = PN do 3 dnů, šedá = ostatní"
+)
+_INJURY_INDICATOR_LABELS = {
+    "fatal": "černá – smrtelný pracovní úraz",
+    "serious": "červená – závažný pracovní úraz",
+    "over_3_days": "oranžová – PN delší než 3 dny",
+    "up_to_3_days": "zelená – PN do 3 dnů",
+    "other": "šedá – ostatní",
+}
 
 _ZOU_STATE_ORDER = ("overdue", "waiting", "done")
 _INJURY_SEVERITY_ORDER = ("fatal", "serious", "over_3_days", "up_to_3_days", "other")
@@ -48,6 +73,46 @@ def _order_status(value: str, order: tuple[str, ...], *, label: str = ""):
         return typed_status(order.index(value), label=label or value or "")
     except ValueError:
         return typed_status(len(order), label=label or value or "")
+
+
+def _injury_color_from_role(value) -> QColor | None:
+    if value is None:
+        return None
+    if isinstance(value, QBrush):
+        color = value.color()
+        return color if color.isValid() else None
+    if isinstance(value, QColor):
+        return value if value.isValid() else None
+    color = QColor(value)
+    return color if color.isValid() else None
+
+
+class _InjuryIndicatorDelegate(QStyledItemDelegate):
+    """Kreslí barevný čtvereček druhu úrazu; výběr řádku barvu nepřebije."""
+
+    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index) -> None:
+        opt = QStyleOptionViewItem(option)
+        self.initStyleOption(opt, index)
+        opt.backgroundBrush = QBrush()
+        widget = option.widget
+        style = widget.style() if widget is not None else None
+        if style is not None:
+            style.drawControl(QStyle.ControlElement.CE_ItemViewItem, opt, painter, widget)
+        else:
+            super().paint(painter, option, index)
+
+        fill = _injury_color_from_role(index.data(Qt.ItemDataRole.BackgroundRole))
+        if fill is None:
+            return
+
+        painter.save()
+        rect = option.rect.adjusted(3, 3, -3, -3)
+        painter.setBrush(QBrush(fill))
+        selected = bool(option.state & QStyle.StateFlag.State_Selected)
+        ring = QColor("#ffffff") if selected or fill.lightness() < 40 else QColor("#555555")
+        painter.setPen(QPen(ring, 1))
+        painter.drawRect(rect)
+        painter.restore()
 
 
 class AccidentTable(QTableWidget):
@@ -67,6 +132,9 @@ class AccidentTable(QTableWidget):
             "Místo úrazu",
             "ZoÚ",
         ])
+        header_item = self.horizontalHeaderItem(0)
+        if header_item is not None:
+            header_item.setToolTip(_INJURY_COLOR_LEGEND)
 
         self.setColumnHidden(1, True)
         self.verticalHeader().setVisible(False)
@@ -75,6 +143,7 @@ class AccidentTable(QTableWidget):
         self.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         enable_typed_sorting(self)
+        self.setItemDelegateForColumn(0, _InjuryIndicatorDelegate(self))
 
     def configure_columns(self):
         header = self.horizontalHeader()
@@ -105,7 +174,8 @@ class AccidentTable(QTableWidget):
                 obligation_rows = obligation_rows_for_summary(accident, saved_data)
                 zou_state = self._zou_summary_state(accident, obligation_rows, today)
                 zou_color = self._zou_color(accident, obligation_rows, today)
-                injury_key = self._injury_severity_key(accident.druh_urazu or "")
+                injury_key = self._injury_severity_key(accident)
+                injury_color = self._injury_type_color(accident)
                 number = accident.number or "—"
                 date_display = (
                     "" if accident.accident_date is None else accident.accident_date.strftime("%d.%m.%Y")
@@ -157,7 +227,7 @@ class AccidentTable(QTableWidget):
                 for column, item in enumerate(cells):
                     item.setToolTip(tooltip)
                     if column == 0:
-                        item.setBackground(self._injury_type_color(accident.druh_urazu or ""))
+                        item.setBackground(injury_color)
                     elif column == 9 and zou_color is not None:
                         item.setBackground(zou_color)
                     self.setItem(row, column, item)
@@ -256,20 +326,20 @@ class AccidentTable(QTableWidget):
             return QColor(_INJURY_COLOR_UP_TO_3_DAYS)
         return QColor(_INJURY_COLOR_SERIOUS)
 
-    def _injury_severity_key(self, druh_urazu: str) -> str:
-        text = (druh_urazu or "").lower()
-        if "smrteln" in text:
+    def _injury_severity_key(self, accident) -> str:
+        category = accident_category(accident)
+        if category == CATEGORY_FATAL:
             return "fatal"
-        if "závaž" in text or "zavaz" in text:
+        if category == CATEGORY_SERIOUS:
             return "serious"
-        if "delší než 3" in text or "delsi nez 3" in text:
+        if category == CATEGORY_PN_OVER_3:
             return "over_3_days"
-        if "nepřesahující 3" in text or "nepresahujici 3" in text:
+        if category == CATEGORY_PN_UP_TO_3:
             return "up_to_3_days"
         return "other"
 
-    def _injury_type_color(self, druh_urazu: str) -> QColor:
-        key = self._injury_severity_key(druh_urazu)
+    def _injury_type_color(self, accident) -> QColor:
+        key = self._injury_severity_key(accident)
         colors = {
             "fatal": QColor(_INJURY_COLOR_FATAL),
             "serious": QColor(_INJURY_COLOR_SERIOUS),
@@ -314,12 +384,14 @@ class AccidentTable(QTableWidget):
 
     def _tooltip(self, accident):
         datum = "" if accident.accident_date is None else accident.accident_date.strftime("%d.%m.%Y")
+        injury_key = self._injury_severity_key(accident)
         rows = [
             ("Číslo:", accident.number or "—"),
             ("Datum:", f"{datum} {accident.accident_time or ''}".strip()),
             ("Zaměstnanec:", accident.employee_name or "—"),
             ("Pracoviště:", accident.workplace_name or accident.pracoviste or "—"),
             ("Druh úrazu:", accident.druh_urazu or "—"),
+            ("Indikátor:", _INJURY_INDICATOR_LABELS.get(injury_key, _INJURY_INDICATOR_LABELS["other"])),
         ]
         return format_info_card(
             title="Pracovní úraz",

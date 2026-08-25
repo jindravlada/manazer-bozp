@@ -40,10 +40,13 @@ with patch.object(Path, "home", return_value=_TMP):
         SECTION_PREDANI,
         SECTION_ZAZNAM,
         applicable_obligations,
+        is_criminal_suspicion,
         is_obligation_relevant,
         is_row_relevant,
         obligations_summary_state,
         obligation_rows_for_summary,
+        oip_notice_uses_fixed_portal_suip,
+        requires_police_obligation,
         row_is_done,
         row_status,
     )
@@ -146,6 +149,46 @@ class KnihaUrazuReportingObligationsTestCase(unittest.TestCase):
             },
         )
         self.assertNotIn(OBLIGATION_ZAMESTNANEC_PREDANI, keys)
+
+    def test_fatal_accident_creates_police_without_criminal_suspicion(self) -> None:
+        accident = AccidentStub(druh_urazu="smrtelný", podezreni_trestny_cin="")
+        keys = self._keys(accident)
+        self.assertIn(OBLIGATION_POLICIE_OHLASENI, keys)
+        self.assertIn(OBLIGATION_POLICIE_ZASLANI, keys)
+        self.assertIn(OBLIGATION_ZP_OHLASENI, keys)
+        self.assertFalse(is_criminal_suspicion(accident))
+        self.assertTrue(requires_police_obligation(accident))
+
+    def test_serious_without_suspicion_has_no_police(self) -> None:
+        accident = AccidentStub(
+            druh_urazu="závažný pracovní úraz (hospitalizace více než 5 po sobě jdoucích dnů)",
+            podezreni_trestny_cin="",
+        )
+        keys = self._keys(accident)
+        self.assertIn(OBLIGATION_OIP_OBU_OHLASENI, keys)
+        self.assertNotIn(OBLIGATION_POLICIE_OHLASENI, keys)
+        self.assertNotIn(OBLIGATION_POLICIE_ZASLANI, keys)
+
+    def test_serious_with_suspicion_creates_police(self) -> None:
+        accident = AccidentStub(
+            druh_urazu="závažný pracovní úraz (hospitalizace více než 5 po sobě jdoucích dnů)",
+            podezreni_trestny_cin="ANO",
+        )
+        keys = self._keys(accident)
+        self.assertIn(OBLIGATION_POLICIE_OHLASENI, keys)
+        self.assertIn(OBLIGATION_POLICIE_ZASLANI, keys)
+
+    def test_oip_notice_portal_cutoff_uses_accident_date(self) -> None:
+        self.assertTrue(
+            oip_notice_uses_fixed_portal_suip(
+                AccidentStub(druh_urazu="smrtelný", accident_date=date(2026, 1, 1))
+            )
+        )
+        self.assertFalse(
+            oip_notice_uses_fixed_portal_suip(
+                AccidentStub(druh_urazu="smrtelný", accident_date=date(2025, 12, 31))
+            )
+        )
 
     def test_criminal_suspicion_adds_police_ohlaseni_only_for_short_pn(self) -> None:
         accident = AccidentStub(

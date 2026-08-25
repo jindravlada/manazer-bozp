@@ -36,6 +36,7 @@ from PySide6.QtWidgets import (
 from core.widgets.dialog_utils import create_save_cancel_box, configure_form_tab_navigation
 from moduly.kniha_urazu.ui.setreni.accident_findings_widget import AccidentFindingsWidget
 from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
+    OBLIGATION_OIP_OBU_OHLASENI,
     OBLIGATION_OO_OHLASENI,
     OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU,
     METHOD_PORTAL_SUIP,
@@ -52,6 +53,7 @@ from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
     obligation_default_deadline,
     obligation_definitions_for_accident,
     obligation_notification_date,
+    oip_notice_uses_fixed_portal_suip,
     record_duty_keys_hidden_for_generation,
     requires_accident_record,
     requires_police_obligation,
@@ -2771,6 +2773,10 @@ class SetreniDialog(QDialog):
             zpusob = self._radio_choice_value(row["zpusob"])
             if key == OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU:
                 zpusob = zpusob or METHOD_PORTAL_SUIP
+            elif key == OBLIGATION_OIP_OBU_OHLASENI and oip_notice_uses_fixed_portal_suip(
+                self.accident
+            ):
+                zpusob = zpusob or METHOD_PORTAL_SUIP
             data.append({
                 "key": key,
                 "nazev": row.get("nazev", ""),
@@ -2908,7 +2914,14 @@ class SetreniDialog(QDialog):
     def _make_admin_row(self, nazev, data=None, agenda="", section="", key=""):
         data = data or {}
 
+        portal_only_oip_notice = (
+            key == OBLIGATION_OIP_OBU_OHLASENI
+            and oip_notice_uses_fixed_portal_suip(self.accident)
+        )
+
         if key == OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU:
+            zpusoby = [METHOD_PORTAL_SUIP]
+        elif portal_only_oip_notice:
             zpusoby = [METHOD_PORTAL_SUIP]
         elif (
             "Portál SÚIP" in nazev
@@ -2968,6 +2981,11 @@ class SetreniDialog(QDialog):
         if key == OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU:
             self._set_radio_choice(row["zpusob"], METHOD_PORTAL_SUIP)
             row["fixed_sending_method"] = METHOD_PORTAL_SUIP
+        elif portal_only_oip_notice:
+            self._set_radio_choice(row["zpusob"], METHOD_PORTAL_SUIP)
+            row["fixed_sending_method"] = METHOD_PORTAL_SUIP
+            row["show_method_upresneni"] = True
+            row["upresneni"].setPlaceholderText("číslo podání nebo poznámka k ohlášení")
         else:
             self._set_radio_choice(row["zpusob"], saved_method)
 
@@ -3045,6 +3063,8 @@ class SetreniDialog(QDialog):
         form.addRow(f"Čas {mode}:", row["cas"])
         if row.get("fixed_sending_method"):
             form.addRow(f"Způsob {mode}:", QLabel(row["fixed_sending_method"]))
+            if row.get("show_method_upresneni"):
+                form.addRow("Upřesnění:", row["upresneni"])
         elif "EZOP" not in row["nazev"]:
             form.addRow(f"Způsob {mode}:", row["zpusob"])
             form.addRow("Upřesnění:", row["upresneni"])
