@@ -77,7 +77,7 @@ class AuditCommissionWidget(QWidget):
         info = QLabel(
             f"{COMMISSION_LABEL_LEADER}, {COMMISSION_LABEL_WORKPLACE.lower()} "
             f"a {COMMISSION_LABEL_UNION.lower()} jsou povinní. "
-            f"{COMMISSION_LABEL_MEMBER}i a {COMMISSION_LABEL_INVITED.lower()} jsou volitelní."
+            f"Auditoři a {COMMISSION_LABEL_INVITED.lower()} jsou volitelní."
         )
         info.setWordWrap(True)
         info.setObjectName("MutedText")

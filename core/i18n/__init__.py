@@ -1,0 +1,1 @@
+"""České překlady standardních Qt dialogů (QFileDialog, …)."""

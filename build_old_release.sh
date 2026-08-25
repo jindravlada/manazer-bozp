@@ -63,6 +63,11 @@ docker run --rm \
     echo "== PyInstaller build =="
     pip install pyinstaller
 
+    if [ ! -f /src/zdroje/preklady/qtbase_cs.qm ]; then
+      echo "Chybí zdroje/preklady/qtbase_cs.qm (český Qt překlad)."
+      exit 1
+    fi
+
     pyinstaller \
       --onedir \
       --windowed \

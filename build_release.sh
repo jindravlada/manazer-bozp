@@ -50,6 +50,10 @@ rm -rf build dist AppDir squashfs-root
 rm -f "$OUTPUT_NAME" Mana_er_BOZP*.AppImage ManazerBOZP*.AppImage Manažer_BOZP*.AppImage
 
 echo "== PyInstaller =="
+if [ ! -f "$PROJECT_DIR/zdroje/preklady/qtbase_cs.qm" ]; then
+  echo "Chybí zdroje/preklady/qtbase_cs.qm (český Qt překlad)."
+  exit 1
+fi
 pyinstaller --onedir --windowed \
   --name "$APP_NAME" \
   --add-data "moduly:moduly" \

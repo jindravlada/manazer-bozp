@@ -2,6 +2,7 @@ import sys
 
 from PySide6.QtWidgets import QApplication
 
+from core.i18n.qt_translator import install_qt_translators
 from core.database.upgrade_guard import (
     MigrationGuardError,
     prepare_database_for_startup,
@@ -30,6 +31,7 @@ def _show_startup_error(title: str, message: str) -> None:
         configure_application_for_dialogs(app)
         install_unified_message_boxes(app)
         install_form_wheel_guards(app)
+        install_qt_translators(app)
     show_critical(None, title, message)
 
 
@@ -52,6 +54,7 @@ def main():
     # Titulek hlavního okna zůstává app_display_name() přes setWindowTitle.
     configure_application_for_dialogs(app)
     install_unified_message_boxes(app)
+    install_qt_translators(app)
     # UX-FORMS-1: kolečko myši nemění hodnoty combo/spin při rolování formuláře.
     install_form_wheel_guards(app)
     # UX-TASK-TOOLTIP-1: tooltip zůstane, dokud kurzor zůstává nad prvkem.
