@@ -23,7 +23,6 @@ from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
     QDialogButtonBox,
-    QFileDialog,
     QHBoxLayout,
     QLabel,
     QListWidget,
@@ -36,6 +35,10 @@ from PySide6.QtWidgets import (
 )
 
 from core.services.storage_service import storage_service
+from core.ui.native_folder_dialog import (
+    PHOTO_FOLDER_DIALOG_TITLE,
+    choose_existing_directory,
+)
 
 PHOTO_PICKER_TITLE = "Vybrat fotografii"
 PHOTO_PICKER_TITLE_MULTI = "Vybrat fotografie"
@@ -803,9 +806,9 @@ class PhotoPickerDialog(QDialog):
             self._load_directory(parent)
 
     def _browse_folder(self) -> None:
-        selected = QFileDialog.getExistingDirectory(
+        selected = choose_existing_directory(
             self,
-            "Vybrat složku s fotografiemi",
+            PHOTO_FOLDER_DIALOG_TITLE,
             str(self._directory),
         )
         if selected:

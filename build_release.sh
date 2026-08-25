@@ -54,13 +54,25 @@ if [ ! -f "$PROJECT_DIR/zdroje/preklady/qtbase_cs.qm" ]; then
   echo "Chybí zdroje/preklady/qtbase_cs.qm (český Qt překlad)."
   exit 1
 fi
+mapfile -t QT_THEME_BINARIES < <(python3 -c 'from core.packaging.qt_platform_plugins import pyinstaller_binary_specs; print("\n".join(pyinstaller_binary_specs()))')
+ADD_THEME_BINARIES=()
+for spec in "${QT_THEME_BINARIES[@]}"; do
+  ADD_THEME_BINARIES+=(--add-binary "$spec")
+done
 pyinstaller --onedir --windowed \
   --name "$APP_NAME" \
   --add-data "moduly:moduly" \
   --add-data "core:core" \
   --add-data "ciselniky:ciselniky" \
   --add-data "zdroje:zdroje" \
+  "${ADD_THEME_BINARIES[@]}" \
   main.py
+
+PORTAL_PLUGIN="dist/$APP_NAME/_internal/PySide6/Qt/plugins/platformthemes/libqxdgdesktopportal.so"
+if [ ! -f "$PORTAL_PLUGIN" ]; then
+  echo "Chybí Qt platform-theme plugin xdgdesktopportal ($PORTAL_PLUGIN)."
+  exit 1
+fi
 
 echo "== AppDir =="
 mkdir -p AppDir/usr/bin

@@ -3,6 +3,7 @@ import sys
 from PySide6.QtWidgets import QApplication
 
 from core.i18n.qt_translator import install_qt_translators
+from core.ui.native_folder_dialog import configure_native_folder_dialogs
 from core.database.upgrade_guard import (
     MigrationGuardError,
     prepare_database_for_startup,
@@ -24,6 +25,7 @@ from core.windows.main_window import MainWindow
 
 
 def _show_startup_error(title: str, message: str) -> None:
+    configure_native_folder_dialogs()
     app = QApplication.instance()
     if app is None:
         app = QApplication(sys.argv)
@@ -36,6 +38,7 @@ def _show_startup_error(title: str, message: str) -> None:
 
 
 def main():
+    configure_native_folder_dialogs()
     # MIGRATION-0: předmigrační záloha (je-li třeba) před jakýmkoli zápisem schématu.
     try:
         prepare_database_for_startup()

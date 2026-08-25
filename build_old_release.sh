@@ -68,6 +68,12 @@ docker run --rm \
       exit 1
     fi
 
+    mapfile -t QT_THEME_BINARIES < <(python3 -c 'from core.packaging.qt_platform_plugins import pyinstaller_binary_specs; print("\n".join(pyinstaller_binary_specs()))')
+    ADD_THEME_BINARIES=()
+    for spec in "${QT_THEME_BINARIES[@]}"; do
+      ADD_THEME_BINARIES+=(--add-binary "$spec")
+    done
+
     pyinstaller \
       --onedir \
       --windowed \
@@ -76,7 +82,14 @@ docker run --rm \
       --add-data "core:core" \
       --add-data "ciselniky:ciselniky" \
       --add-data "zdroje:zdroje" \
+      "${ADD_THEME_BINARIES[@]}" \
       main.py
+
+    PORTAL_PLUGIN="dist/ManazerBOZP/_internal/PySide6/Qt/plugins/platformthemes/libqxdgdesktopportal.so"
+    if [ ! -f "$PORTAL_PLUGIN" ]; then
+      echo "Chybí Qt platform-theme plugin xdgdesktopportal ($PORTAL_PLUGIN)."
+      exit 1
+    fi
 
     echo "== Připravuji AppDir =="
     APP_DISPLAY_NAME="$(python3 -c "from core.version import app_display_name; print(app_display_name())")"
