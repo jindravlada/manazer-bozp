@@ -11,13 +11,13 @@ from datetime import date, datetime
 
 from moduly.audity.constants import (
     AUDIT_INTRO_CHANGES_EMPTY,
-    AUDIT_INTRO_CHANGES_LABEL,
-    AUDIT_INTRO_FINDINGS_GROUP,
+    AUDIT_INTRO_EXPORT_CHANGES_HEADING,
+    AUDIT_INTRO_EXPORT_FINDINGS_HEADING,
+    AUDIT_INTRO_EXPORT_PREVIOUS_AUDITS_HEADING,
+    AUDIT_INTRO_EXPORT_TASKS_HEADING,
     AUDIT_INTRO_FIRST_AUDIT_MESSAGE,
     AUDIT_INTRO_NO_HISTORICAL_FINDINGS,
     AUDIT_INTRO_NO_HISTORICAL_TASKS,
-    AUDIT_INTRO_PREVIOUS_AUDITS_GROUP,
-    AUDIT_INTRO_TASKS_GROUP,
 )
 from moduly.audity.modely.audit import Audit
 from moduly.audity.sluzby.audit_history_service import (
@@ -61,7 +61,7 @@ def format_detailed_intro_section(
         changes_body = AUDIT_INTRO_CHANGES_EMPTY
     else:
         changes_body = changes_raw.rstrip("\n")
-    blocks.append(f"{AUDIT_INTRO_CHANGES_LABEL}\n\n{changes_body}")
+    blocks.append(f"{AUDIT_INTRO_EXPORT_CHANGES_HEADING}\n\n{changes_body}")
 
     if history.is_first_audit:
         blocks.append(AUDIT_INTRO_FIRST_AUDIT_MESSAGE)
@@ -81,7 +81,7 @@ def format_detailed_intro_section(
         for index, item in enumerate(history.previous_audits, start=1)
     ]
     blocks.append(
-        f"{AUDIT_INTRO_PREVIOUS_AUDITS_GROUP}\n\n" + "\n\n".join(audit_lines)
+        f"{AUDIT_INTRO_EXPORT_PREVIOUS_AUDITS_HEADING}\n\n" + "\n\n".join(audit_lines)
     )
 
     if history.findings:
@@ -102,7 +102,7 @@ def format_detailed_intro_section(
         findings_body = "\n\n".join(finding_lines)
     else:
         findings_body = AUDIT_INTRO_NO_HISTORICAL_FINDINGS
-    blocks.append(f"{AUDIT_INTRO_FINDINGS_GROUP}\n\n{findings_body}")
+    blocks.append(f"{AUDIT_INTRO_EXPORT_FINDINGS_HEADING}\n\n{findings_body}")
 
     if history.tasks:
         task_lines = [
@@ -125,7 +125,7 @@ def format_detailed_intro_section(
         tasks_body = "\n\n".join(task_lines)
     else:
         tasks_body = AUDIT_INTRO_NO_HISTORICAL_TASKS
-    blocks.append(f"{AUDIT_INTRO_TASKS_GROUP}\n\n{tasks_body}")
+    blocks.append(f"{AUDIT_INTRO_EXPORT_TASKS_HEADING}\n\n{tasks_body}")
 
     return "\n\n".join(blocks)
 

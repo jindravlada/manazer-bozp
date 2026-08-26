@@ -147,6 +147,11 @@ AUDIT_INTRO_NO_WORKPLACE_HINT = (
 AUDIT_INTRO_PREVIOUS_AUDITS_GROUP = "Předchozí audity"
 AUDIT_INTRO_FINDINGS_GROUP = "Zjištění z předchozích auditů"
 AUDIT_INTRO_TASKS_GROUP = "Úkoly z předchozích auditů"
+# Podrobná zpráva: mezititulky s dvojtečkou. Záložka Úvod zůstává bez dvojtečky.
+AUDIT_INTRO_EXPORT_CHANGES_HEADING = f"{AUDIT_INTRO_CHANGES_LABEL}:"
+AUDIT_INTRO_EXPORT_PREVIOUS_AUDITS_HEADING = f"{AUDIT_INTRO_PREVIOUS_AUDITS_GROUP}:"
+AUDIT_INTRO_EXPORT_FINDINGS_HEADING = f"{AUDIT_INTRO_FINDINGS_GROUP}:"
+AUDIT_INTRO_EXPORT_TASKS_HEADING = f"{AUDIT_INTRO_TASKS_GROUP}:"
 AUDIT_INTRO_NO_HISTORICAL_FINDINGS = "Žádná zjištění z předchozích auditů."
 AUDIT_INTRO_NO_HISTORICAL_TASKS = (
     "Žádné úkoly navázané na zjištění z předchozích auditů."

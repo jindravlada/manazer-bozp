@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-08-26 – AUDIT-DETAILED-INTRO-PUNCTUATION-UX1
+
+**Co se povedlo:** V Podrobné zprávě mají mezititulky Úvodu dvojtečku; záložka Úvod a Protokol beze změny.
+
+**Co už bychom dnes udělali jinak:** Exportní mezititulky hned odlišit od popisků QGroupBox.
+
+**Co bylo zbytečně složité:** —
+
+**Nové pravidlo:** Dvojtečka u mezititulků Podrobné zprávy patří do exportního textu, ne do konstant záložky Úvod.
+
+**Aktualizované dokumenty:** —
+
 ### 2026-08-26 – AUDIT-HISTORY-AS-OF-FIX1
 
 **Co se povedlo:** Historie provozu bere jen audity se `started_at` přísně před časovým bodem aktuálního auditu; plán 1/2028 už není „předchozí audit“ roku 2026.
