@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-08-26 – PROVERKY-CONCLUSION-SAVE-FIX1
+
+**Co se povedlo:** Refresh souhrnu na záložce Závěr už nepřepisuje doporučení vedoucího; Uložit zapíše text do DB a nechá ho v poli.
+
+**Co už bychom dnes udělali jinak:** Stejné oddělení load/refresh jako u AuditConclusionWidget zavést hned při stay-open ukládání Prověrek.
+
+**Co bylo zbytečně složité:** —
+
+**Nové pravidlo:** `refresh()` souhrnu nesmí přepisovat editovatelná pole; načtení z modelu jen v `load_*`.
+
+**Aktualizované dokumenty:** —
+
 ### 2026-08-26 – PROVERKY-DETAILED-STRONG-SIDES-UX1
 
 **Co se povedlo:** Prázdná sekce Silné stránky zmizí z Podrobné zprávy i Protokolu Prověrky (nadpis, pomlčka i prázdný odstavec); vyplněná sekce zůstává stejná.

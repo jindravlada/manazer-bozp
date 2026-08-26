@@ -98,7 +98,29 @@ class BozpInspectionConclusionWidget(QWidget):
 
     def load_inspection(self, inspection) -> None:
         self.inspection = inspection
+        self._load_editor_fields()
         self.refresh()
+
+    def _load_editor_fields(self) -> None:
+        """Načte editovatelná pole jen při load — ne při refresh souhrnu."""
+        if self.inspection is None:
+            self.finished_at_edit.clear_date()
+            self.silne_stranky_edit.clear()
+            self.doporuceni_edit.clear()
+            return
+
+        finished_at = getattr(self.inspection, "finished_at", None)
+        if finished_at is not None:
+            self.finished_at_edit.set_date_value(finished_at)
+        else:
+            self.finished_at_edit.clear_date()
+
+        self.silne_stranky_edit.setPlainText(
+            getattr(self.inspection, "silne_stranky", "") or ""
+        )
+        self.doporuceni_edit.setPlainText(
+            getattr(self.inspection, "doporuceni_vedouciho", "") or ""
+        )
 
     def refresh(self) -> None:
         inspection_id = self.inspection.id if self.inspection is not None else None
@@ -106,13 +128,11 @@ class BozpInspectionConclusionWidget(QWidget):
 
         if inspection_id is None:
             self.status_label.setText("—")
-            self.finished_at_edit.clear_date()
-            self.silne_stranky_edit.clear()
-            self.doporuceni_edit.clear()
             self.findings_total_label.setText("0")
             self.findings_open_label.setText("0")
             self.tasks_total_label.setText("0")
             self.tasks_active_label.setText("0")
+            self.complete_btn.setEnabled(False)
             return
 
         summary = bozp_inspection_service.get_conclusion_summary(inspection_id)
@@ -121,19 +141,11 @@ class BozpInspectionConclusionWidget(QWidget):
         self.tasks_total_label.setText(str(summary["tasks_total"]))
         self.tasks_active_label.setText(str(summary["tasks_active"]))
 
+        # Stav z editoru (finished_at) + started_at — nepřepisuj textová pole.
         started_at = getattr(self.inspection, "started_at", None)
-        finished_at = getattr(self.inspection, "finished_at", None)
+        finished_at = self.finished_at_edit.get_date()
         status = bozp_inspection_service.derive_status(started_at, finished_at)
         self.status_label.setText(status)
-
-        if finished_at is not None:
-            self.finished_at_edit.set_date_value(finished_at)
-        else:
-            self.finished_at_edit.clear_date()
-
-        self.silne_stranky_edit.setPlainText(getattr(self.inspection, "silne_stranky", "") or "")
-        self.doporuceni_edit.setPlainText(getattr(self.inspection, "doporuceni_vedouciho", "") or "")
-
         self.complete_btn.setEnabled(finished_at is None)
 
     def get_data(self) -> dict:

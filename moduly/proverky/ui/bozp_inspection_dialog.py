@@ -206,9 +206,9 @@ class BozpInspectionDialog(QDialog):
             created = bozp_inspection_service.create_inspection(**payload)
             if created is None:
                 return False
-            self.inspection = created
-            self._save_commission_members(created.id, data)
-            self._deferred.flush(entity_id=created.id)
+            self.inspection = bozp_inspection_service.get_by_id(created.id) or created
+            self._save_commission_members(self.inspection.id, data)
+            self._deferred.flush(entity_id=self.inspection.id)
             self._reload_after_persist()
         else:
             updated = bozp_inspection_service.update_inspection(self.inspection.id, **payload)
@@ -216,7 +216,9 @@ class BozpInspectionDialog(QDialog):
                 return False
             self._save_commission_members(self.inspection.id, data)
             self._deferred.flush(entity_id=self.inspection.id)
-            self.inspection = updated
+            self.inspection = (
+                bozp_inspection_service.get_by_id(updated.id) or updated
+            )
             self._reload_after_persist()
 
         self._capture_baseline()
@@ -337,7 +339,7 @@ class BozpInspectionDialog(QDialog):
         )
         self._deferred.flush(entity_id=self.inspection.id)
 
-        self.inspection = updated
+        self.inspection = bozp_inspection_service.get_by_id(updated.id) or updated
         self.conclusion_widget.load_inspection(self.inspection)
         self.spis_widget.load_inspection(self.inspection)
         self.findings_widget.refresh()
