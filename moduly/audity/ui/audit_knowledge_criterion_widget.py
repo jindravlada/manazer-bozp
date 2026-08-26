@@ -9,10 +9,10 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QScrollArea,
-        QSizePolicy,
-        QVBoxLayout,
-        QWidget,
-    )
+    QSizePolicy,
+    QVBoxLayout,
+    QWidget,
+)
 
 from core.shared.constants import ENTITY_AUDITY
 from core.shared.control_result_display import (
@@ -141,23 +141,44 @@ class AuditKnowledgeCriterionWidget(QWidget):
         self._deferred_edits = None
         self._notes_mode: str | None = None
         self._section_summary_edit: SectionSummaryEdit | None = None
+        self._questions_heading: QLabel | None = None
         self._selected_control_point_id = ""
         self._control_point_frames: dict[str, _ControlPointFrame] = {}
         self._overrides_cache: dict[tuple[str, str, str], str] | None = None
 
-        self._content_host = QWidget()
-        self._content_layout = QVBoxLayout(self._content_host)
-        self._content_layout.setContentsMargins(0, 0, 0, 0)
-        self._content_layout.setSpacing(12)
+        self._header_host = QWidget()
+        self._header_host.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Maximum,
+        )
+        self._header_layout = QVBoxLayout(self._header_host)
+        self._header_layout.setContentsMargins(0, 0, 0, 0)
+        self._header_layout.setSpacing(12)
+
+        self._questions_host = QWidget()
+        self._questions_layout = QVBoxLayout(self._questions_host)
+        self._questions_layout.setContentsMargins(0, 0, 0, 0)
+        self._questions_layout.setSpacing(12)
+        # Kompatibilita s testy, které hledají karty v _content_host.
+        self._content_host = self._questions_host
 
         scroll = QScrollArea()
+        scroll.setObjectName("AuditQuestionsScroll")
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QScrollArea.Shape.NoFrame)
-        scroll.setWidget(self._content_host)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setWidget(self._questions_host)
+        scroll.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Expanding,
+        )
+        self._questions_scroll = scroll
         self._scroll_area = scroll
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(12)
+        outer.addWidget(self._header_host, 0)
         outer.addWidget(scroll, 1)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
@@ -223,7 +244,7 @@ class AuditKnowledgeCriterionWidget(QWidget):
         ]
 
     def scroll_to_top(self) -> None:
-        self._scroll_area.verticalScrollBar().setValue(0)
+        self._questions_scroll.verticalScrollBar().setValue(0)
 
     def set_process_purpose(self, purpose: str) -> None:
         self._process_purpose = str(purpose or "").strip()
@@ -311,46 +332,53 @@ class AuditKnowledgeCriterionWidget(QWidget):
         self._clear_content()
 
         if not section:
-            self._content_layout.addWidget(
-                self._build_info_label(f"Vyberte {PROCESS_TERM_CRITERION.lower()} v seznamu vlevo.")
-            )
-            self._content_layout.addStretch()
             return
 
         if not self._section_label:
             self._section_label = str(section.get("nazev") or "").strip()
 
         if self._uses_section_summary_ui():
-            summary = SectionSummaryEdit()
+            summary = SectionSummaryEdit(compact=True)
             summary.set_text(self._current_section_summary_text())
             summary.text_changed.connect(self._on_section_summary_changed)
             self._section_summary_edit = summary
-            self._content_layout.addWidget(summary)
+            self._header_layout.addWidget(summary)
+
+        heading = QLabel(PROCESS_TERM_QUESTION)
+        heading.setObjectName("SectionTitle")
+        heading.setWordWrap(True)
+        self._questions_heading = heading
+        self._header_layout.addWidget(heading)
 
         questions = self._build_control_points_section(section)
         if questions is not None:
-            self._content_layout.addWidget(questions)
+            self._questions_layout.addWidget(questions)
 
         photos = audit_knowledge_service.get_general_reference_photos(section)
         if photos:
-            self._content_layout.addWidget(
+            self._questions_layout.addWidget(
                 self._build_block(
                     KNOWLEDGE_REFERENCE_PHOTOS_TITLE,
                     self._build_reference_photo_gallery(photos),
                 )
             )
 
-        self._content_layout.addStretch()
+        self._questions_layout.addStretch()
+
+    def _clear_layout(self, layout) -> None:
+        while layout.count():
+            item = layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
 
     def _clear_content(self) -> None:
         self._selected_control_point_id = ""
         self._control_point_frames.clear()
         self._section_summary_edit = None
-        while self._content_layout.count():
-            item = self._content_layout.takeAt(0)
-            widget = item.widget()
-            if widget is not None:
-                widget.deleteLater()
+        self._questions_heading = None
+        self._clear_layout(self._header_layout)
+        self._clear_layout(self._questions_layout)
 
     def _build_reference_photo_gallery(self, photos: list[dict]) -> QWidget:
         scroll = QScrollArea()
@@ -421,7 +449,7 @@ class AuditKnowledgeCriterionWidget(QWidget):
             empty = QLabel(self._empty_questions_message(section))
             empty.setObjectName("InfoText")
             empty.setWordWrap(True)
-            return self._build_block(PROCESS_TERM_QUESTION, empty)
+            return self._build_questions_panel(empty)
 
         content = QWidget()
         layout = QVBoxLayout(content)
@@ -437,7 +465,7 @@ class AuditKnowledgeCriterionWidget(QWidget):
         if first_context is not None:
             self._select_control_point(first_context)
 
-        return self._build_block(PROCESS_TERM_QUESTION, content)
+        return self._build_questions_panel(content)
 
     def _empty_questions_message(self, section: dict) -> str:
         all_items = audit_knowledge_service.get_audit_questions(section)
@@ -884,6 +912,16 @@ class AuditKnowledgeCriterionWidget(QWidget):
         if self._on_finding_saved is not None:
             self._on_finding_saved()
         self._notify_deferred_changed()
+
+    def _build_questions_panel(self, content: QWidget) -> QWidget:
+        panel = QFrame()
+        panel.setObjectName("ModulePanel")
+        panel_layout = QVBoxLayout(panel)
+        panel_layout.setContentsMargins(12, 12, 12, 12)
+        panel_layout.setSpacing(6)
+        panel_layout.addWidget(content)
+        return panel
+
     def _build_block(self, title: str, content: QWidget) -> QWidget:
         container = QWidget()
         block_layout = QVBoxLayout(container)

@@ -47,6 +47,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 Nové záznamy přidávat níže (nejnovější nahoře).
 
+### 2026-08-26 – AUDIT-SECTION-SUMMARY-UX1
+
+**Co se povedlo:** V Dokumentaci a Terénu je Souhrnné sdělení ukotvené nahoře (~110 px s vlastním rolováním) a karty otázek se rolují samostatně pod nadpisem Auditní tvrzení.
+
+**Co už bychom dnes udělali jinak:** Společný scroll celé pracovní plochy od začátku rozdělit na pevnou hlavičku a seznam karet.
+
+**Co bylo zbytečně složité:** —
+
+**Nové pravidlo:** Souhrnné sdělení a nadpis Auditní tvrzení zůstávají viditelné; rolují se jen karty otázek.
+
+**Aktualizované dokumenty:** —
+
 ### 2026-08-26 – AUDIT-PROVERKY-SECTION-NOTE-1
 
 **Co se povedlo:** Nové Audity a Prověrky mají jedno Souhrnné sdělení za okruh (společné pro Dokumentaci i Terén), stávající záznamy zůstaly v legacy režimu `notes_mode IS NULL`.
