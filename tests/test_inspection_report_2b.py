@@ -315,7 +315,7 @@ class InspectionReport2bTestCase(unittest.TestCase):
         self.assertEqual(values["podpis_odboru_blok"], "")
 
     def test_appendix_b_and_significant_findings_labels(self) -> None:
-        inspection = self._create_inspection()
+        inspection = self._create_inspection(silne_stranky="Stabilní dokumentace.")
         for generate in (
             protokol_proverky_service.generate_for_inspection,
             protokol_proverky_service.generate_detailed_report_for_inspection,

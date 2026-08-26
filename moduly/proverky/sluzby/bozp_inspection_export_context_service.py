@@ -40,6 +40,7 @@ from moduly.proverky.constants import (
     COMMISSION_RECORD_MEMBER,
     COMMISSION_RECORD_UNION,
     COMMISSION_RECORD_WORKPLACE,
+    INSPECTION_STRENGTHS_EXPORT_SECTION,
     PLANNED_MONTH_NAMES,
     PLANNED_MONTH_NOT_SET_LABEL,
 )
@@ -67,6 +68,9 @@ def _fmt_date(value) -> str:
         return datetime.fromisoformat(text).strftime("%d.%m.%Y")
     except Exception:
         return text
+
+
+_STRENGTHS_EMPTY_PLACEHOLDER = "—"
 
 
 def _text(value) -> str:
@@ -550,19 +554,41 @@ class InspectionExportContext:
         )
 
     def strengths_text(self) -> str:
-        raw = _text(getattr(self.inspection, "silne_stranky", ""))
-        if not raw:
-            return "—"
+        """Odrážky silných stránek bez nadpisu; prázdné → prázdný řetězec."""
+        lines = self._strength_lines()
+        return "\n".join(lines) if lines else ""
+
+    def _strength_items(self) -> list:
+        raw = getattr(self.inspection, "silne_stranky", None)
+        if raw is None:
+            return []
+        if isinstance(raw, (list, tuple)):
+            return list(raw)
+        return str(raw).replace("\r\n", "\n").replace("\r", "\n").split("\n")
+
+    def _strength_lines(self) -> list[str]:
         lines: list[str] = []
-        for line in raw.split("\n"):
-            text = line.strip()
-            if not text:
+        for item in self._strength_items():
+            text = str(item or "").strip()
+            if not text or text == _STRENGTHS_EMPTY_PLACEHOLDER:
                 continue
             if text.startswith("✔"):
                 lines.append(text)
             else:
                 lines.append(f"✔ {text}")
-        return "\n".join(lines) if lines else "—"
+        return lines
+
+    def strengths_section_text(self) -> OdtRichContent:
+        """Sekce Silné stránky — nadpis jen při alespoň jedné vyplněné stránce."""
+        lines = self._strength_lines()
+        if not lines:
+            return OdtRichContent(paragraphs=[], omit_when_empty=True)
+        paragraphs: list[OdtParagraph] = [
+            OdtParagraph.text(INSPECTION_STRENGTHS_EXPORT_SECTION, style="H"),
+        ]
+        for line in lines:
+            paragraphs.append(OdtParagraph.text(line))
+        return OdtRichContent(paragraphs=paragraphs)
 
     def attention_areas_text(self) -> str:
         results = self._control_point_results()
@@ -731,7 +757,7 @@ class InspectionExportContext:
             "prehled_vysledku_text": results_overview,
             "prehled_zjisteni_text": findings_overview,
             "vyznamna_zjisteni_text": findings_overview,
-            "silne_stranky_text": self.strengths_text(),
+            "silne_stranky_text": self.strengths_section_text(),
             "oblasti_pozornosti_text": self.attention_areas_text(),
             "doporuceni_vedouciho": self.leader_recommendation_text(),
             "doporuceni_proverky": self.leader_recommendation_text(),

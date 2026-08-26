@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-08-26 – PROVERKY-DETAILED-STRONG-SIDES-UX1
+
+**Co se povedlo:** Prázdná sekce Silné stránky zmizí z Podrobné zprávy i Protokolu Prověrky (nadpis, pomlčka i prázdný odstavec); vyplněná sekce zůstává stejná.
+
+**Co už bychom dnes udělali jinak:** Nadpis Silné stránky v šabloně Prověrek nechat hned v `OdtRichContent`, stejně jako u Auditů.
+
+**Co bylo zbytečně složité:** —
+
+**Nové pravidlo:** Podmíněná exportní sekce má nadpis v `OdtRichContent` (`omit_when_empty`), ne natvrdo v ODT šabloně.
+
+**Aktualizované dokumenty:** —
+
 ### 2026-08-26 – PROVERKY-PLANNED-SECTION-SUMMARY-MIGRATION-1
 
 **Co se povedlo:** Čisté plánované Prověrky s `notes_mode IS NULL` šlo převést hromadnou inventurou bez N+1, bez backfillu textů a bez zásahu do Auditů.

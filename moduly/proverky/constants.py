@@ -151,6 +151,8 @@ FINDING_REQUIRES_RESULT_MESSAGE = (
     "„Nevyhovuje“ nebo „Vyhovuje s doporučením“."
 )
 
+INSPECTION_STRENGTHS_EXPORT_SECTION = "Silné stránky systému"
+
 INSPECTION_PROTOCOL_BUTTON_LABEL = "Zpráva z prověrky BOZP"
 INSPECTION_PROTOCOL_DIALOG_TITLE = "Zpráva z prověrky BOZP"
 INSPECTION_DETAILED_REPORT_BUTTON_LABEL = "Podrobná zpráva z prověrky BOZP"
