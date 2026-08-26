@@ -34,6 +34,18 @@ class AuditProgramRepository:
             programs = list(session.scalars(stmt))
             return {int(program.id): program for program in programs}
 
+    def get_visits_by_ids(
+        self,
+        visit_ids: list[int] | tuple[int, ...] | set[int],
+    ) -> dict[int, AuditProgramVisit]:
+        ids = [int(value) for value in visit_ids if value is not None]
+        if not ids:
+            return {}
+        with get_session() as session:
+            stmt = select(AuditProgramVisit).where(AuditProgramVisit.id.in_(ids))
+            visits = list(session.scalars(stmt))
+            return {int(visit.id): visit for visit in visits}
+
     def add_program(self, program: AuditProgram) -> AuditProgram:
         with get_session() as session:
             session.add(program)

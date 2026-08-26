@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-08-26 – AUDIT-HISTORY-AS-OF-FIX1
+
+**Co se povedlo:** Historie provozu bere jen audity se `started_at` přísně před časovým bodem aktuálního auditu; plán 1/2028 už není „předchozí audit“ roku 2026.
+
+**Co už bychom dnes udělali jinak:** Časový filtr historie zavést hned v AUDIT-INTRO-1, ne jen vyloučení aktuálního ID.
+
+**Co bylo zbytečně složité:** —
+
+**Nové pravidlo:** Historie = stejný provoz, skutečně zahájeno, `started_at` < as-of (`started_at` aktuálního, jinak plán návštěvy). Bez as-of raději prázdná historie než všechny ostatní audity.
+
+**Aktualizované dokumenty:** —
+
 ### 2026-08-26 – PROVERKY-CONCLUSION-SAVE-FIX1
 
 **Co se povedlo:** Refresh souhrnu na záložce Závěr už nepřepisuje doporučení vedoucího; Uložit zapíše text do DB a nechá ho v poli.

@@ -161,7 +161,7 @@ class AuditIntroExportService:
     def build_detailed_intro_text(self, audit: Audit) -> str:
         history = audit_history_service.get_workplace_history(
             getattr(audit, "workplace_id", None),
-            exclude_audit_id=getattr(audit, "id", None),
+            current_audit=audit,
             include_process_history=False,
         )
         return format_detailed_intro_section(

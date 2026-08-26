@@ -238,7 +238,6 @@ class AuditWorkplaceHistoryWidget(QWidget):
     def refresh(self) -> None:
         """Obnoví jen data Úvodu — bez reloadu metodiky AuditDialogu."""
         workplace_id = getattr(self._audit, "workplace_id", None) if self._audit else None
-        exclude_audit_id = getattr(self._audit, "id", None) if self._audit else None
 
         if workplace_id is None:
             self._history = None
@@ -250,7 +249,7 @@ class AuditWorkplaceHistoryWidget(QWidget):
 
         self._history = audit_history_service.get_workplace_history(
             workplace_id,
-            exclude_audit_id=exclude_audit_id,
+            current_audit=self._audit,
             include_process_history=False,
         )
         self._loaded = True

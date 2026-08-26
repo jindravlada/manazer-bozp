@@ -135,6 +135,7 @@ class AuditIntroHistoryTestCase(unittest.TestCase):
             year=2024,
             planned_month=1,
             audit_date=date(2024, 1, 10),
+            started_at=date(2024, 1, 10),
             finished_at=date(2024, 1, 10),
         )
         newer = audit_service.create_audit(
@@ -143,6 +144,7 @@ class AuditIntroHistoryTestCase(unittest.TestCase):
             year=2025,
             planned_month=6,
             audit_date=date(2025, 6, 15),
+            started_at=date(2025, 6, 15),
             finished_at=date(2025, 6, 15),
         )
         audit_service.create_audit(
@@ -151,6 +153,7 @@ class AuditIntroHistoryTestCase(unittest.TestCase):
             year=2025,
             planned_month=7,
             audit_date=date(2025, 7, 1),
+            started_at=date(2025, 7, 1),
             finished_at=date(2025, 7, 1),
         )
         current = audit_service.create_audit(
@@ -158,6 +161,7 @@ class AuditIntroHistoryTestCase(unittest.TestCase):
             workplace_name=self.workplace.name,
             year=2026,
             planned_month=4,
+            started_at=date(2026, 4, 1),
         )
         history = audit_history_service.get_workplace_history(
             self.workplace.id,
@@ -174,6 +178,7 @@ class AuditIntroHistoryTestCase(unittest.TestCase):
             year=2025,
             planned_month=3,
             audit_date=date(2025, 3, 1),
+            started_at=date(2025, 3, 1),
             finished_at=date(2025, 3, 1),
         )
         open_finding = finding_service.create(
@@ -227,6 +232,7 @@ class AuditIntroHistoryTestCase(unittest.TestCase):
             workplace_name=self.workplace.name,
             year=2026,
             planned_month=4,
+            started_at=date(2026, 4, 1),
         )
         current_finding = finding_service.create(
             ENTITY_AUDITY,
@@ -332,6 +338,7 @@ class AuditIntroHistoryTestCase(unittest.TestCase):
             year=2025,
             planned_month=1,
             audit_date=date(2025, 1, 1),
+            started_at=date(2025, 1, 1),
             finished_at=date(2025, 1, 1),
         )
         current = audit_service.create_audit(
@@ -339,6 +346,7 @@ class AuditIntroHistoryTestCase(unittest.TestCase):
             workplace_name=self.workplace.name,
             year=2026,
             planned_month=4,
+            started_at=date(2026, 4, 1),
         )
         with patch.object(
             audit_history_service,
@@ -476,6 +484,7 @@ class AuditIntroOpenDetailTestCase(unittest.TestCase):
             year=2025,
             planned_month=2,
             audit_date=date(2025, 2, 2),
+            started_at=date(2025, 2, 2),
             finished_at=date(2025, 2, 2),
         )
         finding = finding_service.create(
@@ -496,6 +505,7 @@ class AuditIntroOpenDetailTestCase(unittest.TestCase):
             workplace_name=self.workplace.name,
             year=2026,
             planned_month=4,
+            started_at=date(2026, 4, 1),
         )
         widget = AuditWorkplaceHistoryWidget()
         widget.load_audit(current)

@@ -140,6 +140,7 @@ class AuditHistoryService:
         self,
         workplace_id: int | None,
         *,
+        current_audit=None,
         exclude_audit_id: int | None = None,
         exclude_audit_ids: Collection[int] | None = None,
         program_id: int | None = None,
@@ -148,41 +149,34 @@ class AuditHistoryService:
         if workplace_id is None:
             return self._empty_history()
 
-        audits = self.audit_repository.list_for_workplace(
-            workplace_id,
-            exclude_audit_id=exclude_audit_id,
-            exclude_audit_ids=exclude_audit_ids,
+        current = current_audit
+        if current is None and exclude_audit_id is not None:
+            current = self.audit_repository.get_by_id(int(exclude_audit_id))
+
+        excluded: set[int] = set()
+        if exclude_audit_id is not None:
+            excluded.add(int(exclude_audit_id))
+        if exclude_audit_ids:
+            excluded.update(int(item) for item in exclude_audit_ids)
+        if current is not None and getattr(current, "id", None) is not None:
+            excluded.add(int(current.id))
+
+        as_of = self._history_as_of(current)
+        if as_of is None:
+            return self._empty_history()
+
+        audits = self._previous_started_audits(
+            self.audit_repository.list_for_workplace(workplace_id),
+            as_of=as_of,
+            excluded_ids=excluded,
         )
         if program_id is not None:
             audits = self._filter_audits_for_program(audits, program_id)
 
-        is_first = len(audits) == 0
-        last_audit = self._build_last_audit_summary(audits[0]) if audits else None
-        previous_audits = self._build_previous_audits(audits)
-        raw_findings = finding_service.get_for_entities(
-            ENTITY_AUDITY,
-            [audit.id for audit in audits],
-        )
-        findings = self._map_findings(audits, raw_findings)
-        tasks = self._collect_tasks(raw_findings, findings)
-        process_history: list[WorkplaceProcessHistoryItem] = []
-        if include_process_history:
-            process_history = self._build_process_history(workplace_id, audits)
-        summary = self._build_summary(
-            last_audit,
-            findings,
-            tasks,
-            process_history,
-            previous_audits_count=len(previous_audits),
-        )
-        return WorkplaceHistory(
-            last_audit=last_audit,
-            previous_audits=tuple(previous_audits),
-            findings=tuple(findings),
-            tasks=tuple(tasks),
-            process_history=tuple(process_history),
-            summary=summary,
-            is_first_audit=is_first,
+        return self._history_from_audits(
+            audits,
+            workplace_id=workplace_id,
+            include_process_history=include_process_history,
         )
 
     def aggregate_continuity_for_audits(
@@ -194,13 +188,13 @@ class AuditHistoryService:
         Aktuální audity ze vstupu (a jejich zjištění/úkoly) se do historie nezapočítávají.
         Stejná entita se napříč provozy započte jen jednou podle ID.
         """
-        exclude_by_workplace: dict[int, set[int]] = {}
+        current_by_workplace: dict[int, list] = {}
         for audit in audits:
             workplace_id = getattr(audit, "workplace_id", None)
             audit_id = getattr(audit, "id", None)
             if workplace_id is None or audit_id is None:
                 continue
-            exclude_by_workplace.setdefault(int(workplace_id), set()).add(int(audit_id))
+            current_by_workplace.setdefault(int(workplace_id), []).append(audit)
 
         previous_audit_ids: set[int] = set()
         finding_ids: set[int] = set()
@@ -212,12 +206,44 @@ class AuditHistoryService:
         canceled_task_ids: set[int] = set()
         resolved_label = finding_status_label(FINDING_STATUS_VYPORADANO)
 
-        for workplace_id, excluded in exclude_by_workplace.items():
-            history = self.get_workplace_history(
-                workplace_id,
-                exclude_audit_ids=excluded,
-                include_process_history=False,
-            )
+        visit_ids = [
+            int(audit.program_visit_id)
+            for group in current_by_workplace.values()
+            for audit in group
+            if getattr(audit, "started_at", None) is None
+            and getattr(audit, "program_visit_id", None) is not None
+        ]
+        visits = self.program_repository.get_visits_by_ids(visit_ids)
+
+        reported_ids = {
+            int(audit.id)
+            for group in current_by_workplace.values()
+            for audit in group
+            if getattr(audit, "id", None) is not None
+        }
+
+        for workplace_id, current_group in current_by_workplace.items():
+            workplace_audits = self.audit_repository.list_for_workplace(workplace_id)
+            selected: list = []
+            seen: set[int] = set()
+            for current in current_group:
+                visit = None
+                visit_id = getattr(current, "program_visit_id", None)
+                if visit_id is not None:
+                    visit = visits.get(int(visit_id))
+                as_of = self._history_as_of(current, visit=visit)
+                if as_of is None:
+                    continue
+                for previous in self._previous_started_audits(
+                    workplace_audits,
+                    as_of=as_of,
+                    excluded_ids=reported_ids | {int(current.id)},
+                ):
+                    if previous.id in seen:
+                        continue
+                    seen.add(int(previous.id))
+                    selected.append(previous)
+            history = self._history_from_audits(selected)
             for item in history.previous_audits:
                 previous_audit_ids.add(int(item.audit_id))
             for item in history.findings:
@@ -247,6 +273,89 @@ class AuditHistoryService:
             tasks_completed_count=len(completed_task_ids),
             tasks_canceled_count=len(canceled_task_ids),
         )
+
+    def _history_from_audits(
+        self,
+        audits,
+        *,
+        workplace_id: int | None = None,
+        include_process_history: bool = False,
+    ) -> WorkplaceHistory:
+        is_first = len(audits) == 0
+        last_audit = self._build_last_audit_summary(audits[0]) if audits else None
+        previous_audits = self._build_previous_audits(audits)
+        raw_findings = finding_service.get_for_entities(
+            ENTITY_AUDITY,
+            [audit.id for audit in audits],
+        )
+        findings = self._map_findings(audits, raw_findings)
+        tasks = self._collect_tasks(raw_findings, findings)
+        process_history: list[WorkplaceProcessHistoryItem] = []
+        if include_process_history and workplace_id is not None:
+            process_history = self._build_process_history(workplace_id, audits)
+        summary = self._build_summary(
+            last_audit,
+            findings,
+            tasks,
+            process_history,
+            previous_audits_count=len(previous_audits),
+        )
+        return WorkplaceHistory(
+            last_audit=last_audit,
+            previous_audits=tuple(previous_audits),
+            findings=tuple(findings),
+            tasks=tuple(tasks),
+            process_history=tuple(process_history),
+            summary=summary,
+            is_first_audit=is_first,
+        )
+
+    def _history_as_of(self, audit, visit=None) -> date | None:
+        """Časový bod aktuálního auditu: started_at, jinak plán návštěvy programu."""
+        if audit is None:
+            return None
+        started = self._as_date(getattr(audit, "started_at", None))
+        if started is not None:
+            return started
+        if visit is None:
+            visit_id = getattr(audit, "program_visit_id", None)
+            if visit_id is not None:
+                visit = self.program_repository.get_visit(int(visit_id))
+        if visit is None:
+            return None
+        planned = self._as_date(getattr(visit, "planned_date", None))
+        if planned is not None:
+            return planned
+        year = getattr(visit, "planned_year", None)
+        month = getattr(visit, "planned_month", None)
+        if year and month:
+            return date(int(year), int(month), 1)
+        return None
+
+    @staticmethod
+    def _as_date(value) -> date | None:
+        if value is None:
+            return None
+        if isinstance(value, datetime):
+            return value.date()
+        if isinstance(value, date):
+            return value
+        return None
+
+    @staticmethod
+    def _previous_started_audits(audits, *, as_of: date, excluded_ids: set[int]):
+        previous = [
+            audit
+            for audit in audits
+            if int(audit.id) not in excluded_ids
+            and getattr(audit, "started_at", None) is not None
+            and audit.started_at < as_of
+        ]
+        previous.sort(
+            key=lambda item: (item.started_at, item.id),
+            reverse=True,
+        )
+        return previous
 
     def _empty_history(self) -> WorkplaceHistory:
         summary = WorkplaceHistorySummary(

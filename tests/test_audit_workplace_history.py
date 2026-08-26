@@ -101,6 +101,7 @@ class AuditWorkplaceHistoryServiceTestCase(unittest.TestCase):
             year=audit_date.year,
             planned_month=audit_date.month,
             audit_date=audit_date,
+            started_at=audit_date,
             finished_at=audit_date,
         )
         audit_commission_service.save_members(
@@ -154,6 +155,7 @@ class AuditWorkplaceHistoryServiceTestCase(unittest.TestCase):
             year=2026,
             planned_month=4,
             audit_date=date(2026, 4, 15),
+            started_at=date(2026, 4, 15),
         )
 
         history = audit_history_service.get_workplace_history(
@@ -188,6 +190,7 @@ class AuditWorkplaceHistoryServiceTestCase(unittest.TestCase):
             workplace_name=self.workplace.name,
             year=2026,
             planned_month=4,
+            started_at=date(2026, 4, 1),
         )
 
         history = audit_history_service.get_workplace_history(
@@ -215,6 +218,7 @@ class AuditWorkplaceHistoryServiceTestCase(unittest.TestCase):
             workplace_name=self.workplace.name,
             year=2026,
             planned_month=4,
+            started_at=date(2026, 4, 1),
         )
 
         history = audit_history_service.get_workplace_history(
@@ -263,6 +267,7 @@ class AuditWorkplaceHistoryServiceTestCase(unittest.TestCase):
             workplace_name=self.workplace.name,
             year=2026,
             planned_month=5,
+            started_at=date(2026, 5, 1),
         )
 
         history = audit_history_service.get_workplace_history(
@@ -294,6 +299,7 @@ class AuditWorkplaceHistoryServiceTestCase(unittest.TestCase):
             workplace_name=self.workplace.name,
             year=2026,
             planned_month=4,
+            started_at=date(2026, 4, 1),
         )
 
         history = audit_history_service.get_workplace_history(
@@ -331,6 +337,7 @@ class AuditWorkplaceHistoryServiceTestCase(unittest.TestCase):
             workplace_name=self.workplace.name,
             year=2026,
             planned_month=4,
+            started_at=date(2026, 4, 1),
         )
 
         history = audit_history_service.get_workplace_history(
@@ -379,6 +386,7 @@ class AuditWorkplaceHistoryServiceTestCase(unittest.TestCase):
                     planned_month=4,
                 )
                 audit = audit_program_service.create_audit_from_visit(visit.id)
+                audit_service.update_audit(audit.id, started_at=date(2026, 4, 1))
                 finding_service.create(
                     ENTITY_AUDITY,
                     audit.id,
@@ -393,6 +401,7 @@ class AuditWorkplaceHistoryServiceTestCase(unittest.TestCase):
             program_id=program_a.id,
             year=2026,
             planned_month=5,
+            started_at=date(2026, 5, 1),
         )
 
         history = audit_history_service.get_workplace_history(
@@ -439,7 +448,7 @@ class AuditWorkplaceHistoryWidgetTestCase(unittest.TestCase):
 
         from moduly.audity.constants import TAB_UVOD
 
-        self.assertEqual(dialog.tabs.count(), 8)
+        self.assertEqual(dialog.tabs.count(), len(TAB_LABELS))
         self.assertEqual(dialog.tabs.tabText(2), TAB_UVOD)
         self.assertIsNotNone(dialog.history_widget)
 
@@ -452,6 +461,7 @@ class AuditWorkplaceHistoryWidgetTestCase(unittest.TestCase):
             year=2025,
             planned_month=10,
             audit_date=date(2025, 10, 15),
+            started_at=date(2025, 10, 15),
             finished_at=date(2025, 10, 15),
         )
         self.assertEqual(previous.status, AUDIT_STATUS_DOKONCENO)
@@ -461,6 +471,7 @@ class AuditWorkplaceHistoryWidgetTestCase(unittest.TestCase):
             workplace_name=self.workplace.name,
             year=2026,
             planned_month=4,
+            started_at=date(2026, 4, 1),
         )
 
         widget = AuditWorkplaceHistoryWidget()

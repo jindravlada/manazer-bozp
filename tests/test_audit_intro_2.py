@@ -117,6 +117,11 @@ class AuditIntro2ExportTestCase(unittest.TestCase):
 
     def _create_audit(self, *, workplace=None, year=2026, month=4, **fields):
         workplace = workplace or self.workplace
+        if "started_at" not in fields:
+            if fields.get("finished_at"):
+                fields["started_at"] = fields["finished_at"]
+            elif fields.get("audit_date"):
+                fields["started_at"] = fields["audit_date"]
         return audit_service.create_audit(
             workplace_id=workplace.id,
             workplace_name=workplace.name,
@@ -280,7 +285,7 @@ class AuditIntro2ExportTestCase(unittest.TestCase):
             audit_date=date(2025, 1, 1),
             finished_at=date(2025, 1, 1),
         )
-        current = self._create_audit(year=2026, month=4)
+        current = self._create_audit(year=2026, month=4, started_at=date(2026, 4, 1))
         text = audit_export_context_service.build(
             current, config=DETAILED_REPORT_DOCUMENT_CONFIG
         ).intro_text()
@@ -414,9 +419,9 @@ class AuditIntro2ExportTestCase(unittest.TestCase):
         self.assertEqual(aggregate.tasks_canceled_count, 1)
 
         with patch.object(
-            audit_history_service,
-            "get_workplace_history",
-            wraps=audit_history_service.get_workplace_history,
+            audit_history_service.audit_repository,
+            "list_for_workplace",
+            wraps=audit_history_service.audit_repository.list_for_workplace,
         ) as mocked:
             text = audit_intro_export_service.build_continuity_text_for_audits(
                 [current_a, current_b]
