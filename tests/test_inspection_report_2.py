@@ -128,6 +128,7 @@ class InspectionReport2TestCase(unittest.TestCase):
             "started_at": date(2026, 7, 1),
             "finished_at": date(2026, 7, 5),
             "inspection_type": "Řádná",
+            "notes_mode": None,
         }
         payload.update(fields)
         inspection = bozp_inspection_service.create_inspection(**payload)

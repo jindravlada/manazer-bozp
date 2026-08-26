@@ -98,6 +98,7 @@ class AudityDetailedReportExportTestCase(unittest.TestCase):
             planned_month=7,
             started_at=date(2026, 7, 1),
             finished_at=date(2026, 7, 10),
+            notes_mode=None,
         )
 
     def _set_result(self, audit_id: int, *, control_point_id: str, label: str, result: str, note: str = ""):

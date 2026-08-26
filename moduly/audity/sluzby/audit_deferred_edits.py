@@ -14,9 +14,16 @@ from core.shared.constants import (
     ENTITY_FINDING,
     FINDING_STATUS_V_PROCESU,
 )
+from core.shared.section_summary import (
+    normalize_section_summary_text,
+    section_summary_key,
+)
 from core.shared.sluzby.control_result_service import ControlPointContext, control_result_service
 from core.shared.sluzby.finding_service import finding_service
 from core.shared.sluzby.finding_task_service import finding_task_service
+from moduly.audity.sluzby.audit_section_summary_service import (
+    audit_section_summary_service,
+)
 from moduly.audity.sluzby.audit_verification_service import audit_verification_service
 from moduly.ukoly.sluzby.task_service import task_service
 
@@ -73,6 +80,14 @@ class _PendingVerificationOverride:
 
 
 @dataclass
+class _PendingSectionSummary:
+    entity_id: int | None
+    process_id: str
+    section_id: str
+    summary_text: str
+
+
+@dataclass
 class AuditDeferredEdits:
     """In-memory změny zjištění / úkolů / výsledků kontroly / foto / Dok↔Terén do flush()."""
 
@@ -86,6 +101,9 @@ class AuditDeferredEdits:
     _finding_deletes: set[int] = field(default_factory=set)
     _task_updates: dict[int, dict[str, Any]] = field(default_factory=dict)
     _task_creates: dict[int, dict[str, Any]] = field(default_factory=dict)
+    _section_summaries: dict[tuple[str, str], _PendingSectionSummary] = field(
+        default_factory=dict
+    )
     _next_temp_finding_id: int = -1
     _next_temp_task_id: int = -1
 
@@ -99,6 +117,7 @@ class AuditDeferredEdits:
             or self._finding_deletes
             or self._task_updates
             or self._task_creates
+            or self._section_summaries
         )
 
     def clear(self) -> None:
@@ -110,6 +129,7 @@ class AuditDeferredEdits:
         self._finding_deletes.clear()
         self._task_updates.clear()
         self._task_creates.clear()
+        self._section_summaries.clear()
         self._next_temp_finding_id = -1
         self._next_temp_task_id = -1
 
@@ -165,6 +185,41 @@ class AuditDeferredEdits:
         if row is None:
             return CONTROL_RESULT_NEKONTROLOVANO
         return row.result
+
+    def set_section_summary(
+        self,
+        *,
+        entity_id: int | None,
+        process_id: str,
+        section_id: str,
+        summary_text: str,
+    ) -> None:
+        key = section_summary_key(process_id, section_id)
+        if not key[0] or not key[1]:
+            return
+        self._section_summaries[key] = _PendingSectionSummary(
+            entity_id=int(entity_id) if entity_id is not None else None,
+            process_id=key[0],
+            section_id=key[1],
+            summary_text=normalize_section_summary_text(summary_text),
+        )
+
+    def get_section_summary(
+        self,
+        audit_id: int | None,
+        *,
+        process_id: str,
+        section_id: str,
+    ) -> str:
+        key = section_summary_key(process_id, section_id)
+        pending = self._section_summaries.get(key)
+        if pending is not None:
+            return pending.summary_text
+        return audit_section_summary_service.get_text(
+            audit_id,
+            process_id=process_id,
+            section_id=section_id,
+        )
 
     # --- fotografie výsledků kontroly --------------------------------------
 
@@ -489,7 +544,7 @@ class AuditDeferredEdits:
 
     # --- flush -------------------------------------------------------------
 
-    def flush(self) -> dict[int, int]:
+    def flush(self, *, entity_id: int | None = None) -> dict[int, int]:
         """Zapíše všechny odložené změny. Vrací mapování temp_finding_id → reálné id."""
         finding_id_map: dict[int, int] = {}
 
@@ -526,6 +581,17 @@ class AuditDeferredEdits:
                 control_point_id=pending.control_point_id,
                 verification_type=pending.verification_type,
                 methodology_type=pending.methodology_type,
+            )
+
+        for pending in list(self._section_summaries.values()):
+            target_id = pending.entity_id if pending.entity_id is not None else entity_id
+            if target_id is None:
+                continue
+            audit_section_summary_service.set_text(
+                int(target_id),
+                process_id=pending.process_id,
+                section_id=pending.section_id,
+                summary_text=pending.summary_text,
             )
 
         for finding_id, fields in list(self._finding_updates.items()):

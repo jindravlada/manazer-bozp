@@ -30,6 +30,9 @@ class BozpInspection(Base):
     silne_stranky: Mapped[str] = mapped_column(Text, default="", nullable=False)
     doporuceni_vedouciho: Mapped[str] = mapped_column(Text, default="", nullable=False)
 
+    # AUDIT-PROVERKY-SECTION-NOTE-1: NULL = legacy komentáře u otázek.
+    notes_mode: Mapped[str | None] = mapped_column(String(40), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,

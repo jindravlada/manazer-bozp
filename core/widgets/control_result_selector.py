@@ -64,6 +64,7 @@ class ControlResultSelectorWidget(QWidget):
         self._note_edit.textChanged.connect(self._on_note_text_changed)
         note_row.addWidget(self._note_edit)
         layout.addLayout(note_row)
+        self._note_row_widgets = (self._note_label, self._note_edit)
 
         self._shared_experience_check = QCheckBox(SHARED_EXPERIENCE_LABEL)
         self._shared_experience_check.toggled.connect(self._on_shared_experience_toggled)
@@ -80,6 +81,7 @@ class ControlResultSelectorWidget(QWidget):
         must_be_saved_message: str,
         result_header: str = "Výsledek kontroly",
         note_label: str = "Poznámka:",
+        show_note: bool = True,
     ) -> None:
         self._entity_type = entity_type
         self._entity_id = entity_id
@@ -87,6 +89,8 @@ class ControlResultSelectorWidget(QWidget):
         self._must_be_saved_message = must_be_saved_message
         self._result_header.setText(result_header)
         self._note_label.setText(note_label)
+        for widget in self._note_row_widgets:
+            widget.setVisible(bool(show_note))
         self._reload_from_storage()
 
     def current_result(self) -> str:

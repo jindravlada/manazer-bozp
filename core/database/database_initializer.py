@@ -78,6 +78,12 @@ def initialize_database() -> None:
     from moduly.audity.modely.audit_question_support_snapshot import (  # noqa: F401
         AuditQuestionSupportSnapshot,
     )
+    from moduly.audity.modely.audit_section_summary import (  # noqa: F401
+        AuditSectionSummary,
+    )
+    from moduly.proverky.modely.inspection_section_summary import (  # noqa: F401
+        InspectionSectionSummary,
+    )
     from moduly.audity.modely.audit_extraordinary_question import (  # noqa: F401
         AuditExtraordinaryQuestion,
         AuditExtraordinaryQuestionTarget,

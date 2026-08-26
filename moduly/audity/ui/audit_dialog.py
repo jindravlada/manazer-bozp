@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from core.shared.section_summary import NOTES_MODE_SECTION_SUMMARY_V1
 from core.shared.verification_type import (
     VERIFICATION_TYPE_DOCUMENTATION,
     VERIFICATION_TYPE_TERRAIN,
@@ -134,6 +135,9 @@ class AuditDialog(QDialog):
     def _on_tab_changed(self, index: int) -> None:
         if self.tabs.widget(index) is self.history_widget:
             self.history_widget.ensure_loaded()
+        current = self.tabs.widget(index)
+        if current is self.processes_widget or current is self.terrain_widget:
+            current.reload_section_summary()
 
     def _wire_deferred_edits(self) -> None:
         self.processes_widget.set_deferred_edits(self._deferred)
@@ -195,6 +199,14 @@ class AuditDialog(QDialog):
         self.extraordinary_widget.set_audit_id(audit_id)
         self.findings_widget.set_audit_id(audit_id)
         self.tasks_widget.set_audit_id(audit_id)
+        notes_mode = (
+            getattr(self.audit, "notes_mode", None)
+            if self.audit is not None
+            else NOTES_MODE_SECTION_SUMMARY_V1
+        )
+        self.processes_widget.set_notes_mode(notes_mode)
+        self.terrain_widget.set_notes_mode(notes_mode)
+        self.extraordinary_widget.set_notes_mode(None)
         # Jeden resolve pro všechny záložky — snapshot bez ensure_catalogs / get_knowledge_tree.
         try:
             source = audit_question_source_service.resolve_for_audit(audit_id)
@@ -240,6 +252,8 @@ class AuditDialog(QDialog):
 
         data = self.get_data()
         payload = self.prepare_save_payload(data)
+        self.processes_widget.capture_section_summary()
+        self.terrain_widget.capture_section_summary()
 
         if self.audit is None:
             try:
@@ -258,7 +272,7 @@ class AuditDialog(QDialog):
             if created is None:
                 return False
             self.audit = created
-            self._deferred.flush()
+            self._deferred.flush(entity_id=created.id)
             self._reload_after_persist()
         else:
             # Zápis jen podle id — ne přes mutaci self.audit drženého editorem.
@@ -271,7 +285,7 @@ class AuditDialog(QDialog):
             if updated is None:
                 return False
             self.save_commission_members(self.audit.id, data)
-            self._deferred.flush()
+            self._deferred.flush(entity_id=self.audit.id)
             self.audit = updated
             self._reload_after_persist()
 
@@ -411,7 +425,7 @@ class AuditDialog(QDialog):
             self.audit.id,
             data.get("commission_members", []),
         )
-        self._deferred.flush()
+        self._deferred.flush(entity_id=self.audit.id)
 
         self.audit = updated
         self.conclusion_widget.load_audit(self.audit)

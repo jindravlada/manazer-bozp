@@ -14,6 +14,7 @@ from core.export.control_point_appendix import (
     ControlPointAppendixItem,
     build_areas_appendix,
     build_detailed_control_points_appendix,
+    section_summary_paragraphs,
 )
 from core.export.odt_engine import OdtParagraph, OdtRichContent
 from core.shared.constants import (
@@ -26,6 +27,7 @@ from core.shared.control_result_display import (
     protocol_evaluation_results,
 )
 from core.shared.finding_display import finding_status_label, finding_type_label
+from core.shared.section_summary import uses_section_summary_notes_mode
 from core.shared.sluzby.control_activity_statistics_service import (
     control_activity_statistics_service,
 )
@@ -46,6 +48,9 @@ from moduly.proverky.sluzby.bozp_inspection_commission_service import (
     bozp_inspection_commission_service,
 )
 from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
+from moduly.proverky.sluzby.inspection_section_summary_service import (
+    inspection_section_summary_service,
+)
 
 
 def _fmt_date(value) -> str:
@@ -128,6 +133,19 @@ class InspectionExportContext:
     @property
     def inspection_id(self) -> int:
         return self.inspection.id
+
+    def _uses_section_summary_notes(self) -> bool:
+        return uses_section_summary_notes_mode(
+            getattr(self.inspection, "notes_mode", None)
+        )
+
+    def _section_summaries_map(self) -> dict[tuple[str, str], str]:
+        cached = getattr(self, "_section_summaries_cache", None)
+        if cached is not None:
+            return cached
+        mapping = inspection_section_summary_service.map_for_inspection(self.inspection_id)
+        object.__setattr__(self, "_section_summaries_cache", mapping)
+        return mapping
 
     def is_completed(self) -> bool:
         return self.inspection.finished_at is not None
@@ -314,8 +332,12 @@ class InspectionExportContext:
         if not results:
             return OdtRichContent(paragraphs=[OdtParagraph.text("Nejsou evidovány.")])
 
-        grouped: dict[str, list[str]] = {}
-        area_order: list[str] = []
+        new_mode = self._uses_section_summary_notes()
+        summaries = self._section_summaries_map() if new_mode else {}
+        grouped: dict[object, list[str]] = {}
+        headings: dict[object, str] = {}
+        group_summaries: dict[object, str] = {}
+        area_order: list[object] = []
         for row in sorted(
             results,
             key=lambda item: (
@@ -329,20 +351,36 @@ class InspectionExportContext:
             area = _text(row.source_area_label) or _text(row.source_section_label)
             if not control_point or not area:
                 continue
+            area_id = str(getattr(row, "source_area_id", "") or "").strip()
+            section_id = str(getattr(row, "source_section_id", "") or "").strip()
+            section = _text(row.source_section_label)
+            if new_mode and area_id and section_id:
+                group_id: object = (area_id, section_id)
+                if area and section and area != section:
+                    heading = f"{area} — {section}"
+                else:
+                    heading = section or area
+            else:
+                group_id = area
+                heading = area
             emoji = DEFAULT_RESULT_EMOJI.get(row.result, "○")
-            if area not in grouped:
-                grouped[area] = []
-                area_order.append(area)
-            grouped[area].append(f"{emoji} {control_point}")
+            if group_id not in grouped:
+                grouped[group_id] = []
+                headings[group_id] = heading
+                area_order.append(group_id)
+                if new_mode and area_id and section_id:
+                    group_summaries[group_id] = summaries.get((area_id, section_id), "")
+            grouped[group_id].append(f"{emoji} {control_point}")
 
         paragraphs: list[OdtParagraph] = []
-        for index, area in enumerate(area_order):
-            lines = grouped.get(area) or []
+        for index, group_id in enumerate(area_order):
+            lines = grouped.get(group_id) or []
             if not lines:
                 continue
             if index > 0:
                 paragraphs.append(OdtParagraph.blank_line())
-            paragraphs.append(OdtParagraph.text(area, style="AuditCriterion"))
+            paragraphs.append(OdtParagraph.text(headings[group_id], style="AuditCriterion"))
+            paragraphs.extend(section_summary_paragraphs(group_summaries.get(group_id, "")))
             for line in lines:
                 paragraphs.append(OdtParagraph.text(line))
         if not paragraphs:
@@ -352,6 +390,8 @@ class InspectionExportContext:
     def detailed_appendix_control_points(self) -> OdtRichContent:
         """Příloha B podrobné zprávy – kontrolní body s komentáři a fotografiemi."""
         results = self._control_point_results()
+        new_mode = self._uses_section_summary_notes()
+        summaries = self._section_summaries_map() if new_mode else {}
         items: list[ControlPointAppendixItem] = []
         for row in sorted(
             results,
@@ -367,19 +407,36 @@ class InspectionExportContext:
             if not control_point or not area:
                 continue
             photo_path = control_result_service.resolve_photo_path(row)
+            area_id = str(getattr(row, "source_area_id", "") or "").strip()
+            section_id = str(getattr(row, "source_section_id", "") or "").strip()
+            section = _text(row.source_section_label)
+            if new_mode and area_id and section_id:
+                section_key: tuple[str, str] | None = (area_id, section_id)
+                if area and section and area != section:
+                    heading = f"{area} — {section}"
+                else:
+                    heading = section or area
+            else:
+                section_key = None
+                heading = area
             items.append(
                 ControlPointAppendixItem(
-                    area_label=area,
+                    area_label=heading,
                     control_point_label=control_point,
                     result=row.result,
-                    note=_text(getattr(row, "note", "")),
+                    note="" if new_mode else _text(getattr(row, "note", "")),
                     photo_path=photo_path if photo_path and photo_path.is_file() else None,
+                    section_key=section_key,
+                    section_summary=(
+                        summaries.get(section_key, "") if section_key else ""
+                    ),
                 )
             )
         return build_detailed_control_points_appendix(
             items,
             note_label="Komentář:",
             include_recommendation=False,
+            include_question_notes=not new_mode,
             empty_message="Nejsou evidovány.",
         )
 
@@ -407,16 +464,18 @@ class InspectionExportContext:
                 row.result,
                 control_result_label(row.result),
             )
+            fields = [
+                ("Oblast", row.source_area_label),
+                ("Kontrolní bod", row.source_control_point_label),
+                ("Výsledek", control_result_label(row.result)),
+            ]
+            if not self._uses_section_summary_notes():
+                fields.append(("Komentář", row.note))
             lines.append(
                 _format_labeled_block(
                     index,
                     title,
-                    [
-                        ("Oblast", row.source_area_label),
-                        ("Kontrolní bod", row.source_control_point_label),
-                        ("Výsledek", control_result_label(row.result)),
-                        ("Komentář", row.note),
-                    ],
+                    fields,
                 )
             )
         return lines

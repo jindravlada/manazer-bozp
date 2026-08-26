@@ -121,6 +121,7 @@ class AudityDetailedReportFormattingTestCase(unittest.TestCase):
             planned_month=7,
             started_at=date(2026, 7, 1),
             finished_at=date(2026, 7, 10),
+            notes_mode=None,
         )
 
     def _set_result(

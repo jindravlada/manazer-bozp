@@ -51,6 +51,9 @@ class Audit(Base):
     support_snapshot_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     support_integrity_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
+    # AUDIT-PROVERKY-SECTION-NOTE-1: NULL = legacy poznámky u otázek.
+    notes_mode: Mapped[str | None] = mapped_column(String(40), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,

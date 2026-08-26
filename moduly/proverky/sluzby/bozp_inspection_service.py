@@ -1,6 +1,10 @@
 from datetime import date, datetime
 from dataclasses import dataclass
 
+from core.shared.section_summary import (
+    NOTES_MODE_SECTION_SUMMARY_V1,
+    normalize_notes_mode,
+)
 from core.shared.constants import (
     ENTITY_PROVERKY,
     FINDING_STATUS_OTEVRENE,
@@ -79,6 +83,8 @@ class BozpInspectionService:
 
     def create_inspection(self, **fields) -> BozpInspection:
         data = self._validated_fields(fields)
+        if "notes_mode" not in data:
+            data["notes_mode"] = NOTES_MODE_SECTION_SUMMARY_V1
         inspection = BozpInspection(**data)
         saved = self.repository.add(inspection)
         saved.number = self._make_number(saved.id, saved.year)
@@ -101,6 +107,7 @@ class BozpInspectionService:
             "title": inspection.title,
             "silne_stranky": inspection.silne_stranky,
             "doporuceni_vedouciho": inspection.doporuceni_vedouciho,
+            "notes_mode": getattr(inspection, "notes_mode", None),
         }
         merged.update(fields)
         data = self._validated_fields(merged)
@@ -118,6 +125,11 @@ class BozpInspectionService:
         )
 
         inspection_verification_service.repository.delete_for_inspection(inspection_id)
+        from moduly.proverky.sluzby.inspection_section_summary_service import (
+            inspection_section_summary_service,
+        )
+
+        inspection_section_summary_service.delete_for_inspection(inspection_id)
         return self.repository.delete(inspection_id)
 
     def resolve_workplace_name(self, workplace_id: int | None) -> str:
@@ -266,6 +278,8 @@ class BozpInspectionService:
         data["title"] = str(data.get("title") or "").strip()
         data["silne_stranky"] = str(data.get("silne_stranky") or "").replace("\r\n", "\n").replace("\r", "\n").strip()
         data["doporuceni_vedouciho"] = str(data.get("doporuceni_vedouciho") or "").replace("\r\n", "\n").replace("\r", "\n").strip()
+        if "notes_mode" in data:
+            data["notes_mode"] = normalize_notes_mode(data.get("notes_mode"))
 
         started_at = data.get("started_at")
         finished_at = data.get("finished_at")
@@ -274,7 +288,7 @@ class BozpInspectionService:
         if status not in INSPECTION_SPIS_STATUSES:
             raise ValueError(f"Neplatný stav prověrky: {status}")
 
-        return {
+        payload = {
             "year": data.get("year"),
             "planned_month": data.get("planned_month"),
             "inspection_date": data.get("inspection_date"),
@@ -288,6 +302,9 @@ class BozpInspectionService:
             "silne_stranky": data["silne_stranky"],
             "doporuceni_vedouciho": data["doporuceni_vedouciho"],
         }
+        if "notes_mode" in data:
+            payload["notes_mode"] = data["notes_mode"]
+        return payload
 
     @staticmethod
     def validate_date_order(

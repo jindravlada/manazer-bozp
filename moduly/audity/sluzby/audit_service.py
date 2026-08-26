@@ -1,6 +1,10 @@
 from datetime import date, datetime
 from dataclasses import dataclass
 
+from core.shared.section_summary import (
+    NOTES_MODE_SECTION_SUMMARY_V1,
+    normalize_notes_mode,
+)
 from core.shared.constants import (
     ENTITY_AUDITY,
     FINDING_STATUS_OTEVRENE,
@@ -74,6 +78,8 @@ class AuditService:
 
     def create_audit(self, **fields) -> Audit:
         data = self._validated_fields(fields)
+        if "notes_mode" not in data:
+            data["notes_mode"] = NOTES_MODE_SECTION_SUMMARY_V1
         audit = Audit(**data)
         saved = self.repository.add(audit)
         saved.number = self._make_number(saved.id, saved.year)
@@ -101,6 +107,7 @@ class AuditService:
             "silne_stranky": existing.silne_stranky,
             "changes_since_last": existing.changes_since_last,
             "conclusion_text": getattr(existing, "conclusion_text", None),
+            "notes_mode": getattr(existing, "notes_mode", None),
         }
         merged.update(fields)
         data = self._validated_fields(merged)
@@ -173,6 +180,11 @@ class AuditService:
         audit_verification_service.repository.delete_for_audit(audit_id)
         audit_method_support_snapshot_service.delete_for_audit(audit_id)
         audit_question_snapshot_service.delete_for_audit(audit_id)
+        from moduly.audity.sluzby.audit_section_summary_service import (
+            audit_section_summary_service,
+        )
+
+        audit_section_summary_service.delete_for_audit(audit_id)
         return self.repository.delete(audit_id)
 
     def resolve_workplace_name(self, workplace_id: int | None) -> str:
@@ -358,6 +370,8 @@ class AuditService:
             data["conclusion_text"] = self.normalize_conclusion_text(
                 data.get("conclusion_text")
             )
+        if "notes_mode" in data:
+            data["notes_mode"] = normalize_notes_mode(data.get("notes_mode"))
 
         started_at = data.get("started_at")
         finished_at = data.get("finished_at")
@@ -384,6 +398,8 @@ class AuditService:
             payload["changes_since_last"] = data["changes_since_last"]
         if "conclusion_text" in data:
             payload["conclusion_text"] = data["conclusion_text"]
+        if "notes_mode" in data:
+            payload["notes_mode"] = data["notes_mode"]
         return payload
 
     @staticmethod

@@ -47,6 +47,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 Nové záznamy přidávat níže (nejnovější nahoře).
 
+### 2026-08-26 – AUDIT-PROVERKY-SECTION-NOTE-1
+
+**Co se povedlo:** Nové Audity a Prověrky mají jedno Souhrnné sdělení za okruh (společné pro Dokumentaci i Terén), stávající záznamy zůstaly v legacy režimu `notes_mode IS NULL`.
+
+**Co už bychom dnes udělali jinak:** Režim poznámek zavést jako explicitní sloupec hned při prvním modelu poznámek u otázek, ať později není nutný paralelní legacy/nový výstup.
+
+**Co bylo zbytečně složité:** Nic zásadního — stačila aditivní tabulka sdělení a sdílený deferred buffer.
+
+**Nové pravidlo:** Nový režim jen při vytvoření záznamu; existující Audity/Prověrky se nepřepínají ani neslučují.
+
+**Aktualizované dokumenty:** `UX_NAZVOSLOVI.md` (Souhrnné sdělení)
+
 ### 2026-08-17 – METHODOLOGY-PDF-1
 
 **Co se povedlo:** Přímý PDF přehled živé metodiky (QPdfWriter) z editorů Auditů a Prověrek, včetně pracovní neuložené podoby bez stash/zápisu.

@@ -47,6 +47,15 @@ class BozpAreaKnowledgeWidget(QWidget):
     def set_deferred_edits(self, deferred_edits) -> None:
         self.section_widget.set_deferred_edits(deferred_edits)
 
+    def set_notes_mode(self, notes_mode: str | None) -> None:
+        self.section_widget.set_notes_mode(notes_mode)
+
+    def capture_section_summary(self) -> None:
+        self.section_widget.capture_section_summary()
+
+    def reload_section_summary(self) -> None:
+        self.section_widget.reload_section_summary()
+
     def set_on_deferred_dirty(self, callback) -> None:
         self.section_widget.set_on_deferred_dirty(callback)
 

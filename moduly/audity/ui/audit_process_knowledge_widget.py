@@ -179,6 +179,15 @@ class AuditProcessKnowledgeWidget(QWidget):
     def set_deferred_edits(self, deferred_edits) -> None:
         self.criterion_widget.set_deferred_edits(deferred_edits)
 
+    def set_notes_mode(self, notes_mode: str | None) -> None:
+        self.criterion_widget.set_notes_mode(notes_mode)
+
+    def capture_section_summary(self) -> None:
+        self.criterion_widget.capture_section_summary()
+
+    def reload_section_summary(self) -> None:
+        self.criterion_widget.reload_section_summary()
+
     def set_on_finding_saved(self, callback) -> None:
         self.criterion_widget.set_on_finding_saved(callback)
 

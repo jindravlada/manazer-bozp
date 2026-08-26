@@ -13,6 +13,7 @@ from core.export.control_point_appendix import (
     ControlPointAppendixItem,
     build_areas_appendix,
     build_detailed_control_points_appendix,
+    section_summary_paragraphs,
 )
 from core.export.odt_engine import OdtParagraph, OdtRichContent
 from core.shared.constants import (
@@ -26,6 +27,7 @@ from core.shared.constants import (
 )
 from core.shared.control_result_display import control_result_label, protocol_evaluation_results
 from core.shared.finding_display import finding_status_label, finding_type_label
+from core.shared.section_summary import uses_section_summary_notes_mode
 from core.shared.sluzby.control_activity_statistics_service import (
     control_activity_statistics_service,
 )
@@ -66,6 +68,9 @@ from moduly.audity.sluzby.audit_export_task_order import (
     ordered_audit_export_findings,
 )
 from moduly.audity.sluzby.audit_service import audit_service
+from moduly.audity.sluzby.audit_section_summary_service import (
+    audit_section_summary_service,
+)
 from moduly.nastaveni.sluzby.settings_service import settings_service
 
 _SEVERITY_LABELS = dict(CONTROL_POINT_SEVERITY_OPTIONS)
@@ -199,6 +204,17 @@ class AuditExportContext:
             raise
         object.__setattr__(self, "_question_source_cache", source)
         return source
+
+    def _uses_section_summary_notes(self) -> bool:
+        return uses_section_summary_notes_mode(getattr(self.audit, "notes_mode", None))
+
+    def _section_summaries_map(self) -> dict[tuple[str, str], str]:
+        cached = getattr(self, "_section_summaries_cache", None)
+        if cached is not None:
+            return cached
+        mapping = audit_section_summary_service.map_for_audit(self.audit_id)
+        object.__setattr__(self, "_section_summaries_cache", mapping)
+        return mapping
 
     def is_completed(self) -> bool:
         return self.audit.finished_at is not None
@@ -583,8 +599,12 @@ class AuditExportContext:
         if not results:
             return OdtRichContent()
 
-        grouped: dict[str, list[str]] = {}
-        area_order: list[str] = []
+        new_mode = self._uses_section_summary_notes()
+        summaries = self._section_summaries_map() if new_mode else {}
+        grouped: dict[object, list[str]] = {}
+        headings: dict[object, str] = {}
+        group_summaries: dict[object, str] = {}
+        area_order: list[object] = []
         for row in sorted(
             results,
             key=lambda item: (
@@ -600,20 +620,30 @@ class AuditExportContext:
             area = _text(row.source_section_label) or _text(row.source_area_label)
             if not area:
                 continue
+            process_id = str(getattr(row, "source_area_id", "") or "").strip()
+            section_id = str(getattr(row, "source_section_id", "") or "").strip()
+            if new_mode and process_id and section_id:
+                group_id: object = (process_id, section_id)
+            else:
+                group_id = area
             emoji = _ASSERTION_RESULT_EMOJI.get(row.result, "○")
-            if area not in grouped:
-                grouped[area] = []
-                area_order.append(area)
-            grouped[area].append(f"{emoji} {assertion}")
+            if group_id not in grouped:
+                grouped[group_id] = []
+                headings[group_id] = area
+                area_order.append(group_id)
+                if new_mode and process_id and section_id:
+                    group_summaries[group_id] = summaries.get((process_id, section_id), "")
+            grouped[group_id].append(f"{emoji} {assertion}")
 
         paragraphs: list[OdtParagraph] = []
-        for index, area in enumerate(area_order):
-            lines = grouped.get(area) or []
+        for index, group_id in enumerate(area_order):
+            lines = grouped.get(group_id) or []
             if not lines:
                 continue
             if index > 0:
                 paragraphs.append(OdtParagraph.blank_line())
-            paragraphs.append(OdtParagraph.text(area, style="AuditCriterion"))
+            paragraphs.append(OdtParagraph.text(headings[group_id], style="AuditCriterion"))
+            paragraphs.extend(section_summary_paragraphs(group_summaries.get(group_id, "")))
             for line in lines:
                 paragraphs.append(OdtParagraph.text(line))
         return OdtRichContent(paragraphs=paragraphs)
@@ -629,6 +659,8 @@ class AuditExportContext:
             return OdtRichContent()
 
         recommendations = self._recommendation_by_control_point()
+        new_mode = self._uses_section_summary_notes()
+        summaries = self._section_summaries_map() if new_mode else {}
         items: list[ControlPointAppendixItem] = []
         for row in sorted(
             results,
@@ -648,17 +680,24 @@ class AuditExportContext:
             photo_path = control_result_service.resolve_photo_path(
                 getattr(row, "_original", row)
             )
+            process_id = str(getattr(row, "source_area_id", "") or "").strip()
+            section_id = str(getattr(row, "source_section_id", "") or "").strip()
+            section_key = (process_id, section_id) if new_mode and process_id and section_id else None
             items.append(
                 ControlPointAppendixItem(
                     area_label=area,
                     control_point_label=assertion,
                     result=row.result,
-                    note=_text(getattr(row, "note", "")),
+                    note="" if new_mode else _text(getattr(row, "note", "")),
                     recommendation=recommendations.get(
                         str(row.source_control_point_id or "").strip(),
                         "",
                     ),
                     photo_path=photo_path if photo_path and photo_path.is_file() else None,
+                    section_key=section_key,
+                    section_summary=(
+                        summaries.get(section_key, "") if section_key else ""
+                    ),
                 )
             )
 
@@ -668,6 +707,7 @@ class AuditExportContext:
             result_words=_ASSERTION_RESULT_WORDS,
             note_label="Poznámka auditora:",
             include_recommendation=True,
+            include_question_notes=not new_mode,
         )
 
     def _recommendation_by_control_point(self) -> dict[str, str]:
@@ -952,16 +992,18 @@ class AuditExportContext:
             ),
             start=1,
         ):
+            fields = [
+                ("Proces", row.source_area_label),
+                ("Kritérium", row.source_section_label),
+                ("Tvrzení", row.source_control_point_label),
+            ]
+            if not self._uses_section_summary_notes():
+                fields.append(("Poznámka", row.note))
             lines.append(
                 _format_labeled_block(
                     index,
                     control_result_label(row.result),
-                    [
-                        ("Proces", row.source_area_label),
-                        ("Kritérium", row.source_section_label),
-                        ("Tvrzení", row.source_control_point_label),
-                        ("Poznámka", row.note),
-                    ],
+                    fields,
                 )
             )
         return lines

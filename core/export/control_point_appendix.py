@@ -15,6 +15,10 @@ from core.shared.constants import (
     CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
 )
 from core.shared.control_result_display import control_result_label
+from core.shared.section_summary import (
+    SECTION_SUMMARY_EXPORT_LABEL,
+    normalize_section_summary_text,
+)
 
 DEFAULT_RESULT_EMOJI = {
     CONTROL_RESULT_VYHOVUJE: "🟢",
@@ -44,6 +48,8 @@ class ControlPointAppendixItem:
     recommendation: str = ""
     photo_path: Path | None = None
     photo_paths: tuple[Path, ...] = ()
+    section_key: tuple[str, str] | None = None
+    section_summary: str = ""
 
     def resolved_photo_paths(self) -> list[Path]:
         paths: list[Path] = []
@@ -78,6 +84,20 @@ def build_areas_appendix(
     return OdtRichContent(paragraphs=paragraphs)
 
 
+def section_summary_paragraphs(text: str) -> list[OdtParagraph]:
+    """Souhrnné sdělení za okruh — bez prázdného bloku, se zachováním odstavců."""
+    cleaned = normalize_section_summary_text(text).strip()
+    if not cleaned:
+        return []
+    paragraphs = [OdtParagraph.text(SECTION_SUMMARY_EXPORT_LABEL, bold=True)]
+    for block in cleaned.split("\n"):
+        if not block.strip():
+            paragraphs.append(OdtParagraph.blank_line())
+        else:
+            paragraphs.append(OdtParagraph.text(block))
+    return paragraphs
+
+
 def build_detailed_control_points_appendix(
     items: Sequence[ControlPointAppendixItem],
     *,
@@ -85,6 +105,7 @@ def build_detailed_control_points_appendix(
     result_words: Mapping[str, str] | None = None,
     note_label: str = "Komentář:",
     include_recommendation: bool = False,
+    include_question_notes: bool = True,
     empty_message: str | None = None,
 ) -> OdtRichContent:
     """Podrobná příloha B: oblast, kontrolní bod, výsledek, komentář, foto."""
@@ -101,7 +122,8 @@ def build_detailed_control_points_appendix(
         return OdtRichContent()
 
     paragraphs: list[OdtParagraph] = []
-    current_area: str | None = None
+    current_group: object | None = None
+    emitted_summaries: set[tuple[str, str]] = set()
 
     for item in items:
         area = str(item.area_label or "").strip()
@@ -109,18 +131,22 @@ def build_detailed_control_points_appendix(
         if not area or not control_point:
             continue
 
-        if area != current_area:
-            if current_area is not None:
+        group_id: object = item.section_key if item.section_key else area
+        if group_id != current_group:
+            if current_group is not None:
                 paragraphs.append(OdtParagraph.blank_line())
             paragraphs.append(OdtParagraph.text(area, style="AuditCriterion"))
-            current_area = area
+            current_group = group_id
+            if item.section_key and item.section_key not in emitted_summaries:
+                paragraphs.extend(section_summary_paragraphs(item.section_summary))
+                emitted_summaries.add(item.section_key)
 
         emoji = emoji_map.get(item.result, "○")
         word = words_map.get(item.result, control_result_label(item.result))
         paragraphs.append(OdtParagraph.text(f"{emoji} {control_point} — {word}"))
 
         recommendation = str(item.recommendation or "").strip()
-        note = str(item.note or "").strip()
+        note = str(item.note or "").strip() if include_question_notes else ""
         if (
             include_recommendation
             and not recommendation

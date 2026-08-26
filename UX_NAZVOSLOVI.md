@@ -189,7 +189,7 @@ Nesmí se zaměňovat (např. „Generovat kontroly“ v modulu Prověrky).
 | Zaměstnanec | Pracovník *(v UI, pokud není specifický kontext THP)* |
 | Pracoviště | Místo výkonu práce *(kromě explicitní záložky)* |
 | Opatření | Nápravné opatření / úkol *(pokud jde o finding measure)* |
-| Koordinátor BOZP | Koordinátor *(bez kvalifikace jen tam, kde je kontext jasný)* |
+| Souhrnné sdělení | Poznámka auditora / Komentář *(u nového režimu okruhu Auditů a Prověrek)* |
 
 ---
 

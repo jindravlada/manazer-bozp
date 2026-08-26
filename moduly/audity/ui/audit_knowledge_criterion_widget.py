@@ -9,10 +9,10 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QScrollArea,
-    QSizePolicy,
-    QVBoxLayout,
-    QWidget,
-)
+        QSizePolicy,
+        QVBoxLayout,
+        QWidget,
+    )
 
 from core.shared.constants import ENTITY_AUDITY
 from core.shared.control_result_display import (
@@ -23,6 +23,7 @@ from core.shared.control_result_display import (
 from core.shared.finding_display import finding_status_label
 from core.shared.sluzby.control_result_service import ControlPointContext, control_result_service
 from core.shared.sluzby.finding_service import finding_service
+from core.shared.section_summary import uses_section_summary_notes_mode
 from core.shared.verification_type import (
     VERIFICATION_TYPE_DOCUMENTATION,
     VERIFICATION_TYPE_TERRAIN,
@@ -32,6 +33,7 @@ from core.widgets.control_result_photo_widget import ControlResultPhotoWidget
 from core.widgets.finding_dialog import FindingDialog
 from core.widgets.dialog_utils import exec_maximized
 from core.widgets.image_viewer_dialog import ImageViewerDialog
+from core.widgets.section_summary_edit import SectionSummaryEdit
 from moduly.audity.constants import (
     AUDIT_QUESTION_KIND_EXTRAORDINARY,
     CONTROL_POINT_SEVERITY_OPTIONS,
@@ -137,6 +139,8 @@ class AuditKnowledgeCriterionWidget(QWidget):
         self._on_finding_saved = None
         self._on_deferred_dirty = None
         self._deferred_edits = None
+        self._notes_mode: str | None = None
+        self._section_summary_edit: SectionSummaryEdit | None = None
         self._selected_control_point_id = ""
         self._control_point_frames: dict[str, _ControlPointFrame] = {}
         self._overrides_cache: dict[tuple[str, str, str], str] | None = None
@@ -170,6 +174,15 @@ class AuditKnowledgeCriterionWidget(QWidget):
 
     def set_deferred_edits(self, deferred_edits) -> None:
         self._deferred_edits = deferred_edits
+
+    def set_notes_mode(self, notes_mode: str | None) -> None:
+        self._notes_mode = notes_mode
+        self._rebuild_content()
+
+    def uses_section_summary(self) -> bool:
+        if self._extraordinary_only:
+            return False
+        return uses_section_summary_notes_mode(self._notes_mode)
 
     def _overrides(self) -> dict[tuple[str, str, str], str]:
         if self._deferred_edits is not None:
@@ -223,6 +236,7 @@ class AuditKnowledgeCriterionWidget(QWidget):
         area_label: str = "",
         section_label: str = "",
     ) -> None:
+        self._capture_section_summary()
         self._current_section = section
         self._area_id = area_id.strip()
         self._area_label = area_label.strip()
@@ -236,7 +250,61 @@ class AuditKnowledgeCriterionWidget(QWidget):
 
     def refresh(self) -> None:
         self._overrides_cache = None
+        self._capture_section_summary()
         self._rebuild_content()
+
+    def capture_section_summary(self) -> None:
+        self._capture_section_summary()
+
+    def reload_section_summary(self) -> None:
+        if self._section_summary_edit is None:
+            return
+        self._section_summary_edit.set_text(self._current_section_summary_text())
+
+    def _uses_section_summary_ui(self) -> bool:
+        return self.uses_section_summary() and bool(self._area_id) and bool(self._section_id)
+
+    def _current_section_summary_text(self) -> str:
+        if not self._uses_section_summary_ui():
+            return ""
+        if self._deferred_edits is not None:
+            return self._deferred_edits.get_section_summary(
+                self._audit_id,
+                process_id=self._area_id,
+                section_id=self._section_id,
+            )
+        from moduly.audity.sluzby.audit_section_summary_service import (
+            audit_section_summary_service,
+        )
+
+        return audit_section_summary_service.get_text(
+            self._audit_id,
+            process_id=self._area_id,
+            section_id=self._section_id,
+        )
+
+    def _capture_section_summary(self) -> None:
+        if self._section_summary_edit is None:
+            return
+        if not self.isVisible():
+            return
+        self._write_section_summary(self._section_summary_edit.text())
+
+    def _write_section_summary(self, text: str) -> None:
+        if not self._uses_section_summary_ui() or self._deferred_edits is None:
+            return
+        self._deferred_edits.set_section_summary(
+            entity_id=self._audit_id,
+            process_id=self._area_id,
+            section_id=self._section_id,
+            summary_text=text,
+        )
+        self._notify_deferred_changed()
+
+    def _on_section_summary_changed(self) -> None:
+        if self._section_summary_edit is None:
+            return
+        self._write_section_summary(self._section_summary_edit.text())
 
     def _rebuild_content(self) -> None:
         section = self._current_section
@@ -251,6 +319,13 @@ class AuditKnowledgeCriterionWidget(QWidget):
 
         if not self._section_label:
             self._section_label = str(section.get("nazev") or "").strip()
+
+        if self._uses_section_summary_ui():
+            summary = SectionSummaryEdit()
+            summary.set_text(self._current_section_summary_text())
+            summary.text_changed.connect(self._on_section_summary_changed)
+            self._section_summary_edit = summary
+            self._content_layout.addWidget(summary)
 
         questions = self._build_control_points_section(section)
         if questions is not None:
@@ -270,6 +345,7 @@ class AuditKnowledgeCriterionWidget(QWidget):
     def _clear_content(self) -> None:
         self._selected_control_point_id = ""
         self._control_point_frames.clear()
+        self._section_summary_edit = None
         while self._content_layout.count():
             item = self._content_layout.takeAt(0)
             widget = item.widget()
@@ -433,6 +509,7 @@ class AuditKnowledgeCriterionWidget(QWidget):
             must_be_saved_message=AUDIT_MUST_BE_SAVED_MESSAGE,
             result_header=AUDIT_RESULT_HEADER_LABEL,
             note_label=AUDIT_RESULT_NOTE_LABEL,
+            show_note=not self.uses_section_summary(),
         )
         if self._deferred_edits is not None:
             result_selector.data_saved.connect(self._notify_deferred_changed)

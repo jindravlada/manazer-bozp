@@ -12,6 +12,7 @@ from typing import Collection
 from sqlalchemy import select
 
 from core.database.session import get_session
+from core.shared.section_summary import NOTES_MODE_SECTION_SUMMARY_V1
 from moduly.audity.constants import (
     AUDIT_METHODOLOGY_GENERATION_V2,
     AUDIT_METHODOLOGY_SOURCE_SNAPSHOT,
@@ -128,6 +129,7 @@ def create_audit_with_v2_snapshot(
             audit.methodology_source = AUDIT_METHODOLOGY_SOURCE_SNAPSHOT
             audit.questions_frozen_at = frozen_at
             audit.methodology_generation = AUDIT_METHODOLOGY_GENERATION_V2
+            audit.notes_mode = NOTES_MODE_SECTION_SUMMARY_V1
             audit.created_at = frozen_at
             audit.updated_at = frozen_at
             session.add(audit)

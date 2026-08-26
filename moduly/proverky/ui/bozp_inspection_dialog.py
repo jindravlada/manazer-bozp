@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from core.shared.section_summary import NOTES_MODE_SECTION_SUMMARY_V1
 from core.widgets.editor_dialog_controller import (
     EDITOR_CLOSE_LABEL,
     EDITOR_SAVE_LABEL,
@@ -75,6 +76,7 @@ class BozpInspectionDialog(QDialog):
         self.conclusion_widget = BozpInspectionConclusionWidget()
         self.tabs.addTab(self.conclusion_widget, "Závěr")
         layout.addWidget(self.tabs)
+        self.tabs.currentChanged.connect(self._on_tab_changed)
         layout.addLayout(self._build_footer())
 
         inspection_id = inspection.id if inspection is not None else None
@@ -92,6 +94,11 @@ class BozpInspectionDialog(QDialog):
         self.conclusion_widget.load_inspection(inspection)
         self.commission_widget.set_inspection_context(inspection_id)
         self._capture_baseline()
+
+    def _on_tab_changed(self, index: int) -> None:
+        current = self.tabs.widget(index)
+        if current is self.areas_widget or current is self.terrain_widget:
+            current.reload_section_summary()
 
     def _wire_deferred_edits(self) -> None:
         self.areas_widget.set_deferred_edits(self._deferred)
@@ -148,6 +155,13 @@ class BozpInspectionDialog(QDialog):
         self.terrain_widget.set_inspection_id(inspection_id)
         self.findings_widget.set_inspection_id(inspection_id)
         self.tasks_widget.set_inspection_id(inspection_id)
+        notes_mode = (
+            getattr(self.inspection, "notes_mode", None)
+            if self.inspection is not None
+            else NOTES_MODE_SECTION_SUMMARY_V1
+        )
+        self.areas_widget.set_notes_mode(notes_mode)
+        self.terrain_widget.set_notes_mode(notes_mode)
 
     def _on_finding_changed(self) -> None:
         self._on_related_data_changed()
@@ -183,6 +197,8 @@ class BozpInspectionDialog(QDialog):
 
         data = self.get_data()
         payload = self._prepare_save_payload(data)
+        self.areas_widget.capture_section_summary()
+        self.terrain_widget.capture_section_summary()
 
         if self.inspection is None:
             created = bozp_inspection_service.create_inspection(**payload)
@@ -190,14 +206,14 @@ class BozpInspectionDialog(QDialog):
                 return False
             self.inspection = created
             self._save_commission_members(created.id, data)
-            self._deferred.flush()
+            self._deferred.flush(entity_id=created.id)
             self._reload_after_persist()
         else:
             updated = bozp_inspection_service.update_inspection(self.inspection.id, **payload)
             if updated is None:
                 return False
             self._save_commission_members(self.inspection.id, data)
-            self._deferred.flush()
+            self._deferred.flush(entity_id=self.inspection.id)
             self.inspection = updated
             self._reload_after_persist()
 
@@ -317,7 +333,7 @@ class BozpInspectionDialog(QDialog):
             self.inspection.id,
             data.get("commission_members", []),
         )
-        self._deferred.flush()
+        self._deferred.flush(entity_id=self.inspection.id)
 
         self.inspection = updated
         self.conclusion_widget.load_inspection(self.inspection)
