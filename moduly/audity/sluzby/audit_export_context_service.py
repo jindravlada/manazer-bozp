@@ -882,37 +882,11 @@ class AuditExportContext:
         )
 
     def auditor_recommendation_text(self) -> str:
-        stats = self._activity_statistics()
-        summary = audit_service.get_conclusion_summary(self.audit_id)
-        sentences: list[str] = []
+        from moduly.audity.sluzby.audit_lead_recommendation_service import (
+            resolve_lead_auditor_recommendation_text,
+        )
 
-        if stats.ratings_nevyhovuje:
-            sentences.append(
-                f"Audit identifikoval {stats.ratings_nevyhovuje} neshod "
-                "vyžadujících bezodkladné řešení."
-            )
-        if stats.ratings_vyhovuje_s_doporucenim:
-            sentences.append(
-                f"V {stats.ratings_vyhovuje_s_doporucenim} oblastech byla "
-                "doporučena preventivní zlepšení."
-            )
-        if not sentences:
-            sentences.append(
-                "Audit potvrdil účinnost systému managementu BOZP "
-                "bez závažných nedostatků."
-            )
-        if summary["findings_open"] > 0 or summary["tasks_active"] > 0:
-            sentences.append(
-                f"Organizaci doporučujeme prioritně dokončit "
-                f"{summary['findings_open']} otevřených zjištění "
-                f"a {summary['tasks_active']} aktivních úkolů."
-            )
-        else:
-            sentences.append(
-                "Doporučujeme průběžně sledovat plnění přijatých opatření "
-                "a udržovat zavedené kontroly."
-            )
-        return " ".join(sentences[:4])
+        return resolve_lead_auditor_recommendation_text(self.audit)
 
     def executive_summary_text(self) -> str:
         stats = self._activity_statistics()

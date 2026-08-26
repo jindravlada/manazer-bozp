@@ -47,6 +47,9 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.audity.sluzby.audit_extraordinary_question_service import (
         audit_extraordinary_question_service,
     )
+    from moduly.audity.sluzby.audit_lead_recommendation_service import (
+        confirmed_recommendation_fields,
+    )
     from moduly.audity.sluzby.audit_service import (
         AuditCompletionError,
         audit_service,
@@ -248,6 +251,7 @@ class AuditConclusion1TestCase(unittest.TestCase):
             audit.id,
             finished_at=date(2026, 8, 12),
             conclusion_text="Platný závěr auditu.",
+            **confirmed_recommendation_fields(audit.id),
         )
         assert updated is not None
         self.assertEqual(updated.status, AUDIT_STATUS_DOKONCENO)
@@ -358,6 +362,7 @@ class AuditConclusion1TestCase(unittest.TestCase):
             reopened.id,
             finished_at=date(2026, 8, 14),
             conclusion_text="Doplněný závěr po znovuotevření.",
+            **confirmed_recommendation_fields(reopened.id),
         )
         assert done is not None
         self.assertEqual(done.status, AUDIT_STATUS_DOKONCENO)

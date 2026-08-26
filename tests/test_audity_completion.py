@@ -143,7 +143,15 @@ class AudityCompletionTestCase(unittest.TestCase):
         self.assertFalse(blockers.has_blockers())
 
     def _fill_conclusion(self, dialog, text: str = "Závěr testovacího auditu.") -> None:
+        from moduly.audity.sluzby.audit_lead_recommendation_service import (
+            generate_lead_auditor_recommendation,
+        )
+
         dialog.conclusion_widget.conclusion_edit.setPlainText(text)
+        dialog.conclusion_widget.recommendation_edit.setPlainText(
+            generate_lead_auditor_recommendation(dialog.audit.id)
+        )
+        self.assertTrue(dialog._persist())
 
     @patch("moduly.audity.ui.audit_conclusion_widget.QMessageBox.question")
     def test_complete_without_blockers_saves_completed(self, mock_question) -> None:

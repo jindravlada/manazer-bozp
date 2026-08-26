@@ -31,6 +31,35 @@ AUDIT_CONCLUSION_REQUIRED_MESSAGE = (
 AUDIT_CONCLUSION_EXPORT_SECTION = "Závěr auditu"
 AUDIT_STRENGTHS_EXPORT_SECTION = "Silné stránky systému"
 
+AUDIT_LEAD_RECOMMENDATION_LABEL = "Doporučení vedoucího auditora"
+AUDIT_LEAD_RECOMMENDATION_GENERATE_BUTTON = "Vytvořit doporučení podle výsledků"
+AUDIT_LEAD_RECOMMENDATION_STATUS_CURRENT = "Aktuální"
+AUDIT_LEAD_RECOMMENDATION_STATUS_STALE = (
+    "Neaktuální – výsledky auditu se změnily"
+)
+AUDIT_LEAD_RECOMMENDATION_STATUS_UNCONFIRMED = (
+    "Automatický návrh dosud nebyl potvrzen"
+)
+AUDIT_LEAD_RECOMMENDATION_REQUIRED_MESSAGE = (
+    "Audit nelze dokončit. Vyplňte doporučení vedoucího auditora."
+)
+AUDIT_LEAD_RECOMMENDATION_SIGNATURE_INVALID_MESSAGE = (
+    "Audit nelze dokončit. Doporučení vedoucího auditora neodpovídá "
+    "aktuálním výsledkům."
+)
+AUDIT_LEAD_RECOMMENDATION_EMPTY_REVIEW_MESSAGE = (
+    "Byl vytvořen návrh doporučení vedoucího auditora. "
+    "Před dokončením jej zkontrolujte."
+)
+AUDIT_LEAD_RECOMMENDATION_STALE_REVIEW_MESSAGE = (
+    "Výsledky auditu se od vytvoření doporučení změnily. "
+    "Doporučení zkontrolujte nebo vytvořte nový návrh."
+)
+AUDIT_LEAD_RECOMMENDATION_REPLACE_CONFIRM = (
+    "Současný text doporučení vedoucího auditora bude nahrazen "
+    "automatickým návrhem. Chcete ho nahradit?"
+)
+
 AUDIT_TYPE_RADNY = "Řádný"
 AUDIT_TYPE_MIMORADNY = "Mimořádný"
 

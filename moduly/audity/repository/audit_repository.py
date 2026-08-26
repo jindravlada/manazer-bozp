@@ -115,6 +115,12 @@ class AuditRepository:
             "silne_stranky": audit.silne_stranky,
             "changes_since_last": getattr(audit, "changes_since_last", None),
             "conclusion_text": getattr(audit, "conclusion_text", None),
+            "lead_auditor_recommendation": getattr(
+                audit, "lead_auditor_recommendation", None
+            ),
+            "lead_auditor_recommendation_results_signature": getattr(
+                audit, "lead_auditor_recommendation_results_signature", None
+            ),
             "updated_at": getattr(audit, "updated_at", None) or datetime.now(),
         }
         updated = self.update_fields(audit.id, **payload)

@@ -47,6 +47,12 @@ class Audit(Base):
     # AUDIT-CONCLUSION-1: uživatelský závěr auditu (povinný při dokončení).
     conclusion_text: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # AUDIT-LEAD-RECOMMENDATION-1: potvrzené doporučení vedoucího auditora.
+    lead_auditor_recommendation: Mapped[str | None] = mapped_column(Text, nullable=True)
+    lead_auditor_recommendation_results_signature: Mapped[str | None] = mapped_column(
+        String(64), nullable=True
+    )
+
     # AUDIT-METHOD-SUPPORT-SNAPSHOT-1: samostatná integrita metodické podpory.
     support_snapshot_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     support_integrity_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)

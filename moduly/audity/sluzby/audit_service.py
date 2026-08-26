@@ -16,6 +16,8 @@ from core.shared.sluzby.control_result_service import control_result_service
 from core.shared.sluzby.finding_service import finding_service
 from moduly.audity.constants import (
     AUDIT_CONCLUSION_REQUIRED_MESSAGE,
+    AUDIT_LEAD_RECOMMENDATION_REQUIRED_MESSAGE,
+    AUDIT_LEAD_RECOMMENDATION_SIGNATURE_INVALID_MESSAGE,
     AUDIT_SPIS_STATUSES,
     AUDIT_STATUS_DOKONCENO,
     AUDIT_STATUS_PLANOVANO,
@@ -107,6 +109,12 @@ class AuditService:
             "silne_stranky": existing.silne_stranky,
             "changes_since_last": existing.changes_since_last,
             "conclusion_text": getattr(existing, "conclusion_text", None),
+            "lead_auditor_recommendation": getattr(
+                existing, "lead_auditor_recommendation", None
+            ),
+            "lead_auditor_recommendation_results_signature": getattr(
+                existing, "lead_auditor_recommendation_results_signature", None
+            ),
             "notes_mode": getattr(existing, "notes_mode", None),
         }
         merged.update(fields)
@@ -118,6 +126,22 @@ class AuditService:
         )
         if becoming_finished and self.is_conclusion_blank(data.get("conclusion_text")):
             raise AuditCompletionError(AUDIT_CONCLUSION_REQUIRED_MESSAGE)
+        if becoming_finished:
+            from moduly.audity.sluzby.audit_lead_recommendation_service import (
+                compute_results_signature,
+                is_recommendation_blank,
+            )
+
+            if is_recommendation_blank(data.get("lead_auditor_recommendation")):
+                raise AuditCompletionError(AUDIT_LEAD_RECOMMENDATION_REQUIRED_MESSAGE)
+            saved_sig = str(
+                data.get("lead_auditor_recommendation_results_signature") or ""
+            ).strip()
+            current_sig = compute_results_signature(int(audit_id))
+            if not saved_sig or saved_sig != current_sig:
+                raise AuditCompletionError(
+                    AUDIT_LEAD_RECOMMENDATION_SIGNATURE_INVALID_MESSAGE
+                )
 
         data["updated_at"] = datetime.now()
         # Zápis jen přes id v nové session — ne merge instance držené editorem.
@@ -370,6 +394,22 @@ class AuditService:
             data["conclusion_text"] = self.normalize_conclusion_text(
                 data.get("conclusion_text")
             )
+        if "lead_auditor_recommendation" in data:
+            from moduly.audity.sluzby.audit_lead_recommendation_service import (
+                normalize_recommendation_text,
+            )
+
+            data["lead_auditor_recommendation"] = normalize_recommendation_text(
+                data.get("lead_auditor_recommendation")
+            )
+        if "lead_auditor_recommendation_results_signature" in data:
+            raw_sig = data.get("lead_auditor_recommendation_results_signature")
+            if raw_sig is None or not str(raw_sig).strip():
+                data["lead_auditor_recommendation_results_signature"] = None
+            else:
+                data["lead_auditor_recommendation_results_signature"] = str(
+                    raw_sig
+                ).strip()
         if "notes_mode" in data:
             data["notes_mode"] = normalize_notes_mode(data.get("notes_mode"))
 
@@ -398,6 +438,14 @@ class AuditService:
             payload["changes_since_last"] = data["changes_since_last"]
         if "conclusion_text" in data:
             payload["conclusion_text"] = data["conclusion_text"]
+        if "lead_auditor_recommendation" in data:
+            payload["lead_auditor_recommendation"] = data["lead_auditor_recommendation"]
+            if data.get("lead_auditor_recommendation") is None:
+                payload["lead_auditor_recommendation_results_signature"] = None
+        if "lead_auditor_recommendation_results_signature" in data:
+            payload["lead_auditor_recommendation_results_signature"] = data[
+                "lead_auditor_recommendation_results_signature"
+            ]
         if "notes_mode" in data:
             payload["notes_mode"] = data["notes_mode"]
         return payload

@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-08-26 – AUDIT-LEAD-RECOMMENDATION-1
+
+**Co se povedlo:** Doporučení vedoucího auditora je vidět a editovatelné na záložce Závěr; novému dokončení předchází kontrola textu a podpisu výsledků.
+
+**Co už bychom dnes udělali jinak:** Generátor doporučení hned oddělit od exportního kontextu, ať UI i tisk sdílí jednu službu.
+
+**Co bylo zbytečně složité:** —
+
+**Nové pravidlo:** Automatický návrh se potvrzuje vůči deterministickému podpisu výsledků. Ruční text se bez potvrzení nepřepisuje. Staré dokončené audity bez uloženého doporučení exportují fallback a neoznačují se jako neplatné.
+
+**Aktualizované dokumenty:** —
+
 ### 2026-08-26 – AUDIT-DETAILED-INTRO-PUNCTUATION-UX1
 
 **Co se povedlo:** V Podrobné zprávě mají mezititulky Úvodu dvojtečku; záložka Úvod a Protokol beze změny.

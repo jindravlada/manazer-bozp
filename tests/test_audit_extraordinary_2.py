@@ -94,6 +94,9 @@ with patch.object(Path, "home", return_value=_TMP):
         SnapshotAssertionView,
     )
     from moduly.audity.sluzby.audit_service import audit_service
+    from moduly.audity.sluzby.audit_lead_recommendation_service import (
+        confirmed_recommendation_fields,
+    )
     from moduly.audity.sluzby.audit_v2_create_service import (
         create_audit_with_v2_snapshot,
         create_manual_audit_with_v2_snapshot,
@@ -425,6 +428,7 @@ class Extraordinary2TestCase(unittest.TestCase):
             audit.id,
             finished_at=date(2026, 5, 2),
             conclusion_text="Závěr ověření E2.",
+            **confirmed_recommendation_fields(audit.id),
         )
         assert updated is not None
         targets = audit_extraordinary_question_service.repository.list_targets_for_question(
@@ -457,6 +461,7 @@ class Extraordinary2TestCase(unittest.TestCase):
             audit2.id,
             finished_at=date(2026, 5, 4),
             conclusion_text="Závěr návratu E2.",
+            **confirmed_recommendation_fields(audit2.id),
         )
         targets2 = audit_extraordinary_question_service.repository.list_targets_for_question(
             q2.id

@@ -25,7 +25,13 @@ from core.widgets.editor_dialog_controller import (
     configure_editor_save_button,
     confirm_unsaved_editor_close,
 )
-from moduly.audity.constants import FINDING_SOURCE_LABEL, TAB_LABELS, TAB_MIMORADNE
+from moduly.audity.constants import (
+    AUDIT_LEAD_RECOMMENDATION_EMPTY_REVIEW_MESSAGE,
+    AUDIT_LEAD_RECOMMENDATION_STALE_REVIEW_MESSAGE,
+    FINDING_SOURCE_LABEL,
+    TAB_LABELS,
+    TAB_MIMORADNE,
+)
 from moduly.audity.sluzby.audit_commission_service import audit_commission_service
 from moduly.audity.sluzby.audit_deferred_edits import AuditDeferredEdits
 from moduly.audity.sluzby.audit_program_service import AuditVisitContext
@@ -34,6 +40,11 @@ from moduly.audity.sluzby.audit_question_source_service import (
     audit_question_source_service,
 )
 from moduly.audity.sluzby.audit_service import AuditCompletionError, audit_service
+from moduly.audity.sluzby.audit_lead_recommendation_service import (
+    compute_results_signature,
+    generate_lead_auditor_recommendation,
+    is_recommendation_blank,
+)
 from moduly.audity.sluzby.audit_v2_create_service import (
     AuditV2CreateError,
     create_manual_audit_with_v2_snapshot,
@@ -124,6 +135,9 @@ class AuditDialog(QDialog):
         )
         self.findings_widget.set_on_task_changed(self._on_related_data_changed)
         self.conclusion_widget.set_complete_handler(self._complete_audit)
+        self.conclusion_widget.set_review_needed_handler(
+            lambda: self.tabs.setCurrentWidget(self.conclusion_widget)
+        )
         self.spis_widget.load_audit(audit)
         # Úvod: jen kontext + text changes_since_last; historie lazy při otevření záložky.
         self.history_widget.load_audit(audit)
@@ -251,11 +265,11 @@ class AuditDialog(QDialog):
             return False
 
         data = self.get_data()
-        payload = self.prepare_save_payload(data)
         self.processes_widget.capture_section_summary()
         self.terrain_widget.capture_section_summary()
 
         if self.audit is None:
+            payload = self.prepare_save_payload(data)
             try:
                 created = create_manual_audit_with_v2_snapshot(
                     fields=payload,
@@ -275,7 +289,8 @@ class AuditDialog(QDialog):
             self._deferred.flush(entity_id=created.id)
             self._reload_after_persist()
         else:
-            # Zápis jen podle id — ne přes mutaci self.audit drženého editorem.
+            self._deferred.flush(entity_id=self.audit.id)
+            payload = self.prepare_save_payload(data)
             try:
                 updated = audit_service.update_audit(self.audit.id, **payload)
             except AuditCompletionError as exc:
@@ -285,7 +300,6 @@ class AuditDialog(QDialog):
             if updated is None:
                 return False
             self.save_commission_members(self.audit.id, data)
-            self._deferred.flush(entity_id=self.audit.id)
             self.audit = updated
             self._reload_after_persist()
 
@@ -390,6 +404,16 @@ class AuditDialog(QDialog):
             payload["workplace_id"] = workplace_id
         payload["workplace_name"] = audit_service.resolve_workplace_name(workplace_id)
         payload["title"] = payload.get("title") or ""
+        rec = payload.get("lead_auditor_recommendation")
+        if is_recommendation_blank(rec):
+            payload["lead_auditor_recommendation"] = None
+            payload["lead_auditor_recommendation_results_signature"] = None
+        elif self.audit is not None and getattr(self.audit, "id", None):
+            payload["lead_auditor_recommendation_results_signature"] = (
+                compute_results_signature(int(self.audit.id))
+            )
+        else:
+            payload["lead_auditor_recommendation_results_signature"] = None
         return payload
 
     def save_commission_members(self, audit_id: int, data: dict) -> None:
@@ -406,6 +430,41 @@ class AuditDialog(QDialog):
         if not valid:
             QMessageBox.warning(self, "Auditní tým", message)
             self.tabs.setCurrentWidget(self.commission_widget)
+            return False
+
+        self.processes_widget.capture_section_summary()
+        self.terrain_widget.capture_section_summary()
+        self._deferred.flush(entity_id=self.audit.id)
+
+        rec = self.conclusion_widget.recommendation_edit.toPlainText()
+        current_sig = compute_results_signature(int(self.audit.id))
+        saved_sig = str(
+            getattr(self.audit, "lead_auditor_recommendation_results_signature", None)
+            or ""
+        ).strip()
+
+        if is_recommendation_blank(rec):
+            draft = generate_lead_auditor_recommendation(int(self.audit.id))
+            self.conclusion_widget.apply_generated_recommendation(draft)
+            self.tabs.setCurrentWidget(self.conclusion_widget)
+            QMessageBox.information(
+                self,
+                "Závěr",
+                AUDIT_LEAD_RECOMMENDATION_EMPTY_REVIEW_MESSAGE,
+            )
+            return False
+
+        if (
+            saved_sig != current_sig
+            and not self.conclusion_widget.recommendation_review_pending()
+        ):
+            self.conclusion_widget.mark_recommendation_review_pending()
+            self.tabs.setCurrentWidget(self.conclusion_widget)
+            QMessageBox.warning(
+                self,
+                "Závěr",
+                AUDIT_LEAD_RECOMMENDATION_STALE_REVIEW_MESSAGE,
+            )
             return False
 
         data = self.get_data()
@@ -425,7 +484,6 @@ class AuditDialog(QDialog):
             self.audit.id,
             data.get("commission_members", []),
         )
-        self._deferred.flush(entity_id=self.audit.id)
 
         self.audit = updated
         self.conclusion_widget.load_audit(self.audit)

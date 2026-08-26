@@ -20,8 +20,17 @@ from moduly.audity.constants import (
     AUDIT_CONCLUSION_REQUIRED_MESSAGE,
     AUDIT_DETAILED_REPORT_BUTTON_LABEL,
     AUDIT_DETAILED_REPORT_DIALOG_TITLE,
+    AUDIT_LEAD_RECOMMENDATION_GENERATE_BUTTON,
+    AUDIT_LEAD_RECOMMENDATION_LABEL,
+    AUDIT_LEAD_RECOMMENDATION_REPLACE_CONFIRM,
     AUDIT_PROTOCOL_BUTTON_LABEL,
     AUDIT_PROTOCOL_DIALOG_TITLE,
+)
+from moduly.audity.sluzby.audit_lead_recommendation_service import (
+    generate_lead_auditor_recommendation,
+    is_recommendation_blank,
+    recommendation_status_label,
+    resolve_lead_auditor_recommendation_text,
 )
 from moduly.audity.sluzby.audit_service import AuditCompletionError, audit_service
 from moduly.audity.sluzby.protokol_audit_service import protokol_audit_service
@@ -33,6 +42,8 @@ class AuditConclusionWidget(QWidget):
 
         self.audit = None
         self._on_complete = None
+        self._on_review_needed = None
+        self._recommendation_review_pending = False
 
         layout = QVBoxLayout(self)
 
@@ -66,6 +77,27 @@ class AuditConclusionWidget(QWidget):
         )
         conclusion_layout.addWidget(self.conclusion_edit, stretch=1)
         layout.addWidget(conclusion_group, stretch=1)
+
+        recommendation_group = QGroupBox(AUDIT_LEAD_RECOMMENDATION_LABEL)
+        recommendation_layout = QVBoxLayout(recommendation_group)
+        self.recommendation_edit = QTextEdit()
+        self.recommendation_edit.setPlaceholderText(
+            "Doporučení vedoucího auditora. Při novém dokončení auditu je povinné."
+        )
+        self.recommendation_edit.setMinimumHeight(90)
+        recommendation_layout.addWidget(self.recommendation_edit)
+        self.generate_recommendation_btn = QPushButton(
+            AUDIT_LEAD_RECOMMENDATION_GENERATE_BUTTON
+        )
+        self.generate_recommendation_btn.clicked.connect(
+            self._generate_recommendation_clicked
+        )
+        recommendation_layout.addWidget(self.generate_recommendation_btn)
+        self.recommendation_status_label = QLabel("")
+        self.recommendation_status_label.setObjectName("InfoText")
+        self.recommendation_status_label.setWordWrap(True)
+        recommendation_layout.addWidget(self.recommendation_status_label)
+        layout.addWidget(recommendation_group)
 
         strengths_group = QGroupBox("Silné stránky systému")
         strengths_layout = QVBoxLayout(strengths_group)
@@ -103,6 +135,9 @@ class AuditConclusionWidget(QWidget):
     def set_complete_handler(self, handler) -> None:
         self._on_complete = handler
 
+    def set_review_needed_handler(self, handler) -> None:
+        self._on_review_needed = handler
+
     def load_audit(self, audit) -> None:
         self.audit = audit
         self._load_editor_fields()
@@ -114,6 +149,8 @@ class AuditConclusionWidget(QWidget):
             self.finished_at_edit.clear_date()
             self.silne_stranky_edit.clear()
             self.conclusion_edit.clear()
+            self.recommendation_edit.clear()
+            self._recommendation_review_pending = False
             return
 
         finished_at = getattr(self.audit, "finished_at", None)
@@ -128,6 +165,16 @@ class AuditConclusionWidget(QWidget):
         self.conclusion_edit.setPlainText(
             getattr(self.audit, "conclusion_text", None) or ""
         )
+        saved_rec = getattr(self.audit, "lead_auditor_recommendation", None)
+        if is_recommendation_blank(saved_rec) and getattr(
+            self.audit, "finished_at", None
+        ) is not None:
+            self.recommendation_edit.setPlainText(
+                resolve_lead_auditor_recommendation_text(self.audit)
+            )
+        else:
+            self.recommendation_edit.setPlainText(saved_rec or "")
+        self._recommendation_review_pending = False
 
     def refresh(self) -> None:
         audit_id = self.audit.id if self.audit is not None else None
@@ -140,6 +187,7 @@ class AuditConclusionWidget(QWidget):
             self.tasks_total_label.setText("0")
             self.tasks_active_label.setText("0")
             self.complete_btn.setEnabled(False)
+            self._refresh_recommendation_status()
             return
 
         summary = audit_service.get_conclusion_summary(audit_id)
@@ -154,19 +202,61 @@ class AuditConclusionWidget(QWidget):
         status = audit_service.derive_status(started_at, finished_at)
         self.status_label.setText(status)
         self.complete_btn.setEnabled(finished_at is None)
+        self._refresh_recommendation_status()
 
     def get_data(self) -> dict:
         return {
             "finished_at": self.finished_at_edit.get_date(),
             "silne_stranky": self.silne_stranky_edit.toPlainText().strip(),
             "conclusion_text": self.conclusion_edit.toPlainText(),
+            "lead_auditor_recommendation": self.recommendation_edit.toPlainText(),
         }
+
+    def recommendation_review_pending(self) -> bool:
+        return self._recommendation_review_pending
+
+    def mark_recommendation_review_pending(self) -> None:
+        self._recommendation_review_pending = True
+        self._refresh_recommendation_status()
+
+    def apply_generated_recommendation(self, text: str) -> None:
+        self.recommendation_edit.setPlainText(text)
+        self._recommendation_review_pending = True
+        self._refresh_recommendation_status()
+
+    def _refresh_recommendation_status(self) -> None:
+        if self.audit is None or getattr(self.audit, "id", None) is None:
+            self.recommendation_status_label.setText("")
+            return
+        self.recommendation_status_label.setText(
+            recommendation_status_label(self.audit)
+        )
+
+    def _generate_recommendation_clicked(self) -> None:
+        if self.audit is None or getattr(self.audit, "id", None) is None:
+            QMessageBox.information(self, "Závěr", "Audit je nutné nejdříve uložit.")
+            return
+        current = self.recommendation_edit.toPlainText()
+        if not is_recommendation_blank(current):
+            answer = QMessageBox.question(
+                self,
+                AUDIT_LEAD_RECOMMENDATION_LABEL,
+                AUDIT_LEAD_RECOMMENDATION_REPLACE_CONFIRM,
+                QMessageBox.Yes | QMessageBox.Cancel,
+                QMessageBox.Cancel,
+            )
+            if answer != QMessageBox.Yes:
+                return
+        draft = generate_lead_auditor_recommendation(int(self.audit.id))
+        self.recommendation_edit.setPlainText(draft)
+        self._refresh_recommendation_status()
 
     def _update_state(self) -> None:
         enabled = self.audit is not None and self.audit.id is not None
         self.info_label.setVisible(not enabled)
         self.protocol_btn.setEnabled(enabled)
         self.detailed_report_btn.setEnabled(enabled)
+        self.generate_recommendation_btn.setEnabled(enabled)
 
     def _export_protocol(self) -> None:
         if self.audit is None or self.audit.id is None:
@@ -236,8 +326,10 @@ class AuditConclusionWidget(QWidget):
                 return
 
         finished_at = self.finished_at_edit.get_date()
+        auto_finished_at = False
         if finished_at is None:
             finished_at = date.today()
+            auto_finished_at = True
             self.finished_at_edit.set_date_value(finished_at)
 
         if self._on_complete is None:
@@ -254,5 +346,6 @@ class AuditConclusionWidget(QWidget):
         if saved:
             self.refresh()
         else:
-            self._load_editor_fields()
+            if auto_finished_at:
+                self.finished_at_edit.clear_date()
             self.refresh()

@@ -30,6 +30,9 @@ with patch.object(Path, "home", return_value=_TMP):
         DEFAULT_AUDIT_PROGRAM_STANDARDS,
     )
     from moduly.audity.sluzby.audit_program_service import audit_program_service
+    from moduly.audity.sluzby.audit_lead_recommendation_service import (
+        confirmed_recommendation_fields,
+    )
     from moduly.audity.sluzby.audit_service import audit_service
     from tests.audit_v2a_test_support import prepare_v2_audit_create
 
@@ -144,6 +147,7 @@ class AuditProgramVisitAuditTestCase(unittest.TestCase):
             audit.id,
             finished_at=finished_at,
             conclusion_text="Závěr programu návštěvy.",
+            **confirmed_recommendation_fields(audit.id),
         )
 
         assert updated is not None
@@ -169,6 +173,7 @@ class AuditProgramVisitAuditTestCase(unittest.TestCase):
             audit.id,
             finished_at=date(2026, 4, 22),
             conclusion_text="Závěr coverage.",
+            **confirmed_recommendation_fields(audit.id),
         )
 
         coverage = audit_program_service.get_program_coverage(program.id)

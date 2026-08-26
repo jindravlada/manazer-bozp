@@ -1027,6 +1027,10 @@ def _ensure_audit_columns() -> None:
         "methodology_generation": "methodology_generation VARCHAR(80)",
         "changes_since_last": "changes_since_last TEXT",
         "conclusion_text": "conclusion_text TEXT",
+        "lead_auditor_recommendation": "lead_auditor_recommendation TEXT",
+        "lead_auditor_recommendation_results_signature": (
+            "lead_auditor_recommendation_results_signature VARCHAR(64)"
+        ),
         "support_snapshot_count": "support_snapshot_count INTEGER",
         "support_integrity_hash": "support_integrity_hash VARCHAR(64)",
         "created_at": "created_at DATETIME",
