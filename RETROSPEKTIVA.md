@@ -45,7 +45,17 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
-Nové záznamy přidávat níže (nejnovější nahoře).
+### 2026-08-26 – PROVERKY-SECTION-SUMMARY-UX1
+
+**Co se povedlo:** Kontrolovaná oblast má 70/30 sloupce, Souhrnné sdělení je ukotvené (~110 px) a terénní checklist se zapíná až po uložení, pokud existují terénní body.
+
+**Co už bychom dnes udělali jinak:** Tlačítko checklistu od začátku vázat na uloženou prověrku i na přítomnost terénních bodů, ne jen na `inspection_id`.
+
+**Co bylo zbytečně složité:** —
+
+**Nové pravidlo:** Referenční fotografie a Souhrnné sdělení zůstávají mimo scroll Kontrolních bodů; prázdné fotografie jsou kompaktní.
+
+**Aktualizované dokumenty:** —
 
 ### 2026-08-26 – AUDIT-SECTION-SUMMARY-UX1
 

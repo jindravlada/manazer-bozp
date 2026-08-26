@@ -226,6 +226,10 @@ TERRAIN_CHECKLIST_DIALOG_TITLE = "Terénní checklist"
 TERRAIN_CHECKLIST_TOOLTIP = (
     "Pracovní checklist kontrolních bodů pro ověření v provozu."
 )
+TERRAIN_CHECKLIST_SAVE_FIRST_TOOLTIP = "Nejdříve uložte prověrku."
+TERRAIN_CHECKLIST_NO_TERRAIN_POINTS_TOOLTIP = (
+    "Prověrka neobsahuje žádné terénní kontrolní body."
+)
 TERRAIN_CHECKLIST_EMPTY = "Nejsou žádné kontrolní body typu Terén."
 TERRAIN_TAB_EMPTY = "Žádné kontrolní body pro terénní ověření."
 TERRAIN_TAB_HINT = (

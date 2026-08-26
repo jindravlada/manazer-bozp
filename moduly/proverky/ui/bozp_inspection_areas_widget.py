@@ -21,7 +21,9 @@ from moduly.proverky.constants import (
     TAB_TEREN,
     TERRAIN_CHECKLIST_BUTTON_LABEL,
     TERRAIN_CHECKLIST_DIALOG_TITLE,
+    TERRAIN_CHECKLIST_NO_TERRAIN_POINTS_TOOLTIP,
     TERRAIN_CHECKLIST_REQUIRES_SAVED,
+    TERRAIN_CHECKLIST_SAVE_FIRST_TOOLTIP,
     TERRAIN_CHECKLIST_TOOLTIP,
     VERIFICATION_TYPE_DOCUMENTATION,
     VERIFICATION_TYPE_TERRAIN,
@@ -114,7 +116,7 @@ class BozpInspectionAreasWidget(QWidget):
         self.checklist_btn: QPushButton | None = None
         if show_checklist_button:
             self.checklist_btn = QPushButton(TERRAIN_CHECKLIST_BUTTON_LABEL)
-            self.checklist_btn.setToolTip(TERRAIN_CHECKLIST_TOOLTIP)
+            self.checklist_btn.setToolTip(TERRAIN_CHECKLIST_SAVE_FIRST_TOOLTIP)
             self.checklist_btn.setEnabled(False)
             self.checklist_btn.clicked.connect(self._export_terrain_checklist)
             header_row.addWidget(
@@ -132,6 +134,9 @@ class BozpInspectionAreasWidget(QWidget):
         self.content_stack.addWidget(self._build_placeholder_page())
         self.knowledge_widget = BozpAreaKnowledgeWidget(
             verification_filter=self._verification_type
+        )
+        self.knowledge_widget.section_widget.verification_type_changed.connect(
+            self.refresh_checklist_button
         )
         self.content_stack.addWidget(self.knowledge_widget)
 
@@ -152,8 +157,21 @@ class BozpInspectionAreasWidget(QWidget):
     def set_inspection_id(self, inspection_id: int | None) -> None:
         self._inspection_id = inspection_id
         self.knowledge_widget.set_inspection_id(inspection_id)
-        if self.checklist_btn is not None:
-            self.checklist_btn.setEnabled(inspection_id is not None)
+        self.refresh_checklist_button()
+
+    def refresh_checklist_button(self) -> None:
+        if self.checklist_btn is None:
+            return
+        if self._inspection_id is None:
+            self.checklist_btn.setEnabled(False)
+            self.checklist_btn.setToolTip(TERRAIN_CHECKLIST_SAVE_FIRST_TOOLTIP)
+            return
+        if not terrain_checklist_service.has_terrain_points(self._inspection_id):
+            self.checklist_btn.setEnabled(False)
+            self.checklist_btn.setToolTip(TERRAIN_CHECKLIST_NO_TERRAIN_POINTS_TOOLTIP)
+            return
+        self.checklist_btn.setEnabled(True)
+        self.checklist_btn.setToolTip(TERRAIN_CHECKLIST_TOOLTIP)
 
     def set_on_finding_saved(self, callback) -> None:
         self.knowledge_widget.set_on_finding_saved(callback)
@@ -182,6 +200,7 @@ class BozpInspectionAreasWidget(QWidget):
     def reload_knowledge(self) -> None:
         """Znovu načte strom a aktuální sekci z metodiky (bez cache)."""
         self._refresh_after_knowledge_edit()
+        self.refresh_checklist_button()
 
     def refresh_findings_display(self) -> None:
         self.knowledge_widget.refresh_findings_display()

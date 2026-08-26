@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QScrollArea,
-    QSplitter,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -22,7 +22,6 @@ from core.shared.sluzby.control_result_service import ControlPointContext, contr
 from core.shared.sluzby.finding_service import finding_service
 from core.widgets.control_result_selector import ControlResultSelectorWidget
 from core.widgets.control_result_photo_widget import ControlResultPhotoWidget
-from core.widgets.dialog_utils import wrap_in_scroll_area
 from core.widgets.finding_dialog import FindingDialog
 from core.widgets.dialog_utils import exec_maximized
 from core.widgets.image_viewer_dialog import ImageViewerDialog
@@ -53,8 +52,6 @@ from moduly.proverky.constants import (
     MOVE_TO_DOCUMENTATION_LABEL,
     MOVE_TO_TERRAIN_LABEL,
     MOVE_VERIFICATION_TYPE_TOOLTIP,
-    REFERENCE_PHOTO_PLACEHOLDER_ICON_SIZE_PX,
-    REFERENCE_PHOTO_PLACEHOLDER_WIDTH,
     REFERENCE_PHOTO_THUMBNAIL_SIZE,
     VERIFICATION_TYPE_DOCUMENTATION,
     VERIFICATION_TYPE_TERRAIN,
@@ -102,8 +99,8 @@ _RIGHT_COLUMN_BLOCKS: tuple[tuple[str, str], ...] = (
     ("Legislativa", "legislativa"),
 )
 
-_COLUMN_SPLIT_LEFT_STRETCH = 65
-_COLUMN_SPLIT_RIGHT_STRETCH = 35
+_COLUMN_LEFT_STRETCH = 7
+_COLUMN_RIGHT_STRETCH = 3
 
 _SEVERITY_LABELS = dict(CONTROL_POINT_SEVERITY_OPTIONS)
 
@@ -136,6 +133,9 @@ class BozpKnowledgeSectionWidget(QWidget):
         self._deferred_edits = None
         self._notes_mode: str | None = None
         self._section_summary_edit = None
+        self._control_points_heading: QLabel | None = None
+        self._control_points_scroll: QScrollArea | None = None
+        self._columns_layout: QHBoxLayout | None = None
         self._selected_control_point_id = ""
         self._control_point_frames: dict[str, _ControlPointFrame] = {}
         self._history_point_label: QLabel | None = None
@@ -145,6 +145,10 @@ class BozpKnowledgeSectionWidget(QWidget):
         self._verification_filter = VERIFICATION_TYPE_DOCUMENTATION
 
         self._content_host = QWidget()
+        self._content_host.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Expanding,
+        )
         self._content_layout = QVBoxLayout(self._content_host)
         self._content_layout.setContentsMargins(0, 0, 0, 0)
         self._content_layout.setSpacing(12)
@@ -276,27 +280,70 @@ class BozpKnowledgeSectionWidget(QWidget):
             item=item,
             overrides=self._overrides(),
         )
+
     def _rebuild_content(self) -> None:
         section = self._current_section
         self._clear_content()
 
         if not section:
-            self._content_layout.addWidget(self._build_info_label("Vyberte sekci v seznamu vlevo."))
-            self._content_layout.addStretch()
             return
 
         if not self._section_label:
             self._section_label = str(section.get("nazev") or "").strip()
 
-        self._content_layout.addWidget(self._build_popis_block(section))
+        left = QWidget()
+        left.setObjectName("InspectionSectionLeftColumn")
+        left.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        left_layout = QVBoxLayout(left)
+        left_layout.setContentsMargins(0, 0, 0, 0)
+        left_layout.setSpacing(12)
+
+        left_layout.addWidget(self._build_popis_block(section), 0)
         if self._uses_section_summary_ui():
-            summary = SectionSummaryEdit()
+            summary = SectionSummaryEdit(compact=True)
             summary.set_text(self._current_section_summary_text())
             summary.text_changed.connect(self._on_section_summary_changed)
             self._section_summary_edit = summary
-            self._content_layout.addWidget(summary)
-        self._content_layout.addWidget(self._build_referencni_fotografie_block(section))
-        self._content_layout.addWidget(self._build_columns(section), 1)
+            left_layout.addWidget(summary, 0)
+
+        heading = QLabel("Kontrolní body")
+        heading.setObjectName("SectionTitle")
+        self._control_points_heading = heading
+        left_layout.addWidget(heading, 0)
+
+        scroll = self._build_control_points_scroll_area(section)
+        self._control_points_scroll = scroll
+        left_layout.addWidget(scroll, 1)
+
+        right = QWidget()
+        right.setObjectName("InspectionSectionRightColumn")
+        right.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        right_layout = QVBoxLayout(right)
+        right_layout.setContentsMargins(0, 0, 0, 0)
+        right_layout.setSpacing(12)
+
+        photos = self._build_referencni_fotografie_block(section)
+        photos.setObjectName("InspectionReferencePhotos")
+        photos.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
+        right_layout.addWidget(photos, 0)
+
+        lower_scroll = QScrollArea()
+        lower_scroll.setObjectName("InspectionRightLowerScroll")
+        lower_scroll.setWidgetResizable(True)
+        lower_scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        lower_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        lower_scroll.setWidget(self._build_right_column(section))
+        right_layout.addWidget(lower_scroll, 1)
+
+        columns = QWidget()
+        columns.setObjectName("InspectionSectionColumns")
+        columns_layout = QHBoxLayout(columns)
+        columns_layout.setContentsMargins(0, 0, 0, 0)
+        columns_layout.setSpacing(12)
+        columns_layout.addWidget(left, _COLUMN_LEFT_STRETCH)
+        columns_layout.addWidget(right, _COLUMN_RIGHT_STRETCH)
+        self._columns_layout = columns_layout
+        self._content_layout.addWidget(columns, 1)
 
     def _filtered_control_points(self, section: dict) -> list[dict]:
         items = proverky_knowledge_service.get_active_items(section.get("kontrolni_body"))
@@ -335,19 +382,6 @@ class BozpKnowledgeSectionWidget(QWidget):
             return (CONTROL_POINTS_EMPTY_CURRENT_PART, other_hint)
         return (CONTROL_POINTS_EMPTY_AREA_NONE,)
 
-    def _build_columns(self, section: dict) -> QWidget:
-        right_host = self._build_right_column(section)
-        left_scroll = self._build_control_points_scroll_area(section)
-
-        splitter = QSplitter(Qt.Orientation.Horizontal)
-        splitter.setObjectName("KnowledgeSectionSplitter")
-        splitter.setChildrenCollapsible(False)
-        splitter.addWidget(left_scroll)
-        splitter.addWidget(wrap_in_scroll_area(right_host))
-        splitter.setStretchFactor(0, _COLUMN_SPLIT_LEFT_STRETCH)
-        splitter.setStretchFactor(1, _COLUMN_SPLIT_RIGHT_STRETCH)
-        return splitter
-
     def _build_right_column(self, section: dict) -> QWidget:
         host = QWidget()
         layout = QVBoxLayout(host)
@@ -358,7 +392,10 @@ class BozpKnowledgeSectionWidget(QWidget):
             if field == "historie":
                 layout.addWidget(self._build_historie_block(title))
             else:
-                layout.addWidget(self._build_list_block(title, section, field))
+                block = self._build_list_block(title, section, field)
+                if field == "typicke_zavady":
+                    block.setObjectName("InspectionTypicalDefects")
+                layout.addWidget(block)
 
         layout.addStretch()
         return host
@@ -367,6 +404,9 @@ class BozpKnowledgeSectionWidget(QWidget):
         self._selected_control_point_id = ""
         self._control_point_frames.clear()
         self._section_summary_edit = None
+        self._control_points_heading = None
+        self._control_points_scroll = None
+        self._columns_layout = None
         self._history_point_label = None
         self._workplace_history_host = None
         self._shared_experiences_host = None
@@ -386,50 +426,37 @@ class BozpKnowledgeSectionWidget(QWidget):
     def _build_referencni_fotografie_block(self, section: dict) -> QWidget:
         photos = proverky_knowledge_service.get_general_reference_photos(section)
         if photos:
-            content = self._build_reference_photo_gallery(photos)
-        else:
-            content = self._build_reference_photo_placeholder()
-        return self._build_block(KNOWLEDGE_REFERENCE_PHOTOS_TITLE, content)
+            return self._build_block(
+                KNOWLEDGE_REFERENCE_PHOTOS_TITLE,
+                self._build_reference_photo_gallery(photos),
+            )
+        return self._build_compact_reference_photos_empty()
 
-    def _build_reference_photo_placeholder(self) -> QWidget:
-        panel = QFrame()
-        panel.setObjectName("ReferencePhotoPlaceholder")
-        panel.setFixedSize(REFERENCE_PHOTO_PLACEHOLDER_WIDTH, REFERENCE_PHOTO_THUMBNAIL_SIZE)
-
-        layout = QVBoxLayout(panel)
-        layout.setContentsMargins(12, 10, 12, 10)
+    def _build_compact_reference_photos_empty(self) -> QWidget:
+        container = QWidget()
+        container.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Maximum,
+        )
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(4)
 
-        icon = QLabel("📷")
-        icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        icon.setStyleSheet(
-            f"font-size: {REFERENCE_PHOTO_PLACEHOLDER_ICON_SIZE_PX}px;"
-            " border: none; background: transparent; padding: 0;"
-        )
+        header = QLabel(KNOWLEDGE_REFERENCE_PHOTOS_TITLE)
+        header.setObjectName("SectionTitle")
+        layout.addWidget(header)
 
-        text = QLabel("Referenční fotografie<br>budou doplněny.")
-        text.setObjectName("InfoText")
-        text.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        text.setWordWrap(False)
-
-        layout.addStretch(1)
-        layout.addWidget(icon)
+        text = QLabel("Referenční fotografie budou doplněny.")
+        text.setObjectName("ReferencePhotosEmpty")
+        text.setWordWrap(True)
         layout.addWidget(text)
-        layout.addStretch(1)
-
-        row = QHBoxLayout()
-        row.setContentsMargins(0, 0, 0, 0)
-        row.addWidget(panel)
-        row.addStretch()
-
-        host = QWidget()
-        host.setLayout(row)
-        return host
+        return container
 
     def _build_reference_photo_gallery(self, photos: list[dict]) -> QWidget:
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
         host = QWidget()
@@ -744,10 +771,6 @@ class BozpKnowledgeSectionWidget(QWidget):
         layout = QVBoxLayout(content)
         layout.setContentsMargins(0, 0, 8, 0)
         layout.setSpacing(12)
-
-        header = QLabel("Kontrolní body")
-        header.setObjectName("SectionTitle")
-        layout.addWidget(header)
 
         filtered = self._filtered_control_points(section)
         if filtered:

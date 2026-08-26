@@ -75,6 +75,16 @@ class TerrainChecklistService:
         open_export_file(path, title=TERRAIN_CHECKLIST_DIALOG_TITLE)
         return path
 
+    def has_terrain_points(self, inspection_id: int | None) -> bool:
+        if inspection_id is None:
+            return False
+        return bool(
+            inspection_verification_service.list_control_points(
+                int(inspection_id),
+                verification_type=VERIFICATION_TYPE_TERRAIN,
+            )
+        )
+
     def _checklist_content(self, inspection_id: int) -> OdtRichContent:
         points = inspection_verification_service.list_control_points(
             inspection_id,

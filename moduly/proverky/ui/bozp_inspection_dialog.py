@@ -167,10 +167,12 @@ class BozpInspectionDialog(QDialog):
         self._on_related_data_changed()
         self.areas_widget.refresh_findings_display()
         self.terrain_widget.refresh_findings_display()
+        self.terrain_widget.refresh_checklist_button()
 
     def _on_verification_type_changed(self) -> None:
         self.areas_widget.refresh_findings_display()
         self.terrain_widget.refresh_findings_display()
+        self.terrain_widget.refresh_checklist_button()
 
     def _on_knowledge_changed(self) -> None:
         self.areas_widget.reload_knowledge()
