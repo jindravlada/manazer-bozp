@@ -576,6 +576,16 @@ def prepare_database_for_startup(
         settings_path=settings_path,
     )
 
+    from moduly.proverky.sluzby.proverky_planned_section_summary_migration import (
+        prepare_proverky_planned_section_summary_migration,
+    )
+
+    prepare_proverky_planned_section_summary_migration(
+        workspace_root=workspace_root,
+        database_path=database_path,
+        settings_path=settings_path,
+    )
+
     from moduly.audity.sluzby.audit_method_support_backfill_service import (
         prepare_method_support_backfill,
     )

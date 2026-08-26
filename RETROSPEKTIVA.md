@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-08-26 – PROVERKY-PLANNED-SECTION-SUMMARY-MIGRATION-1
+
+**Co se povedlo:** Čisté plánované Prověrky s `notes_mode IS NULL` šlo převést hromadnou inventurou bez N+1, bez backfillu textů a bez zásahu do Auditů.
+
+**Co už bychom dnes udělali jinak:** Režim poznámek u vygenerovaných plánovaných Prověrek nastavit hned při vzniku záznamu, ať pozdější datová migrace není nutná.
+
+**Co bylo zbytečně složité:** Rozlišení technických řádků `nekontrolovano` od skutečné práce — stačilo ignorovat samotné `recorded_at` a brát jako práci až výsledek, komentář, fotografii, sdílenou zkušenost nebo jméno zapisovatele.
+
+**Nové pravidlo:** Převod do Souhrnného sdělení jen u čistě plánovaných Prověrek; jakákoli pochybnost = legacy režim.
+
+**Aktualizované dokumenty:** —
+
 ### 2026-08-26 – PROVERKY-SECTION-SUMMARY-UX1
 
 **Co se povedlo:** Kontrolovaná oblast má 70/30 sloupce, Souhrnné sdělení je ukotvené (~110 px) a terénní checklist se zapíná až po uložení, pokud existují terénní body.
