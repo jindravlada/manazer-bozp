@@ -46,6 +46,7 @@ from moduly.audity.sluzby.audit_snapshot_integrity_service import (
     apply_snapshot_integrity_manifest,
     diagnose_frozen_snapshot_db_only,
     match_result_to_snapshot_drafts,
+    run_snapshot_fast_integrity_check,
     snapshot_rows_as_drafts,
 )
 from moduly.audity.sluzby.audit_snapshot_schema_migration import schema_is_present
@@ -566,6 +567,14 @@ def prepare_audit_snapshot_backfill(
     # Rychlá cesta: completed + žádný pristine audit bez snapshotu → bez živé metodiky.
     claimed_complete_early = is_transition_complete(workspace_root, TRANSITION_ID)
     if claimed_complete_early and not _cheap_needs_legacy_backfill(database_path):
+        fast = run_snapshot_fast_integrity_check(database_path)
+        if not fast.ok:
+            details = "; ".join(fast.problems)
+            raise AuditSnapshotBackfillError(
+                "AUDIT-SNAPSHOT-1a: nekonzistentní / částečný snapshot. "
+                "Automatická destruktivní oprava se nespouští. "
+                f"Audity: {details}. Obnovte zálohu nebo opravte data ručně."
+            )
         visits_without_audit = _count_visits_without_audit(database_path)
         logger.info(
             "AUDIT-SNAPSHOT-1a fast-path: transition complete, bez get_knowledge_tree"

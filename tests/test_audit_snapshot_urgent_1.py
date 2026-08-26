@@ -83,6 +83,16 @@ def _prepare_schema() -> None:
 
 class AuditSnapshotUrgent1TestCase(unittest.TestCase):
     def setUp(self) -> None:
+        global get_session
+        self._home_patch = patch.object(Path, "home", return_value=_TMP)
+        self._home_patch.start()
+        import core.services.storage_service as storage_module
+        importlib.reload(storage_module)
+        storage_module.storage_service.ensure_structure()
+        import core.database.session as session_module
+        importlib.reload(session_module)
+        get_session = session_module.get_session
+        session_module.reconfigure_database_engine(force=True)
         with get_session() as session:
             session.execute(delete(ControlResult))
             session.execute(delete(AuditQuestionSnapshot))
@@ -91,6 +101,9 @@ class AuditSnapshotUrgent1TestCase(unittest.TestCase):
         for path in (_WS / "zalohy").glob(f"{BACKUP_NAME_PREFIX}_*"):
             path.unlink(missing_ok=True)
         _prepare_schema()
+
+    def tearDown(self) -> None:
+        self._home_patch.stop()
 
     def _backfill(self):
         return prepare_audit_snapshot_backfill(workspace_root=_WS, database_path=_DB)

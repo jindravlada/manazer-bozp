@@ -63,6 +63,13 @@ class AuditSnapshotIntegritySealResult:
     skipped_reason: str | None = None
 
 
+@dataclass(frozen=True)
+class SnapshotFastIntegrityResult:
+    ok: bool
+    problems: tuple[str, ...] = ()
+    sql_statements: int = 0
+
+
 def allocate_integrity_seal_backup_path(
     backups_dir: Path,
     *,
@@ -254,6 +261,126 @@ def compute_snapshot_integrity_hash(
             )
         )
     return hashlib.sha256("\n".join(lines).encode("utf-8")).hexdigest()
+
+
+@dataclass
+class _SnapshotHashRow:
+    process_id: str
+    section_id: str
+    assertion_id: str
+    assertion_text: str
+    verification_type: str
+    question_kind: str
+    is_in_scope: bool | None
+    display_order: int
+    id: int
+
+
+def _sql_is_in_scope(value: object) -> bool | None:
+    if value is True or value == 1:
+        return True
+    if value is False or value == 0:
+        return False
+    return None
+
+
+def run_snapshot_fast_integrity_check(
+    database_path: Path,
+) -> SnapshotFastIntegrityResult:
+    """Levné SQL: count + hash vs manifest. Bez živé metodiky a bez ORM."""
+    path = Path(database_path)
+    if not path.is_file():
+        return SnapshotFastIntegrityResult(ok=True)
+
+    sql_count = 0
+    problems: list[str] = []
+    conn = sqlite3.connect(f"file:{path.resolve()}?mode=ro", uri=True)
+    try:
+        sql_count += 1
+        tables = {
+            str(row[0])
+            for row in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            ).fetchall()
+        }
+        if "audits" not in tables or "audit_question_snapshots" not in tables:
+            return SnapshotFastIntegrityResult(ok=True, sql_statements=sql_count)
+        columns = {str(row[1]) for row in conn.execute("PRAGMA table_info(audits)")}
+        sql_count += 1
+        if "snapshot_question_count" not in columns or "snapshot_integrity_hash" not in columns:
+            return SnapshotFastIntegrityResult(ok=True, sql_statements=sql_count)
+
+        sql_count += 1
+        audits = conn.execute(
+            """
+            SELECT id,
+                   snapshot_question_count,
+                   IFNULL(snapshot_integrity_hash, '')
+            FROM audits
+            WHERE IFNULL(methodology_source, '') = ?
+            ORDER BY id
+            """,
+            (AUDIT_METHODOLOGY_SOURCE_SNAPSHOT,),
+        ).fetchall()
+
+        sql_count += 1
+        snap_rows = conn.execute(
+            """
+            SELECT audit_id, process_id, section_id, assertion_id, assertion_text,
+                   verification_type, question_kind, is_in_scope, display_order, id
+            FROM audit_question_snapshots
+            ORDER BY audit_id, process_id, section_id, assertion_id, id
+            """
+        ).fetchall()
+    finally:
+        conn.close()
+
+    by_audit: dict[int, list[_SnapshotHashRow]] = {}
+    for row in snap_rows:
+        audit_id = int(row[0])
+        by_audit.setdefault(audit_id, []).append(
+            _SnapshotHashRow(
+                process_id=str(row[1] or ""),
+                section_id=str(row[2] or ""),
+                assertion_id=str(row[3] or ""),
+                assertion_text=str(row[4] or ""),
+                verification_type=str(row[5] or ""),
+                question_kind=str(row[6] or ""),
+                is_in_scope=_sql_is_in_scope(row[7]),
+                display_order=int(row[8] or 0),
+                id=int(row[9] or 0),
+            )
+        )
+
+    for audit_id, stored_count, stored_hash in audits:
+        aid = int(audit_id)
+        hash_value = str(stored_hash or "").strip()
+        if stored_count is None and not hash_value:
+            continue
+        rows = by_audit.get(aid, [])
+        actual_count = len(rows)
+        reasons: list[str] = []
+        if stored_count is not None and int(stored_count) != actual_count:
+            reasons.append(
+                f"nesoulad počtu snapshotů: manifest={int(stored_count)}, "
+                f"db={actual_count}"
+            )
+        if hash_value:
+            actual_hash = compute_snapshot_integrity_hash(rows)
+            if actual_hash != hash_value:
+                reasons.append(
+                    "nesoulad snapshot_integrity_hash vůči snapshotovým řádkům"
+                )
+        else:
+            reasons.append("chybí snapshot_integrity_hash (manifest)")
+        if reasons:
+            problems.append(f"id={aid} ({' | '.join(reasons)})")
+
+    return SnapshotFastIntegrityResult(
+        ok=not problems,
+        problems=tuple(problems),
+        sql_statements=sql_count,
+    )
 
 
 def diagnose_frozen_snapshot_db_only(

@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-08-26 – AUDIT-SNAPSHOT-REGRESSION-CHECK-1
+
+**Co se povedlo:** Fast-path completed backfillu znovu pozná smazaný snapshotový řádek levným SQL count/hash, bez živé metodiky a bez přepisu dat.
+
+**Co už bychom dnes udělali jinak:** U completed migrace hned přidat levnou integritní kontrolu, nejen detekci pristine auditů.
+
+**Co bylo zbytečně složité:** —
+
+**Nové pravidlo:** Completed snapshot guard smí přeskočit `get_knowledge_tree`, ale ne kontrolu `snapshot_question_count` / `snapshot_integrity_hash` vůči uloženým řádkům. Poškozený snapshot se nesmí označit jako validní.
+
+**Aktualizované dokumenty:** —
+
 ### 2026-08-26 – AUDIT-LEAD-RECOMMENDATION-1
 
 **Co se povedlo:** Doporučení vedoucího auditora je vidět a editovatelné na záložce Závěr; novému dokončení předchází kontrola textu a podpisu výsledků.
