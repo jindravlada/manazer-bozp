@@ -109,7 +109,7 @@ class UpcomingTasksWidget(DashboardPanel):
         header = self.table.horizontalHeader()
         header.setStretchLastSection(False)
         header.setSectionResizeMode(COL_TITLE, QHeaderView.ResizeMode.Stretch)
-        self.table.setColumnWidth(COL_TYPE, 80)
+        self.table.setColumnWidth(COL_TYPE, 130)
         self.table.setColumnWidth(COL_DUE, 150)
         self.table.setColumnWidth(COL_PRIORITY, 80)
         self.table.setColumnWidth(COL_SOURCE, 120)

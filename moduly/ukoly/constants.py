@@ -21,3 +21,8 @@ TASK_TYPE_LABELS = {
     TASK_TYPE_CONTROL: "Kontrolní úkon",
     TASK_TYPE_AUDIT: "Auditní úkol",
 }
+
+TASK_STATUS_ACTIVE = "Aktivní"
+TASK_STATUS_WAITING_CHECK = "Splněno - čeká na kontrolu"
+TASK_STATUS_CLOSED = "Ukončeno"
+TASK_STATUS_CANCELED = "Zrušeno"

@@ -17,6 +17,7 @@ from core.dashboard.attention_item import (
     ITEM_TYPE_QUALIFICATION_CERTIFICATE,
     ITEM_TYPE_TASK,
     ITEM_TYPE_YEARLY_PLAN_MONTH,
+    TYPE_LABEL_TASK_CONTROL,
     SOURCE_LABEL_AUDIT,
     SOURCE_LABEL_EXTERNAL_AUDIT,
     SOURCE_LABEL_INSPECTION,
@@ -58,6 +59,8 @@ from moduly.smlouvy_ozo.sluzby.ozo_person_service import ozo_person_service
 from moduly.smlouvy_ozo.sluzby.qualification_certificate_service import (
     qualification_certificate_service,
 )
+from moduly.ukoly.constants import TASK_STATUS_CANCELED, TASK_STATUS_CLOSED, TASK_STATUS_WAITING_CHECK
+from moduly.ukoly.sluzby.task_deadline import task_urgency_due_date
 from moduly.ukoly.sluzby.task_service import task_service
 from moduly.externi_audity.constants import (
     EXTERNAL_AUDIT_FINDING_STATUS_LABELS,
@@ -104,30 +107,33 @@ def _task_source_label(task) -> str:
     return label
 
 
-def _from_tasks(today: date) -> list[AttentionItem]:
+def _from_tasks(_today: date) -> list[AttentionItem]:
     items: list[AttentionItem] = []
     for task in task_service.get_all_tasks():
-        if task.computed_status in ("Ukončeno", "Zrušeno"):
+        if task.computed_status in (TASK_STATUS_CLOSED, TASK_STATUS_CANCELED):
             continue
         title = (task.title or "").strip() or f"Úkol #{task.id}"
         priority = task.priority or ""
+        decisive = task_urgency_due_date(task)
+        waiting_check = task.computed_status == TASK_STATUS_WAITING_CHECK
         items.append(
             AttentionItem(
                 item_type=ITEM_TYPE_TASK,
                 source_type=ITEM_TYPE_TASK,
                 source_id=task.id,
                 title=title,
-                date=task.due_date,
+                date=decisive,
                 subtitle=_task_source_label(task),
                 status=task.computed_status or "",
                 priority=priority,
                 open_metadata={"source_type": ITEM_TYPE_TASK, "source_id": task.id},
                 sort_key=build_sort_key(
-                    task.due_date,
+                    decisive,
                     item_type=ITEM_TYPE_TASK,
                     title=title,
                     source_id=task.id,
                 ),
+                type_label_override=TYPE_LABEL_TASK_CONTROL if waiting_check else None,
             )
         )
     return items

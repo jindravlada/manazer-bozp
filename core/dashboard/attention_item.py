@@ -22,6 +22,8 @@ ITEM_TYPE_QUALIFICATION_CERTIFICATE = "qualification_certificate"
 # Zpětná kompatibilita staršího interního názvu.
 ITEM_TYPE_BOZP_INSPECTION = ITEM_TYPE_INSPECTION
 
+TYPE_LABEL_TASK_CONTROL = "Kontrola úkolu"
+
 TYPE_LABELS = {
     ITEM_TYPE_TASK: "Úkol",
     ITEM_TYPE_AUDIT: "Audit",
@@ -78,9 +80,13 @@ class AttentionItem:
     sort_key: tuple = ()
     detail_tooltip: str = ""
     identity_key: str = ""
+    type_label_override: str | None = None
 
     @property
     def type_label(self) -> str:
+        override = (self.type_label_override or "").strip()
+        if override:
+            return override
         return TYPE_LABELS.get(self.item_type, self.item_type)
 
     @property

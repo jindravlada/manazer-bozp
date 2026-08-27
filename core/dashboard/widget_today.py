@@ -30,11 +30,14 @@ from core.dashboard.task_links import configure_task_label, task_id_from_link, t
 from core.dashboard.widget_base import DashboardPanel
 from moduly.schuzky.constants import STATUS_PLANNED as MEETING_STATUS_PLANNED
 from moduly.schuzky.sluzby.meeting_service import meeting_service
+from moduly.ukoly.constants import (
+    TASK_STATUS_CANCELED as STATUS_CANCELED,
+    TASK_STATUS_CLOSED as STATUS_CLOSED,
+    TASK_STATUS_WAITING_CHECK as STATUS_WAITING_CHECK,
+)
+from moduly.ukoly.sluzby.task_deadline import task_urgency_due_date
 from moduly.ukoly.sluzby.task_service import task_service
 
-STATUS_WAITING_CHECK = "Splněno - čeká na kontrolu"
-STATUS_CLOSED = "Ukončeno"
-STATUS_CANCELED = "Zrušeno"
 _CLOSED_STATUSES = {STATUS_CLOSED, STATUS_CANCELED}
 
 _ATTENTION_LINK_PREFIX = "attention:"
@@ -44,16 +47,6 @@ _CERTIFICATE_ITEM_TYPES = {
     ITEM_TYPE_OZO_PERSON_CERTIFICATE,
     ITEM_TYPE_QUALIFICATION_CERTIFICATE,
 }
-
-
-def task_urgency_due_date(task) -> date | None:
-    """Rozhodný termín pro Připomínky podle aktuální fáze úkolu."""
-    status = task.computed_status
-    if status in _CLOSED_STATUSES:
-        return None
-    if status == STATUS_WAITING_CHECK:
-        return task.check_due_date
-    return task.due_date
 
 
 def task_should_appear_in_reminders(task, today: date) -> bool:
