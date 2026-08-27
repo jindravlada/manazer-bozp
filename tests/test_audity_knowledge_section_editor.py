@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from PySide6.QtWidgets import QLabel
+from PySide6.QtWidgets import QLabel, QLineEdit, QTextEdit
 
 _TMP = Path(tempfile.mkdtemp())
 _HOME_PATCHER = patch.object(Path, "home", return_value=_TMP)
@@ -42,6 +42,8 @@ def _import_services() -> None:
     global AudityKnowledgeSectionEditorWidget
     global KNOWLEDGE_EDITOR_SECTION_TABS
     global KNOWLEDGE_EDITOR_TAB_PLACEHOLDER
+    global SECTION_MULTILINE_VISIBLE_LINES
+    global text_edit_height_for_visible_lines
 
     from core.services.editable_catalog_service import editable_catalog_service
     from moduly.audity.constants import (
@@ -56,6 +58,8 @@ def _import_services() -> None:
     from moduly.audity.ui.audity_knowledge_editor_dialog import AudityKnowledgeEditorDialog
     from moduly.audity.ui.audity_knowledge_section_editor_widget import (
         AudityKnowledgeSectionEditorWidget,
+        SECTION_MULTILINE_VISIBLE_LINES,
+        text_edit_height_for_visible_lines,
     )
 
 
@@ -228,6 +232,72 @@ class AudityKnowledgeSectionEditorWidgetTestCase(unittest.TestCase):
         self.assertEqual(widget._tabs.tabText(9), "Postup kontroly")
         self.assertEqual(widget._tabs.tabText(10), "Referenční fotografie")
 
+    def test_popis_and_cil_overeni_stay_compact_multiline_editors(self) -> None:
+        widget = AudityKnowledgeSectionEditorWidget()
+
+        self.assertIsInstance(widget._popis_edit, QTextEdit)
+        self.assertIsInstance(widget._cil_overeni_edit, QTextEdit)
+        self.assertNotIsInstance(widget._popis_edit, QLineEdit)
+        self.assertNotIsInstance(widget._cil_overeni_edit, QLineEdit)
+
+        for edit in (widget._popis_edit, widget._cil_overeni_edit):
+            expected = text_edit_height_for_visible_lines(
+                edit,
+                SECTION_MULTILINE_VISIBLE_LINES,
+            )
+            self.assertEqual(edit.minimumHeight(), expected)
+            self.assertEqual(edit.maximumHeight(), expected)
+            line_height = edit.fontMetrics().lineSpacing()
+            self.assertGreaterEqual(edit.minimumHeight(), SECTION_MULTILINE_VISIBLE_LINES * line_height)
+            self.assertLess(
+                edit.minimumHeight(),
+                (SECTION_MULTILINE_VISIBLE_LINES + 2) * line_height,
+            )
+
+        tabs_layout = widget._tabs.parentWidget().layout()
+        tabs_index = tabs_layout.indexOf(widget._tabs)
+        self.assertGreaterEqual(tabs_index, 0)
+        self.assertGreater(tabs_layout.stretch(tabs_index), 0)
+        form_stretch = tabs_layout.stretch(0)
+        self.assertEqual(form_stretch, 0)
+
+    def test_long_multiline_text_is_preserved_and_editable(self) -> None:
+        long_popis = "\n".join(f"Popis řádek {index}" for index in range(1, 13))
+        long_cil = "\n".join(f"Cíl ověření řádek {index}" for index in range(1, 13))
+        widget = AudityKnowledgeSectionEditorWidget()
+        widget.load_section(
+            process_id=_PROCESS_ID,
+            section_id=_SECTION_ID,
+            section={
+                "id": _SECTION_ID,
+                "nazev": "Test oblast",
+                "popis": long_popis,
+                "cil_overeni": long_cil,
+                "poradi": 10,
+                "aktivni": True,
+            },
+        )
+
+        self.assertEqual(widget._popis_edit.toPlainText(), long_popis)
+        self.assertEqual(widget._cil_overeni_edit.toPlainText(), long_cil)
+
+        widget.resize(900, 700)
+        widget.show()
+        AudityKnowledgeSectionEditorWidgetTestCase._app.processEvents()
+        self.assertGreater(widget._popis_edit.verticalScrollBar().maximum(), 0)
+        self.assertGreater(widget._cil_overeni_edit.verticalScrollBar().maximum(), 0)
+
+        edited_popis = long_popis + "\nDalší odstavec popisu."
+        edited_cil = long_cil + "\nDalší odstavec cíle."
+        widget._popis_edit.setPlainText(edited_popis)
+        widget._cil_overeni_edit.setPlainText(edited_cil)
+
+        self.assertEqual(widget._popis_edit.toPlainText(), edited_popis)
+        self.assertEqual(widget._cil_overeni_edit.toPlainText(), edited_cil)
+        metadata = widget.section_metadata()
+        self.assertEqual(metadata["popis"], edited_popis)
+        self.assertEqual(metadata["cil_overeni"], edited_cil)
+
 
 class AudityKnowledgeEditorDialogSectionTestCase(unittest.TestCase):
     @classmethod
@@ -267,6 +337,85 @@ class AudityKnowledgeEditorDialogSectionTestCase(unittest.TestCase):
         self.assertEqual(dialog.content_stack.currentIndex(), dialog._PAGE_SECTION)
         self.assertTrue(dialog._apply_btn.isEnabled())
         self.assertEqual(dialog.section_editor.section_id, _SECTION_ID)
+
+    def test_load_and_save_keep_popis_and_cil_overeni(self) -> None:
+        original_section = next(
+            item for item in self._original.get("sekce") or [] if item.get("id") == _SECTION_ID
+        )
+        original_popis = str(original_section.get("popis") or "")
+        original_cil = str(original_section.get("cil_overeni") or "")
+
+        dialog = AudityKnowledgeEditorDialog()
+        self._select_section(dialog)
+        editor = dialog.section_editor
+
+        self.assertEqual(editor._popis_edit.toPlainText(), original_popis)
+        self.assertEqual(editor._cil_overeni_edit.toPlainText(), original_cil)
+
+        dialog._apply_changes()
+        saved = self._section_from_file()
+        self.assertEqual(saved["popis"], original_popis)
+        self.assertEqual(saved["cil_overeni"], original_cil)
+        self.assertEqual(editor._popis_edit.toPlainText(), original_popis)
+        self.assertEqual(editor._cil_overeni_edit.toPlainText(), original_cil)
+
+    def test_long_text_edit_marks_dirty_and_saves(self) -> None:
+        long_popis = "\n".join(f"Uložený popis {index}" for index in range(1, 13))
+        long_cil = "\n".join(f"Uložený cíl {index}" for index in range(1, 13))
+        dialog = AudityKnowledgeEditorDialog()
+        self._select_section(dialog)
+
+        dialog.section_editor._popis_edit.setPlainText(long_popis)
+        dialog.section_editor._cil_overeni_edit.setPlainText(long_cil)
+        self.assertTrue(dialog._current_dirty)
+        self.assertTrue(dialog._apply_btn.isEnabled())
+
+        dialog._apply_changes()
+        self.assertFalse(dialog._current_dirty)
+
+        saved = self._section_from_file()
+        self.assertEqual(saved["popis"], long_popis)
+        self.assertEqual(saved["cil_overeni"], long_cil)
+        self.assertEqual(dialog.section_editor._popis_edit.toPlainText(), long_popis)
+        self.assertEqual(dialog.section_editor._cil_overeni_edit.toPlainText(), long_cil)
+
+    def test_assertions_table_shows_more_than_three_rows_on_common_resolutions(self) -> None:
+        dialog = AudityKnowledgeEditorDialog()
+        self._select_section(dialog)
+
+        visible_1080 = self._visible_assertion_row_slots(dialog, 1920, 1080)
+        visible_900 = self._visible_assertion_row_slots(dialog, 1600, 900)
+
+        self.assertGreaterEqual(visible_1080, 8)
+        self.assertGreater(visible_900, 3)
+        self.assertGreaterEqual(visible_1080, visible_900)
+        dialog.close()
+
+    def _section_from_file(self) -> dict:
+        with self._path.open(encoding="utf-8") as handle:
+            payload = json.load(handle)
+        return next(
+            item for item in payload.get("sekce") or [] if item.get("id") == _SECTION_ID
+        )
+
+    def _visible_assertion_row_slots(
+        self,
+        dialog: AudityKnowledgeEditorDialog,
+        width: int,
+        height: int,
+    ) -> int:
+        # Offscreen / malá obrazovka by jinak omezila maximumSize dialogu.
+        dialog.setMaximumSize(max(width, 1920), max(height, 1080))
+        dialog.resize(width, height)
+        dialog.show()
+        self._app.processEvents()
+        table = dialog.section_editor._assertions_widget._table
+        viewport_height = table.viewport().height()
+        row_height = table.verticalHeader().defaultSectionSize()
+        if table.rowCount() > 0:
+            row_height = max(row_height, table.rowHeight(0))
+        self.assertGreater(row_height, 0)
+        return viewport_height // row_height
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 """Editační formulář oblasti ověření v editoru metodiky auditora."""
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QScrollArea,
+    QSizePolicy,
     QSpinBox,
     QTabWidget,
     QTextEdit,
@@ -36,6 +37,42 @@ from moduly.audity.ui.audity_knowledge_list_editor_widget import AudityKnowledge
 from moduly.audity.ui.audity_knowledge_reference_photo_editor_widget import (
     AudityKnowledgeReferencePhotoEditorWidget,
 )
+
+SECTION_MULTILINE_VISIBLE_LINES = 3
+
+
+def text_edit_height_for_visible_lines(edit: QTextEdit, lines: int) -> int:
+    """Výška QTextEdit pro daný počet viditelných řádků aktuálního fontu.
+
+    Odvozuje se z ``lineSpacing`` fontu, okrajů dokumentu, rámečku a
+    vnitřních okrajů widgetu, aby platila i při jiném DPI a měřítku.
+    """
+    edit.ensurePolished()
+    metrics = edit.fontMetrics()
+    contents = edit.contentsMargins()
+    viewport = edit.viewportMargins()
+    document_margin = int(edit.document().documentMargin())
+    return (
+        lines * metrics.lineSpacing()
+        + (2 * document_margin)
+        + (2 * edit.frameWidth())
+        + contents.top()
+        + contents.bottom()
+        + viewport.top()
+        + viewport.bottom()
+    )
+
+
+def configure_compact_multiline_edit(
+    edit: QTextEdit,
+    *,
+    lines: int = SECTION_MULTILINE_VISIBLE_LINES,
+) -> None:
+    """Ponechá víceřádkový editor, ale zafixuje výšku na přibližně ``lines`` řádků."""
+    height = text_edit_height_for_visible_lines(edit, lines)
+    edit.setFixedHeight(height)
+    edit.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+    edit.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
 
 class AudityKnowledgeSectionEditorWidget(QWidget):
@@ -71,9 +108,9 @@ class AudityKnowledgeSectionEditorWidget(QWidget):
         self._nazev_edit = QLineEdit()
         self._control_process_combo = QComboBox()
         self._popis_edit = QTextEdit()
-        self._popis_edit.setMinimumHeight(90)
+        configure_compact_multiline_edit(self._popis_edit)
         self._cil_overeni_edit = QTextEdit()
-        self._cil_overeni_edit.setMinimumHeight(90)
+        configure_compact_multiline_edit(self._cil_overeni_edit)
         self._poradi_spin = QSpinBox()
         self._poradi_spin.setRange(0, 99999)
         self._poradi_spin.setSingleStep(10)
@@ -86,9 +123,13 @@ class AudityKnowledgeSectionEditorWidget(QWidget):
         form.addRow("Cíl ověření:", self._cil_overeni_edit)
         form.addRow("Pořadí:", self._poradi_spin)
         form.addRow("", self._aktivni_check)
-        scroll_layout.addLayout(form)
+        scroll_layout.addLayout(form, stretch=0)
 
         self._tabs = QTabWidget()
+        self._tabs.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Expanding,
+        )
         self._assertions_widget = AudityKnowledgeAssertionsWidget()
         self._list_widgets: dict[str, AudityKnowledgeListEditorWidget] = {}
         self._postup_widget = AudityKnowledgeDescribedListEditorWidget(
