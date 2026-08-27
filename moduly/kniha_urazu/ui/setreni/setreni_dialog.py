@@ -36,18 +36,24 @@ from PySide6.QtWidgets import (
 from core.widgets.dialog_utils import create_save_cancel_box, configure_form_tab_navigation
 from moduly.kniha_urazu.ui.setreni.accident_findings_widget import AccidentFindingsWidget
 from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
+    CSSZ_STATUS_DONE,
+    CSSZ_STATUS_OPTIONAL,
+    CSSZ_STATUS_REQUIRED,
+    OBLIGATION_CSSZ_USSZ_NEMOCENSKE,
     OBLIGATION_OIP_OBU_OHLASENI,
     OBLIGATION_OO_OHLASENI,
     OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU,
     METHOD_PORTAL_SUIP,
+    SECTION_NEMOCENSKE,
     SECTION_ODESLANI,
     SECTION_OHLASENI,
     SECTION_PREDANI,
     SECTION_ZAZNAM,
     INVESTIGATION_BEFORE_ACCIDENT_WARNING,
+    cssz_row_ui_state,
     is_fatal_accident,
     is_investigation_before_accident,
-    is_row_relevant,
+    is_row_visible,
     is_serious_or_fatal_accident,
     has_pn_over_3_days,
     obligation_default_deadline,
@@ -162,6 +168,7 @@ class SetreniDialog(QDialog):
             list(getattr(self, "admin_zaznam_rows", []))
             + list(getattr(self, "admin_odeslani_rows", []))
             + list(getattr(self, "admin_predani_rows", []))
+            + list(getattr(self, "admin_nemocenske_rows", []))
         )
 
     def _date_value(self, widget):
@@ -706,6 +713,7 @@ class SetreniDialog(QDialog):
             list(getattr(self, "admin_zaznam_rows", []))
             + list(getattr(self, "admin_odeslani_rows", []))
             + list(getattr(self, "admin_predani_rows", []))
+            + list(getattr(self, "admin_nemocenske_rows", []))
         )
 
     def _refresh_svedci_rows(self):
@@ -2733,7 +2741,7 @@ class SetreniDialog(QDialog):
         )
 
     def _admin_row_relevant(self, row):
-        return is_row_relevant(
+        return is_row_visible(
             self.accident,
             row,
             saved_data=self._zajisteni_saved_data,
@@ -2880,6 +2888,7 @@ class SetreniDialog(QDialog):
         self.admin_zaznam_rows = []
         self.admin_odeslani_rows = []
         self.admin_predani_rows = []
+        self.admin_nemocenske_rows = []
 
         for definition in obligation_definitions_for_accident(
             self.accident,
@@ -2891,12 +2900,21 @@ class SetreniDialog(QDialog):
                 name=definition.label,
             )
             display_name = definition.label
-            if definition.key != OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU:
+            if definition.key not in {
+                OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU,
+                OBLIGATION_CSSZ_USSZ_NEMOCENSKE,
+            }:
                 display_name = (saved_data.get("nazev") or "").strip() or definition.label
+            if definition.section == SECTION_OHLASENI:
+                agenda = "ohlaseni"
+            elif definition.section == SECTION_NEMOCENSKE:
+                agenda = "nemocenske"
+            else:
+                agenda = "zaznam"
             row = self._make_admin_row(
                 display_name,
                 saved_data,
-                agenda="ohlaseni" if definition.section == SECTION_OHLASENI else "zaznam",
+                agenda=agenda,
                 section=definition.section,
                 key=definition.key,
             )
@@ -2906,6 +2924,8 @@ class SetreniDialog(QDialog):
                 self.admin_zaznam_rows.append(row)
             elif definition.section == SECTION_ODESLANI:
                 self.admin_odeslani_rows.append(row)
+            elif definition.section == SECTION_NEMOCENSKE:
+                self.admin_nemocenske_rows.append(row)
             else:
                 self.admin_predani_rows.append(row)
 
@@ -2919,7 +2939,9 @@ class SetreniDialog(QDialog):
             and oip_notice_uses_fixed_portal_suip(self.accident)
         )
 
-        if key == OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU:
+        if key == OBLIGATION_CSSZ_USSZ_NEMOCENSKE:
+            zpusoby = ["Datová schránka", "E-mail", "Listinná podoba", "Jiný způsob"]
+        elif key == OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU:
             zpusoby = [METHOD_PORTAL_SUIP]
         elif portal_only_oip_notice:
             zpusoby = [METHOD_PORTAL_SUIP]
@@ -2955,7 +2977,9 @@ class SetreniDialog(QDialog):
         row["cas"].setPlaceholderText("např. 14:35")
         row["upresneni"].setPlaceholderText("Upřesnit způsob odeslání / předání")
 
-        if "Kooperativa" in nazev or "Zákonná pojišťovna" in nazev:
+        if key == OBLIGATION_CSSZ_USSZ_NEMOCENSKE:
+            row["lhuta"] = None
+        elif "Kooperativa" in nazev or "Zákonná pojišťovna" in nazev:
             row["lhuta"] = None
 
         if row.get("lhuta") is not None:
@@ -3027,7 +3051,34 @@ class SetreniDialog(QDialog):
         label.setAlignment(Qt.AlignCenter)
 
         def refresh():
-            state = row_status(self._admin_row_state_dict(row), datetime.now().date())
+            state_dict = self._admin_row_state_dict(row)
+            if row.get("key") == OBLIGATION_CSSZ_USSZ_NEMOCENSKE:
+                cssz_state = cssz_row_ui_state(
+                    self.accident,
+                    state_dict,
+                    today=datetime.now().date(),
+                )
+                if cssz_state == "done":
+                    label.setText(CSSZ_STATUS_DONE)
+                    label.setStyleSheet(
+                        "font-weight: bold; color: #0b5d1e; background: #d9f0dd; "
+                        "border: 1px solid #91c79c; border-radius: 3px;"
+                    )
+                elif cssz_state == "required":
+                    label.setText(CSSZ_STATUS_REQUIRED)
+                    label.setStyleSheet(
+                        "font-weight: bold; color: #7a4b00; background: #fff3cd; "
+                        "border: 1px solid #d6b656; border-radius: 3px;"
+                    )
+                else:
+                    label.setText(CSSZ_STATUS_OPTIONAL)
+                    label.setStyleSheet(
+                        "font-weight: bold; color: #334155; background: #eef2f6; "
+                        "border: 1px solid #c5d0dc; border-radius: 3px;"
+                    )
+                return
+
+            state = row_status(state_dict, datetime.now().date())
             if state == "done":
                 label.setText("✔ Odesláno / předáno")
                 label.setStyleSheet("font-weight: bold; color: #0b5d1e; background: #d9f0dd; border: 1px solid #91c79c; border-radius: 3px;")
@@ -3238,6 +3289,16 @@ class SetreniDialog(QDialog):
             for row in visible_predani_rows:
                 predani_layout.addWidget(self._admin_row_group(row, "předání"))
             layout.addWidget(predani)
+
+        visible_nemocenske_rows = [
+            row for row in self.admin_nemocenske_rows if self._admin_row_relevant(row)
+        ]
+        if visible_nemocenske_rows:
+            nemocenske = QGroupBox("NEMOCENSKÉ POJIŠTĚNÍ")
+            nemocenske_layout = QVBoxLayout(nemocenske)
+            for row in visible_nemocenske_rows:
+                nemocenske_layout.addWidget(self._admin_row_group(row, "odeslání"))
+            layout.addWidget(nemocenske)
 
         end_form = QFormLayout()
         end_form.addRow("Datum ukončení šetření:", self.admin_ukonceni)

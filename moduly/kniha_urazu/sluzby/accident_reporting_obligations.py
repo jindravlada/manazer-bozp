@@ -26,11 +26,13 @@ OBLIGATION_EZOP = "ezop"
 OBLIGATION_ZAMESTNANEC_PREDANI = "zamestnanec_predani"
 OBLIGATION_OO_PREDANI = "oo_predani"
 OBLIGATION_RODINA_PREDANI = "rodina_predani"
+OBLIGATION_CSSZ_USSZ_NEMOCENSKE = "cssz_ussz_nemocenske"
 
 SECTION_OHLASENI = "ohlaseni"
 SECTION_ZAZNAM = "zaznam"
 SECTION_ODESLANI = "odeslani"
 SECTION_PREDANI = "predani"
+SECTION_NEMOCENSKE = "nemocenske"
 
 CATEGORY_NO_PN = "no_pn"
 CATEGORY_PN_UP_TO_3 = "pn_up_to_3"
@@ -52,6 +54,7 @@ OBLIGATION_LABELS: dict[str, str] = {
     OBLIGATION_ZAMESTNANEC_PREDANI: "Postižený zaměstnanec – předání podepsaného záznamu o pracovním úrazu",
     OBLIGATION_OO_PREDANI: "Odborová organizace – předání podepsaného záznamu o pracovním úrazu",
     OBLIGATION_RODINA_PREDANI: "Rodinní příslušníci – předání záznamu o pracovním úrazu",
+    OBLIGATION_CSSZ_USSZ_NEMOCENSKE: "ČSSZ / ÚSSZ – podklady k nemocenskému",
 }
 
 LEGACY_LABEL_ALIASES: dict[str, str] = {
@@ -159,6 +162,66 @@ def dpn_calendar_days(dpn_od: date | None, dpn_do: date | None) -> int | None:
     if dpn_od and dpn_do:
         return (dpn_do - dpn_od).days + 1
     return None
+
+
+CSSZ_DPN_REQUIRED_AFTER_DAYS = 14
+CSSZ_STATUS_DONE = "✔ Odesláno"
+CSSZ_STATUS_REQUIRED = "Povinné – dosud neodesláno"
+CSSZ_STATUS_OPTIONAL = "Lze odeslat předem – zatím není povinné"
+
+
+def _cssz_as_date(value: Any) -> date | None:
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, date):
+        return value
+    return parse_saved_date(value)
+
+
+def cssz_dpn_calendar_days(
+    dpn_od: date | None,
+    dpn_do: date | None,
+    *,
+    today: date | None = None,
+) -> int | None:
+    """Délka DPN pro povinnost ČSSZ/ÚSSZ.
+
+    Uzavřená DPN: včetně prvního i posledního dne.
+    Probíhající DPN (chybí ``dpn_do``): včetně prvního dne vůči ``today``.
+    Neplatný nebo budoucí interval vrací ``None`` – nevznikne falešná povinnost.
+    """
+    reference = _cssz_as_date(today) or date.today()
+    start = _cssz_as_date(dpn_od)
+    if start is None:
+        return None
+    if start > reference:
+        return None
+    end = _cssz_as_date(dpn_do)
+    if end is None:
+        return (reference - start).days + 1
+    if end < start:
+        return None
+    if end > reference:
+        end = reference
+    return (end - start).days + 1
+
+
+def cssz_nemocenske_is_required(
+    accident: AccidentLike | None,
+    *,
+    today: date | None = None,
+) -> bool:
+    """True, pokud DPN trvá nebo trvala déle než 14 kalendářních dnů."""
+    if accident is None:
+        return False
+    days = cssz_dpn_calendar_days(
+        getattr(accident, "dpn_od", None),
+        getattr(accident, "dpn_do", None),
+        today=today,
+    )
+    return days is not None and days > CSSZ_DPN_REQUIRED_AFTER_DAYS
 
 
 DPN_KIND_MISMATCH_MESSAGE = (
@@ -454,6 +517,10 @@ def is_obligation_relevant(
     if obligation_key == OBLIGATION_RODINA_PREDANI:
         return category == CATEGORY_FATAL
 
+    if obligation_key == OBLIGATION_CSSZ_USSZ_NEMOCENSKE:
+        # ČSSZ/ÚSSZ není adresát NV 322/2025 Sb. – nesmí vstoupit do ZoÚ, úkolů ani matice záznamu.
+        return False
+
     return False
 
 
@@ -474,7 +541,128 @@ def is_row_relevant(
     )
 
 
+def cssz_row_has_recorded_data(row: dict[str, Any] | None) -> bool:
+    """True, pokud řádek ČSSZ/ÚSSZ už nese evidované údaje (nesmí se ztratit)."""
+    if not row:
+        return False
+    predano = row.get("predano")
+    if predano is True or predano == 1:
+        return True
+    kompletni = row.get("kompletni")
+    if kompletni is True or kompletni == 1:
+        return True
+    datum = row.get("datum")
+    if isinstance(datum, datetime):
+        return True
+    if isinstance(datum, date):
+        return True
+    if isinstance(datum, str) and datum.strip():
+        return True
+    for field in ("cas", "zpusob", "upresneni"):
+        value = row.get(field)
+        if isinstance(value, str) and value.strip():
+            return True
+    return False
+
+
+def cssz_saved_row(saved_data: dict[str, Any] | None) -> dict[str, Any]:
+    if not saved_data:
+        return {}
+    for row in collect_obligation_rows_from_saved_data(saved_data):
+        if obligation_key_from_row(row) == OBLIGATION_CSSZ_USSZ_NEMOCENSKE:
+            return row
+    return {}
+
+
+def is_cssz_nemocenske_visible(
+    accident: AccidentLike | None,
+    *,
+    row: dict[str, Any] | None = None,
+    saved_data: dict[str, Any] | None = None,
+) -> bool:
+    """Viditelnost ČSSZ/ÚSSZ: vyplněné ``dpn_od`` nebo už uložené údaje."""
+    if accident is not None and getattr(accident, "dpn_od", None):
+        return True
+    if cssz_row_has_recorded_data(row):
+        return True
+    return cssz_row_has_recorded_data(cssz_saved_row(saved_data))
+
+
+def is_obligation_visible(
+    accident: AccidentLike | None,
+    obligation_key: str,
+    *,
+    row: dict[str, Any] | None = None,
+    union_organization_active: bool | None = None,
+    saved_data: dict[str, Any] | None = None,
+    record_duty_generation: str | None = None,
+) -> bool:
+    if obligation_key == OBLIGATION_CSSZ_USSZ_NEMOCENSKE:
+        return is_cssz_nemocenske_visible(accident, row=row, saved_data=saved_data)
+    return is_obligation_relevant(
+        accident,
+        obligation_key,
+        union_organization_active=union_organization_active,
+        saved_data=saved_data,
+        record_duty_generation=record_duty_generation,
+    )
+
+
+def is_row_visible(
+    accident: AccidentLike | None,
+    row: dict[str, Any],
+    *,
+    union_organization_active: bool | None = None,
+    saved_data: dict[str, Any] | None = None,
+    record_duty_generation: str | None = None,
+) -> bool:
+    return is_obligation_visible(
+        accident,
+        obligation_key_from_row(row),
+        row=row,
+        union_organization_active=union_organization_active,
+        saved_data=saved_data,
+        record_duty_generation=record_duty_generation,
+    )
+
+
+def is_obligation_required(
+    accident: AccidentLike | None,
+    obligation_key: str,
+    *,
+    today: date | None = None,
+    union_organization_active: bool | None = None,
+    saved_data: dict[str, Any] | None = None,
+    record_duty_generation: str | None = None,
+) -> bool:
+    if obligation_key == OBLIGATION_CSSZ_USSZ_NEMOCENSKE:
+        return cssz_nemocenske_is_required(accident, today=today)
+    return is_obligation_relevant(
+        accident,
+        obligation_key,
+        union_organization_active=union_organization_active,
+        saved_data=saved_data,
+        record_duty_generation=record_duty_generation,
+    )
+
+
+def cssz_row_ui_state(
+    accident: AccidentLike | None,
+    row: dict[str, Any] | None,
+    *,
+    today: date | None = None,
+) -> str:
+    """Stav položky ČSSZ/ÚSSZ: ``done`` / ``required`` / ``optional``."""
+    if row_is_done(row or {}):
+        return "done"
+    if cssz_nemocenske_is_required(accident, today=today):
+        return "required"
+    return "optional"
+
+
 def _section_for_key(key: str) -> str:
+    if key == OBLIGATION_CSSZ_USSZ_NEMOCENSKE:
+        return SECTION_NEMOCENSKE
     if key in {OBLIGATION_VYHOTOVENI_ZAZNAMU, OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU}:
         return SECTION_ZAZNAM
     if key in {
@@ -626,6 +814,11 @@ def obligation_default_deadline(
     label: str = "",
     agenda: str = "",
 ) -> date | None:
+    if obligation_key == OBLIGATION_CSSZ_USSZ_NEMOCENSKE or section == SECTION_NEMOCENSKE:
+        return None
+    if "ČSSZ" in label or "ÚSSZ" in label:
+        return None
+
     if notification_date is None:
         return None
 
@@ -691,6 +884,8 @@ def obligation_rows_for_summary(
         union_organization_active=union_organization_active,
         saved_data=saved_data,
     ):
+        if obligation.key == OBLIGATION_CSSZ_USSZ_NEMOCENSKE:
+            continue
         row = dict(rows_by_key.get(obligation.key, {}))
         row.setdefault("key", obligation.key)
         if obligation.key == OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU:
