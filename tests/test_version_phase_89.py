@@ -41,9 +41,9 @@ class VersionPhase89TestCase(unittest.TestCase):
         os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
         cls._app = QApplication.instance() or QApplication([])
 
-    def test_central_version_is_3_4_0(self) -> None:
-        self.assertEqual(APP_VERSION, "3.4.0")
-        self.assertEqual(app_display_name(), "Manažer BOZP 3.4.0")
+    def test_central_version_is_3_4_5(self) -> None:
+        self.assertEqual(APP_VERSION, "3.4.5")
+        self.assertEqual(app_display_name(), "Manažer BOZP 3.4.5")
 
     def test_main_window_title_uses_central_version(self) -> None:
         # Izolace vůči jiným testům, které mohly přepsat SDÍLENÝ sqlite soubor.
@@ -53,28 +53,56 @@ class VersionPhase89TestCase(unittest.TestCase):
         session_module.dispose_database_engine()
         initialize_database()
         window = MainWindow()
-        self.assertEqual(window.windowTitle(), "Manažer BOZP 3.4.0")
+        self.assertEqual(window.windowTitle(), "Manažer BOZP 3.4.5")
+        self.assertEqual(window.windowTitle(), app_display_name())
 
     def test_about_dialog_shows_central_version(self) -> None:
         dialog = AboutDialog()
-        self.assertIn("3.4.0", dialog.windowTitle())
+        self.assertIn("3.4.5", dialog.windowTitle())
         labels = {label.text() for label in dialog.findChildren(QLabel)}
         self.assertIn(app_display_name(), labels)
         self.assertIn(APP_AUTHOR, labels)
         self.assertIn(APP_COPYRIGHT, labels)
 
+    def test_packaging_metadata_matches_canonical_version(self) -> None:
+        project_root = Path(__file__).resolve().parents[1]
+        major, minor, patch = APP_VERSION.split(".")
+        version_tuple = f"({major}, {minor}, {patch}, 0)"
+
+        version_info = (project_root / "version_info.txt").read_text(encoding="utf-8")
+        self.assertIn(f"filevers={version_tuple}", version_info)
+        self.assertIn(f"prodvers={version_tuple}", version_info)
+        self.assertIn(f"StringStruct('FileVersion', '{APP_VERSION}')", version_info)
+        self.assertIn(f"StringStruct('ProductVersion', '{APP_VERSION}')", version_info)
+        self.assertNotIn("3.4.0", version_info)
+
+        installer = (project_root / "installer.iss").read_text(encoding="utf-8")
+        self.assertIn(f'#define MyAppVersion "{APP_VERSION}"', installer)
+        self.assertIn(f"OutputBaseFilename={installer_output_basename()}", installer)
+        self.assertEqual(installer_output_basename(), "Manazer_BOZP_3_4_5_Setup")
+        self.assertNotIn("3.4.0", installer)
+
+        readme = (project_root / "README.md").read_text(encoding="utf-8")
+        self.assertTrue(readme.startswith(f"# {app_display_name()}"))
+
+        for script_name in ("build_release.sh", "build_old_release.sh"):
+            script = (project_root / script_name).read_text(encoding="utf-8")
+            self.assertIn("from core.version import app_display_name", script)
+            self.assertNotIn("3.4.0", script)
+            self.assertNotIn("3.2.0", script)
+
     def test_generate_version_info_uses_central_version(self) -> None:
         project_root = Path(__file__).resolve().parents[1]
         content = (project_root / "version_info.txt").read_text(encoding="utf-8")
 
-        self.assertIn("StringStruct('FileVersion', '3.4.0')", content)
-        self.assertIn("StringStruct('ProductVersion', '3.4.0')", content)
+        self.assertIn(f"StringStruct('FileVersion', '{APP_VERSION}')", content)
+        self.assertIn(f"StringStruct('ProductVersion', '{APP_VERSION}')", content)
 
     def test_generate_installer_iss_uses_central_version(self) -> None:
         project_root = Path(__file__).resolve().parents[1]
         content = (project_root / "installer.iss").read_text(encoding="utf-8")
 
-        self.assertIn('#define MyAppVersion "3.4.0"', content)
+        self.assertIn(f'#define MyAppVersion "{APP_VERSION}"', content)
         self.assertIn(f"OutputBaseFilename={installer_output_basename()}", content)
 
     def test_official_runtime_files_do_not_hardcode_old_version(self) -> None:
@@ -87,8 +115,8 @@ class VersionPhase89TestCase(unittest.TestCase):
             project_root / "core" / "version.py",
         ]
         forbidden = re.compile(
-            r"Manažer BOZP 3\.(?:0(?:\.0)?|1\.0|2\.0|3\.\d+)|"
-            r"APP_VERSION\s*=\s*\"3\.(?:0|1\.0|2\.0|3\.\d+)\""
+            r"Manažer BOZP 3\.(?:0(?:\.0)?|1\.0|2\.0|3\.\d+|4\.0)|"
+            r"APP_VERSION\s*=\s*\"3\.(?:0|1\.0|2\.0|3\.\d+|4\.0)\""
         )
 
         for path in checked_files:

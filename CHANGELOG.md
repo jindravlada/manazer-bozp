@@ -14,6 +14,16 @@
 
 ---
 
+# Verze 3.4.5
+
+Datum vydání:
+
+27. 8. 2026
+
+Zvýšení verze aplikace. Program, dialog O programu a balicí metadata se identifikují jako Manažer BOZP 3.4.5.
+
+---
+
 # Verze 3.4.0
 
 Datum vydání:
