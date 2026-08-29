@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
@@ -208,6 +208,8 @@ class MeetingOrganizerWidget(QWidget):
 class MeetingParticipantsWidget(QWidget):
     """Jeden seznam účastníků; interní (THP/Osoby) + externí."""
 
+    participantsChanged = Signal()
+
     _KIND_REF = "ref"
     _KIND_PERSON = "person"  # legacy payload
     _KIND_EXTERNAL = "external"
@@ -294,7 +296,10 @@ class MeetingParticipantsWidget(QWidget):
         dialog = ExternalParticipantDialog(self)
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return
+        before = self.list_widget.count()
         self._append_external(dialog.get_data())
+        if self.list_widget.count() > before:
+            self.participantsChanged.emit()
 
     def edit_selected(self) -> None:
         items = self.list_widget.selectedItems()
@@ -303,8 +308,12 @@ class MeetingParticipantsWidget(QWidget):
         self._edit_item(items[0])
 
     def remove_selected(self) -> None:
-        for item in self.list_widget.selectedItems():
+        items = self.list_widget.selectedItems()
+        if not items:
+            return
+        for item in items:
             self.list_widget.takeItem(self.list_widget.row(item))
+        self.participantsChanged.emit()
 
     def _on_item_double_clicked(self, item: QListWidgetItem) -> None:
         self._edit_item(item)
@@ -327,6 +336,7 @@ class MeetingParticipantsWidget(QWidget):
             {"kind": self._KIND_EXTERNAL, "data": updated[0]},
         )
         item.setText(meeting_service.external_participant_label(updated[0]))
+        self.participantsChanged.emit()
 
     def _on_typeahead_activated(self, _index: int) -> None:
         self._add_current()
@@ -335,8 +345,11 @@ class MeetingParticipantsWidget(QWidget):
         ref = self.typeahead.current_ref()
         if ref is None:
             return
+        before = self.list_widget.count()
         self._append_ref(ref)
         self.typeahead.clear_selection()
+        if self.list_widget.count() > before:
+            self.participantsChanged.emit()
 
     def _list_refs(self) -> list[dict]:
         refs: list[dict] = []

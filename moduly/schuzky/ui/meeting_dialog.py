@@ -107,6 +107,9 @@ class MeetingDialog(QDialog):
         else:
             self.agenda_items_widget.load_for_meeting(None)
 
+        self.participants_selector.participantsChanged.connect(
+            self._editor.refresh_dirty
+        )
         self._editor.capture_baseline()
 
     def _meeting_tab(self) -> QWidget:

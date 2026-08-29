@@ -252,6 +252,10 @@ class EditorDialogController(QObject):
         self._dirty = True
         self._refresh_save_enabled()
 
+    def refresh_dirty(self, *_args) -> None:
+        """Znovu vyhodnotí Uložit podle snapshotu / is_dirty, bez vynucení dirty."""
+        self._refresh_save_enabled()
+
     def mark_clean(self) -> None:
         self._dirty = False
         if self._snapshot_fn is not None:
