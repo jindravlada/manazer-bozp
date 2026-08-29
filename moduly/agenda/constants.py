@@ -8,6 +8,7 @@ ITEM_TYPE_TASK = "task"
 ITEM_TYPE_MEETING = "meeting"
 
 TYPE_LABEL_TASK = "Úkol"
+TYPE_LABEL_TASK_CONTROL = "Kontrola úkolu"
 TYPE_LABEL_MEETING = "Událost"
 
 TYPE_FILTER_TASKS = "Úkoly"

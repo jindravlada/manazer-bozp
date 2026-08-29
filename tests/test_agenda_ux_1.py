@@ -130,36 +130,45 @@ class AgendaUx1TestCase(unittest.TestCase):
 
         page = AgendaPage()
 
-        def _ids():
+        def _keys():
             return {
-                page.table.item(row, COL_TITLE).data(Qt.ItemDataRole.UserRole).source_id
+                (
+                    page.table.item(row, COL_TITLE).data(Qt.ItemDataRole.UserRole).item_type,
+                    page.table.item(row, COL_TITLE).data(Qt.ItemDataRole.UserRole).source_id,
+                )
                 for row in range(page.table.rowCount())
             }
 
         page.status_filter.setCurrentText(STATUS_MODE_ACTIVE)
         page.refresh()
-        self.assertIn(active_task.id, _ids())
-        self.assertIn(planned.id, _ids())
-        self.assertNotIn(done_task.id, _ids())
-        self.assertNotIn(closed.id, _ids())
+        self.assertIn((ITEM_TYPE_TASK, active_task.id), _keys())
+        self.assertIn((ITEM_TYPE_MEETING, planned.id), _keys())
+        self.assertNotIn((ITEM_TYPE_TASK, done_task.id), _keys())
+        self.assertNotIn((ITEM_TYPE_MEETING, closed.id), _keys())
 
         page.status_filter.setCurrentText(STATUS_MODE_DONE)
         page.type_checks[ITEM_TYPE_MEETING].setChecked(False)
         page.refresh()
-        self.assertEqual(_ids(), {done_task.id})
+        self.assertNotIn((ITEM_TYPE_TASK, done_task.id), _keys())
+        self.assertNotIn((ITEM_TYPE_TASK, active_task.id), _keys())
 
         page.type_checks[ITEM_TYPE_MEETING].setChecked(True)
         page.type_checks[ITEM_TYPE_TASK].setChecked(False)
         page.status_filter.setCurrentText(STATUS_MODE_CLOSED)
         page.refresh()
-        self.assertEqual(_ids(), {closed.id})
+        self.assertEqual(_keys(), {(ITEM_TYPE_MEETING, closed.id)})
 
         page.type_checks[ITEM_TYPE_TASK].setChecked(True)
         page.status_filter.setCurrentText(STATUS_MODE_ALL)
         page.refresh()
         self.assertTrue(
-            {active_task.id, done_task.id, planned.id, closed.id}.issubset(_ids())
+            {
+                (ITEM_TYPE_TASK, active_task.id),
+                (ITEM_TYPE_MEETING, planned.id),
+                (ITEM_TYPE_MEETING, closed.id),
+            }.issubset(_keys())
         )
+        self.assertNotIn((ITEM_TYPE_TASK, done_task.id), _keys())
 
     def test_status_modes_depend_on_type(self) -> None:
         page = AgendaPage()
@@ -210,7 +219,7 @@ class AgendaUx1TestCase(unittest.TestCase):
         items = { (i.item_type, i.source_id): i for i in agenda_service.get_items() }
         self.assertEqual(items[(ITEM_TYPE_TASK, overdue.id)].row_state, ROW_STATE_OVERDUE)
         self.assertEqual(items[(ITEM_TYPE_TASK, waiting.id)].row_state, ROW_STATE_WAITING)
-        self.assertEqual(items[(ITEM_TYPE_TASK, done.id)].row_state, ROW_STATE_DONE)
+        self.assertNotIn((ITEM_TYPE_TASK, done.id), items)
         self.assertEqual(
             items[(ITEM_TYPE_MEETING, cancelled_meeting.id)].row_state,
             ROW_STATE_CANCELED,

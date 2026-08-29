@@ -174,7 +174,10 @@ class CalendarUx1TestCase(unittest.TestCase):
         )
         task_service.create_task(title="Úkol stejný den", due_date=date(2026, 8, 10))
 
-        dots, events = build_calendar_day_data(today=date(2026, 8, 1))
+        dots, events = build_calendar_day_data(
+            today=date(2026, 8, 1),
+            now=datetime(2026, 8, 1, 12, 0),
+        )
         day = date(2026, 8, 10)
         self.assertIn(day, dots)
         self.assertEqual(len(dots[day]), 1)  # jedna indikace stačí (set of kinds)

@@ -24,6 +24,7 @@ from moduly.agenda.constants import (
     STATUS_MODE_PLANNED,
     TYPE_LABEL_MEETING,
     TYPE_LABEL_TASK,
+    TYPE_LABEL_TASK_CONTROL,
 )
 from moduly.schuzky.constants import (
     DEFAULT_MEETING_PRIORITY,
@@ -33,6 +34,12 @@ from moduly.schuzky.constants import (
     STATUS_PLANNED,
 )
 from moduly.schuzky.sluzby.meeting_service import meeting_service
+from moduly.ukoly.constants import (
+    TASK_STATUS_CANCELED,
+    TASK_STATUS_CLOSED,
+    TASK_STATUS_WAITING_CHECK,
+)
+from moduly.ukoly.sluzby.task_deadline import task_urgency_due_date
 from moduly.ukoly.sluzby.task_service import task_service
 
 
@@ -81,15 +88,16 @@ def _normalize_priority(value: str | None) -> str:
 
 
 def _task_row_state(task, *, today: date) -> str:
-    """Stejná logika jako TaskTable._row_state."""
+    """Stav řádku podle aktuální fáze úkolu a rozhodného termínu."""
     status = task.computed_status
-    if status == "Zrušeno":
+    if status == TASK_STATUS_CANCELED:
         return ROW_STATE_CANCELED
-    if status == "Ukončeno":
+    if status == TASK_STATUS_CLOSED:
         return ROW_STATE_DONE
-    if task.due_date is not None and task.due_date < today:
+    decisive = task_urgency_due_date(task)
+    if decisive is not None and decisive < today:
         return ROW_STATE_OVERDUE
-    if status == "Splněno - čeká na kontrolu":
+    if status == TASK_STATUS_WAITING_CHECK:
         return ROW_STATE_WAITING
     return ROW_STATE_ACTIVE
 
@@ -111,25 +119,29 @@ def _meeting_row_state(meeting, *, now: datetime) -> str:
 def _from_tasks(*, today: date) -> list[AgendaItem]:
     items: list[AgendaItem] = []
     for task in task_service.get_all_tasks():
-        title = (task.title or "").strip() or "Bez názvu"
         status = task.computed_status or ""
+        if status in (TASK_STATUS_CLOSED, TASK_STATUS_CANCELED):
+            continue
+        title = (task.title or "").strip() or "Bez názvu"
         source = (task_source_short_label(task) or "").strip() or "—"
         person = (task.responsible_person or "").strip()
+        waiting_check = status == TASK_STATUS_WAITING_CHECK
+        decisive = task_urgency_due_date(task)
         items.append(
             AgendaItem(
                 item_type=ITEM_TYPE_TASK,
                 source_id=int(task.id),
-                type_label=TYPE_LABEL_TASK,
+                type_label=TYPE_LABEL_TASK_CONTROL if waiting_check else TYPE_LABEL_TASK,
                 title=title,
                 person=person,
                 status=status,
                 source=source,
                 row_state=_task_row_state(task, today=today),
                 priority=_normalize_priority(getattr(task, "priority", None)),
-                due_date=task.due_date,
+                due_date=decisive,
                 base_title=title,
                 sort_key=_build_sort_key(
-                    task.due_date,
+                    decisive,
                     item_type=ITEM_TYPE_TASK,
                     title=title,
                     source_id=task.id,

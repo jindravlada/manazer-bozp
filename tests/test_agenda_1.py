@@ -38,6 +38,7 @@ with patch.object(Path, "home", return_value=_TMP):
         MODULE_KEY,
         MODULE_NAME,
         STATUS_MODE_ACTIVE,
+        STATUS_MODE_ALL,
         STATUS_MODE_DONE,
         TYPE_FILTER_MEETINGS,
         TYPE_FILTER_TASKS,
@@ -180,10 +181,19 @@ class Agenda1TestCase(unittest.TestCase):
             page.table.item(row, 0).data(Qt.ItemDataRole.UserRole)
             for row in range(page.table.rowCount())
         ]
-        self.assertEqual(
-            {(p.item_type, p.source_id) for p in payloads},
-            {(ITEM_TYPE_TASK, done_task.id)},
-        )
+        done_ids = {(p.item_type, p.source_id) for p in payloads}
+        self.assertNotIn((ITEM_TYPE_TASK, done_task.id), done_ids)
+        self.assertNotIn((ITEM_TYPE_TASK, open_task.id), done_ids)
+
+        page.status_filter.setCurrentText(STATUS_MODE_ALL)
+        page.refresh()
+        payloads = [
+            page.table.item(row, 0).data(Qt.ItemDataRole.UserRole)
+            for row in range(page.table.rowCount())
+        ]
+        all_ids = {(p.item_type, p.source_id) for p in payloads}
+        self.assertIn((ITEM_TYPE_TASK, open_task.id), all_ids)
+        self.assertNotIn((ITEM_TYPE_TASK, done_task.id), all_ids)
 
     def test_open_correct_editor(self) -> None:
         task = task_service.create_task(
