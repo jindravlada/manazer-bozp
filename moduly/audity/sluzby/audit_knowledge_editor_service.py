@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import shutil
+from collections.abc import Sequence
 from copy import deepcopy
 from dataclasses import dataclass
 from datetime import datetime
@@ -62,6 +63,16 @@ class LoadedKnowledgeFile:
 class LoadAllResult:
     files: tuple[LoadedKnowledgeFile, ...]
     errors: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class AssertionQuestionKindChange:
+    """Jedna změna druhu otázky v dávce (AUDIT-METHOD-SAVE-BATCH-4A)."""
+
+    process_id: str
+    section_id: str
+    assertion_id: str
+    question_kind: str
 
 
 class AuditKnowledgeEditorService:
@@ -478,9 +489,35 @@ class AuditKnowledgeEditorService:
 
         return section_id, []
 
+    def _restore_written_user_json_files(
+        self,
+        written: list[tuple[str, Path]],
+        created_paths: list[Path],
+    ) -> list[str]:
+        """Obnoví již zapsané soubory ze ``.bak``. Chyby obnovy nesmí zmizet."""
+        restore_errors: list[str] = []
+        created = set(created_paths)
+        for _relative_path, path in written:
+            try:
+                backup = self._latest_backup(path.name)
+                if backup is not None:
+                    shutil.copy2(backup, path)
+                elif path in created:
+                    path.unlink()
+            except OSError as exc:
+                restore_errors.append(
+                    f"{path.name}: obnovení ze zálohy selhalo ({exc})"
+                )
+        return restore_errors
+
     def _save_user_json_files(
         self,
         files: tuple[tuple[str, dict], ...],
+        *,
+        write_error_template: str = "Zápis metadat procesu selhal ({exc})",
+        post_validation_message: str = (
+            "Uložená metadata procesu neprošla validací, obnovena záloha."
+        ),
     ) -> list[str]:
         resolved: list[tuple[str, Path, dict]] = []
         errors: list[str] = []
@@ -509,34 +546,20 @@ class AuditKnowledgeEditorService:
                     created_paths.append(path)
                 written.append((relative_path, path))
         except OSError as exc:
-            for _relative_path, path in written:
-                backup = self._latest_backup(path.name)
-                if backup is not None:
-                    shutil.copy2(backup, path)
-            for path in created_paths:
-                try:
-                    path.unlink()
-                except OSError:
-                    pass
-            return [f"Zápis metadat procesu selhal ({exc})"]
+            restore_errors = self._restore_written_user_json_files(
+                written, created_paths
+            )
+            return [write_error_template.format(exc=exc)] + restore_errors
 
         post_errors: list[str] = []
-        for relative_path, path in written:
+        for relative_path, _path in written:
             post_errors.extend(self.validate_user_file(relative_path))
 
         if post_errors:
-            for _relative_path, path in written:
-                backup = self._latest_backup(path.name)
-                if backup is not None:
-                    shutil.copy2(backup, path)
-                elif path in created_paths:
-                    try:
-                        path.unlink()
-                    except OSError:
-                        pass
-            return post_errors + [
-                "Uložená metadata procesu neprošla validací, obnovena záloha."
-            ]
+            restore_errors = self._restore_written_user_json_files(
+                written, created_paths
+            )
+            return post_errors + [post_validation_message] + restore_errors
 
         return []
 
@@ -959,7 +982,105 @@ class AuditKnowledgeEditorService:
         assertion_id: str,
         question_kind: str,
     ) -> list[str]:
-        """Zapíše ``question_kind`` (včetně Nezařazeno) — flush pracovní kopie UX1."""
+        """Zapíše ``question_kind`` (včetně Nezařazeno) — jedna změna přes dávku."""
+        return self.set_assertion_question_kinds_batch(
+            (
+                AssertionQuestionKindChange(
+                    process_id=process_id,
+                    section_id=section_id,
+                    assertion_id=assertion_id,
+                    question_kind=question_kind,
+                ),
+            )
+        )
+
+    def set_assertion_question_kinds_batch(
+        self,
+        changes: Sequence[AssertionQuestionKindChange],
+    ) -> list[str]:
+        """Zapíše dávku druhů otázek — každý knowledge JSON nejvýše jednou."""
+        normalized, errors = self._normalize_question_kind_changes(changes)
+        if errors:
+            return errors
+        if not normalized:
+            return []
+
+        self.ensure_user_catalogs()
+
+        processes_by_id = {
+            process.id: process
+            for process in audit_knowledge_service.get_processes(
+                include_inactive=True,
+                ensure=False,
+            )
+        }
+
+        grouped: dict[str, list[AssertionQuestionKindChange]] = {}
+        load_errors: list[str] = []
+        for change in normalized:
+            process = processes_by_id.get(change.process_id)
+            if process is None or not process.soubor_znalosti:
+                load_errors.append(f"Proces '{change.process_id}' nebyl nalezen.")
+                continue
+            relative_path = f"{_CATALOG_DIR}/{process.soubor_znalosti}"
+            grouped.setdefault(relative_path, []).append(change)
+        if load_errors:
+            return load_errors
+
+        originals: dict[str, dict] = {}
+        for relative_path in grouped:
+            path = self.resolve_user_path(relative_path)
+            data, error = self.load_json_safe(path)
+            if error or data is None:
+                load_errors.append(
+                    error or f"Soubor {path.name} nelze načíst."
+                )
+                continue
+            originals[relative_path] = data
+        if load_errors:
+            return load_errors
+
+        working_files: dict[str, dict] = {
+            relative_path: deepcopy(data)
+            for relative_path, data in originals.items()
+        }
+        mutated_paths: list[str] = []
+        apply_errors: list[str] = []
+        for relative_path, file_changes in grouped.items():
+            working = working_files[relative_path]
+            mutated, file_errors = self._apply_question_kind_changes_to_document(
+                working,
+                file_changes,
+            )
+            if file_errors:
+                apply_errors.extend(file_errors)
+            elif mutated:
+                mutated_paths.append(relative_path)
+        if apply_errors:
+            return apply_errors
+        if not mutated_paths:
+            return []
+
+        pre_errors = self._ensure_pre_v2_backup_for_kind_batch()
+        if pre_errors:
+            return pre_errors
+
+        files = tuple(
+            (relative_path, working_files[relative_path])
+            for relative_path in mutated_paths
+        )
+        return self._save_user_json_files(
+            files,
+            write_error_template="Zápis knowledge souboru selhal ({exc})",
+            post_validation_message=(
+                "Uložený knowledge soubor neprošel validací, obnovena záloha."
+            ),
+        )
+
+    def _normalize_question_kind_changes(
+        self,
+        changes: Sequence[AssertionQuestionKindChange],
+    ) -> tuple[list[AssertionQuestionKindChange], list[str]]:
         from moduly.audity.constants import (
             AUDIT_QUESTION_KIND_OPERATION,
             AUDIT_QUESTION_KIND_SYSTEM,
@@ -971,55 +1092,141 @@ class AuditKnowledgeEditorService:
             validate_question_kind,
         )
 
-        target_id = str(assertion_id or "").strip()
-        if not target_id:
-            return ["Chybí identifikátor auditního tvrzení."]
+        errors: list[str] = []
+        by_identity: dict[tuple[str, str, str], AssertionQuestionKindChange] = {}
+        for raw in changes:
+            process_id = str(raw.process_id or "").strip()
+            section_id = str(raw.section_id or "").strip()
+            assertion_id = str(raw.assertion_id or "").strip()
+            if not process_id:
+                errors.append("Chybí identifikátor procesu.")
+                continue
+            if not section_id:
+                errors.append("Chybí identifikátor oblasti ověření.")
+                continue
+            if not assertion_id:
+                errors.append("Chybí identifikátor auditního tvrzení.")
+                continue
+            try:
+                kind = validate_question_kind(
+                    raw.question_kind,
+                    allow_legacy=False,
+                    allow_missing=True,
+                )
+            except AuditQuestionKindError as exc:
+                errors.append(str(exc))
+                continue
+            kind = interpret_question_kind(raw.question_kind)
+            if kind not in (
+                AUDIT_QUESTION_KIND_SYSTEM,
+                AUDIT_QUESTION_KIND_OPERATION,
+                AUDIT_QUESTION_KIND_UNCLASSIFIED,
+            ):
+                errors.append(
+                    f"Neplatný druh otázky pro editor: {raw.question_kind!r}"
+                )
+                continue
+            identity = (process_id, section_id, assertion_id)
+            normalized = AssertionQuestionKindChange(
+                process_id=process_id,
+                section_id=section_id,
+                assertion_id=assertion_id,
+                question_kind=kind,
+            )
+            existing = by_identity.get(identity)
+            if existing is None:
+                by_identity[identity] = normalized
+                continue
+            if existing.question_kind != kind:
+                errors.append(
+                    "Konfliktní dávka: tvrzení "
+                    f"'{process_id}/{section_id}/{assertion_id}' "
+                    "má různé cílové druhy otázky."
+                )
+        if errors:
+            return [], errors
+        return list(by_identity.values()), []
+
+    def _apply_question_kind_changes_to_document(
+        self,
+        working: dict,
+        file_changes: Sequence[AssertionQuestionKindChange],
+    ) -> tuple[bool, list[str]]:
+        from moduly.audity.sluzby.audit_question_kind import interpret_question_kind
+
+        mutated = False
+        errors: list[str] = []
+        by_section: dict[str, list[AssertionQuestionKindChange]] = {}
+        for change in file_changes:
+            by_section.setdefault(change.section_id, []).append(change)
+
+        for section_id, section_changes in by_section.items():
+            process_id = section_changes[0].process_id
+            found = audit_knowledge_service._find_criterion_in_sections(
+                working.get("sekce") or [],
+                section_id,
+            )
+            if found is None:
+                errors.append(
+                    f"Oblast '{section_id}' v procesu '{process_id}' nebyla nalezena."
+                )
+                continue
+            parent_list, index = found
+            section = parent_list[index]
+            before_assertions = list(section.get("auditni_tvrzeni") or [])
+            after_assertions = list(before_assertions)
+            for change in section_changes:
+                matches = [
+                    item_index
+                    for item_index, item in enumerate(after_assertions)
+                    if isinstance(item, dict)
+                    and str(item.get("id") or "").strip() == change.assertion_id
+                ]
+                if not matches:
+                    errors.append(
+                        f"Auditní tvrzení '{change.assertion_id}' nebylo nalezeno."
+                    )
+                    continue
+                if len(matches) > 1:
+                    errors.append(
+                        f"Auditní tvrzení '{change.assertion_id}' v oblasti "
+                        f"'{section_id}' není jednoznačné."
+                    )
+                    continue
+                item_index = matches[0]
+                item = after_assertions[item_index]
+                current = interpret_question_kind(item.get("question_kind"))
+                if current == change.question_kind:
+                    continue
+                after_assertions[item_index] = {
+                    **item,
+                    "question_kind": change.question_kind,
+                }
+                mutated = True
+            if errors:
+                continue
+            removal_errors = self.validate_no_list_items_removed(
+                before_assertions,
+                after_assertions,
+                path=f"{section.get('id')}.auditni_tvrzeni",
+            )
+            if removal_errors:
+                errors.extend(removal_errors)
+                continue
+            section["auditni_tvrzeni"] = after_assertions
+        return mutated, errors
+
+    def _ensure_pre_v2_backup_for_kind_batch(self) -> list[str]:
+        from moduly.audity.sluzby.audit_method_v2_backup_service import (
+            AuditMethodV2BackupError,
+            ensure_pre_v2_backup,
+        )
 
         try:
-            kind = validate_question_kind(
-                question_kind,
-                allow_legacy=False,
-                allow_missing=True,
-            )
-        except AuditQuestionKindError as exc:
+            ensure_pre_v2_backup()
+        except AuditMethodV2BackupError as exc:
             return [str(exc)]
-        kind = interpret_question_kind(question_kind)
-        if kind not in (
-            AUDIT_QUESTION_KIND_SYSTEM,
-            AUDIT_QUESTION_KIND_OPERATION,
-            AUDIT_QUESTION_KIND_UNCLASSIFIED,
-        ):
-            return [f"Neplatný druh otázky pro editor: {question_kind!r}"]
-
-        context, errors = self._resolve_section_context(process_id, section_id)
-        if errors:
-            return errors
-        assert context is not None
-
-        relative_path, data, _parent_list, _index, section = context
-        before_assertions = deepcopy(section.get("auditni_tvrzeni") or [])
-        after_assertions = deepcopy(before_assertions)
-
-        updated = False
-        for index, item in enumerate(after_assertions):
-            if not isinstance(item, dict):
-                continue
-            if str(item.get("id") or "").strip() != target_id:
-                continue
-            after_assertions[index] = {**item, "question_kind": kind}
-            updated = True
-            break
-        if not updated:
-            return [f"Auditní tvrzení '{target_id}' nebylo nalezeno."]
-
-        return self._save_section_assertions(
-            relative_path=relative_path,
-            data=data,
-            section=section,
-            before_assertions=before_assertions,
-            after_assertions=after_assertions,
-            require_pre_v2_backup=True,
-        )
+        return []
 
     def set_assertion_active(
         self,

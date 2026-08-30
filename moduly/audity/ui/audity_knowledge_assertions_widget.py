@@ -22,7 +22,10 @@ from moduly.audity.constants import (
     QUESTION_KIND_EDITOR_LABEL_UNCLASSIFIED,
     QUESTION_KIND_EDITOR_OPTIONS,
 )
-from moduly.audity.sluzby.audit_knowledge_editor_service import audit_knowledge_editor_service
+from moduly.audity.sluzby.audit_knowledge_editor_service import (
+    AssertionQuestionKindChange,
+    audit_knowledge_editor_service,
+)
 from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
 from moduly.audity.sluzby.audit_question_kind import interpret_question_kind
 from moduly.audity.ui.audity_knowledge_assertion_dialog import AudityKnowledgeAssertionDialog
@@ -153,17 +156,23 @@ class AudityKnowledgeAssertionsWidget(QWidget):
     def flush_pending_question_kinds(self) -> list[str]:
         if not self._pending_kinds:
             return []
-        for (process_id, section_id, assertion_id), kind in list(self._pending_kinds.items()):
-            errors = audit_knowledge_editor_service.set_assertion_question_kind(
-                process_id,
-                section_id,
-                assertion_id,
-                kind,
+        changes = [
+            AssertionQuestionKindChange(
+                process_id=process_id,
+                section_id=section_id,
+                assertion_id=assertion_id,
+                question_kind=kind,
             )
-            if errors:
-                return errors
-            self._pending_kinds.pop((process_id, section_id, assertion_id), None)
-            self._disk_kinds[(process_id, section_id, assertion_id)] = kind
+            for (process_id, section_id, assertion_id), kind in self._pending_kinds.items()
+        ]
+        errors = audit_knowledge_editor_service.set_assertion_question_kinds_batch(
+            changes
+        )
+        if errors:
+            return errors
+        for key, kind in self._pending_kinds.items():
+            self._disk_kinds[key] = kind
+        self._pending_kinds.clear()
         if self.has_section():
             self.reload_assertions()
         else:

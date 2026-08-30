@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-08-30 – AUDIT-METHOD-SAVE-BATCH-4A
+
+**Co se povedlo:** Změny druhů otázek se ukládají po souborech, ne po tvrzeních; 100 změn v jednom JSON je jeden zápis.
+
+**Co už bychom dnes udělali jinak:** Pending druhy od začátku sbírat jako dávku, ne jako mapu „ulož po jednom“.
+
+**Co bylo zbytečně složité:** —
+
+**Nové pravidlo:** Opakovaný zápis téhož knowledge JSON v jednom uložení editoru je chyba. Nejdřív dávková persistence, teprve potom LongOperationRunner.
+
+**Aktualizované dokumenty:** —
+
 ### 2026-08-30 – SIMILARITY-LOCATION-DISPLAY-3
 
 **Co se povedlo:** Nad tabulkou jsou názvy porovnávaných oblastí ze snapshotu; v buňkách Umístění zůstane konec cesty (`ElideLeft`) a tooltip drží úplnou původní cestu.
