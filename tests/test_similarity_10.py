@@ -255,7 +255,8 @@ class Similarity10UiTestCase(unittest.TestCase):
             box.addButton.side_effect = [continue_btn, cancel_btn]
             box.clickedButton.return_value = cancel_btn
             dialog._start_analysis()
-            self.assertIsNone(dialog._worker)
+            self.assertFalse(dialog._runner.is_running())
+            self.assertEqual(dialog._flow_state, "idle")
             box.setDefaultButton.assert_called()
 
     def test_results_dialog_unchanged_for_pairs(self) -> None:

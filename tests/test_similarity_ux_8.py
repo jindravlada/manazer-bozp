@@ -12,6 +12,7 @@ _TMP = Path(tempfile.mkdtemp(prefix="similarity-ux-8-"))
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 with patch.object(Path, "home", return_value=_TMP):
+    from PySide6.QtCore import QEventLoop, QTimer
     from PySide6.QtWidgets import QApplication, QDialog
 
     from core.database.database_initializer import initialize_database
@@ -39,6 +40,19 @@ def _app() -> QApplication:
     if app is None:
         app = QApplication([])
     return app
+
+
+def _wait_runner_finished(dialog: SimilarityAnalysisDialog, timeout_ms: int = 3000) -> None:
+    if not dialog._runner.is_running():
+        return
+    loop = QEventLoop()
+    dialog._runner.finished.connect(loop.quit)
+    timer = QTimer()
+    timer.setSingleShot(True)
+    timer.timeout.connect(loop.quit)
+    timer.start(timeout_ms)
+    loop.exec()
+    timer.stop()
 
 
 def _candidate(item_id: str, text: str) -> ControlPointSimilarityCandidate:
@@ -166,8 +180,7 @@ class SimilarityUx8SeparationTestCase(unittest.TestCase):
             return_value=False,
         ):
             dialog._start_analysis()
-            if dialog._worker is not None:
-                dialog._worker.wait(3000)
+            _wait_runner_finished(dialog)
         self.assertFalse(analyze_mock.call_args.kwargs.get("include_checked", True))
 
 

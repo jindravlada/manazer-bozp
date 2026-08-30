@@ -476,6 +476,179 @@ class LongOperationDialogTestCase(unittest.TestCase):
         dialog.deleteLater()
         parent.deleteLater()
 
+    def test_status_text_is_shown_and_cleared(self) -> None:
+        runner = LongOperationRunner()
+        dialog = LongOperationDialog(
+            None,
+            title="Stav",
+            runner=runner,
+            delay_ms=0,
+        )
+        proceed = threading.Event()
+        presented = _SignalLog(dialog.presented)
+        status = _SignalLog(runner.status_changed)
+        finished = _SignalLog(runner.finished)
+
+        def work(ctx: LongOperationContext, _snapshot: object) -> object:
+            ctx.set_phase("Počítám…")
+            ctx.set_progress(1, 2)
+            ctx.set_status("Doplňkový stav")
+            proceed.wait(timeout=5)
+            ctx.set_status("")
+            return None
+
+        try:
+            runner.start(work, None)
+            presented.wait()
+            status.wait()
+            self.assertTrue(dialog._status_label.isVisible())
+            self.assertEqual(dialog._status_label.text(), "Doplňkový stav")
+        finally:
+            proceed.set()
+        finished.wait()
+        self.assertFalse(dialog.isVisible())
+        dialog.deleteLater()
+
+    def test_close_on_success_false_keeps_dialog_until_complete(self) -> None:
+        runner = LongOperationRunner()
+        dialog = LongOperationDialog(
+            None,
+            title="Navazující fáze",
+            runner=runner,
+            delay_ms=0,
+            close_on_success=False,
+        )
+        proceed = threading.Event()
+        presented = _SignalLog(dialog.presented)
+        succeeded = _SignalLog(runner.succeeded)
+        finished = _SignalLog(runner.finished)
+        visibility: list[bool] = []
+
+        def work(ctx: LongOperationContext, _snapshot: object) -> object:
+            ctx.set_phase("Počítám…")
+            ctx.set_progress(10, 10)
+            proceed.wait(timeout=5)
+            return "rows"
+
+        try:
+            runner.start(work, None)
+            presented.wait()
+            self.assertTrue(dialog.isVisible())
+        finally:
+            proceed.set()
+        succeeded.wait()
+        finished.wait()
+        QApplication.sendPostedEvents()
+        self._app.processEvents()
+
+        self.assertTrue(dialog.isVisible())
+        self.assertTrue(dialog.is_followup_active())
+        visibility.append(dialog.isVisible())
+
+        dialog.set_phase("Připravuji výsledky k zobrazení…")
+        dialog.set_status("")
+        dialog.set_progress(20, 100)
+        self.assertEqual(dialog._phase_label.text(), "Připravuji výsledky k zobrazení…")
+        self.assertEqual(dialog._count_label.text(), "20 / 100")
+        self.assertFalse(dialog._status_label.isVisible())
+        self.assertTrue(dialog._cancel_btn.isEnabled())
+
+        dialog.complete()
+        self.assertFalse(dialog.isVisible())
+        self.assertFalse(dialog.is_followup_active())
+        self.assertEqual(visibility, [True])
+        dialog.deleteLater()
+
+    def test_followup_cancel_emits_without_closing_until_complete(self) -> None:
+        runner = LongOperationRunner()
+        dialog = LongOperationDialog(
+            None,
+            title="Follow-up",
+            runner=runner,
+            delay_ms=0,
+            close_on_success=False,
+        )
+        proceed = threading.Event()
+        presented = _SignalLog(dialog.presented)
+        finished = _SignalLog(runner.finished)
+        cancel_log = _SignalLog(dialog.cancel_requested)
+
+        def work(ctx: LongOperationContext, _snapshot: object) -> object:
+            ctx.set_phase("Počítám…")
+            proceed.wait(timeout=5)
+            return "ok"
+
+        try:
+            runner.start(work, None)
+            presented.wait()
+        finally:
+            proceed.set()
+        finished.wait()
+        QApplication.sendPostedEvents()
+        self._app.processEvents()
+
+        self.assertTrue(dialog.isVisible())
+        dialog._cancel_btn.click()
+        self.assertEqual(cancel_log.count, 1)
+        self.assertTrue(dialog.isVisible())
+        dialog.complete()
+        self.assertFalse(dialog.isVisible())
+        dialog.deleteLater()
+
+    def test_close_on_success_false_fast_complete_does_not_flash(self) -> None:
+        runner = LongOperationRunner()
+        dialog = LongOperationDialog(
+            None,
+            title="Rychlé dojetí",
+            runner=runner,
+            delay_ms=300,
+            close_on_success=False,
+        )
+        succeeded = _SignalLog(runner.succeeded)
+        presented = _SignalLog(dialog.presented)
+
+        def work(_ctx: LongOperationContext, snapshot: object) -> object:
+            return snapshot
+
+        runner.start(work, True)
+        succeeded.wait()
+        dialog.complete()
+        QApplication.sendPostedEvents()
+        self._app.processEvents()
+
+        self.assertFalse(dialog.was_presented())
+        self.assertFalse(dialog.isVisible())
+        self.assertEqual(presented.count, 0)
+        self.assertFalse(dialog._show_timer.isActive())
+        dialog.deleteLater()
+
+    def test_default_close_on_success_still_hides_after_succeeded(self) -> None:
+        runner = LongOperationRunner()
+        dialog = LongOperationDialog(
+            None,
+            title="Samostatná operace",
+            runner=runner,
+            delay_ms=0,
+        )
+        proceed = threading.Event()
+        presented = _SignalLog(dialog.presented)
+        finished = _SignalLog(runner.finished)
+
+        def work(ctx: LongOperationContext, _snapshot: object) -> object:
+            ctx.set_phase("Počítám…")
+            proceed.wait(timeout=5)
+            return "done"
+
+        try:
+            runner.start(work, None)
+            presented.wait()
+            self.assertTrue(dialog.isVisible())
+        finally:
+            proceed.set()
+        finished.wait()
+        self.assertFalse(dialog.isVisible())
+        dialog.deleteLater()
+
 
 class ChunkedUiPumpTestCase(unittest.TestCase):
     @classmethod

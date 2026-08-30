@@ -92,6 +92,10 @@ class LongOperationContext:
             int(total),
         )
 
+    def set_status(self, text: str) -> None:
+        """Doplňkový stavový text (obecné, bez doménové logiky)."""
+        self._worker.status_changed.emit(self._generation, str(text))
+
     def is_cancel_requested(self) -> bool:
         """True jen mimo atomickou fázi, pokud uživatel požádal o zrušení."""
         if self._atomic:
@@ -107,6 +111,7 @@ class LongOperationContext:
 class _LongOperationWorker(QObject):
     phase_changed = Signal(int, str, bool, bool)
     progress_changed = Signal(int, int, int)
+    status_changed = Signal(int, str)
     succeeded = Signal(int, object)
     cancelled = Signal(int)
     failed = Signal(int, str)
@@ -158,6 +163,7 @@ class LongOperationRunner(QObject):
     - ``started`` — operace přijata a vlákno spuštěno
     - ``phase_changed(text, indeterminate, atomic)``
     - ``progress_changed(current, total)``
+    - ``status_changed(text)`` — volitelný doplňkový stav
     - ``succeeded(result)`` — doménové dokončení workeru
     - ``cancelled`` — uživatelské zrušení (není chyba)
     - ``failed(message)`` — uživatelský text bez tracebacku
@@ -170,6 +176,7 @@ class LongOperationRunner(QObject):
     started = Signal()
     phase_changed = Signal(str, bool, bool)
     progress_changed = Signal(int, int)
+    status_changed = Signal(str)
     succeeded = Signal(object)
     cancelled = Signal()
     failed = Signal(str)
@@ -241,6 +248,10 @@ class LongOperationRunner(QObject):
             self._on_worker_progress,
             Qt.ConnectionType.QueuedConnection,
         )
+        worker.status_changed.connect(
+            self._on_worker_status,
+            Qt.ConnectionType.QueuedConnection,
+        )
         worker.succeeded.connect(
             self._on_worker_succeeded,
             Qt.ConnectionType.QueuedConnection,
@@ -301,6 +312,11 @@ class LongOperationRunner(QObject):
         if generation != self._generation or self._outcome_emitted:
             return
         self.progress_changed.emit(int(current), int(total))
+
+    def _on_worker_status(self, generation: int, text: str) -> None:
+        if generation != self._generation or self._outcome_emitted:
+            return
+        self.status_changed.emit(str(text))
 
     def _on_worker_succeeded(self, generation: int, result: object) -> None:
         self._emit_outcome(generation, "succeeded", result)

@@ -10,6 +10,10 @@ Zavření a Escape:
 
 Nepoužívá ``exec()``: zpožděné zobrazení je neslučitelné s okamžitým
 modálním ``exec()``. Modalita je ``WindowModal`` vůči rodiči.
+
+Výchozí chování po ``succeeded`` dialog zavře. Pro navazující UI fázi
+(např. ``ChunkedUiPump``) nastavte ``close_on_success=False`` a po dokončení
+fáze zavolejte ``complete()``. Zrušení a chyba dialog vždy uzavřou.
 """
 
 from __future__ import annotations
@@ -36,6 +40,7 @@ class LongOperationDialog(QDialog):
     """Parent-modální průběh napojený na ``LongOperationRunner``."""
 
     presented = Signal()
+    cancel_requested = Signal()
 
     def __init__(
         self,
@@ -45,14 +50,17 @@ class LongOperationDialog(QDialog):
         runner: LongOperationRunner,
         delay_ms: int = DEFAULT_DELAY_MS,
         allow_cancel: bool = True,
+        close_on_success: bool = True,
     ) -> None:
         super().__init__(parent)
         self._runner = runner
         self._delay_ms = max(0, int(delay_ms))
         self._allow_cancel = bool(allow_cancel)
+        self._close_on_success = bool(close_on_success)
         self._settled = False
         self._presented = False
         self._atomic = False
+        self._followup_active = False
         self._show_timer = QTimer(self)
         self._show_timer.setSingleShot(True)
         self._show_timer.timeout.connect(self._present)
@@ -63,9 +71,9 @@ class LongOperationDialog(QDialog):
         configure_resizable_form_dialog(
             self,
             width=520,
-            height=200,
+            height=220,
             min_width=420,
-            min_height=160,
+            min_height=180,
         )
 
         layout = QVBoxLayout(self)
@@ -82,6 +90,11 @@ class LongOperationDialog(QDialog):
         self._count_label.setWordWrap(True)
         layout.addWidget(self._count_label)
 
+        self._status_label = QLabel("")
+        self._status_label.setWordWrap(True)
+        self._status_label.setVisible(False)
+        layout.addWidget(self._status_label)
+
         buttons = QHBoxLayout()
         buttons.addStretch()
         self._cancel_btn = QPushButton("Zrušit")
@@ -93,10 +106,11 @@ class LongOperationDialog(QDialog):
         runner.started.connect(self._on_started)
         runner.phase_changed.connect(self._on_phase_changed)
         runner.progress_changed.connect(self._on_progress_changed)
-        runner.succeeded.connect(self._on_settled)
-        runner.cancelled.connect(self._on_settled)
-        runner.failed.connect(self._on_settled)
-        runner.finished.connect(self._on_settled)
+        runner.status_changed.connect(self._on_status_changed)
+        runner.succeeded.connect(self._on_succeeded)
+        runner.cancelled.connect(self._on_terminal_outcome)
+        runner.failed.connect(self._on_terminal_outcome)
+        runner.finished.connect(self._on_finished)
 
         if runner.is_running():
             self._on_started()
@@ -108,14 +122,55 @@ class LongOperationDialog(QDialog):
         """True, pokud se dialog skutečně ukázal (pro testy i diagnostiku)."""
         return self._presented
 
+    def is_followup_active(self) -> bool:
+        return self._followup_active and not self._settled
+
+    def set_phase(
+        self,
+        text: str,
+        *,
+        indeterminate: bool = False,
+        atomic: bool = False,
+    ) -> None:
+        """GUI-vláknová změna fáze (navazující UI práce po workeru)."""
+        self._on_phase_changed(str(text), bool(indeterminate), bool(atomic))
+
+    def set_progress(self, current: int, total: int) -> None:
+        """GUI-vláknový průběh navazující fáze."""
+        self._on_progress_changed(int(current), int(total))
+
+    def set_status(self, text: str) -> None:
+        """Doplňkový stavový řádek. Prázdný text řádek skryje."""
+        self._on_status_changed(str(text))
+
+    def begin_followup(self) -> None:
+        """Označí, že po workeru pokračuje UI fáze a dialog má zůstat.
+
+        Volitelné — při ``close_on_success=False`` se follow-up aktivuje
+        už na ``succeeded``. Metoda slouží k dřívějšímu zobrazení, pokud
+        worker skončil dřív, než uplynula prodleva.
+        """
+        if self._settled:
+            return
+        self._followup_active = True
+        self._update_cancel_enabled()
+        self._present_if_due()
+
+    def complete(self) -> None:
+        """Definitivně ukončí dialog včetně navazující UI fáze."""
+        self._followup_active = False
+        self._settle()
+
     def _on_started(self) -> None:
         self._settled = False
         self._presented = False
         self._atomic = False
+        self._followup_active = False
         self._phase_label.setText("Připravuji…")
         self._progress_bar.setRange(0, 0)
         self._progress_bar.setValue(0)
         self._count_label.setText("")
+        self._on_status_changed("")
         self._update_cancel_enabled()
         self._show_timer.stop()
         self._show_timer.start(self._delay_ms)
@@ -123,11 +178,17 @@ class LongOperationDialog(QDialog):
     def _present(self) -> None:
         if self._settled or self._presented:
             return
-        if not self._runner.is_running():
+        if not self._runner.is_running() and not self._followup_active:
             return
         self._presented = True
         self.show()
         self.presented.emit()
+
+    def _present_if_due(self) -> None:
+        if self._settled or self._presented:
+            return
+        if self._delay_ms == 0 or not self._show_timer.isActive():
+            self._present()
 
     def _on_phase_changed(self, text: str, indeterminate: bool, atomic: bool) -> None:
         if self._settled:
@@ -150,11 +211,21 @@ class LongOperationDialog(QDialog):
         self._progress_bar.setValue(min(max(current, 0), total))
         self._count_label.setText(f"{current} / {total}")
 
+    def _on_status_changed(self, text: str) -> None:
+        if self._settled:
+            return
+        value = str(text or "").strip()
+        self._status_label.setText(value)
+        self._status_label.setVisible(bool(value))
+
+    def _operation_busy(self) -> bool:
+        return self._runner.is_running() or self._followup_active
+
     def _update_cancel_enabled(self) -> None:
         can_cancel = (
             self._allow_cancel
             and not self._atomic
-            and self._runner.is_running()
+            and self._operation_busy()
             and not self._settled
         )
         self._cancel_btn.setEnabled(can_cancel)
@@ -163,14 +234,36 @@ class LongOperationDialog(QDialog):
         if self._atomic or not self._allow_cancel:
             return
         self._cancel_btn.setEnabled(False)
-        self._runner.request_cancel()
+        if self._runner.is_running():
+            self._runner.request_cancel()
+        self.cancel_requested.emit()
 
-    def _on_settled(self, *_args) -> None:
+    def _on_succeeded(self, *_args) -> None:
+        if self._settled:
+            return
+        if self._close_on_success:
+            self._settle()
+            return
+        self._followup_active = True
+        self._atomic = False
+        self._update_cancel_enabled()
+        self._present_if_due()
+
+    def _on_terminal_outcome(self, *_args) -> None:
+        self._followup_active = False
         self._settle()
+
+    def _on_finished(self, *_args) -> None:
+        if self._close_on_success or self._settled:
+            if not self._settled:
+                self._settle()
+            return
+        self._update_cancel_enabled()
 
     def _settle(self) -> None:
         self._settled = True
         self._atomic = False
+        self._followup_active = False
         self._show_timer.stop()
         self._cancel_btn.setEnabled(False)
         if self._presented and self.isVisible():
@@ -183,8 +276,8 @@ class LongOperationDialog(QDialog):
         if self._atomic:
             event.ignore()
             return
-        if self._allow_cancel and self._runner.is_running():
-            self._runner.request_cancel()
+        if self._allow_cancel and self._operation_busy():
+            self._on_cancel_clicked()
             event.ignore()
             return
         event.ignore()
@@ -195,8 +288,8 @@ class LongOperationDialog(QDialog):
             return
         if self._atomic:
             return
-        if self._allow_cancel and self._runner.is_running():
-            self._runner.request_cancel()
+        if self._allow_cancel and self._operation_busy():
+            self._on_cancel_clicked()
             return
 
     def keyPressEvent(self, event) -> None:  # noqa: N802

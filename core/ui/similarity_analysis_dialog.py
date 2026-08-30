@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import Qt, QThread, QTimer, Signal
+import logging
+from dataclasses import dataclass
+
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
@@ -12,7 +15,6 @@ from PySide6.QtWidgets import (
     QHeaderView,
     QLabel,
     QMessageBox,
-    QProgressBar,
     QPushButton,
     QStackedWidget,
     QTableWidget,
@@ -26,15 +28,8 @@ from core.shared.sluzby.similarity_checked_pair_service import (
     similarity_checked_pair_service,
 )
 from core.shared.sluzby.similarity_domain import (
-    SCOPE_AUDIT,
-    SCOPE_LEGAL,
-    SCOPE_MEASURES,
-    SCOPE_PBP,
     SCOPE_PROVERKY,
-    SCOPE_RISKS,
     SIMILARITY_DOMAINS,
-    SIMILARITY_SCOPE_DEFS,
-    domain_label,
     estimate_comparison_count,
     estimate_duration_label,
     requires_large_analysis_confirmation,
@@ -51,11 +46,22 @@ from core.shared.sluzby.similarity_item_opener import (
     open_similarity_item,
 )
 from core.ui.similarity_checked_pairs_dialog import SimilarityCheckedPairsDialog
-from core.widgets.dialog_utils import exec_maximized, prepare_work_dialog_maximized
-from core.widgets.table_utils import refresh_elided_cell_tooltips
+from core.widgets.chunked_ui_pump import ChunkedUiPump
+from core.widgets.dialog_utils import prepare_work_dialog_maximized
+from core.widgets.long_operation_dialog import (
+    DEFAULT_DELAY_MS,
+    LongOperationDialog,
+)
+from core.widgets.long_operation_runner import (
+    LongOperationContext,
+    LongOperationRunner,
+)
+from core.widgets.table_utils import apply_cell_tooltip, refresh_elided_cell_tooltips
 from moduly.proverky.sluzby.control_point_similarity_analysis import (
     ControlPointSimilarityPair,
 )
+
+logger = logging.getLogger(__name__)
 
 # Sloupce výsledkové tabulky:
 # výběr uživatele | podobnost | stav z DB | texty…
@@ -75,37 +81,56 @@ _RESULT_TEXT_COLUMNS = (
     _COL_RIGHT_LOCATION,
 )
 
+PHASE_ANALYZING = "Analyzuji podobnosti…"
+PHASE_PREPARING_RESULTS = "Připravuji výsledky k zobrazení…"
+PREPARING_CANCELLED_MESSAGE = "Příprava výsledků byla zrušena."
+RESULT_TABLE_BATCH_SIZE = 50
 
-class _DomainAnalysisWorker(QThread):
-    progress = Signal(int, int, int)  # current, total, found
-    finished_ok = Signal(object, bool)  # pairs, cancelled
-    failed = Signal(str)
+FLOW_IDLE = "idle"
+FLOW_ANALYZING = "analyzing"
+FLOW_PREPARING_RESULTS = "preparing_results"
+FLOW_RESULTS_READY = "results_ready"
+FLOW_CANCELLED = "cancelled"
+FLOW_FAILED = "failed"
 
-    def __init__(self, scope_a: str, scope_b: str, parent=None) -> None:
-        super().__init__(parent)
-        self._cancel_requested = False
-        self._scope_a = scope_a
-        self._scope_b = scope_b
 
-    def request_cancel(self) -> None:
-        self._cancel_requested = True
+@dataclass(frozen=True)
+class SimilarityAnalysisSnapshot:
+    """Čistý vstup workeru — bez dialogu a bez Qt widgetů."""
 
-    def run(self) -> None:
-        try:
-            pairs, cancelled = analyze_domain_similarities(
-                self._scope_a,
-                self._scope_b,
-                include_checked=False,
-                progress_callback=self._on_progress,
-                should_cancel=lambda: self._cancel_requested,
-            )
-        except Exception as exc:  # noqa: BLE001
-            self.failed.emit(str(exc))
-            return
-        self.finished_ok.emit(pairs, cancelled)
+    scope_a: str
+    scope_b: str
+    include_checked: bool = False
 
-    def _on_progress(self, current: int, total: int, found: int) -> None:
-        self.progress.emit(current, total, found)
+
+@dataclass
+class SimilarityAnalysisWorkResult:
+    pairs: list
+    cancelled: bool
+
+
+def run_similarity_analysis(
+    ctx: LongOperationContext,
+    snapshot: SimilarityAnalysisSnapshot,
+) -> SimilarityAnalysisWorkResult:
+    """Výpočet podobností mimo GUI vlákno. Sort a mapování DTO zůstává ve službě."""
+    ctx.set_phase(PHASE_ANALYZING)
+
+    def on_progress(current: int, total: int, found: int) -> None:
+        ctx.set_progress(current, total)
+        ctx.set_status(f"Nalezeno kandidátů: {found}")
+
+    pairs, cancelled = analyze_domain_similarities(
+        snapshot.scope_a,
+        snapshot.scope_b,
+        include_checked=snapshot.include_checked,
+        progress_callback=on_progress,
+        should_cancel=ctx.is_cancel_requested,
+    )
+    # 100 % porovnávací smyčky ≠ hotové zobrazení.
+    ctx.set_phase(PHASE_PREPARING_RESULTS, indeterminate=True)
+    ctx.set_status("")
+    return SimilarityAnalysisWorkResult(pairs=list(pairs), cancelled=bool(cancelled))
 
 
 class SimilarityAnalysisDialog(QDialog):
@@ -122,27 +147,44 @@ class SimilarityAnalysisDialog(QDialog):
         self.setModal(True)
         self.resize(980, 660)
 
-        self._worker: _DomainAnalysisWorker | None = None
         self._pairs: list[SimilarityAnalysisPair | ControlPointSimilarityPair] = []
         self._cancelled = False
         self._closing = False
+        self._close_when_idle = False
         self._count_a = 0
         self._count_b = 0
         self._comparison_estimate = 0
+        self._flow_state = FLOW_IDLE
+        self._fill_row = 0
+        self._suspend_resize_tooltips = False
+        self._progress_delay_ms = DEFAULT_DELAY_MS
+        self._result_batch_size = RESULT_TABLE_BATCH_SIZE
+        self._progress_dialog: LongOperationDialog | None = None
+        self._header_resize_connected = False
+
+        self._runner = LongOperationRunner(self)
+        self._pump = ChunkedUiPump(self)
+        self._runner.succeeded.connect(self._on_runner_succeeded)
+        self._runner.cancelled.connect(self._on_runner_cancelled)
+        self._runner.failed.connect(self._on_runner_failed)
+        self._runner.finished.connect(self._on_runner_finished)
+        self._pump.progress.connect(self._on_pump_progress)
+        self._pump.succeeded.connect(self._on_pump_succeeded)
+        self._pump.cancelled.connect(self._on_pump_cancelled)
+        self._pump.failed.connect(self._on_pump_failed)
 
         root = QVBoxLayout(self)
         self._stack = QStackedWidget()
         root.addWidget(self._stack, 1)
 
         self._setup_page = self._build_setup_page()
-        self._progress_page = self._build_progress_page()
         self._results_page = self._build_results_page()
         self._stack.addWidget(self._setup_page)
-        self._stack.addWidget(self._progress_page)
         self._stack.addWidget(self._results_page)
 
         self._stack.setCurrentWidget(self._setup_page)
         self._refresh_scope_estimates()
+        self._apply_controls_for_state()
 
         if auto_start:
             QTimer.singleShot(0, self._start_analysis)
@@ -250,36 +292,6 @@ class SimilarityAnalysisDialog(QDialog):
             f"Orientační doba:\n{duration}"
         )
 
-    def _build_progress_page(self) -> QWidget:
-        page = QWidget()
-        layout = QVBoxLayout(page)
-
-        self._progress_scope_label = QLabel("Kontrolní otázky")
-        self._progress_scope_label.setObjectName("SectionTitle")
-        layout.addWidget(self._progress_scope_label)
-
-        self._progress_bar = QProgressBar()
-        self._progress_bar.setMinimum(0)
-        self._progress_bar.setMaximum(100)
-        self._progress_bar.setValue(0)
-        layout.addWidget(self._progress_bar)
-
-        self._progress_count_label = QLabel("0 / 0")
-        layout.addWidget(self._progress_count_label)
-
-        self._progress_found_label = QLabel("Nalezeno kandidátů: 0")
-        layout.addWidget(self._progress_found_label)
-
-        layout.addStretch()
-
-        buttons = QDialogButtonBox()
-        self._cancel_btn = buttons.addButton(
-            "Zrušit analýzu", QDialogButtonBox.ButtonRole.RejectRole
-        )
-        self._cancel_btn.clicked.connect(self._cancel_analysis)
-        layout.addWidget(buttons)
-        return page
-
     def _build_results_page(self) -> QWidget:
         page = QWidget()
         layout = QVBoxLayout(page)
@@ -338,7 +350,6 @@ class SimilarityAnalysisDialog(QDialog):
         header.setSectionResizeMode(
             _COL_RIGHT_LOCATION, QHeaderView.ResizeMode.Stretch
         )
-        header.sectionResized.connect(self._refresh_result_tooltips)
         self._results_table.itemChanged.connect(self._on_result_item_changed)
         layout.addWidget(self._results_table, 1)
 
@@ -373,7 +384,7 @@ class SimilarityAnalysisDialog(QDialog):
         self._results_table.itemSelectionChanged.connect(self._update_action_buttons)
 
         buttons = QDialogButtonBox()
-        again_btn = buttons.addButton(
+        self._again_btn = buttons.addButton(
             "Nová analýza", QDialogButtonBox.ButtonRole.ActionRole
         )
         self._manage_checked_results_btn = buttons.addButton(
@@ -383,7 +394,7 @@ class SimilarityAnalysisDialog(QDialog):
         close_btn = buttons.addButton(
             "Zavřít", QDialogButtonBox.ButtonRole.RejectRole
         )
-        again_btn.clicked.connect(self._back_to_setup)
+        self._again_btn.clicked.connect(self._back_to_setup)
         self._manage_checked_results_btn.clicked.connect(
             self._open_checked_pairs_manager
         )
@@ -391,7 +402,63 @@ class SimilarityAnalysisDialog(QDialog):
         layout.addWidget(buttons)
         return page
 
+    def _is_busy(self) -> bool:
+        return self._flow_state in {FLOW_ANALYZING, FLOW_PREPARING_RESULTS}
+
+    def _results_are_ready(self) -> bool:
+        return self._flow_state == FLOW_RESULTS_READY
+
+    def _apply_controls_for_state(self) -> None:
+        busy = self._is_busy()
+        ready = self._results_are_ready()
+        self._start_btn.setEnabled(not busy)
+        self._scope_a_combo.setEnabled(not busy)
+        self._scope_b_combo.setEnabled(not busy)
+        self._manage_checked_setup_btn.setEnabled(not busy)
+        self._again_btn.setEnabled(not busy)
+        self._manage_checked_results_btn.setEnabled(not busy)
+        if not ready:
+            self._open_first_btn.setEnabled(False)
+            self._open_second_btn.setEnabled(False)
+            self._open_both_btn.setEnabled(False)
+            self._mark_checked_btn.setEnabled(False)
+            self._bulk_mark_btn.setEnabled(False)
+            self._results_table.setEnabled(not busy)
+        else:
+            self._results_table.setEnabled(True)
+            self._update_action_buttons()
+
+    def _set_flow_state(self, state: str) -> None:
+        self._flow_state = state
+        self._apply_controls_for_state()
+
+    def _ensure_progress_dialog(self) -> LongOperationDialog:
+        dialog = self._progress_dialog
+        if dialog is not None:
+            return dialog
+        dialog = LongOperationDialog(
+            self,
+            title=self.windowTitle(),
+            runner=self._runner,
+            delay_ms=self._progress_delay_ms,
+            close_on_success=False,
+        )
+        dialog.cancel_requested.connect(self._on_progress_cancel_requested)
+        self._progress_dialog = dialog
+        return dialog
+
+    def _complete_progress_dialog(self) -> None:
+        dialog = self._progress_dialog
+        if dialog is None:
+            return
+        dialog.complete()
+
     def _start_analysis(self) -> None:
+        if self._is_busy():
+            return
+        if self._runner.is_running() or self._pump.is_running():
+            return
+
         scope_a = self._selected_scope_a()
         scope_b = self._selected_scope_b()
         self._refresh_scope_estimates()
@@ -417,129 +484,307 @@ class SimilarityAnalysisDialog(QDialog):
 
         self._pairs = []
         self._cancelled = False
+        self._close_when_idle = False
+        self._fill_row = 0
+        self._set_flow_state(FLOW_ANALYZING)
+        self._stack.setCurrentWidget(self._setup_page)
 
-        label_a = domain_label(scope_a)
-        label_b = domain_label(scope_b)
-        if scope_a == scope_b:
-            self._progress_scope_label.setText(label_a)
-        else:
-            self._progress_scope_label.setText(f"{label_a} ↔ {label_b}")
-
-        self._progress_bar.setValue(0)
-        self._progress_count_label.setText("0 / 0")
-        self._progress_found_label.setText("Nalezeno kandidátů: 0")
-        self._cancel_btn.setEnabled(True)
-        self._stack.setCurrentWidget(self._progress_page)
-
-        self._worker = _DomainAnalysisWorker(scope_a, scope_b, parent=self)
-        self._worker.progress.connect(self._on_progress)
-        self._worker.finished_ok.connect(self._on_finished)
-        self._worker.failed.connect(self._on_failed)
-        self._worker.start()
-
-    def _cancel_analysis(self) -> None:
-        if self._worker is not None and self._worker.isRunning():
-            self._cancel_btn.setEnabled(False)
-            self._progress_found_label.setText(
-                self._progress_found_label.text() + " — ruším…"
+        snapshot = SimilarityAnalysisSnapshot(
+            scope_a=scope_a,
+            scope_b=scope_b,
+            include_checked=False,
+        )
+        self._ensure_progress_dialog()
+        started = self._runner.start(run_similarity_analysis, snapshot)
+        if not started:
+            self._set_flow_state(FLOW_IDLE)
+            QMessageBox.warning(
+                self,
+                self.windowTitle(),
+                "Analýzu se nepodařilo spustit, protože jiná operace ještě běží.",
             )
-            self._worker.request_cancel()
 
-    def _on_progress(self, current: int, total: int, found: int) -> None:
-        self._progress_bar.setMaximum(max(total, 1))
-        self._progress_bar.setValue(current)
-        self._progress_count_label.setText(f"{current} / {total}")
-        self._progress_found_label.setText(f"Nalezeno kandidátů: {found}")
+    def _on_progress_cancel_requested(self) -> None:
+        if self._flow_state == FLOW_ANALYZING:
+            self._runner.request_cancel()
+            return
+        if self._flow_state == FLOW_PREPARING_RESULTS:
+            self._pump.request_cancel()
 
-    def _on_finished(self, pairs: object, cancelled: bool) -> None:
-        self._pairs = list(pairs or [])
-        self._cancelled = bool(cancelled)
-        self._worker = None
-        self._show_results()
+    def _on_runner_succeeded(self, result: object) -> None:
+        if self._flow_state != FLOW_ANALYZING:
+            return
+        work = result if isinstance(result, SimilarityAnalysisWorkResult) else None
+        pairs = list(work.pairs) if work is not None else list(result or [])
+        cancelled = bool(work.cancelled) if work is not None else False
+        self._pairs = pairs
+        self._cancelled = cancelled
 
-    def _on_failed(self, message: str) -> None:
-        self._worker = None
+        if self._close_when_idle:
+            self._discard_partial_table()
+            self._complete_progress_dialog()
+            self._set_flow_state(FLOW_CANCELLED)
+            self._finish_close()
+            return
+
+        self._begin_prepare_results(pairs)
+
+    def _on_runner_cancelled(self) -> None:
+        if self._flow_state != FLOW_ANALYZING:
+            return
+        self._complete_progress_dialog()
+        if self._close_when_idle:
+            self._set_flow_state(FLOW_CANCELLED)
+            self._finish_close()
+            return
+        self._cancelled = True
+        self._pairs = []
+        self._set_flow_state(FLOW_CANCELLED)
+        self._show_cancelled_without_results()
+
+    def _on_runner_failed(self, message: str) -> None:
+        logger.error("Analýza podobností selhala: %s", message)
+        self._complete_progress_dialog()
+        self._discard_partial_table()
+        self._set_flow_state(FLOW_FAILED)
+        if self._close_when_idle:
+            self._finish_close()
+            return
         QMessageBox.critical(
             self,
             self.windowTitle(),
             f"Analýza selhala.\n\n{message}",
         )
         self._stack.setCurrentWidget(self._setup_page)
+        self._set_flow_state(FLOW_IDLE)
 
-    def _open_checked_pairs_manager(self) -> None:
-        SimilarityCheckedPairsDialog(self).exec()
+    def _on_runner_finished(self) -> None:
+        self._apply_controls_for_state()
 
-    def _show_results(self) -> None:
-        status = "Analýza byla zrušena." if self._cancelled else "Analýza dokončena."
-        self._results_summary.setText(status)
+    def _visible_result_pairs(self, pairs: list) -> list:
+        return [pair for pair in pairs if not pair.checked]
+
+    def _begin_prepare_results(self, pairs: list) -> None:
+        visible = self._visible_result_pairs(pairs)
+        self._pairs = visible
+        self._set_flow_state(FLOW_PREPARING_RESULTS)
+        self._prepare_results_table_shell(visible)
+
+        progress = self._progress_dialog
+        if progress is not None:
+            progress.begin_followup()
+            progress.set_phase(PHASE_PREPARING_RESULTS)
+            progress.set_status("")
+            progress.set_progress(0, len(visible) if visible else 0)
+
+        if not visible:
+            self._on_pump_succeeded()
+            return
+
+        self._fill_row = 0
+        self._pump.start(
+            visible,
+            self._consume_result_batch,
+            batch_size=self._result_batch_size,
+        )
+
+    def _prepare_results_table_shell(self, pairs: list) -> None:
+        header = self._results_table.horizontalHeader()
+        if self._header_resize_connected:
+            try:
+                header.sectionResized.disconnect(self._on_result_section_resized)
+            except (TypeError, RuntimeError):
+                pass
+            self._header_resize_connected = False
+
+        self._suspend_resize_tooltips = True
+        self._results_table.blockSignals(True)
+        self._results_table.setUpdatesEnabled(False)
+        self._results_table.setRowCount(0)
+        self._results_table.setRowCount(len(pairs))
+        self._results_table.clearSelection()
+        self._fill_row = 0
+
+    def _consume_result_batch(self, batch) -> None:
+        for pair in batch:
+            self._fill_result_row(self._fill_row, pair)
+            self._fill_row += 1
+
+    def _fill_result_row(self, row: int, pair) -> None:
+        select_item = QTableWidgetItem()
+        select_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+        select_item.setCheckState(Qt.CheckState.Unchecked)
+        select_item.setFlags(
+            Qt.ItemFlag.ItemIsUserCheckable
+            | Qt.ItemFlag.ItemIsEnabled
+            | Qt.ItemFlag.ItemIsSelectable
+        )
+        select_item.setToolTip(
+            "Tuto dvojici chci nyní hromadně označit jako zkontrolovanou."
+        )
+
+        similarity = f"{pair.score_percent} % — {pair.match_label}"
+        status_item = QTableWidgetItem("")
+        status_item.setData(Qt.ItemDataRole.UserRole, pair)
+
+        left_text = QTableWidgetItem(pair.left.text)
+        left_location = QTableWidgetItem(pair.left.location_label)
+        right_text = QTableWidgetItem(pair.right.text)
+        right_location = QTableWidgetItem(pair.right.location_label)
+
+        self._results_table.setItem(row, _COL_SELECT, select_item)
+        self._results_table.setItem(row, _COL_SIMILARITY, QTableWidgetItem(similarity))
+        self._results_table.setItem(row, _COL_STATUS, status_item)
+        self._results_table.setItem(row, _COL_LEFT_TEXT, left_text)
+        self._results_table.setItem(row, _COL_LEFT_LOCATION, left_location)
+        self._results_table.setItem(row, _COL_RIGHT_TEXT, right_text)
+        self._results_table.setItem(row, _COL_RIGHT_LOCATION, right_location)
+
+        apply_cell_tooltip(left_text, pair.left.text)
+        apply_cell_tooltip(left_location, pair.left.location_label)
+        apply_cell_tooltip(right_text, pair.right.text)
+        apply_cell_tooltip(right_location, pair.right.location_label)
+
+    def _restore_results_table_after_fill(self) -> None:
+        self._results_table.blockSignals(False)
+        self._results_table.setUpdatesEnabled(True)
+        self._suspend_resize_tooltips = False
+        header = self._results_table.horizontalHeader()
+        if not self._header_resize_connected:
+            header.sectionResized.connect(self._on_result_section_resized)
+            self._header_resize_connected = True
+
+    def _on_result_section_resized(self, *_args) -> None:
+        if self._suspend_resize_tooltips:
+            return
+        if self._flow_state != FLOW_RESULTS_READY:
+            return
+        # Během počátečního plnění se nespouští. Po hotových výsledcích
+        # nespouštíme celotabulkový průchod — tooltipy jsou v dávkách.
+
+    def _on_pump_progress(self, processed: int, total: int) -> None:
+        if self._flow_state != FLOW_PREPARING_RESULTS:
+            return
+        progress = self._progress_dialog
+        if progress is None:
+            return
+        progress.set_progress(processed, total)
+
+    def _on_pump_succeeded(self) -> None:
+        if self._flow_state != FLOW_PREPARING_RESULTS:
+            return
+        self._restore_results_table_after_fill()
+        if self._close_when_idle:
+            self._complete_progress_dialog()
+            self._set_flow_state(FLOW_CANCELLED)
+            self._finish_close()
+            return
+        self._complete_progress_dialog()
+        self._present_results_page()
+        self._set_flow_state(FLOW_RESULTS_READY)
+
+    def _on_pump_cancelled(self) -> None:
+        if self._flow_state != FLOW_PREPARING_RESULTS:
+            return
+        self._discard_partial_table()
+        self._complete_progress_dialog()
+        self._cancelled = True
+        self._set_flow_state(FLOW_CANCELLED)
+        if self._close_when_idle:
+            self._finish_close()
+            return
+        self._show_preparing_cancelled()
+
+    def _on_pump_failed(self, message: str) -> None:
+        logger.error("Příprava výsledků podobností selhala: %s", message)
+        self._discard_partial_table()
+        self._complete_progress_dialog()
+        self._set_flow_state(FLOW_FAILED)
+        if self._close_when_idle:
+            self._finish_close()
+            return
+        QMessageBox.critical(
+            self,
+            self.windowTitle(),
+            f"Příprava výsledků selhala.\n\n{message}",
+        )
+        self._stack.setCurrentWidget(self._setup_page)
+        self._set_flow_state(FLOW_IDLE)
+
+    def _discard_partial_table(self) -> None:
         self._results_table.blockSignals(True)
         self._results_table.setRowCount(0)
+        self._results_table.blockSignals(False)
+        self._results_table.setUpdatesEnabled(True)
+        self._suspend_resize_tooltips = False
+        self._pairs = []
+        self._fill_row = 0
 
-        # Analýza zobrazuje pouze nevyřešené dvojice (SIMILARITY-UX-8).
-        pairs = [pair for pair in self._pairs if not pair.checked]
-        self._pairs = pairs
+    def _show_preparing_cancelled(self) -> None:
+        self._pairs = []
+        self._results_summary.setText(PREPARING_CANCELLED_MESSAGE)
+        self._results_counts.setText(
+            "Celkem nalezeno: 0\nVybráno: 0\nZbývá k posouzení: 0"
+        )
+        self._empty_label.setText(PREPARING_CANCELLED_MESSAGE)
+        self._empty_label.setVisible(True)
+        self._results_table.setVisible(False)
+        self._bulk_hint.setVisible(False)
+        self._bulk_mark_btn.setVisible(False)
+        self._stack.setCurrentWidget(self._results_page)
+        self._apply_controls_for_state()
 
+    def _show_cancelled_without_results(self) -> None:
+        self._show_preparing_cancelled()
+        self._results_summary.setText("Analýza byla zrušena.")
+        self._empty_label.setText("Analýza byla zrušena.")
+
+    def _present_results_page(self) -> None:
+        status = "Analýza byla zrušena." if self._cancelled else "Analýza dokončena."
+        self._results_summary.setText(status)
+        pairs = self._pairs
         has_pairs = bool(pairs)
+        self._empty_label.setText("Nebyly nalezeny žádné podobné záznamy.")
         self._empty_label.setVisible(not has_pairs)
         self._results_table.setVisible(has_pairs)
         self._bulk_hint.setVisible(has_pairs)
         self._bulk_mark_btn.setVisible(has_pairs)
-
-        if has_pairs:
-            self._results_table.setRowCount(len(pairs))
-            for row, pair in enumerate(pairs):
-                # Checkbox = pouze aktuální výběr uživatele (nikdy stav z DB).
-                select_item = QTableWidgetItem()
-                select_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-                select_item.setCheckState(Qt.CheckState.Unchecked)
-                select_item.setFlags(
-                    Qt.ItemFlag.ItemIsUserCheckable
-                    | Qt.ItemFlag.ItemIsEnabled
-                    | Qt.ItemFlag.ItemIsSelectable
-                )
-                select_item.setToolTip(
-                    "Tuto dvojici chci nyní hromadně označit jako zkontrolovanou."
-                )
-
-                similarity = f"{pair.score_percent} % — {pair.match_label}"
-                status_item = QTableWidgetItem("")
-                status_item.setData(Qt.ItemDataRole.UserRole, pair)
-
-                self._results_table.setItem(row, _COL_SELECT, select_item)
-                self._results_table.setItem(
-                    row, _COL_SIMILARITY, QTableWidgetItem(similarity)
-                )
-                self._results_table.setItem(row, _COL_STATUS, status_item)
-                self._results_table.setItem(
-                    row, _COL_LEFT_TEXT, QTableWidgetItem(pair.left.text)
-                )
-                self._results_table.setItem(
-                    row, _COL_LEFT_LOCATION, QTableWidgetItem(pair.left.location_label)
-                )
-                self._results_table.setItem(
-                    row, _COL_RIGHT_TEXT, QTableWidgetItem(pair.right.text)
-                )
-                self._results_table.setItem(
-                    row,
-                    _COL_RIGHT_LOCATION,
-                    QTableWidgetItem(pair.right.location_label),
-                )
-
-        self._results_table.blockSignals(False)
         self._update_counts()
-        self._update_action_buttons()
         self._stack.setCurrentWidget(self._results_page)
-        self._refresh_result_tooltips()
+
+    def _open_checked_pairs_manager(self) -> None:
+        if self._is_busy():
+            return
+        SimilarityCheckedPairsDialog(self).exec()
+
+    def _show_results(self) -> None:
+        """Synchronní naplnění tabulky (testy a přestavba po označení)."""
+        pairs = self._visible_result_pairs(self._pairs)
+        self._pairs = pairs
+        self._prepare_results_table_shell(pairs)
+        self._fill_row = 0
+        for pair in pairs:
+            self._fill_result_row(self._fill_row, pair)
+            self._fill_row += 1
+        self._restore_results_table_after_fill()
+        self._present_results_page()
+        self._set_flow_state(FLOW_RESULTS_READY)
 
     def _refresh_result_tooltips(self, *_args) -> None:
+        if self._suspend_resize_tooltips:
+            return
         refresh_elided_cell_tooltips(self._results_table, _RESULT_TEXT_COLUMNS)
 
     def _on_result_item_changed(self, item: QTableWidgetItem) -> None:
+        if not self._results_are_ready():
+            return
         if item is None or item.column() != _COL_SELECT:
             return
         self._update_counts()
 
     def _selected_row_indexes(self) -> list[int]:
+        if not self._results_are_ready():
+            return []
         selected: list[int] = []
         for row in range(self._results_table.rowCount()):
             item = self._results_table.item(row, _COL_SELECT)
@@ -552,6 +797,8 @@ class SimilarityAnalysisDialog(QDialog):
         return selected
 
     def _pair_at_row(self, row: int):
+        if not self._results_are_ready():
+            return None
         item = self._results_table.item(row, _COL_STATUS)
         if item is None:
             return None
@@ -569,9 +816,11 @@ class SimilarityAnalysisDialog(QDialog):
             f"Vybráno: {selected}\n"
             f"Zbývá k posouzení: {remaining}"
         )
-        self._bulk_mark_btn.setEnabled(selected > 0)
+        self._bulk_mark_btn.setEnabled(self._results_are_ready() and selected > 0)
 
     def _selected_pair(self):
+        if not self._results_are_ready():
+            return None
         rows = self._results_table.selectionModel().selectedRows()
         if not rows:
             return None
@@ -579,7 +828,7 @@ class SimilarityAnalysisDialog(QDialog):
 
     def _update_action_buttons(self) -> None:
         pair = self._selected_pair()
-        enabled = pair is not None
+        enabled = pair is not None and self._results_are_ready()
         self._open_first_btn.setEnabled(enabled)
         self._open_second_btn.setEnabled(enabled)
         self._open_both_btn.setEnabled(enabled)
@@ -587,6 +836,8 @@ class SimilarityAnalysisDialog(QDialog):
         self._update_counts()
 
     def _open_selected(self, which: str) -> None:
+        if not self._results_are_ready():
+            return
         pair = self._selected_pair()
         if pair is None:
             return
@@ -602,6 +853,8 @@ class SimilarityAnalysisDialog(QDialog):
         return SIMILARITY_ENTITY_PROVERKY_CONTROL_POINT
 
     def _mark_selected_checked(self) -> None:
+        if not self._results_are_ready():
+            return
         pair = self._selected_pair()
         if pair is None:
             return
@@ -631,6 +884,8 @@ class SimilarityAnalysisDialog(QDialog):
         self._show_results()
 
     def _mark_selected_rows_checked(self) -> None:
+        if not self._results_are_ready():
+            return
         rows = self._selected_row_indexes()
         if not rows:
             return
@@ -669,7 +924,12 @@ class SimilarityAnalysisDialog(QDialog):
             )
 
     def _back_to_setup(self) -> None:
+        if self._is_busy():
+            return
         self._pairs = []
+        self._cancelled = False
+        self._results_table.setRowCount(0)
+        self._set_flow_state(FLOW_IDLE)
         self._stack.setCurrentWidget(self._setup_page)
 
     def _has_pending_bulk_selection(self) -> bool:
@@ -711,6 +971,8 @@ class SimilarityAnalysisDialog(QDialog):
 
     def _prepare_close_with_pending_selection(self) -> bool:
         """True = smí se zavřít. False = zůstat otevřený."""
+        if self._is_busy():
+            return True
         if not self._has_pending_bulk_selection():
             return True
         decision = self._prompt_pending_bulk_selection_close()
@@ -718,42 +980,52 @@ class SimilarityAnalysisDialog(QDialog):
             return False
         if decision == "mark_and_close":
             self._mark_selected_rows_checked()
-        # discard: nic neukládat, jen zavřít
+        return True
+
+    def _request_operation_cancel(self) -> None:
+        if self._flow_state == FLOW_ANALYZING:
+            self._runner.request_cancel()
+            return
+        if self._flow_state == FLOW_PREPARING_RESULTS:
+            self._pump.request_cancel()
+
+    def _finish_close(self) -> None:
+        self._closing = True
+        self._complete_progress_dialog()
+        self.accept()
+
+    def _request_close_or_cancel(self) -> bool:
+        """True = dialog se smí hned zavřít. False = čeká na zrušení operace."""
+        if self._closing:
+            return True
+        if self._is_busy():
+            self._close_when_idle = True
+            self._request_operation_cancel()
+            return False
+        if not self._prepare_close_with_pending_selection():
+            return False
+        self._closing = True
         return True
 
     def _request_close(self) -> None:
-        if self._closing:
+        if self._request_close_or_cancel():
             self.accept()
-            return
-        if not self._prepare_close_with_pending_selection():
-            return
-        self._closing = True
-        self._stop_worker_if_running()
-        self.accept()
-
-    def _stop_worker_if_running(self) -> None:
-        if self._worker is not None and self._worker.isRunning():
-            self._worker.request_cancel()
-            self._worker.wait(5000)
 
     def reject(self) -> None:
-        if self._closing:
+        if self._request_close_or_cancel():
             super().reject()
-            return
-        if not self._prepare_close_with_pending_selection():
-            return
-        self._closing = True
-        self._stop_worker_if_running()
-        super().reject()
 
     def closeEvent(self, event) -> None:  # noqa: N802
         if self._closing:
-            self._stop_worker_if_running()
             super().closeEvent(event)
+            return
+        if self._is_busy():
+            self._close_when_idle = True
+            self._request_operation_cancel()
+            event.ignore()
             return
         if not self._prepare_close_with_pending_selection():
             event.ignore()
             return
         self._closing = True
-        self._stop_worker_if_running()
         super().closeEvent(event)

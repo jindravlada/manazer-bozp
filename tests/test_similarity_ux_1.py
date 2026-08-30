@@ -27,6 +27,7 @@ with patch.object(Path, "home", return_value=_TMP):
 
     initialize_database()
 
+    from PySide6.QtCore import QEventLoop, QTimer
     from PySide6.QtWidgets import QApplication, QMenuBar, QTabWidget
 
     from core.ui.similarity_analysis_dialog import (
@@ -51,6 +52,19 @@ def _app() -> QApplication:
     if app is None:
         app = QApplication([])
     return app
+
+
+def _wait_runner_finished(dialog: SimilarityAnalysisDialog, timeout_ms: int = 3000) -> None:
+    if not dialog._runner.is_running():
+        return
+    loop = QEventLoop()
+    dialog._runner.finished.connect(loop.quit)
+    timer = QTimer()
+    timer.setSingleShot(True)
+    timer.timeout.connect(loop.quit)
+    timer.start(timeout_ms)
+    loop.exec()
+    timer.stop()
 
 
 class SimilarityUx1PageTestCase(unittest.TestCase):
@@ -123,8 +137,7 @@ class SimilarityUx1LaunchTestCase(unittest.TestCase):
             return_value=False,
         ):
             dialog._start_analysis()
-            if dialog._worker is not None:
-                dialog._worker.wait(3000)
+            _wait_runner_finished(dialog)
         analyze_mock.assert_called()
         kwargs = analyze_mock.call_args.kwargs
         self.assertFalse(kwargs.get("include_checked", True))

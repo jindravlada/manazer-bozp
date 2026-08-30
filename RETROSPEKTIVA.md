@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-08-30 – SIMILARITY-LONG-OPERATION-2
+
+**Co se povedlo:** Analýza podobností běží přes `LongOperationRunner` a výsledky se plní `ChunkedUiPump`; dialog průběhu zůstane mezi výpočtem a tabulkou, takže 100 % výpočtu už nezamrazí GUI.
+
+**Co už bychom dnes udělali jinak:** Follow-up režim (`close_on_success=False`) hned v jádru dialogu, ať napojení modulu nemusí bojovat se zavřením po `succeeded`.
+
+**Co bylo zbytečně složité:** Globální `refresh_elided_cell_tooltips` po tisících řádcích. Tooltipy se teď připraví v dávce.
+
+**Nové pravidlo:** Dlouhá operace s následným plněním tabulky je jeden dialog: worker → pumpa → `complete()`. 100 % workeru není konec zobrazení.
+
+**Aktualizované dokumenty:** —
+
 ### 2026-08-30 – LONG-OPERATION-CORE-1
 
 **Co se povedlo:** Společný runner/dialog/pumpa bez napojení na produkční moduly; QThread lifecycle s generací signálů a zpožděným zobrazením dialogu.
