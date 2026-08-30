@@ -55,6 +55,7 @@ from moduly.audity.sluzby.audit_question_kind import interpret_question_kind  # 
 from moduly.audity.ui.audity_knowledge_editor_dialog import (  # noqa: E402
     AudityKnowledgeEditorDialog,
 )
+from tests.audit_method_save_wait import wait_for_audit_method_save  # noqa: E402
 
 _PROCESS_URAZY = "urazy_mimo_udalosti"
 _SECTION_URAZY = "evidence_hlaseni_urazu"
@@ -966,6 +967,7 @@ class SaveBatchEditorTestCase(unittest.TestCase):
             )
         )
         dialog._apply_changes()
+        wait_for_audit_method_save(dialog)
         self.assertFalse(dialog.section_editor.has_pending_assertion_kinds())
         self.assertEqual(
             _assertion_kind(self._path, _SECTION_URAZY, _ASSERTION_URAZY),
@@ -994,6 +996,7 @@ class SaveBatchEditorTestCase(unittest.TestCase):
             wraps=audit_knowledge_editor_service.set_assertion_question_kinds_batch,
         ) as batch:
             dialog._save_and_close()
+            wait_for_audit_method_save(dialog)
         self.assertEqual(batch.call_count, 1)
         self.assertEqual(
             _assertion_kind(self._path, _SECTION_URAZY, _ASSERTION_URAZY),
@@ -1015,7 +1018,8 @@ class SaveBatchEditorTestCase(unittest.TestCase):
                 wraps=audit_knowledge_editor_service.set_assertion_question_kinds_batch,
             ) as batch,
         ):
-            self.assertTrue(dialog._confirm_close())
+            self.assertFalse(dialog._confirm_close())
+            wait_for_audit_method_save(dialog)
         self.assertEqual(batch.call_count, 1)
         self.assertEqual(
             _assertion_kind(self._path, _SECTION_URAZY, _ASSERTION_URAZY),

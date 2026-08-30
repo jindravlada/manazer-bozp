@@ -6,6 +6,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from tests.audit_method_save_wait import wait_for_audit_method_save
+
 _TMP = Path(tempfile.mkdtemp())
 _HOME_PATCHER = patch.object(Path, "home", return_value=_TMP)
 
@@ -288,6 +290,7 @@ class AudityKnowledgeEditorDialogSaveFeedbackTestCase(
 
         dialog.process_editor._nazev_edit.setText("Editor test — potvrzení uložení")
         dialog._apply_changes()
+        wait_for_audit_method_save(dialog)
 
         self.assertEqual(dialog._status_label.text(), KNOWLEDGE_EDITOR_SAVED_MESSAGE)
 
@@ -300,10 +303,12 @@ class AudityKnowledgeEditorDialogSaveFeedbackTestCase(
         dialog = AudityKnowledgeEditorDialog()
         self.assertTrue(dialog.knowledge_tree.select_node(_PROCESS_ID))
 
+        dialog.process_editor._nazev_edit.setText("Editor test — simulovaná chyba")
         dialog._apply_changes()
+        wait_for_audit_method_save(dialog)
 
         mock_warning.assert_called_once()
-        self.assertEqual(dialog._status_label.text(), "")
+        self.assertNotEqual(dialog._status_label.text(), KNOWLEDGE_EDITOR_SAVED_MESSAGE)
 
 
 if __name__ == "__main__":

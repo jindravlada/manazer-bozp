@@ -8,6 +8,8 @@ from unittest.mock import patch
 
 from PySide6.QtWidgets import QApplication, QDialog, QLineEdit, QMessageBox, QSizePolicy
 
+from tests.audit_method_save_wait import wait_for_audit_method_save
+
 _TMP = Path(tempfile.mkdtemp())
 _HOME_PATCHER = patch.object(Path, "home", return_value=_TMP)
 
@@ -109,6 +111,7 @@ class AudityKnowledgeEditorActionsTestCase(unittest.TestCase):
         self.assertTrue(dialog._modified)
 
         dialog._apply_changes()
+        wait_for_audit_method_save(dialog)
         self.assertEqual(dialog._status_label.text(), KNOWLEDGE_EDITOR_SAVED_MESSAGE)
         self.assertFalse(dialog._modified)
 
@@ -117,6 +120,7 @@ class AudityKnowledgeEditorActionsTestCase(unittest.TestCase):
 
         apply_width = dialog._apply_btn.width()
         dialog._apply_changes()
+        wait_for_audit_method_save(dialog)
         self.assertEqual(dialog._apply_btn.width(), apply_width)
 
     def test_apply_saves_and_keeps_dialog_open(self) -> None:
@@ -125,6 +129,7 @@ class AudityKnowledgeEditorActionsTestCase(unittest.TestCase):
 
         dialog.process_editor._nazev_edit.setText("Editor test — Použít")
         dialog._apply_changes()
+        wait_for_audit_method_save(dialog)
 
         self.assertEqual(dialog.result(), QDialog.DialogCode.Rejected)
         self.assertEqual(dialog._status_label.text(), KNOWLEDGE_EDITOR_SAVED_MESSAGE)
@@ -136,6 +141,7 @@ class AudityKnowledgeEditorActionsTestCase(unittest.TestCase):
 
         dialog.process_editor._nazev_edit.setText("Editor test — Uložit a zavřít")
         dialog._save_and_close()
+        wait_for_audit_method_save(dialog)
 
         self.assertEqual(dialog.result(), QDialog.DialogCode.Accepted)
         self.assertFalse(dialog._modified)
@@ -174,6 +180,7 @@ class AudityKnowledgeEditorActionsTestCase(unittest.TestCase):
             return_value="save",
         ):
             dialog._request_close()
+        wait_for_audit_method_save(dialog)
 
         self.assertEqual(dialog.result(), QDialog.DialogCode.Rejected)
         self.assertFalse(dialog._modified)
@@ -200,11 +207,13 @@ class AudityKnowledgeEditorActionsTestCase(unittest.TestCase):
     def test_apply_shows_error_on_failure(self, _mock_save, mock_warning) -> None:
         dialog = AudityKnowledgeEditorDialog()
         self.assertTrue(dialog.knowledge_tree.select_node(_PROCESS_ID))
+        dialog.process_editor._nazev_edit.setText("Editor test — chyba uložení")
 
         dialog._apply_changes()
+        wait_for_audit_method_save(dialog)
 
         mock_warning.assert_called_once()
-        self.assertEqual(dialog._status_label.text(), "")
+        self.assertNotEqual(dialog._status_label.text(), KNOWLEDGE_EDITOR_SAVED_MESSAGE)
 
 
 class ProverkyKnowledgeEditorActionsTestCase(unittest.TestCase):

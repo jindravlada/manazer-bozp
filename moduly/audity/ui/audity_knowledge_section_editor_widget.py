@@ -193,6 +193,12 @@ class AudityKnowledgeSectionEditorWidget(QWidget):
     def pending_question_kind_overrides(self) -> dict[str, str]:
         return self._assertions_widget.pending_question_kind_overrides()
 
+    def pending_question_kind_changes(self):
+        return self._assertions_widget.pending_question_kind_changes()
+
+    def clear_pending_question_kinds_after_persist(self) -> None:
+        self._assertions_widget.clear_pending_question_kinds_after_persist()
+
     def flush_pending_assertion_kinds(self) -> list[str]:
         return self._assertions_widget.flush_pending_question_kinds()
 

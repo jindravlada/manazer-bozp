@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-08-30 – AUDIT-METHOD-LONG-OPERATION-4B
+
+**Co se povedlo:** Použít, Uložit a zavřít i zavírací Uložit jdou jedním persistovacím tokem mimo GUI vlákno; dávkový zápis druhů z 4A zůstal.
+
+**Co už bychom dnes udělali jinak:** Snapshot pending změn sbírat jako čistá data od začátku, ať GUI nemusí stashovat těsně před workerem.
+
+**Co bylo zbytečně složité:** Tři synchronní ukládací cesty se lišily epilogem i tím, co se zapisuje.
+
+**Nové pravidlo:** Persistence editoru metodiky patří do `persist_audit_method_save`. GUI jen snapshot, blokování a epilog. Po úspěšném zápisu se selhání obnovy editoru nesmí tvářit jako neuložená data.
+
+**Aktualizované dokumenty:** —
+
 ### 2026-08-30 – AUDIT-METHOD-SAVE-BATCH-4A
 
 **Co se povedlo:** Změny druhů otázek se ukládají po souborech, ne po tvrzeních; 100 změn v jednom JSON je jeden zápis.

@@ -303,6 +303,8 @@ class AuditKnowledgeEditorService:
         process_id: str,
         section_id: str,
         metadata: dict,
+        *,
+        skip_legal_resolve: bool = False,
     ) -> list[str]:
         self.ensure_user_catalogs()
 
@@ -342,12 +344,17 @@ class AuditKnowledgeEditorService:
         updated["poradi"] = poradi
         updated["aktivni"] = bool(metadata.get("aktivni", True))
         if "legal_requirement_id" in metadata:
-            legal_requirement_id, link_errors = self._resolve_legal_requirement_id(
-                metadata.get("legal_requirement_id"),
-                existing_id=existing.get("legal_requirement_id"),
-            )
-            if link_errors:
-                return link_errors
+            if skip_legal_resolve:
+                legal_requirement_id = self.normalize_legal_requirement_id(
+                    metadata.get("legal_requirement_id")
+                )
+            else:
+                legal_requirement_id, link_errors = self._resolve_legal_requirement_id(
+                    metadata.get("legal_requirement_id"),
+                    existing_id=existing.get("legal_requirement_id"),
+                )
+                if link_errors:
+                    return link_errors
             if legal_requirement_id is not None:
                 updated["legal_requirement_id"] = legal_requirement_id
             else:

@@ -52,6 +52,7 @@ from core.widgets.knowledge_editor_actions import (
     KNOWLEDGE_EDITOR_UNSAVED_MESSAGE,
     confirm_close_with_unsaved_changes,
 )
+from tests.audit_method_save_wait import wait_for_audit_method_save
 from moduly.audity.sluzby.audit_knowledge_editor_service import audit_knowledge_editor_service
 from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
 from moduly.audity.ui.audity_knowledge_editor_dialog import AudityKnowledgeEditorDialog
@@ -74,6 +75,13 @@ class KnowledgeEditorConfirmLabelsPhase97sTestCase(unittest.TestCase):
     def test_confirm_dialog_button_labels(self) -> None:
         captured: dict[str, list[str]] = {"labels": []}
 
+        class _FakeButton:
+            def setText(self, *_args):
+                return None
+
+            def setIcon(self, *_args):
+                return None
+
         class _FakeMessageBox:
             Icon = QMessageBox.Icon
             ButtonRole = QMessageBox.ButtonRole
@@ -91,12 +99,15 @@ class KnowledgeEditorConfirmLabelsPhase97sTestCase(unittest.TestCase):
                 return None
 
             def addButton(self, label, _role):
-                button = object()
+                button = _FakeButton()
                 self._buttons.append(button)
                 captured["labels"].append(label)
                 return button
 
             def setDefaultButton(self, *_args):
+                return None
+
+            def setEscapeButton(self, *_args):
                 return None
 
             def exec(self):
@@ -178,6 +189,7 @@ class AudityDeferredSavePhase97sTestCase(unittest.TestCase):
             return_value="save",
         ):
             dialog._request_close()
+        wait_for_audit_method_save(dialog)
 
         with self._knowledge_path.open(encoding="utf-8") as handle:
             on_disk = json.load(handle)

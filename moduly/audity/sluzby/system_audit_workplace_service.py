@@ -165,5 +165,45 @@ class SystemAuditWorkplaceService:
         self._save(payload)
         return int(workplace.id)
 
+    def persist_saved_system_workplace_id(self, workplace_id: int | None) -> int | None:
+        """Zapíše ID systémového provozu bez DB lookupu.
+
+        Validace existence a auditovatelnosti musí proběhnout předem
+        (GUI vlákno). Worker tak nepotřebuje SQLAlchemy session z editoru.
+        Před první v2 změnou vytvoří jednorázovou zálohu.
+        """
+        from moduly.audity.sluzby.audit_method_v2_backup_service import (
+            AuditMethodV2BackupError,
+            ensure_pre_v2_backup,
+        )
+
+        current = self.get_system_audit_workplace_id()
+        if workplace_id is None or workplace_id == 0:
+            normalized: int | None = None
+        else:
+            try:
+                normalized = int(workplace_id)
+            except (TypeError, ValueError) as exc:
+                raise SystemAuditWorkplaceError(
+                    f"Neplatné ID systémového provozu: {workplace_id!r}"
+                ) from exc
+            if normalized <= 0:
+                raise SystemAuditWorkplaceError(
+                    f"Neplatné ID systémového provozu: {workplace_id!r}"
+                )
+
+        if current == normalized:
+            return current
+
+        try:
+            ensure_pre_v2_backup()
+        except AuditMethodV2BackupError:
+            raise
+
+        payload = self._load()
+        payload[SYSTEM_AUDIT_WORKPLACE_SETTING_KEY] = normalized
+        self._save(payload)
+        return normalized
+
 
 system_audit_workplace_service = SystemAuditWorkplaceService()

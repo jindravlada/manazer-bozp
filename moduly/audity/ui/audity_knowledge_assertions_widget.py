@@ -139,6 +139,24 @@ class AudityKnowledgeAssertionsWidget(QWidget):
             for (process_id, section_id, assertion_id), kind in self._pending_kinds.items()
         }
 
+    def pending_question_kind_changes(self) -> tuple[AssertionQuestionKindChange, ...]:
+        """Čistá dávka pending druhů — bez zápisu a bez Qt modelů."""
+        return tuple(
+            AssertionQuestionKindChange(
+                process_id=process_id,
+                section_id=section_id,
+                assertion_id=assertion_id,
+                question_kind=kind,
+            )
+            for (process_id, section_id, assertion_id), kind in self._pending_kinds.items()
+        )
+
+    def clear_pending_question_kinds_after_persist(self) -> None:
+        """Po úspěšném zápisu jen vyčistí pracovní kopii (bez čtení disku)."""
+        for key, kind in self._pending_kinds.items():
+            self._disk_kinds[key] = kind
+        self._pending_kinds.clear()
+
     def discard_pending_question_kinds(self) -> None:
         self._pending_kinds.clear()
         if not self.has_section():

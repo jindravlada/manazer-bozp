@@ -8,6 +8,8 @@ from unittest.mock import patch
 
 from PySide6.QtWidgets import QLabel, QLineEdit, QTextEdit
 
+from tests.audit_method_save_wait import wait_for_audit_method_save
+
 _TMP = Path(tempfile.mkdtemp())
 _HOME_PATCHER = patch.object(Path, "home", return_value=_TMP)
 
@@ -353,6 +355,7 @@ class AudityKnowledgeEditorDialogSectionTestCase(unittest.TestCase):
         self.assertEqual(editor._cil_overeni_edit.toPlainText(), original_cil)
 
         dialog._apply_changes()
+        wait_for_audit_method_save(dialog)
         saved = self._section_from_file()
         self.assertEqual(saved["popis"], original_popis)
         self.assertEqual(saved["cil_overeni"], original_cil)
@@ -371,6 +374,7 @@ class AudityKnowledgeEditorDialogSectionTestCase(unittest.TestCase):
         self.assertTrue(dialog._apply_btn.isEnabled())
 
         dialog._apply_changes()
+        wait_for_audit_method_save(dialog)
         self.assertFalse(dialog._current_dirty)
 
         saved = self._section_from_file()
