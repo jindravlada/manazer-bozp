@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-08-30 – LONG-OPERATION-CORE-1
+
+**Co se povedlo:** Společný runner/dialog/pumpa bez napojení na produkční moduly; QThread lifecycle s generací signálů a zpožděným zobrazením dialogu.
+
+**Co už bychom dnes udělali jinak:** Testy hned stavět na vlastním čekání na signál, ne na `QSignalSpy[]` (v aktuálním PySide není indexovatelný).
+
+**Co bylo zbytečně složité:** —
+
+**Nové pravidlo:** Dlouhá operace: worker `QObject.moveToThread`, ne podtřída `QThread`. Dialog se `exec()` nezobrazuje kvůli zpožděnému show. Mezi UI dávkami `QTimer.singleShot`, ne `processEvents`.
+
+**Aktualizované dokumenty:** —
+
 ### 2026-08-26 – AUDIT-SNAPSHOT-REGRESSION-CHECK-1
 
 **Co se povedlo:** Fast-path completed backfillu znovu pozná smazaný snapshotový řádek levným SQL count/hash, bez živé metodiky a bez přepisu dat.
