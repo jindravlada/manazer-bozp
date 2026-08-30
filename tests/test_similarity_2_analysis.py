@@ -165,8 +165,16 @@ class Similarity2UiTestCase(unittest.TestCase):
         dialog._show_results()
         self.assertEqual(dialog._results_table.rowCount(), 2)
         self.assertIn("100 %", dialog._results_table.item(0, 1).text())
-        self.assertIn("Prověrky BOZP", dialog._results_table.item(0, 4).text())
-        self.assertIn("Prověrky BOZP", dialog._results_table.item(0, 6).text())
+        self.assertEqual(
+            dialog._results_table.item(0, 4).text(),
+            "Oblast → Sekce",
+        )
+        self.assertEqual(
+            dialog._results_table.item(0, 6).text(),
+            "Oblast → Sekce",
+        )
+        self.assertIn("Prověrky BOZP", dialog._results_table.item(0, 4).toolTip())
+        self.assertIn("Prověrky BOZP", dialog._pairs[0].left.location_label)
 
 
 if __name__ == "__main__":

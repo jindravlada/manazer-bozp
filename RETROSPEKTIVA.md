@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-08-30 – SIMILARITY-LOCATION-DISPLAY-3
+
+**Co se povedlo:** Nad tabulkou jsou názvy porovnávaných oblastí ze snapshotu; v buňkách Umístění zůstane konec cesty (`ElideLeft`) a tooltip drží úplnou původní cestu.
+
+**Co už bychom dnes udělali jinak:** Kořen cesty (`MODULE_NAME`) oddělit od popisku comboboxu (`domain_label`) hned při sběru kandidátů, ať heading i ořez používají stejný zdroj bez fallbacku.
+
+**Co bylo zbytečně složité:** —
+
+**Nové pravidlo:** Viditelný text sloupce Umístění smí zkrátit jen přesný počáteční kořen + oddělovač. Identita otázky a `location_label` v DTO se nemění.
+
+**Aktualizované dokumenty:** —
+
 ### 2026-08-30 – SIMILARITY-LONG-OPERATION-2
 
 **Co se povedlo:** Analýza podobností běží přes `LongOperationRunner` a výsledky se plní `ChunkedUiPump`; dialog průběhu zůstane mezi výpočtem a tabulkou, takže 100 % výpočtu už nezamrazí GUI.

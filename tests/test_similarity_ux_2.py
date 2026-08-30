@@ -17,6 +17,8 @@ with patch.object(Path, "home", return_value=_TMP):
 
     from core.ui.similarity_analysis_dialog import (
         SimilarityAnalysisDialog,
+        _RESULT_LOCATION_COLUMNS,
+        _RESULT_QUESTION_COLUMNS,
         _RESULT_TEXT_COLUMNS,
     )
     from core.widgets.dialog_utils import prepare_work_dialog_maximized
@@ -164,7 +166,7 @@ class SimilarityUx2TooltipTestCase(unittest.TestCase):
 
         self.assertEqual(table.textElideMode(), Qt.TextElideMode.ElideRight)
 
-        for column in _RESULT_TEXT_COLUMNS:
+        for column in _RESULT_QUESTION_COLUMNS:
             self.assertTrue(
                 table_cell_text_is_elided(table, 0, column),
                 f"sloupec {column} má být zkrácen",
@@ -174,16 +176,42 @@ class SimilarityUx2TooltipTestCase(unittest.TestCase):
             full = table.item(0, column).text()
             self.assertEqual(tip, wrap_tooltip_text(full))
 
+        pair0 = dialog._pair_at_row(0)
+        self.assertIsNotNone(pair0)
+        self.assertEqual(
+            table.item(0, 4).toolTip(),
+            wrap_tooltip_text(pair0.left.location_label),
+        )
+        self.assertEqual(
+            table.item(0, 6).toolTip(),
+            wrap_tooltip_text(pair0.right.location_label),
+        )
+        self.assertNotEqual(table.item(0, 4).text(), pair0.left.location_label)
+        self.assertIn(table.item(0, 4).text(), pair0.left.location_label)
+
         for column in _RESULT_TEXT_COLUMNS:
             table.setColumnWidth(column, 500)
         QApplication.processEvents()
         dialog._refresh_result_tooltips()
-        for column in _RESULT_TEXT_COLUMNS:
+        for column in _RESULT_QUESTION_COLUMNS:
             self.assertFalse(
                 table_cell_text_is_elided(table, 1, column),
                 f"krátký text ve sloupci {column} nemá být zkrácen",
             )
             self.assertEqual(table.item(1, column).toolTip(), "")
+
+        pair1 = dialog._pair_at_row(1)
+        self.assertIsNotNone(pair1)
+        self.assertEqual(
+            table.item(1, 4).toolTip(),
+            wrap_tooltip_text(pair1.left.location_label),
+        )
+        self.assertEqual(
+            table.item(1, 6).toolTip(),
+            wrap_tooltip_text(pair1.right.location_label),
+        )
+        for column in _RESULT_LOCATION_COLUMNS:
+            self.assertTrue(table.item(1, column).toolTip())
 
 
 if __name__ == "__main__":

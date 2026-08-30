@@ -16,7 +16,10 @@ from PySide6.QtWidgets import (
     QLabel,
     QMessageBox,
     QPushButton,
+    QSizePolicy,
     QStackedWidget,
+    QStyledItemDelegate,
+    QStyleOptionViewItem,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -30,6 +33,7 @@ from core.shared.sluzby.similarity_checked_pair_service import (
 from core.shared.sluzby.similarity_domain import (
     SCOPE_PROVERKY,
     SIMILARITY_DOMAINS,
+    domain_label,
     estimate_comparison_count,
     estimate_duration_label,
     requires_large_analysis_confirmation,
@@ -45,6 +49,10 @@ from core.shared.sluzby.similarity_item_opener import (
     SimilarityItemOpenError,
     open_similarity_item,
 )
+from core.shared.sluzby.similarity_location_format import (
+    format_similarity_location,
+    similarity_location_root,
+)
 from core.ui.similarity_checked_pairs_dialog import SimilarityCheckedPairsDialog
 from core.widgets.chunked_ui_pump import ChunkedUiPump
 from core.widgets.dialog_utils import prepare_work_dialog_maximized
@@ -56,6 +64,7 @@ from core.widgets.long_operation_runner import (
     LongOperationContext,
     LongOperationRunner,
 )
+from core.widgets.info_tooltip import set_widget_tooltip
 from core.widgets.table_utils import apply_cell_tooltip, refresh_elided_cell_tooltips
 from moduly.proverky.sluzby.control_point_similarity_analysis import (
     ControlPointSimilarityPair,
@@ -73,13 +82,16 @@ _COL_LEFT_LOCATION = 4
 _COL_RIGHT_TEXT = 5
 _COL_RIGHT_LOCATION = 6
 
-# Textové sloupce s ElideRight + tooltipem
-_RESULT_TEXT_COLUMNS = (
+# Textové sloupce s ElideRight + tooltipem podle zkrácení
+_RESULT_QUESTION_COLUMNS = (
     _COL_LEFT_TEXT,
-    _COL_LEFT_LOCATION,
     _COL_RIGHT_TEXT,
+)
+_RESULT_LOCATION_COLUMNS = (
+    _COL_LEFT_LOCATION,
     _COL_RIGHT_LOCATION,
 )
+_RESULT_TEXT_COLUMNS = _RESULT_QUESTION_COLUMNS + _RESULT_LOCATION_COLUMNS
 
 PHASE_ANALYZING = "Analyzuji podobnosti…"
 PHASE_PREPARING_RESULTS = "Připravuji výsledky k zobrazení…"
@@ -92,6 +104,52 @@ FLOW_PREPARING_RESULTS = "preparing_results"
 FLOW_RESULTS_READY = "results_ready"
 FLOW_CANCELLED = "cancelled"
 FLOW_FAILED = "failed"
+
+
+class LocationElideLeftDelegate(QStyledItemDelegate):
+    """Kreslí text sloupce Umístění se zkrácením zleva (konec cesty zůstane vidět)."""
+
+    def initStyleOption(self, option: QStyleOptionViewItem, index) -> None:  # noqa: N802
+        super().initStyleOption(option, index)
+        option.textElideMode = Qt.TextElideMode.ElideLeft
+
+
+class _ElidingLabel(QLabel):
+    """Jednořádkový popisek: dlouhý text zkrátí a dá celý název do tooltipu."""
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._full_text = ""
+        self.setWordWrap(False)
+        self.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Preferred,
+        )
+
+    def set_full_text(self, text: str) -> None:
+        self._full_text = str(text or "")
+        self._apply_elide()
+
+    def full_text(self) -> str:
+        return self._full_text
+
+    def resizeEvent(self, event) -> None:  # noqa: N802
+        super().resizeEvent(event)
+        self._apply_elide()
+
+    def _apply_elide(self) -> None:
+        available = max(0, self.contentsRect().width())
+        elided = self.fontMetrics().elidedText(
+            self._full_text,
+            Qt.TextElideMode.ElideRight,
+            available,
+        )
+        if super().text() != elided:
+            super().setText(elided)
+        if elided != self._full_text and self._full_text.strip():
+            set_widget_tooltip(self, self._full_text)
+        else:
+            self.setToolTip("")
 
 
 @dataclass(frozen=True)
@@ -161,6 +219,8 @@ class SimilarityAnalysisDialog(QDialog):
         self._result_batch_size = RESULT_TABLE_BATCH_SIZE
         self._progress_dialog: LongOperationDialog | None = None
         self._header_resize_connected = False
+        self._result_snapshot: SimilarityAnalysisSnapshot | None = None
+        self._location_delegate = LocationElideLeftDelegate(self)
 
         self._runner = LongOperationRunner(self)
         self._pump = ChunkedUiPump(self)
@@ -306,6 +366,18 @@ class SimilarityAnalysisDialog(QDialog):
         self._results_counts.setObjectName("InfoText")
         layout.addWidget(self._results_counts)
 
+        self._scope_info_row = QWidget()
+        scope_row = QHBoxLayout(self._scope_info_row)
+        scope_row.setContentsMargins(0, 0, 0, 0)
+        self._scope_first_label = _ElidingLabel()
+        self._scope_first_label.setObjectName("InfoText")
+        self._scope_second_label = _ElidingLabel()
+        self._scope_second_label.setObjectName("InfoText")
+        scope_row.addWidget(self._scope_first_label, 1)
+        scope_row.addWidget(self._scope_second_label, 1)
+        layout.addWidget(self._scope_info_row)
+        self._hide_scope_headings()
+
         self._bulk_hint = QLabel(
             "ℹ Zaškrtněte dvojice, které jsou v pořádku (nejde o skutečné duplicity). "
             "Po dokončení je můžete jedním kliknutím skrýt z dalších analýz."
@@ -349,6 +421,12 @@ class SimilarityAnalysisDialog(QDialog):
         header.setSectionResizeMode(_COL_RIGHT_TEXT, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(
             _COL_RIGHT_LOCATION, QHeaderView.ResizeMode.Stretch
+        )
+        self._results_table.setItemDelegateForColumn(
+            _COL_LEFT_LOCATION, self._location_delegate
+        )
+        self._results_table.setItemDelegateForColumn(
+            _COL_RIGHT_LOCATION, self._location_delegate
         )
         self._results_table.itemChanged.connect(self._on_result_item_changed)
         layout.addWidget(self._results_table, 1)
@@ -486,6 +564,7 @@ class SimilarityAnalysisDialog(QDialog):
         self._cancelled = False
         self._close_when_idle = False
         self._fill_row = 0
+        self._hide_scope_headings()
         self._set_flow_state(FLOW_ANALYZING)
         self._stack.setCurrentWidget(self._setup_page)
 
@@ -494,6 +573,7 @@ class SimilarityAnalysisDialog(QDialog):
             scope_b=scope_b,
             include_checked=False,
         )
+        self._result_snapshot = snapshot
         self._ensure_progress_dialog()
         started = self._runner.start(run_similarity_analysis, snapshot)
         if not started:
@@ -555,6 +635,7 @@ class SimilarityAnalysisDialog(QDialog):
             self.windowTitle(),
             f"Analýza selhala.\n\n{message}",
         )
+        self._hide_scope_headings()
         self._stack.setCurrentWidget(self._setup_page)
         self._set_flow_state(FLOW_IDLE)
 
@@ -627,10 +708,16 @@ class SimilarityAnalysisDialog(QDialog):
         status_item = QTableWidgetItem("")
         status_item.setData(Qt.ItemDataRole.UserRole, pair)
 
+        scope_a, scope_b = self._result_scope_keys()
+        left_full = pair.left.location_label
+        right_full = pair.right.location_label
+        left_visible = self._visible_location(left_full, scope_a)
+        right_visible = self._visible_location(right_full, scope_b)
+
         left_text = QTableWidgetItem(pair.left.text)
-        left_location = QTableWidgetItem(pair.left.location_label)
+        left_location = QTableWidgetItem(left_visible)
         right_text = QTableWidgetItem(pair.right.text)
-        right_location = QTableWidgetItem(pair.right.location_label)
+        right_location = QTableWidgetItem(right_visible)
 
         self._results_table.setItem(row, _COL_SELECT, select_item)
         self._results_table.setItem(row, _COL_SIMILARITY, QTableWidgetItem(similarity))
@@ -641,9 +728,9 @@ class SimilarityAnalysisDialog(QDialog):
         self._results_table.setItem(row, _COL_RIGHT_LOCATION, right_location)
 
         apply_cell_tooltip(left_text, pair.left.text)
-        apply_cell_tooltip(left_location, pair.left.location_label)
         apply_cell_tooltip(right_text, pair.right.text)
-        apply_cell_tooltip(right_location, pair.right.location_label)
+        set_widget_tooltip(left_location, left_full)
+        set_widget_tooltip(right_location, right_full)
 
     def _restore_results_table_after_fill(self) -> None:
         self._results_table.blockSignals(False)
@@ -708,6 +795,7 @@ class SimilarityAnalysisDialog(QDialog):
             self.windowTitle(),
             f"Příprava výsledků selhala.\n\n{message}",
         )
+        self._hide_scope_headings()
         self._stack.setCurrentWidget(self._setup_page)
         self._set_flow_state(FLOW_IDLE)
 
@@ -731,6 +819,7 @@ class SimilarityAnalysisDialog(QDialog):
         self._results_table.setVisible(False)
         self._bulk_hint.setVisible(False)
         self._bulk_mark_btn.setVisible(False)
+        self._hide_scope_headings()
         self._stack.setCurrentWidget(self._results_page)
         self._apply_controls_for_state()
 
@@ -750,7 +839,44 @@ class SimilarityAnalysisDialog(QDialog):
         self._bulk_hint.setVisible(has_pairs)
         self._bulk_mark_btn.setVisible(has_pairs)
         self._update_counts()
+        if self._cancelled:
+            self._hide_scope_headings()
+        else:
+            self._update_scope_headings()
         self._stack.setCurrentWidget(self._results_page)
+
+    def _visible_location(self, full_path: str, scope_key: str) -> str:
+        path = str(full_path or "").strip()
+        heading_root = domain_label(scope_key)
+        formatted = format_similarity_location(path, heading_root)
+        if formatted != path:
+            return formatted
+        location_root = similarity_location_root(scope_key)
+        if location_root != heading_root:
+            return format_similarity_location(path, location_root)
+        return formatted
+
+    def _result_scope_keys(self) -> tuple[str, str]:
+        snapshot = self._result_snapshot
+        if snapshot is not None:
+            return snapshot.scope_a, snapshot.scope_b
+        return self._selected_scope_a(), self._selected_scope_b()
+
+    def _hide_scope_headings(self) -> None:
+        self._scope_first_label.set_full_text("")
+        self._scope_second_label.set_full_text("")
+        self._scope_info_row.setVisible(False)
+
+    def _update_scope_headings(self) -> None:
+        # Názvy ze snapshotu dokončené analýzy — stejný kořen jako v location_label
+        # (ne aktuální combobox a ne domain_label, který u auditů/prověrek
+        # neodpovídá prefixu cesty).
+        scope_a, scope_b = self._result_scope_keys()
+        name_a = similarity_location_root(scope_a)
+        name_b = similarity_location_root(scope_b)
+        self._scope_first_label.set_full_text(f"První otázka: {name_a}")
+        self._scope_second_label.set_full_text(f"Druhá otázka: {name_b}")
+        self._scope_info_row.setVisible(True)
 
     def _open_checked_pairs_manager(self) -> None:
         if self._is_busy():
@@ -773,7 +899,7 @@ class SimilarityAnalysisDialog(QDialog):
     def _refresh_result_tooltips(self, *_args) -> None:
         if self._suspend_resize_tooltips:
             return
-        refresh_elided_cell_tooltips(self._results_table, _RESULT_TEXT_COLUMNS)
+        refresh_elided_cell_tooltips(self._results_table, _RESULT_QUESTION_COLUMNS)
 
     def _on_result_item_changed(self, item: QTableWidgetItem) -> None:
         if not self._results_are_ready():
@@ -928,7 +1054,9 @@ class SimilarityAnalysisDialog(QDialog):
             return
         self._pairs = []
         self._cancelled = False
+        self._result_snapshot = None
         self._results_table.setRowCount(0)
+        self._hide_scope_headings()
         self._set_flow_state(FLOW_IDLE)
         self._stack.setCurrentWidget(self._setup_page)
 
