@@ -1166,6 +1166,34 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         header.setMinimumSectionSize(56)
         header.setStretchLastSection(True)
 
+    elif profile == "state_supervision_overview":
+        from moduly.statni_dozor.constants import (
+            COL_AUTHORITY,
+            COL_ENDED,
+            COL_RESULT,
+            COL_STARTED,
+            COL_STATUS,
+            COL_WORKPLACE,
+        )
+
+        widths = {
+            COL_STATUS: 52,
+            COL_AUTHORITY: 220,
+            COL_WORKPLACE: 180,
+            COL_STARTED: 110,
+            COL_ENDED: 110,
+            COL_RESULT: 240,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        header.setSectionResizeMode(COL_STATUS, QHeaderView.Fixed)
+        header.setSectionResizeMode(COL_STARTED, QHeaderView.Fixed)
+        header.setSectionResizeMode(COL_ENDED, QHeaderView.Fixed)
+        header.setSectionResizeMode(COL_AUTHORITY, QHeaderView.Stretch)
+        header.setSectionResizeMode(COL_WORKPLACE, QHeaderView.Stretch)
+        header.setSectionResizeMode(COL_RESULT, QHeaderView.Stretch)
+        table.setTextElideMode(Qt.TextElideMode.ElideRight)
+
     table.verticalHeader().setVisible(False)
     if profile not in ("controls_year_matrix", "yearly_plan"):
         table.setAlternatingRowColors(True)

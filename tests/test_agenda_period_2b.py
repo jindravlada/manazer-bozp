@@ -82,9 +82,9 @@ class AgendaPeriod2bTestCase(unittest.TestCase):
 
     def test_agenda_has_two_tabs(self) -> None:
         page = AgendaPage()
-        self.assertEqual(page.tabs.count(), 3)
+        self.assertEqual(page.tabs.count(), 4)
         self.assertEqual(page.tabs.tabText(0), TAB_TASKS_MEETINGS)
-        self.assertEqual(page.tabs.tabText(1), TAB_PERIODIC)
+        self.assertEqual(page.tabs.tabText(2), TAB_PERIODIC)
         self.assertIsInstance(page.periodic_tab, PeriodicActivitiesTab)
         self.assertTrue(hasattr(page, "table"))
         self.assertTrue(hasattr(page, "new_task_btn"))

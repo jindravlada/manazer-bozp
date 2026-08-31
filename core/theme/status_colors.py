@@ -12,6 +12,7 @@ STATUS_DONE_BG = "#d9f0dd"
 STATUS_MISSING_BG = "#f8d7da"
 STATUS_WARNING_BG = "#fff3cd"
 STATUS_IN_PROGRESS_BG = "#ffe0b2"
+STATUS_WAITING_BG = "#90caf9"
 STATUS_NEUTRAL_BG = "#eeeeee"
 
 # Text stavů

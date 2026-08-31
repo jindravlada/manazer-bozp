@@ -309,14 +309,18 @@ class StateSupervisionCore1MigrationTestCase(unittest.TestCase):
         self.assertIn("prepare_state_supervision_core_1_schema", source)
         self.assertGreaterEqual(source.count("prepare_state_supervision_core_1_schema("), 2)
 
-    def test_10_agenda_module_untouched(self) -> None:
+    def test_10_first_agenda_and_calendar_isolated(self) -> None:
         root = Path(__file__).resolve().parents[1]
-        agenda = (root / "moduly" / "agenda" / "ui" / "agenda_page.py").read_text(
+        service = (root / "moduly" / "agenda" / "sluzby" / "agenda_service.py").read_text(
             encoding="utf-8"
         )
-        self.assertNotIn("statni_dozor", agenda)
-        self.assertNotIn("state_supervision", agenda)
-        self.assertNotIn("Státní dozor", agenda)
+        calendar = (
+            root / "core" / "dashboard" / "widget_calendar_placeholder.py"
+        ).read_text(encoding="utf-8")
+        self.assertNotIn("statni_dozor", service)
+        self.assertNotIn("state_supervision", service)
+        self.assertNotIn("statni_dozor", calendar)
+        self.assertNotIn("state_supervision", calendar)
 
 
 _SVC_HOME = Path(tempfile.mkdtemp(prefix="state-supervision-core-1-svc-"))

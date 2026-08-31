@@ -47,6 +47,8 @@ from moduly.periodicke_cinnosti.constants import TAB_PERIODIC, TAB_TASKS_MEETING
 from moduly.periodicke_cinnosti.ui.periodic_activities_tab import PeriodicActivitiesTab
 from moduly.rocni_plan.constants import TAB_YEARLY_PLAN
 from moduly.rocni_plan.ui.yearly_plan_tab import YearlyPlanTab
+from moduly.statni_dozor.constants import TAB_STATE_SUPERVISION
+from moduly.statni_dozor.ui.state_supervision_tab import StateSupervisionTab
 from moduly.schuzky.constants import LIST_WINDOW_TITLE as MEETINGS_TITLE
 from moduly.schuzky.sluzby.meeting_agenda_item_service import meeting_agenda_item_service
 from moduly.schuzky.sluzby.meeting_service import (
@@ -122,12 +124,14 @@ class AgendaPage(QWidget):
             self,
             on_changed=self._refresh_dashboard,
         )
+        self.state_supervision_tab = StateSupervisionTab(self)
         self.yearly_plan_tab = YearlyPlanTab(
             self,
             on_changed=self._refresh_dashboard,
         )
 
         self.tabs.addTab(tasks_tab, TAB_TASKS_MEETINGS)
+        self.tabs.addTab(self.state_supervision_tab, TAB_STATE_SUPERVISION)
         self.tabs.addTab(self.periodic_tab, TAB_PERIODIC)
         self.tabs.addTab(self.yearly_plan_tab, TAB_YEARLY_PLAN)
         layout.addWidget(self.tabs)
@@ -219,11 +223,13 @@ class AgendaPage(QWidget):
     def showEvent(self, event: QShowEvent) -> None:
         super().showEvent(event)
         self.refresh()
+        self.state_supervision_tab.refresh()
         self.periodic_tab.refresh()
         self.yearly_plan_tab.refresh()
 
     def hideEvent(self, event: QHideEvent) -> None:
         self.table.clear_selection()
+        self.state_supervision_tab.table.clear_selection()
         self.periodic_tab.table.clear_selection()
         self.yearly_plan_tab.table.clear_selection()
         super().hideEvent(event)
