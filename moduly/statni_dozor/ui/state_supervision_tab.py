@@ -1,4 +1,4 @@
-"""Záložka Agendy – Státní dozor (pouze čtecí přehled)."""
+"""Záložka Agendy – Státní dozor."""
 
 from __future__ import annotations
 
@@ -10,20 +10,31 @@ from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QLabel,
+    QMessageBox,
+    QPushButton,
     QVBoxLayout,
     QWidget,
 )
 
+from core.widgets.dialog_utils import (
+    configure_edit_action_button,
+    configure_new_action_button,
+    exec_maximized,
+)
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
 from moduly.statni_dozor.constants import (
+    ACTION_EDIT,
+    ACTION_NEW,
     EMPTY_STATE_FILTER,
     EMPTY_STATE_NONE,
     FILTER_ALL,
     FILTER_MODE_ACTIVE,
     FILTER_MODE_CLOSED,
     FILTER_MODES,
+    ITEM_NOT_FOUND_MESSAGE,
     LOAD_ERROR_TEXT,
+    MODULE_NAME,
     STATE_SUPERVISION_STATUS_LABELS,
     STATE_SUPERVISION_STATUS_ORDER,
     STATUS_CANCELLED,
@@ -33,6 +44,9 @@ from moduly.statni_dozor.constants import (
 from moduly.statni_dozor.modely.state_supervision import StateSupervision
 from moduly.statni_dozor.sluzby.state_supervision_service import (
     state_supervision_service,
+)
+from moduly.statni_dozor.ui.state_supervision_editor_dialog import (
+    StateSupervisionEditorDialog,
 )
 from moduly.statni_dozor.ui.state_supervision_table import (
     StateSupervisionTable,
@@ -50,6 +64,16 @@ class StateSupervisionTab(QWidget):
         self._updating_filters = False
 
         layout = QVBoxLayout(self)
+
+        toolbar = QHBoxLayout()
+        self.new_btn = QPushButton(ACTION_NEW)
+        self.edit_btn = QPushButton(ACTION_EDIT)
+        configure_new_action_button(self.new_btn)
+        configure_edit_action_button(self.edit_btn)
+        self.edit_btn.setEnabled(False)
+        toolbar.addWidget(self.new_btn)
+        toolbar.addWidget(self.edit_btn)
+        toolbar.addStretch()
 
         filters = QHBoxLayout()
         filters.addWidget(QLabel("Zobrazit:"))
@@ -89,18 +113,24 @@ class StateSupervisionTab(QWidget):
         self.empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.empty_label.hide()
 
+        layout.addLayout(toolbar)
         layout.addLayout(filters)
         layout.addWidget(self.text_filter)
         layout.addWidget(self.hint_label)
         layout.addWidget(self.empty_label)
         layout.addWidget(self.table)
 
+        self.new_btn.clicked.connect(self.new_supervision)
+        self.edit_btn.clicked.connect(self.edit_selected)
+        self.table.doubleClicked.connect(self.edit_selected)
+        self.table.selectionModel().selectionChanged.connect(self._refresh_action_buttons)
         self.mode_filter.currentIndexChanged.connect(self._on_filter_changed)
         self.year_filter.currentIndexChanged.connect(self._on_filter_changed)
         self.authority_filter.currentIndexChanged.connect(self._on_filter_changed)
         self.workplace_filter.currentIndexChanged.connect(self._on_filter_changed)
         self.status_filter.currentIndexChanged.connect(self._on_filter_changed)
         self.text_filter.search_edit.textChanged.connect(self._update_empty_state)
+        self.text_filter.search_edit.textChanged.connect(self._refresh_action_buttons)
 
         self.refresh()
 
@@ -112,7 +142,7 @@ class StateSupervisionTab(QWidget):
         self.table.clear_selection()
         super().hideEvent(event)
 
-    def refresh(self) -> None:
+    def refresh(self, *, select_id: int | None = None) -> None:
         try:
             records = state_supervision_service.list_supervisions()
         except Exception:
@@ -123,6 +153,7 @@ class StateSupervisionTab(QWidget):
             self._rebuild_filter_options([])
             self.text_filter.update_count()
             self._update_empty_state()
+            self._refresh_action_buttons()
             return
 
         self._load_error = None
@@ -131,14 +162,47 @@ class StateSupervisionTab(QWidget):
         visible = self._apply_combo_filters(records)
         self.table.load_records(visible)
         configure_table_columns(self.table, "state_supervision_overview")
-        self.table.clear_selection()
         self.text_filter.update_count()
         self._update_empty_state()
+        if select_id is not None:
+            self.table.select_by_id(select_id)
+        else:
+            self.table.clear_selection()
+        self._refresh_action_buttons()
 
     def _on_filter_changed(self) -> None:
         if self._updating_filters:
             return
         self.refresh()
+
+    def _selected_row_count(self) -> int:
+        return len(self.table.selectionModel().selectedRows())
+
+    def _refresh_action_buttons(self, *_args) -> None:
+        self.edit_btn.setEnabled(self._selected_row_count() == 1)
+
+    def new_supervision(self) -> None:
+        self._open_editor(None)
+
+    def edit_selected(self) -> None:
+        if self._selected_row_count() != 1:
+            return
+        supervision_id = self.table.selected_supervision_id()
+        if supervision_id is None:
+            return
+        self._open_editor(supervision_id)
+
+    def _open_editor(self, supervision_id: int | None) -> None:
+        if supervision_id is not None:
+            record = state_supervision_service.get_supervision(supervision_id)
+            if record is None:
+                QMessageBox.warning(self, MODULE_NAME, ITEM_NOT_FOUND_MESSAGE)
+                self.refresh()
+                return
+        dialog = StateSupervisionEditorDialog(self, supervision_id=supervision_id)
+        exec_maximized(dialog)
+        if dialog.saved:
+            self.refresh(select_id=dialog.supervision_id)
 
     def _rebuild_filter_options(self, records: list[StateSupervision]) -> None:
         self._updating_filters = True

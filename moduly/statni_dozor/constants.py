@@ -127,3 +127,69 @@ STATE_SUPERVISION_NOTIFICATION_METHOD_LABELS: dict[str, str] = {
     NOTIFICATION_METHOD_IN_PERSON: "Osobně",
     NOTIFICATION_METHOD_OTHER: "Jinak",
 }
+
+STATE_SUPERVISION_NOTIFICATION_METHOD_ORDER: tuple[str, ...] = (
+    NOTIFICATION_METHOD_EMAIL,
+    NOTIFICATION_METHOD_DATA_BOX,
+    NOTIFICATION_METHOD_PHONE,
+    NOTIFICATION_METHOD_WRITTEN,
+    NOTIFICATION_METHOD_IN_PERSON,
+    NOTIFICATION_METHOD_OTHER,
+)
+
+# Popisky v editoru (CORE-1 ukládá kódy; „Telefonicky“ je jen UI).
+STATE_SUPERVISION_NOTIFICATION_METHOD_EDITOR_LABELS: dict[str, str] = {
+    **STATE_SUPERVISION_NOTIFICATION_METHOD_LABELS,
+    NOTIFICATION_METHOD_PHONE: "Telefonicky",
+}
+
+NOTIFICATION_METHOD_EMPTY_LABEL = "nevyplněno"
+
+ACTION_NEW = "Nový státní dozor"
+ACTION_EDIT = "Upravit"
+ACTION_SAVE_AND_CLOSE = "Uložit a zavřít"
+
+DIALOG_TITLE_NEW = "Nový státní dozor"
+DIALOG_TITLE_EDIT = "Státní dozor"
+
+TAB_ANNOUNCEMENT = "Ohlášení a zahájení"
+
+AUTHORITY_SUGGESTIONS: tuple[str, ...] = (
+    "Oblastní báňský úřad (OBÚ)",
+    "Oblastní inspektorát práce (OIP)",
+    "Krajská hygienická stanice (KHS)",
+    "Hasičský záchranný sbor (HZS)",
+    "Drážní úřad (DÚ)",
+)
+
+AUTHORITY_REQUIRED_MESSAGE = "Není vyplněn kontrolní orgán."
+ENDED_BEFORE_STARTED_MESSAGE = (
+    "Datum a čas ukončení nesmí být dříve než datum a čas zahájení."
+)
+SAVE_ERROR_MESSAGE = "Kontrolu státního dozoru se nepodařilo uložit."
+ITEM_NOT_FOUND_MESSAGE = "Kontrola státního dozoru už není k dispozici."
+
+GROUP_NOTIFICATION = "Ohlášení kontroly"
+GROUP_PLANNED_START = "Plánované zahájení"
+GROUP_ACTUAL_COURSE = "Skutečný průběh"
+GROUP_INFORMING = "Informování"
+GROUP_REPRESENTATION = "Zastupování"
+
+LABEL_AUTHORITY = "Kontrolní orgán"
+LABEL_AUTHORITY_ICO = "IČ"
+LABEL_AUTHORITY_ADDRESS = "Adresa kontrolního orgánu"
+LABEL_WORKPLACE = "Provoz / pracoviště"
+LABEL_STATUS = "Stav kontroly"
+LABEL_NOTIFICATION_METHOD = "Způsob ohlášení"
+LABEL_ANNOUNCED_AT = "Datum a čas ohlášení"
+LABEL_FILE_NUMBER = "Číslo jednací"
+LABEL_NOTIFICATION_NOTE = "Poznámka k ohlášení"
+LABEL_PLANNED_START_AT = "Plánované datum a čas zahájení"
+LABEL_PLANNED_START_PLACE = "Místo zahájení"
+LABEL_PLANNED_CONTROL_PLACE = "Místo provedení kontroly"
+LABEL_STARTED_AT = "Skutečné datum a čas zahájení"
+LABEL_ENDED_AT = "Skutečné datum a čas ukončení"
+LABEL_TRADE_UNION_NOTIFIED_AT = "Odborová organizace informována"
+LABEL_MANAGEMENT_NOTIFIED_AT = "Vedení informováno"
+LABEL_POWER_OF_ATTORNEY = "Je vyžadována plná moc"
+LABEL_POWER_OF_ATTORNEY_NOTE = "Poznámka k plné moci"

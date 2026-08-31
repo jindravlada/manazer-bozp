@@ -158,6 +158,41 @@ class StateSupervisionTable(QTableWidget):
         self.clearSelection()
         self.setCurrentCell(-1, -1)
 
+    def selected_supervision_id(self) -> int | None:
+        rows = self.selectionModel().selectedRows()
+        if len(rows) != 1:
+            return None
+        item = self.item(rows[0].row(), COL_STATUS)
+        if item is None:
+            return None
+        raw = item.data(_ROLE_ID)
+        try:
+            return int(raw)
+        except (TypeError, ValueError):
+            return None
+
+    def select_by_id(self, supervision_id: int | None) -> bool:
+        if supervision_id is None:
+            self.clear_selection()
+            return False
+        target = int(supervision_id)
+        for row in range(self.rowCount()):
+            if self.isRowHidden(row):
+                continue
+            item = self.item(row, COL_STATUS)
+            if item is None:
+                continue
+            raw = item.data(_ROLE_ID)
+            try:
+                found = int(raw)
+            except (TypeError, ValueError):
+                continue
+            if found == target:
+                self.selectRow(row)
+                return True
+        self.clear_selection()
+        return False
+
     def load_records(self, records: list[StateSupervision]) -> None:
         with sorting_paused(self):
             self.setRowCount(0)

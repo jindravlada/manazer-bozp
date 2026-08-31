@@ -149,7 +149,7 @@ class StateSupervisionOverview2aTestCase(unittest.TestCase):
         self.assertEqual(page.tabs.indexOf(page.yearly_plan_tab), 3)
         page.close()
 
-    def test_02_default_filter_all_and_no_actions(self) -> None:
+    def test_02_default_filter_all_and_toolbar_actions(self) -> None:
         page = self._open_page()
         tab = page.state_supervision_tab
         self.assertEqual(tab.mode_filter.currentText(), FILTER_ALL)
@@ -157,7 +157,11 @@ class StateSupervisionOverview2aTestCase(unittest.TestCase):
             button.text()
             for button in tab.findChildren(QPushButton)
         ]
-        self.assertEqual(buttons, [])
+        self.assertIn("Nový státní dozor", buttons)
+        self.assertIn("Upravit", buttons)
+        self.assertNotIn("Odstranit", buttons)
+        self.assertNotIn("Otevřít", buttons)
+        self.assertFalse(tab.edit_btn.isEnabled())
         page.close()
 
     def test_03_closed_and_cancelled_visible(self) -> None:
