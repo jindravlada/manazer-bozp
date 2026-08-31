@@ -216,9 +216,16 @@ class EventMyMessagePersistence1TestCase(unittest.TestCase):
         meeting_agenda_item_service.save_items(meeting.id, [{"title": "Bod"}])
         dialog = self._open(meeting)
         self.assertFalse(dialog._editor.save_button.isEnabled())
+        from core.widgets.editor_dialog_controller import _safe_disconnect
+
+        _safe_disconnect(
+            dialog.agenda_items_widget.moje_sdeleni_edit.textChanged,
+            dialog._editor.mark_dirty,
+        )
         dialog.agenda_items_widget.moje_sdeleni_edit.setPlainText("Změna")
-        self.assertTrue(dialog._editor.is_dirty())
+        QApplication.processEvents()
         self.assertTrue(dialog._editor.save_button.isEnabled())
+        self.assertTrue(dialog._editor.is_dirty())
 
     def test_successful_save_marks_dialog_clean(self) -> None:
         meeting = self._create_meeting()

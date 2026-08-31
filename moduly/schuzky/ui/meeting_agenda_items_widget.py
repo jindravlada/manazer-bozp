@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QAction, QActionGroup
 from PySide6.QtWidgets import (
     QComboBox,
@@ -111,6 +111,8 @@ def _format_due(due_date) -> str:
 
 
 class MeetingAgendaItemsWidget(QWidget):
+    itemsChanged = Signal()
+
     def __init__(self, parent=None, *, template_mode: bool = False):
         super().__init__(parent)
         self._template_mode = bool(template_mode)
@@ -259,6 +261,8 @@ class MeetingAgendaItemsWidget(QWidget):
         self.title_edit.textChanged.connect(self._on_title_edited)
         self.status_combo.currentTextChanged.connect(self._on_status_edited)
         self.moje_sdeleni_edit.textChanged.connect(self._on_moje_sdeleni_edited)
+        self.prubeh_jednani_edit.textChanged.connect(self._on_prubeh_edited)
+        self.zaver_edit.textChanged.connect(self._on_zaver_edited)
         self.add_task_btn.clicked.connect(self.add_task)
         self.open_task_btn.clicked.connect(self.open_selected_task)
         self.unlink_task_btn.clicked.connect(self.unlink_selected_task)
@@ -332,6 +336,7 @@ class MeetingAgendaItemsWidget(QWidget):
         self._refresh_list(select_row=new_index)
         self.title_edit.setFocus()
         self.title_edit.selectAll()
+        self._notify_items_changed()
 
     def remove_item(self) -> None:
         index = self._selected_index()
@@ -343,9 +348,11 @@ class MeetingAgendaItemsWidget(QWidget):
         if not self._items:
             self._current_index = None
             self._refresh_list(select_row=None)
+            self._notify_items_changed()
             return
         next_index = min(index, len(self._items) - 1)
         self._refresh_list(select_row=next_index)
+        self._notify_items_changed()
 
     def move_item(self, direction: int) -> None:
         index = self._selected_index()
@@ -358,6 +365,7 @@ class MeetingAgendaItemsWidget(QWidget):
         self._flush_editor_to_item()
         self._items[index], self._items[target] = self._items[target], self._items[index]
         self._refresh_list(select_row=target)
+        self._notify_items_changed()
 
     def add_task(self) -> None:
         meeting_id, item_id = self._current_meeting_and_item_ids()
@@ -481,15 +489,24 @@ class MeetingAgendaItemsWidget(QWidget):
             return
         self._items[self._current_index]["title"] = text
         self._update_list_item_text(self._current_index)
+        self._notify_items_changed()
 
     def _on_moje_sdeleni_edited(self) -> None:
+        self._sync_plain_field("moje_sdeleni", self.moje_sdeleni_edit)
+
+    def _on_prubeh_edited(self) -> None:
+        self._sync_plain_field("prubeh_jednani", self.prubeh_jednani_edit)
+
+    def _on_zaver_edited(self) -> None:
+        self._sync_plain_field("zaver", self.zaver_edit)
+
+    def _sync_plain_field(self, key: str, edit: QTextEdit) -> None:
         if self._suppress_selection or self._current_index is None:
             return
         if not (0 <= self._current_index < len(self._items)):
             return
-        self._items[self._current_index]["moje_sdeleni"] = (
-            self.moje_sdeleni_edit.toPlainText()
-        )
+        self._items[self._current_index][key] = edit.toPlainText()
+        self._notify_items_changed()
 
     def _on_status_edited(self, status: str) -> None:
         if self._suppress_selection or self._current_index is None:
@@ -500,12 +517,17 @@ class MeetingAgendaItemsWidget(QWidget):
         if not (0 <= index < len(self._items)):
             return
         normalized = meeting_agenda_item_service.normalize_status(status)
+        previous = meeting_agenda_item_service.normalize_status(
+            self._items[index].get("status")
+        )
         self._items[index]["status"] = normalized
         self._update_list_item_text(index)
         if index == self._current_index and self.status_combo.currentText() != normalized:
             self._suppress_selection = True
             self.status_combo.setCurrentText(normalized)
             self._suppress_selection = False
+        if normalized != previous:
+            self._notify_items_changed()
 
     def _update_list_item_text(self, index: int) -> None:
         if not (0 <= index < self.list_widget.count()):
@@ -548,6 +570,21 @@ class MeetingAgendaItemsWidget(QWidget):
         row = self.list_widget.currentRow()
         return row if row >= 0 else None
 
+    def _notify_items_changed(self) -> None:
+        if self._suppress_selection:
+            return
+        self.itemsChanged.emit()
+
+    def _block_editor_signals(self, blocked: bool) -> None:
+        for widget in (
+            self.status_combo,
+            self.title_edit,
+            self.moje_sdeleni_edit,
+            self.prubeh_jednani_edit,
+            self.zaver_edit,
+        ):
+            widget.blockSignals(blocked)
+
     def _flush_editor_to_item(self) -> None:
         if self._current_index is None:
             return
@@ -577,23 +614,27 @@ class MeetingAgendaItemsWidget(QWidget):
 
         item = self._items[self._current_index]
         self._suppress_selection = True
+        self._block_editor_signals(True)
         status = meeting_agenda_item_service.normalize_status(item.get("status"))
         self.status_combo.setCurrentText(status)
         self.title_edit.setText(item.get("title") or "")
         self.moje_sdeleni_edit.setPlainText(item.get("moje_sdeleni") or "")
         self.prubeh_jednani_edit.setPlainText(item.get("prubeh_jednani") or "")
         self.zaver_edit.setPlainText(item.get("zaver") or "")
+        self._block_editor_signals(False)
         self._suppress_selection = False
         self.editor_stack.setCurrentWidget(self.editor_panel)
         self._refresh_tasks()
 
     def _show_none_selected(self) -> None:
         self._suppress_selection = True
+        self._block_editor_signals(True)
         self.status_combo.setCurrentText(DEFAULT_AGENDA_ITEM_STATUS)
         self.title_edit.clear()
         self.moje_sdeleni_edit.clear()
         self.prubeh_jednani_edit.clear()
         self.zaver_edit.clear()
+        self._block_editor_signals(False)
         self._suppress_selection = False
         self.tasks_table.setRowCount(0)
         self._task_ids = []
