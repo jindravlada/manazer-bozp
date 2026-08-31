@@ -258,6 +258,7 @@ class MeetingAgendaItemsWidget(QWidget):
         self.list_widget.customContextMenuRequested.connect(self._show_status_context_menu)
         self.title_edit.textChanged.connect(self._on_title_edited)
         self.status_combo.currentTextChanged.connect(self._on_status_edited)
+        self.moje_sdeleni_edit.textChanged.connect(self._on_moje_sdeleni_edited)
         self.add_task_btn.clicked.connect(self.add_task)
         self.open_task_btn.clicked.connect(self.open_selected_task)
         self.unlink_task_btn.clicked.connect(self.unlink_selected_task)
@@ -480,6 +481,15 @@ class MeetingAgendaItemsWidget(QWidget):
             return
         self._items[self._current_index]["title"] = text
         self._update_list_item_text(self._current_index)
+
+    def _on_moje_sdeleni_edited(self) -> None:
+        if self._suppress_selection or self._current_index is None:
+            return
+        if not (0 <= self._current_index < len(self._items)):
+            return
+        self._items[self._current_index]["moje_sdeleni"] = (
+            self.moje_sdeleni_edit.toPlainText()
+        )
 
     def _on_status_edited(self, status: str) -> None:
         if self._suppress_selection or self._current_index is None:
