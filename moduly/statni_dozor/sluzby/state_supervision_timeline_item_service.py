@@ -203,8 +203,8 @@ class StateSupervisionTimelineItemService:
         (výchozí stejně jako ``replace_orders``) skryjí přes ``active=False``.
         Nový draft bez DB ID se při vynechání z dávky do DB nezapisuje.
 
-        Caller-owned ``session`` se necommituje — připraveno na budoucí
-        napojení do ``save_supervision_with_documents``.
+        Caller-owned ``session`` se necommituje — napojeno do
+        ``save_supervision_bundle``.
         """
         self._require_supervision(supervision_id, session=session)
         hide_omitted = replace_orders if deactivate_omitted is None else bool(

@@ -1,4 +1,4 @@
-"""Editor kontroly státního dozoru — Ohlášení a zahájení, Předmět a příprava."""
+"""Editor kontroly státního dozoru — tři záložky včetně průběhu."""
 
 from __future__ import annotations
 
@@ -61,8 +61,10 @@ from moduly.statni_dozor.constants import (
     DIALOG_TITLE_EDIT,
     DIALOG_TITLE_NEW,
     COL_DOCUMENT_TITLE,
+    COL_TIMELINE_TITLE,
     DOCUMENT_COLUMN_HEADERS,
     EMPTY_DOCUMENTS,
+    EMPTY_TIMELINE,
     EMPTY_VALUE,
     ENDED_BEFORE_STARTED_MESSAGE,
     GROUP_ACTUAL_COURSE,
@@ -102,7 +104,10 @@ from moduly.statni_dozor.constants import (
     STATE_SUPERVISION_STATUS_LABELS,
     STATE_SUPERVISION_STATUS_ORDER,
     TAB_ANNOUNCEMENT,
+    TAB_COURSE,
     TAB_SUBJECT_PREPARATION,
+    TIMELINE_COLUMN_HEADERS,
+    TIMELINE_HINT,
     TOOLTIP_INITIAL_INFORMATION,
     TOOLTIP_PREPARATION_NOTE,
     TOOLTIP_SUBJECT,
@@ -112,6 +117,10 @@ from moduly.statni_dozor.modely.state_supervision_required_document_draft import
     StateSupervisionRequiredDocumentDraft,
     new_required_document_client_key,
 )
+from moduly.statni_dozor.modely.state_supervision_timeline_item_draft import (
+    StateSupervisionTimelineItemDraft,
+    new_timeline_item_client_key,
+)
 from moduly.statni_dozor.sluzby.state_supervision_required_document_service import (
     state_supervision_required_document_service,
 )
@@ -119,12 +128,16 @@ from moduly.statni_dozor.sluzby.state_supervision_service import (
     StateSupervisionError,
     state_supervision_service,
 )
+from moduly.statni_dozor.sluzby.state_supervision_timeline_item_service import (
+    state_supervision_timeline_item_service,
+)
 from moduly.statni_dozor.ui.state_supervision_table import (
     display_or_dash,
     format_supervision_datetime,
 )
 
 _ROLE_DOCUMENT_KEY = Qt.ItemDataRole.UserRole
+_ROLE_TIMELINE_KEY = Qt.ItemDataRole.UserRole
 
 logger = logging.getLogger(__name__)
 
@@ -208,6 +221,7 @@ class StateSupervisionEditorDialog(QDialog):
         self._loaded_name_snapshot = ""
         self._loaded_address_snapshot = ""
         self._document_drafts: list[StateSupervisionRequiredDocumentDraft] = []
+        self._timeline_drafts: list[StateSupervisionTimelineItemDraft] = []
 
         if supervision_id is not None:
             self._record = state_supervision_service.get_supervision(supervision_id)
@@ -224,6 +238,7 @@ class StateSupervisionEditorDialog(QDialog):
         self.tabs = QTabWidget()
         self.tabs.addTab(wrap_in_scroll_area(self._build_announcement_tab()), TAB_ANNOUNCEMENT)
         self.tabs.addTab(self._build_subject_tab(), TAB_SUBJECT_PREPARATION)
+        self.tabs.addTab(self._build_course_tab(), TAB_COURSE)
         layout.addWidget(self.tabs, 1)
         layout.addLayout(self._build_footer())
 
@@ -246,9 +261,11 @@ class StateSupervisionEditorDialog(QDialog):
         if self._record is not None:
             self._apply_record(self._record)
             self._load_documents(int(self._record.id))
+            self._load_timeline(int(self._record.id))
         else:
             self._set_combo_data(self.status_combo, DEFAULT_STATUS)
             self._refresh_documents_table()
+            self._refresh_timeline_table()
 
         self._editor.capture_baseline()
 
@@ -447,6 +464,74 @@ class StateSupervisionEditorDialog(QDialog):
         self._refresh_document_actions()
         return box
 
+    def _build_course_tab(self) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+
+        self.timeline_hint_label = QLabel(TIMELINE_HINT)
+        self.timeline_hint_label.setWordWrap(True)
+        self.timeline_hint_label.setStyleSheet("color: #666;")
+        layout.addWidget(self.timeline_hint_label)
+
+        toolbar = QHBoxLayout()
+        self.add_timeline_btn = QPushButton(ACTION_ADD)
+        self.edit_timeline_btn = QPushButton(ACTION_EDIT)
+        self.remove_timeline_btn = QPushButton(ACTION_REMOVE)
+        self.move_timeline_up_btn = QPushButton(ACTION_MOVE_UP)
+        self.move_timeline_down_btn = QPushButton(ACTION_MOVE_DOWN)
+        configure_new_action_button(self.add_timeline_btn)
+        configure_edit_action_button(self.edit_timeline_btn)
+        for button in (
+            self.add_timeline_btn,
+            self.edit_timeline_btn,
+            self.remove_timeline_btn,
+            self.move_timeline_up_btn,
+            self.move_timeline_down_btn,
+        ):
+            button.setAutoDefault(False)
+            button.setDefault(False)
+            toolbar.addWidget(button)
+        toolbar.addStretch(1)
+        layout.addLayout(toolbar)
+
+        self.timeline_empty_label = QLabel(EMPTY_TIMELINE)
+        self.timeline_empty_label.setWordWrap(True)
+        self.timeline_empty_label.setStyleSheet("color: #666;")
+        layout.addWidget(self.timeline_empty_label)
+
+        self.timeline_table = QTableWidget(0, len(TIMELINE_COLUMN_HEADERS))
+        self.timeline_table.setHorizontalHeaderLabels(TIMELINE_COLUMN_HEADERS)
+        self.timeline_table.verticalHeader().setVisible(False)
+        self.timeline_table.setSelectionBehavior(
+            QAbstractItemView.SelectionBehavior.SelectRows
+        )
+        self.timeline_table.setSelectionMode(
+            QAbstractItemView.SelectionMode.SingleSelection
+        )
+        self.timeline_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.timeline_table.setSortingEnabled(False)
+        self.timeline_table.setTextElideMode(Qt.TextElideMode.ElideRight)
+        self.timeline_table.setMinimumHeight(180)
+        self.timeline_table.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
+        configure_table_columns(self.timeline_table, "state_supervision_timeline_items")
+        layout.addWidget(self.timeline_table, 1)
+
+        self.add_timeline_btn.clicked.connect(self._add_timeline_item)
+        self.edit_timeline_btn.clicked.connect(self._edit_selected_timeline_item)
+        self.remove_timeline_btn.clicked.connect(self._remove_selected_timeline_item)
+        self.move_timeline_up_btn.clicked.connect(
+            lambda: self._move_selected_timeline_item(-1)
+        )
+        self.move_timeline_down_btn.clicked.connect(
+            lambda: self._move_selected_timeline_item(1)
+        )
+        self.timeline_table.doubleClicked.connect(self._edit_selected_timeline_item)
+        self.timeline_table.itemSelectionChanged.connect(self._refresh_timeline_actions)
+        self._refresh_timeline_actions()
+        return page
+
     def _build_footer(self) -> QHBoxLayout:
         footer = QHBoxLayout()
         footer.setContentsMargins(0, 0, 0, 0)
@@ -607,7 +692,10 @@ class StateSupervisionEditorDialog(QDialog):
 
     def get_snapshot(self) -> tuple:
         data = self.get_data()
-        return tuple(data[key] for key in _EDITOR_FIELDS) + (self._documents_snapshot(),)
+        return tuple(data[key] for key in _EDITOR_FIELDS) + (
+            self._documents_snapshot(),
+            self._timeline_snapshot(),
+        )
 
     def _validation_message(self, data: dict) -> str | None:
         if not data["authority_name"]:
@@ -627,16 +715,18 @@ class StateSupervisionEditorDialog(QDialog):
         payload = {key: data[key] for key in _EDITOR_FIELDS}
         previous_id = self._supervision_id
         try:
-            record, _docs = state_supervision_service.save_supervision_with_documents(
+            record, _docs, _items = state_supervision_service.save_supervision_bundle(
                 supervision_id=self._supervision_id,
                 fields=payload,
                 documents=self._drafts_for_save(),
+                timeline_items=self._timeline_drafts_for_save(),
             )
             loaded = state_supervision_service.get_supervision(int(record.id))
             if loaded is None:
                 raise StateSupervisionError(SAVE_ERROR_MESSAGE)
             self._apply_record(loaded)
             self._load_documents(int(loaded.id))
+            self._load_timeline(int(loaded.id))
             self._persisted = True
             self.setWindowTitle(DIALOG_TITLE_EDIT)
             return True
@@ -836,6 +926,187 @@ class StateSupervisionEditorDialog(QDialog):
         inactive = [item for item in self._document_drafts if not item.active]
         self._document_drafts = active + inactive
         self._refresh_documents_table(select_key=key)
+        self._editor.refresh_dirty()
+
+    def _active_timeline_items(self) -> list[StateSupervisionTimelineItemDraft]:
+        return [item for item in self._timeline_drafts if item.active]
+
+    def _timeline_snapshot(self) -> tuple:
+        rows = []
+        for item in self._timeline_drafts:
+            rows.append(
+                (
+                    item.client_key,
+                    item.id,
+                    _normalize_datetime(item.occurred_at),
+                    str(item.title or ""),
+                    item.place,
+                    item.notes,
+                    int(item.display_order or 0),
+                    bool(item.active),
+                )
+            )
+        return tuple(rows)
+
+    def _timeline_drafts_for_save(self) -> list[StateSupervisionTimelineItemDraft]:
+        active = [
+            replace(item, display_order=index * 10)
+            for index, item in enumerate(self._active_timeline_items())
+        ]
+        inactive = [item for item in self._timeline_drafts if not item.active]
+        return active + inactive
+
+    def _load_timeline(self, supervision_id: int) -> None:
+        records = state_supervision_timeline_item_service.list_timeline_items(
+            int(supervision_id),
+            include_inactive=False,
+        )
+        loaded: list[StateSupervisionTimelineItemDraft] = []
+        for record in records:
+            loaded.append(
+                StateSupervisionTimelineItemDraft(
+                    title=str(record.title or ""),
+                    id=int(record.id),
+                    occurred_at=_normalize_datetime(record.occurred_at),
+                    place=record.place,
+                    notes=record.notes,
+                    display_order=int(record.display_order or 0),
+                    active=bool(record.active),
+                    client_key=f"db-{record.id}",
+                )
+            )
+        self._timeline_drafts = loaded
+        self._refresh_timeline_table()
+
+    def _refresh_timeline_table(self, *, select_key: str | None = None) -> None:
+        active = self._active_timeline_items()
+        self.timeline_empty_label.setVisible(not active)
+        self.timeline_table.setVisible(True)
+        self.timeline_table.setRowCount(len(active))
+        for row, item in enumerate(active):
+            values = [
+                format_supervision_datetime(_normalize_datetime(item.occurred_at)),
+                display_or_dash(item.title),
+                display_or_dash(item.place),
+                display_or_dash(item.notes),
+            ]
+            for column, text in enumerate(values):
+                cell = QTableWidgetItem(text)
+                cell.setFlags(cell.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                if column == COL_TIMELINE_TITLE:
+                    cell.setData(_ROLE_TIMELINE_KEY, item.client_key)
+                apply_cell_tooltip(cell, text if text != EMPTY_VALUE else "")
+                self.timeline_table.setItem(row, column, cell)
+        configure_table_columns(
+            self.timeline_table, "state_supervision_timeline_items"
+        )
+        if select_key:
+            self._select_timeline_key(select_key)
+        self._refresh_timeline_actions()
+
+    def _selected_timeline_key(self) -> str | None:
+        rows = self.timeline_table.selectionModel().selectedRows()
+        if len(rows) != 1:
+            return None
+        item = self.timeline_table.item(rows[0].row(), COL_TIMELINE_TITLE)
+        if item is None:
+            return None
+        key = item.data(_ROLE_TIMELINE_KEY)
+        return str(key) if key else None
+
+    def _select_timeline_key(self, client_key: str) -> None:
+        for row in range(self.timeline_table.rowCount()):
+            item = self.timeline_table.item(row, COL_TIMELINE_TITLE)
+            if item is not None and item.data(_ROLE_TIMELINE_KEY) == client_key:
+                self.timeline_table.selectRow(row)
+                return
+        self.timeline_table.clearSelection()
+
+    def _timeline_draft_by_key(
+        self, client_key: str | None
+    ) -> StateSupervisionTimelineItemDraft | None:
+        if not client_key:
+            return None
+        for item in self._timeline_drafts:
+            if item.client_key == client_key:
+                return item
+        return None
+
+    def _refresh_timeline_actions(self, *_args) -> None:
+        active = self._active_timeline_items()
+        key = self._selected_timeline_key()
+        has_one = key is not None
+        self.edit_timeline_btn.setEnabled(has_one)
+        self.remove_timeline_btn.setEnabled(has_one)
+        index = next((i for i, item in enumerate(active) if item.client_key == key), -1)
+        self.move_timeline_up_btn.setEnabled(has_one and index > 0)
+        self.move_timeline_down_btn.setEnabled(has_one and 0 <= index < len(active) - 1)
+
+    def _add_timeline_item(self) -> None:
+        from moduly.statni_dozor.ui.state_supervision_timeline_item_dialog import (
+            exec_timeline_item_dialog,
+        )
+
+        active = self._active_timeline_items()
+        next_order = max((item.display_order for item in active), default=-10) + 10
+        draft = StateSupervisionTimelineItemDraft(
+            title="",
+            display_order=next_order,
+            client_key=new_timeline_item_client_key(),
+        )
+        saved = exec_timeline_item_dialog(self, draft=draft, is_new=True)
+        if saved is None:
+            return
+        self._timeline_drafts.append(saved)
+        self._refresh_timeline_table(select_key=saved.client_key)
+        self._editor.refresh_dirty()
+
+    def _edit_selected_timeline_item(self) -> None:
+        from moduly.statni_dozor.ui.state_supervision_timeline_item_dialog import (
+            exec_timeline_item_dialog,
+        )
+
+        current = self._timeline_draft_by_key(self._selected_timeline_key())
+        if current is None:
+            return
+        saved = exec_timeline_item_dialog(self, draft=replace(current), is_new=False)
+        if saved is None:
+            return
+        for index, item in enumerate(self._timeline_drafts):
+            if item.client_key == current.client_key:
+                self._timeline_drafts[index] = saved
+                break
+        self._refresh_timeline_table(select_key=saved.client_key)
+        self._editor.refresh_dirty()
+
+    def _remove_selected_timeline_item(self) -> None:
+        current = self._timeline_draft_by_key(self._selected_timeline_key())
+        if current is None:
+            return
+        if current.id is None:
+            self._timeline_drafts = [
+                item
+                for item in self._timeline_drafts
+                if item.client_key != current.client_key
+            ]
+        else:
+            current.active = False
+        self._refresh_timeline_table()
+        self._editor.refresh_dirty()
+
+    def _move_selected_timeline_item(self, delta: int) -> None:
+        key = self._selected_timeline_key()
+        active = self._active_timeline_items()
+        index = next((i for i, item in enumerate(active) if item.client_key == key), -1)
+        target = index + delta
+        if index < 0 or target < 0 or target >= len(active):
+            return
+        active[index], active[target] = active[target], active[index]
+        for order, item in enumerate(active):
+            item.display_order = order * 10
+        inactive = [item for item in self._timeline_drafts if not item.active]
+        self._timeline_drafts = active + inactive
+        self._refresh_timeline_table(select_key=key)
         self._editor.refresh_dirty()
 
     def _save_and_close(self) -> None:

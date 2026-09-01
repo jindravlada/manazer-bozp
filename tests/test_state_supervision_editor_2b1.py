@@ -224,13 +224,13 @@ class StateSupervisionEditor2b1TestCase(unittest.TestCase):
         self.assertFalse(dialog._editor.save_button.isEnabled())
         self.assertFalse(dialog._save_close_btn.isEnabled())
         self.assertEqual(dialog._save_close_btn.text(), ACTION_SAVE_AND_CLOSE)
-        self.assertEqual(dialog.tabs.count(), 2)
+        self.assertEqual(dialog.tabs.count(), 3)
         self.assertEqual(dialog.tabs.tabText(0), TAB_ANNOUNCEMENT)
         self.assertEqual(dialog.tabs.tabText(1), TAB_SUBJECT_PREPARATION)
         extra_titles = [
             dialog.tabs.tabText(index) for index in range(dialog.tabs.count())
         ]
-        self.assertNotIn("Průběh kontroly", extra_titles)
+        self.assertIn("Průběh kontroly", extra_titles)
         self.assertNotIn("Závěr a opatření", extra_titles)
 
         before = _count_supervisions()

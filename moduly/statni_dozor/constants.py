@@ -154,6 +154,7 @@ DIALOG_TITLE_EDIT = "Státní dozor"
 
 TAB_ANNOUNCEMENT = "Ohlášení a zahájení"
 TAB_SUBJECT_PREPARATION = "Předmět a příprava"
+TAB_COURSE = "Průběh kontroly"
 
 AUTHORITY_SUGGESTIONS: tuple[str, ...] = (
     "Obvodní báňský úřad (OBÚ)",
@@ -258,6 +259,32 @@ RESPONSIBLE_SOURCE_TYPES = frozenset(
     }
 )
 
-# Průběh kontroly (STATE-SUPERVISION-TIMELINE-CORE-3A0)
+# Průběh kontroly (STATE-SUPERVISION-TIMELINE-CORE-3A0 / UI-3A1)
 ENTITY_TIMELINE_ITEM = "state_supervision_timeline_item"
 TABLE_TIMELINE_ITEMS = "state_supervision_timeline_items"
+
+EMPTY_TIMELINE = "Zatím nejsou zaznamenány žádné údaje z průběhu kontroly."
+TIMELINE_HINT = (
+    "Zaznamenávejte jednotlivé úkony a poznámky z průběhu kontroly. "
+    "Změny se uloží až hlavním tlačítkem Uložit."
+)
+DIALOG_TIMELINE_NEW = "Nový záznam průběhu"
+DIALOG_TIMELINE_EDIT = "Záznam průběhu"
+TIMELINE_TITLE_REQUIRED_MESSAGE = "Není vyplněn název záznamu."
+
+LABEL_TIMELINE_OCCURRED_AT = "Datum a čas"
+LABEL_TIMELINE_TITLE = "Název záznamu"
+LABEL_TIMELINE_PLACE = "Místo"
+LABEL_TIMELINE_NOTES = "Zápis z průběhu"
+
+COL_TIMELINE_OCCURRED = 0
+COL_TIMELINE_TITLE = 1
+COL_TIMELINE_PLACE = 2
+COL_TIMELINE_NOTES = 3
+
+TIMELINE_COLUMN_HEADERS = [
+    "Datum a čas",
+    "Název záznamu",
+    "Místo",
+    "Zápis z průběhu",
+]

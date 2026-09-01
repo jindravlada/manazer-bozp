@@ -45,6 +45,7 @@ with patch.object(Path, "home", return_value=_TMP):
         LABEL_PREPARATION_NOTE,
         LABEL_SUBJECT,
         TAB_ANNOUNCEMENT,
+        TAB_COURSE,
         TAB_STATE_SUPERVISION,
         TAB_SUBJECT_PREPARATION,
     )
@@ -105,12 +106,14 @@ class StateSupervisionEditor2b2TestCase(unittest.TestCase):
     def _tab_titles(self, dialog: StateSupervisionEditorDialog) -> list[str]:
         return [dialog.tabs.tabText(index) for index in range(dialog.tabs.count())]
 
-    def test_01_exactly_two_tabs_in_order(self) -> None:
+    def test_01_three_tabs_in_order(self) -> None:
         dialog = StateSupervisionEditorDialog()
         titles = self._tab_titles(dialog)
-        self.assertEqual(titles, [TAB_ANNOUNCEMENT, TAB_SUBJECT_PREPARATION])
-        self.assertEqual(dialog.tabs.count(), 2)
-        self.assertNotIn("Průběh kontroly", titles)
+        self.assertEqual(
+            titles,
+            [TAB_ANNOUNCEMENT, TAB_SUBJECT_PREPARATION, TAB_COURSE],
+        )
+        self.assertEqual(dialog.tabs.count(), 3)
         self.assertNotIn("Závěr a opatření", titles)
         dialog.close()
 

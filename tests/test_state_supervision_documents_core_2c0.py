@@ -613,8 +613,8 @@ class StateSupervisionDocumentsCore2c0ServiceTestCase(unittest.TestCase):
 
     def test_10_editor_still_two_tabs_without_delete(self) -> None:
         source = inspect.getsource(StateSupervisionEditorDialog)
-        self.assertEqual(source.count("self.tabs.addTab("), 2)
-        self.assertNotIn("Průběh kontroly", source)
+        self.assertEqual(source.count("self.tabs.addTab("), 3)
+        self.assertIn("TAB_COURSE", source)
         self.assertNotIn("Závěr a opatření", source)
         public = [
             name

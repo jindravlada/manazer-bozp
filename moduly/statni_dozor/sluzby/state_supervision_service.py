@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from datetime import datetime
-from typing import Any
+from typing import Any, Final
 
 from sqlalchemy.orm import Session
 
@@ -178,6 +178,20 @@ def _normalize_payload(fields: dict[str, Any]) -> dict[str, Any]:
     return payload
 
 
+class KeepExisting:
+    """Sentinel: podřízená kolekce nebyla předána a existující data se nemění.
+
+    Odlišuje se od prázdného seznamu, který znamená „deaktivovat všechny
+    aktivní položky této kolekce“.
+    """
+
+    def __repr__(self) -> str:
+        return "KEEP_EXISTING"
+
+
+KEEP_EXISTING: Final = KeepExisting()
+
+
 class StateSupervisionService:
     def __init__(self) -> None:
         self.repository = StateSupervisionRepository()
@@ -287,28 +301,42 @@ class StateSupervisionService:
             query=query,
         )
 
-    def save_supervision_with_documents(
+    def save_supervision_bundle(
         self,
         *,
         supervision_id: int | None,
         fields: dict[str, Any],
-        documents: Sequence[Any],
+        documents: Sequence[Any] | KeepExisting = KEEP_EXISTING,
+        timeline_items: Sequence[Any] | KeepExisting = KEEP_EXISTING,
         session: Session | None = None,
-    ) -> tuple[StateSupervision, list]:
-        """Uloží kontrolu a požadované doklady v jedné transakci.
+    ) -> tuple[StateSupervision, list, list]:
+        """Uloží kontrolu, doklady a průběh v jedné transakci.
 
-        Jedna caller-owned nebo službou vlastněná session: create/update rodiče,
-        flush ID, dávkový upsert dokladů, jeden commit. Při chybě rollback všeho.
+        ``KEEP_EXISTING`` = kolekce nebyla poskytnuta, existující řádky
+        se nemění. Prázdný seznam = deaktivovat všechny aktivní položky
+        dané kolekce. ``None`` se nepoužívá.
+
+        Jedna session: create/update rodiče, flush ID, dávkový upsert
+        dokladů, dávkový upsert průběhu, jeden commit. Při chybě rollback.
         """
         from moduly.statni_dozor.modely.state_supervision_required_document import (
             StateSupervisionRequiredDocument,
         )
+        from moduly.statni_dozor.modely.state_supervision_timeline_item import (
+            StateSupervisionTimelineItem,
+        )
         from moduly.statni_dozor.sluzby.state_supervision_required_document_service import (
             state_supervision_required_document_service,
         )
+        from moduly.statni_dozor.sluzby.state_supervision_timeline_item_service import (
+            state_supervision_timeline_item_service,
+        )
 
         payload = dict(fields)
-        drafts = list(documents)
+        save_documents = documents is not KEEP_EXISTING
+        save_timeline = timeline_items is not KEEP_EXISTING
+        document_drafts = list(documents) if save_documents else []
+        timeline_drafts = list(timeline_items) if save_timeline else []
         with self.repository.session(session) as (sess, owns):
             if supervision_id is None:
                 record = self.create_supervision(session=sess, **payload)
@@ -319,12 +347,28 @@ class StateSupervisionService:
                     **payload,
                 )
             sess.flush()
-            stored_docs = state_supervision_required_document_service.save_document_batch(
-                int(record.id),
-                drafts,
-                session=sess,
-                replace_orders=True,
-            )
+            stored_docs: list = []
+            stored_timeline: list = []
+            if save_documents:
+                stored_docs = (
+                    state_supervision_required_document_service.save_document_batch(
+                        int(record.id),
+                        document_drafts,
+                        session=sess,
+                        replace_orders=True,
+                        deactivate_omitted=True,
+                    )
+                )
+            if save_timeline:
+                stored_timeline = (
+                    state_supervision_timeline_item_service.save_timeline_batch(
+                        int(record.id),
+                        timeline_drafts,
+                        session=sess,
+                        replace_orders=True,
+                        deactivate_omitted=True,
+                    )
+                )
             if owns:
                 sess.commit()
                 sess.refresh(record)
@@ -334,8 +378,31 @@ class StateSupervisionService:
                     sess.refresh(item)
                     sess.expunge(item)
                     detached_docs.append(item)
-                return record, detached_docs
-            return record, stored_docs
+                detached_timeline: list[StateSupervisionTimelineItem] = []
+                for item in stored_timeline:
+                    sess.refresh(item)
+                    sess.expunge(item)
+                    detached_timeline.append(item)
+                return record, detached_docs, detached_timeline
+            return record, stored_docs, stored_timeline
+
+    def save_supervision_with_documents(
+        self,
+        *,
+        supervision_id: int | None,
+        fields: dict[str, Any],
+        documents: Sequence[Any],
+        session: Session | None = None,
+    ) -> tuple[StateSupervision, list]:
+        """Kompatibilní wrapper: uloží kontrolu a doklady, průběh nemění."""
+        record, stored_docs, _timeline = self.save_supervision_bundle(
+            supervision_id=supervision_id,
+            fields=fields,
+            documents=documents,
+            timeline_items=KEEP_EXISTING,
+            session=session,
+        )
+        return record, stored_docs
 
 
 state_supervision_service = StateSupervisionService()

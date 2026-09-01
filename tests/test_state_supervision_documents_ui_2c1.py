@@ -135,7 +135,7 @@ class StateSupervisionDocumentsUi2c1TestCase(unittest.TestCase):
 
     def test_01_section_on_second_tab_six_columns_and_buttons(self) -> None:
         dialog = StateSupervisionEditorDialog()
-        self.assertEqual(dialog.tabs.count(), 2)
+        self.assertEqual(dialog.tabs.count(), 3)
         self.assertEqual(dialog.tabs.tabText(0), TAB_ANNOUNCEMENT)
         self.assertEqual(dialog.tabs.tabText(1), TAB_SUBJECT_PREPARATION)
         groups = [box.title() for box in dialog.findChildren(QGroupBox)]
@@ -464,7 +464,9 @@ class StateSupervisionDocumentsUi2c1TestCase(unittest.TestCase):
         self.assertTrue(dialog._editor.is_dirty())
         dialog.close()
 
-        source = inspect.getsource(StateSupervisionService.save_supervision_with_documents)
+        source = inspect.getsource(
+            StateSupervisionService.save_supervision_bundle
+        )
         self.assertEqual(source.count("sess.commit()"), 1)
         self.assertNotIn("session.commit()", source)
         repo_source = inspect.getsource(
@@ -537,7 +539,7 @@ class StateSupervisionDocumentsUi2c1TestCase(unittest.TestCase):
         sub.close()
 
         source = inspect.getsource(StateSupervisionEditorDialog)
-        self.assertIn("save_supervision_with_documents", source)
+        self.assertIn("save_supervision_bundle", source)
         self.assertNotIn("DELETE FROM", source)
         self.assertEqual(source.count("create_supervision("), 0)
 

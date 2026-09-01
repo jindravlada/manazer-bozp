@@ -684,23 +684,26 @@ class StateSupervisionTimelineCore3a0ServiceTestCase(unittest.TestCase):
         self.assertTrue(cancelled[0].active)
         self.assertEqual(cancelled[0].id, other_row.id)
 
-    def test_10_ui_unchanged_two_editor_tabs(self) -> None:
+    def test_10_no_physical_delete_and_agenda_four_tabs(self) -> None:
         source = inspect.getsource(StateSupervisionEditorDialog)
-        self.assertEqual(source.count("self.tabs.addTab("), 2)
-        self.assertNotIn("Průběh kontroly", source)
         self.assertNotIn("Závěr a opatření", source)
-        self.assertNotIn("TimelineItem", source)
-        self.assertNotIn("save_timeline_batch", source)
-        bundle = inspect.getsource(
+        public = [
+            name
+            for name in dir(type(state_supervision_timeline_item_service))
+            if not name.startswith("_")
+        ]
+        self.assertNotIn("delete", public)
+        self.assertNotIn("delete_timeline_item", public)
+        self.assertNotIn("remove", public)
+        wrapper = inspect.getsource(
             StateSupervisionService.save_supervision_with_documents
         )
-        self.assertNotIn("save_timeline_batch", bundle)
-        self.assertNotIn("timeline", bundle.lower())
+        self.assertIn("KEEP_EXISTING", wrapper)
+        self.assertNotIn("save_timeline_batch", wrapper)
         from moduly.statni_dozor.ui import state_supervision_tab
 
         tab_source = inspect.getsource(state_supervision_tab)
         self.assertNotIn("save_timeline_batch", tab_source)
-        self.assertNotIn("TimelineItem", tab_source)
         from moduly.agenda.ui import agenda_page
 
         agenda_source = inspect.getsource(agenda_page)

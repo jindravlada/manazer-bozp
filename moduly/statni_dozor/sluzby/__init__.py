@@ -4,6 +4,7 @@ from moduly.statni_dozor.sluzby.state_supervision_required_document_service impo
     state_supervision_required_document_service,
 )
 from moduly.statni_dozor.sluzby.state_supervision_service import (
+    KEEP_EXISTING,
     StateSupervisionError,
     state_supervision_service,
 )
@@ -12,6 +13,7 @@ from moduly.statni_dozor.sluzby.state_supervision_timeline_item_service import (
 )
 
 __all__ = [
+    "KEEP_EXISTING",
     "StateSupervisionError",
     "state_supervision_service",
     "state_supervision_required_document_service",

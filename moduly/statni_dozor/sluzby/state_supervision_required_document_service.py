@@ -267,14 +267,20 @@ class StateSupervisionRequiredDocumentService:
         *,
         session: Session | None = None,
         replace_orders: bool = True,
+        deactivate_omitted: bool = False,
     ) -> list[StateSupervisionRequiredDocument]:
         """Uloží dávku dokladů jedné kontroly v jedné transakci.
 
         Duplicitní ``display_order`` se při ``replace_orders=True`` (výchozí)
         deterministicky přepíše na 0, 10, 20, … podle (order, id, pořadí v dávce).
+
+        Při ``deactivate_omitted=True`` se aktivní doklady, které v dávce
+        chybí, skryjí přes ``active=False``. Prázdná dávka tak deaktivuje
+        všechny aktivní doklady. Výchozí ``False`` zachovává 2C0 chování.
         """
         self._require_supervision(supervision_id, session=session)
-        if not drafts:
+        hide_omitted = bool(deactivate_omitted)
+        if not drafts and not hide_omitted:
             return []
 
         with self.repository.session(session) as (sess, owns):
@@ -288,7 +294,7 @@ class StateSupervisionRequiredDocumentService:
             }
             ordered = (
                 _normalize_batch_orders(drafts)
-                if replace_orders
+                if replace_orders and drafts
                 else [
                     (_require_display_order(draft.display_order), draft)
                     for draft in drafts
@@ -304,16 +310,30 @@ class StateSupervisionRequiredDocumentService:
                     session=sess,
                 )
                 prepared.append(record)
+            kept_count = len(prepared)
+            if hide_omitted:
+                kept_ids = {int(draft.id) for draft in drafts if draft.id is not None}
+                for row_id, row in existing_rows.items():
+                    if row_id in kept_ids:
+                        continue
+                    if not bool(row.active):
+                        continue
+                    row.active = False
+                    row.updated_at = datetime.now()
+                    prepared.append(row)
+            if not prepared:
+                return []
             stored = self.repository.save_all(prepared, session=sess)
+            kept = stored[:kept_count]
             if owns:
                 sess.commit()
                 detached: list[StateSupervisionRequiredDocument] = []
-                for record in stored:
+                for record in kept:
                     sess.refresh(record)
                     sess.expunge(record)
                     detached.append(record)
                 return detached
-            return stored
+            return kept
 
     def _draft_from_record(
         self, record: StateSupervisionRequiredDocument
