@@ -580,20 +580,15 @@ class AttachmentStagingRegressionGuardTests(_HomeMixin):
         self.assertIn("attachment_service.delete", widget_src)
         self.assertNotIn("prepare_attachment_staging", widget_src)
 
-    def test_state_supervision_bundle_and_editor_unchanged(self) -> None:
-        from moduly.statni_dozor.sluzby.state_supervision_service import (
-            StateSupervisionService,
-        )
+    def test_state_supervision_editor_has_no_attachment_ui(self) -> None:
         from moduly.statni_dozor.ui.state_supervision_editor_dialog import (
             StateSupervisionEditorDialog,
         )
 
-        bundle = inspect.getsource(StateSupervisionService.save_supervision_bundle)
-        self.assertNotIn("prepare_attachment_staging", bundle)
-        self.assertNotIn("AttachmentStagingState", bundle)
         editor = inspect.getsource(StateSupervisionEditorDialog)
         self.assertEqual(editor.count("self.tabs.addTab("), 4)
         self.assertNotIn("prepare_attachment_staging", editor)
+        self.assertNotIn("AttachmentStagingState", editor)
 
     def test_external_audits_keep_own_staging(self) -> None:
         from moduly.externi_audity.sluzby import external_audit_draft

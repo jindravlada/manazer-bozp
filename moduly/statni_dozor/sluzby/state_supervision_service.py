@@ -2,17 +2,20 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Sequence
 from datetime import datetime
 from typing import Any, Final
 
 from sqlalchemy.orm import Session
 
+from core.models.attachment_staging import AttachmentStagingState
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.statni_dozor.constants import (
     CLOSED_AT_REQUIRED_MESSAGE,
     CLOSED_BEFORE_ENDED_MESSAGE,
     DEFAULT_STATUS,
+    ENTITY_STATE_SUPERVISION,
     OBJECTIONS_BEFORE_PROTOCOL_MESSAGE,
     STATE_SUPERVISION_NOTIFICATION_METHODS,
     STATE_SUPERVISION_STATUSES,
@@ -186,11 +189,15 @@ def _normalize_payload(fields: dict[str, Any]) -> dict[str, Any]:
     return payload
 
 
+logger = logging.getLogger(__name__)
+
+
 class KeepExisting:
     """Sentinel: podřízená kolekce nebyla předána a existující data se nemění.
 
     Odlišuje se od prázdného seznamu, který znamená „deaktivovat všechny
-    aktivní položky této kolekce“.
+    aktivní položky této kolekce“. U příloh prázdný ``AttachmentStagingState``
+    existující soubory nedeaktivuje — viz ``save_supervision_bundle``.
     """
 
     def __repr__(self) -> str:
@@ -321,18 +328,30 @@ class StateSupervisionService:
         documents: Sequence[Any] | KeepExisting = KEEP_EXISTING,
         timeline_items: Sequence[Any] | KeepExisting = KEEP_EXISTING,
         participants: Sequence[Any] | KeepExisting = KEEP_EXISTING,
+        attachments: AttachmentStagingState | KeepExisting = KEEP_EXISTING,
         session: Session | None = None,
     ) -> tuple[StateSupervision, list, list]:
-        """Uloží kontrolu, doklady, průběh a účastníky v jedné transakci.
+        """Uloží kontrolu, doklady, průběh, účastníky a staged přílohy atomicky.
+
+        Návrat zůstává 3-složka ``(kontrola, doklady, průběh)``.
 
         ``KEEP_EXISTING`` = kolekce nebyla poskytnuta, existující řádky
-        se nemění. Prázdný seznam = deaktivovat všechny aktivní položky
-        dané kolekce. ``None`` se nepoužívá.
+        se nemění. Prázdný seznam dokladů / průběhu / účastníků = deaktivovat
+        všechny aktivní položky dané kolekce. ``None`` se nepoužívá.
 
-        Jedna session: create/update rodiče, flush ID, dávkový upsert
-        dokladů, dávkový upsert průběhu, dávkový upsert účastníků,
-        jeden commit. Při chybě rollback.
+        ``attachments=KEEP_EXISTING`` přílohy nenačítá ani nemění a nevytváří
+        žádný soubor. ``AttachmentStagingState`` aplikuje jen
+        ``pending_add_paths`` a ``pending_remove_ids``; prázdný staging
+        existující přílohy nedeaktivuje. Úspěšně aplikovaný staging se
+        nesmí znovu použít bez obnovení — bundle jej samo nemění ani
+        nevolá ``clear()``.
+
+        Pořadí: create/update rodiče, flush ID, doklady, průběh, účastníci,
+        ``prepare_attachment_staging`` v caller-owned session, jeden commit,
+        ``finalize_attachment_changes``. Při chybě rollback DB a úklid
+        nových kopií; původní odebírané soubory zůstanou.
         """
+        from core.services.attachment_service import attachment_service
         from moduly.statni_dozor.modely.state_supervision_required_document import (
             StateSupervisionRequiredDocument,
         )
@@ -356,62 +375,93 @@ class StateSupervisionService:
         document_drafts = list(documents) if save_documents else []
         timeline_drafts = list(timeline_items) if save_timeline else []
         participant_drafts = list(participants) if save_participants else []
-        with self.repository.session(session) as (sess, owns):
-            if supervision_id is None:
-                record = self.create_supervision(session=sess, **payload)
-            else:
-                record = self.update_supervision(
-                    int(supervision_id),
-                    session=sess,
-                    **payload,
-                )
-            sess.flush()
-            stored_docs: list = []
-            stored_timeline: list = []
-            if save_documents:
-                stored_docs = (
-                    state_supervision_required_document_service.save_document_batch(
+        staging = _require_attachment_argument(attachments)
+        prepared = None
+        committed = False
+        result: tuple[StateSupervision, list, list] | None = None
+        try:
+            with self.repository.session(session) as (sess, owns):
+                if supervision_id is None:
+                    record = self.create_supervision(session=sess, **payload)
+                else:
+                    record = self.update_supervision(
+                        int(supervision_id),
+                        session=sess,
+                        **payload,
+                    )
+                sess.flush()
+                stored_docs: list = []
+                stored_timeline: list = []
+                if save_documents:
+                    stored_docs = (
+                        state_supervision_required_document_service.save_document_batch(
+                            int(record.id),
+                            document_drafts,
+                            session=sess,
+                            replace_orders=True,
+                            deactivate_omitted=True,
+                        )
+                    )
+                if save_timeline:
+                    stored_timeline = (
+                        state_supervision_timeline_item_service.save_timeline_batch(
+                            int(record.id),
+                            timeline_drafts,
+                            session=sess,
+                            replace_orders=True,
+                            deactivate_omitted=True,
+                        )
+                    )
+                if save_participants:
+                    state_supervision_participant_service.save_participant_batch(
                         int(record.id),
-                        document_drafts,
+                        participant_drafts,
                         session=sess,
                         replace_orders=True,
                         deactivate_omitted=True,
                     )
-                )
-            if save_timeline:
-                stored_timeline = (
-                    state_supervision_timeline_item_service.save_timeline_batch(
+                if staging is not None and staging.has_changes():
+                    prepared = attachment_service.prepare_attachment_staging(
+                        ENTITY_STATE_SUPERVISION,
                         int(record.id),
-                        timeline_drafts,
-                        session=sess,
-                        replace_orders=True,
-                        deactivate_omitted=True,
+                        staging,
+                        sess,
                     )
+                if owns:
+                    sess.commit()
+                    committed = True
+                    sess.refresh(record)
+                    sess.expunge(record)
+                    detached_docs: list[StateSupervisionRequiredDocument] = []
+                    for item in stored_docs:
+                        sess.refresh(item)
+                        sess.expunge(item)
+                        detached_docs.append(item)
+                    detached_timeline: list[StateSupervisionTimelineItem] = []
+                    for item in stored_timeline:
+                        sess.refresh(item)
+                        sess.expunge(item)
+                        detached_timeline.append(item)
+                    result = (record, detached_docs, detached_timeline)
+                else:
+                    result = (record, stored_docs, stored_timeline)
+        except Exception:
+            if prepared is not None and not committed:
+                try:
+                    attachment_service.rollback_attachment_changes(prepared)
+                except Exception:
+                    logger.exception("Úklid připravených příloh kontroly selhal.")
+            raise
+        assert result is not None
+        if prepared is not None and committed:
+            warnings = attachment_service.finalize_attachment_changes(prepared)
+            for message in warnings:
+                logger.warning(
+                    "Kontrola %s byla uložena, ale odstranění souboru přílohy selhalo: %s",
+                    result[0].id,
+                    message,
                 )
-            if save_participants:
-                state_supervision_participant_service.save_participant_batch(
-                    int(record.id),
-                    participant_drafts,
-                    session=sess,
-                    replace_orders=True,
-                    deactivate_omitted=True,
-                )
-            if owns:
-                sess.commit()
-                sess.refresh(record)
-                sess.expunge(record)
-                detached_docs: list[StateSupervisionRequiredDocument] = []
-                for item in stored_docs:
-                    sess.refresh(item)
-                    sess.expunge(item)
-                    detached_docs.append(item)
-                detached_timeline: list[StateSupervisionTimelineItem] = []
-                for item in stored_timeline:
-                    sess.refresh(item)
-                    sess.expunge(item)
-                    detached_timeline.append(item)
-                return record, detached_docs, detached_timeline
-            return record, stored_docs, stored_timeline
+        return result
 
     def save_supervision_with_documents(
         self,
@@ -428,9 +478,27 @@ class StateSupervisionService:
             documents=documents,
             timeline_items=KEEP_EXISTING,
             participants=KEEP_EXISTING,
+            attachments=KEEP_EXISTING,
             session=session,
         )
         return record, stored_docs
+
+
+def _require_attachment_argument(
+    attachments: AttachmentStagingState | KeepExisting,
+) -> AttachmentStagingState | None:
+    if attachments is None:
+        raise StateSupervisionError(
+            "Parametr attachments nesmí být None. "
+            "Použijte KEEP_EXISTING nebo AttachmentStagingState."
+        )
+    if attachments is KEEP_EXISTING:
+        return None
+    if not isinstance(attachments, AttachmentStagingState):
+        raise StateSupervisionError(
+            "Parametr attachments musí být KEEP_EXISTING nebo AttachmentStagingState."
+        )
+    return attachments
 
 
 state_supervision_service = StateSupervisionService()
