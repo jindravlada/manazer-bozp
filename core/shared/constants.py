@@ -17,6 +17,7 @@ ENTITY_TRAINING = "training"
 ENTITY_PPE = "ppe"
 ENTITY_CHEMICAL = "chemical"
 ENTITY_EXTERNAL_AUDIT = "external_audit"
+ENTITY_STATE_SUPERVISION = "state_supervision"
 
 LINK_RELATED = "related"
 LINK_REQUIRES = "requires"
@@ -42,6 +43,7 @@ VALID_ENTITY_TYPES = frozenset(
         ENTITY_PPE,
         ENTITY_CHEMICAL,
         ENTITY_EXTERNAL_AUDIT,
+        ENTITY_STATE_SUPERVISION,
     }
 )
 
@@ -89,6 +91,7 @@ ENTITY_TYPE_LABELS: dict[str, str] = {
     ENTITY_MU_INVESTIGATION: "Vyšetřování MU",
     ENTITY_FINDING: "Zjištění",
     ENTITY_MEETING: "Schůzka",
+    ENTITY_STATE_SUPERVISION: "Státní dozor",
 }
 
 LINK_TYPE_LABELS: dict[str, str] = {

@@ -2,9 +2,33 @@
 
 from __future__ import annotations
 
+from core.shared.constants import (
+    ENTITY_STATE_SUPERVISION,
+    FINDING_TYPE_NEDOSTATEK,
+    FINDING_TYPE_PORUSENI_PREDPISU,
+    FINDING_TYPE_PRILEZITOST,
+    FINDING_TYPE_ZAVADA,
+    FINDING_TYPE_ZJISTENI,
+)
+
 MODULE_KEY = "state_supervision"
 MODULE_NAME = "Státní dozor"
-ENTITY_STATE_SUPERVISION = "state_supervision"
+
+STATE_SUPERVISION_FINDING_TYPES = frozenset(
+    {
+        FINDING_TYPE_PRILEZITOST,
+        FINDING_TYPE_NEDOSTATEK,
+        FINDING_TYPE_ZAVADA,
+        FINDING_TYPE_PORUSENI_PREDPISU,
+        FINDING_TYPE_ZJISTENI,
+    }
+)
+
+
+def is_state_supervision_finding_type(finding_type: str) -> bool:
+    """Povolená podmnožina druhů zjištění kontroly státního dozoru."""
+    return finding_type in STATE_SUPERVISION_FINDING_TYPES
+
 
 STATUS_ANNOUNCED = "announced"
 STATUS_PREPARATION = "preparation"
