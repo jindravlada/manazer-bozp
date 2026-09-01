@@ -422,8 +422,11 @@ class StateSupervisionCore1ServiceTestCase(unittest.TestCase):
         self.assertEqual(set(STATE_SUPERVISION_STATUS_LABELS), STATE_SUPERVISION_STATUSES)
         record = self._create()
         for status in STATE_SUPERVISION_STATUSES:
+            extra = {}
+            if status == STATUS_CLOSED:
+                extra["closed_at"] = datetime(2026, 5, 1, 12, 0)
             updated = state_supervision_service.update_supervision(
-                record.id, status=status
+                record.id, status=status, **extra
             )
             self.assertEqual(updated.status, status)
 
@@ -487,6 +490,7 @@ class StateSupervisionCore1ServiceTestCase(unittest.TestCase):
         closed = self._create(
             authority_name=f"OIP {marker}",
             status=STATUS_CLOSED,
+            closed_at=datetime(2026, 5, 1, 12, 0),
         )
         cancelled = self._create(
             authority_name=f"OIP {marker}",

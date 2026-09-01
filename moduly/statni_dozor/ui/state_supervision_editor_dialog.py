@@ -1,4 +1,4 @@
-"""Editor kontroly státního dozoru — tři záložky včetně průběhu."""
+"""Editor kontroly státního dozoru — čtyři záložky včetně závěru."""
 
 from __future__ import annotations
 
@@ -57,6 +57,8 @@ from moduly.statni_dozor.constants import (
     ACTION_SAVE_AND_CLOSE,
     AUTHORITY_REQUIRED_MESSAGE,
     AUTHORITY_SUGGESTIONS,
+    CLOSED_AT_REQUIRED_MESSAGE,
+    CLOSED_BEFORE_ENDED_MESSAGE,
     DEFAULT_STATUS,
     DIALOG_TITLE_EDIT,
     DIALOG_TITLE_NEW,
@@ -68,42 +70,60 @@ from moduly.statni_dozor.constants import (
     EMPTY_VALUE,
     ENDED_BEFORE_STARTED_MESSAGE,
     GROUP_ACTUAL_COURSE,
+    GROUP_COMPLETION_CLOSE,
     GROUP_INFORMING,
     GROUP_INITIAL_INFORMATION,
     GROUP_NOTIFICATION,
+    GROUP_OBJECTIONS,
     GROUP_PLANNED_START,
     GROUP_PREPARATION,
+    GROUP_PROTOCOL,
     GROUP_REPRESENTATION,
     GROUP_REQUIRED_DOCUMENTS,
+    GROUP_RESULT,
     GROUP_SUBJECT,
     LABEL_ANNOUNCED_AT,
     LABEL_AUTHORITY,
     LABEL_AUTHORITY_ADDRESS,
+    LABEL_AUTHORITY_CONFIRMATION_AT,
     LABEL_AUTHORITY_ICO,
+    LABEL_CLOSED_AT,
+    LABEL_COMPLETION_EVIDENCE_SENT_AT,
     LABEL_ENDED_AT,
     LABEL_FILE_NUMBER,
+    LABEL_FINAL_SUMMARY,
     LABEL_INITIAL_INFORMATION,
     LABEL_MANAGEMENT_NOTIFIED_AT,
     LABEL_NOTIFICATION_METHOD,
     LABEL_NOTIFICATION_NOTE,
+    LABEL_OBJECTIONS_DUE_AT,
+    LABEL_OBJECTIONS_NOTE,
+    LABEL_OBJECTIONS_SUBMITTED_AT,
     LABEL_PLANNED_CONTROL_PLACE,
     LABEL_PLANNED_START_AT,
     LABEL_PLANNED_START_PLACE,
     LABEL_POWER_OF_ATTORNEY,
     LABEL_POWER_OF_ATTORNEY_NOTE,
     LABEL_PREPARATION_NOTE,
+    LABEL_PROTOCOL_NUMBER,
+    LABEL_PROTOCOL_RECEIVED_AT,
+    LABEL_RESULT,
     LABEL_STARTED_AT,
     LABEL_STATUS,
     LABEL_SUBJECT,
     LABEL_TRADE_UNION_NOTIFIED_AT,
     LABEL_WORKPLACE,
     NOTIFICATION_METHOD_EMPTY_LABEL,
+    OBJECTIONS_BEFORE_PROTOCOL_MESSAGE,
+    RESULT_SUGGESTIONS,
     SAVE_ERROR_MESSAGE,
     STATE_SUPERVISION_NOTIFICATION_METHOD_EDITOR_LABELS,
     STATE_SUPERVISION_NOTIFICATION_METHOD_ORDER,
     STATE_SUPERVISION_STATUS_LABELS,
     STATE_SUPERVISION_STATUS_ORDER,
+    STATUS_CLOSED,
     TAB_ANNOUNCEMENT,
+    TAB_CONCLUSION,
     TAB_COURSE,
     TAB_SUBJECT_PREPARATION,
     TIMELINE_COLUMN_HEADERS,
@@ -165,6 +185,16 @@ _EDITOR_FIELDS = (
     "preparation_note",
     "power_of_attorney_required",
     "power_of_attorney_note",
+    "result",
+    "final_summary",
+    "protocol_number",
+    "protocol_received_at",
+    "objections_due_at",
+    "objections_submitted_at",
+    "objections_note",
+    "completion_evidence_sent_at",
+    "authority_confirmation_at",
+    "closed_at",
 )
 
 
@@ -239,6 +269,9 @@ class StateSupervisionEditorDialog(QDialog):
         self.tabs.addTab(wrap_in_scroll_area(self._build_announcement_tab()), TAB_ANNOUNCEMENT)
         self.tabs.addTab(self._build_subject_tab(), TAB_SUBJECT_PREPARATION)
         self.tabs.addTab(self._build_course_tab(), TAB_COURSE)
+        self._conclusion_tab_index = self.tabs.addTab(
+            wrap_in_scroll_area(self._build_conclusion_tab()), TAB_CONCLUSION
+        )
         layout.addWidget(self.tabs, 1)
         layout.addLayout(self._build_footer())
 
@@ -532,6 +565,62 @@ class StateSupervisionEditorDialog(QDialog):
         self._refresh_timeline_actions()
         return page
 
+    def _build_conclusion_tab(self) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+
+        result_box = QGroupBox(GROUP_RESULT)
+        result_form = QFormLayout(result_box)
+        self.result_combo = SearchComboBox()
+        self.result_combo.set_items(list(RESULT_SUGGESTIONS), include_empty=True)
+        self.final_summary_edit = _medium_note_edit()
+        result_form.addRow(f"{LABEL_RESULT}:", self.result_combo)
+        result_form.addRow(f"{LABEL_FINAL_SUMMARY}:", self.final_summary_edit)
+
+        protocol_box = QGroupBox(GROUP_PROTOCOL)
+        protocol_form = QFormLayout(protocol_box)
+        self.protocol_number_edit = QLineEdit()
+        self.protocol_received_at_edit = NullableDateTimeEdit()
+        protocol_form.addRow(f"{LABEL_PROTOCOL_NUMBER}:", self.protocol_number_edit)
+        protocol_form.addRow(
+            f"{LABEL_PROTOCOL_RECEIVED_AT}:",
+            self.protocol_received_at_edit,
+        )
+
+        objections_box = QGroupBox(GROUP_OBJECTIONS)
+        objections_form = QFormLayout(objections_box)
+        self.objections_due_at_edit = NullableDateTimeEdit()
+        self.objections_submitted_at_edit = NullableDateTimeEdit()
+        self.objections_note_edit = _medium_note_edit()
+        objections_form.addRow(f"{LABEL_OBJECTIONS_DUE_AT}:", self.objections_due_at_edit)
+        objections_form.addRow(
+            f"{LABEL_OBJECTIONS_SUBMITTED_AT}:",
+            self.objections_submitted_at_edit,
+        )
+        objections_form.addRow(f"{LABEL_OBJECTIONS_NOTE}:", self.objections_note_edit)
+
+        close_box = QGroupBox(GROUP_COMPLETION_CLOSE)
+        close_form = QFormLayout(close_box)
+        self.completion_evidence_sent_at_edit = NullableDateTimeEdit()
+        self.authority_confirmation_at_edit = NullableDateTimeEdit()
+        self.closed_at_edit = NullableDateTimeEdit()
+        close_form.addRow(
+            f"{LABEL_COMPLETION_EVIDENCE_SENT_AT}:",
+            self.completion_evidence_sent_at_edit,
+        )
+        close_form.addRow(
+            f"{LABEL_AUTHORITY_CONFIRMATION_AT}:",
+            self.authority_confirmation_at_edit,
+        )
+        close_form.addRow(f"{LABEL_CLOSED_AT}:", self.closed_at_edit)
+
+        layout.addWidget(result_box)
+        layout.addWidget(protocol_box)
+        layout.addWidget(objections_box)
+        layout.addWidget(close_box)
+        layout.addStretch(1)
+        return page
+
     def _build_footer(self) -> QHBoxLayout:
         footer = QHBoxLayout()
         footer.setContentsMargins(0, 0, 0, 0)
@@ -557,6 +646,12 @@ class StateSupervisionEditorDialog(QDialog):
             self.ended_at_edit,
             self.trade_union_notified_at_edit,
             self.management_notified_at_edit,
+            self.protocol_received_at_edit,
+            self.objections_due_at_edit,
+            self.objections_submitted_at_edit,
+            self.completion_evidence_sent_at_edit,
+            self.authority_confirmation_at_edit,
+            self.closed_at_edit,
         )
 
     def _set_combo_data(self, combo: QComboBox, value) -> None:
@@ -588,6 +683,10 @@ class StateSupervisionEditorDialog(QDialog):
             self.subject_edit,
             self.initial_information_edit,
             self.preparation_note_edit,
+            self.result_combo,
+            self.final_summary_edit,
+            self.protocol_number_edit,
+            self.objections_note_edit,
             *self._datetime_widgets(),
         ]
         for widget in blockers:
@@ -627,6 +726,26 @@ class StateSupervisionEditorDialog(QDialog):
                 str(record.initial_information or "")
             )
             self.preparation_note_edit.setPlainText(str(record.preparation_note or ""))
+            self.result_combo.setCurrentText(str(record.result or ""))
+            self.final_summary_edit.setPlainText(str(record.final_summary or ""))
+            self.protocol_number_edit.setText(str(record.protocol_number or ""))
+            self.protocol_received_at_edit.set_datetime(
+                _normalize_datetime(record.protocol_received_at)
+            )
+            self.objections_due_at_edit.set_datetime(
+                _normalize_datetime(record.objections_due_at)
+            )
+            self.objections_submitted_at_edit.set_datetime(
+                _normalize_datetime(record.objections_submitted_at)
+            )
+            self.objections_note_edit.setPlainText(str(record.objections_note or ""))
+            self.completion_evidence_sent_at_edit.set_datetime(
+                _normalize_datetime(record.completion_evidence_sent_at)
+            )
+            self.authority_confirmation_at_edit.set_datetime(
+                _normalize_datetime(record.authority_confirmation_at)
+            )
+            self.closed_at_edit.set_datetime(_normalize_datetime(record.closed_at))
         finally:
             for widget in blockers:
                 widget.blockSignals(False)
@@ -688,6 +807,26 @@ class StateSupervisionEditorDialog(QDialog):
             "subject": self.subject_edit.toPlainText().strip(),
             "initial_information": self.initial_information_edit.toPlainText().strip(),
             "preparation_note": self.preparation_note_edit.toPlainText().strip(),
+            "result": self.result_combo.currentText().strip(),
+            "final_summary": self.final_summary_edit.toPlainText().strip(),
+            "protocol_number": self.protocol_number_edit.text().strip(),
+            "protocol_received_at": _normalize_datetime(
+                self.protocol_received_at_edit.get_datetime()
+            ),
+            "objections_due_at": _normalize_datetime(
+                self.objections_due_at_edit.get_datetime()
+            ),
+            "objections_submitted_at": _normalize_datetime(
+                self.objections_submitted_at_edit.get_datetime()
+            ),
+            "objections_note": self.objections_note_edit.toPlainText().strip(),
+            "completion_evidence_sent_at": _normalize_datetime(
+                self.completion_evidence_sent_at_edit.get_datetime()
+            ),
+            "authority_confirmation_at": _normalize_datetime(
+                self.authority_confirmation_at_edit.get_datetime()
+            ),
+            "closed_at": _normalize_datetime(self.closed_at_edit.get_datetime()),
         }
 
     def get_snapshot(self) -> tuple:
@@ -697,6 +836,14 @@ class StateSupervisionEditorDialog(QDialog):
             self._timeline_snapshot(),
         )
 
+    def _focus_conclusion_datetime(self, widget: NullableDateTimeEdit) -> None:
+        self.tabs.setCurrentIndex(self._conclusion_tab_index)
+        widget.setFocus(Qt.FocusReason.OtherFocusReason)
+        if widget.has_value():
+            widget.edit.setFocus(Qt.FocusReason.OtherFocusReason)
+        else:
+            widget.set_button.setFocus(Qt.FocusReason.OtherFocusReason)
+
     def _validation_message(self, data: dict) -> str | None:
         if not data["authority_name"]:
             return AUTHORITY_REQUIRED_MESSAGE
@@ -704,6 +851,22 @@ class StateSupervisionEditorDialog(QDialog):
         ended = data["ended_at"]
         if started is not None and ended is not None and ended < started:
             return ENDED_BEFORE_STARTED_MESSAGE
+        protocol_received = data["protocol_received_at"]
+        objections_submitted = data["objections_submitted_at"]
+        if (
+            protocol_received is not None
+            and objections_submitted is not None
+            and objections_submitted < protocol_received
+        ):
+            self._focus_conclusion_datetime(self.objections_submitted_at_edit)
+            return OBJECTIONS_BEFORE_PROTOCOL_MESSAGE
+        closed_at = data["closed_at"]
+        if data["status"] == STATUS_CLOSED and closed_at is None:
+            self._focus_conclusion_datetime(self.closed_at_edit)
+            return CLOSED_AT_REQUIRED_MESSAGE
+        if ended is not None and closed_at is not None and closed_at < ended:
+            self._focus_conclusion_datetime(self.closed_at_edit)
+            return CLOSED_BEFORE_ENDED_MESSAGE
         return None
 
     def _persist(self) -> bool:

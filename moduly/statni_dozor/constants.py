@@ -155,6 +155,7 @@ DIALOG_TITLE_EDIT = "Státní dozor"
 TAB_ANNOUNCEMENT = "Ohlášení a zahájení"
 TAB_SUBJECT_PREPARATION = "Předmět a příprava"
 TAB_COURSE = "Průběh kontroly"
+TAB_CONCLUSION = "Závěr a opatření"
 
 AUTHORITY_SUGGESTIONS: tuple[str, ...] = (
     "Obvodní báňský úřad (OBÚ)",
@@ -168,6 +169,16 @@ AUTHORITY_REQUIRED_MESSAGE = "Není vyplněn kontrolní orgán."
 ENDED_BEFORE_STARTED_MESSAGE = (
     "Datum a čas ukončení nesmí být dříve než datum a čas zahájení."
 )
+CLOSED_AT_REQUIRED_MESSAGE = (
+    "Není vyplněno datum a čas administrativního uzavření."
+)
+CLOSED_BEFORE_ENDED_MESSAGE = (
+    "Datum a čas administrativního uzavření nesmí být dříve "
+    "než skutečné ukončení kontroly."
+)
+OBJECTIONS_BEFORE_PROTOCOL_MESSAGE = (
+    "Datum podání námitek nesmí být dříve než datum doručení protokolu."
+)
 SAVE_ERROR_MESSAGE = "Kontrolu státního dozoru se nepodařilo uložit."
 ITEM_NOT_FOUND_MESSAGE = "Kontrola státního dozoru už není k dispozici."
 
@@ -179,6 +190,18 @@ GROUP_REPRESENTATION = "Zastupování"
 GROUP_SUBJECT = "Předmět kontroly"
 GROUP_INITIAL_INFORMATION = "Prvotní informace od inspektora"
 GROUP_PREPARATION = "Příprava kontroly"
+GROUP_RESULT = "Výsledek kontroly"
+GROUP_PROTOCOL = "Protokol"
+GROUP_OBJECTIONS = "Námitky"
+GROUP_COMPLETION_CLOSE = "Doložení splnění a uzavření"
+
+RESULT_SUGGESTIONS: tuple[str, ...] = (
+    "Bez zjištěných nedostatků",
+    "Zjištěny nedostatky",
+    "Uložena opatření",
+    "Zahájeno navazující řízení",
+    "Jiný výsledek",
+)
 
 LABEL_AUTHORITY = "Kontrolní orgán"
 LABEL_AUTHORITY_ICO = "IČ"
@@ -201,6 +224,16 @@ LABEL_POWER_OF_ATTORNEY_NOTE = "Poznámka k plné moci"
 LABEL_SUBJECT = "Předmět a tematika kontroly"
 LABEL_INITIAL_INFORMATION = "Prvotní informace od inspektora"
 LABEL_PREPARATION_NOTE = "Co je potřeba zajistit a připravit"
+LABEL_RESULT = "Výsledek kontroly"
+LABEL_FINAL_SUMMARY = "Závěrečné shrnutí"
+LABEL_PROTOCOL_NUMBER = "Číslo protokolu"
+LABEL_PROTOCOL_RECEIVED_AT = "Protokol doručen dne a v kolik"
+LABEL_OBJECTIONS_DUE_AT = "Lhůta pro podání námitek"
+LABEL_OBJECTIONS_SUBMITTED_AT = "Námitky podány dne a v kolik"
+LABEL_OBJECTIONS_NOTE = "Poznámka k námitkám"
+LABEL_COMPLETION_EVIDENCE_SENT_AT = "Doklady o splnění odeslány dne a v kolik"
+LABEL_AUTHORITY_CONFIRMATION_AT = "Potvrzení kontrolního orgánu přijato dne a v kolik"
+LABEL_CLOSED_AT = "Kontrola administrativně uzavřena dne a v kolik"
 
 TOOLTIP_SUBJECT = (
     "Důvod kontroly, tematika, rozsah a kontrolované činnosti nebo oblasti."

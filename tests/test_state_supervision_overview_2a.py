@@ -166,7 +166,10 @@ class StateSupervisionOverview2aTestCase(unittest.TestCase):
 
     def test_03_closed_and_cancelled_visible(self) -> None:
         active = self._create()
-        closed = self._create(status=STATUS_CLOSED)
+        closed = self._create(
+            status=STATUS_CLOSED,
+            closed_at=datetime(2026, 5, 1, 12, 0),
+        )
         cancelled = self._create(status=STATUS_CANCELLED)
         page = self._open_page()
         tab = page.state_supervision_tab
@@ -217,10 +220,16 @@ class StateSupervisionOverview2aTestCase(unittest.TestCase):
             STATUS_CLOSED: STATUS_DONE_BG,
             STATUS_CANCELLED: STATUS_NEUTRAL_BG,
         }
-        created = {
-            status: self._create(status=status, authority_name=f"{status} {self.marker}")
-            for status in STATE_SUPERVISION_STATUS_ORDER
-        }
+        created = {}
+        for status in STATE_SUPERVISION_STATUS_ORDER:
+            extra = {}
+            if status == STATUS_CLOSED:
+                extra["closed_at"] = datetime(2026, 5, 1, 12, 0)
+            created[status] = self._create(
+                status=status,
+                authority_name=f"{status} {self.marker}",
+                **extra,
+            )
         page = self._open_page()
         tab = page.state_supervision_tab
         self.assertIsInstance(tab.table.itemDelegateForColumn(COL_STATUS), StatusCubeDelegate)
@@ -322,6 +331,7 @@ class StateSupervisionOverview2aTestCase(unittest.TestCase):
         closed = self._create(
             authority_name=f"SÚIP {self.marker}",
             status=STATUS_CLOSED,
+            closed_at=datetime(2026, 5, 1, 12, 0),
             started_at=datetime(2026, 1, 10, 8, 0),
         )
         cancelled = self._create(

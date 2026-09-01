@@ -10,9 +10,13 @@ from sqlalchemy.orm import Session
 
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.statni_dozor.constants import (
+    CLOSED_AT_REQUIRED_MESSAGE,
+    CLOSED_BEFORE_ENDED_MESSAGE,
     DEFAULT_STATUS,
+    OBJECTIONS_BEFORE_PROTOCOL_MESSAGE,
     STATE_SUPERVISION_NOTIFICATION_METHODS,
     STATE_SUPERVISION_STATUSES,
+    STATUS_CLOSED,
 )
 from moduly.statni_dozor.modely.state_supervision import StateSupervision
 from moduly.statni_dozor.repository.state_supervision_repository import (
@@ -112,8 +116,10 @@ def _optional_notification_method(value: Any) -> str | None:
 
 def _validate_date_order(
     *,
+    status: str | None = None,
     started_at: datetime | None,
     ended_at: datetime | None,
+    closed_at: datetime | None = None,
     protocol_received_at: datetime | None,
     objections_submitted_at: datetime | None,
 ) -> None:
@@ -126,9 +132,11 @@ def _validate_date_order(
         and objections_submitted_at is not None
         and objections_submitted_at < protocol_received_at
     ):
-        raise StateSupervisionError(
-            "Datum podání námitek nesmí být dříve než datum doručení protokolu."
-        )
+        raise StateSupervisionError(OBJECTIONS_BEFORE_PROTOCOL_MESSAGE)
+    if status == STATUS_CLOSED and closed_at is None:
+        raise StateSupervisionError(CLOSED_AT_REQUIRED_MESSAGE)
+    if ended_at is not None and closed_at is not None and closed_at < ended_at:
+        raise StateSupervisionError(CLOSED_BEFORE_ENDED_MESSAGE)
 
 
 def _workplace_snapshots(
@@ -212,8 +220,10 @@ class StateSupervisionService:
             }
         )
         _validate_date_order(
+            status=payload.get("status"),
             started_at=payload.get("started_at"),
             ended_at=payload.get("ended_at"),
+            closed_at=payload.get("closed_at"),
             protocol_received_at=payload.get("protocol_received_at"),
             objections_submitted_at=payload.get("objections_submitted_at"),
         )
@@ -262,8 +272,10 @@ class StateSupervisionService:
         merged = {key: getattr(record, key) for key in _UPDATABLE_FIELDS}
         merged.update(payload)
         _validate_date_order(
+            status=merged.get("status"),
             started_at=merged.get("started_at"),
             ended_at=merged.get("ended_at"),
+            closed_at=merged.get("closed_at"),
             protocol_received_at=merged.get("protocol_received_at"),
             objections_submitted_at=merged.get("objections_submitted_at"),
         )

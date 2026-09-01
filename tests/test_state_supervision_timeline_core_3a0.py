@@ -661,6 +661,7 @@ class StateSupervisionTimelineCore3a0ServiceTestCase(unittest.TestCase):
         state_supervision_service.update_supervision(
             self.supervision.id,
             status=STATUS_CLOSED,
+            closed_at=datetime(2026, 5, 1, 12, 0),
         )
         listed = state_supervision_timeline_item_service.list_timeline_items(
             self.supervision.id
@@ -686,7 +687,7 @@ class StateSupervisionTimelineCore3a0ServiceTestCase(unittest.TestCase):
 
     def test_10_no_physical_delete_and_agenda_four_tabs(self) -> None:
         source = inspect.getsource(StateSupervisionEditorDialog)
-        self.assertNotIn("Závěr a opatření", source)
+        self.assertIn("TAB_CONCLUSION", source)
         public = [
             name
             for name in dir(type(state_supervision_timeline_item_service))

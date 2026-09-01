@@ -603,6 +603,7 @@ class StateSupervisionDocumentsCore2c0ServiceTestCase(unittest.TestCase):
         state_supervision_service.update_supervision(
             self.supervision.id,
             status=STATUS_CLOSED,
+            closed_at=datetime(2026, 5, 1, 12, 0),
         )
         listed = state_supervision_required_document_service.list_documents(
             self.supervision.id
@@ -613,9 +614,9 @@ class StateSupervisionDocumentsCore2c0ServiceTestCase(unittest.TestCase):
 
     def test_10_editor_still_two_tabs_without_delete(self) -> None:
         source = inspect.getsource(StateSupervisionEditorDialog)
-        self.assertEqual(source.count("self.tabs.addTab("), 3)
+        self.assertEqual(source.count("self.tabs.addTab("), 4)
         self.assertIn("TAB_COURSE", source)
-        self.assertNotIn("Závěr a opatření", source)
+        self.assertIn("TAB_CONCLUSION", source)
         public = [
             name
             for name in dir(type(state_supervision_required_document_service))
