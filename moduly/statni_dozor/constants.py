@@ -542,6 +542,15 @@ FINDING_STORED_REMOVE_HINT = (
     "Uložené zjištění zůstává v historii. Lze jej upravit nebo označit jako vypořádané."
 )
 FINDING_DESCRIPTION_REQUIRED_MESSAGE = "Není vyplněn popis zjištění."
+ACTION_CONFIRM_CLOSE_SUPERVISION = "Uzavřít kontrolu"
+CLOSURE_WARNING_INTRO = "Kontrola dosud obsahuje:"
+CLOSURE_WARNING_OPEN_FINDINGS = "otevřená nebo rozpracovaná zjištění"
+CLOSURE_WARNING_ACTIVE_TASKS = "neukončené navazující úkoly"
+CLOSURE_WARNING_MISSING_TASKS = "chybějící navázané úkoly"
+CLOSURE_WARNING_FOOTER = (
+    "Kontrolu lze uzavřít, ale tyto položky zůstanou nadále evidované. "
+    "Chcete kontrolu přesto uzavřít?"
+)
 DIALOG_FINDING_NEW = "Nové zjištění"
 DIALOG_FINDING_EDIT = "Zjištění kontroly"
 

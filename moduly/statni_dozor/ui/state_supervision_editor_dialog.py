@@ -194,6 +194,9 @@ from moduly.statni_dozor.sluzby.state_supervision_finding_service import (
 from moduly.statni_dozor.sluzby.state_supervision_finding_task_service import (
     state_supervision_finding_task_service,
 )
+from moduly.statni_dozor.sluzby.state_supervision_closure_readiness import (
+    state_supervision_closure_readiness,
+)
 from moduly.statni_dozor.sluzby.state_supervision_participant_service import (
     state_supervision_participant_service,
 )
@@ -209,6 +212,9 @@ from moduly.statni_dozor.sluzby.state_supervision_timeline_item_service import (
 )
 from moduly.statni_dozor.ui.state_supervision_attachment_staging_widget import (
     StateSupervisionAttachmentStagingWidget,
+)
+from moduly.statni_dozor.ui.state_supervision_closure_confirm import (
+    confirm_supervision_closure,
 )
 from moduly.statni_dozor.ui.state_supervision_table import (
     display_or_dash,
@@ -1170,11 +1176,36 @@ class StateSupervisionEditorDialog(QDialog):
             return CLOSED_BEFORE_ENDED_MESSAGE
         return None
 
+    def _baseline_status(self) -> str:
+        baseline = getattr(self._editor, "_baseline", None)
+        index = _EDITOR_FIELDS.index("status")
+        if isinstance(baseline, tuple) and len(baseline) > index:
+            return str(baseline[index] or DEFAULT_STATUS)
+        if self._record is not None:
+            return str(self._record.status or DEFAULT_STATUS)
+        return DEFAULT_STATUS
+
+    def _is_transition_to_closed(self, working_status: str) -> bool:
+        return working_status == STATUS_CLOSED and self._baseline_status() != STATUS_CLOSED
+
+    def _confirm_closure_if_needed(self, working_status: str) -> bool:
+        if not self._is_transition_to_closed(working_status):
+            return True
+        readiness = state_supervision_closure_readiness(self._findings_drafts)
+        if not readiness.needs_confirmation:
+            return True
+        if confirm_supervision_closure(self, readiness):
+            return True
+        self._focus_course_tab()
+        return False
+
     def _persist(self) -> bool:
         data = self.get_data()
         message = self._validation_message(data)
         if message:
             QMessageBox.warning(self, self.windowTitle(), message)
+            return False
+        if not self._confirm_closure_if_needed(str(data["status"])):
             return False
         payload = {key: data[key] for key in _EDITOR_FIELDS}
         previous_id = self._supervision_id
