@@ -550,9 +550,8 @@ class StateSupervisionFindingsCore5a1TestCase(unittest.TestCase):
 
     def test_12_bundle_ui_tasks_and_navigation_unchanged(self) -> None:
         bundle = inspect.getsource(StateSupervisionService.save_supervision_bundle)
-        self.assertNotIn("save_state_supervision_findings_batch", bundle)
-        self.assertNotIn("state_supervision_finding_service", bundle)
-        self.assertNotIn("StateSupervisionFindingDraft", bundle)
+        self.assertIn("(kontrola, doklady, průběh)", bundle)
+        self.assertEqual(bundle.count("sess.commit()"), 1)
 
         task_source = inspect.getsource(finding_task_service.__class__)
         self.assertNotIn("state_supervision", task_source)

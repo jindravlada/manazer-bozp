@@ -195,9 +195,11 @@ logger = logging.getLogger(__name__)
 class KeepExisting:
     """Sentinel: podřízená kolekce nebyla předána a existující data se nemění.
 
-    Odlišuje se od prázdného seznamu, který znamená „deaktivovat všechny
-    aktivní položky této kolekce“. U příloh prázdný ``AttachmentStagingState``
-    existující soubory nedeaktivuje — viz ``save_supervision_bundle``.
+    Odlišuje se od prázdného seznamu dokladů / průběhu / účastníků, který
+    znamená „deaktivovat všechny aktivní položky této kolekce“. U příloh
+    prázdný ``AttachmentStagingState`` existující soubory nedeaktivuje.
+    U zjištění prázdný seznam nic nemaže — Finding nemá soft-delete.
+    Viz ``save_supervision_bundle``.
     """
 
     def __repr__(self) -> str:
@@ -329,15 +331,25 @@ class StateSupervisionService:
         timeline_items: Sequence[Any] | KeepExisting = KEEP_EXISTING,
         participants: Sequence[Any] | KeepExisting = KEEP_EXISTING,
         attachments: AttachmentStagingState | KeepExisting = KEEP_EXISTING,
+        findings: Sequence[Any] | KeepExisting = KEEP_EXISTING,
         session: Session | None = None,
     ) -> tuple[StateSupervision, list, list]:
-        """Uloží kontrolu, doklady, průběh, účastníky a staged přílohy atomicky.
+        """Uloží kontrolu, doklady, průběh, účastníky, zjištění a staged přílohy atomicky.
 
-        Návrat zůstává 3-složka ``(kontrola, doklady, průběh)``.
+        Návrat zůstává 3-složka ``(kontrola, doklady, průběh)``. Uložená
+        zjištění se do návratu nepřidávají — po úspěchu je načtěte přes
+        ``list_findings(supervision_id)``.
 
         ``KEEP_EXISTING`` = kolekce nebyla poskytnuta, existující řádky
-        se nemění. Prázdný seznam dokladů / průběhu / účastníků = deaktivovat
-        všechny aktivní položky dané kolekce. ``None`` se nepoužívá.
+        se nenačítají ani nemění. Prázdný seznam dokladů / průběhu /
+        účastníků = deaktivovat všechny aktivní položky dané kolekce.
+        ``None`` se u příloh i zjištění odmítá.
+
+        ``findings=KEEP_EXISTING`` zjištění nenačítá, nemění a nevolá
+        finding batch. Předaná sekvence draftů se vytvoří nebo aktualizuje;
+        vynechaná existující zjištění zůstanou. Prázdná sekvence ``[]``
+        nic nevytvoří, neaktualizuje, nemaže ani nepřečísluje — Finding
+        nemá soft-delete a bundle nevolá fyzický ``delete``.
 
         ``attachments=KEEP_EXISTING`` přílohy nenačítá ani nemění a nevytváří
         žádný soubor. ``AttachmentStagingState`` aplikuje jen
@@ -347,9 +359,11 @@ class StateSupervisionService:
         nevolá ``clear()``.
 
         Pořadí: create/update rodiče, flush ID, doklady, průběh, účastníci,
-        ``prepare_attachment_staging`` v caller-owned session, jeden commit,
-        ``finalize_attachment_changes``. Při chybě rollback DB a úklid
-        nových kopií; původní odebírané soubory zůstanou.
+        zjištění, ``prepare_attachment_staging`` v caller-owned session,
+        jeden commit, ``finalize_attachment_changes``. Chyba zjištění
+        nastane před kopírováním souborů. Při chybě rollback DB a úklid
+        nových kopií; původní odebírané soubory zůstanou. Původní drafty
+        zjištění se nemění (žádné DB ID, ``client_key`` ani ``task_id``).
         """
         from core.services.attachment_service import attachment_service
         from moduly.statni_dozor.modely.state_supervision_required_document import (
@@ -357,6 +371,9 @@ class StateSupervisionService:
         )
         from moduly.statni_dozor.modely.state_supervision_timeline_item import (
             StateSupervisionTimelineItem,
+        )
+        from moduly.statni_dozor.sluzby.state_supervision_finding_service import (
+            state_supervision_finding_service,
         )
         from moduly.statni_dozor.sluzby.state_supervision_participant_service import (
             state_supervision_participant_service,
@@ -375,6 +392,7 @@ class StateSupervisionService:
         document_drafts = list(documents) if save_documents else []
         timeline_drafts = list(timeline_items) if save_timeline else []
         participant_drafts = list(participants) if save_participants else []
+        finding_drafts = _require_findings_argument(findings)
         staging = _require_attachment_argument(attachments)
         prepared = None
         committed = False
@@ -419,6 +437,13 @@ class StateSupervisionService:
                         session=sess,
                         replace_orders=True,
                         deactivate_omitted=True,
+                    )
+                if finding_drafts:
+                    state_supervision_finding_service.save_state_supervision_findings_batch(
+                        int(record.id),
+                        finding_drafts,
+                        session=sess,
+                        replace_orders=True,
                     )
                 if staging is not None and staging.has_changes():
                     prepared = attachment_service.prepare_attachment_staging(
@@ -471,7 +496,7 @@ class StateSupervisionService:
         documents: Sequence[Any],
         session: Session | None = None,
     ) -> tuple[StateSupervision, list]:
-        """Kompatibilní wrapper: uloží kontrolu a doklady, průběh a účastníky nemění."""
+        """Kompatibilní wrapper: uloží kontrolu a doklady, průběh, účastníky a zjištění nemění."""
         record, stored_docs, _timeline = self.save_supervision_bundle(
             supervision_id=supervision_id,
             fields=fields,
@@ -479,6 +504,7 @@ class StateSupervisionService:
             timeline_items=KEEP_EXISTING,
             participants=KEEP_EXISTING,
             attachments=KEEP_EXISTING,
+            findings=KEEP_EXISTING,
             session=session,
         )
         return record, stored_docs
@@ -499,6 +525,38 @@ def _require_attachment_argument(
             "Parametr attachments musí být KEEP_EXISTING nebo AttachmentStagingState."
         )
     return attachments
+
+
+def _require_findings_argument(
+    findings: Sequence[Any] | KeepExisting,
+) -> list | None:
+    if findings is None:
+        raise StateSupervisionError(
+            "Parametr findings nesmí být None. "
+            "Použijte KEEP_EXISTING nebo seznam draftů."
+        )
+    if findings is KEEP_EXISTING:
+        return None
+    if isinstance(findings, (str, bytes)):
+        raise StateSupervisionError(
+            "Parametr findings musí být KEEP_EXISTING nebo seznam draftů."
+        )
+    try:
+        drafts = list(findings)
+    except TypeError as exc:
+        raise StateSupervisionError(
+            "Parametr findings musí být KEEP_EXISTING nebo seznam draftů."
+        ) from exc
+    from moduly.statni_dozor.modely.state_supervision_finding_draft import (
+        StateSupervisionFindingDraft,
+    )
+
+    for item in drafts:
+        if not isinstance(item, StateSupervisionFindingDraft):
+            raise StateSupervisionError(
+                "Parametr findings musí obsahovat StateSupervisionFindingDraft."
+            )
+    return drafts
 
 
 state_supervision_service = StateSupervisionService()
