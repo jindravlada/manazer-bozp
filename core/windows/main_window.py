@@ -504,6 +504,8 @@ class MainWindow(QMainWindow):
             self._open_state_supervision_by_id(
                 int(supervision_id),
                 target_tab=metadata.get("target_tab"),
+                focus_kind=metadata.get("kind"),
+                focus_child_id=metadata.get("child_id"),
             )
 
     def _open_external_audit_by_id(
@@ -662,6 +664,8 @@ class MainWindow(QMainWindow):
         supervision_id: int,
         *,
         target_tab: str | None = None,
+        focus_kind: str | None = None,
+        focus_child_id: int | None = None,
     ) -> None:
         from moduly.statni_dozor.constants import ITEM_NOT_FOUND_MESSAGE, MODULE_NAME
         from moduly.statni_dozor.sluzby.state_supervision_service import (
@@ -677,7 +681,12 @@ class MainWindow(QMainWindow):
         self._show("agenda")
         page = self._page_widgets.get("agenda")
         if page is not None and hasattr(page, "open_supervision"):
-            page.open_supervision(supervision_id, target_tab=target_tab)
+            page.open_supervision(
+                supervision_id,
+                target_tab=target_tab,
+                focus_kind=focus_kind,
+                focus_child_id=focus_child_id,
+            )
         self._refresh_dashboard_and_agenda()
 
     def _open_ozo_contract_by_id(self, contract_id: int) -> None:

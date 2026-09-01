@@ -206,7 +206,14 @@ class StateSupervisionTab(QWidget):
             return
         self._open_editor(supervision_id)
 
-    def open_supervision(self, supervision_id: int, *, target_tab: str | None = None) -> None:
+    def open_supervision(
+        self,
+        supervision_id: int,
+        *,
+        target_tab: str | None = None,
+        focus_kind: str | None = None,
+        focus_child_id: int | None = None,
+    ) -> None:
         """Otevře editor kontroly podle ID (i když aktuální filtr řádek skrývá)."""
         record = state_supervision_service.get_supervision(supervision_id)
         if record is None:
@@ -215,13 +222,20 @@ class StateSupervisionTab(QWidget):
             return
         self.table.select_by_id(supervision_id)
         self._refresh_action_buttons()
-        self._open_editor(supervision_id, target_tab=target_tab)
+        self._open_editor(
+            supervision_id,
+            target_tab=target_tab,
+            focus_kind=focus_kind,
+            focus_child_id=focus_child_id,
+        )
 
     def _open_editor(
         self,
         supervision_id: int | None,
         *,
         target_tab: str | None = None,
+        focus_kind: str | None = None,
+        focus_child_id: int | None = None,
     ) -> None:
         if supervision_id is not None:
             record = state_supervision_service.get_supervision(supervision_id)
@@ -232,6 +246,10 @@ class StateSupervisionTab(QWidget):
         kwargs: dict = {"supervision_id": supervision_id}
         if target_tab:
             kwargs["target_tab"] = target_tab
+        if focus_kind:
+            kwargs["focus_kind"] = focus_kind
+        if focus_child_id is not None:
+            kwargs["focus_child_id"] = int(focus_child_id)
         dialog = StateSupervisionEditorDialog(self, **kwargs)
         exec_maximized(dialog)
         if dialog.saved:

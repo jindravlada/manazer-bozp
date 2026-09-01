@@ -71,6 +71,8 @@ from moduly.statni_dozor.constants import (
     DEFAULT_STATUS,
     DIALOG_TITLE_EDIT,
     DIALOG_TITLE_NEW,
+    DOCUMENT_NOT_IN_ACTIVE_LIST_MESSAGE,
+    FINDING_NO_LONGER_AVAILABLE_MESSAGE,
     ATTENDANCE_UNEVALUATED_LABEL,
     COL_DOCUMENT_TITLE,
     COL_FINDING_TASK,
@@ -154,6 +156,7 @@ from moduly.statni_dozor.constants import (
     PLANNED_YES_LABEL,
     RESULT_SUGGESTIONS,
     SAVE_ERROR_MESSAGE,
+    MODULE_NAME,
     STATE_SUPERVISION_FINDING_TYPE_LABELS,
     STATE_SUPERVISION_NOTIFICATION_METHOD_EDITOR_LABELS,
     STATE_SUPERVISION_NOTIFICATION_METHOD_ORDER,
@@ -368,6 +371,8 @@ class StateSupervisionEditorDialog(QDialog):
         *,
         supervision_id: int | None = None,
         target_tab: str | None = None,
+        focus_kind: str | None = None,
+        focus_child_id: int | None = None,
     ):
         super().__init__(parent)
         self._record: StateSupervision | None = None
@@ -440,6 +445,7 @@ class StateSupervisionEditorDialog(QDialog):
             self._load_attachments(None)
 
         self._apply_target_tab(target_tab)
+        self._focus_projection_child(focus_kind, focus_child_id)
         self._editor.capture_baseline()
 
     @property
@@ -463,6 +469,32 @@ class StateSupervisionEditorDialog(QDialog):
             if self.tabs.tabText(index) == wanted:
                 self.tabs.setCurrentIndex(index)
                 return
+
+    def _focus_projection_child(
+        self,
+        kind: str | None,
+        child_id: int | None,
+    ) -> None:
+        """Vybere doklad/Finding podle ID. Chybějící child jen informuje, nic nezapisuje."""
+        if child_id is None:
+            return
+        from moduly.statni_dozor.sluzby.state_supervision_deadline_projection import (
+            KIND_DOCUMENT,
+            KIND_FINDING,
+        )
+
+        key = f"db-{int(child_id)}"
+        if kind == KIND_DOCUMENT:
+            if not self._select_document_key(key):
+                QMessageBox.information(
+                    self, MODULE_NAME, DOCUMENT_NOT_IN_ACTIVE_LIST_MESSAGE
+                )
+            return
+        if kind == KIND_FINDING:
+            if not self._select_finding_key(key):
+                QMessageBox.information(
+                    self, MODULE_NAME, FINDING_NO_LONGER_AVAILABLE_MESSAGE
+                )
 
     def _build_header(self) -> QWidget:
         host = QWidget()
@@ -1372,13 +1404,17 @@ class StateSupervisionEditorDialog(QDialog):
         key = item.data(_ROLE_DOCUMENT_KEY)
         return str(key) if key else None
 
-    def _select_document_key(self, client_key: str) -> None:
+    def _select_document_key(self, client_key: str) -> bool:
         for row in range(self.documents_table.rowCount()):
             item = self.documents_table.item(row, COL_DOCUMENT_TITLE)
             if item is not None and item.data(_ROLE_DOCUMENT_KEY) == client_key:
                 self.documents_table.selectRow(row)
-                return
+                self.documents_table.scrollToItem(
+                    item, QAbstractItemView.ScrollHint.PositionAtCenter
+                )
+                return True
         self.documents_table.clearSelection()
+        return False
 
     def _draft_by_key(self, client_key: str | None) -> StateSupervisionRequiredDocumentDraft | None:
         if not client_key:
@@ -1764,13 +1800,17 @@ class StateSupervisionEditorDialog(QDialog):
         key = item.data(_ROLE_FINDING_KEY)
         return str(key) if key else None
 
-    def _select_finding_key(self, client_key: str) -> None:
+    def _select_finding_key(self, client_key: str) -> bool:
         for row in range(self.findings_table.rowCount()):
             item = self.findings_table.item(row, COL_FINDING_TYPE)
             if item is not None and item.data(_ROLE_FINDING_KEY) == client_key:
                 self.findings_table.selectRow(row)
-                return
+                self.findings_table.scrollToItem(
+                    item, QAbstractItemView.ScrollHint.PositionAtCenter
+                )
+                return True
         self.findings_table.clearSelection()
+        return False
 
     def _finding_draft_by_key(
         self, client_key: str | None

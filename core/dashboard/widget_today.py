@@ -14,6 +14,7 @@ from core.dashboard.attention_item import (
     ITEM_TYPE_OZO_CONTRACT,
     ITEM_TYPE_OZO_PERSON_CERTIFICATE,
     ITEM_TYPE_QUALIFICATION_CERTIFICATE,
+    ITEM_TYPE_STATE_SUPERVISION,
     ITEM_TYPE_YEARLY_PLAN_MONTH,
     AttentionItem,
     meeting_dashboard_source_label,
@@ -24,6 +25,7 @@ from core.dashboard.attention_service import (
     get_external_audit_reminder_items,
     get_external_finding_reminder_items,
     get_periodic_reminder_items,
+    get_state_supervision_reminder_items,
     get_yearly_plan_month_reminder_items,
 )
 from core.dashboard.task_links import configure_task_label, task_id_from_link, task_link
@@ -284,7 +286,11 @@ def _escape_html(text: str) -> str:
 
 def attention_link(item: AttentionItem) -> str:
     safe_text = _escape_html(item.title or "")
-    href = f"{_ATTENTION_LINK_PREFIX}{item.item_type}:{item.source_id}"
+    identity = (item.identity_key or "").strip()
+    if identity:
+        href = f"{_ATTENTION_LINK_PREFIX}key:{identity}"
+    else:
+        href = f"{_ATTENTION_LINK_PREFIX}{item.item_type}:{item.source_id}"
     return (
         f'<a href="{href}" '
         f'style="color:inherit; text-decoration:none; cursor:pointer;">{safe_text}</a>'
@@ -298,6 +304,12 @@ def attention_from_link(
     if not link.startswith(_ATTENTION_LINK_PREFIX):
         return None
     payload = link[len(_ATTENTION_LINK_PREFIX) :]
+    if payload.startswith("key:"):
+        identity = payload[4:]
+        for item in items:
+            if (item.identity_key or "") == identity:
+                return item
+        return None
     if ":" not in payload:
         return None
     item_type, raw_id = payload.split(":", 1)
@@ -382,7 +394,10 @@ class TodayWidget(DashboardPanel):
 
     def _attention_line(self, item: AttentionItem, prefix: str) -> str:
         term = item.due_date.strftime("%d.%m.%Y") if item.due_date else "bez termínu"
-        place = item.subtitle or "—"
+        if item.item_type == ITEM_TYPE_STATE_SUPERVISION:
+            place = item.type_label or item.subtitle or "—"
+        else:
+            place = item.subtitle or "—"
         title = attention_link(item)
         return (
             f"{prefix} <b>{term}</b> – {title}"
@@ -437,6 +452,10 @@ class TodayWidget(DashboardPanel):
             get_external_finding_reminder_items(today=today),
             today,
         )
+        ss_burning, ss_due = classify_reminder_attention_items(
+            get_state_supervision_reminder_items(today=today),
+            today,
+        )
         self._linked_attention = (
             list(month_burning)
             + list(month_due)
@@ -450,6 +469,8 @@ class TodayWidget(DashboardPanel):
             + list(ea_audit_due)
             + list(ea_finding_burning)
             + list(ea_finding_due)
+            + list(ss_burning)
+            + list(ss_due)
         )
 
         ordered: list[str] = []
@@ -462,12 +483,14 @@ class TodayWidget(DashboardPanel):
         ordered.extend(self._attention_line(item, "🔴") for item in meeting_burning_items)
         ordered.extend(self._attention_line(item, "🔴") for item in ea_audit_burning)
         ordered.extend(self._attention_line(item, "🔴") for item in ea_finding_burning)
+        ordered.extend(self._attention_line(item, "🔴") for item in ss_burning)
         ordered.extend(self._task_line(task, "🔴") for task in burning)
         ordered.extend(self._attention_line(item, "🔵") for item in month_due)
         ordered.extend(self._attention_line(item, "🔵") for item in periodic_due)
         ordered.extend(self._attention_line(item, "🔵") for item in meeting_due_items)
         ordered.extend(self._attention_line(item, "🔵") for item in ea_audit_due)
         ordered.extend(self._attention_line(item, "🔵") for item in ea_finding_due)
+        ordered.extend(self._attention_line(item, "🔵") for item in ss_due)
         ordered.extend(self._task_line(task, "🔵") for task in due_today)
         ordered.extend(self._task_line(task, "🟡") for task in waiting)
 

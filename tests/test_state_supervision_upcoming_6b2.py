@@ -246,14 +246,14 @@ class StateSupervisionUpcoming6B2TestCase(unittest.TestCase):
             objections_due_at=_PAST,
         )
         doc = state_supervision_required_document_service.create_document(
-            row.id, title=f"Spis {self.marker}", due_at=_PAST
+            row.id, title=f"Spis {self.marker}", due_at=_FUTURE
         )
         finding = finding_service.create(
             ENTITY_STATE_SUPERVISION,
             row.id,
             finding_type=FINDING_TYPE_ZAVADA,
             description=f"Zjištění {self.marker}",
-            due_date=_TODAY,
+            due_date=_FUTURE.date(),
             status=FINDING_STATUS_OTEVRENE,
         )
         items = [
@@ -586,6 +586,8 @@ class StateSupervisionUpcoming6B2TestCase(unittest.TestCase):
         dummy._open_state_supervision_by_id.assert_called_once_with(
             int(closed.id),
             target_tab=TAB_ANNOUNCEMENT,
+            focus_kind=KIND_PLANNED_START,
+            focus_child_id=None,
         )
 
     def test_11_missing_parent_and_collector_failure(self) -> None:

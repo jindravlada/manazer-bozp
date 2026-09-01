@@ -243,6 +243,10 @@ OBJECTIONS_BEFORE_PROTOCOL_MESSAGE = (
 )
 SAVE_ERROR_MESSAGE = "Kontrolu státního dozoru se nepodařilo uložit."
 ITEM_NOT_FOUND_MESSAGE = "Kontrola státního dozoru už není k dispozici."
+DOCUMENT_NOT_IN_ACTIVE_LIST_MESSAGE = (
+    "Požadovaný doklad již není v aktivním seznamu."
+)
+FINDING_NO_LONGER_AVAILABLE_MESSAGE = "Zjištění již není k dispozici."
 
 GROUP_NOTIFICATION = "Ohlášení kontroly"
 GROUP_PLANNED_START = "Plánované zahájení"

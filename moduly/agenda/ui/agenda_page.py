@@ -162,13 +162,23 @@ class AgendaPage(QWidget):
             self.tabs.setCurrentIndex(index)
         self.periodic_tab.open_activity(activity_id)
 
-    def open_supervision(self, supervision_id: int, *, target_tab: str | None = None) -> None:
+    def open_supervision(
+        self,
+        supervision_id: int,
+        *,
+        target_tab: str | None = None,
+        focus_kind: str | None = None,
+        focus_child_id: int | None = None,
+    ) -> None:
         """Přepne na Státní dozor a otevře konkrétní kontrolu."""
         index = self.tabs.indexOf(self.state_supervision_tab)
         if index >= 0:
             self.tabs.setCurrentIndex(index)
         self.state_supervision_tab.open_supervision(
-            supervision_id, target_tab=target_tab
+            supervision_id,
+            target_tab=target_tab,
+            focus_kind=focus_kind,
+            focus_child_id=focus_child_id,
         )
 
     def open_yearly_plan(self, year: int, month: int) -> None:

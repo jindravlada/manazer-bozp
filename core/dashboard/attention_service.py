@@ -17,7 +17,6 @@ from core.dashboard.attention_item import (
     ITEM_TYPE_OZO_PERSON_CERTIFICATE,
     ITEM_TYPE_PERIODIC,
     ITEM_TYPE_QUALIFICATION_CERTIFICATE,
-    ITEM_TYPE_STATE_SUPERVISION,
     ITEM_TYPE_TASK,
     ITEM_TYPE_YEARLY_PLAN_MONTH,
     TYPE_LABEL_TASK_CONTROL,
@@ -28,12 +27,16 @@ from core.dashboard.attention_item import (
     SOURCE_LABEL_OZO_PERSON,
     SOURCE_LABEL_PERIODIC,
     SOURCE_LABEL_QUALIFICATION,
-    SOURCE_LABEL_STATE_SUPERVISION,
     SOURCE_LABEL_YEARLY_PLAN,
     AttentionItem,
     attention_item_identity,
     attention_item_is_overdue,
     meeting_dashboard_source_label,
+)
+from core.dashboard.state_supervision_attention import (
+    attention_item_from_state_supervision_deadline,
+    deadline_item_belongs_in_attention,
+    deadline_item_belongs_in_reminders,
 )
 from core.shared.task_source_display import task_source_short_labels
 from core.shared.working_days import first_working_day
@@ -721,53 +724,20 @@ def get_yearly_plan_month_reminder_items(
     return _from_yearly_plan_month(today)
 
 
-def attention_item_from_state_supervision_deadline(projected: Any) -> AttentionItem:
-    """Mapuje projekční položku Státního dozoru na AttentionItem (6B2)."""
-    supervision_id = int(projected.supervision_id)
-    metadata: dict[str, Any] = {
-        "kind": projected.kind,
-        "target_tab": projected.target_tab,
-        "supervision_id": supervision_id,
-    }
-    if getattr(projected, "child_id", None) is not None:
-        metadata["child_id"] = int(projected.child_id)
-    title = str(projected.title or "")
-    due_date = projected.due_date
-    event_at = projected.event_at
-    return AttentionItem(
-        item_type=ITEM_TYPE_STATE_SUPERVISION,
-        source_type=ITEM_TYPE_STATE_SUPERVISION,
-        source_id=supervision_id,
-        title=title,
-        date=due_date,
-        subtitle=SOURCE_LABEL_STATE_SUPERVISION,
-        status="",
-        priority=str(projected.priority or ""),
-        event_at=event_at,
-        open_metadata=metadata,
-        sort_key=build_sort_key(
-            due_date,
-            item_type=ITEM_TYPE_STATE_SUPERVISION,
-            title=title,
-            source_id=supervision_id,
-            due_datetime=event_at,
-        ),
-        detail_tooltip=str(getattr(projected, "detail", "") or ""),
-        identity_key=str(projected.identity_key or ""),
-        type_label_override=str(projected.type_label or "") or None,
+def _load_state_supervision_deadline_items(today: date) -> list[Any]:
+    from moduly.statni_dozor.sluzby.state_supervision_deadline_projection import (
+        list_state_supervision_deadline_items,
     )
+
+    return list(list_state_supervision_deadline_items(today=today))
 
 
 def _from_state_supervision_upcoming(today: date) -> list[AttentionItem]:
-    """Plánované zahájení a námitky (include_in_upcoming). Doklady a Findings ne."""
+    """Upcoming položky plus prošlé doklady/Findings pro kartu Po termínu."""
     try:
-        from moduly.statni_dozor.sluzby.state_supervision_deadline_projection import (
-            list_state_supervision_deadline_items,
-        )
-
         items: list[AttentionItem] = []
-        for projected in list_state_supervision_deadline_items(today=today):
-            if not projected.include_in_upcoming:
+        for projected in _load_state_supervision_deadline_items(today):
+            if not deadline_item_belongs_in_attention(projected, today):
                 continue
             items.append(attention_item_from_state_supervision_deadline(projected))
         return items
@@ -775,6 +745,30 @@ def _from_state_supervision_upcoming(today: date) -> list[AttentionItem]:
         logger.exception(
             "Selhalo načtení termínů Státního dozoru pro Nadcházející."
         )
+        return []
+
+
+def get_state_supervision_reminder_items(
+    *, today: date | None = None
+) -> list[AttentionItem]:
+    """Připomínky Státního dozoru od due_date včetně dneška. Deduplikace identity_key."""
+    today = today or date.today()
+    try:
+        items: list[AttentionItem] = []
+        seen: set[str] = set()
+        for projected in _load_state_supervision_deadline_items(today):
+            if not deadline_item_belongs_in_reminders(projected, today):
+                continue
+            item = attention_item_from_state_supervision_deadline(projected)
+            key = (item.identity_key or "").strip()
+            if key:
+                if key in seen:
+                    continue
+                seen.add(key)
+            items.append(item)
+        return items
+    except Exception:
+        logger.exception("Selhalo načtení připomínek Státního dozoru.")
         return []
 
 
