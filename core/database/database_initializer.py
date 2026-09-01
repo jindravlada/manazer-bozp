@@ -96,7 +96,10 @@ def initialize_database() -> None:
         ExternalAuditVisit,
         ExternalAuditVisitParticipant,
     )
-    from moduly.statni_dozor.modely import StateSupervision  # noqa: F401
+    from moduly.statni_dozor.modely import (  # noqa: F401
+        StateSupervision,
+        StateSupervisionRequiredDocument,
+    )
     from moduly.smlouvy_ozo.modely.ozo_contract import OzoContract  # noqa: F401
     from moduly.smlouvy_ozo.modely.ozo_person import OzoPerson  # noqa: F401
     from moduly.smlouvy_ozo.modely.ozo_person_period import OzoPersonPeriod  # noqa: F401

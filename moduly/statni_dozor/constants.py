@@ -210,3 +210,16 @@ TOOLTIP_INITIAL_INFORMATION = (
 TOOLTIP_PREPARATION_NOTE = (
     "Požadované materiály, dokumenty, organizační zajištění a potřebná součinnost."
 )
+
+# Požadované doklady (STATE-SUPERVISION-DOCUMENTS-CORE-2C0)
+ENTITY_REQUIRED_DOCUMENT = "state_supervision_required_document"
+TABLE_REQUIRED_DOCUMENTS = "state_supervision_required_documents"
+
+RESPONSIBLE_SOURCE_PERSON = "person"
+RESPONSIBLE_SOURCE_THP_WORKER = "thp_worker"
+RESPONSIBLE_SOURCE_TYPES = frozenset(
+    {
+        RESPONSIBLE_SOURCE_PERSON,
+        RESPONSIBLE_SOURCE_THP_WORKER,
+    }
+)
