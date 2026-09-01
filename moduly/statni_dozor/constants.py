@@ -257,3 +257,7 @@ RESPONSIBLE_SOURCE_TYPES = frozenset(
         RESPONSIBLE_SOURCE_THP_WORKER,
     }
 )
+
+# Průběh kontroly (STATE-SUPERVISION-TIMELINE-CORE-3A0)
+ENTITY_TIMELINE_ITEM = "state_supervision_timeline_item"
+TABLE_TIMELINE_ITEMS = "state_supervision_timeline_items"

@@ -99,6 +99,7 @@ def initialize_database() -> None:
     from moduly.statni_dozor.modely import (  # noqa: F401
         StateSupervision,
         StateSupervisionRequiredDocument,
+        StateSupervisionTimelineItem,
     )
     from moduly.smlouvy_ozo.modely.ozo_contract import OzoContract  # noqa: F401
     from moduly.smlouvy_ozo.modely.ozo_person import OzoPerson  # noqa: F401
