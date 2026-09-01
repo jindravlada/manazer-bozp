@@ -75,6 +75,7 @@ with patch.object(Path, "home", return_value=_TMP):
         STATUS_IN_PROGRESS,
         TAB_ANNOUNCEMENT,
         TAB_STATE_SUPERVISION,
+        TAB_SUBJECT_PREPARATION,
     )
     from moduly.statni_dozor.sluzby.state_supervision_service import (
         state_supervision_service,
@@ -223,12 +224,12 @@ class StateSupervisionEditor2b1TestCase(unittest.TestCase):
         self.assertFalse(dialog._editor.save_button.isEnabled())
         self.assertFalse(dialog._save_close_btn.isEnabled())
         self.assertEqual(dialog._save_close_btn.text(), ACTION_SAVE_AND_CLOSE)
-        self.assertEqual(dialog.tabs.count(), 1)
+        self.assertEqual(dialog.tabs.count(), 2)
         self.assertEqual(dialog.tabs.tabText(0), TAB_ANNOUNCEMENT)
+        self.assertEqual(dialog.tabs.tabText(1), TAB_SUBJECT_PREPARATION)
         extra_titles = [
             dialog.tabs.tabText(index) for index in range(dialog.tabs.count())
         ]
-        self.assertNotIn("Předmět a příprava", extra_titles)
         self.assertNotIn("Průběh kontroly", extra_titles)
         self.assertNotIn("Závěr a opatření", extra_titles)
 
@@ -556,6 +557,8 @@ class StateSupervisionEditor2b1TestCase(unittest.TestCase):
         record = self._create()
         dialog = StateSupervisionEditorDialog(supervision_id=record.id)
         self.assertFalse(dialog._editor.is_dirty())
+        dialog.tabs.setCurrentIndex(0)
+        dialog.tabs.setCurrentIndex(1)
         dialog.tabs.setCurrentIndex(0)
         dialog.notification_method_combo.showPopup()
         dialog.notification_method_combo.hidePopup()

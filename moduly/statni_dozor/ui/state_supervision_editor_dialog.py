@@ -1,4 +1,4 @@
-"""Editor kontroly státního dozoru — základ a záložka Ohlášení a zahájení."""
+"""Editor kontroly státního dozoru — Ohlášení a zahájení, Předmět a příprava."""
 
 from __future__ import annotations
 
@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QGroupBox,
     QHBoxLayout,
+    QLabel,
     QLineEdit,
     QMessageBox,
     QPushButton,
@@ -34,6 +35,7 @@ from core.widgets.editor_dialog_controller import (
     EditorDialogController,
     configure_editor_save_button,
 )
+from core.widgets.info_tooltip import set_widget_tooltip
 from core.widgets.nullable_datetime_edit import NullableDateTimeEdit
 from core.widgets.search_combo_box import SearchComboBox
 from core.widgets.workplace_selector import WorkplaceSelector
@@ -48,15 +50,19 @@ from moduly.statni_dozor.constants import (
     ENDED_BEFORE_STARTED_MESSAGE,
     GROUP_ACTUAL_COURSE,
     GROUP_INFORMING,
+    GROUP_INITIAL_INFORMATION,
     GROUP_NOTIFICATION,
     GROUP_PLANNED_START,
+    GROUP_PREPARATION,
     GROUP_REPRESENTATION,
+    GROUP_SUBJECT,
     LABEL_ANNOUNCED_AT,
     LABEL_AUTHORITY,
     LABEL_AUTHORITY_ADDRESS,
     LABEL_AUTHORITY_ICO,
     LABEL_ENDED_AT,
     LABEL_FILE_NUMBER,
+    LABEL_INITIAL_INFORMATION,
     LABEL_MANAGEMENT_NOTIFIED_AT,
     LABEL_NOTIFICATION_METHOD,
     LABEL_NOTIFICATION_NOTE,
@@ -65,8 +71,10 @@ from moduly.statni_dozor.constants import (
     LABEL_PLANNED_START_PLACE,
     LABEL_POWER_OF_ATTORNEY,
     LABEL_POWER_OF_ATTORNEY_NOTE,
+    LABEL_PREPARATION_NOTE,
     LABEL_STARTED_AT,
     LABEL_STATUS,
+    LABEL_SUBJECT,
     LABEL_TRADE_UNION_NOTIFIED_AT,
     LABEL_WORKPLACE,
     NOTIFICATION_METHOD_EMPTY_LABEL,
@@ -76,6 +84,10 @@ from moduly.statni_dozor.constants import (
     STATE_SUPERVISION_STATUS_LABELS,
     STATE_SUPERVISION_STATUS_ORDER,
     TAB_ANNOUNCEMENT,
+    TAB_SUBJECT_PREPARATION,
+    TOOLTIP_INITIAL_INFORMATION,
+    TOOLTIP_PREPARATION_NOTE,
+    TOOLTIP_SUBJECT,
 )
 from moduly.statni_dozor.modely.state_supervision import StateSupervision
 from moduly.statni_dozor.sluzby.state_supervision_service import (
@@ -104,6 +116,9 @@ _EDITOR_FIELDS = (
     "started_at",
     "ended_at",
     "file_number",
+    "subject",
+    "initial_information",
+    "preparation_note",
     "power_of_attorney_required",
     "power_of_attorney_note",
 )
@@ -121,6 +136,20 @@ class _SupervisionEditorController(EditorDialogController):
         enabled = bool(self.save_button is not None and self.save_button.isEnabled())
         for button in self._extra_save_buttons:
             button.setEnabled(enabled)
+
+
+def _medium_note_edit(*, stretch: bool = False) -> QTextEdit:
+    edit = QTextEdit()
+    edit.setAcceptRichText(False)
+    edit.setTabChangesFocus(True)
+    edit.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
+    edit.setMinimumHeight(110)
+    if stretch:
+        edit.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+    else:
+        edit.setMaximumHeight(160)
+        edit.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+    return edit
 
 
 def _short_note_edit() -> QTextEdit:
@@ -162,6 +191,10 @@ class StateSupervisionEditorDialog(QDialog):
         layout.addWidget(self._build_header())
         self.tabs = QTabWidget()
         self.tabs.addTab(wrap_in_scroll_area(self._build_announcement_tab()), TAB_ANNOUNCEMENT)
+        self.tabs.addTab(
+            wrap_in_scroll_area(self._build_subject_tab()),
+            TAB_SUBJECT_PREPARATION,
+        )
         layout.addWidget(self.tabs, 1)
         layout.addLayout(self._build_footer())
 
@@ -290,6 +323,36 @@ class StateSupervisionEditorDialog(QDialog):
         layout.addStretch(1)
         return page
 
+    def _build_subject_tab(self) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+
+        subject_box = QGroupBox(GROUP_SUBJECT)
+        subject_layout = QVBoxLayout(subject_box)
+        self.subject_edit = _medium_note_edit()
+        set_widget_tooltip(self.subject_edit, TOOLTIP_SUBJECT)
+        subject_layout.addWidget(QLabel(f"{LABEL_SUBJECT}:"))
+        subject_layout.addWidget(self.subject_edit, 1)
+
+        initial_box = QGroupBox(GROUP_INITIAL_INFORMATION)
+        initial_layout = QVBoxLayout(initial_box)
+        self.initial_information_edit = _medium_note_edit()
+        set_widget_tooltip(self.initial_information_edit, TOOLTIP_INITIAL_INFORMATION)
+        initial_layout.addWidget(QLabel(f"{LABEL_INITIAL_INFORMATION}:"))
+        initial_layout.addWidget(self.initial_information_edit, 1)
+
+        preparation_box = QGroupBox(GROUP_PREPARATION)
+        preparation_layout = QVBoxLayout(preparation_box)
+        self.preparation_note_edit = _medium_note_edit(stretch=True)
+        set_widget_tooltip(self.preparation_note_edit, TOOLTIP_PREPARATION_NOTE)
+        preparation_layout.addWidget(QLabel(f"{LABEL_PREPARATION_NOTE}:"))
+        preparation_layout.addWidget(self.preparation_note_edit, 1)
+
+        layout.addWidget(subject_box, 1)
+        layout.addWidget(initial_box, 1)
+        layout.addWidget(preparation_box, 2)
+        return page
+
     def _build_footer(self) -> QHBoxLayout:
         footer = QHBoxLayout()
         footer.setContentsMargins(0, 0, 0, 0)
@@ -343,6 +406,9 @@ class StateSupervisionEditorDialog(QDialog):
             self.planned_control_place_edit,
             self.power_of_attorney_checkbox,
             self.power_of_attorney_note_edit,
+            self.subject_edit,
+            self.initial_information_edit,
+            self.preparation_note_edit,
             *self._datetime_widgets(),
         ]
         for widget in blockers:
@@ -377,6 +443,11 @@ class StateSupervisionEditorDialog(QDialog):
             self.power_of_attorney_note_edit.setPlainText(
                 str(record.power_of_attorney_note or "")
             )
+            self.subject_edit.setPlainText(str(record.subject or ""))
+            self.initial_information_edit.setPlainText(
+                str(record.initial_information or "")
+            )
+            self.preparation_note_edit.setPlainText(str(record.preparation_note or ""))
         finally:
             for widget in blockers:
                 widget.blockSignals(False)
@@ -435,6 +506,9 @@ class StateSupervisionEditorDialog(QDialog):
             ),
             "power_of_attorney_required": self.power_of_attorney_checkbox.isChecked(),
             "power_of_attorney_note": self.power_of_attorney_note_edit.toPlainText().strip(),
+            "subject": self.subject_edit.toPlainText().strip(),
+            "initial_information": self.initial_information_edit.toPlainText().strip(),
+            "preparation_note": self.preparation_note_edit.toPlainText().strip(),
         }
 
     def get_snapshot(self) -> tuple:

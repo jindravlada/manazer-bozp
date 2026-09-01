@@ -153,9 +153,10 @@ DIALOG_TITLE_NEW = "Nový státní dozor"
 DIALOG_TITLE_EDIT = "Státní dozor"
 
 TAB_ANNOUNCEMENT = "Ohlášení a zahájení"
+TAB_SUBJECT_PREPARATION = "Předmět a příprava"
 
 AUTHORITY_SUGGESTIONS: tuple[str, ...] = (
-    "Oblastní báňský úřad (OBÚ)",
+    "Obvodní báňský úřad (OBÚ)",
     "Oblastní inspektorát práce (OIP)",
     "Krajská hygienická stanice (KHS)",
     "Hasičský záchranný sbor (HZS)",
@@ -174,6 +175,9 @@ GROUP_PLANNED_START = "Plánované zahájení"
 GROUP_ACTUAL_COURSE = "Skutečný průběh"
 GROUP_INFORMING = "Informování"
 GROUP_REPRESENTATION = "Zastupování"
+GROUP_SUBJECT = "Předmět kontroly"
+GROUP_INITIAL_INFORMATION = "Prvotní informace od inspektora"
+GROUP_PREPARATION = "Příprava kontroly"
 
 LABEL_AUTHORITY = "Kontrolní orgán"
 LABEL_AUTHORITY_ICO = "IČ"
@@ -193,3 +197,16 @@ LABEL_TRADE_UNION_NOTIFIED_AT = "Odborová organizace informována"
 LABEL_MANAGEMENT_NOTIFIED_AT = "Vedení informováno"
 LABEL_POWER_OF_ATTORNEY = "Je vyžadována plná moc"
 LABEL_POWER_OF_ATTORNEY_NOTE = "Poznámka k plné moci"
+LABEL_SUBJECT = "Předmět a tematika kontroly"
+LABEL_INITIAL_INFORMATION = "Prvotní informace od inspektora"
+LABEL_PREPARATION_NOTE = "Co je potřeba zajistit a připravit"
+
+TOOLTIP_SUBJECT = (
+    "Důvod kontroly, tematika, rozsah a kontrolované činnosti nebo oblasti."
+)
+TOOLTIP_INITIAL_INFORMATION = (
+    "Co inspektor předběžně sdělil, na co se zaměří a co bude chtít ověřit."
+)
+TOOLTIP_PREPARATION_NOTE = (
+    "Požadované materiály, dokumenty, organizační zajištění a potřebná součinnost."
+)
