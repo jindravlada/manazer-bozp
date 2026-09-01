@@ -30,6 +30,25 @@ def is_state_supervision_finding_type(finding_type: str) -> bool:
     return finding_type in STATE_SUPERVISION_FINDING_TYPES
 
 
+STATE_SUPERVISION_FINDING_TYPE_ORDER: tuple[str, ...] = (
+    FINDING_TYPE_PRILEZITOST,
+    FINDING_TYPE_NEDOSTATEK,
+    FINDING_TYPE_ZAVADA,
+    FINDING_TYPE_PORUSENI_PREDPISU,
+    FINDING_TYPE_ZJISTENI,
+)
+
+# Popisky pouze pro UI Státního dozoru. Nesmí se míchat s FINDING_TYPE_LABELS
+# (exporty auditů/prověrek). Zkratka PKZ zde označuje konkrétní Finding.
+STATE_SUPERVISION_FINDING_TYPE_LABELS: dict[str, str] = {
+    FINDING_TYPE_PRILEZITOST: "Příležitost ke zlepšení (PKZ)",
+    FINDING_TYPE_NEDOSTATEK: "Nedostatek",
+    FINDING_TYPE_ZAVADA: "Závada",
+    FINDING_TYPE_PORUSENI_PREDPISU: "Porušení požadavku",
+    FINDING_TYPE_ZJISTENI: "Jiné zjištění",
+}
+
+
 STATUS_ANNOUNCED = "announced"
 STATUS_PREPARATION = "preparation"
 STATUS_IN_PROGRESS = "in_progress"
@@ -489,4 +508,44 @@ ATTACHMENT_COLUMN_HEADERS = [
     "Typ",
     "Velikost",
     "Stav",
+]
+
+# Zjištění kontroly (STATE-SUPERVISION-FINDINGS-UI-5A3)
+GROUP_COURSE_TIMELINE = "Průběh kontroly"
+GROUP_FINDINGS = "Zjištění kontroly"
+EMPTY_FINDINGS = "Zatím nejsou evidována žádná zjištění kontroly."
+FINDING_TASK_LINKED = "Navázán"
+FINDING_STORED_REMOVE_HINT = (
+    "Uložené zjištění zůstává v historii. Lze jej upravit nebo označit jako vypořádané."
+)
+FINDING_DESCRIPTION_REQUIRED_MESSAGE = "Není vyplněn popis zjištění."
+DIALOG_FINDING_NEW = "Nové zjištění"
+DIALOG_FINDING_EDIT = "Zjištění kontroly"
+
+LABEL_FINDING_TYPE = "Druh zjištění"
+LABEL_FINDING_DESCRIPTION = "Popis zjištění"
+LABEL_FINDING_PLACE = "Místo / oblast"
+LABEL_FINDING_STATUS = "Stav"
+LABEL_FINDING_PERSON = "Odpovědná osoba"
+LABEL_FINDING_DUE = "Termín"
+LABEL_FINDING_RECOMMENDED = "Doporučené opatření"
+LABEL_FINDING_RESOLUTION = "Poznámka k vypořádání"
+LABEL_FINDING_RESOLVED_AT = "Vypořádáno dne"
+
+COL_FINDING_TYPE = 0
+COL_FINDING_DESCRIPTION = 1
+COL_FINDING_PLACE = 2
+COL_FINDING_STATUS = 3
+COL_FINDING_PERSON = 4
+COL_FINDING_DUE = 5
+COL_FINDING_TASK = 6
+
+FINDING_COLUMN_HEADERS = [
+    "Druh",
+    "Popis",
+    "Místo / oblast",
+    "Stav",
+    "Odpovědná osoba",
+    "Termín",
+    "Úkol",
 ]

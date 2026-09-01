@@ -614,10 +614,11 @@ class StateSupervisionFindingsBundle5a2TestCase(unittest.TestCase):
 
         editor = inspect.getsource(StateSupervisionEditorDialog)
         self.assertEqual(editor.count("self.tabs.addTab("), 5)
-        self.assertNotIn("StateSupervisionFindingDraft", editor)
+        self.assertIn("StateSupervisionFindingDraft", editor)
         self.assertNotIn("save_state_supervision_findings_batch", editor)
         persist = inspect.getsource(StateSupervisionEditorDialog._persist)
-        self.assertNotIn("findings=", persist)
+        self.assertIn("findings=", persist)
+        self.assertNotIn("Vytvořit úkol", editor)
         agenda = inspect.getsource(AgendaPage)
         self.assertEqual(agenda.count("self.tabs.addTab("), 4)
 

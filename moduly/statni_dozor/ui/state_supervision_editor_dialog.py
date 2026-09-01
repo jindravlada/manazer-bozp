@@ -1,4 +1,4 @@
-"""Editor kontroly státního dozoru — čtyři záložky včetně závěru."""
+"""Editor kontroly státního dozoru — pět záložek včetně průběhu a zjištění."""
 
 from __future__ import annotations
 
@@ -50,6 +50,7 @@ from core.widgets.editor_dialog_controller import (
 from core.widgets.info_tooltip import set_widget_tooltip
 from core.widgets.nullable_datetime_edit import NullableDateTimeEdit
 from core.widgets.search_combo_box import SearchComboBox
+from core.shared.finding_display import FINDING_STATUS_LABELS
 from core.widgets.table_utils import apply_cell_tooltip, configure_table_columns
 from core.widgets.workplace_selector import WorkplaceSelector
 from moduly.nastaveni.sluzby.settings_service import settings_service
@@ -69,17 +70,24 @@ from moduly.statni_dozor.constants import (
     DIALOG_TITLE_NEW,
     ATTENDANCE_UNEVALUATED_LABEL,
     COL_DOCUMENT_TITLE,
+    COL_FINDING_TYPE,
     COL_PARTICIPANT_ROLE,
     COL_TIMELINE_TITLE,
     DOCUMENT_COLUMN_HEADERS,
     EMPTY_DOCUMENTS,
+    EMPTY_FINDINGS,
     EMPTY_PARTICIPANTS,
     EMPTY_TIMELINE,
     EMPTY_VALUE,
+    FINDING_COLUMN_HEADERS,
+    FINDING_STORED_REMOVE_HINT,
+    FINDING_TASK_LINKED,
     ENDED_BEFORE_STARTED_MESSAGE,
     ENTITY_STATE_SUPERVISION,
     GROUP_ACTUAL_COURSE,
     GROUP_COMPLETION_CLOSE,
+    GROUP_COURSE_TIMELINE,
+    GROUP_FINDINGS,
     GROUP_INFORMING,
     GROUP_INITIAL_INFORMATION,
     GROUP_NOTIFICATION,
@@ -133,6 +141,7 @@ from moduly.statni_dozor.constants import (
     PLANNED_YES_LABEL,
     RESULT_SUGGESTIONS,
     SAVE_ERROR_MESSAGE,
+    STATE_SUPERVISION_FINDING_TYPE_LABELS,
     STATE_SUPERVISION_NOTIFICATION_METHOD_EDITOR_LABELS,
     STATE_SUPERVISION_NOTIFICATION_METHOD_ORDER,
     STATE_SUPERVISION_STATUS_LABELS,
@@ -150,6 +159,10 @@ from moduly.statni_dozor.constants import (
     TOOLTIP_SUBJECT,
 )
 from moduly.statni_dozor.modely.state_supervision import StateSupervision
+from moduly.statni_dozor.modely.state_supervision_finding_draft import (
+    StateSupervisionFindingDraft,
+    new_finding_client_key,
+)
 from moduly.statni_dozor.modely.state_supervision_participant_draft import (
     StateSupervisionParticipantDraft,
     new_participant_client_key,
@@ -161,6 +174,9 @@ from moduly.statni_dozor.modely.state_supervision_required_document_draft import
 from moduly.statni_dozor.modely.state_supervision_timeline_item_draft import (
     StateSupervisionTimelineItemDraft,
     new_timeline_item_client_key,
+)
+from moduly.statni_dozor.sluzby.state_supervision_finding_service import (
+    state_supervision_finding_service,
 )
 from moduly.statni_dozor.sluzby.state_supervision_participant_service import (
     state_supervision_participant_service,
@@ -180,11 +196,13 @@ from moduly.statni_dozor.ui.state_supervision_attachment_staging_widget import (
 )
 from moduly.statni_dozor.ui.state_supervision_table import (
     display_or_dash,
+    format_supervision_date,
     format_supervision_datetime,
 )
 
 _ROLE_DOCUMENT_KEY = Qt.ItemDataRole.UserRole
 _ROLE_TIMELINE_KEY = Qt.ItemDataRole.UserRole
+_ROLE_FINDING_KEY = Qt.ItemDataRole.UserRole
 _ROLE_PARTICIPANT_KEY = Qt.ItemDataRole.UserRole
 
 logger = logging.getLogger(__name__)
@@ -285,6 +303,29 @@ def _participant_attendance_label(status: str | None) -> str:
     return PARTICIPANT_ATTENDANCE_LABELS.get(status, status)
 
 
+def _finding_type_label(finding_type: str | None) -> str:
+    if not finding_type:
+        return EMPTY_VALUE
+    return STATE_SUPERVISION_FINDING_TYPE_LABELS.get(finding_type, finding_type)
+
+
+def _finding_status_label(status: str | None) -> str:
+    if not status:
+        return EMPTY_VALUE
+    return FINDING_STATUS_LABELS.get(status, status)
+
+
+def _finding_task_label(task_id: int | None) -> str:
+    return FINDING_TASK_LINKED if task_id is not None else EMPTY_VALUE
+
+
+def _is_finding_error(message: str) -> bool:
+    text = str(message or "").casefold()
+    if "kontrola státního dozoru" in text and "neexistuje" in text:
+        return False
+    return "zjištění" in text
+
+
 class StateSupervisionEditorDialog(QDialog):
     def __init__(self, parent=None, *, supervision_id: int | None = None):
         super().__init__(parent)
@@ -296,6 +337,7 @@ class StateSupervisionEditorDialog(QDialog):
         self._loaded_address_snapshot = ""
         self._document_drafts: list[StateSupervisionRequiredDocumentDraft] = []
         self._timeline_drafts: list[StateSupervisionTimelineItemDraft] = []
+        self._findings_drafts: list[StateSupervisionFindingDraft] = []
         self._participant_drafts: list[StateSupervisionParticipantDraft] = []
         self._attachment_staging = AttachmentStagingState()
 
@@ -314,7 +356,7 @@ class StateSupervisionEditorDialog(QDialog):
         self.tabs = QTabWidget()
         self.tabs.addTab(wrap_in_scroll_area(self._build_announcement_tab()), TAB_ANNOUNCEMENT)
         self.tabs.addTab(self._build_subject_tab(), TAB_SUBJECT_PREPARATION)
-        self.tabs.addTab(self._build_course_tab(), TAB_COURSE)
+        self._course_tab_index = self.tabs.addTab(self._build_course_tab(), TAB_COURSE)
         self._conclusion_tab_index = self.tabs.addTab(
             wrap_in_scroll_area(self._build_conclusion_tab()), TAB_CONCLUSION
         )
@@ -344,12 +386,14 @@ class StateSupervisionEditorDialog(QDialog):
             self._apply_record(self._record)
             self._load_documents(int(self._record.id))
             self._load_timeline(int(self._record.id))
+            self._load_findings(int(self._record.id))
             self._load_participants(int(self._record.id))
             self._load_attachments(int(self._record.id))
         else:
             self._set_combo_data(self.status_combo, DEFAULT_STATUS)
             self._refresh_documents_table()
             self._refresh_timeline_table()
+            self._refresh_findings_table()
             self._refresh_participants_table()
             self._load_attachments(None)
 
@@ -619,6 +663,13 @@ class StateSupervisionEditorDialog(QDialog):
     def _build_course_tab(self) -> QWidget:
         page = QWidget()
         layout = QVBoxLayout(page)
+        layout.addWidget(self._build_timeline_section(), 1)
+        layout.addWidget(self._build_findings_section(), 1)
+        return page
+
+    def _build_timeline_section(self) -> QWidget:
+        box = QGroupBox(GROUP_COURSE_TIMELINE)
+        layout = QVBoxLayout(box)
 
         self.timeline_hint_label = QLabel(TIMELINE_HINT)
         self.timeline_hint_label.setWordWrap(True)
@@ -663,7 +714,7 @@ class StateSupervisionEditorDialog(QDialog):
         self.timeline_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.timeline_table.setSortingEnabled(False)
         self.timeline_table.setTextElideMode(Qt.TextElideMode.ElideRight)
-        self.timeline_table.setMinimumHeight(180)
+        self.timeline_table.setMinimumHeight(120)
         self.timeline_table.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
         )
@@ -682,7 +733,66 @@ class StateSupervisionEditorDialog(QDialog):
         self.timeline_table.doubleClicked.connect(self._edit_selected_timeline_item)
         self.timeline_table.itemSelectionChanged.connect(self._refresh_timeline_actions)
         self._refresh_timeline_actions()
-        return page
+        return box
+
+    def _build_findings_section(self) -> QWidget:
+        box = QGroupBox(GROUP_FINDINGS)
+        layout = QVBoxLayout(box)
+
+        toolbar = QHBoxLayout()
+        self.add_finding_btn = QPushButton(ACTION_ADD)
+        self.edit_finding_btn = QPushButton(ACTION_EDIT)
+        self.remove_finding_btn = QPushButton(ACTION_REMOVE)
+        self.move_finding_up_btn = QPushButton(ACTION_MOVE_UP)
+        self.move_finding_down_btn = QPushButton(ACTION_MOVE_DOWN)
+        configure_new_action_button(self.add_finding_btn)
+        configure_edit_action_button(self.edit_finding_btn)
+        for button in (
+            self.add_finding_btn,
+            self.edit_finding_btn,
+            self.remove_finding_btn,
+            self.move_finding_up_btn,
+            self.move_finding_down_btn,
+        ):
+            button.setAutoDefault(False)
+            button.setDefault(False)
+            toolbar.addWidget(button)
+        toolbar.addStretch(1)
+        layout.addLayout(toolbar)
+
+        self.findings_empty_label = QLabel(EMPTY_FINDINGS)
+        self.findings_empty_label.setWordWrap(True)
+        self.findings_empty_label.setStyleSheet("color: #666;")
+        layout.addWidget(self.findings_empty_label)
+
+        self.findings_table = QTableWidget(0, len(FINDING_COLUMN_HEADERS))
+        self.findings_table.setHorizontalHeaderLabels(FINDING_COLUMN_HEADERS)
+        self.findings_table.verticalHeader().setVisible(False)
+        self.findings_table.setSelectionBehavior(
+            QAbstractItemView.SelectionBehavior.SelectRows
+        )
+        self.findings_table.setSelectionMode(
+            QAbstractItemView.SelectionMode.SingleSelection
+        )
+        self.findings_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.findings_table.setSortingEnabled(False)
+        self.findings_table.setTextElideMode(Qt.TextElideMode.ElideRight)
+        self.findings_table.setMinimumHeight(120)
+        self.findings_table.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
+        configure_table_columns(self.findings_table, "state_supervision_findings")
+        layout.addWidget(self.findings_table, 1)
+
+        self.add_finding_btn.clicked.connect(self._add_finding)
+        self.edit_finding_btn.clicked.connect(self._edit_selected_finding)
+        self.remove_finding_btn.clicked.connect(self._remove_selected_finding)
+        self.move_finding_up_btn.clicked.connect(lambda: self._move_selected_finding(-1))
+        self.move_finding_down_btn.clicked.connect(lambda: self._move_selected_finding(1))
+        self.findings_table.doubleClicked.connect(self._edit_selected_finding)
+        self.findings_table.itemSelectionChanged.connect(self._refresh_finding_actions)
+        self._refresh_finding_actions()
+        return box
 
     def _build_conclusion_tab(self) -> QWidget:
         page = QWidget()
@@ -969,6 +1079,7 @@ class StateSupervisionEditorDialog(QDialog):
         return tuple(data[key] for key in _EDITOR_FIELDS) + (
             self._documents_snapshot(),
             self._timeline_snapshot(),
+            self._findings_snapshot(),
             self._participants_snapshot(),
             self._attachment_staging.snapshot(),
         )
@@ -983,6 +1094,9 @@ class StateSupervisionEditorDialog(QDialog):
 
     def _focus_attachments_tab(self) -> None:
         self.tabs.setCurrentIndex(self._attachments_tab_index)
+
+    def _focus_course_tab(self) -> None:
+        self.tabs.setCurrentIndex(self._course_tab_index)
 
     def _validation_message(self, data: dict) -> str | None:
         if not data["authority_name"]:
@@ -1025,6 +1139,7 @@ class StateSupervisionEditorDialog(QDialog):
                 timeline_items=self._timeline_drafts_for_save(),
                 participants=self._participant_drafts_for_save(),
                 attachments=self._attachment_staging,
+                findings=self._findings_drafts_for_save(),
             )
             loaded = state_supervision_service.get_supervision(int(record.id))
             if loaded is None:
@@ -1032,6 +1147,7 @@ class StateSupervisionEditorDialog(QDialog):
             self._apply_record(loaded)
             self._load_documents(int(loaded.id))
             self._load_timeline(int(loaded.id))
+            self._load_findings(int(loaded.id))
             self._load_participants(int(loaded.id))
             self._attachment_staging = AttachmentStagingState()
             self.attachments_widget.bind_staging(self._attachment_staging)
@@ -1041,6 +1157,8 @@ class StateSupervisionEditorDialog(QDialog):
             return True
         except StateSupervisionError as error:
             self._supervision_id = previous_id
+            if _is_finding_error(str(error)):
+                self._focus_course_tab()
             logger.exception("Uložení kontroly státního dozoru selhalo.")
             QMessageBox.warning(self, self.windowTitle(), str(error))
             return False
@@ -1429,6 +1547,202 @@ class StateSupervisionEditorDialog(QDialog):
         inactive = [item for item in self._timeline_drafts if not item.active]
         self._timeline_drafts = active + inactive
         self._refresh_timeline_table(select_key=key)
+        self._editor.refresh_dirty()
+
+    def _findings_snapshot(self) -> tuple:
+        rows = []
+        for item in self._findings_drafts:
+            rows.append(
+                (
+                    item.id,
+                    item.client_key,
+                    str(item.finding_type or ""),
+                    str(item.description or ""),
+                    str(item.source_area_label or ""),
+                    str(item.status or ""),
+                    item.responsible_person_id,
+                    str(item.responsible_person_name or ""),
+                    item.due_date,
+                    str(item.recommended_action or ""),
+                    str(item.resolution_note or ""),
+                    item.resolved_at,
+                    item.task_id,
+                    int(item.display_order or 0),
+                )
+            )
+        return tuple(rows)
+
+    def _findings_drafts_for_save(self) -> list[StateSupervisionFindingDraft]:
+        return [
+            replace(item, display_order=index * 10)
+            for index, item in enumerate(self._findings_drafts)
+        ]
+
+    def _load_findings(self, supervision_id: int) -> None:
+        records = state_supervision_finding_service.list_findings(int(supervision_id))
+        loaded: list[StateSupervisionFindingDraft] = []
+        for record in records:
+            loaded.append(
+                StateSupervisionFindingDraft(
+                    finding_type=str(record.finding_type or ""),
+                    description=str(record.description or ""),
+                    id=int(record.id),
+                    source_area_label=str(record.source_area_label or ""),
+                    status=str(record.status or ""),
+                    responsible_person_id=record.responsible_person_id,
+                    responsible_person_name=str(record.responsible_person_name or ""),
+                    due_date=record.due_date,
+                    recommended_action=str(record.recommended_action or ""),
+                    resolution_note=str(record.resolution_note or ""),
+                    resolved_at=record.resolved_at,
+                    task_id=record.task_id,
+                    display_order=int(record.display_order or 0),
+                    client_key=f"db-{record.id}",
+                )
+            )
+        self._findings_drafts = loaded
+        self._refresh_findings_table()
+
+    def _refresh_findings_table(self, *, select_key: str | None = None) -> None:
+        rows = self._findings_drafts
+        self.findings_empty_label.setVisible(not rows)
+        self.findings_table.setVisible(True)
+        self.findings_table.setRowCount(len(rows))
+        for row, item in enumerate(rows):
+            values = [
+                _finding_type_label(item.finding_type),
+                display_or_dash(item.description),
+                display_or_dash(item.source_area_label),
+                _finding_status_label(item.status),
+                display_or_dash(item.responsible_person_name),
+                format_supervision_date(item.due_date),
+                _finding_task_label(item.task_id),
+            ]
+            for column, text in enumerate(values):
+                cell = QTableWidgetItem(text)
+                cell.setFlags(cell.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                if column == COL_FINDING_TYPE:
+                    cell.setData(_ROLE_FINDING_KEY, item.client_key)
+                apply_cell_tooltip(cell, text if text != EMPTY_VALUE else "")
+                self.findings_table.setItem(row, column, cell)
+        configure_table_columns(self.findings_table, "state_supervision_findings")
+        if select_key:
+            self._select_finding_key(select_key)
+        self._refresh_finding_actions()
+
+    def _selected_finding_key(self) -> str | None:
+        rows = self.findings_table.selectionModel().selectedRows()
+        if len(rows) != 1:
+            return None
+        item = self.findings_table.item(rows[0].row(), COL_FINDING_TYPE)
+        if item is None:
+            return None
+        key = item.data(_ROLE_FINDING_KEY)
+        return str(key) if key else None
+
+    def _select_finding_key(self, client_key: str) -> None:
+        for row in range(self.findings_table.rowCount()):
+            item = self.findings_table.item(row, COL_FINDING_TYPE)
+            if item is not None and item.data(_ROLE_FINDING_KEY) == client_key:
+                self.findings_table.selectRow(row)
+                return
+        self.findings_table.clearSelection()
+
+    def _finding_draft_by_key(
+        self, client_key: str | None
+    ) -> StateSupervisionFindingDraft | None:
+        if not client_key:
+            return None
+        for item in self._findings_drafts:
+            if item.client_key == client_key:
+                return item
+        return None
+
+    def _refresh_finding_actions(self, *_args) -> None:
+        key = self._selected_finding_key()
+        current = self._finding_draft_by_key(key)
+        has_one = current is not None
+        stored = has_one and current.id is not None
+        self.edit_finding_btn.setEnabled(has_one)
+        self.remove_finding_btn.setEnabled(has_one and not stored)
+        if stored:
+            set_widget_tooltip(self.remove_finding_btn, FINDING_STORED_REMOVE_HINT)
+        else:
+            set_widget_tooltip(self.remove_finding_btn, "")
+        index = next(
+            (i for i, item in enumerate(self._findings_drafts) if item.client_key == key),
+            -1,
+        )
+        self.move_finding_up_btn.setEnabled(has_one and index > 0)
+        self.move_finding_down_btn.setEnabled(
+            has_one and 0 <= index < len(self._findings_drafts) - 1
+        )
+
+    def _add_finding(self) -> None:
+        from moduly.statni_dozor.ui.state_supervision_finding_dialog import (
+            exec_finding_dialog,
+        )
+
+        next_order = (
+            max((item.display_order for item in self._findings_drafts), default=-10) + 10
+        )
+        draft = StateSupervisionFindingDraft(
+            display_order=next_order,
+            client_key=new_finding_client_key(),
+        )
+        saved = exec_finding_dialog(self, draft=draft, is_new=True)
+        if saved is None:
+            return
+        self._findings_drafts.append(saved)
+        self._refresh_findings_table(select_key=saved.client_key)
+        self._editor.refresh_dirty()
+
+    def _edit_selected_finding(self) -> None:
+        from moduly.statni_dozor.ui.state_supervision_finding_dialog import (
+            exec_finding_dialog,
+        )
+
+        current = self._finding_draft_by_key(self._selected_finding_key())
+        if current is None:
+            return
+        saved = exec_finding_dialog(self, draft=replace(current), is_new=False)
+        if saved is None:
+            return
+        for index, item in enumerate(self._findings_drafts):
+            if item.client_key == current.client_key:
+                self._findings_drafts[index] = saved
+                break
+        self._refresh_findings_table(select_key=saved.client_key)
+        self._editor.refresh_dirty()
+
+    def _remove_selected_finding(self) -> None:
+        current = self._finding_draft_by_key(self._selected_finding_key())
+        if current is None or current.id is not None:
+            return
+        self._findings_drafts = [
+            item
+            for item in self._findings_drafts
+            if item.client_key != current.client_key
+        ]
+        self._refresh_findings_table()
+        self._editor.refresh_dirty()
+
+    def _move_selected_finding(self, delta: int) -> None:
+        key = self._selected_finding_key()
+        index = next(
+            (i for i, item in enumerate(self._findings_drafts) if item.client_key == key),
+            -1,
+        )
+        target = index + delta
+        if index < 0 or target < 0 or target >= len(self._findings_drafts):
+            return
+        self._findings_drafts[index], self._findings_drafts[target] = (
+            self._findings_drafts[target],
+            self._findings_drafts[index],
+        )
+        for order, item in enumerate(self._findings_drafts):
+            item.display_order = order * 10
+        self._refresh_findings_table(select_key=key)
         self._editor.refresh_dirty()
 
     def _active_participants(self) -> list[StateSupervisionParticipantDraft]:
