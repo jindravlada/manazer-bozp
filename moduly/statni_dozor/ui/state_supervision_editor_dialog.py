@@ -362,7 +362,13 @@ def _is_finding_error(message: str) -> bool:
 
 
 class StateSupervisionEditorDialog(QDialog):
-    def __init__(self, parent=None, *, supervision_id: int | None = None):
+    def __init__(
+        self,
+        parent=None,
+        *,
+        supervision_id: int | None = None,
+        target_tab: str | None = None,
+    ):
         super().__init__(parent)
         self._record: StateSupervision | None = None
         self._supervision_id = supervision_id
@@ -433,6 +439,7 @@ class StateSupervisionEditorDialog(QDialog):
             self._refresh_participants_table()
             self._load_attachments(None)
 
+        self._apply_target_tab(target_tab)
         self._editor.capture_baseline()
 
     @property
@@ -446,6 +453,16 @@ class StateSupervisionEditorDialog(QDialog):
         if self._record is not None:
             return int(self._record.id)
         return None
+
+    def _apply_target_tab(self, target_tab: str | None) -> None:
+        """Po načtení přepne na známou záložku; neznámý kód nechá výchozí první."""
+        wanted = str(target_tab or "").strip()
+        if not wanted:
+            return
+        for index in range(self.tabs.count()):
+            if self.tabs.tabText(index) == wanted:
+                self.tabs.setCurrentIndex(index)
+                return
 
     def _build_header(self) -> QWidget:
         host = QWidget()

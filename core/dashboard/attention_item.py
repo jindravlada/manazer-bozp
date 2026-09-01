@@ -19,6 +19,7 @@ ITEM_TYPE_YEARLY_PLAN_MONTH = "yearly_plan_month"
 ITEM_TYPE_OZO_CONTRACT = "ozo_contract"
 ITEM_TYPE_OZO_PERSON_CERTIFICATE = "ozo_person_certificate"
 ITEM_TYPE_QUALIFICATION_CERTIFICATE = "qualification_certificate"
+ITEM_TYPE_STATE_SUPERVISION = "state_supervision"
 # Zpětná kompatibilita staršího interního názvu.
 ITEM_TYPE_BOZP_INSPECTION = ITEM_TYPE_INSPECTION
 
@@ -37,6 +38,7 @@ TYPE_LABELS = {
     ITEM_TYPE_OZO_CONTRACT: "Smlouva OZO",
     ITEM_TYPE_OZO_PERSON_CERTIFICATE: "Osvědčení OZO",
     ITEM_TYPE_QUALIFICATION_CERTIFICATE: "Osvědčení",
+    ITEM_TYPE_STATE_SUPERVISION: "Státní dozor",
 }
 
 SOURCE_LABEL_AUDIT = "Audit systému řízení"
@@ -47,6 +49,7 @@ SOURCE_LABEL_YEARLY_PLAN = "Roční plán"
 SOURCE_LABEL_OZO_CONTRACT = "Smlouvy OZO"
 SOURCE_LABEL_OZO_PERSON = "Odborně způsobilá osoba"
 SOURCE_LABEL_QUALIFICATION = "Ostatní osvědčení"
+SOURCE_LABEL_STATE_SUPERVISION = "Státní dozor"
 
 PRIORITY_RANK = {
     "Kritická": 0,

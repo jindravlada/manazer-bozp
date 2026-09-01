@@ -426,6 +426,7 @@ class MainWindow(QMainWindow):
             ITEM_TYPE_OZO_PERSON_CERTIFICATE,
             ITEM_TYPE_PERIODIC,
             ITEM_TYPE_QUALIFICATION_CERTIFICATE,
+            ITEM_TYPE_STATE_SUPERVISION,
             ITEM_TYPE_TASK,
             ITEM_TYPE_YEARLY_PLAN_MONTH,
         )
@@ -496,6 +497,14 @@ class MainWindow(QMainWindow):
                 year = today.year
                 month = today.month
             self._open_yearly_plan_month(int(year), int(month))
+            return
+        if item_type == ITEM_TYPE_STATE_SUPERVISION and entity_id is not None:
+            metadata = getattr(item, "open_metadata", None) or {}
+            supervision_id = metadata.get("supervision_id", entity_id)
+            self._open_state_supervision_by_id(
+                int(supervision_id),
+                target_tab=metadata.get("target_tab"),
+            )
 
     def _open_external_audit_by_id(
         self,
@@ -646,6 +655,29 @@ class MainWindow(QMainWindow):
         page = self._page_widgets.get("agenda")
         if page is not None and hasattr(page, "open_yearly_plan"):
             page.open_yearly_plan(year, month)
+        self._refresh_dashboard_and_agenda()
+
+    def _open_state_supervision_by_id(
+        self,
+        supervision_id: int,
+        *,
+        target_tab: str | None = None,
+    ) -> None:
+        from moduly.statni_dozor.constants import ITEM_NOT_FOUND_MESSAGE, MODULE_NAME
+        from moduly.statni_dozor.sluzby.state_supervision_service import (
+            state_supervision_service,
+        )
+
+        record = state_supervision_service.get_supervision(supervision_id)
+        if record is None:
+            QMessageBox.warning(self, MODULE_NAME, ITEM_NOT_FOUND_MESSAGE)
+            self._refresh_dashboard_and_agenda()
+            return
+
+        self._show("agenda")
+        page = self._page_widgets.get("agenda")
+        if page is not None and hasattr(page, "open_supervision"):
+            page.open_supervision(supervision_id, target_tab=target_tab)
         self._refresh_dashboard_and_agenda()
 
     def _open_ozo_contract_by_id(self, contract_id: int) -> None:
