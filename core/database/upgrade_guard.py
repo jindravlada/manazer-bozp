@@ -92,6 +92,77 @@ def is_migration_in_progress(workspace_root: Path, transition_id: str = TRANSITI
     return isinstance(active, dict) and active.get("transition_id") == transition_id
 
 
+def _active_in_progress_payload(state: dict) -> object | None:
+    if not isinstance(state, dict) or "in_progress" not in state:
+        return None
+    active = state.get("in_progress")
+    if active is None:
+        return None
+    return active
+
+
+def in_progress_owner_id(active: object) -> str:
+    """Stabilní popisek vlastníka markeru pro diagnostiku (bez zápisu)."""
+    if isinstance(active, dict):
+        raw = active.get("transition_id")
+        if isinstance(raw, str) and raw.strip():
+            return raw.strip()
+        return "(chybí transition_id)"
+    return "(neplatný in_progress)"
+
+
+def _owns_in_progress(active: object, transition_id: str) -> bool:
+    if not isinstance(active, dict):
+        return False
+    raw = active.get("transition_id")
+    return isinstance(raw, str) and raw.strip() == transition_id
+
+
+def require_no_active_in_progress(workspace_root: Path) -> None:
+    """Odmítne start, pokud existuje jakýkoli nedokončený in_progress marker."""
+    state = read_migration_state(workspace_root)
+    active = _active_in_progress_payload(state)
+    if active is None:
+        return
+    owner = in_progress_owner_id(active)
+    backup = None
+    if isinstance(active, dict):
+        backup = active.get("pre_migration_backup")
+    raise MigrationIncompleteError(
+        "Předchozí upgrade databáze nebyl dokončen.\n\n"
+        "Aplikace neotevře napůl migrovaná data.\n"
+        "Obnovte data z předmigrační zálohy a kontaktujte podporu, "
+        "pokud problém přetrvá.\n\n"
+        f"Přechod: {owner}\n"
+        f"Záloha: {backup or '(nenalezena)'}"
+    )
+
+
+def _reject_foreign_in_progress(
+    state: dict,
+    transition_id: str,
+    *,
+    completing: bool,
+) -> None:
+    active = _active_in_progress_payload(state)
+    if active is None:
+        return
+    if _owns_in_progress(active, transition_id):
+        return
+    owner = in_progress_owner_id(active)
+    if completing:
+        raise MigrationGuardError(
+            "Nelze dokončit přechod, protože probíhá jiná migrace.\n"
+            f"Dokončovaný přechod: {transition_id}\n"
+            f"Vlastník aktivního in_progress: {owner}"
+        )
+    raise MigrationGuardError(
+        "Nelze zahájit přechod, protože probíhá jiná migrace.\n"
+        f"Zahajovaný přechod: {transition_id}\n"
+        f"Vlastník aktivního in_progress: {owner}"
+    )
+
+
 def mark_migration_in_progress(
     workspace_root: Path,
     *,
@@ -99,6 +170,7 @@ def mark_migration_in_progress(
     transition_id: str = TRANSITION_ID,
 ) -> None:
     state = read_migration_state(workspace_root)
+    _reject_foreign_in_progress(state, transition_id, completing=False)
     state["in_progress"] = {
         "transition_id": transition_id,
         "started_at": datetime.now().isoformat(timespec="seconds"),
@@ -113,7 +185,9 @@ def mark_migration_complete(
     backup_path: Path | None,
     transition_id: str = TRANSITION_ID,
 ) -> None:
+    """Označí přechod completed. Cizí in_progress nesmaže ani nepřepíše."""
     state = read_migration_state(workspace_root)
+    _reject_foreign_in_progress(state, transition_id, completing=True)
     completed = list(state.get("completed_transitions") or [])
     if transition_id not in completed:
         completed.append(transition_id)
@@ -277,7 +351,7 @@ def prepare_database_for_startup(
     Spouštěcí příprava DB: případná předmigrační záloha, pak ``initialize_database``.
 
     Pořadí:
-    1. Odmítnout pokračování při ``in_progress`` markeru (MIGRATION-0).
+    1. Odmítnout pokračování při jakémkoli ``in_progress`` markeru.
     2. AUDIT-SNAPSHOT-0: pokud chybí schema na existující DB → záloha + DDL.
     3. Pokud legacy DB bez Registru rizik → záloha + ověření + marker.
     4. Spustit migrace / ``create_all``.
@@ -301,17 +375,7 @@ def prepare_database_for_startup(
     backups_dir = workspace_root / "zalohy"
     init = initialize_fn or initialize_database
 
-    if is_migration_in_progress(workspace_root, transition_id):
-        state = read_migration_state(workspace_root)
-        backup = (state.get("in_progress") or {}).get("pre_migration_backup")
-        raise MigrationIncompleteError(
-            "Předchozí upgrade databáze nebyl dokončen.\n\n"
-            "Aplikace neotevře napůl migrovaná data.\n"
-            "Obnovte data z předmigrační zálohy a kontaktujte podporu, "
-            "pokud problém přetrvá.\n\n"
-            f"Přechod: {transition_id}\n"
-            f"Záloha: {backup or '(nenalezena)'}"
-        )
+    require_no_active_in_progress(workspace_root)
 
     # AUDIT-SNAPSHOT-0 před create_all — zabrání vzniku tabulky bez zálohy.
     if needs_audit_snapshot_schema(database_path):

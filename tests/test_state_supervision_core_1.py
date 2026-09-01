@@ -591,7 +591,7 @@ class StateSupervisionCore1ServiceTestCase(unittest.TestCase):
                     workspace_root=ws,
                     database_path=db,
                 )
-            self.assertIn("STATE-SUPERVISION-CORE-1", str(ctx.exception))
+            self.assertIn(TRANSITION_ID, str(ctx.exception))
         finally:
             write_migration_state(ws, state_before)
 
