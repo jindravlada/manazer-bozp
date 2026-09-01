@@ -547,11 +547,12 @@ class StateSupervisionFindingTaskCore5a4TestCase(unittest.TestCase):
             dialog.remove_finding_btn.text(),
         ]
         self.assertNotIn("Vytvořit úkol", texts)
+        self.assertEqual(dialog.create_finding_task_btn.text(), "Vytvořit úkol")
         editor_src = inspect.getsource(StateSupervisionEditorDialog)
         persist_src = inspect.getsource(StateSupervisionEditorDialog._persist)
         bundle_src = inspect.getsource(StateSupervisionService.save_supervision_bundle)
-        self.assertNotIn("Vytvořit úkol", editor_src)
-        self.assertNotIn("create_task_for_finding", editor_src)
+        self.assertIn("ACTION_CREATE_TASK", editor_src)
+        self.assertIn("create_task_for_finding", editor_src)
         self.assertNotIn("create_task_for_finding", persist_src)
         self.assertNotIn("create_task_for_finding", bundle_src)
         self.assertNotIn("state_supervision_finding_task_service", persist_src)

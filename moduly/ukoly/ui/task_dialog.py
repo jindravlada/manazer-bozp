@@ -19,7 +19,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.shared.constants import ENTITY_ACCIDENT, ENTITY_AUDITY, ENTITY_MU_INVESTIGATION
+from core.shared.constants import (
+    ENTITY_ACCIDENT,
+    ENTITY_AUDITY,
+    ENTITY_MU_INVESTIGATION,
+    ENTITY_STATE_SUPERVISION,
+)
 from core.navigation.source_navigator import (
     ACCIDENT_OPEN_ADMINISTRATION,
     ACCIDENT_OPEN_RECORD,
@@ -84,6 +89,8 @@ class TaskDialog(QDialog):
         create_factory: Callable[[dict], Any] | None = None,
         persist_handler: Callable[[Any | None, dict], Any] | None = None,
         window_title: str | None = None,
+        fixed_priority: str | None = None,
+        source_finding: Any | None = None,
     ):
         super().__init__(parent)
 
@@ -91,6 +98,7 @@ class TaskDialog(QDialog):
         self._create_kwargs = dict(create_kwargs or {})
         self._create_factory = create_factory
         self._persist_handler = persist_handler
+        self._fixed_priority = str(fixed_priority or "").strip() or None
         self._baseline: object | None = None
         self._closing = False
         self._attachments_info_label: QLabel | None = None
@@ -102,6 +110,8 @@ class TaskDialog(QDialog):
                 from core.shared.sluzby.finding_service import finding_service
 
                 self._finding = finding_service.get_by_id(int(source_id))
+        if self._finding is None and source_finding is not None:
+            self._finding = source_finding
         self._is_investigation_action = (
             task is not None
             and getattr(task, "task_type", "") == TASK_TYPE_INVESTIGATION_ACTION
@@ -120,8 +130,18 @@ class TaskDialog(QDialog):
 
         if self._finding is not None:
             self.source_panel = TaskFindingSourcePanel()
+            source_task = task
+            if source_task is None:
+                from types import SimpleNamespace
+
+                from core.shared.constants import ENTITY_FINDING
+
+                source_task = SimpleNamespace(
+                    source_module=ENTITY_FINDING,
+                    source_record_id=self._finding.id,
+                )
             self.source_panel.set_content(
-                task_source_label(task),
+                task_source_label(source_task),
                 self._finding.description,
             )
             if self._should_show_source_open_button():
@@ -197,6 +217,7 @@ class TaskDialog(QDialog):
 
         self._verification_changed()
         self._refresh_status()
+        self._apply_fixed_priority()
         self._capture_baseline()
 
     def _build_footer(self) -> QHBoxLayout:
@@ -228,6 +249,12 @@ class TaskDialog(QDialog):
         footer.addWidget(self._save_close_btn)
         footer.addWidget(self._close_btn)
         return footer
+
+    def _apply_fixed_priority(self) -> None:
+        if not self._fixed_priority:
+            return
+        self.priority_combo.setCurrentText(self._fixed_priority)
+        self.priority_combo.setEnabled(False)
 
     def _capture_baseline(self) -> None:
         self._baseline = self.get_data()
@@ -353,7 +380,10 @@ class TaskDialog(QDialog):
             return False
         if not source_navigator.can_open(self._finding.entity_type, self._finding.entity_id):
             return False
-        if self._finding.entity_type == ENTITY_AUDITY and self._is_opened_from_modal_parent():
+        if self._finding.entity_type in {
+            ENTITY_AUDITY,
+            ENTITY_STATE_SUPERVISION,
+        } and self._is_opened_from_modal_parent():
             return False
         return True
 
@@ -539,7 +569,7 @@ class TaskDialog(QDialog):
 
         requires_verification = self.requires_verification_checkbox.isChecked()
 
-        return {
+        data = {
             "title": self.title_edit.toPlainText().strip(),
             "description": "",
             "priority": self.priority_combo.currentText(),
@@ -556,3 +586,6 @@ class TaskDialog(QDialog):
             "canceled": self.canceled_checkbox.isChecked(),
             "note": self.note_edit.toPlainText().strip(),
         }
+        if self._fixed_priority:
+            data["priority"] = self._fixed_priority
+        return data

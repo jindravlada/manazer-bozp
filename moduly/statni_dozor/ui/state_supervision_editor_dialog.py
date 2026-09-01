@@ -36,6 +36,7 @@ from core.models.attachment_staging import (
 )
 from core.services.attachment_service import attachment_service
 from core.widgets.dialog_utils import (
+    configure_create_linked_action_button,
     configure_edit_action_button,
     configure_form_tab_navigation,
     configure_new_action_button,
@@ -56,9 +57,11 @@ from core.widgets.workplace_selector import WorkplaceSelector
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.statni_dozor.constants import (
     ACTION_ADD,
+    ACTION_CREATE_TASK,
     ACTION_EDIT,
     ACTION_MOVE_DOWN,
     ACTION_MOVE_UP,
+    ACTION_OPEN_TASK,
     ACTION_REMOVE,
     ACTION_SAVE_AND_CLOSE,
     AUTHORITY_REQUIRED_MESSAGE,
@@ -70,6 +73,7 @@ from moduly.statni_dozor.constants import (
     DIALOG_TITLE_NEW,
     ATTENDANCE_UNEVALUATED_LABEL,
     COL_DOCUMENT_TITLE,
+    COL_FINDING_TASK,
     COL_FINDING_TYPE,
     COL_PARTICIPANT_ROLE,
     COL_TIMELINE_TITLE,
@@ -81,7 +85,16 @@ from moduly.statni_dozor.constants import (
     EMPTY_VALUE,
     FINDING_COLUMN_HEADERS,
     FINDING_STORED_REMOVE_HINT,
+    FINDING_TASK_DIRTY_TOOLTIP,
+    FINDING_TASK_HINT_DIRTY,
+    FINDING_TASK_HINT_LINKED,
+    FINDING_TASK_HINT_UNSAVED,
     FINDING_TASK_LINKED,
+    FINDING_TASK_MISSING_LABEL,
+    FINDING_TASK_MISSING_OPEN_MESSAGE,
+    FINDING_TASK_NOT_FOUND_MESSAGE,
+    FINDING_TASK_RELOAD_FAILED_MESSAGE,
+    FINDING_TASK_SAVE_FIRST_TOOLTIP,
     ENDED_BEFORE_STARTED_MESSAGE,
     ENTITY_STATE_SUPERVISION,
     GROUP_ACTUAL_COURSE,
@@ -178,6 +191,9 @@ from moduly.statni_dozor.modely.state_supervision_timeline_item_draft import (
 from moduly.statni_dozor.sluzby.state_supervision_finding_service import (
     state_supervision_finding_service,
 )
+from moduly.statni_dozor.sluzby.state_supervision_finding_task_service import (
+    state_supervision_finding_task_service,
+)
 from moduly.statni_dozor.sluzby.state_supervision_participant_service import (
     state_supervision_participant_service,
 )
@@ -256,6 +272,9 @@ class _SupervisionEditorController(EditorDialogController):
         enabled = bool(self.save_button is not None and self.save_button.isEnabled())
         for button in self._extra_save_buttons:
             button.setEnabled(enabled)
+        refresh_findings = getattr(self._dialog, "_refresh_finding_actions", None)
+        if callable(refresh_findings):
+            refresh_findings()
 
 
 def _medium_note_edit(*, stretch: bool = False) -> QTextEdit:
@@ -315,8 +334,18 @@ def _finding_status_label(status: str | None) -> str:
     return FINDING_STATUS_LABELS.get(status, status)
 
 
-def _finding_task_label(task_id: int | None) -> str:
-    return FINDING_TASK_LINKED if task_id is not None else EMPTY_VALUE
+def _finding_task_texts(task) -> tuple[str, str]:
+    if task is None:
+        return FINDING_TASK_MISSING_LABEL, FINDING_TASK_MISSING_LABEL
+    title = str(task.title or "").strip() or FINDING_TASK_LINKED
+    status = str(getattr(task, "computed_status", None) or task.status or "").strip()
+    due = format_supervision_date(task.due_date) if task.due_date else ""
+    tooltip_lines = [title]
+    if status:
+        tooltip_lines.append(status)
+    if due:
+        tooltip_lines.append(due)
+    return title, "\n".join(tooltip_lines)
 
 
 def _is_finding_error(message: str) -> bool:
@@ -340,6 +369,7 @@ class StateSupervisionEditorDialog(QDialog):
         self._findings_drafts: list[StateSupervisionFindingDraft] = []
         self._participant_drafts: list[StateSupervisionParticipantDraft] = []
         self._attachment_staging = AttachmentStagingState()
+        self._finding_task_busy = False
 
         if supervision_id is not None:
             self._record = state_supervision_service.get_supervision(supervision_id)
@@ -745,20 +775,35 @@ class StateSupervisionEditorDialog(QDialog):
         self.remove_finding_btn = QPushButton(ACTION_REMOVE)
         self.move_finding_up_btn = QPushButton(ACTION_MOVE_UP)
         self.move_finding_down_btn = QPushButton(ACTION_MOVE_DOWN)
+        self.create_finding_task_btn = QPushButton(ACTION_CREATE_TASK)
+        self.open_finding_task_btn = QPushButton(ACTION_OPEN_TASK)
         configure_new_action_button(self.add_finding_btn)
         configure_edit_action_button(self.edit_finding_btn)
+        configure_create_linked_action_button(self.create_finding_task_btn)
+        configure_edit_action_button(self.open_finding_task_btn)
         for button in (
             self.add_finding_btn,
             self.edit_finding_btn,
             self.remove_finding_btn,
             self.move_finding_up_btn,
             self.move_finding_down_btn,
+            self.create_finding_task_btn,
+            self.open_finding_task_btn,
         ):
             button.setAutoDefault(False)
             button.setDefault(False)
             toolbar.addWidget(button)
         toolbar.addStretch(1)
         layout.addLayout(toolbar)
+
+        self.finding_task_hint_label = QLabel()
+        self.finding_task_hint_label.setWordWrap(True)
+        self.finding_task_hint_label.setStyleSheet("color: #666;")
+        self.finding_task_hint_label.setSizePolicy(
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed
+        )
+        self.finding_task_hint_label.setVisible(False)
+        layout.addWidget(self.finding_task_hint_label)
 
         self.findings_empty_label = QLabel(EMPTY_FINDINGS)
         self.findings_empty_label.setWordWrap(True)
@@ -789,6 +834,8 @@ class StateSupervisionEditorDialog(QDialog):
         self.remove_finding_btn.clicked.connect(self._remove_selected_finding)
         self.move_finding_up_btn.clicked.connect(lambda: self._move_selected_finding(-1))
         self.move_finding_down_btn.clicked.connect(lambda: self._move_selected_finding(1))
+        self.create_finding_task_btn.clicked.connect(self._create_finding_task)
+        self.open_finding_task_btn.clicked.connect(self._open_finding_task)
         self.findings_table.doubleClicked.connect(self._edit_selected_finding)
         self.findings_table.itemSelectionChanged.connect(self._refresh_finding_actions)
         self._refresh_finding_actions()
@@ -1578,7 +1625,7 @@ class StateSupervisionEditorDialog(QDialog):
             for index, item in enumerate(self._findings_drafts)
         ]
 
-    def _load_findings(self, supervision_id: int) -> None:
+    def _load_findings(self, supervision_id: int, *, select_key: str | None = None) -> None:
         records = state_supervision_finding_service.list_findings(int(supervision_id))
         loaded: list[StateSupervisionFindingDraft] = []
         for record in records:
@@ -1601,14 +1648,40 @@ class StateSupervisionEditorDialog(QDialog):
                 )
             )
         self._findings_drafts = loaded
-        self._refresh_findings_table()
+        self._refresh_findings_table(select_key=select_key)
+
+    def _finding_tasks_by_id(self) -> dict[int, object]:
+        ids = sorted(
+            {
+                int(item.task_id)
+                for item in self._findings_drafts
+                if item.task_id is not None
+            }
+        )
+        if not ids:
+            return {}
+        from moduly.ukoly.sluzby.task_service import task_service
+
+        return {
+            int(task.id): task
+            for task in task_service.get_tasks_by_ids(ids)
+            if getattr(task, "id", None) is not None
+        }
 
     def _refresh_findings_table(self, *, select_key: str | None = None) -> None:
         rows = self._findings_drafts
+        tasks_by_id = self._finding_tasks_by_id()
         self.findings_empty_label.setVisible(not rows)
         self.findings_table.setVisible(True)
         self.findings_table.setRowCount(len(rows))
         for row, item in enumerate(rows):
+            if item.task_id is None:
+                task_text = EMPTY_VALUE
+                task_tooltip = ""
+            else:
+                task_text, task_tooltip = _finding_task_texts(
+                    tasks_by_id.get(int(item.task_id))
+                )
             values = [
                 _finding_type_label(item.finding_type),
                 display_or_dash(item.description),
@@ -1616,14 +1689,17 @@ class StateSupervisionEditorDialog(QDialog):
                 _finding_status_label(item.status),
                 display_or_dash(item.responsible_person_name),
                 format_supervision_date(item.due_date),
-                _finding_task_label(item.task_id),
+                task_text,
             ]
             for column, text in enumerate(values):
                 cell = QTableWidgetItem(text)
                 cell.setFlags(cell.flags() & ~Qt.ItemFlag.ItemIsEditable)
                 if column == COL_FINDING_TYPE:
                     cell.setData(_ROLE_FINDING_KEY, item.client_key)
-                apply_cell_tooltip(cell, text if text != EMPTY_VALUE else "")
+                if column == COL_FINDING_TASK:
+                    apply_cell_tooltip(cell, task_tooltip)
+                else:
+                    apply_cell_tooltip(cell, text if text != EMPTY_VALUE else "")
                 self.findings_table.setItem(row, column, cell)
         configure_table_columns(self.findings_table, "state_supervision_findings")
         if select_key:
@@ -1659,10 +1735,13 @@ class StateSupervisionEditorDialog(QDialog):
         return None
 
     def _refresh_finding_actions(self, *_args) -> None:
+        if not hasattr(self, "create_finding_task_btn"):
+            return
         key = self._selected_finding_key()
         current = self._finding_draft_by_key(key)
         has_one = current is not None
         stored = has_one and current.id is not None
+        dirty = self._editor_is_dirty()
         self.edit_finding_btn.setEnabled(has_one)
         self.remove_finding_btn.setEnabled(has_one and not stored)
         if stored:
@@ -1677,6 +1756,38 @@ class StateSupervisionEditorDialog(QDialog):
         self.move_finding_down_btn.setEnabled(
             has_one and 0 <= index < len(self._findings_drafts) - 1
         )
+
+        create_enabled = False
+        open_enabled = False
+        create_tooltip = ""
+        hint = ""
+        if current is None:
+            pass
+        elif current.id is None:
+            create_tooltip = FINDING_TASK_SAVE_FIRST_TOOLTIP
+            hint = FINDING_TASK_HINT_UNSAVED
+        elif current.task_id is not None:
+            open_enabled = True
+            hint = FINDING_TASK_HINT_LINKED
+            if dirty:
+                create_tooltip = FINDING_TASK_DIRTY_TOOLTIP
+        elif dirty:
+            create_tooltip = FINDING_TASK_DIRTY_TOOLTIP
+            hint = FINDING_TASK_HINT_DIRTY
+        elif not self._finding_task_busy:
+            create_enabled = True
+
+        self.create_finding_task_btn.setEnabled(create_enabled)
+        self.open_finding_task_btn.setEnabled(open_enabled)
+        set_widget_tooltip(self.create_finding_task_btn, create_tooltip)
+        self.finding_task_hint_label.setText(hint)
+        self.finding_task_hint_label.setVisible(bool(hint))
+
+    def _editor_is_dirty(self) -> bool:
+        editor = getattr(self, "_editor", None)
+        if editor is None:
+            return False
+        return bool(editor.is_dirty())
 
     def _add_finding(self) -> None:
         from moduly.statni_dozor.ui.state_supervision_finding_dialog import (
@@ -1744,6 +1855,151 @@ class StateSupervisionEditorDialog(QDialog):
             item.display_order = order * 10
         self._refresh_findings_table(select_key=key)
         self._editor.refresh_dirty()
+
+    def _create_finding_task(self) -> None:
+        if self._finding_task_busy:
+            return
+        current = self._finding_draft_by_key(self._selected_finding_key())
+        if current is None or current.id is None:
+            return
+        if current.task_id is not None:
+            return
+        if self._editor_is_dirty():
+            return
+
+        from core.shared.sluzby.finding_service import finding_service
+        from moduly.agenda.constants import PRIORITY_CRITICAL
+        from moduly.ukoly.ui.task_dialog import TaskDialog
+
+        finding = finding_service.get_by_id(int(current.id))
+        if finding is None:
+            QMessageBox.warning(self, GROUP_FINDINGS, FINDING_TASK_NOT_FOUND_MESSAGE)
+            return
+
+        finding_id = int(finding.id)
+        defaults = state_supervision_finding_task_service.task_defaults_for_finding(
+            finding
+        )
+        select_key = current.client_key
+
+        def _create(data: dict):
+            try:
+                return state_supervision_finding_task_service.create_task_for_finding(
+                    finding_id,
+                    data,
+                )
+            except StateSupervisionError as exc:
+                logger.warning(
+                    "Vytvoření úkolu ze zjištění %s selhalo: %s",
+                    finding_id,
+                    exc,
+                )
+                QMessageBox.warning(self, GROUP_FINDINGS, str(exc))
+                return None
+            except Exception:
+                logger.exception(
+                    "Vytvoření úkolu ze zjištění %s selhalo.",
+                    finding_id,
+                )
+                QMessageBox.warning(
+                    self,
+                    GROUP_FINDINGS,
+                    "Úkol se nepodařilo vytvořit.",
+                )
+                return None
+
+        dialog = None
+        self._finding_task_busy = True
+        self.create_finding_task_btn.setEnabled(False)
+        try:
+            dialog = TaskDialog(
+                self,
+                create_factory=_create,
+                fixed_priority=PRIORITY_CRITICAL,
+                source_finding=finding,
+            )
+            self._apply_finding_task_defaults(dialog, defaults)
+            dialog.exec()
+        finally:
+            self._finding_task_busy = False
+
+        task = getattr(dialog, "task", None) if dialog is not None else None
+        task_id = getattr(task, "id", None)
+        if task is None or task_id is None:
+            self._refresh_finding_actions()
+            return
+
+        try:
+            supervision_id = self.supervision_id
+            if supervision_id is None:
+                raise RuntimeError("missing supervision id")
+            self._load_findings(int(supervision_id), select_key=select_key)
+        except Exception:
+            logger.exception("Obnovení zjištění po vytvoření úkolu selhalo.")
+            self._apply_created_task_id(select_key, int(task_id))
+            self._refresh_findings_table(select_key=select_key)
+            QMessageBox.warning(
+                self,
+                GROUP_FINDINGS,
+                FINDING_TASK_RELOAD_FAILED_MESSAGE,
+            )
+        self._editor.capture_baseline()
+        self._notify_agenda_task_created()
+        self._refresh_finding_actions()
+
+    def _apply_finding_task_defaults(self, dialog, defaults: dict) -> None:
+        dialog.title_edit.setPlainText(str(defaults.get("title") or ""))
+        person_id = defaults.get("responsible_person_id")
+        dialog.person_selector.set_person_id(person_id)
+        due_date = defaults.get("due_date")
+        if due_date is not None:
+            dialog.due_date_edit.set_date_iso(due_date.isoformat())
+        dialog.requires_verification_checkbox.setChecked(
+            bool(defaults.get("requires_verification", True))
+        )
+        dialog._verification_changed()
+        dialog._apply_fixed_priority()
+        dialog._capture_baseline()
+
+    def _apply_created_task_id(self, client_key: str, task_id: int) -> None:
+        for index, item in enumerate(self._findings_drafts):
+            if item.client_key == client_key:
+                self._findings_drafts[index] = replace(item, task_id=int(task_id))
+                return
+
+    def _open_finding_task(self) -> None:
+        current = self._finding_draft_by_key(self._selected_finding_key())
+        if current is None or current.task_id is None:
+            return
+        from moduly.ukoly.sluzby.task_service import task_service
+        from moduly.ukoly.ui.task_dialog import TaskDialog
+
+        select_key = current.client_key
+        task = task_service.get_task_by_id(int(current.task_id))
+        if task is None:
+            QMessageBox.warning(
+                self,
+                GROUP_FINDINGS,
+                FINDING_TASK_MISSING_OPEN_MESSAGE,
+            )
+            self._refresh_findings_table(select_key=select_key)
+            return
+        dialog = TaskDialog(self, task=task)
+        dialog.exec()
+        self._refresh_findings_table(select_key=select_key)
+
+    def _notify_agenda_task_created(self) -> None:
+        from moduly.agenda.ui.agenda_page import AgendaPage
+
+        widget = self.parentWidget()
+        while widget is not None:
+            if isinstance(widget, AgendaPage):
+                current_index = widget.tabs.currentIndex()
+                widget.refresh()
+                widget._refresh_dashboard()
+                widget.tabs.setCurrentIndex(current_index)
+                return
+            widget = widget.parentWidget()
 
     def _active_participants(self) -> list[StateSupervisionParticipantDraft]:
         return [item for item in self._participant_drafts if item.active]

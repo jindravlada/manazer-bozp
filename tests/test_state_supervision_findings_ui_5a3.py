@@ -69,9 +69,11 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rocni_plan.constants import TAB_YEARLY_PLAN
     from moduly.statni_dozor.constants import (
         ACTION_ADD,
+        ACTION_CREATE_TASK,
         ACTION_EDIT,
         ACTION_MOVE_DOWN,
         ACTION_MOVE_UP,
+        ACTION_OPEN_TASK,
         ACTION_REMOVE,
         COL_FINDING_DESCRIPTION,
         COL_FINDING_DUE,
@@ -85,7 +87,7 @@ with patch.object(Path, "home", return_value=_TMP):
         EMPTY_VALUE,
         FINDING_COLUMN_HEADERS,
         FINDING_DESCRIPTION_REQUIRED_MESSAGE,
-        FINDING_TASK_LINKED,
+        FINDING_TASK_MISSING_LABEL,
         GROUP_COURSE_TIMELINE,
         GROUP_FINDINGS,
         STATE_SUPERVISION_FINDING_TYPE_LABELS,
@@ -234,17 +236,22 @@ class StateSupervisionFindingsUi5a3TestCase(unittest.TestCase):
         self.assertEqual(dialog.remove_finding_btn.text(), ACTION_REMOVE)
         self.assertEqual(dialog.move_finding_up_btn.text(), ACTION_MOVE_UP)
         self.assertEqual(dialog.move_finding_down_btn.text(), ACTION_MOVE_DOWN)
+        self.assertEqual(dialog.create_finding_task_btn.text(), ACTION_CREATE_TASK)
+        self.assertEqual(dialog.open_finding_task_btn.text(), ACTION_OPEN_TASK)
         self.assertTrue(dialog.add_finding_btn.isEnabled())
         self.assertFalse(dialog.edit_finding_btn.isEnabled())
         self.assertFalse(dialog.remove_finding_btn.isEnabled())
         self.assertFalse(dialog.move_finding_up_btn.isEnabled())
         self.assertFalse(dialog.move_finding_down_btn.isEnabled())
+        self.assertFalse(dialog.create_finding_task_btn.isEnabled())
+        self.assertFalse(dialog.open_finding_task_btn.isEnabled())
         self.assertLessEqual(dialog.minimumWidth(), 1600)
         self.assertLessEqual(dialog.minimumHeight(), 480)
         source = inspect.getsource(StateSupervisionEditorDialog)
         self.assertEqual(source.count("self.tabs.addTab("), 5)
         self.assertIn("doubleClicked.connect(self._edit_selected_finding)", source)
-        self.assertNotIn("Vytvořit úkol", source)
+        self.assertIn("ACTION_CREATE_TASK", source)
+        self.assertIn("ACTION_OPEN_TASK", source)
         self.assertNotIn("SourceNavigator", source)
         self.assertNotIn("QSplitter", source)
         self.assertNotIn("save_button.setEnabled(True)", source)
@@ -314,7 +321,9 @@ class StateSupervisionFindingsUi5a3TestCase(unittest.TestCase):
             self.assertNotIn(".pkz", source)
             self.assertNotIn("ciselniky", source)
             self.assertNotIn("MeetingPersonTypeahead", source)
-            self.assertNotIn("finding_task_service", source)
+        self.assertNotIn("finding_task_service", dialog_src)
+        self.assertNotIn("from core.shared.sluzby.finding_task_service", editor_src)
+        self.assertNotIn("finding_task_service.create_task_from_finding", editor_src)
 
     def test_03_subdialog_fields_cancel_noop_and_task_id(self) -> None:
         original = _draft(
@@ -593,7 +602,7 @@ class StateSupervisionFindingsUi5a3TestCase(unittest.TestCase):
         )
         self.assertEqual(
             dialog.findings_table.item(task_row, COL_FINDING_TASK).text(),
-            FINDING_TASK_LINKED,
+            FINDING_TASK_MISSING_LABEL,
         )
         empty_task = next(
             i for i, row in enumerate(dialog._findings_drafts) if row.task_id is None
@@ -807,6 +816,8 @@ class StateSupervisionFindingsUi5a3TestCase(unittest.TestCase):
             dialog.remove_finding_btn.text(),
         ]
         self.assertNotIn("Vytvořit úkol", texts)
+        self.assertEqual(dialog.create_finding_task_btn.text(), "Vytvořit úkol")
+        self.assertEqual(dialog.open_finding_task_btn.text(), "Otevřít úkol")
         persist = inspect.getsource(StateSupervisionEditorDialog._persist)
         self.assertIn("findings=self._findings_drafts_for_save()", persist)
         self.assertIn("save_supervision_bundle", persist)

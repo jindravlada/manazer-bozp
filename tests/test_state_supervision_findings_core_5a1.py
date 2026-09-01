@@ -566,7 +566,7 @@ class StateSupervisionFindingsCore5a1TestCase(unittest.TestCase):
         self.assertEqual(editor_source.count("self.tabs.addTab("), 5)
         self.assertIn("StateSupervisionFindingDraft", editor_source)
         self.assertNotIn("save_state_supervision_findings_batch", editor_source)
-        self.assertNotIn("Vytvořit úkol", editor_source)
+        self.assertIn("ACTION_CREATE_TASK", editor_source)
 
         agenda_source = inspect.getsource(AgendaPage)
         self.assertEqual(agenda_source.count("self.tabs.addTab("), 4)

@@ -618,7 +618,7 @@ class StateSupervisionFindingsBundle5a2TestCase(unittest.TestCase):
         self.assertNotIn("save_state_supervision_findings_batch", editor)
         persist = inspect.getsource(StateSupervisionEditorDialog._persist)
         self.assertIn("findings=", persist)
-        self.assertNotIn("Vytvořit úkol", editor)
+        self.assertIn("ACTION_CREATE_TASK", editor)
         agenda = inspect.getsource(AgendaPage)
         self.assertEqual(agenda.count("self.tabs.addTab("), 4)
 

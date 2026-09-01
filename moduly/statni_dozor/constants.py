@@ -515,6 +515,21 @@ GROUP_COURSE_TIMELINE = "Průběh kontroly"
 GROUP_FINDINGS = "Zjištění kontroly"
 EMPTY_FINDINGS = "Zatím nejsou evidována žádná zjištění kontroly."
 FINDING_TASK_LINKED = "Navázán"
+ACTION_CREATE_TASK = "Vytvořit úkol"
+ACTION_OPEN_TASK = "Otevřít úkol"
+FINDING_TASK_SAVE_FIRST_TOOLTIP = "Nejprve uložte kontrolu a zjištění."
+FINDING_TASK_DIRTY_TOOLTIP = (
+    "Před vytvořením úkolu nejprve uložte všechny změny kontroly."
+)
+FINDING_TASK_HINT_UNSAVED = "Úkol lze vytvořit po uložení zjištění."
+FINDING_TASK_HINT_DIRTY = "Před vytvořením úkolu nejprve uložte změny kontroly."
+FINDING_TASK_HINT_LINKED = "Ke zjištění je již navázán úkol."
+FINDING_TASK_MISSING_LABEL = "Úkol nebyl nalezen"
+FINDING_TASK_MISSING_OPEN_MESSAGE = "Navázaný úkol nebyl nalezen."
+FINDING_TASK_RELOAD_FAILED_MESSAGE = (
+    "Úkol byl vytvořen, ale nepodařilo se obnovit obrazovku. "
+    "Zavřete editor a otevřete kontrolu znovu."
+)
 FINDING_TASK_NOT_FOUND_MESSAGE = "Zjištění nebylo nalezeno."
 FINDING_TASK_WRONG_ENTITY_MESSAGE = (
     "Úkol ze zjištění lze vytvořit jen pro kontrolu státního dozoru."
