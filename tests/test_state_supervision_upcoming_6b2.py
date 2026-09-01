@@ -536,7 +536,7 @@ class StateSupervisionUpcoming6B2TestCase(unittest.TestCase):
         opened: list[tuple[int | None, str | None]] = []
 
         class FakeDialog:
-            def __init__(self, parent=None, *, supervision_id=None, target_tab=None):
+            def __init__(self, parent=None, *, supervision_id=None, target_tab=None, **_kwargs):
                 opened.append((supervision_id, target_tab))
                 self.saved = False
                 self.supervision_id = supervision_id

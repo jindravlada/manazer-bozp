@@ -242,6 +242,10 @@ OBJECTIONS_BEFORE_PROTOCOL_MESSAGE = (
     "Datum podání námitek nesmí být dříve než datum doručení protokolu."
 )
 SAVE_ERROR_MESSAGE = "Kontrolu státního dozoru se nepodařilo uložit."
+WORKSPACE_REFRESH_FAILED_MESSAGE = (
+    "Data byla uložena, ale pracovní plochu se nepodařilo obnovit. "
+    "Obnovte ji prosím ručně."
+)
 ITEM_NOT_FOUND_MESSAGE = "Kontrola státního dozoru už není k dispozici."
 DOCUMENT_NOT_IN_ACTIVE_LIST_MESSAGE = (
     "Požadovaný doklad již není v aktivním seznamu."

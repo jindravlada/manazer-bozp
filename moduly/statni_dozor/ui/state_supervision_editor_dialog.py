@@ -156,6 +156,7 @@ from moduly.statni_dozor.constants import (
     PLANNED_YES_LABEL,
     RESULT_SUGGESTIONS,
     SAVE_ERROR_MESSAGE,
+    WORKSPACE_REFRESH_FAILED_MESSAGE,
     MODULE_NAME,
     STATE_SUPERVISION_FINDING_TYPE_LABELS,
     STATE_SUPERVISION_NOTIFICATION_METHOD_EDITOR_LABELS,
@@ -285,6 +286,17 @@ class _SupervisionEditorController(EditorDialogController):
         if callable(refresh_findings):
             refresh_findings()
 
+    def _run_save(self) -> bool:
+        if getattr(self._dialog, "_workspace_refresh_in_progress", False):
+            return False
+        ok = super()._run_save()
+        if not ok:
+            return False
+        notify = getattr(self._dialog, "_notify_state_supervision_saved", None)
+        if callable(notify):
+            notify()
+        return True
+
 
 def _medium_note_edit(*, stretch: bool = False) -> QTextEdit:
     edit = QTextEdit()
@@ -373,11 +385,14 @@ class StateSupervisionEditorDialog(QDialog):
         target_tab: str | None = None,
         focus_kind: str | None = None,
         focus_child_id: int | None = None,
+        on_saved=None,
     ):
         super().__init__(parent)
         self._record: StateSupervision | None = None
         self._supervision_id = supervision_id
         self._persisted = False
+        self._on_saved = on_saved
+        self._workspace_refresh_in_progress = False
         self._loaded_workplace_id: int | None = None
         self._loaded_name_snapshot = ""
         self._loaded_address_snapshot = ""
@@ -459,6 +474,32 @@ class StateSupervisionEditorDialog(QDialog):
         if self._record is not None:
             return int(self._record.id)
         return None
+
+    def _notify_state_supervision_saved(self) -> None:
+        """Po úspěšném persist a clean editoru obnoví přehled a dashboard.
+
+        Nic nezapisuje. Selhání obnovy nemění uložená data ani dirty stav.
+        """
+        if self._workspace_refresh_in_progress:
+            return
+        callback = self._on_saved
+        supervision_id = self.supervision_id
+        if not callable(callback) or supervision_id is None:
+            return
+        self._workspace_refresh_in_progress = True
+        try:
+            callback(int(supervision_id))
+        except Exception:
+            logger.exception(
+                "Obnova pracovní plochy po uložení státního dozoru selhala."
+            )
+            QMessageBox.information(
+                self,
+                self.windowTitle(),
+                WORKSPACE_REFRESH_FAILED_MESSAGE,
+            )
+        finally:
+            self._workspace_refresh_in_progress = False
 
     def _apply_target_tab(self, target_tab: str | None) -> None:
         """Po načtení přepne na známou záložku; neznámý kód nechá výchozí první."""
@@ -2084,7 +2125,7 @@ class StateSupervisionEditorDialog(QDialog):
             if isinstance(widget, AgendaPage):
                 current_index = widget.tabs.currentIndex()
                 widget.refresh()
-                widget._refresh_dashboard()
+                widget.refresh_dashboard()
                 widget.tabs.setCurrentIndex(current_index)
                 return
             widget = widget.parentWidget()

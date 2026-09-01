@@ -544,6 +544,7 @@ class StateSupervisionReminders6B3TestCase(unittest.TestCase):
                 target_tab=None,
                 focus_kind=None,
                 focus_child_id=None,
+                **_kwargs,
             ):
                 opened.append((supervision_id, target_tab, focus_kind, focus_child_id))
                 self.saved = False

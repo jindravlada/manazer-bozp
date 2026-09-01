@@ -65,6 +65,7 @@ class StateSupervisionTab(QWidget):
         self._unfiltered_count = 0
         self._load_error: str | None = None
         self._updating_filters = False
+        self._after_save_callback = None
 
         layout = QVBoxLayout(self)
 
@@ -184,6 +185,29 @@ class StateSupervisionTab(QWidget):
             self.table.clear_selection()
         self._refresh_action_buttons()
 
+    def set_after_save_callback(self, callback) -> None:
+        """Úzký callback dashboardu po úspěšném uložení. Nic nezapisuje."""
+        self._after_save_callback = callback
+
+    def state_supervision_saved(self, supervision_id: int) -> None:
+        """Obnoví přehled a dashboard. Nepřepíná záložku a neotevírá editor."""
+        sid = int(supervision_id)
+        first_error = None
+        try:
+            self.refresh(select_id=sid)
+        except Exception as error:
+            logger.exception("Obnova přehledu státního dozoru po uložení selhala.")
+            first_error = error
+        try:
+            if callable(self._after_save_callback):
+                self._after_save_callback()
+        except Exception as error:
+            logger.exception("Obnova dashboardu po uložení státního dozoru selhala.")
+            if first_error is None:
+                first_error = error
+        if first_error is not None:
+            raise first_error
+
     def _on_filter_changed(self) -> None:
         if self._updating_filters:
             return
@@ -243,7 +267,10 @@ class StateSupervisionTab(QWidget):
                 QMessageBox.warning(self, MODULE_NAME, ITEM_NOT_FOUND_MESSAGE)
                 self.refresh()
                 return
-        kwargs: dict = {"supervision_id": supervision_id}
+        kwargs: dict = {
+            "supervision_id": supervision_id,
+            "on_saved": self.state_supervision_saved,
+        }
         if target_tab:
             kwargs["target_tab"] = target_tab
         if focus_kind:
@@ -252,8 +279,6 @@ class StateSupervisionTab(QWidget):
             kwargs["focus_child_id"] = int(focus_child_id)
         dialog = StateSupervisionEditorDialog(self, **kwargs)
         exec_maximized(dialog)
-        if dialog.saved:
-            self.refresh(select_id=dialog.supervision_id)
 
     def _rebuild_filter_options(self, records: list[StateSupervision]) -> None:
         self._updating_filters = True

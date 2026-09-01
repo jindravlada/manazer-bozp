@@ -541,7 +541,7 @@ class StateSupervisionFindingTaskUi5a5TestCase(unittest.TestCase):
         opened: list[int | None] = []
 
         class FakeDialog:
-            def __init__(self, parent=None, *, supervision_id=None):
+            def __init__(self, parent=None, *, supervision_id=None, **_kwargs):
                 opened.append(supervision_id)
                 self.saved = False
                 self.supervision_id = supervision_id

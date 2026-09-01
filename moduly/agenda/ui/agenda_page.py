@@ -125,6 +125,7 @@ class AgendaPage(QWidget):
             on_changed=self._refresh_dashboard,
         )
         self.state_supervision_tab = StateSupervisionTab(self)
+        self.state_supervision_tab.set_after_save_callback(self.refresh_dashboard)
         self.yearly_plan_tab = YearlyPlanTab(
             self,
             on_changed=self._refresh_dashboard,
@@ -150,6 +151,10 @@ class AgendaPage(QWidget):
 
     def set_dashboard_refresh_callback(self, callback) -> None:
         self._dashboard_refresh_callback = callback
+
+    def refresh_dashboard(self) -> None:
+        """Obnoví Nadcházející, Připomínky a kartu Po termínu jednou společnou cestou."""
+        self._refresh_dashboard()
 
     def open_tasks_and_meetings(self) -> None:
         """Přepne na záložku Úkoly a události."""
