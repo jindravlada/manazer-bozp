@@ -157,8 +157,13 @@ class StateSupervisionRequiredDocumentService:
         self.repository = StateSupervisionRequiredDocumentRepository()
         self._supervisions = StateSupervisionRepository()
 
-    def _require_supervision(self, supervision_id: int) -> None:
-        record = self._supervisions.get_by_id(int(supervision_id))
+    def _require_supervision(
+        self,
+        supervision_id: int,
+        *,
+        session: Session | None = None,
+    ) -> None:
+        record = self._supervisions.get_by_id(int(supervision_id), session=session)
         if record is None:
             raise StateSupervisionError(
                 f"Kontrola státního dozoru {supervision_id} neexistuje."
@@ -171,7 +176,7 @@ class StateSupervisionRequiredDocumentService:
         include_inactive: bool = False,
         session: Session | None = None,
     ) -> list[StateSupervisionRequiredDocument]:
-        self._require_supervision(supervision_id)
+        self._require_supervision(supervision_id, session=session)
         return self.repository.list_for_supervision(
             int(supervision_id),
             include_inactive=include_inactive,
@@ -268,7 +273,7 @@ class StateSupervisionRequiredDocumentService:
         Duplicitní ``display_order`` se při ``replace_orders=True`` (výchozí)
         deterministicky přepíše na 0, 10, 20, … podle (order, id, pořadí v dávce).
         """
-        self._require_supervision(supervision_id)
+        self._require_supervision(supervision_id, session=session)
         if not drafts:
             return []
 

@@ -211,9 +211,43 @@ TOOLTIP_PREPARATION_NOTE = (
     "Požadované materiály, dokumenty, organizační zajištění a potřebná součinnost."
 )
 
-# Požadované doklady (STATE-SUPERVISION-DOCUMENTS-CORE-2C0)
+# Požadované doklady (STATE-SUPERVISION-DOCUMENTS-CORE-2C0 / UI-2C1)
 ENTITY_REQUIRED_DOCUMENT = "state_supervision_required_document"
 TABLE_REQUIRED_DOCUMENTS = "state_supervision_required_documents"
+
+GROUP_REQUIRED_DOCUMENTS = "Požadované doklady a podklady"
+EMPTY_DOCUMENTS = "Zatím nejsou evidovány žádné požadované doklady."
+DIALOG_DOCUMENT_NEW = "Nový požadovaný doklad"
+DIALOG_DOCUMENT_EDIT = "Požadovaný doklad"
+DOCUMENT_TITLE_REQUIRED_MESSAGE = "Není vyplněn název dokladu / podkladu."
+
+LABEL_DOCUMENT_TITLE = "Doklad / podklad"
+LABEL_DOCUMENT_RESPONSIBLE = "Odpovědná osoba"
+LABEL_DOCUMENT_DUE = "Termín"
+LABEL_DOCUMENT_PREPARED = "Připraveno dne"
+LABEL_DOCUMENT_SUBMITTED = "Předáno dne"
+LABEL_DOCUMENT_NOTE = "Poznámka"
+
+COL_DOCUMENT_TITLE = 0
+COL_DOCUMENT_RESPONSIBLE = 1
+COL_DOCUMENT_DUE = 2
+COL_DOCUMENT_PREPARED = 3
+COL_DOCUMENT_SUBMITTED = 4
+COL_DOCUMENT_NOTE = 5
+
+DOCUMENT_COLUMN_HEADERS = [
+    "Doklad / podklad",
+    "Odpovědná osoba",
+    "Termín",
+    "Připraveno",
+    "Předáno",
+    "Poznámka",
+]
+
+ACTION_ADD = "Přidat"
+ACTION_REMOVE = "Odebrat"
+ACTION_MOVE_UP = "Nahoru"
+ACTION_MOVE_DOWN = "Dolů"
 
 RESPONSIBLE_SOURCE_PERSON = "person"
 RESPONSIBLE_SOURCE_THP_WORKER = "thp_worker"

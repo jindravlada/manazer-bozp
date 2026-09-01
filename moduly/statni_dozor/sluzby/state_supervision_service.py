@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import datetime
 from typing import Any
+
+from sqlalchemy.orm import Session
 
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.statni_dozor.constants import (
@@ -184,6 +187,7 @@ class StateSupervisionService:
         *,
         authority_name: str,
         status: str = DEFAULT_STATUS,
+        session: Session | None = None,
         **fields: Any,
     ) -> StateSupervision:
         payload = _normalize_payload(
@@ -209,17 +213,24 @@ class StateSupervisionService:
         payload["workplace_address_snapshot"] = addr_snap
         payload.setdefault("power_of_attorney_required", False)
         record = StateSupervision(**payload)
-        return self.repository.add(record)
+        return self.repository.add(record, session=session)
 
-    def get_supervision(self, supervision_id: int) -> StateSupervision | None:
-        return self.repository.get_by_id(supervision_id)
+    def get_supervision(
+        self,
+        supervision_id: int,
+        *,
+        session: Session | None = None,
+    ) -> StateSupervision | None:
+        return self.repository.get_by_id(supervision_id, session=session)
 
     def update_supervision(
         self,
         supervision_id: int,
+        *,
+        session: Session | None = None,
         **fields: Any,
     ) -> StateSupervision:
-        record = self.repository.get_by_id(supervision_id)
+        record = self.repository.get_by_id(supervision_id, session=session)
         if record is None:
             raise StateSupervisionError(
                 f"Kontrola státního dozoru {supervision_id} neexistuje."
@@ -252,7 +263,7 @@ class StateSupervisionService:
         merged["workplace_address_snapshot"] = addr_snap
         for key, value in merged.items():
             setattr(record, key, value)
-        return self.repository.update(record)
+        return self.repository.update(record, session=session)
 
     def list_supervisions(
         self,
@@ -275,6 +286,56 @@ class StateSupervisionService:
             workplace_id=workplace_id,
             query=query,
         )
+
+    def save_supervision_with_documents(
+        self,
+        *,
+        supervision_id: int | None,
+        fields: dict[str, Any],
+        documents: Sequence[Any],
+        session: Session | None = None,
+    ) -> tuple[StateSupervision, list]:
+        """Uloží kontrolu a požadované doklady v jedné transakci.
+
+        Jedna caller-owned nebo službou vlastněná session: create/update rodiče,
+        flush ID, dávkový upsert dokladů, jeden commit. Při chybě rollback všeho.
+        """
+        from moduly.statni_dozor.modely.state_supervision_required_document import (
+            StateSupervisionRequiredDocument,
+        )
+        from moduly.statni_dozor.sluzby.state_supervision_required_document_service import (
+            state_supervision_required_document_service,
+        )
+
+        payload = dict(fields)
+        drafts = list(documents)
+        with self.repository.session(session) as (sess, owns):
+            if supervision_id is None:
+                record = self.create_supervision(session=sess, **payload)
+            else:
+                record = self.update_supervision(
+                    int(supervision_id),
+                    session=sess,
+                    **payload,
+                )
+            sess.flush()
+            stored_docs = state_supervision_required_document_service.save_document_batch(
+                int(record.id),
+                drafts,
+                session=sess,
+                replace_orders=True,
+            )
+            if owns:
+                sess.commit()
+                sess.refresh(record)
+                sess.expunge(record)
+                detached_docs: list[StateSupervisionRequiredDocument] = []
+                for item in stored_docs:
+                    sess.refresh(item)
+                    sess.expunge(item)
+                    detached_docs.append(item)
+                return record, detached_docs
+            return record, stored_docs
 
 
 state_supervision_service = StateSupervisionService()

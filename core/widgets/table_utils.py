@@ -1194,6 +1194,35 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         header.setSectionResizeMode(COL_RESULT, QHeaderView.Stretch)
         table.setTextElideMode(Qt.TextElideMode.ElideRight)
 
+    elif profile == "state_supervision_required_documents":
+        from moduly.statni_dozor.constants import (
+            COL_DOCUMENT_DUE,
+            COL_DOCUMENT_NOTE,
+            COL_DOCUMENT_PREPARED,
+            COL_DOCUMENT_RESPONSIBLE,
+            COL_DOCUMENT_SUBMITTED,
+            COL_DOCUMENT_TITLE,
+        )
+
+        table.setWordWrap(False)
+        table.setTextElideMode(Qt.TextElideMode.ElideRight)
+        widths = {
+            COL_DOCUMENT_TITLE: 240,
+            COL_DOCUMENT_RESPONSIBLE: 160,
+            COL_DOCUMENT_DUE: 130,
+            COL_DOCUMENT_PREPARED: 130,
+            COL_DOCUMENT_SUBMITTED: 130,
+            COL_DOCUMENT_NOTE: 200,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        header.setSectionResizeMode(COL_DOCUMENT_DUE, QHeaderView.Fixed)
+        header.setSectionResizeMode(COL_DOCUMENT_PREPARED, QHeaderView.Fixed)
+        header.setSectionResizeMode(COL_DOCUMENT_SUBMITTED, QHeaderView.Fixed)
+        header.setSectionResizeMode(COL_DOCUMENT_RESPONSIBLE, QHeaderView.Interactive)
+        header.setSectionResizeMode(COL_DOCUMENT_TITLE, QHeaderView.Stretch)
+        header.setSectionResizeMode(COL_DOCUMENT_NOTE, QHeaderView.Stretch)
+
     table.verticalHeader().setVisible(False)
     if profile not in ("controls_year_matrix", "yearly_plan"):
         table.setAlternatingRowColors(True)

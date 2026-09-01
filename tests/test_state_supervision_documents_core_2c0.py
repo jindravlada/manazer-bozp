@@ -611,15 +611,21 @@ class StateSupervisionDocumentsCore2c0ServiceTestCase(unittest.TestCase):
         self.assertTrue(listed[0].active)
         self.assertEqual(listed[0].id, row.id)
 
-    def test_10_ui_unchanged(self) -> None:
+    def test_10_editor_still_two_tabs_without_delete(self) -> None:
         source = inspect.getsource(StateSupervisionEditorDialog)
-        self.assertNotIn("RequiredDocument", source)
-        self.assertNotIn("required_document", source)
-        self.assertNotIn("save_document_batch", source)
+        self.assertEqual(source.count("self.tabs.addTab("), 2)
+        self.assertNotIn("Průběh kontroly", source)
+        self.assertNotIn("Závěr a opatření", source)
+        public = [
+            name
+            for name in dir(type(state_supervision_required_document_service))
+            if not name.startswith("_")
+        ]
+        self.assertNotIn("delete_document", public)
         from moduly.statni_dozor.ui import state_supervision_tab
 
         tab_source = inspect.getsource(state_supervision_tab)
-        self.assertNotIn("required_document", tab_source)
+        self.assertNotIn("save_document_batch", tab_source)
 
     def test_11_incomplete_migration_blocks_startup(self) -> None:
         ws = storage_module.storage_service.base

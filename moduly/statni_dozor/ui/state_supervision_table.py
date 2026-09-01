@@ -74,6 +74,12 @@ def format_supervision_date(value: datetime | date | None) -> str:
     return value.strftime("%d.%m.%Y")
 
 
+def format_supervision_datetime(value: datetime | None) -> str:
+    if value is None:
+        return EMPTY_VALUE
+    return value.strftime("%d.%m.%Y %H:%M")
+
+
 def display_or_dash(value: str | None) -> str:
     text = str(value or "").strip()
     return text if text else EMPTY_VALUE

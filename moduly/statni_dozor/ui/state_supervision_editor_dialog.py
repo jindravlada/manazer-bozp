@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
-import logging
+from dataclasses import replace
 from datetime import datetime
+
+import logging
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QAbstractItemView,
     QCheckBox,
     QComboBox,
     QDialog,
@@ -19,6 +22,8 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QSizePolicy,
+    QTableWidget,
+    QTableWidgetItem,
     QTabWidget,
     QTextEdit,
     QVBoxLayout,
@@ -26,7 +31,9 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import (
+    configure_edit_action_button,
     configure_form_tab_navigation,
+    configure_new_action_button,
     configure_resizable_form_dialog,
     create_save_cancel_box,
     wrap_in_scroll_area,
@@ -38,15 +45,25 @@ from core.widgets.editor_dialog_controller import (
 from core.widgets.info_tooltip import set_widget_tooltip
 from core.widgets.nullable_datetime_edit import NullableDateTimeEdit
 from core.widgets.search_combo_box import SearchComboBox
+from core.widgets.table_utils import apply_cell_tooltip, configure_table_columns
 from core.widgets.workplace_selector import WorkplaceSelector
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.statni_dozor.constants import (
+    ACTION_ADD,
+    ACTION_EDIT,
+    ACTION_MOVE_DOWN,
+    ACTION_MOVE_UP,
+    ACTION_REMOVE,
     ACTION_SAVE_AND_CLOSE,
     AUTHORITY_REQUIRED_MESSAGE,
     AUTHORITY_SUGGESTIONS,
     DEFAULT_STATUS,
     DIALOG_TITLE_EDIT,
     DIALOG_TITLE_NEW,
+    COL_DOCUMENT_TITLE,
+    DOCUMENT_COLUMN_HEADERS,
+    EMPTY_DOCUMENTS,
+    EMPTY_VALUE,
     ENDED_BEFORE_STARTED_MESSAGE,
     GROUP_ACTUAL_COURSE,
     GROUP_INFORMING,
@@ -55,6 +72,7 @@ from moduly.statni_dozor.constants import (
     GROUP_PLANNED_START,
     GROUP_PREPARATION,
     GROUP_REPRESENTATION,
+    GROUP_REQUIRED_DOCUMENTS,
     GROUP_SUBJECT,
     LABEL_ANNOUNCED_AT,
     LABEL_AUTHORITY,
@@ -90,10 +108,23 @@ from moduly.statni_dozor.constants import (
     TOOLTIP_SUBJECT,
 )
 from moduly.statni_dozor.modely.state_supervision import StateSupervision
+from moduly.statni_dozor.modely.state_supervision_required_document_draft import (
+    StateSupervisionRequiredDocumentDraft,
+    new_required_document_client_key,
+)
+from moduly.statni_dozor.sluzby.state_supervision_required_document_service import (
+    state_supervision_required_document_service,
+)
 from moduly.statni_dozor.sluzby.state_supervision_service import (
     StateSupervisionError,
     state_supervision_service,
 )
+from moduly.statni_dozor.ui.state_supervision_table import (
+    display_or_dash,
+    format_supervision_datetime,
+)
+
+_ROLE_DOCUMENT_KEY = Qt.ItemDataRole.UserRole
 
 logger = logging.getLogger(__name__)
 
@@ -176,6 +207,7 @@ class StateSupervisionEditorDialog(QDialog):
         self._loaded_workplace_id: int | None = None
         self._loaded_name_snapshot = ""
         self._loaded_address_snapshot = ""
+        self._document_drafts: list[StateSupervisionRequiredDocumentDraft] = []
 
         if supervision_id is not None:
             self._record = state_supervision_service.get_supervision(supervision_id)
@@ -191,10 +223,7 @@ class StateSupervisionEditorDialog(QDialog):
         layout.addWidget(self._build_header())
         self.tabs = QTabWidget()
         self.tabs.addTab(wrap_in_scroll_area(self._build_announcement_tab()), TAB_ANNOUNCEMENT)
-        self.tabs.addTab(
-            wrap_in_scroll_area(self._build_subject_tab()),
-            TAB_SUBJECT_PREPARATION,
-        )
+        self.tabs.addTab(self._build_subject_tab(), TAB_SUBJECT_PREPARATION)
         layout.addWidget(self.tabs, 1)
         layout.addLayout(self._build_footer())
 
@@ -216,8 +245,10 @@ class StateSupervisionEditorDialog(QDialog):
 
         if self._record is not None:
             self._apply_record(self._record)
+            self._load_documents(int(self._record.id))
         else:
             self._set_combo_data(self.status_combo, DEFAULT_STATUS)
+            self._refresh_documents_table()
 
         self._editor.capture_baseline()
 
@@ -330,6 +361,7 @@ class StateSupervisionEditorDialog(QDialog):
         subject_box = QGroupBox(GROUP_SUBJECT)
         subject_layout = QVBoxLayout(subject_box)
         self.subject_edit = _medium_note_edit()
+        self.subject_edit.setMaximumHeight(130)
         set_widget_tooltip(self.subject_edit, TOOLTIP_SUBJECT)
         subject_layout.addWidget(QLabel(f"{LABEL_SUBJECT}:"))
         subject_layout.addWidget(self.subject_edit, 1)
@@ -337,6 +369,7 @@ class StateSupervisionEditorDialog(QDialog):
         initial_box = QGroupBox(GROUP_INITIAL_INFORMATION)
         initial_layout = QVBoxLayout(initial_box)
         self.initial_information_edit = _medium_note_edit()
+        self.initial_information_edit.setMaximumHeight(130)
         set_widget_tooltip(self.initial_information_edit, TOOLTIP_INITIAL_INFORMATION)
         initial_layout.addWidget(QLabel(f"{LABEL_INITIAL_INFORMATION}:"))
         initial_layout.addWidget(self.initial_information_edit, 1)
@@ -344,14 +377,75 @@ class StateSupervisionEditorDialog(QDialog):
         preparation_box = QGroupBox(GROUP_PREPARATION)
         preparation_layout = QVBoxLayout(preparation_box)
         self.preparation_note_edit = _medium_note_edit(stretch=True)
+        self.preparation_note_edit.setMaximumHeight(140)
         set_widget_tooltip(self.preparation_note_edit, TOOLTIP_PREPARATION_NOTE)
         preparation_layout.addWidget(QLabel(f"{LABEL_PREPARATION_NOTE}:"))
         preparation_layout.addWidget(self.preparation_note_edit, 1)
 
         layout.addWidget(subject_box, 1)
         layout.addWidget(initial_box, 1)
-        layout.addWidget(preparation_box, 2)
+        layout.addWidget(preparation_box, 1)
+        layout.addWidget(self._build_documents_section(), 3)
         return page
+
+    def _build_documents_section(self) -> QWidget:
+        box = QGroupBox(GROUP_REQUIRED_DOCUMENTS)
+        layout = QVBoxLayout(box)
+
+        toolbar = QHBoxLayout()
+        self.add_document_btn = QPushButton(ACTION_ADD)
+        self.edit_document_btn = QPushButton(ACTION_EDIT)
+        self.remove_document_btn = QPushButton(ACTION_REMOVE)
+        self.move_document_up_btn = QPushButton(ACTION_MOVE_UP)
+        self.move_document_down_btn = QPushButton(ACTION_MOVE_DOWN)
+        configure_new_action_button(self.add_document_btn)
+        configure_edit_action_button(self.edit_document_btn)
+        for button in (
+            self.add_document_btn,
+            self.edit_document_btn,
+            self.remove_document_btn,
+            self.move_document_up_btn,
+            self.move_document_down_btn,
+        ):
+            button.setAutoDefault(False)
+            button.setDefault(False)
+            toolbar.addWidget(button)
+        toolbar.addStretch(1)
+        layout.addLayout(toolbar)
+
+        self.documents_empty_label = QLabel(EMPTY_DOCUMENTS)
+        self.documents_empty_label.setWordWrap(True)
+        self.documents_empty_label.setStyleSheet("color: #666;")
+        layout.addWidget(self.documents_empty_label)
+
+        self.documents_table = QTableWidget(0, len(DOCUMENT_COLUMN_HEADERS))
+        self.documents_table.setHorizontalHeaderLabels(DOCUMENT_COLUMN_HEADERS)
+        self.documents_table.verticalHeader().setVisible(False)
+        self.documents_table.setSelectionBehavior(
+            QAbstractItemView.SelectionBehavior.SelectRows
+        )
+        self.documents_table.setSelectionMode(
+            QAbstractItemView.SelectionMode.SingleSelection
+        )
+        self.documents_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.documents_table.setSortingEnabled(False)
+        self.documents_table.setTextElideMode(Qt.TextElideMode.ElideRight)
+        self.documents_table.setMinimumHeight(140)
+        self.documents_table.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
+        configure_table_columns(self.documents_table, "state_supervision_required_documents")
+        layout.addWidget(self.documents_table, 1)
+
+        self.add_document_btn.clicked.connect(self._add_document)
+        self.edit_document_btn.clicked.connect(self._edit_selected_document)
+        self.remove_document_btn.clicked.connect(self._remove_selected_document)
+        self.move_document_up_btn.clicked.connect(lambda: self._move_selected_document(-1))
+        self.move_document_down_btn.clicked.connect(lambda: self._move_selected_document(1))
+        self.documents_table.doubleClicked.connect(self._edit_selected_document)
+        self.documents_table.itemSelectionChanged.connect(self._refresh_document_actions)
+        self._refresh_document_actions()
+        return box
 
     def _build_footer(self) -> QHBoxLayout:
         footer = QHBoxLayout()
@@ -513,7 +607,7 @@ class StateSupervisionEditorDialog(QDialog):
 
     def get_snapshot(self) -> tuple:
         data = self.get_data()
-        return tuple(data[key] for key in _EDITOR_FIELDS)
+        return tuple(data[key] for key in _EDITOR_FIELDS) + (self._documents_snapshot(),)
 
     def _validation_message(self, data: dict) -> str | None:
         if not data["authority_name"]:
@@ -531,29 +625,218 @@ class StateSupervisionEditorDialog(QDialog):
             QMessageBox.warning(self, self.windowTitle(), message)
             return False
         payload = {key: data[key] for key in _EDITOR_FIELDS}
+        previous_id = self._supervision_id
         try:
-            if self._supervision_id is None:
-                record = state_supervision_service.create_supervision(**payload)
-            else:
-                record = state_supervision_service.update_supervision(
-                    int(self._supervision_id),
-                    **payload,
-                )
+            record, _docs = state_supervision_service.save_supervision_with_documents(
+                supervision_id=self._supervision_id,
+                fields=payload,
+                documents=self._drafts_for_save(),
+            )
             loaded = state_supervision_service.get_supervision(int(record.id))
             if loaded is None:
                 raise StateSupervisionError(SAVE_ERROR_MESSAGE)
             self._apply_record(loaded)
+            self._load_documents(int(loaded.id))
             self._persisted = True
             self.setWindowTitle(DIALOG_TITLE_EDIT)
             return True
         except StateSupervisionError as error:
+            self._supervision_id = previous_id
             logger.exception("Uložení kontroly státního dozoru selhalo.")
             QMessageBox.warning(self, self.windowTitle(), str(error))
             return False
         except Exception:
+            self._supervision_id = previous_id
             logger.exception("Uložení kontroly státního dozoru selhalo.")
             QMessageBox.warning(self, self.windowTitle(), SAVE_ERROR_MESSAGE)
             return False
+
+    def _active_documents(self) -> list[StateSupervisionRequiredDocumentDraft]:
+        return [item for item in self._document_drafts if item.active]
+
+    def _documents_snapshot(self) -> tuple:
+        rows = []
+        for item in self._document_drafts:
+            rows.append(
+                (
+                    item.client_key,
+                    item.id,
+                    str(item.title or ""),
+                    item.responsible_source_type,
+                    item.responsible_source_id,
+                    item.responsible_name_snapshot,
+                    _normalize_datetime(item.due_at),
+                    _normalize_datetime(item.prepared_at),
+                    _normalize_datetime(item.submitted_at),
+                    item.note,
+                    int(item.display_order or 0),
+                    bool(item.active),
+                )
+            )
+        return tuple(rows)
+
+    def _drafts_for_save(self) -> list[StateSupervisionRequiredDocumentDraft]:
+        active = [
+            replace(item, display_order=index * 10)
+            for index, item in enumerate(self._active_documents())
+        ]
+        inactive = [item for item in self._document_drafts if not item.active]
+        return active + inactive
+
+    def _load_documents(self, supervision_id: int) -> None:
+        records = state_supervision_required_document_service.list_documents(
+            int(supervision_id),
+            include_inactive=False,
+        )
+        loaded: list[StateSupervisionRequiredDocumentDraft] = []
+        for record in records:
+            loaded.append(
+                StateSupervisionRequiredDocumentDraft(
+                    title=str(record.title or ""),
+                    id=int(record.id),
+                    responsible_source_type=record.responsible_source_type,
+                    responsible_source_id=record.responsible_source_id,
+                    responsible_name_snapshot=record.responsible_name_snapshot,
+                    due_at=_normalize_datetime(record.due_at),
+                    prepared_at=_normalize_datetime(record.prepared_at),
+                    submitted_at=_normalize_datetime(record.submitted_at),
+                    note=record.note,
+                    display_order=int(record.display_order or 0),
+                    active=bool(record.active),
+                    client_key=f"db-{record.id}",
+                )
+            )
+        self._document_drafts = loaded
+        self._refresh_documents_table()
+
+    def _refresh_documents_table(self, *, select_key: str | None = None) -> None:
+        active = self._active_documents()
+        self.documents_empty_label.setVisible(not active)
+        self.documents_table.setVisible(True)
+        self.documents_table.setRowCount(len(active))
+        for row, item in enumerate(active):
+            values = [
+                display_or_dash(item.title),
+                display_or_dash(item.responsible_name_snapshot),
+                format_supervision_datetime(_normalize_datetime(item.due_at)),
+                format_supervision_datetime(_normalize_datetime(item.prepared_at)),
+                format_supervision_datetime(_normalize_datetime(item.submitted_at)),
+                display_or_dash(item.note),
+            ]
+            for column, text in enumerate(values):
+                cell = QTableWidgetItem(text)
+                cell.setFlags(cell.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                if column == COL_DOCUMENT_TITLE:
+                    cell.setData(_ROLE_DOCUMENT_KEY, item.client_key)
+                apply_cell_tooltip(cell, text if text != EMPTY_VALUE else "")
+                self.documents_table.setItem(row, column, cell)
+        configure_table_columns(
+            self.documents_table, "state_supervision_required_documents"
+        )
+        if select_key:
+            self._select_document_key(select_key)
+        self._refresh_document_actions()
+
+    def _selected_document_key(self) -> str | None:
+        rows = self.documents_table.selectionModel().selectedRows()
+        if len(rows) != 1:
+            return None
+        item = self.documents_table.item(rows[0].row(), COL_DOCUMENT_TITLE)
+        if item is None:
+            return None
+        key = item.data(_ROLE_DOCUMENT_KEY)
+        return str(key) if key else None
+
+    def _select_document_key(self, client_key: str) -> None:
+        for row in range(self.documents_table.rowCount()):
+            item = self.documents_table.item(row, COL_DOCUMENT_TITLE)
+            if item is not None and item.data(_ROLE_DOCUMENT_KEY) == client_key:
+                self.documents_table.selectRow(row)
+                return
+        self.documents_table.clearSelection()
+
+    def _draft_by_key(self, client_key: str | None) -> StateSupervisionRequiredDocumentDraft | None:
+        if not client_key:
+            return None
+        for item in self._document_drafts:
+            if item.client_key == client_key:
+                return item
+        return None
+
+    def _refresh_document_actions(self, *_args) -> None:
+        active = self._active_documents()
+        key = self._selected_document_key()
+        has_one = key is not None
+        self.edit_document_btn.setEnabled(has_one)
+        self.remove_document_btn.setEnabled(has_one)
+        index = next((i for i, item in enumerate(active) if item.client_key == key), -1)
+        self.move_document_up_btn.setEnabled(has_one and index > 0)
+        self.move_document_down_btn.setEnabled(has_one and 0 <= index < len(active) - 1)
+
+    def _add_document(self) -> None:
+        from moduly.statni_dozor.ui.state_supervision_required_document_dialog import (
+            exec_required_document_dialog,
+        )
+
+        active = self._active_documents()
+        next_order = (max((item.display_order for item in active), default=-10) + 10)
+        draft = StateSupervisionRequiredDocumentDraft(
+            title="",
+            display_order=next_order,
+            client_key=new_required_document_client_key(),
+        )
+        saved = exec_required_document_dialog(self, draft=draft, is_new=True)
+        if saved is None:
+            return
+        self._document_drafts.append(saved)
+        self._refresh_documents_table(select_key=saved.client_key)
+        self._editor.refresh_dirty()
+
+    def _edit_selected_document(self) -> None:
+        from moduly.statni_dozor.ui.state_supervision_required_document_dialog import (
+            exec_required_document_dialog,
+        )
+
+        current = self._draft_by_key(self._selected_document_key())
+        if current is None:
+            return
+        saved = exec_required_document_dialog(self, draft=replace(current), is_new=False)
+        if saved is None:
+            return
+        for index, item in enumerate(self._document_drafts):
+            if item.client_key == current.client_key:
+                self._document_drafts[index] = saved
+                break
+        self._refresh_documents_table(select_key=saved.client_key)
+        self._editor.refresh_dirty()
+
+    def _remove_selected_document(self) -> None:
+        current = self._draft_by_key(self._selected_document_key())
+        if current is None:
+            return
+        if current.id is None:
+            self._document_drafts = [
+                item for item in self._document_drafts if item.client_key != current.client_key
+            ]
+        else:
+            current.active = False
+        self._refresh_documents_table()
+        self._editor.refresh_dirty()
+
+    def _move_selected_document(self, delta: int) -> None:
+        key = self._selected_document_key()
+        active = self._active_documents()
+        index = next((i for i, item in enumerate(active) if item.client_key == key), -1)
+        target = index + delta
+        if index < 0 or target < 0 or target >= len(active):
+            return
+        active[index], active[target] = active[target], active[index]
+        for order, item in enumerate(active):
+            item.display_order = order * 10
+        inactive = [item for item in self._document_drafts if not item.active]
+        self._document_drafts = active + inactive
+        self._refresh_documents_table(select_key=key)
+        self._editor.refresh_dirty()
 
     def _save_and_close(self) -> None:
         if not self._editor._run_save():

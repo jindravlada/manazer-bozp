@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+import uuid
+from dataclasses import dataclass, field
 from datetime import datetime
+
+
+def new_required_document_client_key() -> str:
+    return uuid.uuid4().hex
 
 
 @dataclass
@@ -19,3 +24,4 @@ class StateSupervisionRequiredDocumentDraft:
     note: str | None = None
     display_order: int = 0
     active: bool = True
+    client_key: str = field(default_factory=new_required_document_client_key)
