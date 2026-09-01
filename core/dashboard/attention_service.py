@@ -31,7 +31,7 @@ from core.dashboard.attention_item import (
     attention_item_is_overdue,
     meeting_dashboard_source_label,
 )
-from core.shared.task_source_display import task_source_short_label
+from core.shared.task_source_display import task_source_short_labels
 from core.shared.working_days import first_working_day
 from moduly.audity.sluzby.audit_service import audit_service
 from moduly.periodicke_cinnosti.constants import PLACE_KIND_NONE, format_place
@@ -100,8 +100,13 @@ def build_sort_key(
     )
 
 
-def _task_source_label(task) -> str:
-    label = (task_source_short_label(task) or "").strip()
+def _task_source_label(task, labels: dict[int, str] | None = None) -> str:
+    if labels is not None and task.id is not None:
+        label = (labels.get(int(task.id)) or "").strip()
+    else:
+        from core.shared.task_source_display import task_source_short_label
+
+        label = (task_source_short_label(task) or "").strip()
     if not label or label == "—":
         return ""
     return label
@@ -109,7 +114,9 @@ def _task_source_label(task) -> str:
 
 def _from_tasks(_today: date) -> list[AttentionItem]:
     items: list[AttentionItem] = []
-    for task in task_service.get_all_tasks():
+    tasks = task_service.get_all_tasks()
+    source_labels = task_source_short_labels(tasks)
+    for task in tasks:
         if task.computed_status in (TASK_STATUS_CLOSED, TASK_STATUS_CANCELED):
             continue
         title = (task.title or "").strip() or f"Úkol #{task.id}"
@@ -123,7 +130,7 @@ def _from_tasks(_today: date) -> list[AttentionItem]:
                 source_id=task.id,
                 title=title,
                 date=decisive,
-                subtitle=_task_source_label(task),
+                subtitle=_task_source_label(task, source_labels),
                 status=task.computed_status or "",
                 priority=priority,
                 open_metadata={"source_type": ITEM_TYPE_TASK, "source_id": task.id},

@@ -1,18 +1,40 @@
+from collections.abc import Iterator
+from contextlib import contextmanager
+
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from core.database.session import get_session
 from moduly.ukoly.modely.task import Task
 
 
+@contextmanager
+def _open_session(session: Session | None) -> Iterator[tuple[Session, bool]]:
+    owns = session is None
+    current = get_session() if owns else session
+    try:
+        yield current, owns
+    except Exception:
+        if owns:
+            current.rollback()
+        raise
+    finally:
+        if owns:
+            current.close()
+
+
 class TaskRepository:
+    def session(self, session: Session | None = None):
+        return _open_session(session)
+
     def get_all(self) -> list[Task]:
         with get_session() as session:
             stmt = select(Task).order_by(Task.completed, Task.due_date, Task.id)
             return list(session.scalars(stmt))
 
-    def get_by_id(self, task_id: int) -> Task | None:
-        with get_session() as session:
-            return session.get(Task, task_id)
+    def get_by_id(self, task_id: int, *, session: Session | None = None) -> Task | None:
+        with _open_session(session) as (sess, _owns):
+            return sess.get(Task, task_id)
 
     def get_by_ids(self, task_ids: list[int] | tuple[int, ...]) -> list[Task]:
         ids = [int(value) for value in task_ids if value is not None]
@@ -84,11 +106,14 @@ class TaskRepository:
             )
             return list(session.scalars(stmt))
 
-    def add(self, task: Task) -> Task:
-        with get_session() as session:
-            session.add(task)
-            session.commit()
-            session.refresh(task)
+    def add(self, task: Task, *, session: Session | None = None) -> Task:
+        """Uloží úkol. Bez ``session`` vlastní commit; caller-owned jen flush."""
+        with _open_session(session) as (sess, owns):
+            sess.add(task)
+            sess.flush()
+            if owns:
+                sess.commit()
+                sess.refresh(task)
             return task
 
     def update(self, task: Task) -> Task:

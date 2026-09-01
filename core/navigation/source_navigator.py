@@ -1,8 +1,18 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from core.shared.constants import ENTITY_ACCIDENT, ENTITY_AUDITY, ENTITY_MU_INVESTIGATION
+from core.shared.constants import (
+    ENTITY_ACCIDENT,
+    ENTITY_AUDITY,
+    ENTITY_MU_INVESTIGATION,
+    ENTITY_STATE_SUPERVISION,
+)
 from core.shared.sluzby.finding_service import finding_service
+from moduly.statni_dozor.constants import (
+    FINDING_PARENT_MISSING_MESSAGE,
+    FINDING_SOURCE_MISSING_MESSAGE,
+    MODULE_NAME,
+)
 
 # Cílové chování navigace pro ENTITY_ACCIDENT
 ACCIDENT_OPEN_RECORD = "record"
@@ -80,9 +90,28 @@ class SourceNavigator:
         """
         finding = finding_service.get_by_id(finding_id)
         if finding is None:
+            self._warn_navigation("Navigace", FINDING_SOURCE_MISSING_MESSAGE)
             return False
 
+        if finding.entity_type == ENTITY_STATE_SUPERVISION:
+            from moduly.statni_dozor.sluzby.state_supervision_service import (
+                state_supervision_service,
+            )
+
+            parent = state_supervision_service.get_supervision(finding.entity_id)
+            if parent is None:
+                self._warn_navigation(MODULE_NAME, FINDING_PARENT_MISSING_MESSAGE)
+                return False
+
         return self.open(finding.entity_type, finding.entity_id)
+
+    def _warn_navigation(self, title: str, message: str) -> None:
+        from PySide6.QtWidgets import QApplication, QMessageBox, QWidget
+
+        if QApplication.instance() is None:
+            return
+        parent = self._host if isinstance(self._host, QWidget) else None
+        QMessageBox.warning(parent, title, message)
 
     def _register_default_routes(self) -> None:
         self.register(
@@ -100,6 +129,11 @@ class SourceNavigator:
             ENTITY_MU_INVESTIGATION,
             "vysetrovani_mu",
             lambda page, entity_id: page.open_investigation(entity_id),
+        )
+        self.register(
+            ENTITY_STATE_SUPERVISION,
+            "agenda",
+            lambda page, entity_id: page.open_supervision(entity_id),
         )
         # Další typy: source_navigator.register(ENTITY_PROVERKY, "proverky", opener)
 

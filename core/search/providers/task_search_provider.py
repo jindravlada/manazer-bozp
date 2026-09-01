@@ -4,7 +4,7 @@ from core.search.constants import SOURCE_TYPE_TASK
 from core.search.global_search_result import GlobalSearchResult
 from core.search.search_provider import SearchProvider
 from core.search.search_utils import contains_query
-from core.shared.task_source_display import task_source_label, task_source_short_label
+from core.shared.task_source_display import task_source_label, task_source_labels, task_source_short_label, task_source_short_labels
 from moduly.ukoly.sluzby.task_service import task_service
 
 _PRIORITY_TITLE_MATCH = 100
@@ -19,10 +19,13 @@ class TaskSearchProvider(SearchProvider):
 
     def search(self, query: str, *, limit: int) -> list[GlobalSearchResult]:
         results: list[GlobalSearchResult] = []
+        tasks = task_service.get_all_tasks()
+        short_labels = task_source_short_labels(tasks)
+        long_labels = task_source_labels(tasks)
 
-        for task in task_service.get_all_tasks():
-            source_label = task_source_label(task)
-            source_short = task_source_short_label(task)
+        for task in tasks:
+            source_label = long_labels.get(int(task.id), task_source_label(task))
+            source_short = short_labels.get(int(task.id), task_source_short_label(task))
             title = task.title or ""
             description = task.description or ""
 

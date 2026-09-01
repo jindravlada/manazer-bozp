@@ -32,6 +32,9 @@ class FindingService:
     def get_by_id(self, finding_id: int) -> Finding | None:
         return self.repository.get_by_id(finding_id)
 
+    def get_by_ids(self, finding_ids: list[int] | tuple[int, ...]) -> list[Finding]:
+        return self.repository.get_by_ids(finding_ids)
+
     def get_by_task_id(self, task_id: int) -> Finding | None:
         return self.repository.get_by_task_id(task_id)
 

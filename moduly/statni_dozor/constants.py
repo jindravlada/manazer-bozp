@@ -515,6 +515,14 @@ GROUP_COURSE_TIMELINE = "Průběh kontroly"
 GROUP_FINDINGS = "Zjištění kontroly"
 EMPTY_FINDINGS = "Zatím nejsou evidována žádná zjištění kontroly."
 FINDING_TASK_LINKED = "Navázán"
+FINDING_TASK_NOT_FOUND_MESSAGE = "Zjištění nebylo nalezeno."
+FINDING_TASK_WRONG_ENTITY_MESSAGE = (
+    "Úkol ze zjištění lze vytvořit jen pro kontrolu státního dozoru."
+)
+FINDING_TASK_ALREADY_LINKED_MESSAGE = "Zjištění už má navázaný úkol."
+FINDING_TASK_MISSING_TASK_MESSAGE = "Zjištění odkazuje na neexistující úkol."
+FINDING_SOURCE_MISSING_MESSAGE = "Zjištění se nepodařilo otevřít."
+FINDING_PARENT_MISSING_MESSAGE = "Kontrola státního dozoru už není k dispozici."
 FINDING_STORED_REMOVE_HINT = (
     "Uložené zjištění zůstává v historii. Lze jej upravit nebo označit jako vypořádané."
 )

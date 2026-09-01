@@ -5,7 +5,7 @@ from PySide6.QtGui import QColor, QBrush, QMouseEvent
 from PySide6.QtWidgets import QHeaderView, QTableWidget
 
 from core.shared.sluzby.finding_service import finding_service
-from core.shared.task_source_display import task_source_short_label
+from core.shared.task_source_display import task_source_short_label, task_source_short_labels
 from core.widgets.info_tooltip import format_info_card
 from core.widgets.typed_table_sort import (
     create_typed_item,
@@ -106,6 +106,7 @@ class TaskTable(QTableWidget):
 
     def load_tasks(self, tasks):
         today = date.today()
+        source_labels = task_source_short_labels(tasks)
 
         with sorting_paused(self):
             self.setRowCount(len(tasks))
@@ -113,12 +114,12 @@ class TaskTable(QTableWidget):
             for row, task in enumerate(tasks):
                 record_id = int(task.id)
                 row_state = self._row_state(task, today)
-                tooltip = self._task_tooltip(task, row_state)
+                source = source_labels.get(record_id, task_source_short_label(task))
+                tooltip = self._task_tooltip(task, row_state, source=source)
                 description = task_description_table_text(task)
                 due_display = "" if task.due_date is None else task.due_date.strftime("%d.%m.%Y")
                 responsible = task.responsible_person or "—"
                 workplace = task.workplace_name or "—"
-                source = task_source_short_label(task)
                 source_record = self._source_record_display(task)
                 type_label = task_type_table_label(task)
                 status = task.computed_status or ""
@@ -187,7 +188,7 @@ class TaskTable(QTableWidget):
 
         self.resizeRowsToContents()
 
-    def _task_tooltip(self, task, row_state: str) -> str:
+    def _task_tooltip(self, task, row_state: str, *, source: str | None = None) -> str:
         due_date = "—" if task.due_date is None else task.due_date.strftime("%d.%m.%Y")
         completed_date = "—" if task.completed_date is None else task.completed_date.strftime("%d.%m.%Y")
         check_due_date = "—" if task.check_due_date is None else task.check_due_date.strftime("%d.%m.%Y")
@@ -204,7 +205,7 @@ class TaskTable(QTableWidget):
             ("Kontrola do:", check_due_date),
             ("Datum kontroly:", checked_date),
             ("Kontroloval:", task.checked_by_name or "—"),
-            ("Zdroj:", task_source_short_label(task)),
+            ("Zdroj:", source if source is not None else task_source_short_label(task)),
             ("Zdrojový záznam:", self._source_record_display(task)),
         ]
 

@@ -4,6 +4,9 @@ from moduly.statni_dozor.sluzby.state_supervision_finding_service import (
     save_state_supervision_findings_batch,
     state_supervision_finding_service,
 )
+from moduly.statni_dozor.sluzby.state_supervision_finding_task_service import (
+    state_supervision_finding_task_service,
+)
 from moduly.statni_dozor.sluzby.state_supervision_participant_service import (
     state_supervision_participant_service,
 )
@@ -24,6 +27,7 @@ __all__ = [
     "StateSupervisionError",
     "state_supervision_service",
     "state_supervision_finding_service",
+    "state_supervision_finding_task_service",
     "save_state_supervision_findings_batch",
     "state_supervision_required_document_service",
     "state_supervision_timeline_item_service",

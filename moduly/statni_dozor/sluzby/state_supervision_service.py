@@ -256,6 +256,14 @@ class StateSupervisionService:
     ) -> StateSupervision | None:
         return self.repository.get_by_id(supervision_id, session=session)
 
+    def get_supervisions_by_ids(
+        self,
+        supervision_ids: list[int] | tuple[int, ...],
+        *,
+        session: Session | None = None,
+    ) -> list[StateSupervision]:
+        return self.repository.get_by_ids(supervision_ids, session=session)
+
     def update_supervision(
         self,
         supervision_id: int,

@@ -1,3 +1,6 @@
+from dataclasses import dataclass, field
+from typing import Any
+
 from core.shared.constants import (
     ENTITY_ACCIDENT,
     ENTITY_AUDITY,
@@ -6,8 +9,18 @@ from core.shared.constants import (
     ENTITY_MEETING,
     ENTITY_MU_INVESTIGATION,
     ENTITY_PROVERKY,
+    ENTITY_STATE_SUPERVISION,
+    ENTITY_TYPE_LABELS,
 )
 from core.shared.sluzby.finding_service import finding_service
+
+
+@dataclass
+class TaskSourceContext:
+    """Dávkově načtené zdroje pro seznamy úkolů (bez N+1)."""
+
+    findings: dict[int, Any] = field(default_factory=dict)
+    supervisions: dict[int, Any] = field(default_factory=dict)
 
 
 def task_type_label(task) -> str:
@@ -16,7 +29,59 @@ def task_type_label(task) -> str:
     return task_type_table_label(task)
 
 
-def task_source_short_label(task) -> str:
+def task_source_short_labels(tasks) -> dict[int, str]:
+    context = build_task_source_context(tasks)
+    labels: dict[int, str] = {}
+    for task in tasks:
+        task_id = getattr(task, "id", None)
+        if task_id is None:
+            continue
+        labels[int(task_id)] = task_source_short_label(task, context=context)
+    return labels
+
+
+def task_source_labels(tasks) -> dict[int, str]:
+    context = build_task_source_context(tasks)
+    labels: dict[int, str] = {}
+    for task in tasks:
+        task_id = getattr(task, "id", None)
+        if task_id is None:
+            continue
+        labels[int(task_id)] = task_source_label(task, context=context)
+    return labels
+
+
+def build_task_source_context(tasks) -> TaskSourceContext:
+    finding_ids = [
+        int(task.source_record_id)
+        for task in tasks
+        if (task.source_module or "") == ENTITY_FINDING and task.source_record_id
+    ]
+    findings = {
+        int(row.id): row
+        for row in finding_service.get_by_ids(finding_ids)
+        if row.id is not None
+    }
+    supervision_ids = [
+        int(row.entity_id)
+        for row in findings.values()
+        if row.entity_type == ENTITY_STATE_SUPERVISION and row.entity_id
+    ]
+    supervisions: dict[int, Any] = {}
+    if supervision_ids:
+        from moduly.statni_dozor.sluzby.state_supervision_service import (
+            state_supervision_service,
+        )
+
+        supervisions = {
+            int(row.id): row
+            for row in state_supervision_service.get_supervisions_by_ids(supervision_ids)
+            if row.id is not None
+        }
+    return TaskSourceContext(findings=findings, supervisions=supervisions)
+
+
+def task_source_short_label(task, *, context: TaskSourceContext | None = None) -> str:
     from moduly.rizeni_rizik.constants import ENTITY_RISK_MEASURE_REVIEW
 
     source_module = task.source_module or ""
@@ -31,7 +96,7 @@ def task_source_short_label(task) -> str:
     if source_module == ENTITY_RISK_MEASURE_REVIEW:
         return "Přezkoumání"
     if source_module == ENTITY_FINDING and task.source_record_id:
-        finding = finding_service.get_by_id(task.source_record_id)
+        finding = _finding_for_source(task.source_record_id, context)
         if finding is not None:
             return _entity_source_short_label(finding.entity_type)
         return "Zjištění"
@@ -46,6 +111,7 @@ def _entity_source_short_label(entity_type: str) -> str:
         ENTITY_MU_INVESTIGATION: "MU",
         ENTITY_PROVERKY: "Prověrka",
         ENTITY_MEETING: "Schůzka",
+        ENTITY_STATE_SUPERVISION: ENTITY_TYPE_LABELS[ENTITY_STATE_SUPERVISION],
     }
     return labels.get(entity_type, entity_type or "—")
 
@@ -73,7 +139,7 @@ def _legacy_source_short_label(source: str) -> str:
     return mapping.get(source or "", source or "—")
 
 
-def task_source_label(task) -> str:
+def task_source_label(task, *, context: TaskSourceContext | None = None) -> str:
     from moduly.rizeni_rizik.constants import ENTITY_RISK_MEASURE_REVIEW
 
     source_module = task.source_module or ""
@@ -88,11 +154,22 @@ def task_source_label(task) -> str:
     if source_module == ENTITY_RISK_MEASURE_REVIEW and task.source_record_id:
         return _risk_measure_review_source_label(task.source_record_id)
     if source_module == ENTITY_FINDING and task.source_record_id:
-        finding = finding_service.get_by_id(task.source_record_id)
+        finding = _finding_for_source(task.source_record_id, context)
         if finding is not None:
-            return _finding_entity_source_label(finding.entity_type, finding.entity_id)
+            return _finding_entity_source_label(
+                finding.entity_type,
+                finding.entity_id,
+                context=context,
+            )
 
     return _legacy_source_label(source_module)
+
+
+def _finding_for_source(finding_id: int, context: TaskSourceContext | None):
+    fid = int(finding_id)
+    if context is not None:
+        return context.findings.get(fid)
+    return finding_service.get_by_id(fid)
 
 
 def _risk_measure_review_source_label(review_id: int) -> str:
@@ -131,7 +208,14 @@ def _legal_requirement_source_label(requirement_id: int) -> str:
     return f"Právní požadavek #{requirement_id}"
 
 
-def _finding_entity_source_label(entity_type: str, entity_id: int) -> str:
+def _finding_entity_source_label(
+    entity_type: str,
+    entity_id: int,
+    *,
+    context: TaskSourceContext | None = None,
+) -> str:
+    if entity_type == ENTITY_STATE_SUPERVISION:
+        return _state_supervision_source_label(entity_id, context=context)
     labels = {
         ENTITY_AUDITY: "Audit systému řízení",
         ENTITY_ACCIDENT: "Úraz",
@@ -143,6 +227,34 @@ def _finding_entity_source_label(entity_type: str, entity_id: int) -> str:
     if detail:
         return f"{base} {detail}"
     return base
+
+
+def _state_supervision_source_label(
+    supervision_id: int,
+    *,
+    context: TaskSourceContext | None = None,
+) -> str:
+    from moduly.statni_dozor.sluzby.state_supervision_service import (
+        state_supervision_service,
+    )
+
+    record = None
+    if context is not None:
+        record = context.supervisions.get(int(supervision_id))
+    if record is None:
+        record = state_supervision_service.get_supervision(supervision_id)
+    base = ENTITY_TYPE_LABELS[ENTITY_STATE_SUPERVISION]
+    if record is None:
+        return base
+    authority = (record.authority_name or "").strip()
+    subject_raw = (record.subject or "").strip()
+    subject = subject_raw.splitlines()[0].strip() if subject_raw else ""
+    parts = [base]
+    if authority:
+        parts.append(authority)
+    if subject:
+        parts.append(subject)
+    return " – ".join(parts)
 
 
 def _entity_record_detail(entity_type: str, entity_id: int) -> str:

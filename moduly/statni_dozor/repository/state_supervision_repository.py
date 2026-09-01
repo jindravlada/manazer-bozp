@@ -51,6 +51,27 @@ class StateSupervisionRepository:
                 sess.expunge(record)
             return record
 
+    def get_by_ids(
+        self,
+        supervision_ids: list[int] | tuple[int, ...],
+        *,
+        session: Session | None = None,
+    ) -> list[StateSupervision]:
+        ids = [int(value) for value in supervision_ids if value is not None]
+        if not ids:
+            return []
+        with _open_session(session) as (sess, owns):
+            stmt = (
+                select(StateSupervision)
+                .where(StateSupervision.id.in_(ids))
+                .order_by(StateSupervision.id)
+            )
+            records = list(sess.scalars(stmt))
+            if owns:
+                for record in records:
+                    sess.expunge(record)
+            return records
+
     def add(
         self,
         record: StateSupervision,

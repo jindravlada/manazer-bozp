@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, datetime, time
 
-from core.shared.task_source_display import task_source_short_label
+from core.shared.task_source_display import task_source_short_labels
 from moduly.agenda.constants import (
     DEFAULT_PRIORITY,
     ITEM_TYPE_MEETING,
@@ -118,12 +118,14 @@ def _meeting_row_state(meeting, *, now: datetime) -> str:
 
 def _from_tasks(*, today: date) -> list[AgendaItem]:
     items: list[AgendaItem] = []
-    for task in task_service.get_all_tasks():
+    tasks = task_service.get_all_tasks()
+    source_labels = task_source_short_labels(tasks)
+    for task in tasks:
         status = task.computed_status or ""
         if status in (TASK_STATUS_CLOSED, TASK_STATUS_CANCELED):
             continue
         title = (task.title or "").strip() or "Bez názvu"
-        source = (task_source_short_label(task) or "").strip() or "—"
+        source = (source_labels.get(int(task.id)) or "").strip() or "—"
         person = (task.responsible_person or "").strip()
         waiting_check = status == TASK_STATUS_WAITING_CHECK
         decisive = task_urgency_due_date(task)

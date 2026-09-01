@@ -1,5 +1,7 @@
 from datetime import date, timedelta
 
+from sqlalchemy.orm import Session
+
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.ukoly.constants import DEFAULT_TASK_TYPE, TASK_TYPE_INVESTIGATION_ACTION
 from moduly.ukoly.modely.task import Task
@@ -70,6 +72,8 @@ class TaskService:
         task_type: str = DEFAULT_TASK_TYPE,
         source_check_code: str = "",
         requires_verification: bool | None = None,
+        *,
+        session: Session | None = None,
     ) -> Task:
         if requires_verification is None:
             if task_type == TASK_TYPE_INVESTIGATION_ACTION:
@@ -111,7 +115,7 @@ class TaskService:
             source_check_code=source_check_code,
         )
         self._sync_legacy_status(task)
-        saved = self.repository.add(task)
+        saved = self.repository.add(task, session=session)
         return saved
 
     def update_task(

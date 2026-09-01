@@ -88,6 +88,24 @@ class FindingRepository:
                 sess.expunge(record)
             return record
 
+    def get_by_ids(
+        self,
+        finding_ids: list[int] | tuple[int, ...],
+        *,
+        session: Session | None = None,
+    ) -> list[Finding]:
+        """Hromadné načtení zjištění podle ID (bez N+1 v seznamech úkolů)."""
+        ids = [int(value) for value in finding_ids if value is not None]
+        if not ids:
+            return []
+        with _open_session(session) as (sess, owns):
+            stmt = select(Finding).where(Finding.id.in_(ids)).order_by(Finding.id)
+            rows = list(sess.scalars(stmt))
+            if owns:
+                for row in rows:
+                    sess.expunge(row)
+            return rows
+
     def get_by_task_id(
         self,
         task_id: int,

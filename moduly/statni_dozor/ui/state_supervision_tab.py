@@ -192,6 +192,17 @@ class StateSupervisionTab(QWidget):
             return
         self._open_editor(supervision_id)
 
+    def open_supervision(self, supervision_id: int) -> None:
+        """Otevře editor kontroly podle ID (i když aktuální filtr řádek skrývá)."""
+        record = state_supervision_service.get_supervision(supervision_id)
+        if record is None:
+            QMessageBox.warning(self, MODULE_NAME, ITEM_NOT_FOUND_MESSAGE)
+            self.refresh()
+            return
+        self.table.select_by_id(supervision_id)
+        self._refresh_action_buttons()
+        self._open_editor(supervision_id)
+
     def _open_editor(self, supervision_id: int | None) -> None:
         if supervision_id is not None:
             record = state_supervision_service.get_supervision(supervision_id)
