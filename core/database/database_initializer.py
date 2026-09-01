@@ -98,6 +98,7 @@ def initialize_database() -> None:
     )
     from moduly.statni_dozor.modely import (  # noqa: F401
         StateSupervision,
+        StateSupervisionParticipant,
         StateSupervisionRequiredDocument,
         StateSupervisionTimelineItem,
     )

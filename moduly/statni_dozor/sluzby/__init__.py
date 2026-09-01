@@ -1,5 +1,8 @@
 """Služby Státního dozoru."""
 
+from moduly.statni_dozor.sluzby.state_supervision_participant_service import (
+    state_supervision_participant_service,
+)
 from moduly.statni_dozor.sluzby.state_supervision_required_document_service import (
     state_supervision_required_document_service,
 )
@@ -18,4 +21,5 @@ __all__ = [
     "state_supervision_service",
     "state_supervision_required_document_service",
     "state_supervision_timeline_item_service",
+    "state_supervision_participant_service",
 ]

@@ -453,6 +453,18 @@ def prepare_database_for_startup(
             settings_path=settings_path,
         )
 
+    from moduly.statni_dozor.sluzby.state_supervision_participants_core_3c0_schema_migration import (
+        needs_state_supervision_participants_core_3c0_schema,
+        prepare_state_supervision_participants_core_3c0_schema,
+    )
+
+    if needs_state_supervision_participants_core_3c0_schema(database_path):
+        prepare_state_supervision_participants_core_3c0_schema(
+            workspace_root=workspace_root,
+            database_path=database_path,
+            settings_path=settings_path,
+        )
+
     from moduly.nastaveni.sluzby.person_thp_separation_migration import (
         needs_person_thp_separation,
         prepare_person_thp_separation,
@@ -639,6 +651,16 @@ def prepare_database_for_startup(
     )
 
     prepare_state_supervision_timeline_core_3a0_schema(
+        workspace_root=workspace_root,
+        database_path=database_path,
+        settings_path=settings_path,
+    )
+
+    from moduly.statni_dozor.sluzby.state_supervision_participants_core_3c0_schema_migration import (
+        prepare_state_supervision_participants_core_3c0_schema,
+    )
+
+    prepare_state_supervision_participants_core_3c0_schema(
         workspace_root=workspace_root,
         database_path=database_path,
         settings_path=settings_path,
