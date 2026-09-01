@@ -69,6 +69,7 @@ with patch.object(Path, "home", return_value=_TMP):
         PLANNED_NO_LABEL,
         PLANNED_YES_LABEL,
         TAB_ANNOUNCEMENT,
+        TAB_ATTACHMENTS,
         TAB_CONCLUSION,
         TAB_COURSE,
         TAB_STATE_SUPERVISION,
@@ -169,10 +170,16 @@ class StateSupervisionParticipantsUi3c1TestCase(unittest.TestCase):
 
     def test_01_four_tabs_group_on_first_tab_columns_and_buttons(self) -> None:
         dialog = StateSupervisionEditorDialog()
-        self.assertEqual(dialog.tabs.count(), 4)
+        self.assertEqual(dialog.tabs.count(), 5)
         self.assertEqual(
             [dialog.tabs.tabText(i) for i in range(dialog.tabs.count())],
-            [TAB_ANNOUNCEMENT, TAB_SUBJECT_PREPARATION, TAB_COURSE, TAB_CONCLUSION],
+            [
+                TAB_ANNOUNCEMENT,
+                TAB_SUBJECT_PREPARATION,
+                TAB_COURSE,
+                TAB_CONCLUSION,
+                TAB_ATTACHMENTS,
+            ],
         )
         self.assertEqual(dialog.minimumWidth(), 640)
         self.assertEqual(dialog.minimumHeight(), 480)
@@ -219,7 +226,7 @@ class StateSupervisionParticipantsUi3c1TestCase(unittest.TestCase):
         self.assertFalse(dialog.move_participant_up_btn.isEnabled())
         self.assertFalse(dialog.move_participant_down_btn.isEnabled())
         source = inspect.getsource(StateSupervisionEditorDialog)
-        self.assertEqual(source.count("self.tabs.addTab("), 4)
+        self.assertEqual(source.count("self.tabs.addTab("), 5)
         self.assertNotIn("TAB_PARTICIPANTS", source)
         self.assertIn("doubleClicked.connect(self._edit_selected_participant)", source)
         self.assertNotIn("save_button.setEnabled(True)", source)

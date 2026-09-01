@@ -586,7 +586,7 @@ class AttachmentStagingRegressionGuardTests(_HomeMixin):
         )
 
         editor = inspect.getsource(StateSupervisionEditorDialog)
-        self.assertEqual(editor.count("self.tabs.addTab("), 4)
+        self.assertEqual(editor.count("self.tabs.addTab("), 5)
         self.assertNotIn("prepare_attachment_staging", editor)
         self.assertNotIn("AttachmentWidget", editor)
 

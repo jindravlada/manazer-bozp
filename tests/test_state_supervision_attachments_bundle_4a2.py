@@ -676,11 +676,12 @@ class StateSupervisionAttachmentsBundle4a2TestCase(unittest.TestCase):
         )
 
         editor = inspect.getsource(StateSupervisionEditorDialog)
-        self.assertEqual(editor.count("self.tabs.addTab("), 4)
+        self.assertEqual(editor.count("self.tabs.addTab("), 5)
         self.assertIn("TAB_ANNOUNCEMENT", editor)
         self.assertIn("TAB_SUBJECT_PREPARATION", editor)
         self.assertIn("TAB_COURSE", editor)
         self.assertIn("TAB_CONCLUSION", editor)
+        self.assertIn("TAB_ATTACHMENTS", editor)
         self.assertNotIn("prepare_attachment_staging", editor)
         self.assertNotIn("pending_add_paths", editor)
         init = inspect.getsource(StateSupervisionEditorDialog.__init__)

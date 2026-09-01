@@ -406,6 +406,7 @@ with patch.object(Path, "home", return_value=_SVC_HOME):
         STATUS_CANCELLED,
         STATUS_CLOSED,
         TAB_ANNOUNCEMENT,
+        TAB_ATTACHMENTS,
         TAB_CONCLUSION,
         TAB_COURSE,
         TAB_STATE_SUPERVISION,
@@ -848,17 +849,23 @@ class StateSupervisionParticipantsCore3c0ServiceTestCase(unittest.TestCase):
         self.assertIn("KEEP_EXISTING", bundle)
         self.assertEqual(bundle.count("sess.commit()"), 1)
         editor_source = inspect.getsource(StateSupervisionEditorDialog)
-        self.assertEqual(editor_source.count("self.tabs.addTab("), 4)
+        self.assertEqual(editor_source.count("self.tabs.addTab("), 5)
         self.assertNotIn("TAB_PARTICIPANTS", editor_source)
         self.assertNotIn("save_participant_batch", editor_source)
 
         db = storage_module.storage_service.database_path
         before = _count(db, TABLE_PARTICIPANTS)
         dialog = StateSupervisionEditorDialog(supervision_id=self.supervision.id)
-        self.assertEqual(dialog.tabs.count(), 4)
+        self.assertEqual(dialog.tabs.count(), 5)
         self.assertEqual(
             [dialog.tabs.tabText(i) for i in range(dialog.tabs.count())],
-            [TAB_ANNOUNCEMENT, TAB_SUBJECT_PREPARATION, TAB_COURSE, TAB_CONCLUSION],
+            [
+                TAB_ANNOUNCEMENT,
+                TAB_SUBJECT_PREPARATION,
+                TAB_COURSE,
+                TAB_CONCLUSION,
+                TAB_ATTACHMENTS,
+            ],
         )
         self.assertFalse(dialog._editor.is_dirty())
         dialog.close()

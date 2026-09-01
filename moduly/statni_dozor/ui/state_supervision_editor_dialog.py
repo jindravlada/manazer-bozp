@@ -79,7 +79,6 @@ from moduly.statni_dozor.constants import (
     ENDED_BEFORE_STARTED_MESSAGE,
     ENTITY_STATE_SUPERVISION,
     GROUP_ACTUAL_COURSE,
-    GROUP_ATTACHMENTS,
     GROUP_COMPLETION_CLOSE,
     GROUP_INFORMING,
     GROUP_INITIAL_INFORMATION,
@@ -140,6 +139,7 @@ from moduly.statni_dozor.constants import (
     STATE_SUPERVISION_STATUS_ORDER,
     STATUS_CLOSED,
     TAB_ANNOUNCEMENT,
+    TAB_ATTACHMENTS,
     TAB_CONCLUSION,
     TAB_COURSE,
     TAB_SUBJECT_PREPARATION,
@@ -317,6 +317,9 @@ class StateSupervisionEditorDialog(QDialog):
         self.tabs.addTab(self._build_course_tab(), TAB_COURSE)
         self._conclusion_tab_index = self.tabs.addTab(
             wrap_in_scroll_area(self._build_conclusion_tab()), TAB_CONCLUSION
+        )
+        self._attachments_tab_index = self.tabs.addTab(
+            self._build_attachments_tab(), TAB_ATTACHMENTS
         )
         layout.addWidget(self.tabs, 1)
         layout.addLayout(self._build_footer())
@@ -734,19 +737,19 @@ class StateSupervisionEditorDialog(QDialog):
         layout.addWidget(protocol_box)
         layout.addWidget(objections_box)
         layout.addWidget(close_box)
-        layout.addWidget(self._build_attachments_section(), 1)
+        layout.addStretch(1)
         return page
 
-    def _build_attachments_section(self) -> QWidget:
-        box = QGroupBox(GROUP_ATTACHMENTS)
-        layout = QVBoxLayout(box)
+    def _build_attachments_tab(self) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
         self.attachments_widget = StateSupervisionAttachmentStagingWidget(
-            box,
+            page,
             staging=self._attachment_staging,
             on_changed=self._on_attachments_changed,
         )
         layout.addWidget(self.attachments_widget, 1)
-        return box
+        return page
 
     def _on_attachments_changed(self) -> None:
         editor = getattr(self, "_editor", None)
@@ -978,6 +981,9 @@ class StateSupervisionEditorDialog(QDialog):
         else:
             widget.set_button.setFocus(Qt.FocusReason.OtherFocusReason)
 
+    def _focus_attachments_tab(self) -> None:
+        self.tabs.setCurrentIndex(self._attachments_tab_index)
+
     def _validation_message(self, data: dict) -> str | None:
         if not data["authority_name"]:
             return AUTHORITY_REQUIRED_MESSAGE
@@ -1040,8 +1046,16 @@ class StateSupervisionEditorDialog(QDialog):
             return False
         except AttachmentStagingError as error:
             self._supervision_id = previous_id
+            self._focus_attachments_tab()
             logger.exception("Uložení příloh spisu státního dozoru selhalo.")
             QMessageBox.warning(self, self.windowTitle(), str(error))
+            return False
+        except OSError:
+            self._supervision_id = previous_id
+            if self._attachment_staging.has_changes():
+                self._focus_attachments_tab()
+            logger.exception("Uložení kontroly státního dozoru selhalo.")
+            QMessageBox.warning(self, self.windowTitle(), SAVE_ERROR_MESSAGE)
             return False
         except Exception:
             self._supervision_id = previous_id

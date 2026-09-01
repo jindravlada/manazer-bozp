@@ -135,7 +135,7 @@ class StateSupervisionDocumentsUi2c1TestCase(unittest.TestCase):
 
     def test_01_section_on_second_tab_six_columns_and_buttons(self) -> None:
         dialog = StateSupervisionEditorDialog()
-        self.assertEqual(dialog.tabs.count(), 4)
+        self.assertEqual(dialog.tabs.count(), 5)
         self.assertEqual(dialog.tabs.tabText(0), TAB_ANNOUNCEMENT)
         self.assertEqual(dialog.tabs.tabText(1), TAB_SUBJECT_PREPARATION)
         groups = [box.title() for box in dialog.findChildren(QGroupBox)]

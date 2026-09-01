@@ -45,6 +45,7 @@ with patch.object(Path, "home", return_value=_TMP):
         LABEL_PREPARATION_NOTE,
         LABEL_SUBJECT,
         TAB_ANNOUNCEMENT,
+        TAB_ATTACHMENTS,
         TAB_CONCLUSION,
         TAB_COURSE,
         TAB_STATE_SUPERVISION,
@@ -112,9 +113,15 @@ class StateSupervisionEditor2b2TestCase(unittest.TestCase):
         titles = self._tab_titles(dialog)
         self.assertEqual(
             titles,
-            [TAB_ANNOUNCEMENT, TAB_SUBJECT_PREPARATION, TAB_COURSE, TAB_CONCLUSION],
+            [
+                TAB_ANNOUNCEMENT,
+                TAB_SUBJECT_PREPARATION,
+                TAB_COURSE,
+                TAB_CONCLUSION,
+                TAB_ATTACHMENTS,
+            ],
         )
-        self.assertEqual(dialog.tabs.count(), 4)
+        self.assertEqual(dialog.tabs.count(), 5)
         dialog.close()
 
     def test_02_three_multiline_fields(self) -> None:

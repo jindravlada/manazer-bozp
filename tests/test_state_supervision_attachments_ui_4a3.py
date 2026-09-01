@@ -75,8 +75,8 @@ with patch.object(Path, "home", return_value=_TMP):
         ENTITY_STATE_SUPERVISION,
         GROUP_ATTACHMENTS,
         GROUP_COMPLETION_CLOSE,
-        GROUP_RESULT,
         TAB_ANNOUNCEMENT,
+        TAB_ATTACHMENTS,
         TAB_CONCLUSION,
         TAB_COURSE,
         TAB_STATE_SUPERVISION,
@@ -167,21 +167,36 @@ class StateSupervisionAttachmentsUi4a3TestCase(unittest.TestCase):
         item = dialog.attachments_widget.table.item(row, COL_ATTACHMENT_NAME)
         return item.text() if item is not None else ""
 
-    def test_01_four_tabs_section_hint_empty_and_buttons(self) -> None:
+    def test_01_five_tabs_attachments_on_last_and_buttons(self) -> None:
         dialog = StateSupervisionEditorDialog()
-        self.assertEqual(dialog.tabs.count(), 4)
+        self.assertEqual(dialog.tabs.count(), 5)
         self.assertEqual(
             [dialog.tabs.tabText(i) for i in range(dialog.tabs.count())],
-            [TAB_ANNOUNCEMENT, TAB_SUBJECT_PREPARATION, TAB_COURSE, TAB_CONCLUSION],
+            [
+                TAB_ANNOUNCEMENT,
+                TAB_SUBJECT_PREPARATION,
+                TAB_COURSE,
+                TAB_CONCLUSION,
+                TAB_ATTACHMENTS,
+            ],
         )
         self.assertEqual(dialog.minimumWidth(), 640)
         self.assertEqual(dialog.minimumHeight(), 480)
-        scroll = dialog.tabs.widget(3)
-        page = scroll.widget()
-        groups = [box.title() for box in page.findChildren(QGroupBox)]
-        self.assertEqual(groups[-1], GROUP_ATTACHMENTS)
-        self.assertGreater(groups.index(GROUP_ATTACHMENTS), groups.index(GROUP_COMPLETION_CLOSE))
-        self.assertGreater(groups.index(GROUP_COMPLETION_CLOSE), groups.index(GROUP_RESULT))
+        conclusion = dialog.tabs.widget(3).widget()
+        conclusion_groups = [box.title() for box in conclusion.findChildren(QGroupBox)]
+        self.assertNotIn(GROUP_ATTACHMENTS, conclusion_groups)
+        self.assertEqual(conclusion_groups[-1], GROUP_COMPLETION_CLOSE)
+        from moduly.statni_dozor.ui.state_supervision_attachment_staging_widget import (
+            StateSupervisionAttachmentStagingWidget,
+        )
+
+        widgets = dialog.findChildren(StateSupervisionAttachmentStagingWidget)
+        self.assertEqual(len(widgets), 1)
+        self.assertEqual(
+            len(conclusion.findChildren(StateSupervisionAttachmentStagingWidget)),
+            0,
+        )
+        self.assertEqual(dialog.tabs.widget(4).findChildren(StateSupervisionAttachmentStagingWidget), widgets)
         widget = dialog.attachments_widget
         self.assertEqual(widget.hint.text(), ATTACHMENTS_HINT)
         self.assertEqual(widget.empty_label.text(), EMPTY_ATTACHMENTS)
@@ -205,7 +220,7 @@ class StateSupervisionAttachmentsUi4a3TestCase(unittest.TestCase):
         self.assertFalse(widget.btn_remove.isEnabled())
         self.assertIn("Všechny soubory", ATTACHMENT_FILE_FILTER)
         source = inspect.getsource(StateSupervisionEditorDialog)
-        self.assertEqual(source.count("self.tabs.addTab("), 4)
+        self.assertEqual(source.count("self.tabs.addTab("), 5)
         self.assertNotIn("AttachmentWidget", source)
         self.assertIn("attachments=self._attachment_staging", source)
         self.assertNotIn("save_button.setEnabled(True)", source)

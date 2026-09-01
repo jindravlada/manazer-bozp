@@ -74,6 +74,7 @@ with patch.object(Path, "home", return_value=_TMP):
         STATUS_ANNOUNCED,
         STATUS_IN_PROGRESS,
         TAB_ANNOUNCEMENT,
+        TAB_ATTACHMENTS,
         TAB_CONCLUSION,
         TAB_STATE_SUPERVISION,
         TAB_SUBJECT_PREPARATION,
@@ -225,7 +226,7 @@ class StateSupervisionEditor2b1TestCase(unittest.TestCase):
         self.assertFalse(dialog._editor.save_button.isEnabled())
         self.assertFalse(dialog._save_close_btn.isEnabled())
         self.assertEqual(dialog._save_close_btn.text(), ACTION_SAVE_AND_CLOSE)
-        self.assertEqual(dialog.tabs.count(), 4)
+        self.assertEqual(dialog.tabs.count(), 5)
         self.assertEqual(dialog.tabs.tabText(0), TAB_ANNOUNCEMENT)
         self.assertEqual(dialog.tabs.tabText(1), TAB_SUBJECT_PREPARATION)
         extra_titles = [
@@ -233,6 +234,7 @@ class StateSupervisionEditor2b1TestCase(unittest.TestCase):
         ]
         self.assertIn("Průběh kontroly", extra_titles)
         self.assertIn(TAB_CONCLUSION, extra_titles)
+        self.assertIn(TAB_ATTACHMENTS, extra_titles)
 
         before = _count_supervisions()
         with patch.object(QMessageBox, "warning") as warning:

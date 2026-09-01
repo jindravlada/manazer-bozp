@@ -55,7 +55,6 @@ with patch.object(Path, "home", return_value=_TMP):
         COL_ENDED,
         COL_RESULT,
         COL_STATUS,
-        GROUP_ATTACHMENTS,
         GROUP_COMPLETION_CLOSE,
         GROUP_OBJECTIONS,
         GROUP_PROTOCOL,
@@ -66,6 +65,7 @@ with patch.object(Path, "home", return_value=_TMP):
         STATUS_CANCELLED,
         STATUS_CLOSED,
         TAB_ANNOUNCEMENT,
+        TAB_ATTACHMENTS,
         TAB_CONCLUSION,
         TAB_COURSE,
         TAB_STATE_SUPERVISION,
@@ -148,26 +148,23 @@ class StateSupervisionConclusionUi3b1TestCase(unittest.TestCase):
         dialog = StateSupervisionEditorDialog()
         self.assertEqual(
             self._tab_titles(dialog),
-            [TAB_ANNOUNCEMENT, TAB_SUBJECT_PREPARATION, TAB_COURSE, TAB_CONCLUSION],
+            [
+                TAB_ANNOUNCEMENT,
+                TAB_SUBJECT_PREPARATION,
+                TAB_COURSE,
+                TAB_CONCLUSION,
+                TAB_ATTACHMENTS,
+            ],
         )
-        self.assertEqual(dialog.tabs.count(), 4)
+        self.assertEqual(dialog.tabs.count(), 5)
         page = self._conclusion_page(dialog)
         groups = [box.title() for box in page.findChildren(QGroupBox)]
         self.assertEqual(
             groups,
-            [
-                GROUP_RESULT,
-                GROUP_PROTOCOL,
-                GROUP_OBJECTIONS,
-                GROUP_COMPLETION_CLOSE,
-                GROUP_ATTACHMENTS,
-            ],
+            [GROUP_RESULT, GROUP_PROTOCOL, GROUP_OBJECTIONS, GROUP_COMPLETION_CLOSE],
         )
-        self.assertEqual(len(page.findChildren(QTableWidget)), 1)
-        self.assertEqual(
-            [btn.text() for btn in page.findChildren(QPushButton)],
-            ["Přidat přílohy", "Otevřít", "Odebrat"],
-        )
+        self.assertEqual(len(page.findChildren(QTableWidget)), 0)
+        self.assertEqual([btn.text() for btn in page.findChildren(QPushButton)], [])
         self.assertIsInstance(dialog.result_combo, SearchComboBox)
         self.assertTrue(dialog.result_combo.isEditable())
         combo_values = [

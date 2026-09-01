@@ -156,6 +156,7 @@ TAB_ANNOUNCEMENT = "Ohlášení a zahájení"
 TAB_SUBJECT_PREPARATION = "Předmět a příprava"
 TAB_COURSE = "Průběh kontroly"
 TAB_CONCLUSION = "Závěr a opatření"
+TAB_ATTACHMENTS = "Přílohy"
 
 AUTHORITY_SUGGESTIONS: tuple[str, ...] = (
     "Obvodní báňský úřad (OBÚ)",

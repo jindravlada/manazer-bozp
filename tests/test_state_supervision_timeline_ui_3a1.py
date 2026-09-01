@@ -49,6 +49,7 @@ with patch.object(Path, "home", return_value=_TMP):
         EMPTY_TIMELINE,
         EMPTY_VALUE,
         TAB_ANNOUNCEMENT,
+        TAB_ATTACHMENTS,
         TAB_CONCLUSION,
         TAB_COURSE,
         TAB_STATE_SUPERVISION,
@@ -141,11 +142,12 @@ class StateSupervisionTimelineUi3a1TestCase(unittest.TestCase):
 
     def test_01_three_tabs_four_columns_and_buttons(self) -> None:
         dialog = StateSupervisionEditorDialog()
-        self.assertEqual(dialog.tabs.count(), 4)
+        self.assertEqual(dialog.tabs.count(), 5)
         self.assertEqual(dialog.tabs.tabText(0), TAB_ANNOUNCEMENT)
         self.assertEqual(dialog.tabs.tabText(1), TAB_SUBJECT_PREPARATION)
         self.assertEqual(dialog.tabs.tabText(2), TAB_COURSE)
         self.assertEqual(dialog.tabs.tabText(3), TAB_CONCLUSION)
+        self.assertEqual(dialog.tabs.tabText(4), TAB_ATTACHMENTS)
         self.assertEqual(dialog.timeline_hint_label.text(), TIMELINE_HINT)
         self.assertEqual(dialog.timeline_empty_label.text(), EMPTY_TIMELINE)
         self.assertFalse(dialog.timeline_empty_label.isHidden())
