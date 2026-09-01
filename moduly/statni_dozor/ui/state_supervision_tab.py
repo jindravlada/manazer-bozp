@@ -42,6 +42,9 @@ from moduly.statni_dozor.constants import (
     STATUS_CUBE_HINT,
 )
 from moduly.statni_dozor.modely.state_supervision import StateSupervision
+from moduly.statni_dozor.sluzby.state_supervision_attention import (
+    state_supervision_attention_service,
+)
 from moduly.statni_dozor.sluzby.state_supervision_service import (
     state_supervision_service,
 )
@@ -160,7 +163,18 @@ class StateSupervisionTab(QWidget):
         self._unfiltered_count = len(records)
         self._rebuild_filter_options(records)
         visible = self._apply_combo_filters(records)
-        self.table.load_records(visible)
+        attentions = {}
+        attention_error = False
+        try:
+            attentions = state_supervision_attention_service.summarize(visible)
+        except Exception:
+            logger.exception("Vyhodnocení upozornění státního dozoru selhalo.")
+            attention_error = True
+        self.table.load_records(
+            visible,
+            attentions=attentions,
+            attention_error=attention_error,
+        )
         configure_table_columns(self.table, "state_supervision_overview")
         self.text_filter.update_count()
         self._update_empty_state()

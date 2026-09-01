@@ -183,6 +183,20 @@ class StateSupervisionRequiredDocumentService:
             session=session,
         )
 
+    def list_for_supervisions(
+        self,
+        supervision_ids: Sequence[int],
+        *,
+        include_inactive: bool = False,
+        session: Session | None = None,
+    ) -> list[StateSupervisionRequiredDocument]:
+        """Dávkové načtení dokladů pro přehled. Nic nezapisuje."""
+        return self.repository.list_for_supervisions(
+            supervision_ids,
+            include_inactive=include_inactive,
+            session=session,
+        )
+
     def get_document(
         self,
         document_id: int,

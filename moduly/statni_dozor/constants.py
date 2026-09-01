@@ -124,8 +124,26 @@ EMPTY_STATE_NONE = "Zatím nejsou evidovány žádné kontroly státního dozoru
 EMPTY_STATE_FILTER = "Nastaveným filtrům neodpovídá žádná kontrola."
 LOAD_ERROR_TEXT = "Přehled státního dozoru se nepodařilo načíst."
 STATUS_CUBE_HINT = (
-    "Barevná značka vyjadřuje stav kontroly. Podrobnosti zobrazíte najetím myši."
+    "Barevná značka vyjadřuje stav kontroly. Červená upozorňuje na nevyřešený "
+    "problém nebo prošlou evidovanou lhůtu. Podrobnosti zobrazíte najetím myši."
 )
+ATTENTION_TOOLTIP_STATUS_PREFIX = "Stav:"
+ATTENTION_TOOLTIP_ALERT_HEADING = "Upozornění:"
+ATTENTION_EVALUATION_FAILED_MESSAGE = "Stav upozornění se nepodařilo vyhodnotit."
+ATTENTION_REASON_OVERDUE_DOCUMENTS = "overdue_documents"
+ATTENTION_REASON_OVERDUE_FINDINGS = "overdue_findings"
+ATTENTION_REASON_OVERDUE_TASKS = "overdue_tasks"
+ATTENTION_REASON_MISSING_TASKS = "missing_tasks"
+ATTENTION_REASON_OVERDUE_OBJECTIONS = "overdue_objections"
+ATTENTION_REASON_OVERDUE_PLANNED_START = "overdue_planned_start"
+ATTENTION_REASON_LABELS: dict[str, str] = {
+    ATTENTION_REASON_OVERDUE_DOCUMENTS: "požadované doklady po termínu",
+    ATTENTION_REASON_OVERDUE_FINDINGS: "zjištění po termínu",
+    ATTENTION_REASON_OVERDUE_TASKS: "navazující úkoly po termínu",
+    ATTENTION_REASON_MISSING_TASKS: "chybějící navázané úkoly",
+    ATTENTION_REASON_OVERDUE_OBJECTIONS: "uplynula lhůta pro podání námitek",
+    ATTENTION_REASON_OVERDUE_PLANNED_START: "uplynul plánovaný termín zahájení",
+}
 EMPTY_VALUE = "—"
 
 COL_STATUS = 0

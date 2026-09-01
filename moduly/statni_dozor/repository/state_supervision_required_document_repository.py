@@ -72,6 +72,36 @@ class StateSupervisionRequiredDocumentRepository:
                     sess.expunge(record)
             return records
 
+    def list_for_supervisions(
+        self,
+        supervision_ids: Sequence[int],
+        *,
+        include_inactive: bool = False,
+        session: Session | None = None,
+    ) -> list[StateSupervisionRequiredDocument]:
+        ids = [int(value) for value in supervision_ids if value is not None]
+        if not ids:
+            return []
+        with _open_session(session) as (sess, owns):
+            stmt = (
+                select(StateSupervisionRequiredDocument)
+                .where(
+                    StateSupervisionRequiredDocument.state_supervision_id.in_(ids)
+                )
+                .order_by(
+                    StateSupervisionRequiredDocument.state_supervision_id.asc(),
+                    StateSupervisionRequiredDocument.display_order.asc(),
+                    StateSupervisionRequiredDocument.id.asc(),
+                )
+            )
+            if not include_inactive:
+                stmt = stmt.where(StateSupervisionRequiredDocument.active.is_(True))
+            records = list(sess.scalars(stmt))
+            if owns:
+                for record in records:
+                    sess.expunge(record)
+            return records
+
     def add(
         self,
         record: StateSupervisionRequiredDocument,

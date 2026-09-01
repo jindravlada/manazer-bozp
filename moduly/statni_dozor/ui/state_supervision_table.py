@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
 from core.theme.status_colors import (
     STATUS_DONE_BG,
     STATUS_IN_PROGRESS_BG,
+    STATUS_MISSING_BG,
     STATUS_NEUTRAL_BG,
     STATUS_WAITING_BG,
     STATUS_WARNING_BG,
@@ -32,6 +33,12 @@ from core.widgets.typed_table_sort import (
     typed_text,
 )
 from moduly.statni_dozor.constants import (
+    ATTENTION_EVALUATION_FAILED_MESSAGE,
+    ATTENTION_REASON_LABELS,
+    ATTENTION_REASON_OVERDUE_OBJECTIONS,
+    ATTENTION_REASON_OVERDUE_PLANNED_START,
+    ATTENTION_TOOLTIP_ALERT_HEADING,
+    ATTENTION_TOOLTIP_STATUS_PREFIX,
     COL_STATUS,
     COLUMN_HEADERS,
     EMPTY_VALUE,
@@ -49,6 +56,10 @@ from moduly.statni_dozor.constants import (
     STATUS_WAITING_PROTOCOL,
 )
 from moduly.statni_dozor.modely.state_supervision import StateSupervision
+from moduly.statni_dozor.sluzby.state_supervision_attention import (
+    AttentionReason,
+    StateSupervisionAttention,
+)
 
 _ROLE_ID = Qt.ItemDataRole.UserRole
 _CUBE_SIZE = 12
@@ -64,6 +75,20 @@ STATUS_CUBE_COLORS: dict[str, str] = {
     STATUS_CLOSED: STATUS_DONE_BG,
     STATUS_CANCELLED: STATUS_NEUTRAL_BG,
 }
+
+
+STATUS_CUBE_ALERT_COLOR = STATUS_MISSING_BG
+_STATUS_SORT_NON_ALERT = 1000
+
+
+def _reason_line(reason: AttentionReason) -> str:
+    label = ATTENTION_REASON_LABELS.get(reason.code, reason.code)
+    if reason.code in {
+        ATTENTION_REASON_OVERDUE_OBJECTIONS,
+        ATTENTION_REASON_OVERDUE_PLANNED_START,
+    }:
+        return f"• {label}"
+    return f"• {label}: {reason.count}"
 
 
 def format_supervision_date(value: datetime | date | None) -> str:
@@ -85,12 +110,59 @@ def display_or_dash(value: str | None) -> str:
     return text if text else EMPTY_VALUE
 
 
-def status_cube_tooltip(status: str) -> str:
+def status_cube_tooltip(
+    status: str,
+    attention: StateSupervisionAttention | None = None,
+    *,
+    evaluation_failed: bool = False,
+) -> str:
     label = STATE_SUPERVISION_STATUS_LABELS.get(status, status)
-    hint = STATE_SUPERVISION_STATUS_HINTS.get(status, "")
-    if hint:
-        return f"{label} — {hint}"
-    return label
+    lines = [f"{ATTENTION_TOOLTIP_STATUS_PREFIX} {label}."]
+    show_alert = (
+        not evaluation_failed
+        and status != STATUS_CANCELLED
+        and attention is not None
+        and attention.has_alert
+    )
+    if evaluation_failed:
+        lines.append(ATTENTION_EVALUATION_FAILED_MESSAGE)
+    elif show_alert:
+        lines.append("")
+        lines.append(ATTENTION_TOOLTIP_ALERT_HEADING)
+        for reason in attention.reasons:
+            if reason.count:
+                lines.append(_reason_line(reason))
+    else:
+        hint = STATE_SUPERVISION_STATUS_HINTS.get(status, "")
+        if hint:
+            lines.append(hint)
+    return "\n".join(lines)
+
+
+def cube_shows_alert(
+    status: str,
+    attention: StateSupervisionAttention | None,
+    *,
+    evaluation_failed: bool = False,
+) -> bool:
+    if evaluation_failed or status == STATUS_CANCELLED:
+        return False
+    return bool(attention is not None and attention.has_alert)
+
+
+def status_cube_color(
+    status: str,
+    attention: StateSupervisionAttention | None = None,
+    *,
+    evaluation_failed: bool = False,
+) -> str:
+    if evaluation_failed:
+        return STATUS_NEUTRAL_BG
+    if status == STATUS_CANCELLED:
+        return STATUS_NEUTRAL_BG
+    if cube_shows_alert(status, attention):
+        return STATUS_CUBE_ALERT_COLOR
+    return STATUS_CUBE_COLORS.get(status, STATUS_NEUTRAL_BG)
 
 
 def effective_start_at(record: StateSupervision) -> datetime | None:
@@ -199,27 +271,59 @@ class StateSupervisionTable(QTableWidget):
         self.clear_selection()
         return False
 
-    def load_records(self, records: list[StateSupervision]) -> None:
+    def load_records(
+        self,
+        records: list[StateSupervision],
+        *,
+        attentions: dict[int, StateSupervisionAttention] | None = None,
+        attention_error: bool = False,
+    ) -> None:
+        summaries = attentions or {}
         with sorting_paused(self):
             self.setRowCount(0)
             self.setRowCount(len(records))
             for row, record in enumerate(records):
-                self._fill_row(row, record)
+                self._fill_row(
+                    row,
+                    record,
+                    attention=summaries.get(int(record.id)) if record.id is not None else None,
+                    attention_error=attention_error,
+                )
 
-    def _fill_row(self, row: int, record: StateSupervision) -> None:
+    def _fill_row(
+        self,
+        row: int,
+        record: StateSupervision,
+        *,
+        attention: StateSupervisionAttention | None = None,
+        attention_error: bool = False,
+    ) -> None:
         record_id = int(record.id)
         status = str(record.status or "")
+        show_alert = cube_shows_alert(
+            status, attention, evaluation_failed=attention_error
+        )
         status_item = create_typed_item(
             "",
             typed_status(
-                _status_order(status),
+                _status_sort_order(status, show_alert),
                 label=STATE_SUPERVISION_STATUS_LABELS.get(status, status),
             ),
             stable_id=record_id,
         )
         status_item.setData(_ROLE_ID, record_id)
-        status_item.setBackground(QColor(STATUS_CUBE_COLORS.get(status, STATUS_NEUTRAL_BG)))
-        status_item.setToolTip(status_cube_tooltip(status))
+        status_item.setBackground(
+            QColor(
+                status_cube_color(
+                    status, attention, evaluation_failed=attention_error
+                )
+            )
+        )
+        status_item.setToolTip(
+            status_cube_tooltip(
+                status, attention, evaluation_failed=attention_error
+            )
+        )
 
         authority = display_or_dash(record.authority_name)
         authority_item = create_typed_item(
@@ -295,3 +399,10 @@ def _status_order(status: str) -> int:
         return STATE_SUPERVISION_STATUS_ORDER.index(status)
     except ValueError:
         return len(STATE_SUPERVISION_STATUS_ORDER)
+
+
+def _status_sort_order(status: str, show_alert: bool) -> int:
+    workflow = _status_order(status)
+    if show_alert:
+        return workflow
+    return _STATUS_SORT_NON_ALERT + workflow
