@@ -55,6 +55,7 @@ with patch.object(Path, "home", return_value=_TMP):
         COL_ENDED,
         COL_RESULT,
         COL_STATUS,
+        GROUP_ATTACHMENTS,
         GROUP_COMPLETION_CLOSE,
         GROUP_OBJECTIONS,
         GROUP_PROTOCOL,
@@ -154,10 +155,19 @@ class StateSupervisionConclusionUi3b1TestCase(unittest.TestCase):
         groups = [box.title() for box in page.findChildren(QGroupBox)]
         self.assertEqual(
             groups,
-            [GROUP_RESULT, GROUP_PROTOCOL, GROUP_OBJECTIONS, GROUP_COMPLETION_CLOSE],
+            [
+                GROUP_RESULT,
+                GROUP_PROTOCOL,
+                GROUP_OBJECTIONS,
+                GROUP_COMPLETION_CLOSE,
+                GROUP_ATTACHMENTS,
+            ],
         )
-        self.assertEqual(len(page.findChildren(QTableWidget)), 0)
-        self.assertEqual([btn.text() for btn in page.findChildren(QPushButton)], [])
+        self.assertEqual(len(page.findChildren(QTableWidget)), 1)
+        self.assertEqual(
+            [btn.text() for btn in page.findChildren(QPushButton)],
+            ["Přidat přílohy", "Otevřít", "Odebrat"],
+        )
         self.assertIsInstance(dialog.result_combo, SearchComboBox)
         self.assertTrue(dialog.result_combo.isEditable())
         combo_values = [

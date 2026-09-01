@@ -1255,6 +1255,29 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         header.setSectionResizeMode(COL_PARTICIPANT_CONTACT, QHeaderView.Interactive)
         header.setSectionResizeMode(COL_PARTICIPANT_NOTE, QHeaderView.Stretch)
 
+    elif profile == "state_supervision_attachments":
+        from moduly.statni_dozor.constants import (
+            COL_ATTACHMENT_NAME,
+            COL_ATTACHMENT_SIZE,
+            COL_ATTACHMENT_STATUS,
+            COL_ATTACHMENT_TYPE,
+        )
+
+        table.setWordWrap(False)
+        table.setTextElideMode(Qt.TextElideMode.ElideRight)
+        widths = {
+            COL_ATTACHMENT_NAME: 260,
+            COL_ATTACHMENT_TYPE: 70,
+            COL_ATTACHMENT_SIZE: 90,
+            COL_ATTACHMENT_STATUS: 120,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        header.setSectionResizeMode(COL_ATTACHMENT_TYPE, QHeaderView.Fixed)
+        header.setSectionResizeMode(COL_ATTACHMENT_SIZE, QHeaderView.Fixed)
+        header.setSectionResizeMode(COL_ATTACHMENT_STATUS, QHeaderView.Interactive)
+        header.setSectionResizeMode(COL_ATTACHMENT_NAME, QHeaderView.Stretch)
+
     table.verticalHeader().setVisible(False)
     if profile not in ("controls_year_matrix", "yearly_plan"):
         table.setAlternatingRowColors(True)

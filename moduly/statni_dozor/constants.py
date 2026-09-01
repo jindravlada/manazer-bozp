@@ -429,3 +429,39 @@ PARTICIPANT_COLUMN_HEADERS = [
     "Kontakt",
     "Poznámka",
 ]
+
+# Přílohy spisu (STATE-SUPERVISION-ATTACHMENTS-UI-4A3)
+GROUP_ATTACHMENTS = "Přílohy spisu"
+ATTACHMENTS_HINT = (
+    "Zde lze uložit dokumenty k celému průběhu kontroly, například oznámení, "
+    "plnou moc, předané podklady, protokol, námitky nebo doklady o splnění opatření."
+)
+EMPTY_ATTACHMENTS = "Zatím nejsou evidovány žádné přílohy spisu."
+ACTION_ADD_ATTACHMENTS = "Přidat přílohy"
+ACTION_OPEN = "Otevřít"
+ACTION_RESTORE = "Vrátit"
+ATTACHMENT_STATUS_SAVED = "Uloženo"
+ATTACHMENT_STATUS_NEW = "Nová příloha"
+ATTACHMENT_STATUS_REMOVE = "K odebrání"
+ATTACHMENT_FILE_MISSING = "Soubor chybí"
+ATTACHMENT_DUPLICATE_ONE = "Stejný soubor už je ve frontě příloh."
+ATTACHMENT_DUPLICATE_MANY = "{count} souborů nebylo přidáno, protože už ve frontě jsou."
+ATTACHMENT_FILE_FILTER = (
+    "Běžné dokumenty (*.pdf *.odt *.doc *.docx *.xls *.xlsx "
+    "*.png *.jpg *.jpeg *.webp *.txt *.zfo);;"
+    "Všechny soubory (*.*)"
+)
+ATTACHMENT_OPEN_TITLE = "Přílohy spisu"
+ATTACHMENT_OPEN_ERROR = "Soubor přílohy se nepodařilo otevřít."
+
+COL_ATTACHMENT_NAME = 0
+COL_ATTACHMENT_TYPE = 1
+COL_ATTACHMENT_SIZE = 2
+COL_ATTACHMENT_STATUS = 3
+
+ATTACHMENT_COLUMN_HEADERS = [
+    "Název souboru",
+    "Typ",
+    "Velikost",
+    "Stav",
+]

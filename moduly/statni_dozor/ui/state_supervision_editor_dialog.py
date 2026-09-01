@@ -30,6 +30,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.models.attachment_staging import (
+    AttachmentStagingError,
+    AttachmentStagingState,
+)
+from core.services.attachment_service import attachment_service
 from core.widgets.dialog_utils import (
     configure_edit_action_button,
     configure_form_tab_navigation,
@@ -72,7 +77,9 @@ from moduly.statni_dozor.constants import (
     EMPTY_TIMELINE,
     EMPTY_VALUE,
     ENDED_BEFORE_STARTED_MESSAGE,
+    ENTITY_STATE_SUPERVISION,
     GROUP_ACTUAL_COURSE,
+    GROUP_ATTACHMENTS,
     GROUP_COMPLETION_CLOSE,
     GROUP_INFORMING,
     GROUP_INITIAL_INFORMATION,
@@ -167,6 +174,9 @@ from moduly.statni_dozor.sluzby.state_supervision_service import (
 )
 from moduly.statni_dozor.sluzby.state_supervision_timeline_item_service import (
     state_supervision_timeline_item_service,
+)
+from moduly.statni_dozor.ui.state_supervision_attachment_staging_widget import (
+    StateSupervisionAttachmentStagingWidget,
 )
 from moduly.statni_dozor.ui.state_supervision_table import (
     display_or_dash,
@@ -287,6 +297,7 @@ class StateSupervisionEditorDialog(QDialog):
         self._document_drafts: list[StateSupervisionRequiredDocumentDraft] = []
         self._timeline_drafts: list[StateSupervisionTimelineItemDraft] = []
         self._participant_drafts: list[StateSupervisionParticipantDraft] = []
+        self._attachment_staging = AttachmentStagingState()
 
         if supervision_id is not None:
             self._record = state_supervision_service.get_supervision(supervision_id)
@@ -331,11 +342,13 @@ class StateSupervisionEditorDialog(QDialog):
             self._load_documents(int(self._record.id))
             self._load_timeline(int(self._record.id))
             self._load_participants(int(self._record.id))
+            self._load_attachments(int(self._record.id))
         else:
             self._set_combo_data(self.status_combo, DEFAULT_STATUS)
             self._refresh_documents_table()
             self._refresh_timeline_table()
             self._refresh_participants_table()
+            self._load_attachments(None)
 
         self._editor.capture_baseline()
 
@@ -721,8 +734,24 @@ class StateSupervisionEditorDialog(QDialog):
         layout.addWidget(protocol_box)
         layout.addWidget(objections_box)
         layout.addWidget(close_box)
-        layout.addStretch(1)
+        layout.addWidget(self._build_attachments_section(), 1)
         return page
+
+    def _build_attachments_section(self) -> QWidget:
+        box = QGroupBox(GROUP_ATTACHMENTS)
+        layout = QVBoxLayout(box)
+        self.attachments_widget = StateSupervisionAttachmentStagingWidget(
+            box,
+            staging=self._attachment_staging,
+            on_changed=self._on_attachments_changed,
+        )
+        layout.addWidget(self.attachments_widget, 1)
+        return box
+
+    def _on_attachments_changed(self) -> None:
+        editor = getattr(self, "_editor", None)
+        if editor is not None:
+            editor.refresh_dirty()
 
     def _build_footer(self) -> QHBoxLayout:
         footer = QHBoxLayout()
@@ -938,6 +967,7 @@ class StateSupervisionEditorDialog(QDialog):
             self._documents_snapshot(),
             self._timeline_snapshot(),
             self._participants_snapshot(),
+            self._attachment_staging.snapshot(),
         )
 
     def _focus_conclusion_datetime(self, widget: NullableDateTimeEdit) -> None:
@@ -988,6 +1018,7 @@ class StateSupervisionEditorDialog(QDialog):
                 documents=self._drafts_for_save(),
                 timeline_items=self._timeline_drafts_for_save(),
                 participants=self._participant_drafts_for_save(),
+                attachments=self._attachment_staging,
             )
             loaded = state_supervision_service.get_supervision(int(record.id))
             if loaded is None:
@@ -996,12 +1027,20 @@ class StateSupervisionEditorDialog(QDialog):
             self._load_documents(int(loaded.id))
             self._load_timeline(int(loaded.id))
             self._load_participants(int(loaded.id))
+            self._attachment_staging = AttachmentStagingState()
+            self.attachments_widget.bind_staging(self._attachment_staging)
+            self._load_attachments(int(loaded.id))
             self._persisted = True
             self.setWindowTitle(DIALOG_TITLE_EDIT)
             return True
         except StateSupervisionError as error:
             self._supervision_id = previous_id
             logger.exception("Uložení kontroly státního dozoru selhalo.")
+            QMessageBox.warning(self, self.windowTitle(), str(error))
+            return False
+        except AttachmentStagingError as error:
+            self._supervision_id = previous_id
+            logger.exception("Uložení příloh spisu státního dozoru selhalo.")
             QMessageBox.warning(self, self.windowTitle(), str(error))
             return False
         except Exception:
@@ -1437,6 +1476,15 @@ class StateSupervisionEditorDialog(QDialog):
             )
         self._participant_drafts = loaded
         self._refresh_participants_table()
+
+    def _load_attachments(self, supervision_id: int | None) -> None:
+        if not supervision_id:
+            self.attachments_widget.set_existing([])
+            return
+        rows = attachment_service.get_for_entity(
+            ENTITY_STATE_SUPERVISION, int(supervision_id)
+        )
+        self.attachments_widget.set_existing(rows)
 
     def _refresh_participants_table(self, *, select_key: str | None = None) -> None:
         active = self._active_participants()

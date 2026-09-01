@@ -588,7 +588,7 @@ class AttachmentStagingRegressionGuardTests(_HomeMixin):
         editor = inspect.getsource(StateSupervisionEditorDialog)
         self.assertEqual(editor.count("self.tabs.addTab("), 4)
         self.assertNotIn("prepare_attachment_staging", editor)
-        self.assertNotIn("AttachmentStagingState", editor)
+        self.assertNotIn("AttachmentWidget", editor)
 
     def test_external_audits_keep_own_staging(self) -> None:
         from moduly.externi_audity.sluzby import external_audit_draft
