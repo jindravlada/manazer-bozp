@@ -389,3 +389,43 @@ PARTICIPANT_SOURCE_TYPES = frozenset(
         PARTICIPANT_SOURCE_THP_WORKER,
     }
 )
+
+GROUP_PARTICIPANTS = "Účastníci kontroly"
+EMPTY_PARTICIPANTS = "Zatím nejsou evidováni žádní účastníci kontroly."
+DIALOG_PARTICIPANT_NEW = "Nový účastník kontroly"
+DIALOG_PARTICIPANT_EDIT = "Účastník kontroly"
+PARTICIPANT_NAME_REQUIRED_MESSAGE = "Není vyplněno jméno účastníka."
+PARTICIPANT_IDENTITY_CONFLICT_MESSAGE = (
+    "Nelze současně použít osobu z evidence a jiné ručně zadané jméno."
+)
+
+LABEL_PARTICIPANT_ROLE = "Role při kontrole"
+LABEL_PARTICIPANT_CATALOG = "Osoba z evidence"
+LABEL_PARTICIPANT_EXTERNAL_NAME = "Jméno externí osoby"
+LABEL_PARTICIPANT_ORGANIZATION = "Organizace"
+LABEL_PARTICIPANT_CONTACT = "Kontakt"
+LABEL_PARTICIPANT_PLANNED = "Plánovaná účast"
+LABEL_PARTICIPANT_ATTENDANCE = "Skutečná účast"
+LABEL_PARTICIPANT_NOTE = "Poznámka"
+
+ATTENDANCE_UNEVALUATED_LABEL = "Nevyhodnoceno"
+PLANNED_YES_LABEL = "Ano"
+PLANNED_NO_LABEL = "Ne"
+
+COL_PARTICIPANT_ROLE = 0
+COL_PARTICIPANT_NAME = 1
+COL_PARTICIPANT_ORGANIZATION = 2
+COL_PARTICIPANT_PLANNED = 3
+COL_PARTICIPANT_ATTENDANCE = 4
+COL_PARTICIPANT_CONTACT = 5
+COL_PARTICIPANT_NOTE = 6
+
+PARTICIPANT_COLUMN_HEADERS = [
+    "Role",
+    "Jméno",
+    "Organizace",
+    "Plánovaná účast",
+    "Skutečná účast",
+    "Kontakt",
+    "Poznámka",
+]

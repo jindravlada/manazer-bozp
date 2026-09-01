@@ -320,22 +320,27 @@ class StateSupervisionService:
         fields: dict[str, Any],
         documents: Sequence[Any] | KeepExisting = KEEP_EXISTING,
         timeline_items: Sequence[Any] | KeepExisting = KEEP_EXISTING,
+        participants: Sequence[Any] | KeepExisting = KEEP_EXISTING,
         session: Session | None = None,
     ) -> tuple[StateSupervision, list, list]:
-        """Uloží kontrolu, doklady a průběh v jedné transakci.
+        """Uloží kontrolu, doklady, průběh a účastníky v jedné transakci.
 
         ``KEEP_EXISTING`` = kolekce nebyla poskytnuta, existující řádky
         se nemění. Prázdný seznam = deaktivovat všechny aktivní položky
         dané kolekce. ``None`` se nepoužívá.
 
         Jedna session: create/update rodiče, flush ID, dávkový upsert
-        dokladů, dávkový upsert průběhu, jeden commit. Při chybě rollback.
+        dokladů, dávkový upsert průběhu, dávkový upsert účastníků,
+        jeden commit. Při chybě rollback.
         """
         from moduly.statni_dozor.modely.state_supervision_required_document import (
             StateSupervisionRequiredDocument,
         )
         from moduly.statni_dozor.modely.state_supervision_timeline_item import (
             StateSupervisionTimelineItem,
+        )
+        from moduly.statni_dozor.sluzby.state_supervision_participant_service import (
+            state_supervision_participant_service,
         )
         from moduly.statni_dozor.sluzby.state_supervision_required_document_service import (
             state_supervision_required_document_service,
@@ -347,8 +352,10 @@ class StateSupervisionService:
         payload = dict(fields)
         save_documents = documents is not KEEP_EXISTING
         save_timeline = timeline_items is not KEEP_EXISTING
+        save_participants = participants is not KEEP_EXISTING
         document_drafts = list(documents) if save_documents else []
         timeline_drafts = list(timeline_items) if save_timeline else []
+        participant_drafts = list(participants) if save_participants else []
         with self.repository.session(session) as (sess, owns):
             if supervision_id is None:
                 record = self.create_supervision(session=sess, **payload)
@@ -381,6 +388,14 @@ class StateSupervisionService:
                         deactivate_omitted=True,
                     )
                 )
+            if save_participants:
+                state_supervision_participant_service.save_participant_batch(
+                    int(record.id),
+                    participant_drafts,
+                    session=sess,
+                    replace_orders=True,
+                    deactivate_omitted=True,
+                )
             if owns:
                 sess.commit()
                 sess.refresh(record)
@@ -406,12 +421,13 @@ class StateSupervisionService:
         documents: Sequence[Any],
         session: Session | None = None,
     ) -> tuple[StateSupervision, list]:
-        """Kompatibilní wrapper: uloží kontrolu a doklady, průběh nemění."""
+        """Kompatibilní wrapper: uloží kontrolu a doklady, průběh a účastníky nemění."""
         record, stored_docs, _timeline = self.save_supervision_bundle(
             supervision_id=supervision_id,
             fields=fields,
             documents=documents,
             timeline_items=KEEP_EXISTING,
+            participants=KEEP_EXISTING,
             session=session,
         )
         return record, stored_docs

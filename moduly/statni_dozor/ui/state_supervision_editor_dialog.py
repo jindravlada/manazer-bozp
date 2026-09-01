@@ -62,10 +62,13 @@ from moduly.statni_dozor.constants import (
     DEFAULT_STATUS,
     DIALOG_TITLE_EDIT,
     DIALOG_TITLE_NEW,
+    ATTENDANCE_UNEVALUATED_LABEL,
     COL_DOCUMENT_TITLE,
+    COL_PARTICIPANT_ROLE,
     COL_TIMELINE_TITLE,
     DOCUMENT_COLUMN_HEADERS,
     EMPTY_DOCUMENTS,
+    EMPTY_PARTICIPANTS,
     EMPTY_TIMELINE,
     EMPTY_VALUE,
     ENDED_BEFORE_STARTED_MESSAGE,
@@ -75,6 +78,7 @@ from moduly.statni_dozor.constants import (
     GROUP_INITIAL_INFORMATION,
     GROUP_NOTIFICATION,
     GROUP_OBJECTIONS,
+    GROUP_PARTICIPANTS,
     GROUP_PLANNED_START,
     GROUP_PREPARATION,
     GROUP_PROTOCOL,
@@ -115,6 +119,12 @@ from moduly.statni_dozor.constants import (
     LABEL_WORKPLACE,
     NOTIFICATION_METHOD_EMPTY_LABEL,
     OBJECTIONS_BEFORE_PROTOCOL_MESSAGE,
+    PARTICIPANT_ATTENDANCE_LABELS,
+    PARTICIPANT_COLUMN_HEADERS,
+    PARTICIPANT_ROLE_INSPECTOR,
+    PARTICIPANT_ROLE_LABELS,
+    PLANNED_NO_LABEL,
+    PLANNED_YES_LABEL,
     RESULT_SUGGESTIONS,
     SAVE_ERROR_MESSAGE,
     STATE_SUPERVISION_NOTIFICATION_METHOD_EDITOR_LABELS,
@@ -133,6 +143,10 @@ from moduly.statni_dozor.constants import (
     TOOLTIP_SUBJECT,
 )
 from moduly.statni_dozor.modely.state_supervision import StateSupervision
+from moduly.statni_dozor.modely.state_supervision_participant_draft import (
+    StateSupervisionParticipantDraft,
+    new_participant_client_key,
+)
 from moduly.statni_dozor.modely.state_supervision_required_document_draft import (
     StateSupervisionRequiredDocumentDraft,
     new_required_document_client_key,
@@ -140,6 +154,9 @@ from moduly.statni_dozor.modely.state_supervision_required_document_draft import
 from moduly.statni_dozor.modely.state_supervision_timeline_item_draft import (
     StateSupervisionTimelineItemDraft,
     new_timeline_item_client_key,
+)
+from moduly.statni_dozor.sluzby.state_supervision_participant_service import (
+    state_supervision_participant_service,
 )
 from moduly.statni_dozor.sluzby.state_supervision_required_document_service import (
     state_supervision_required_document_service,
@@ -158,6 +175,7 @@ from moduly.statni_dozor.ui.state_supervision_table import (
 
 _ROLE_DOCUMENT_KEY = Qt.ItemDataRole.UserRole
 _ROLE_TIMELINE_KEY = Qt.ItemDataRole.UserRole
+_ROLE_PARTICIPANT_KEY = Qt.ItemDataRole.UserRole
 
 logger = logging.getLogger(__name__)
 
@@ -241,6 +259,22 @@ def _normalize_datetime(value: datetime | None) -> datetime | None:
     return value.replace(microsecond=0)
 
 
+def _participant_role_label(role: str | None) -> str:
+    if not role:
+        return EMPTY_VALUE
+    return PARTICIPANT_ROLE_LABELS.get(role, role)
+
+
+def _participant_planned_label(planned: bool) -> str:
+    return PLANNED_YES_LABEL if planned else PLANNED_NO_LABEL
+
+
+def _participant_attendance_label(status: str | None) -> str:
+    if not status:
+        return ATTENDANCE_UNEVALUATED_LABEL
+    return PARTICIPANT_ATTENDANCE_LABELS.get(status, status)
+
+
 class StateSupervisionEditorDialog(QDialog):
     def __init__(self, parent=None, *, supervision_id: int | None = None):
         super().__init__(parent)
@@ -252,6 +286,7 @@ class StateSupervisionEditorDialog(QDialog):
         self._loaded_address_snapshot = ""
         self._document_drafts: list[StateSupervisionRequiredDocumentDraft] = []
         self._timeline_drafts: list[StateSupervisionTimelineItemDraft] = []
+        self._participant_drafts: list[StateSupervisionParticipantDraft] = []
 
         if supervision_id is not None:
             self._record = state_supervision_service.get_supervision(supervision_id)
@@ -295,10 +330,12 @@ class StateSupervisionEditorDialog(QDialog):
             self._apply_record(self._record)
             self._load_documents(int(self._record.id))
             self._load_timeline(int(self._record.id))
+            self._load_participants(int(self._record.id))
         else:
             self._set_combo_data(self.status_combo, DEFAULT_STATUS)
             self._refresh_documents_table()
             self._refresh_timeline_table()
+            self._refresh_participants_table()
 
         self._editor.capture_baseline()
 
@@ -401,8 +438,74 @@ class StateSupervisionEditorDialog(QDialog):
         layout.addWidget(actual)
         layout.addWidget(informing)
         layout.addWidget(representation)
+        layout.addWidget(self._build_participants_section())
         layout.addStretch(1)
         return page
+
+    def _build_participants_section(self) -> QWidget:
+        box = QGroupBox(GROUP_PARTICIPANTS)
+        layout = QVBoxLayout(box)
+
+        toolbar = QHBoxLayout()
+        self.add_participant_btn = QPushButton(ACTION_ADD)
+        self.edit_participant_btn = QPushButton(ACTION_EDIT)
+        self.remove_participant_btn = QPushButton(ACTION_REMOVE)
+        self.move_participant_up_btn = QPushButton(ACTION_MOVE_UP)
+        self.move_participant_down_btn = QPushButton(ACTION_MOVE_DOWN)
+        configure_new_action_button(self.add_participant_btn)
+        configure_edit_action_button(self.edit_participant_btn)
+        for button in (
+            self.add_participant_btn,
+            self.edit_participant_btn,
+            self.remove_participant_btn,
+            self.move_participant_up_btn,
+            self.move_participant_down_btn,
+        ):
+            button.setAutoDefault(False)
+            button.setDefault(False)
+            toolbar.addWidget(button)
+        toolbar.addStretch(1)
+        layout.addLayout(toolbar)
+
+        self.participants_empty_label = QLabel(EMPTY_PARTICIPANTS)
+        self.participants_empty_label.setWordWrap(True)
+        self.participants_empty_label.setStyleSheet("color: #666;")
+        layout.addWidget(self.participants_empty_label)
+
+        self.participants_table = QTableWidget(0, len(PARTICIPANT_COLUMN_HEADERS))
+        self.participants_table.setHorizontalHeaderLabels(PARTICIPANT_COLUMN_HEADERS)
+        self.participants_table.verticalHeader().setVisible(False)
+        self.participants_table.setSelectionBehavior(
+            QAbstractItemView.SelectionBehavior.SelectRows
+        )
+        self.participants_table.setSelectionMode(
+            QAbstractItemView.SelectionMode.SingleSelection
+        )
+        self.participants_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.participants_table.setSortingEnabled(False)
+        self.participants_table.setTextElideMode(Qt.TextElideMode.ElideRight)
+        self.participants_table.setMinimumHeight(140)
+        self.participants_table.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
+        )
+        configure_table_columns(self.participants_table, "state_supervision_participants")
+        layout.addWidget(self.participants_table, 1)
+
+        self.add_participant_btn.clicked.connect(self._add_participant)
+        self.edit_participant_btn.clicked.connect(self._edit_selected_participant)
+        self.remove_participant_btn.clicked.connect(self._remove_selected_participant)
+        self.move_participant_up_btn.clicked.connect(
+            lambda: self._move_selected_participant(-1)
+        )
+        self.move_participant_down_btn.clicked.connect(
+            lambda: self._move_selected_participant(1)
+        )
+        self.participants_table.doubleClicked.connect(self._edit_selected_participant)
+        self.participants_table.itemSelectionChanged.connect(
+            self._refresh_participant_actions
+        )
+        self._refresh_participant_actions()
+        return box
 
     def _build_subject_tab(self) -> QWidget:
         page = QWidget()
@@ -834,6 +937,7 @@ class StateSupervisionEditorDialog(QDialog):
         return tuple(data[key] for key in _EDITOR_FIELDS) + (
             self._documents_snapshot(),
             self._timeline_snapshot(),
+            self._participants_snapshot(),
         )
 
     def _focus_conclusion_datetime(self, widget: NullableDateTimeEdit) -> None:
@@ -883,6 +987,7 @@ class StateSupervisionEditorDialog(QDialog):
                 fields=payload,
                 documents=self._drafts_for_save(),
                 timeline_items=self._timeline_drafts_for_save(),
+                participants=self._participant_drafts_for_save(),
             )
             loaded = state_supervision_service.get_supervision(int(record.id))
             if loaded is None:
@@ -890,6 +995,7 @@ class StateSupervisionEditorDialog(QDialog):
             self._apply_record(loaded)
             self._load_documents(int(loaded.id))
             self._load_timeline(int(loaded.id))
+            self._load_participants(int(loaded.id))
             self._persisted = True
             self.setWindowTitle(DIALOG_TITLE_EDIT)
             return True
@@ -1270,6 +1376,202 @@ class StateSupervisionEditorDialog(QDialog):
         inactive = [item for item in self._timeline_drafts if not item.active]
         self._timeline_drafts = active + inactive
         self._refresh_timeline_table(select_key=key)
+        self._editor.refresh_dirty()
+
+    def _active_participants(self) -> list[StateSupervisionParticipantDraft]:
+        return [item for item in self._participant_drafts if item.active]
+
+    def _participants_snapshot(self) -> tuple:
+        rows = []
+        for item in self._participant_drafts:
+            rows.append(
+                (
+                    item.id,
+                    item.client_key,
+                    str(item.role or ""),
+                    item.source_type,
+                    item.source_id,
+                    str(item.name_snapshot or ""),
+                    item.organization_snapshot,
+                    item.contact_note,
+                    bool(item.planned),
+                    item.attendance_status,
+                    item.note,
+                    int(item.display_order or 0),
+                    bool(item.active),
+                )
+            )
+        return tuple(rows)
+
+    def _participant_drafts_for_save(self) -> list[StateSupervisionParticipantDraft]:
+        active = [
+            replace(item, display_order=index * 10)
+            for index, item in enumerate(self._active_participants())
+        ]
+        inactive = [item for item in self._participant_drafts if not item.active]
+        return active + inactive
+
+    def _load_participants(self, supervision_id: int) -> None:
+        records = state_supervision_participant_service.list_participants(
+            int(supervision_id),
+            include_inactive=False,
+        )
+        loaded: list[StateSupervisionParticipantDraft] = []
+        for record in records:
+            loaded.append(
+                StateSupervisionParticipantDraft(
+                    role=str(record.role or ""),
+                    name_snapshot=str(record.name_snapshot or ""),
+                    id=int(record.id),
+                    source_type=record.source_type,
+                    source_id=record.source_id,
+                    organization_snapshot=record.organization_snapshot,
+                    contact_note=record.contact_note,
+                    planned=bool(record.planned),
+                    attendance_status=record.attendance_status,
+                    note=record.note,
+                    display_order=int(record.display_order or 0),
+                    active=bool(record.active),
+                    client_key=f"db-{record.id}",
+                )
+            )
+        self._participant_drafts = loaded
+        self._refresh_participants_table()
+
+    def _refresh_participants_table(self, *, select_key: str | None = None) -> None:
+        active = self._active_participants()
+        self.participants_empty_label.setVisible(not active)
+        self.participants_table.setVisible(True)
+        self.participants_table.setRowCount(len(active))
+        for row, item in enumerate(active):
+            values = [
+                _participant_role_label(item.role),
+                display_or_dash(item.name_snapshot),
+                display_or_dash(item.organization_snapshot),
+                _participant_planned_label(bool(item.planned)),
+                _participant_attendance_label(item.attendance_status),
+                display_or_dash(item.contact_note),
+                display_or_dash(item.note),
+            ]
+            for column, text in enumerate(values):
+                cell = QTableWidgetItem(text)
+                cell.setFlags(cell.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                if column == COL_PARTICIPANT_ROLE:
+                    cell.setData(_ROLE_PARTICIPANT_KEY, item.client_key)
+                apply_cell_tooltip(cell, text if text != EMPTY_VALUE else "")
+                self.participants_table.setItem(row, column, cell)
+        configure_table_columns(
+            self.participants_table, "state_supervision_participants"
+        )
+        if select_key:
+            self._select_participant_key(select_key)
+        self._refresh_participant_actions()
+
+    def _selected_participant_key(self) -> str | None:
+        rows = self.participants_table.selectionModel().selectedRows()
+        if len(rows) != 1:
+            return None
+        item = self.participants_table.item(rows[0].row(), COL_PARTICIPANT_ROLE)
+        if item is None:
+            return None
+        key = item.data(_ROLE_PARTICIPANT_KEY)
+        return str(key) if key else None
+
+    def _select_participant_key(self, client_key: str) -> None:
+        for row in range(self.participants_table.rowCount()):
+            item = self.participants_table.item(row, COL_PARTICIPANT_ROLE)
+            if item is not None and item.data(_ROLE_PARTICIPANT_KEY) == client_key:
+                self.participants_table.selectRow(row)
+                return
+        self.participants_table.clearSelection()
+
+    def _participant_draft_by_key(
+        self, client_key: str | None
+    ) -> StateSupervisionParticipantDraft | None:
+        if not client_key:
+            return None
+        for item in self._participant_drafts:
+            if item.client_key == client_key:
+                return item
+        return None
+
+    def _refresh_participant_actions(self, *_args) -> None:
+        active = self._active_participants()
+        key = self._selected_participant_key()
+        has_one = key is not None
+        self.edit_participant_btn.setEnabled(has_one)
+        self.remove_participant_btn.setEnabled(has_one)
+        index = next((i for i, item in enumerate(active) if item.client_key == key), -1)
+        self.move_participant_up_btn.setEnabled(has_one and index > 0)
+        self.move_participant_down_btn.setEnabled(
+            has_one and 0 <= index < len(active) - 1
+        )
+
+    def _add_participant(self) -> None:
+        from moduly.statni_dozor.ui.state_supervision_participant_dialog import (
+            exec_participant_dialog,
+        )
+
+        active = self._active_participants()
+        next_order = max((item.display_order for item in active), default=-10) + 10
+        draft = StateSupervisionParticipantDraft(
+            role=PARTICIPANT_ROLE_INSPECTOR,
+            display_order=next_order,
+            client_key=new_participant_client_key(),
+        )
+        saved = exec_participant_dialog(self, draft=draft, is_new=True)
+        if saved is None:
+            return
+        self._participant_drafts.append(saved)
+        self._refresh_participants_table(select_key=saved.client_key)
+        self._editor.refresh_dirty()
+
+    def _edit_selected_participant(self) -> None:
+        from moduly.statni_dozor.ui.state_supervision_participant_dialog import (
+            exec_participant_dialog,
+        )
+
+        current = self._participant_draft_by_key(self._selected_participant_key())
+        if current is None:
+            return
+        saved = exec_participant_dialog(self, draft=replace(current), is_new=False)
+        if saved is None:
+            return
+        for index, item in enumerate(self._participant_drafts):
+            if item.client_key == current.client_key:
+                self._participant_drafts[index] = saved
+                break
+        self._refresh_participants_table(select_key=saved.client_key)
+        self._editor.refresh_dirty()
+
+    def _remove_selected_participant(self) -> None:
+        current = self._participant_draft_by_key(self._selected_participant_key())
+        if current is None:
+            return
+        if current.id is None:
+            self._participant_drafts = [
+                item
+                for item in self._participant_drafts
+                if item.client_key != current.client_key
+            ]
+        else:
+            current.active = False
+        self._refresh_participants_table()
+        self._editor.refresh_dirty()
+
+    def _move_selected_participant(self, delta: int) -> None:
+        key = self._selected_participant_key()
+        active = self._active_participants()
+        index = next((i for i, item in enumerate(active) if item.client_key == key), -1)
+        target = index + delta
+        if index < 0 or target < 0 or target >= len(active):
+            return
+        active[index], active[target] = active[target], active[index]
+        for order, item in enumerate(active):
+            item.display_order = order * 10
+        inactive = [item for item in self._participant_drafts if not item.active]
+        self._participant_drafts = active + inactive
+        self._refresh_participants_table(select_key=key)
         self._editor.refresh_dirty()
 
     def _save_and_close(self) -> None:

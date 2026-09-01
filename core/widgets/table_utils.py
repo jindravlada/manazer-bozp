@@ -1223,6 +1223,38 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         header.setSectionResizeMode(COL_DOCUMENT_TITLE, QHeaderView.Stretch)
         header.setSectionResizeMode(COL_DOCUMENT_NOTE, QHeaderView.Stretch)
 
+    elif profile == "state_supervision_participants":
+        from moduly.statni_dozor.constants import (
+            COL_PARTICIPANT_ATTENDANCE,
+            COL_PARTICIPANT_CONTACT,
+            COL_PARTICIPANT_NAME,
+            COL_PARTICIPANT_NOTE,
+            COL_PARTICIPANT_ORGANIZATION,
+            COL_PARTICIPANT_PLANNED,
+            COL_PARTICIPANT_ROLE,
+        )
+
+        table.setWordWrap(False)
+        table.setTextElideMode(Qt.TextElideMode.ElideRight)
+        widths = {
+            COL_PARTICIPANT_ROLE: 160,
+            COL_PARTICIPANT_NAME: 180,
+            COL_PARTICIPANT_ORGANIZATION: 140,
+            COL_PARTICIPANT_PLANNED: 110,
+            COL_PARTICIPANT_ATTENDANCE: 140,
+            COL_PARTICIPANT_CONTACT: 140,
+            COL_PARTICIPANT_NOTE: 180,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        header.setSectionResizeMode(COL_PARTICIPANT_PLANNED, QHeaderView.Fixed)
+        header.setSectionResizeMode(COL_PARTICIPANT_ATTENDANCE, QHeaderView.Fixed)
+        header.setSectionResizeMode(COL_PARTICIPANT_ROLE, QHeaderView.Interactive)
+        header.setSectionResizeMode(COL_PARTICIPANT_NAME, QHeaderView.Stretch)
+        header.setSectionResizeMode(COL_PARTICIPANT_ORGANIZATION, QHeaderView.Stretch)
+        header.setSectionResizeMode(COL_PARTICIPANT_CONTACT, QHeaderView.Interactive)
+        header.setSectionResizeMode(COL_PARTICIPANT_NOTE, QHeaderView.Stretch)
+
     table.verticalHeader().setVisible(False)
     if profile not in ("controls_year_matrix", "yearly_plan"):
         table.setAlternatingRowColors(True)
