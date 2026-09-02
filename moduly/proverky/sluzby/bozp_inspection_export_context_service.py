@@ -31,6 +31,12 @@ from core.shared.section_summary import uses_section_summary_notes_mode
 from core.shared.sluzby.control_activity_statistics_service import (
     control_activity_statistics_service,
 )
+from core.shared.sluzby.control_report_language import (
+    PRILEZITOST_FORMS,
+    ZAVADA_FORMS,
+    format_during_found_sentence,
+    format_feminine_found_clause,
+)
 from core.shared.sluzby.control_result_service import control_result_service
 from core.shared.sluzby.finding_service import finding_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
@@ -92,14 +98,6 @@ def _format_labeled_block(
 
 def _join_blocks(blocks: list[str]) -> str:
     return "\n\n".join(blocks)
-
-
-def _zavady_phrase(count: int) -> str:
-    if count == 1:
-        return "1 závada"
-    if 2 <= count <= 4:
-        return f"{count} závady"
-    return f"{count} závad"
 
 
 _OVERVIEW_RESULT_TITLES = {
@@ -512,25 +510,27 @@ class InspectionExportContext:
                 "na kontrolovaném pracovišti."
             )
 
-        detail_parts: list[str] = []
+        clauses: list[str] = []
         if stats.ratings_nevyhovuje:
-            detail_parts.append(_zavady_phrase(stats.ratings_nevyhovuje))
-        if stats.ratings_vyhovuje_s_doporucenim == 1:
-            detail_parts.append("1 příležitost ke zlepšení")
-        elif stats.ratings_vyhovuje_s_doporucenim > 1:
-            detail_parts.append(
-                f"{stats.ratings_vyhovuje_s_doporucenim} příležitosti ke zlepšení"
-            )
-
-        if detail_parts:
-            if len(detail_parts) == 2:
-                second_sentence = (
-                    f"Během prověrky byla zjištěna {detail_parts[0]} a {detail_parts[1]}. "
+            clauses.append(
+                format_feminine_found_clause(
+                    stats.ratings_nevyhovuje,
+                    **ZAVADA_FORMS,
                 )
-            else:
-                second_sentence = f"Během prověrky byla zjištěna {detail_parts[0]}. "
-        else:
-            second_sentence = "Během prověrky nebyla zjištěna významná zjištění. "
+            )
+        if stats.ratings_vyhovuje_s_doporucenim:
+            clauses.append(
+                format_feminine_found_clause(
+                    stats.ratings_vyhovuje_s_doporucenim,
+                    **PRILEZITOST_FORMS,
+                )
+            )
+        second_sentence = format_during_found_sentence(
+            during="Během prověrky",
+            clauses=clauses,
+            empty="Během prověrky nebyla zjištěna významná zjištění.",
+        )
+        second_sentence += " "
 
         if stats.ratings_nevyhovuje >= 3:
             second_sentence += "Bylo prokázáno systémové selhání v některých oblastech."
