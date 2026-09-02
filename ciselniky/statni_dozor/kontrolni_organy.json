@@ -1,0 +1,750 @@
+{
+  "schema_version": 1,
+  "catalog_version": "2026-09-02",
+  "verified_at": "2026-09-02",
+  "sources": [
+    {
+      "title": "Státní úřad inspekce práce – kontakty a oblastní inspektoráty",
+      "url": "https://suip.gov.cz/kontakty-1"
+    },
+    {
+      "title": "Oblastní inspektorát práce pro hlavní město Prahu – povinně zveřejňované informace",
+      "url": "https://suip.gov.cz/web/oip03/povinne-zverejnovane-informace"
+    },
+    {
+      "title": "Oblastní inspektorát práce pro Středočeský kraj – povinně zveřejňované informace",
+      "url": "https://suip.gov.cz/web/oip04/povinne-zverejnovane-informace"
+    },
+    {
+      "title": "Oblastní inspektorát práce pro Jihočeský kraj a Vysočinu – povinně zveřejňované informace",
+      "url": "https://suip.gov.cz/web/oip05/povinne-zverejnovane-informace"
+    },
+    {
+      "title": "Oblastní inspektorát práce pro Plzeňský kraj a Karlovarský kraj – povinně zveřejňované informace",
+      "url": "https://suip.gov.cz/web/oip06/povinne-zverejnovane-informace"
+    },
+    {
+      "title": "Oblastní inspektorát práce pro Ústecký kraj a Liberecký kraj – povinně zveřejňované informace",
+      "url": "https://suip.gov.cz/web/oip07/povinne-zverejnovane-informace"
+    },
+    {
+      "title": "Oblastní inspektorát práce pro Královéhradecký kraj a Pardubický kraj – povinně zveřejňované informace",
+      "url": "https://suip.gov.cz/web/oip08/povinne-zverejnovane-informace"
+    },
+    {
+      "title": "Oblastní inspektorát práce pro Jihomoravský kraj a Zlínský kraj – povinně zveřejňované informace",
+      "url": "https://suip.gov.cz/web/oip09/povinne-zverejnovane-informace"
+    },
+    {
+      "title": "Oblastní inspektorát práce pro Moravskoslezský kraj a Olomoucký kraj – povinně zveřejňované informace",
+      "url": "https://suip.gov.cz/web/oip10/povinne-zverejnovane-informace"
+    },
+    {
+      "title": "Český báňský úřad – obvodní báňské úřady",
+      "url": "https://cbu.gov.cz/obu/praha"
+    },
+    {
+      "title": "Vyhláška č. 394/2011 Sb., o sídlech obvodních báňských úřadů, ve znění vyhlášky č. 279/2023 Sb.",
+      "url": "https://www.zakonyprolidi.cz/cs/2023-279"
+    },
+    {
+      "title": "Ministerstvo zdravotnictví – Krajské hygienické stanice",
+      "url": "https://mzd.gov.cz/krajske-hygienicke-stanice/"
+    },
+    {
+      "title": "Hasičský záchranný sbor České republiky – krajská ředitelství",
+      "url": "https://hzscr.gov.cz/clanek/hlavni-predstavitele-na-centralni-a-krajske-urovni.aspx?q=Y2hudW09Mg%3D%3D"
+    },
+    {
+      "title": "HZS hlavního města Prahy – změna sídla od 1. 3. 2026",
+      "url": "https://hzscr.gov.cz/clanek/hzs-hlavniho-mesta-prahy-menu-kontakty-krajske-reditelstvi.aspx"
+    },
+    {
+      "title": "Drážní úřad – kontakty pracovišť Praha, Plzeň a Olomouc",
+      "url": "https://du.gov.cz/kontakty/"
+    }
+  ],
+  "authorities": [
+    {
+      "code": "suip",
+      "name": "Státní úřad inspekce práce",
+      "abbreviation": "SÚIP / OIP",
+      "website": "https://suip.gov.cz",
+      "display_order": 10,
+      "origin": "bundled",
+      "external_key": "authority:suip",
+      "source_url": "https://suip.gov.cz/kontakty-1",
+      "offices": [
+        {
+          "external_key": "suip:oip-praha",
+          "name": "Oblastní inspektorát práce pro hlavní město Prahu",
+          "abbreviation": "OIP Praha",
+          "address": "Kladenská 103/105, 160 00 Praha 6",
+          "phone": "+420 950 179 310",
+          "email": "praha@suip.gov.cz",
+          "website": "https://suip.gov.cz/web/oip03",
+          "territorial_scope": "Hlavní město Praha",
+          "office_kind": "regional",
+          "display_order": 10,
+          "origin": "bundled",
+          "source_url": "https://suip.gov.cz/web/oip03/povinne-zverejnovane-informace"
+        },
+        {
+          "external_key": "suip:oip-stredocesky",
+          "name": "Oblastní inspektorát práce pro Středočeský kraj",
+          "abbreviation": "OIP Střední Čechy",
+          "address": "náměstí Barikád 1122/2, 130 00 Praha 3",
+          "phone": "+420 950 179 400",
+          "email": "stredni.cechy@suip.gov.cz",
+          "website": "https://suip.gov.cz/web/oip04",
+          "territorial_scope": "Středočeský kraj",
+          "office_kind": "regional",
+          "display_order": 20,
+          "origin": "bundled",
+          "source_url": "https://suip.gov.cz/web/oip04/povinne-zverejnovane-informace"
+        },
+        {
+          "external_key": "suip:oip-jihocesky-vysocina",
+          "name": "Oblastní inspektorát práce pro Jihočeský kraj a Vysočinu",
+          "abbreviation": "OIP České Budějovice",
+          "address": "Vodní 1629/21, 370 06 České Budějovice",
+          "phone": "+420 950 179 511",
+          "email": "budejovice@suip.gov.cz",
+          "website": "https://suip.gov.cz/web/oip05",
+          "territorial_scope": "Jihočeský kraj a Kraj Vysočina",
+          "office_kind": "regional",
+          "display_order": 30,
+          "origin": "bundled",
+          "source_url": "https://suip.gov.cz/web/oip05/povinne-zverejnovane-informace"
+        },
+        {
+          "external_key": "suip:oip-plzensky-karlovarsky",
+          "name": "Oblastní inspektorát práce pro Plzeňský kraj a Karlovarský kraj",
+          "abbreviation": "OIP Plzeň",
+          "address": "Schwarzova 2617/27, 301 00 Plzeň",
+          "phone": "+420 950 179 611",
+          "email": "plzen@suip.gov.cz",
+          "website": "https://suip.gov.cz/web/oip06",
+          "territorial_scope": "Plzeňský kraj a Karlovarský kraj",
+          "office_kind": "regional",
+          "display_order": 40,
+          "origin": "bundled",
+          "source_url": "https://suip.gov.cz/web/oip06/povinne-zverejnovane-informace"
+        },
+        {
+          "external_key": "suip:oip-ustecky-liberecky",
+          "name": "Oblastní inspektorát práce pro Ústecký kraj a Liberecký kraj",
+          "abbreviation": "OIP Ústí nad Labem",
+          "address": "SNP 2720/21, 400 11 Ústí nad Labem",
+          "phone": "+420 950 179 711",
+          "email": "usti@suip.gov.cz",
+          "website": "https://suip.gov.cz/web/oip07",
+          "territorial_scope": "Ústecký kraj a Liberecký kraj",
+          "office_kind": "regional",
+          "display_order": 50,
+          "origin": "bundled",
+          "source_url": "https://suip.gov.cz/web/oip07/povinne-zverejnovane-informace"
+        },
+        {
+          "external_key": "suip:oip-kralovehradecky-pardubicky",
+          "name": "Oblastní inspektorát práce pro Královéhradecký kraj a Pardubický kraj",
+          "abbreviation": "OIP Hradec Králové",
+          "address": "Říční 1195/5, 500 02 Hradec Králové",
+          "phone": "+420 950 179 800",
+          "email": "hradec@suip.gov.cz",
+          "website": "https://suip.gov.cz/web/oip08",
+          "territorial_scope": "Královéhradecký kraj a Pardubický kraj",
+          "office_kind": "regional",
+          "display_order": 60,
+          "origin": "bundled",
+          "source_url": "https://suip.gov.cz/web/oip08/povinne-zverejnovane-informace"
+        },
+        {
+          "external_key": "suip:oip-jihomoravsky-zlinsky",
+          "name": "Oblastní inspektorát práce pro Jihomoravský kraj a Zlínský kraj",
+          "abbreviation": "OIP Brno",
+          "address": "Milady Horákové 1970/3, 602 00 Brno",
+          "phone": "+420 950 179 900",
+          "email": "brno@suip.gov.cz",
+          "website": "https://suip.gov.cz/web/oip09",
+          "territorial_scope": "Jihomoravský kraj a Zlínský kraj",
+          "office_kind": "regional",
+          "display_order": 70,
+          "origin": "bundled",
+          "source_url": "https://suip.gov.cz/web/oip09/povinne-zverejnovane-informace"
+        },
+        {
+          "external_key": "suip:oip-moravskoslezsky-olomoucky",
+          "name": "Oblastní inspektorát práce pro Moravskoslezský kraj a Olomoucký kraj",
+          "abbreviation": "OIP Ostrava",
+          "address": "Živičná 1123/2, 702 00 Ostrava",
+          "phone": "+420 950 179 211",
+          "email": "ostrava@suip.gov.cz",
+          "website": "https://suip.gov.cz/web/oip10",
+          "territorial_scope": "Moravskoslezský kraj a Olomoucký kraj",
+          "office_kind": "regional",
+          "display_order": 80,
+          "origin": "bundled",
+          "source_url": "https://suip.gov.cz/web/oip10/povinne-zverejnovane-informace"
+        }
+      ]
+    },
+    {
+      "code": "cbu",
+      "name": "Český báňský úřad",
+      "abbreviation": "ČBÚ / OBÚ",
+      "website": "https://cbu.gov.cz",
+      "display_order": 20,
+      "origin": "bundled",
+      "external_key": "authority:cbu",
+      "source_url": "https://cbu.gov.cz/cs/",
+      "offices": [
+        {
+          "external_key": "cbu:obu-praha",
+          "name": "Obvodní báňský úřad pro území Hlavního města Prahy a kraje Středočeského",
+          "abbreviation": "OBÚ Praha",
+          "address": "Kozí 4, 110 01 Praha 1 – Staré Město",
+          "phone": "221 775 372",
+          "email": "podatelna.obupraha@cbu.gov.cz",
+          "website": "https://cbu.gov.cz/obu/praha",
+          "territorial_scope": "Hlavní město Praha a Středočeský kraj",
+          "office_kind": "territorial",
+          "display_order": 10,
+          "origin": "bundled",
+          "source_url": "https://cbu.gov.cz/obu/praha"
+        },
+        {
+          "external_key": "cbu:obu-plzen",
+          "name": "Obvodní báňský úřad pro území krajů Plzeňského a Jihočeského",
+          "abbreviation": "OBÚ Plzeň",
+          "address": "Hřímalého 2730/11, 301 00 Plzeň",
+          "phone": "377 850 401",
+          "email": "podatelna.plzen@cbu.gov.cz",
+          "website": "https://cbu.gov.cz/obu/plzen",
+          "territorial_scope": "Plzeňský kraj a Jihočeský kraj",
+          "office_kind": "territorial",
+          "display_order": 20,
+          "origin": "bundled",
+          "source_url": "https://cbu.gov.cz/obu/plzen"
+        },
+        {
+          "external_key": "cbu:obu-sokolov",
+          "name": "Obvodní báňský úřad pro území kraje Karlovarského",
+          "abbreviation": "OBÚ Sokolov",
+          "address": "Boženy Němcové 1932, 356 01 Sokolov",
+          "phone": "352 350 740",
+          "email": "podatelna.sokolov@cbu.gov.cz",
+          "website": "https://cbu.gov.cz/obu/sokolov",
+          "territorial_scope": "Karlovarský kraj",
+          "office_kind": "territorial",
+          "display_order": 30,
+          "origin": "bundled",
+          "source_url": "https://cbu.gov.cz/obu/sokolov"
+        },
+        {
+          "external_key": "cbu:obu-most",
+          "name": "Obvodní báňský úřad pro území kraje Ústeckého",
+          "abbreviation": "OBÚ Most",
+          "address": "U Města Chersonu 1429, 434 01 Most",
+          "phone": "476 140 760",
+          "email": "podatelna.most@cbu.gov.cz",
+          "website": "https://cbu.gov.cz/obu/most",
+          "territorial_scope": "Ústecký kraj",
+          "office_kind": "territorial",
+          "display_order": 40,
+          "origin": "bundled",
+          "source_url": "https://cbu.gov.cz/obu/most"
+        },
+        {
+          "external_key": "cbu:obu-hradec-kralove",
+          "name": "Obvodní báňský úřad pro území krajů Královéhradeckého, Pardubického, Libereckého a Vysočina",
+          "abbreviation": "OBÚ Hradec Králové",
+          "address": "Wonkova 1142, 500 02 Hradec Králové",
+          "phone": "499 815 700",
+          "email": "podatelna.hkralove@cbu.gov.cz",
+          "website": "https://cbu.gov.cz/obu/hk",
+          "territorial_scope": "Královéhradecký kraj, Pardubický kraj, Liberecký kraj a Kraj Vysočina",
+          "office_kind": "territorial",
+          "display_order": 50,
+          "origin": "bundled",
+          "source_url": "https://cbu.gov.cz/obu/hk"
+        },
+        {
+          "external_key": "cbu:obu-brno",
+          "name": "Obvodní báňský úřad pro území krajů Jihomoravského a Zlínského",
+          "abbreviation": "OBÚ Brno",
+          "address": "Cejl 481/13, 601 42 Brno",
+          "phone": "545 567 022",
+          "email": "podatelna.brno@cbu.gov.cz",
+          "website": "https://cbu.gov.cz/obu/brno",
+          "territorial_scope": "Jihomoravský kraj a Zlínský kraj",
+          "office_kind": "territorial",
+          "display_order": 60,
+          "origin": "bundled",
+          "source_url": "https://cbu.gov.cz/obu/brno"
+        },
+        {
+          "external_key": "cbu:obu-ostrava",
+          "name": "Obvodní báňský úřad pro území krajů Moravskoslezského a Olomouckého",
+          "abbreviation": "OBÚ Ostrava",
+          "address": "Veleslavínova 18, 702 00 Ostrava",
+          "phone": "596 100 211",
+          "email": "podatelna.ostrava@cbu.gov.cz",
+          "website": "https://cbu.gov.cz/obu/ostrava",
+          "territorial_scope": "Moravskoslezský kraj a Olomoucký kraj",
+          "office_kind": "territorial",
+          "display_order": 70,
+          "origin": "bundled",
+          "source_url": "https://cbu.gov.cz/obu/ostrava"
+        }
+      ]
+    },
+    {
+      "code": "khs",
+      "name": "Krajské hygienické stanice",
+      "abbreviation": "KHS",
+      "website": "https://mzd.gov.cz/krajske-hygienicke-stanice/",
+      "display_order": 30,
+      "origin": "bundled",
+      "external_key": "authority:khs",
+      "source_url": "https://mzd.gov.cz/krajske-hygienicke-stanice/",
+      "offices": [
+        {
+          "external_key": "khs:praha",
+          "name": "Hygienická stanice hlavního města Prahy",
+          "abbreviation": "HS Praha",
+          "address": "Rytířská 12, 110 01 Praha 1",
+          "phone": "296 336 700",
+          "email": "podatelna@hygpraha.cz",
+          "website": "https://www.hygpraha.cz",
+          "territorial_scope": "Hlavní město Praha",
+          "office_kind": "regional",
+          "display_order": 10,
+          "origin": "bundled",
+          "source_url": "https://www.hygpraha.cz"
+        },
+        {
+          "external_key": "khs:stredocesky-kraj",
+          "name": "Krajská hygienická stanice Středočeského kraje se sídlem v Praze",
+          "abbreviation": "KHS Středočeského kraje",
+          "address": "Dittrichova 329/17, 128 01 Praha 2",
+          "phone": "211 154 600",
+          "email": "e-podatelna@khsstc.cz",
+          "website": "https://khsstc.cz",
+          "territorial_scope": "Středočeský kraj",
+          "office_kind": "regional",
+          "display_order": 20,
+          "origin": "bundled",
+          "source_url": "https://khsstc.cz"
+        },
+        {
+          "external_key": "khs:jihocesky-kraj",
+          "name": "Krajská hygienická stanice Jihočeského kraje se sídlem v Českých Budějovicích",
+          "abbreviation": "KHS Jihočeského kraje",
+          "address": "Na Sadech 25, 370 71 České Budějovice",
+          "phone": "387 712 111",
+          "email": "khscb@khscb.cz",
+          "website": "https://www.khscb.cz",
+          "territorial_scope": "Jihočeský kraj",
+          "office_kind": "regional",
+          "display_order": 30,
+          "origin": "bundled",
+          "source_url": "https://www.khscb.cz"
+        },
+        {
+          "external_key": "khs:plzensky-kraj",
+          "name": "Krajská hygienická stanice Plzeňského kraje se sídlem v Plzni",
+          "abbreviation": "KHS Plzeňského kraje",
+          "address": "Skrétova 15, 303 22 Plzeň",
+          "phone": "377 155 111",
+          "email": "podatelna@khsplzen.cz",
+          "website": "https://www.khsplzen.cz",
+          "territorial_scope": "Plzeňský kraj",
+          "office_kind": "regional",
+          "display_order": 40,
+          "origin": "bundled",
+          "source_url": "https://www.khsplzen.cz"
+        },
+        {
+          "external_key": "khs:karlovarsky-kraj",
+          "name": "Krajská hygienická stanice Karlovarského kraje se sídlem v Karlových Varech",
+          "abbreviation": "KHS Karlovarského kraje",
+          "address": "Závodní 94, 360 21 Karlovy Vary",
+          "phone": "355 328 311",
+          "email": "sekretariat@khskv.cz",
+          "website": "https://www.khskv.cz",
+          "territorial_scope": "Karlovarský kraj",
+          "office_kind": "regional",
+          "display_order": 50,
+          "origin": "bundled",
+          "source_url": "https://www.khskv.cz"
+        },
+        {
+          "external_key": "khs:ustecky-kraj",
+          "name": "Krajská hygienická stanice Ústeckého kraje se sídlem v Ústí nad Labem",
+          "abbreviation": "KHS Ústeckého kraje",
+          "address": "Moskevská 15, 400 01 Ústí nad Labem",
+          "phone": "477 755 111",
+          "email": "info@khsusti.cz",
+          "website": "https://www.khsusti.cz",
+          "territorial_scope": "Ústecký kraj",
+          "office_kind": "regional",
+          "display_order": 60,
+          "origin": "bundled",
+          "source_url": "https://www.khsusti.cz"
+        },
+        {
+          "external_key": "khs:liberecky-kraj",
+          "name": "Krajská hygienická stanice Libereckého kraje se sídlem v Liberci",
+          "abbreviation": "KHS Libereckého kraje",
+          "address": "Husova 64, 460 31 Liberec",
+          "phone": "485 253 111",
+          "email": "posta@khslbc.cz",
+          "website": "https://www.khslbc.cz",
+          "territorial_scope": "Liberecký kraj",
+          "office_kind": "regional",
+          "display_order": 70,
+          "origin": "bundled",
+          "source_url": "https://www.khslbc.cz"
+        },
+        {
+          "external_key": "khs:kralovehradecky-kraj",
+          "name": "Krajská hygienická stanice Královéhradeckého kraje se sídlem v Hradci Králové",
+          "abbreviation": "KHS Královéhradeckého kraje",
+          "address": "Habrmanova 19, 501 01 Hradec Králové",
+          "phone": "495 058 111",
+          "email": "khshk@khshk.cz",
+          "website": "https://www.khshk.cz",
+          "territorial_scope": "Královéhradecký kraj",
+          "office_kind": "regional",
+          "display_order": 80,
+          "origin": "bundled",
+          "source_url": "https://www.khshk.cz"
+        },
+        {
+          "external_key": "khs:pardubicky-kraj",
+          "name": "Krajská hygienická stanice Pardubického kraje se sídlem v Pardubicích",
+          "abbreviation": "KHS Pardubického kraje",
+          "address": "Mezi Mosty 1793, 530 03 Pardubice",
+          "phone": "466 052 338",
+          "email": "elektronicka.podatelna@khspce.cz",
+          "website": "https://www.khspce.cz",
+          "territorial_scope": "Pardubický kraj",
+          "office_kind": "regional",
+          "display_order": 90,
+          "origin": "bundled",
+          "source_url": "https://www.khspce.cz"
+        },
+        {
+          "external_key": "khs:kraj-vysocina",
+          "name": "Krajská hygienická stanice kraje Vysočina se sídlem v Jihlavě",
+          "abbreviation": "KHS kraje Vysočina",
+          "address": "Tolstého 1914/15, 586 01 Jihlava",
+          "phone": "567 564 551",
+          "email": "podatelna@khsjih.cz",
+          "website": "https://www.khsjih.cz",
+          "territorial_scope": "Kraj Vysočina",
+          "office_kind": "regional",
+          "display_order": 100,
+          "origin": "bundled",
+          "source_url": "https://www.khsjih.cz"
+        },
+        {
+          "external_key": "khs:jihomoravsky-kraj",
+          "name": "Krajská hygienická stanice Jihomoravského kraje se sídlem v Brně",
+          "abbreviation": "KHS Jihomoravského kraje",
+          "address": "Jeřábkova 4, 602 00 Brno",
+          "phone": "545 111 091",
+          "email": "podatelna@khsbrno.cz",
+          "website": "https://www.khsbrno.cz",
+          "territorial_scope": "Jihomoravský kraj",
+          "office_kind": "regional",
+          "display_order": 110,
+          "origin": "bundled",
+          "source_url": "https://www.khsbrno.cz"
+        },
+        {
+          "external_key": "khs:olomoucky-kraj",
+          "name": "Krajská hygienická stanice Olomouckého kraje se sídlem v Olomouci",
+          "abbreviation": "KHS Olomouckého kraje",
+          "address": "Wolkerova 74/6, 779 11 Olomouc",
+          "phone": "585 719 111",
+          "email": "epodatelna@khsolc.cz",
+          "website": "https://www.khsolc.cz",
+          "territorial_scope": "Olomoucký kraj",
+          "office_kind": "regional",
+          "display_order": 120,
+          "origin": "bundled",
+          "source_url": "https://www.khsolc.cz"
+        },
+        {
+          "external_key": "khs:moravskoslezsky-kraj",
+          "name": "Krajská hygienická stanice Moravskoslezského kraje se sídlem v Ostravě",
+          "abbreviation": "KHS Moravskoslezského kraje",
+          "address": "Na Bělidle 7, 702 00 Ostrava",
+          "phone": "595 138 111",
+          "email": "podatelna@khsova.cz",
+          "website": "https://www.khsova.cz",
+          "territorial_scope": "Moravskoslezský kraj",
+          "office_kind": "regional",
+          "display_order": 130,
+          "origin": "bundled",
+          "source_url": "https://www.khsova.cz"
+        },
+        {
+          "external_key": "khs:zlinsky-kraj",
+          "name": "Krajská hygienická stanice Zlínského kraje se sídlem ve Zlíně",
+          "abbreviation": "KHS Zlínského kraje",
+          "address": "Havlíčkovo nábř. 600, 760 01 Zlín",
+          "phone": "577 006 737",
+          "email": "podatelna@khszlin.cz",
+          "website": "https://www.khszlin.cz",
+          "territorial_scope": "Zlínský kraj",
+          "office_kind": "regional",
+          "display_order": 140,
+          "origin": "bundled",
+          "source_url": "https://www.khszlin.cz"
+        }
+      ]
+    },
+    {
+      "code": "hzs",
+      "name": "Hasičský záchranný sbor České republiky",
+      "abbreviation": "HZS",
+      "website": "https://hzscr.gov.cz",
+      "display_order": 40,
+      "origin": "bundled",
+      "external_key": "authority:hzs",
+      "source_url": "https://hzscr.gov.cz",
+      "offices": [
+        {
+          "external_key": "hzs:praha",
+          "name": "Hasičský záchranný sbor hlavního města Prahy",
+          "abbreviation": "HZS hl. m. Prahy",
+          "address": "Argentinská 1630/34a, 170 00 Praha 7 - Holešovice",
+          "phone": "950 850 011",
+          "email": "pha.podatelna@svc.hzscr.cz",
+          "website": "https://hzscr.gov.cz/clanek/hzs-hlavniho-mesta-prahy-menu-kontakty-krajske-reditelstvi.aspx",
+          "territorial_scope": "Hlavní město Praha",
+          "office_kind": "regional",
+          "display_order": 10,
+          "origin": "bundled",
+          "source_url": "https://hzscr.gov.cz/clanek/hzs-hlavniho-mesta-prahy-menu-kontakty-krajske-reditelstvi.aspx"
+        },
+        {
+          "external_key": "hzs:stredocesky-kraj",
+          "name": "Hasičský záchranný sbor Středočeského kraje",
+          "abbreviation": "HZS Středočeského kraje",
+          "address": "Jana Palacha 1970, 272 01 Kladno",
+          "phone": "950 870 011",
+          "website": "https://www.hzscr.cz/hzs-stredoceskeho-kraje.aspx",
+          "territorial_scope": "Středočeský kraj",
+          "office_kind": "regional",
+          "display_order": 20,
+          "origin": "bundled",
+          "source_url": "https://www.hzscr.cz/hzs-stredoceskeho-kraje.aspx"
+        },
+        {
+          "external_key": "hzs:jihocesky-kraj",
+          "name": "Hasičský záchranný sbor Jihočeského kraje",
+          "abbreviation": "HZS Jihočeského kraje",
+          "address": "Pražská 52b, 370 04 České Budějovice 3",
+          "phone": "950 230 111",
+          "website": "https://www.hzscr.cz/hzs-jihoceskeho-kraje.aspx",
+          "territorial_scope": "Jihočeský kraj",
+          "office_kind": "regional",
+          "display_order": 30,
+          "origin": "bundled",
+          "source_url": "https://www.hzscr.cz/hzs-jihoceskeho-kraje.aspx"
+        },
+        {
+          "external_key": "hzs:plzensky-kraj",
+          "name": "Hasičský záchranný sbor Plzeňského kraje",
+          "abbreviation": "HZS Plzeňského kraje",
+          "address": "Kaplířova 9, 320 68 Plzeň",
+          "phone": "950 330 211",
+          "website": "https://www.hzscr.cz/hzs-plzenskeho-kraje.aspx",
+          "territorial_scope": "Plzeňský kraj",
+          "office_kind": "regional",
+          "display_order": 40,
+          "origin": "bundled",
+          "source_url": "https://www.hzscr.cz/hzs-plzenskeho-kraje.aspx"
+        },
+        {
+          "external_key": "hzs:karlovarsky-kraj",
+          "name": "Hasičský záchranný sbor Karlovarského kraje",
+          "abbreviation": "HZS Karlovarského kraje",
+          "address": "Závodní 205, 360 06 Karlovy Vary",
+          "website": "https://www.hzscr.cz/hzs-karlovarskeho-kraje.aspx",
+          "territorial_scope": "Karlovarský kraj",
+          "office_kind": "regional",
+          "display_order": 50,
+          "origin": "bundled",
+          "source_url": "https://www.hzscr.cz/hzs-karlovarskeho-kraje.aspx"
+        },
+        {
+          "external_key": "hzs:ustecky-kraj",
+          "name": "Hasičský záchranný sbor Ústeckého kraje",
+          "abbreviation": "HZS Ústeckého kraje",
+          "address": "Horova 10, 400 01 Ústí nad Labem",
+          "website": "https://www.hzscr.cz/hzs-usteckeho-kraje.aspx",
+          "territorial_scope": "Ústecký kraj",
+          "office_kind": "regional",
+          "display_order": 60,
+          "origin": "bundled",
+          "source_url": "https://www.hzscr.cz/hzs-usteckeho-kraje.aspx"
+        },
+        {
+          "external_key": "hzs:liberecky-kraj",
+          "name": "Hasičský záchranný sbor Libereckého kraje",
+          "abbreviation": "HZS Libereckého kraje",
+          "address": "Barvířská 29/10, 460 01 Liberec 3",
+          "phone": "950 470 111",
+          "website": "https://www.hzscr.cz/hzs-libereckeho-kraje.aspx",
+          "territorial_scope": "Liberecký kraj",
+          "office_kind": "regional",
+          "display_order": 70,
+          "origin": "bundled",
+          "source_url": "https://www.hzscr.cz/hzs-libereckeho-kraje.aspx"
+        },
+        {
+          "external_key": "hzs:kralovehradecky-kraj",
+          "name": "Hasičský záchranný sbor Královéhradeckého kraje",
+          "abbreviation": "HZS Královéhradeckého kraje",
+          "address": "nábřeží U Přívozu 122, 500 03 Hradec Králové",
+          "website": "https://www.hzscr.cz/hzs-kralovehradeckeho-kraje.aspx",
+          "territorial_scope": "Královéhradecký kraj",
+          "office_kind": "regional",
+          "display_order": 80,
+          "origin": "bundled",
+          "source_url": "https://www.hzscr.cz/hzs-kralovehradeckeho-kraje.aspx"
+        },
+        {
+          "external_key": "hzs:pardubicky-kraj",
+          "name": "Hasičský záchranný sbor Pardubického kraje",
+          "abbreviation": "HZS Pardubického kraje",
+          "address": "Teplého 1526, 530 02 Pardubice",
+          "website": "https://www.hzscr.cz/hzs-pardubickeho-kraje.aspx",
+          "territorial_scope": "Pardubický kraj",
+          "office_kind": "regional",
+          "display_order": 90,
+          "origin": "bundled",
+          "source_url": "https://www.hzscr.cz/hzs-pardubickeho-kraje.aspx"
+        },
+        {
+          "external_key": "hzs:kraj-vysocina",
+          "name": "Hasičský záchranný sbor Kraje Vysočina",
+          "abbreviation": "HZS Kraje Vysočina",
+          "address": "Ke Skalce 32, 586 04 Jihlava",
+          "website": "https://www.hzscr.cz/hzs-kraje-vysocina.aspx",
+          "territorial_scope": "Kraj Vysočina",
+          "office_kind": "regional",
+          "display_order": 100,
+          "origin": "bundled",
+          "source_url": "https://www.hzscr.cz/hzs-kraje-vysocina.aspx"
+        },
+        {
+          "external_key": "hzs:jihomoravsky-kraj",
+          "name": "Hasičský záchranný sbor Jihomoravského kraje",
+          "abbreviation": "HZS Jihomoravského kraje",
+          "address": "Zubatého 1, 614 00 Brno",
+          "website": "https://www.hzscr.cz/hzs-jihomoravskeho-kraje.aspx",
+          "territorial_scope": "Jihomoravský kraj",
+          "office_kind": "regional",
+          "display_order": 110,
+          "origin": "bundled",
+          "source_url": "https://www.hzscr.cz/hzs-jihomoravskeho-kraje.aspx"
+        },
+        {
+          "external_key": "hzs:olomoucky-kraj",
+          "name": "Hasičský záchranný sbor Olomouckého kraje",
+          "abbreviation": "HZS Olomouckého kraje",
+          "address": "Schweitzerova 91, 779 00 Olomouc",
+          "phone": "950 770 011",
+          "website": "https://www.hzscr.cz/hzs-olomouckeho-kraje.aspx",
+          "territorial_scope": "Olomoucký kraj",
+          "office_kind": "regional",
+          "display_order": 120,
+          "origin": "bundled",
+          "source_url": "https://www.hzscr.cz/hzs-olomouckeho-kraje.aspx"
+        },
+        {
+          "external_key": "hzs:moravskoslezsky-kraj",
+          "name": "Hasičský záchranný sbor Moravskoslezského kraje",
+          "abbreviation": "HZS Moravskoslezského kraje",
+          "address": "Výškovická 40, 700 30 Ostrava - Zábřeh",
+          "phone": "950 730 311",
+          "website": "https://www.hzscr.cz/hzs-moravskoslezskeho-kraje.aspx",
+          "territorial_scope": "Moravskoslezský kraj",
+          "office_kind": "regional",
+          "display_order": 130,
+          "origin": "bundled",
+          "source_url": "https://www.hzscr.cz/hzs-moravskoslezskeho-kraje.aspx"
+        },
+        {
+          "external_key": "hzs:zlinsky-kraj",
+          "name": "Hasičský záchranný sbor Zlínského kraje",
+          "abbreviation": "HZS Zlínského kraje",
+          "address": "Přílucká 213, 760 01 Zlín",
+          "website": "https://www.hzscr.cz/hzs-zlinskeho-kraje.aspx",
+          "territorial_scope": "Zlínský kraj",
+          "office_kind": "regional",
+          "display_order": 140,
+          "origin": "bundled",
+          "source_url": "https://www.hzscr.cz/hzs-zlinskeho-kraje.aspx"
+        }
+      ]
+    },
+    {
+      "code": "du",
+      "name": "Drážní úřad",
+      "abbreviation": "DÚ",
+      "website": "https://du.gov.cz",
+      "display_order": 50,
+      "origin": "bundled",
+      "external_key": "authority:du",
+      "source_url": "https://du.gov.cz/kontakty/",
+      "offices": [
+        {
+          "external_key": "du:praha",
+          "name": "Drážní úřad – pracoviště Praha",
+          "abbreviation": "DÚ Praha",
+          "address": "Bělehradská 222/128, 120 00 Praha 2",
+          "phone": "226 523 368",
+          "email": "podatelna@du.gov.cz",
+          "website": "https://du.gov.cz/kontakty/",
+          "office_kind": "headquarters",
+          "display_order": 10,
+          "origin": "bundled",
+          "source_url": "https://du.gov.cz/kontakty/"
+        },
+        {
+          "external_key": "du:plzen",
+          "name": "Drážní úřad – pracoviště Plzeň",
+          "abbreviation": "DÚ Plzeň",
+          "address": "Škroupova 11, 301 36 Plzeň",
+          "phone": "972 524 098",
+          "email": "podatelna@du.gov.cz",
+          "website": "https://du.gov.cz/kontakty/",
+          "office_kind": "territorial",
+          "display_order": 20,
+          "origin": "bundled",
+          "source_url": "https://du.gov.cz/kontakty/"
+        },
+        {
+          "external_key": "du:olomouc",
+          "name": "Drážní úřad – pracoviště Olomouc",
+          "abbreviation": "DÚ Olomouc",
+          "address": "Nerudova 1, 779 00 Olomouc",
+          "phone": "972 741 315",
+          "email": "podatelna@du.gov.cz",
+          "website": "https://du.gov.cz/kontakty/",
+          "office_kind": "territorial",
+          "display_order": 30,
+          "origin": "bundled",
+          "source_url": "https://du.gov.cz/kontakty/"
+        }
+      ]
+    }
+  ]
+}

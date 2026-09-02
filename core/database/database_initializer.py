@@ -296,6 +296,19 @@ def initialize_database() -> None:
     _normalize_task_status_values()
     _normalize_meeting_status_values()
     _normalize_accident_legacy_values()
+    _ensure_control_authority_catalog()
+
+
+def _ensure_control_authority_catalog() -> None:
+    from moduly.statni_dozor.sluzby.control_authority_catalog_seed_service import (
+        ensure_control_authority_catalog,
+    )
+
+    if not _table_exists("control_authorities") or not _table_exists(
+        "control_authority_offices"
+    ):
+        return
+    ensure_control_authority_catalog()
 
 
 def _table_columns(table_name: str) -> set[str]:

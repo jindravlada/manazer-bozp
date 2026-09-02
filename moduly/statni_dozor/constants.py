@@ -667,3 +667,36 @@ OFFICE_NOT_FOUND_MESSAGE = "Příslušné pracoviště už není k dispozici."
 OFFICE_ACTIVE_UNDER_INACTIVE_AUTHORITY_MESSAGE = (
     "Aktivní příslušné pracoviště nelze evidovat u neaktivního kontrolního orgánu."
 )
+
+# Seed katalogu (STATE-SUPERVISION-AUTHORITY-CATALOG-SEED-8A1)
+AUTHORITY_CATALOG_SEED_RELATIVE_PATH = "ciselniky/statni_dozor/kontrolni_organy.json"
+AUTHORITY_CATALOG_SEED_SCHEMA_VERSION = 1
+AUTHORITY_CATALOG_SEED_STARTUP_MESSAGE = (
+    "Výchozí katalog kontrolních orgánů se nepodařilo načíst. "
+    "Aplikaci nelze spustit."
+)
+AUTHORITY_CATALOG_SEED_SCHEMA_INVALID_MESSAGE = (
+    "Výchozí katalog kontrolních orgánů má neznámou verzi schématu."
+)
+AUTHORITY_CATALOG_SEED_KEY_REQUIRED_MESSAGE = (
+    "Výchozí katalog kontrolních orgánů musí mít vyplněný technický klíč."
+)
+AUTHORITY_CATALOG_SEED_DUPLICATE_KEY_MESSAGE = (
+    "Výchozí katalog kontrolních orgánů obsahuje duplicitní technický klíč."
+)
+AUTHORITY_CATALOG_SEED_DUPLICATE_CODE_MESSAGE = (
+    "Výchozí katalog kontrolních orgánů obsahuje duplicitní kód orgánu."
+)
+AUTHORITY_CATALOG_SEED_ICO_FORBIDDEN_MESSAGE = (
+    "Výchozí katalog kontrolních orgánů nesmí obsahovat IČ."
+)
+AUTHORITY_CATALOG_SEED_URL_INVALID_MESSAGE = (
+    "Výchozí katalog kontrolních orgánů obsahuje URL s nepovoleným schématem."
+)
+AUTHORITY_CATALOG_SEED_ADDRESS_REQUIRED_MESSAGE = (
+    "Ve výchozím katalogu musí mít pracoviště vyplněnou adresu."
+)
+AUTHORITY_CATALOG_SEED_COLLISION_MESSAGE = (
+    "Výchozí katalog kontrolních orgánů nelze importovat, "
+    "protože technický klíč koliduje s existujícím záznamem."
+)

@@ -425,8 +425,7 @@ class StateSupervisionAuthorityCatalogCore8a0ServiceTestCase(unittest.TestCase):
             REQUIRED_AUTHORITY_INDEXES.issubset(_indexes(db, AUTHORITIES_TABLE))
         )
         self.assertTrue(REQUIRED_OFFICE_INDEXES.issubset(_indexes(db, OFFICES_TABLE)))
-        self.assertEqual(self.service.list_authorities(include_inactive=True), [])
-        self.assertEqual(self.service.list_offices(include_inactive=True), [])
+        # Seed 8A1 plní výchozí katalog; 8A0 ověřuje jen existenci schématu.
 
     def test_02_create_authority_minimal_and_unique_code(self) -> None:
         authority = self.service.create_authority(
