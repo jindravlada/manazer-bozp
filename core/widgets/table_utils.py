@@ -1278,6 +1278,61 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         header.setSectionResizeMode(COL_ATTACHMENT_STATUS, QHeaderView.Interactive)
         header.setSectionResizeMode(COL_ATTACHMENT_NAME, QHeaderView.Stretch)
 
+    elif profile == "state_supervision_timeline_items":
+        from moduly.statni_dozor.constants import (
+            COL_TIMELINE_NOTES,
+            COL_TIMELINE_OCCURRED,
+            COL_TIMELINE_PLACE,
+            COL_TIMELINE_TITLE,
+        )
+
+        table.setWordWrap(False)
+        table.setTextElideMode(Qt.TextElideMode.ElideRight)
+        widths = {
+            COL_TIMELINE_OCCURRED: 145,
+            COL_TIMELINE_TITLE: 265,
+            COL_TIMELINE_PLACE: 210,
+            COL_TIMELINE_NOTES: 200,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        header.setSectionResizeMode(COL_TIMELINE_OCCURRED, QHeaderView.Interactive)
+        header.setSectionResizeMode(COL_TIMELINE_TITLE, QHeaderView.Interactive)
+        header.setSectionResizeMode(COL_TIMELINE_PLACE, QHeaderView.Interactive)
+        header.setSectionResizeMode(COL_TIMELINE_NOTES, QHeaderView.Stretch)
+
+    elif profile == "state_supervision_findings":
+        from moduly.statni_dozor.constants import (
+            COL_FINDING_DESCRIPTION,
+            COL_FINDING_DUE,
+            COL_FINDING_PERSON,
+            COL_FINDING_PLACE,
+            COL_FINDING_STATUS,
+            COL_FINDING_TASK,
+            COL_FINDING_TYPE,
+        )
+
+        table.setWordWrap(False)
+        table.setTextElideMode(Qt.TextElideMode.ElideRight)
+        widths = {
+            COL_FINDING_TYPE: 205,
+            COL_FINDING_DESCRIPTION: 190,
+            COL_FINDING_PLACE: 165,
+            COL_FINDING_STATUS: 105,
+            COL_FINDING_PERSON: 180,
+            COL_FINDING_DUE: 105,
+            COL_FINDING_TASK: 160,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        header.setSectionResizeMode(COL_FINDING_TYPE, QHeaderView.Interactive)
+        header.setSectionResizeMode(COL_FINDING_DESCRIPTION, QHeaderView.Interactive)
+        header.setSectionResizeMode(COL_FINDING_PLACE, QHeaderView.Interactive)
+        header.setSectionResizeMode(COL_FINDING_STATUS, QHeaderView.Interactive)
+        header.setSectionResizeMode(COL_FINDING_PERSON, QHeaderView.Interactive)
+        header.setSectionResizeMode(COL_FINDING_DUE, QHeaderView.Interactive)
+        header.setSectionResizeMode(COL_FINDING_TASK, QHeaderView.Stretch)
+
     table.verticalHeader().setVisible(False)
     if profile not in ("controls_year_matrix", "yearly_plan"):
         table.setAlternatingRowColors(True)

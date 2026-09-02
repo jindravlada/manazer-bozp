@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-02 – STATE-SUPERVISION-TIMELINE-COLUMNS-7B2
+
+**Co se povedlo:** Tabulky průběhu a zjištění vyplní viewport; poslední sloupec je Stretch, první Interactive se základními šířkami.
+
+**Co už bychom dnes udělali jinak:** Profil v `configure_table_columns` založit ve stejném sprintu jako tabulku. Chybějící větev nechá `setStretchLastSection(False)` a Qt výchozí ~100 px, takže tabulka zůstane úzký blok vlevo.
+
+**Co bylo zbytečně složité:** —
+
+**Nové pravidlo:** Každý `configure_table_columns(profile)` musí mít větev. Bez ní se jen vypne stretch posledního sloupce.
+
+**Aktualizované dokumenty:** —
+
 ### 2026-09-02 – STATE-SUPERVISION-EDITOR-LAYOUT-7B1
 
 **Co se povedlo:** První záložka je dvousloupcová bez splitteru; tabulka dokladů dostala zbývající výšku (294 px při 1600×900, 474 px při 1920×1080). Starší `initial_information` se slučuje do předmětu až při skutečném uložení.
