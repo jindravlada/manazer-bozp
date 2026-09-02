@@ -36,14 +36,11 @@ from core.shared.sluzby.control_report_attention import (
     format_attention_areas_text,
     map_task_titles_by_finding_id,
 )
-from core.shared.sluzby.control_report_language import (
-    FINDINGS_OVERVIEW_EMPTY_SENTENCE,
-    INSPECTION_EMPTY_FOUND_SENTENCE,
-    PRILEZITOST_FORMS,
-    ZAVADA_FORMS,
-    format_during_found_sentence,
-    format_feminine_found_clause,
+from core.shared.sluzby.control_report_findings_summary import (
+    format_findings_overview_lines,
+    format_inspection_evidence_sentence,
 )
+from core.shared.sluzby.control_report_language import FINDINGS_OVERVIEW_EMPTY_SENTENCE
 from core.shared.sluzby.control_report_overview import (
     format_result_overview_rating_lines,
 )
@@ -57,6 +54,7 @@ from moduly.proverky.constants import (
     COMMISSION_RECORD_MEMBER,
     COMMISSION_RECORD_UNION,
     COMMISSION_RECORD_WORKPLACE,
+    INSPECTION_FINDING_REPORT_TYPE_ORDER,
     INSPECTION_STRENGTHS_EXPORT_SECTION,
     PLANNED_MONTH_NAMES,
     PLANNED_MONTH_NOT_SET_LABEL,
@@ -527,7 +525,14 @@ class InspectionExportContext:
         return self.findings_overview_text()
 
     def _activity_statistics(self):
-        return control_activity_statistics_service.compute(ENTITY_PROVERKY, self.inspection_id)
+        cached = getattr(self, "_activity_statistics_cache", None)
+        if cached is not None:
+            return cached
+        stats = control_activity_statistics_service.compute(
+            ENTITY_PROVERKY, self.inspection_id
+        )
+        object.__setattr__(self, "_activity_statistics_cache", stats)
+        return stats
 
     def overall_assessment_text(self) -> str:
         stats = self._activity_statistics()
@@ -547,25 +552,9 @@ class InspectionExportContext:
                 "na kontrolovaném pracovišti."
             )
 
-        clauses: list[str] = []
-        if stats.ratings_nevyhovuje:
-            clauses.append(
-                format_feminine_found_clause(
-                    stats.ratings_nevyhovuje,
-                    **ZAVADA_FORMS,
-                )
-            )
-        if stats.ratings_vyhovuje_s_doporucenim:
-            clauses.append(
-                format_feminine_found_clause(
-                    stats.ratings_vyhovuje_s_doporucenim,
-                    **PRILEZITOST_FORMS,
-                )
-            )
-        second_sentence = format_during_found_sentence(
-            during="Během prověrky",
-            clauses=clauses,
-            empty=INSPECTION_EMPTY_FOUND_SENTENCE,
+        second_sentence = format_inspection_evidence_sentence(
+            self._export_findings(),
+            INSPECTION_FINDING_REPORT_TYPE_ORDER,
         )
         second_sentence += " "
 
@@ -585,11 +574,12 @@ class InspectionExportContext:
             points_label="Kontrolních bodů",
         )
         lines.extend(
-            [
-                f"Zjištění: {stats.findings_total}",
-                f"Otevřené úkoly: {summary['tasks_active']}",
-            ]
+            format_findings_overview_lines(
+                self._export_findings(),
+                INSPECTION_FINDING_REPORT_TYPE_ORDER,
+            )
         )
+        lines.append(f"Otevřené úkoly: {summary['tasks_active']}")
         return "\n".join(lines)
 
     def strengths_text(self) -> str:

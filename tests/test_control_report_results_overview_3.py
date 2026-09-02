@@ -93,12 +93,15 @@ def _overview_section(content: str) -> str:
 def _assert_overview_order(test: unittest.TestCase, text: str) -> None:
     pos_nevyhovuje = text.find("Nevyhovuje:")
     pos_nelze = text.find("Nelze posoudit:")
-    pos_zjisteni = text.find("Zjištění:")
+    pos_zjisteni = text.find("Zjištění celkem:")
+    pos_ukoly = text.find("Otevřené úkoly:")
     test.assertGreaterEqual(pos_nevyhovuje, 0)
     test.assertGreaterEqual(pos_nelze, 0)
     test.assertGreaterEqual(pos_zjisteni, 0)
+    test.assertGreaterEqual(pos_ukoly, 0)
     test.assertLess(pos_nevyhovuje, pos_nelze)
     test.assertLess(pos_nelze, pos_zjisteni)
+    test.assertLess(pos_zjisteni, pos_ukoly)
     test.assertNotIn("Netýká se", text)
     test.assertNotIn("Není relevantní", text)
 

@@ -33,10 +33,10 @@ PRILEZITOST_FORMS = {
 }
 
 INSPECTION_EMPTY_FOUND_SENTENCE = (
-    "Během prověrky nebyly zjištěny žádné závady ani příležitosti ke zlepšení."
+    "Evidence prověrky neobsahuje žádná zjištění."
 )
 AUDIT_EMPTY_FOUND_SENTENCE = (
-    "Během auditu nebyly zjištěny žádné neshody ani příležitosti ke zlepšení."
+    "Evidence auditu neobsahuje žádná zjištění."
 )
 
 FINDINGS_OVERVIEW_EMPTY_SENTENCE = (

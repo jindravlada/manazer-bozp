@@ -264,6 +264,14 @@ AUDIT_FINDING_TYPE_LABELS = {
 
 AUDIT_FINDING_TYPES = frozenset(AUDIT_FINDING_TYPE_LABELS.keys())
 
+# Pořadí druhů v úvodu zprávy podle závažnosti ISO 19011:
+# neshoda → pozorování → příležitost ke zlepšení.
+AUDIT_FINDING_REPORT_TYPE_ORDER: tuple[str, ...] = (
+    AUDIT_FINDING_TYPE_NESHODA,
+    AUDIT_FINDING_TYPE_POZOROVANI,
+    AUDIT_FINDING_TYPE_PKZ,
+)
+
 AUDIT_PROGRAM_STATUS_DRAFT = "draft"
 AUDIT_PROGRAM_STATUS_APPROVED = "approved"
 AUDIT_PROGRAM_STATUS_RUNNING = "running"

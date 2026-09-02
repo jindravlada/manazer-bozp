@@ -2,6 +2,15 @@
 
 from dataclasses import dataclass
 
+from core.shared.constants import (
+    FINDING_TYPE_NEDOSTATEK,
+    FINDING_TYPE_NESHODA,
+    FINDING_TYPE_PORUSENI_PREDPISU,
+    FINDING_TYPE_POZOROVANI,
+    FINDING_TYPE_PRILEZITOST,
+    FINDING_TYPE_ZAVADA,
+    FINDING_TYPE_ZJISTENI,
+)
 from core.shared.verification_type import (
     VERIFICATION_TYPE_DEFAULT,
     VERIFICATION_TYPE_DOCUMENTATION,
@@ -145,6 +154,19 @@ FINDING_OPEN_EXISTING_LABEL = "Otevřít zjištění"
 FINDING_CREATED_LABEL = "Zjištění založeno"
 FINDING_DUPLICATE_MESSAGE = "Pro tento kontrolní bod už existuje zjištění. Otevře se existující záznam."
 INSPECTION_MUST_BE_SAVED_MESSAGE = "Prověrku je nutné nejdříve uložit."
+# Pořadí druhů v úvodu zprávy podle závažnosti (nejtěžší → příležitost).
+# Dialog prověrky nabízí všechny VALID_FINDING_TYPES; zde jen druhy s vlastním
+# popiskem v reportu. Ostatní (pokyn, příčiny úrazu, …) → Ostatní zjištění.
+INSPECTION_FINDING_REPORT_TYPE_ORDER: tuple[str, ...] = (
+    FINDING_TYPE_ZAVADA,
+    FINDING_TYPE_NEDOSTATEK,
+    FINDING_TYPE_PORUSENI_PREDPISU,
+    FINDING_TYPE_NESHODA,
+    FINDING_TYPE_POZOROVANI,
+    FINDING_TYPE_ZJISTENI,
+    FINDING_TYPE_PRILEZITOST,
+)
+
 FINDING_REQUIRES_NONCOMPLIANCE_MESSAGE = "Zjištění lze založit pouze u kontrolního bodu s výsledkem „Nevyhovuje“."
 FINDING_REQUIRES_RESULT_MESSAGE = (
     "Zjištění lze založit pouze u kontrolního bodu s výsledkem "

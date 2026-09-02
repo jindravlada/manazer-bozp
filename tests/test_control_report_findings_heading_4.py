@@ -390,11 +390,8 @@ class ControlReportFindingsHeading4TestCase(unittest.TestCase):
         inspection_text = bozp_inspection_export_context_service.build(
             inspection
         ).overall_assessment_text()
-        self.assertIn(
-            "Během prověrky byla zjištěna 1 závada a bylo zjištěno "
-            "5 příležitostí ke zlepšení.",
-            inspection_text,
-        )
+        self.assertIn(INSPECTION_EMPTY_FOUND_SENTENCE, inspection_text)
+        self.assertNotIn("Během prověrky", inspection_text)
 
         audit = self._create_audit()
         self._add_results(
@@ -412,11 +409,8 @@ class ControlReportFindingsHeading4TestCase(unittest.TestCase):
             prefix="pkz",
         )
         audit_text = audit_export_context_service.build(audit).overall_assessment_text()
-        self.assertIn(
-            "Během auditu byly zjištěny 2 neshody a byla zjištěna "
-            "1 příležitost ke zlepšení.",
-            audit_text,
-        )
+        self.assertIn(AUDIT_EMPTY_FOUND_SENTENCE, audit_text)
+        self.assertNotIn("Během auditu", audit_text)
 
     def test_heading_order_in_all_four_outputs(self) -> None:
         inspection = self._create_inspection()

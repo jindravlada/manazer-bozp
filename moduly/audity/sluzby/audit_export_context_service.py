@@ -36,14 +36,11 @@ from core.shared.sluzby.control_report_attention import (
     format_attention_areas_text,
     map_task_titles_by_finding_id,
 )
-from core.shared.sluzby.control_report_language import (
-    AUDIT_EMPTY_FOUND_SENTENCE,
-    FINDINGS_OVERVIEW_EMPTY_SENTENCE,
-    NESHODA_FORMS,
-    PRILEZITOST_FORMS,
-    format_during_found_sentence,
-    format_feminine_found_clause,
+from core.shared.sluzby.control_report_findings_summary import (
+    format_audit_evidence_sentence,
+    format_findings_overview_lines,
 )
+from core.shared.sluzby.control_report_language import FINDINGS_OVERVIEW_EMPTY_SENTENCE
 from core.shared.sluzby.control_report_overview import (
     format_result_overview_rating_lines,
 )
@@ -51,6 +48,7 @@ from core.shared.sluzby.control_result_service import control_result_service
 from core.shared.sluzby.finding_service import finding_service
 from moduly.audity.constants import (
     AUDIT_CONCLUSION_EXPORT_SECTION,
+    AUDIT_FINDING_REPORT_TYPE_ORDER,
     AUDIT_QUESTION_KIND_EXTRAORDINARY,
     AUDIT_STRENGTHS_EXPORT_SECTION,
     COMMISSION_RECORD_INVITED,
@@ -778,7 +776,12 @@ class AuditExportContext:
         )
 
     def _activity_statistics(self):
-        return control_activity_statistics_service.compute(ENTITY_AUDITY, self.audit_id)
+        cached = getattr(self, "_activity_statistics_cache", None)
+        if cached is not None:
+            return cached
+        stats = control_activity_statistics_service.compute(ENTITY_AUDITY, self.audit_id)
+        object.__setattr__(self, "_activity_statistics_cache", stats)
+        return stats
 
     def audited_system_label(self) -> str:
         program = self.program_name()
@@ -804,25 +807,9 @@ class AuditExportContext:
         else:
             first_sentence = "Systém řízení plní požadavky bez závažných výhrad."
 
-        clauses: list[str] = []
-        if stats.ratings_nevyhovuje:
-            clauses.append(
-                format_feminine_found_clause(
-                    stats.ratings_nevyhovuje,
-                    **NESHODA_FORMS,
-                )
-            )
-        if stats.ratings_vyhovuje_s_doporucenim:
-            clauses.append(
-                format_feminine_found_clause(
-                    stats.ratings_vyhovuje_s_doporucenim,
-                    **PRILEZITOST_FORMS,
-                )
-            )
-        second_sentence = format_during_found_sentence(
-            during="Během auditu",
-            clauses=clauses,
-            empty=AUDIT_EMPTY_FOUND_SENTENCE,
+        second_sentence = format_audit_evidence_sentence(
+            self._export_findings(),
+            AUDIT_FINDING_REPORT_TYPE_ORDER,
         )
         second_sentence += " "
 
@@ -910,11 +897,12 @@ class AuditExportContext:
             points_label="Auditních tvrzení",
         )
         lines.extend(
-            [
-                f"Zjištění: {stats.findings_total}",
-                f"Otevřené úkoly: {summary['tasks_active']}",
-            ]
+            format_findings_overview_lines(
+                self._export_findings(),
+                AUDIT_FINDING_REPORT_TYPE_ORDER,
+            )
         )
+        lines.append(f"Otevřené úkoly: {summary['tasks_active']}")
         return "\n".join(lines)
 
     def signatures_text(self) -> str:

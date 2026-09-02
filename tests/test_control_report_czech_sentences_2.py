@@ -36,6 +36,10 @@ with patch.object(Path, "home", return_value=_TMP):
         ENTITY_AUDITY,
         ENTITY_PROVERKY,
     )
+    from core.shared.sluzby.control_report_language import (
+        AUDIT_EMPTY_FOUND_SENTENCE,
+        INSPECTION_EMPTY_FOUND_SENTENCE,
+    )
     from core.shared.sluzby.control_result_service import (
         ControlPointContext,
         control_result_service,
@@ -173,8 +177,13 @@ class ControlReportCzechSentences2TestCase(unittest.TestCase):
         text = bozp_inspection_export_context_service.build(
             inspection
         ).overall_assessment_text()
-        self.assertIn("Během prověrky byla zjištěna 1 závada.", text)
+        self.assertIn(INSPECTION_EMPTY_FOUND_SENTENCE, text)
+        self.assertIn(
+            "Prověrka BOZP prokázala nedostatky vyžadující nápravu",
+            text,
+        )
         self.assertIn("Prověrka neprokázala systémové selhání.", text)
+        self.assertNotIn("Během prověrky", text)
         self.assertNotIn("neshoda", text.casefold())
         _assert_forbidden_absent(self, text)
 
@@ -190,8 +199,9 @@ class ControlReportCzechSentences2TestCase(unittest.TestCase):
         text = bozp_inspection_export_context_service.build(
             inspection
         ).overall_assessment_text()
+        self.assertIn(INSPECTION_EMPTY_FOUND_SENTENCE, text)
         self.assertIn(
-            "Během prověrky byly zjištěny 3 příležitosti ke zlepšení.",
+            "Prověrka BOZP potvrdila obecně vyhovující stav s doporučeními",
             text,
         )
         self.assertIn("Prověrka neprokázala systémové selhání.", text)
@@ -209,10 +219,7 @@ class ControlReportCzechSentences2TestCase(unittest.TestCase):
         text = bozp_inspection_export_context_service.build(
             inspection
         ).overall_assessment_text()
-        self.assertIn(
-            "Během prověrky bylo zjištěno 5 příležitostí ke zlepšení.",
-            text,
-        )
+        self.assertIn(INSPECTION_EMPTY_FOUND_SENTENCE, text)
         self.assertNotIn("závada", text.casefold())
         _assert_forbidden_absent(self, text)
 
@@ -225,10 +232,7 @@ class ControlReportCzechSentences2TestCase(unittest.TestCase):
             )
         )
         for content in (protocol, detailed):
-            self.assertIn(
-                "Během prověrky bylo zjištěno 5 příležitostí ke zlepšení.",
-                content,
-            )
+            self.assertIn(INSPECTION_EMPTY_FOUND_SENTENCE, content)
             _assert_forbidden_absent(self, content)
 
     def test_inspection_only_21_and_22_opportunities(self) -> None:
@@ -243,10 +247,7 @@ class ControlReportCzechSentences2TestCase(unittest.TestCase):
         text_21 = bozp_inspection_export_context_service.build(
             inspection
         ).overall_assessment_text()
-        self.assertIn(
-            "Během prověrky bylo zjištěno 21 příležitostí ke zlepšení.",
-            text_21,
-        )
+        self.assertIn(INSPECTION_EMPTY_FOUND_SENTENCE, text_21)
         _assert_forbidden_absent(self, text_21)
 
         self._add_results(
@@ -259,10 +260,7 @@ class ControlReportCzechSentences2TestCase(unittest.TestCase):
         text_22 = bozp_inspection_export_context_service.build(
             inspection
         ).overall_assessment_text()
-        self.assertIn(
-            "Během prověrky bylo zjištěno 22 příležitostí ke zlepšení.",
-            text_22,
-        )
+        self.assertIn(INSPECTION_EMPTY_FOUND_SENTENCE, text_22)
         _assert_forbidden_absent(self, text_22)
 
     def test_inspection_combination_one_and_five(self) -> None:
@@ -284,9 +282,9 @@ class ControlReportCzechSentences2TestCase(unittest.TestCase):
         text = bozp_inspection_export_context_service.build(
             inspection
         ).overall_assessment_text()
+        self.assertIn(INSPECTION_EMPTY_FOUND_SENTENCE, text)
         self.assertIn(
-            "Během prověrky byla zjištěna 1 závada a bylo zjištěno "
-            "5 příležitostí ke zlepšení.",
+            "Prověrka BOZP prokázala nedostatky vyžadující nápravu",
             text,
         )
         self.assertIn("Prověrka neprokázala systémové selhání.", text)
@@ -311,11 +309,7 @@ class ControlReportCzechSentences2TestCase(unittest.TestCase):
         text = bozp_inspection_export_context_service.build(
             inspection
         ).overall_assessment_text()
-        self.assertIn(
-            "Během prověrky byly zjištěny 2 závady a byla zjištěna "
-            "1 příležitost ke zlepšení.",
-            text,
-        )
+        self.assertIn(INSPECTION_EMPTY_FOUND_SENTENCE, text)
         _assert_forbidden_absent(self, text)
 
     def test_inspection_both_zero_keeps_empty_wording(self) -> None:
@@ -330,10 +324,7 @@ class ControlReportCzechSentences2TestCase(unittest.TestCase):
         text = bozp_inspection_export_context_service.build(
             inspection
         ).overall_assessment_text()
-        self.assertIn(
-            "Během prověrky nebyly zjištěny žádné závady ani příležitosti ke zlepšení.",
-            text,
-        )
+        self.assertIn(INSPECTION_EMPTY_FOUND_SENTENCE, text)
         self.assertNotIn("bylo zjištěno 0", text)
         self.assertIn("Prověrka neprokázala systémové selhání.", text)
 
@@ -349,7 +340,7 @@ class ControlReportCzechSentences2TestCase(unittest.TestCase):
         text = bozp_inspection_export_context_service.build(
             inspection
         ).overall_assessment_text()
-        self.assertIn("Během prověrky bylo zjištěno 5 závad.", text)
+        self.assertIn(INSPECTION_EMPTY_FOUND_SENTENCE, text)
         self.assertIn(
             "Bylo prokázáno systémové selhání v některých oblastech.",
             text,
@@ -366,7 +357,8 @@ class ControlReportCzechSentences2TestCase(unittest.TestCase):
             prefix="nc",
         )
         text = audit_export_context_service.build(audit).overall_assessment_text()
-        self.assertIn("Během auditu byla zjištěna 1 neshoda.", text)
+        self.assertIn(AUDIT_EMPTY_FOUND_SENTENCE, text)
+        self.assertIn("Systém řízení vykazuje neshody vyžadující nápravu.", text)
         self.assertIn("Audit neprokázal systémové selhání.", text)
         self.assertNotIn("závada", text.casefold())
         _assert_forbidden_absent(self, text)
@@ -381,7 +373,7 @@ class ControlReportCzechSentences2TestCase(unittest.TestCase):
             prefix="nc",
         )
         text = audit_export_context_service.build(audit).overall_assessment_text()
-        self.assertIn("Během auditu byly zjištěny 3 neshody.", text)
+        self.assertIn(AUDIT_EMPTY_FOUND_SENTENCE, text)
         self.assertIn(
             "Bylo prokázáno systémové selhání v některých oblastech.",
             text,
@@ -398,10 +390,7 @@ class ControlReportCzechSentences2TestCase(unittest.TestCase):
             prefix="pkz",
         )
         text = audit_export_context_service.build(audit).overall_assessment_text()
-        self.assertIn(
-            "Během auditu bylo zjištěno 5 příležitostí ke zlepšení.",
-            text,
-        )
+        self.assertIn(AUDIT_EMPTY_FOUND_SENTENCE, text)
         _assert_forbidden_absent(self, text)
 
         protocol = _odt_content(protokol_audit_service.generate_for_audit(audit))
@@ -409,10 +398,7 @@ class ControlReportCzechSentences2TestCase(unittest.TestCase):
             protokol_audit_service.generate_detailed_report_for_audit(audit)
         )
         for content in (protocol, detailed):
-            self.assertIn(
-                "Během auditu bylo zjištěno 5 příležitostí ke zlepšení.",
-                content,
-            )
+            self.assertIn(AUDIT_EMPTY_FOUND_SENTENCE, content)
             _assert_forbidden_absent(self, content)
 
     def test_audit_combination_two_and_one(self) -> None:
@@ -432,21 +418,14 @@ class ControlReportCzechSentences2TestCase(unittest.TestCase):
             prefix="pkz",
         )
         text = audit_export_context_service.build(audit).overall_assessment_text()
-        self.assertIn(
-            "Během auditu byly zjištěny 2 neshody a byla zjištěna "
-            "1 příležitost ke zlepšení.",
-            text,
-        )
+        self.assertIn(AUDIT_EMPTY_FOUND_SENTENCE, text)
         self.assertIn("Audit neprokázal systémové selhání.", text)
         _assert_forbidden_absent(self, text)
 
     def test_audit_both_zero_keeps_empty_wording(self) -> None:
         audit = self._create_audit()
         text = audit_export_context_service.build(audit).overall_assessment_text()
-        self.assertIn(
-            "Během auditu nebyly zjištěny žádné neshody ani příležitosti ke zlepšení.",
-            text,
-        )
+        self.assertIn(AUDIT_EMPTY_FOUND_SENTENCE, text)
         self.assertNotIn("bylo zjištěno 0", text)
         self.assertIn("Audit neprokázal systémové selhání.", text)
 
