@@ -1,15 +1,29 @@
+from __future__ import annotations
+
+from collections.abc import Callable
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence, QShortcut
-from PySide6.QtWidgets import QLabel, QLineEdit, QTableWidget, QHBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QLineEdit, QTableWidget, QWidget
+
+ApplyFn = Callable[[str], tuple[int, int]]
 
 
 class FilterBar(QWidget):
-    """Globální živý filtr pro QTableWidget."""
+    """Globální živý filtr pro QTableWidget nebo vlastní apply_fn (strom)."""
 
-    def __init__(self, table: QTableWidget, placeholder: str = "🔍 Hledat...", parent=None):
+    def __init__(
+        self,
+        table: QTableWidget | None = None,
+        placeholder: str = "🔍 Hledat...",
+        parent=None,
+        *,
+        apply_fn: ApplyFn | None = None,
+    ):
         super().__init__(parent)
 
         self.table = table
+        self._apply_fn = apply_fn
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -42,6 +56,14 @@ class FilterBar(QWidget):
 
     def apply_filter(self) -> None:
         text = self.search_edit.text().strip().lower()
+        if self._apply_fn is not None:
+            visible, total = self._apply_fn(text)
+            self.count_label.setText(f"Zobrazeno: {visible} / {total}")
+            return
+        if self.table is None:
+            self.count_label.setText("Zobrazeno: 0 / 0")
+            return
+
         total = self.table.rowCount()
         visible = 0
 

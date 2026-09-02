@@ -668,6 +668,44 @@ OFFICE_ACTIVE_UNDER_INACTIVE_AUTHORITY_MESSAGE = (
     "Aktivní příslušné pracoviště nelze evidovat u neaktivního kontrolního orgánu."
 )
 
+AUTHORITY_ORIGIN_LABELS: dict[str, str] = {
+    AUTHORITY_ORIGIN_BUNDLED: "Výchozí",
+    AUTHORITY_ORIGIN_WEB: "Z webu",
+    AUTHORITY_ORIGIN_MANUAL: "Ručně",
+}
+OFFICE_KIND_USER_LABELS: dict[str, str] = {
+    OFFICE_KIND_HEADQUARTERS: "Centrální",
+    OFFICE_KIND_REGIONAL: "Regionální",
+    OFFICE_KIND_TERRITORIAL: "Územní",
+    OFFICE_KIND_OTHER: "Jiné",
+}
+CATALOG_ROW_KIND_AUTHORITY = "Kontrolní orgán"
+CATALOG_ROW_KIND_OFFICE = "Příslušné pracoviště"
+OFFICE_CATALOG_TOOLTIP = (
+    "Konkrétní oblastní, obvodní, krajské nebo územní pracoviště "
+    "kontrolního orgánu, které kontrolu ohlásilo nebo provádí."
+)
+CATALOG_MANUAL_EDIT_HINT = (
+    "Ručně upravené údaje nebudou při webové kontrole automaticky přepsány."
+)
+CATALOG_SHOW_INACTIVE_LABEL = "Zobrazit neaktivní"
+CATALOG_NEW_AUTHORITY_LABEL = "Nový kontrolní orgán"
+CATALOG_NEW_OFFICE_LABEL = "Nové pracoviště"
+CATALOG_EMPTY_TEXT = "Zatím nejsou evidovány žádné kontrolní orgány."
+CATALOG_FILTER_EMPTY_TEXT = (
+    "Zadanému hledání neodpovídá žádný kontrolní orgán ani příslušné pracoviště."
+)
+CATALOG_LOAD_ERROR_TEXT = "Katalog kontrolních orgánů se nepodařilo načíst."
+CATALOG_REFRESH_AFTER_SAVE_MESSAGE = (
+    "Záznam je uložený, ale přehled se nepodařilo obnovit."
+)
+CATALOG_DEACTIVATE_AUTHORITY_TITLE = "Deaktivovat kontrolní orgán"
+CATALOG_DEACTIVATE_OFFICE_TITLE = "Deaktivovat příslušné pracoviště"
+CATALOG_CODE_PLACEHOLDER = "Při uložení se odvodí z názvu."
+CATALOG_HAS_ACTIVE_OFFICES_TOOLTIP = (
+    "Nejprve deaktivujte příslušná pracoviště."
+)
+
 # Seed katalogu (STATE-SUPERVISION-AUTHORITY-CATALOG-SEED-8A1)
 AUTHORITY_CATALOG_SEED_RELATIVE_PATH = "ciselniky/statni_dozor/kontrolni_organy.json"
 AUTHORITY_CATALOG_SEED_SCHEMA_VERSION = 1

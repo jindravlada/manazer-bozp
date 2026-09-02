@@ -1,5 +1,11 @@
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QHeaderView, QStyle, QTableWidget, QTableWidgetItem
+from PySide6.QtWidgets import (
+    QHeaderView,
+    QStyle,
+    QTableWidget,
+    QTableWidgetItem,
+    QTreeWidget,
+)
 
 from core.widgets.info_tooltip import set_widget_tooltip
 from core.widgets.text_preview import DEFAULT_TEXT_PREVIEW_LENGTH, truncate_text_preview
@@ -1339,3 +1345,33 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
     if profile == "yearly_plan":
         # Celoroční pohled: zebra po měsících přes Base/AlternateBase, ne globálně.
         table.setAlternatingRowColors(False)
+
+
+def configure_tree_columns(tree: QTreeWidget, profile: str) -> None:
+    """Rozložení sloupců stromu. Nemění existující QTableWidget profily."""
+    header = tree.header()
+    header.setStretchLastSection(False)
+    tree.setWordWrap(False)
+    tree.setTextElideMode(Qt.TextElideMode.ElideRight)
+    tree.setUniformRowHeights(True)
+    tree.setAlternatingRowColors(True)
+    tree.setAnimated(False)
+    if profile == "control_authority_catalog":
+        widths = {
+            0: 280,
+            1: 170,
+            2: 260,
+            3: 200,
+            4: 90,
+            5: 70,
+        }
+        for column, width in widths.items():
+            tree.setColumnWidth(column, width)
+        header.setSectionResizeMode(0, QHeaderView.Stretch)
+        header.setSectionResizeMode(1, QHeaderView.Interactive)
+        header.setSectionResizeMode(2, QHeaderView.Stretch)
+        header.setSectionResizeMode(3, QHeaderView.Interactive)
+        header.setSectionResizeMode(4, QHeaderView.Interactive)
+        header.setSectionResizeMode(5, QHeaderView.Interactive)
+        return
+    header.setStretchLastSection(True)

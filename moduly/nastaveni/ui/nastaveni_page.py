@@ -38,6 +38,8 @@ from moduly.nastaveni.ui.exposed_group_dialog import ExposedGroupDialog
 from moduly.nastaveni.ui.responsibility_role_dialog import ResponsibilityRoleDialog
 from moduly.nastaveni.ui.thp_worker_dialog import ThpWorkerDialog
 from moduly.nastaveni.ui.workplace_dialog import WorkplaceDialog
+from moduly.statni_dozor.constants import TAB_STATE_SUPERVISION
+from moduly.statni_dozor.ui.control_authority_catalog_tab import ControlAuthorityCatalogTab
 
 
 class NastaveniPage(QWidget):
@@ -47,12 +49,21 @@ class NastaveniPage(QWidget):
         layout = QVBoxLayout(self)
         self.tabs = QTabWidget()
 
-        self.tabs.addTab(self._workers_tab(), "THP pracovníci")
-        self.tabs.addTab(self._persons_tab(), "Osoby")
-        self.tabs.addTab(self._workplaces_tab(), "Provozy a pracoviště")
-        self.tabs.addTab(self._responsibility_roles_tab(), "Funkce / role")
-        self.tabs.addTab(self._exposed_groups_tab(), "Ohrožené skupiny")
-        self.tabs.addTab(self._employer_tab(), "Zaměstnavatel")
+        self.workers_tab = self._workers_tab()
+        self.persons_tab = self._persons_tab()
+        self.workplaces_tab = self._workplaces_tab()
+        self.state_supervision_catalog_tab = ControlAuthorityCatalogTab()
+        self.responsibility_roles_tab = self._responsibility_roles_tab()
+        self.exposed_groups_tab = self._exposed_groups_tab()
+        self.employer_tab = self._employer_tab()
+
+        self.tabs.addTab(self.workers_tab, "THP pracovníci")
+        self.tabs.addTab(self.persons_tab, "Osoby")
+        self.tabs.addTab(self.workplaces_tab, "Provozy a pracoviště")
+        self.tabs.addTab(self.state_supervision_catalog_tab, TAB_STATE_SUPERVISION)
+        self.tabs.addTab(self.responsibility_roles_tab, "Funkce / role")
+        self.tabs.addTab(self.exposed_groups_tab, "Ohrožené skupiny")
+        self.tabs.addTab(self.employer_tab, "Zaměstnavatel")
 
         layout.addWidget(self.tabs)
         self.refresh()
@@ -629,7 +640,9 @@ class NastaveniPage(QWidget):
         self.open_worker(worker_id)
 
     def open_worker(self, worker_id: int):
-        self.tabs.setCurrentIndex(0)
+        index = self.tabs.indexOf(self.workers_tab)
+        if index >= 0:
+            self.tabs.setCurrentIndex(index)
 
         worker = settings_service.get_worker_by_id(worker_id)
         if worker is None:
@@ -1030,6 +1043,7 @@ class NastaveniPage(QWidget):
         self.refresh_workplaces()
         self.refresh_responsibility_roles()
         self.refresh_exposed_groups()
+        self.state_supervision_catalog_tab.refresh()
 
     def refresh_workers(self):
         include_inactive = self.worker_filter.currentText() == "Všichni"

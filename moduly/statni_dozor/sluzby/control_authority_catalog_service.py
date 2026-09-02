@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from datetime import datetime
 from typing import Any
 
@@ -54,6 +55,13 @@ def _canonicalize_code(value: Any) -> str:
     if not code:
         raise ControlAuthorityCatalogError(AUTHORITY_CODE_REQUIRED_MESSAGE)
     return code
+
+
+def slugify_authority_code(name: Any) -> str:
+    decomposed = unicodedata.normalize("NFKD", str(name or ""))
+    ascii_text = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
+    slug = re.sub(r"[^a-z0-9]+", "-", ascii_text.casefold()).strip("-")
+    return slug or "organ"
 
 
 def _require_name(value: Any, message: str) -> str:
@@ -113,6 +121,23 @@ class ControlAuthorityCatalogService:
         session: Session | None = None,
     ) -> ControlAuthority | None:
         return self.repository.get_authority(int(authority_id), session=session)
+
+    def allocate_unique_authority_code(
+        self,
+        name: str,
+        *,
+        session: Session | None = None,
+    ) -> str:
+        try:
+            base = _canonicalize_code(slugify_authority_code(name))
+        except ControlAuthorityCatalogError:
+            base = "organ"
+        candidate = base
+        suffix = 2
+        while self.get_authority_by_code(candidate, session=session) is not None:
+            candidate = f"{base}-{suffix}"
+            suffix += 1
+        return candidate
 
     def get_authority_by_code(
         self,

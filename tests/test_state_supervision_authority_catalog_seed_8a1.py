@@ -737,6 +737,7 @@ class StateSupervisionAuthorityCatalogSeed8a1ImportTestCase(unittest.TestCase):
                 "THP pracovníci",
                 "Osoby",
                 "Provozy a pracoviště",
+                "Státní dozor",
                 "Funkce / role",
                 "Ohrožené skupiny",
                 "Zaměstnavatel",
