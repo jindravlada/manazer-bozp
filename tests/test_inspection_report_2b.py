@@ -322,8 +322,8 @@ class InspectionReport2bTestCase(unittest.TestCase):
         ):
             content = _odt_content(generate(inspection))
             self.assertIn("Příloha B – Kontrolní body", content)
-            self.assertIn("Významná zjištění", content)
-            self.assertNotIn("Přehled zjištění", content)
+            self.assertIn("Podrobný přehled zjištění", content)
+            self.assertNotIn("Významná zjištění", content)
             self.assertNotIn(
                 "Příloha B – Výsledky jednotlivých kontrolních bodů", content
             )
@@ -333,7 +333,7 @@ class InspectionReport2bTestCase(unittest.TestCase):
                 content.find("Přehled výsledků"),
                 content.find("Silné stránky systému"),
                 content.find("Oblasti vyžadující pozornost"),
-                content.find("Významná zjištění"),
+                content.find("Podrobný přehled zjištění"),
                 content.find("Doporučení vedoucího prověrky"),
             ]
             self.assertTrue(all(pos >= 0 for pos in positions))

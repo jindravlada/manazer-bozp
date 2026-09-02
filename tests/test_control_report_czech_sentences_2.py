@@ -330,7 +330,10 @@ class ControlReportCzechSentences2TestCase(unittest.TestCase):
         text = bozp_inspection_export_context_service.build(
             inspection
         ).overall_assessment_text()
-        self.assertIn("Během prověrky nebyla zjištěna významná zjištění.", text)
+        self.assertIn(
+            "Během prověrky nebyly zjištěny žádné závady ani příležitosti ke zlepšení.",
+            text,
+        )
         self.assertNotIn("bylo zjištěno 0", text)
         self.assertIn("Prověrka neprokázala systémové selhání.", text)
 
@@ -440,7 +443,10 @@ class ControlReportCzechSentences2TestCase(unittest.TestCase):
     def test_audit_both_zero_keeps_empty_wording(self) -> None:
         audit = self._create_audit()
         text = audit_export_context_service.build(audit).overall_assessment_text()
-        self.assertIn("Během auditu nebyla zjištěna významná zjištění.", text)
+        self.assertIn(
+            "Během auditu nebyly zjištěny žádné neshody ani příležitosti ke zlepšení.",
+            text,
+        )
         self.assertNotIn("bylo zjištěno 0", text)
         self.assertIn("Audit neprokázal systémové selhání.", text)
 

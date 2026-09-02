@@ -489,7 +489,7 @@ class AudityProtokolExportTestCase(unittest.TestCase):
             "Přehled výsledků",
             "Silné stránky systému",
             "Oblasti vyžadující pozornost",
-            "Významná zjištění",
+            "Podrobný přehled zjištění",
             "Doporučení vedoucího auditora",
             "Rozsah auditu",
             "Detail zjištění",
@@ -527,7 +527,7 @@ class AudityProtokolExportTestCase(unittest.TestCase):
             content.find("Podpisy"),
         )
         self.assertLess(
-            content.find("Významná zjištění"),
+            content.find("Podrobný přehled zjištění"),
             content.find("Podpisy"),
         )
 
@@ -947,7 +947,7 @@ class AudityProtokolExportTestCase(unittest.TestCase):
         main = content.split("CELKOVÉ HODNOCENÍ", 1)[1]
         self.assertLess(main.find("Podpisy"), main.find("Příloha A – Auditované procesy"))
         self.assertLess(main.find("Přijatá opatření / úkoly"), main.find("Podpisy"))
-        self.assertLess(main.find("Významná zjištění"), main.find("Podpisy"))
+        self.assertLess(main.find("Podrobný přehled zjištění"), main.find("Podpisy"))
         self.assertLess(main.find("Detail zjištění"), main.find("Podpisy"))
         after_signatures = main.split("Podpisy", 1)[1]
         for forbidden in (
@@ -955,7 +955,7 @@ class AudityProtokolExportTestCase(unittest.TestCase):
             "Přehled výsledků",
             "Silné stránky systému",
             "Oblasti vyžadující pozornost",
-            "Významná zjištění",
+            "Podrobný přehled zjištění",
             "Doporučení vedoucího auditora",
             "Rozsah auditu",
             "Detail zjištění",

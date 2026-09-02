@@ -281,8 +281,8 @@ class InspectionReport2TestCase(unittest.TestCase):
         content = _odt_content(path)
         self.assertIn("Závada", content)
         self.assertNotIn("neshoda", content.casefold())
-        self.assertIn("Významná zjištění", content)
-        self.assertNotIn("Přehled zjištění", content)
+        self.assertIn("Podrobný přehled zjištění", content)
+        self.assertNotIn("Významná zjištění", content)
 
     def test_appendix_a_and_b_in_detailed_report(self) -> None:
         inspection = self._create_inspection()

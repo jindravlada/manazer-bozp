@@ -32,6 +32,7 @@ from core.shared.sluzby.control_activity_statistics_service import (
     control_activity_statistics_service,
 )
 from core.shared.sluzby.control_report_language import (
+    INSPECTION_EMPTY_FOUND_SENTENCE,
     PRILEZITOST_FORMS,
     ZAVADA_FORMS,
     format_during_found_sentence,
@@ -531,7 +532,7 @@ class InspectionExportContext:
         second_sentence = format_during_found_sentence(
             during="Během prověrky",
             clauses=clauses,
-            empty="Během prověrky nebyla zjištěna významná zjištění.",
+            empty=INSPECTION_EMPTY_FOUND_SENTENCE,
         )
         second_sentence += " "
 

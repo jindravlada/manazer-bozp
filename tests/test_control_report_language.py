@@ -5,6 +5,8 @@ from __future__ import annotations
 import unittest
 
 from core.shared.sluzby.control_report_language import (
+    AUDIT_EMPTY_FOUND_SENTENCE,
+    INSPECTION_EMPTY_FOUND_SENTENCE,
     NESHODA_FORMS,
     PRILEZITOST_FORMS,
     ZAVADA_FORMS,
@@ -85,7 +87,7 @@ class ControlReportLanguageTestCase(unittest.TestCase):
             format_during_found_sentence(
                 during="Během prověrky",
                 clauses=[format_feminine_found_clause(5, **PRILEZITOST_FORMS)],
-                empty="Během prověrky nebyla zjištěna významná zjištění.",
+                empty=INSPECTION_EMPTY_FOUND_SENTENCE,
             ),
         )
         self.assertEqual(
@@ -93,7 +95,7 @@ class ControlReportLanguageTestCase(unittest.TestCase):
             format_during_found_sentence(
                 during="Během auditu",
                 clauses=[format_feminine_found_clause(3, **NESHODA_FORMS)],
-                empty="Během auditu nebyla zjištěna významná zjištění.",
+                empty=AUDIT_EMPTY_FOUND_SENTENCE,
             ),
         )
         self.assertEqual(
@@ -104,7 +106,7 @@ class ControlReportLanguageTestCase(unittest.TestCase):
                     format_feminine_found_clause(1, **ZAVADA_FORMS),
                     format_feminine_found_clause(5, **PRILEZITOST_FORMS),
                 ],
-                empty="Během prověrky nebyla zjištěna významná zjištění.",
+                empty=INSPECTION_EMPTY_FOUND_SENTENCE,
             ),
         )
         self.assertEqual(
@@ -115,21 +117,30 @@ class ControlReportLanguageTestCase(unittest.TestCase):
                     format_feminine_found_clause(2, **NESHODA_FORMS),
                     format_feminine_found_clause(1, **PRILEZITOST_FORMS),
                 ],
-                empty="Během auditu nebyla zjištěna významná zjištění.",
+                empty=AUDIT_EMPTY_FOUND_SENTENCE,
             ),
         )
 
-    def test_during_sentence_empty_keeps_current_zero_wording(self) -> None:
-        empty = "Během prověrky nebyla zjištěna významná zjištění."
+    def test_during_sentence_empty_uses_empty_parameter(self) -> None:
         self.assertEqual(
-            empty,
+            INSPECTION_EMPTY_FOUND_SENTENCE,
             format_during_found_sentence(
                 during="Během prověrky",
                 clauses=[],
-                empty=empty,
+                empty=INSPECTION_EMPTY_FOUND_SENTENCE,
             ),
         )
-        self.assertNotIn("bylo zjištěno 0", empty)
+        self.assertEqual(
+            AUDIT_EMPTY_FOUND_SENTENCE,
+            format_during_found_sentence(
+                during="Během auditu",
+                clauses=[],
+                empty=AUDIT_EMPTY_FOUND_SENTENCE,
+            ),
+        )
+        self.assertNotIn("bylo zjištěno 0", INSPECTION_EMPTY_FOUND_SENTENCE)
+        self.assertNotIn("významná zjištění", INSPECTION_EMPTY_FOUND_SENTENCE)
+        self.assertNotIn("významná zjištění", AUDIT_EMPTY_FOUND_SENTENCE)
 
 
 if __name__ == "__main__":

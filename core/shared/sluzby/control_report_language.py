@@ -32,6 +32,13 @@ PRILEZITOST_FORMS = {
     "many": "příležitostí ke zlepšení",
 }
 
+INSPECTION_EMPTY_FOUND_SENTENCE = (
+    "Během prověrky nebyly zjištěny žádné závady ani příležitosti ke zlepšení."
+)
+AUDIT_EMPTY_FOUND_SENTENCE = (
+    "Během auditu nebyly zjištěny žádné neshody ani příležitosti ke zlepšení."
+)
+
 
 def format_feminine_found_clause(
     count: int,

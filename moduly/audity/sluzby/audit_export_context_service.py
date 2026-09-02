@@ -32,6 +32,7 @@ from core.shared.sluzby.control_activity_statistics_service import (
     control_activity_statistics_service,
 )
 from core.shared.sluzby.control_report_language import (
+    AUDIT_EMPTY_FOUND_SENTENCE,
     NESHODA_FORMS,
     PRILEZITOST_FORMS,
     format_during_found_sentence,
@@ -814,7 +815,7 @@ class AuditExportContext:
         second_sentence = format_during_found_sentence(
             during="Během auditu",
             clauses=clauses,
-            empty="Během auditu nebyla zjištěna významná zjištění.",
+            empty=AUDIT_EMPTY_FOUND_SENTENCE,
         )
         second_sentence += " "
 

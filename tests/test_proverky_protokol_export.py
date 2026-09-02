@@ -449,7 +449,7 @@ class ProverkyProtokolExportTestCase(unittest.TestCase):
             "CELKOVÉ HODNOCENÍ",
             "Přehled výsledků",
             "Oblasti vyžadující pozornost",
-            "Významná zjištění",
+            "Podrobný přehled zjištění",
             "Doporučení vedoucího prověrky",
             "Rozsah prověrky",
             "Detail zjištění",
@@ -462,7 +462,7 @@ class ProverkyProtokolExportTestCase(unittest.TestCase):
 
         self.assertNotIn("Protokol o prověrce BOZP", content)
         self.assertNotIn("Příloha – Kontrolované oblasti", content.replace("Příloha A – Kontrolované oblasti", ""))
-        self.assertNotIn("Přehled zjištění", content)
+        self.assertNotIn("Významná zjištění", content)
         self.assertNotIn("Příloha B – Výsledky jednotlivých kontrolních bodů", content)
 
     def test_strengths_and_attention_areas_in_output(self) -> None:
