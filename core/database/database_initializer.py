@@ -97,6 +97,8 @@ def initialize_database() -> None:
         ExternalAuditVisitParticipant,
     )
     from moduly.statni_dozor.modely import (  # noqa: F401
+        ControlAuthority,
+        ControlAuthorityOffice,
         StateSupervision,
         StateSupervisionParticipant,
         StateSupervisionRequiredDocument,

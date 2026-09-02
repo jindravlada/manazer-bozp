@@ -25,6 +25,9 @@ class StateSupervision(Base):
     authority_ico: Mapped[str | None] = mapped_column(String(20), nullable=True)
     authority_name: Mapped[str] = mapped_column(String(250), nullable=False, index=True)
     authority_address: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    authority_office_id: Mapped[int | None] = mapped_column(
+        Integer, nullable=True, index=True
+    )
 
     workplace_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     workplace_name_snapshot: Mapped[str] = mapped_column(

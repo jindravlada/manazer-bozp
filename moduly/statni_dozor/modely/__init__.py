@@ -1,5 +1,7 @@
 """Modely Státního dozoru."""
 
+from moduly.statni_dozor.modely.control_authority import ControlAuthority
+from moduly.statni_dozor.modely.control_authority_office import ControlAuthorityOffice
 from moduly.statni_dozor.modely.state_supervision import StateSupervision
 from moduly.statni_dozor.modely.state_supervision_finding_draft import (
     StateSupervisionFindingDraft,
@@ -24,6 +26,8 @@ from moduly.statni_dozor.modely.state_supervision_timeline_item_draft import (
 )
 
 __all__ = [
+    "ControlAuthority",
+    "ControlAuthorityOffice",
     "StateSupervision",
     "StateSupervisionFindingDraft",
     "StateSupervisionParticipant",

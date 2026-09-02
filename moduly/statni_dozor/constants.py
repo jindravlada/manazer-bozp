@@ -607,3 +607,63 @@ FINDING_COLUMN_HEADERS = [
     "Termín",
     "Úkol",
 ]
+
+# Katalog kontrolních orgánů (STATE-SUPERVISION-AUTHORITY-CATALOG-CORE-8A0)
+AUTHORITY_ORIGIN_BUNDLED = "bundled"
+AUTHORITY_ORIGIN_WEB = "web"
+AUTHORITY_ORIGIN_MANUAL = "manual"
+AUTHORITY_ORIGINS: frozenset[str] = frozenset(
+    {
+        AUTHORITY_ORIGIN_BUNDLED,
+        AUTHORITY_ORIGIN_WEB,
+        AUTHORITY_ORIGIN_MANUAL,
+    }
+)
+AUTHORITY_IMPORT_ORIGINS: frozenset[str] = frozenset(
+    {AUTHORITY_ORIGIN_BUNDLED, AUTHORITY_ORIGIN_WEB}
+)
+
+OFFICE_KIND_HEADQUARTERS = "headquarters"
+OFFICE_KIND_REGIONAL = "regional"
+OFFICE_KIND_TERRITORIAL = "territorial"
+OFFICE_KIND_OTHER = "other"
+OFFICE_KINDS: frozenset[str] = frozenset(
+    {
+        OFFICE_KIND_HEADQUARTERS,
+        OFFICE_KIND_REGIONAL,
+        OFFICE_KIND_TERRITORIAL,
+        OFFICE_KIND_OTHER,
+    }
+)
+
+AUTHORITY_CODE_REQUIRED_MESSAGE = "Není vyplněn kód kontrolního orgánu."
+AUTHORITY_NAME_REQUIRED_MESSAGE = "Není vyplněn název kontrolního orgánu."
+AUTHORITY_CODE_DUPLICATE_MESSAGE = "Kód kontrolního orgánu už existuje."
+AUTHORITY_EXTERNAL_KEY_DUPLICATE_MESSAGE = (
+    "Technický klíč kontrolního orgánu už existuje."
+)
+AUTHORITY_ORIGIN_INVALID_MESSAGE = "Neplatný původ záznamu kontrolního orgánu."
+AUTHORITY_DISPLAY_ORDER_INVALID_MESSAGE = (
+    "Pořadí zobrazení kontrolního orgánu nesmí být záporné."
+)
+AUTHORITY_NOT_FOUND_MESSAGE = "Kontrolní orgán už není k dispozici."
+AUTHORITY_HAS_ACTIVE_OFFICES_MESSAGE = (
+    "Kontrolní orgán má aktivní pracoviště. Nejprve je deaktivujte."
+)
+
+OFFICE_NAME_REQUIRED_MESSAGE = "Není vyplněn název příslušného pracoviště."
+OFFICE_AUTHORITY_REQUIRED_MESSAGE = "Není vyplněn kontrolní orgán pracoviště."
+OFFICE_KIND_INVALID_MESSAGE = "Neplatný druh pracoviště kontrolního orgánu."
+OFFICE_ORIGIN_INVALID_MESSAGE = (
+    "Neplatný původ záznamu pracoviště kontrolního orgánu."
+)
+OFFICE_EXTERNAL_KEY_DUPLICATE_MESSAGE = (
+    "Technický klíč pracoviště kontrolního orgánu už existuje."
+)
+OFFICE_DISPLAY_ORDER_INVALID_MESSAGE = (
+    "Pořadí zobrazení pracoviště nesmí být záporné."
+)
+OFFICE_NOT_FOUND_MESSAGE = "Příslušné pracoviště už není k dispozici."
+OFFICE_ACTIVE_UNDER_INACTIVE_AUTHORITY_MESSAGE = (
+    "Aktivní příslušné pracoviště nelze evidovat u neaktivního kontrolního orgánu."
+)

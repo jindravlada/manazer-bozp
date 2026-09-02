@@ -1,5 +1,9 @@
 """Služby Státního dozoru."""
 
+from moduly.statni_dozor.sluzby.control_authority_catalog_service import (
+    ControlAuthorityCatalogError,
+    control_authority_catalog_service,
+)
 from moduly.statni_dozor.sluzby.state_supervision_finding_service import (
     save_state_supervision_findings_batch,
     state_supervision_finding_service,
@@ -23,8 +27,10 @@ from moduly.statni_dozor.sluzby.state_supervision_timeline_item_service import (
 )
 
 __all__ = [
+    "ControlAuthorityCatalogError",
     "KEEP_EXISTING",
     "StateSupervisionError",
+    "control_authority_catalog_service",
     "state_supervision_service",
     "state_supervision_finding_service",
     "state_supervision_finding_task_service",

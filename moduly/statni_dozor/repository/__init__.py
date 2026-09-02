@@ -1,5 +1,8 @@
 """Repository Státního dozoru."""
 
+from moduly.statni_dozor.repository.control_authority_catalog_repository import (
+    ControlAuthorityCatalogRepository,
+)
 from moduly.statni_dozor.repository.state_supervision_participant_repository import (
     StateSupervisionParticipantRepository,
 )
@@ -14,6 +17,7 @@ from moduly.statni_dozor.repository.state_supervision_timeline_item_repository i
 )
 
 __all__ = [
+    "ControlAuthorityCatalogRepository",
     "StateSupervisionParticipantRepository",
     "StateSupervisionRepository",
     "StateSupervisionRequiredDocumentRepository",
