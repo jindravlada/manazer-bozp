@@ -29,7 +29,7 @@ AUDIT_CONCLUSION_REQUIRED_MESSAGE = (
     "Audit nelze dokončit. Vyplňte závěr auditu."
 )
 AUDIT_CONCLUSION_EXPORT_SECTION = "Závěr auditu"
-AUDIT_STRENGTHS_EXPORT_SECTION = "Silné stránky systému"
+AUDIT_STRENGTHS_EXPORT_SECTION = "Silné stránky"
 
 AUDIT_LEAD_RECOMMENDATION_LABEL = "Doporučení vedoucího auditora"
 AUDIT_LEAD_RECOMMENDATION_GENERATE_BUTTON = "Vytvořit doporučení podle výsledků"

@@ -487,7 +487,7 @@ class AudityProtokolExportTestCase(unittest.TestCase):
             "Základní informace",
             "CELKOVÉ HODNOCENÍ",
             "Přehled výsledků",
-            "Silné stránky systému",
+            "Silné stránky",
             "Oblasti vyžadující pozornost",
             "Podrobný přehled zjištění",
             "Doporučení vedoucího auditora",
@@ -967,7 +967,7 @@ class AudityProtokolExportTestCase(unittest.TestCase):
         for forbidden in (
             "CELKOVÉ HODNOCENÍ",
             "Přehled výsledků",
-            "Silné stránky systému",
+            "Silné stránky",
             "Oblasti vyžadující pozornost",
             "Podrobný přehled zjištění",
             "Doporučení vedoucího auditora",

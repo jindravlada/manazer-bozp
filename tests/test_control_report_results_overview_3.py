@@ -84,7 +84,7 @@ def _odt_content(path: Path) -> str:
 
 def _overview_section(content: str) -> str:
     after = content.split("Přehled výsledků", 1)[1]
-    for marker in ("Silné stránky systému", "Oblasti vyžadující pozornost"):
+    for marker in ("Silné stránky", "Oblasti vyžadující pozornost"):
         if marker in after:
             return after.split(marker, 1)[0]
     return after

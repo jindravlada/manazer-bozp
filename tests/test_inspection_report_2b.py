@@ -331,7 +331,7 @@ class InspectionReport2bTestCase(unittest.TestCase):
             # pořadí jako u auditu
             positions = [
                 content.find("Přehled výsledků"),
-                content.find("Silné stránky systému"),
+                content.find("Silné stránky"),
                 content.find("Oblasti vyžadující pozornost"),
                 content.find("Podrobný přehled zjištění"),
                 content.find("Doporučení vedoucího prověrky"),

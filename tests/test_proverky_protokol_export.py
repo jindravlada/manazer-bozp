@@ -522,7 +522,8 @@ class ProverkyProtokolExportTestCase(unittest.TestCase):
         content = _odt_content(path)
 
         self.assertIn("✔ Funkční organizace práce.", content)
-        self.assertIn("Silné stránky systému", content)
+        self.assertIn("Silné stránky", content)
+        self.assertNotIn("Silné stránky systému", content)
         self.assertIn("Doporučuje se dokončit otevřená nápravná opatření.", content)
         self.assertIn("🔴 Chybí označení únikových východů.", content)
         self.assertIn("🟡 Evidence preventivních opatření není vždy úplná.", content)
