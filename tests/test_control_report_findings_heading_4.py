@@ -304,7 +304,13 @@ class ControlReportFindingsHeading4TestCase(unittest.TestCase):
         for path in paths:
             content = _odt_content(path)
             self.assertIn(INSPECTION_EMPTY_FOUND_SENTENCE, content)
-            self.assertIn("Nejsou evidována významná zjištění.", _findings_section(content))
+            self.assertIn(
+                "Nejsou evidována žádná zjištění k podrobnému uvedení.",
+                _findings_section(content),
+            )
+            folded = content.casefold()
+            self.assertNotIn("významná zjištění", folded)
+            self.assertNotIn("významných zjištění", folded)
 
     def test_audit_only_opportunities_heading(self) -> None:
         audit = self._create_audit()
@@ -357,7 +363,13 @@ class ControlReportFindingsHeading4TestCase(unittest.TestCase):
         for path in paths:
             content = _odt_content(path)
             self.assertIn(AUDIT_EMPTY_FOUND_SENTENCE, content)
-            self.assertIn("Nejsou evidována významná zjištění.", _findings_section(content))
+            self.assertIn(
+                "Nejsou evidována žádná zjištění k podrobnému uvedení.",
+                _findings_section(content),
+            )
+            folded = content.casefold()
+            self.assertNotIn("významná zjištění", folded)
+            self.assertNotIn("významných zjištění", folded)
 
     def test_non_zero_czech_sentences_unchanged(self) -> None:
         inspection = self._create_inspection()

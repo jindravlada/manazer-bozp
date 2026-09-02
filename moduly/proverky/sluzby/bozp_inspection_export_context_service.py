@@ -31,7 +31,13 @@ from core.shared.section_summary import uses_section_summary_notes_mode
 from core.shared.sluzby.control_activity_statistics_service import (
     control_activity_statistics_service,
 )
+from core.shared.sluzby.control_report_attention import (
+    finding_task_ids,
+    format_attention_areas_text,
+    map_task_titles_by_finding_id,
+)
 from core.shared.sluzby.control_report_language import (
+    FINDINGS_OVERVIEW_EMPTY_SENTENCE,
     INSPECTION_EMPTY_FOUND_SENTENCE,
     PRILEZITOST_FORMS,
     ZAVADA_FORMS,
@@ -44,6 +50,7 @@ from core.shared.sluzby.control_report_overview import (
 from core.shared.sluzby.control_result_service import control_result_service
 from core.shared.sluzby.finding_service import finding_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
+from moduly.ukoly.sluzby.task_service import task_service
 from moduly.proverky.constants import (
     COMMISSION_RECORD_INVITED,
     COMMISSION_RECORD_LEADER,
@@ -324,7 +331,33 @@ class InspectionExportContext:
         return build_areas_appendix(self.controlled_areas_lines())
 
     def _control_point_results(self):
-        return control_result_service.get_for_entity(ENTITY_PROVERKY, self.inspection_id)
+        cached = getattr(self, "_control_point_results_cache", None)
+        if cached is not None:
+            return cached
+        results = control_result_service.get_for_entity(ENTITY_PROVERKY, self.inspection_id)
+        object.__setattr__(self, "_control_point_results_cache", results)
+        return results
+
+    def _export_findings(self):
+        cached = getattr(self, "_export_findings_cache", None)
+        if cached is not None:
+            return cached
+        findings = finding_service.get_for_entity(ENTITY_PROVERKY, self.inspection_id)
+        object.__setattr__(self, "_export_findings_cache", findings)
+        return findings
+
+    def _task_title_by_finding_id(self) -> dict[int, str]:
+        cached = getattr(self, "_task_title_by_finding_id_cache", None)
+        if cached is not None:
+            return cached
+        findings = self._export_findings()
+        task_ids = finding_task_ids(findings)
+        tasks_by_id = {
+            int(task.id): task for task in task_service.get_tasks_by_ids(task_ids)
+        } if task_ids else {}
+        mapping = map_task_titles_by_finding_id(findings, tasks_by_id)
+        object.__setattr__(self, "_task_title_by_finding_id_cache", mapping)
+        return mapping
 
     def appendix_control_points_text(self) -> OdtRichContent:
         """Příloha B – protokol: jen kontrolní otázky; podrobná zpráva: i komentáře a foto."""
@@ -488,7 +521,7 @@ class InspectionExportContext:
 
     def findings_overview_text(self) -> str:
         lines = self.findings_overview_lines()
-        return _join_blocks(lines) if lines else "Nejsou evidována významná zjištění."
+        return _join_blocks(lines) if lines else FINDINGS_OVERVIEW_EMPTY_SENTENCE
 
     def significant_findings_text(self) -> str:
         return self.findings_overview_text()
@@ -597,32 +630,11 @@ class InspectionExportContext:
         return OdtRichContent(paragraphs=paragraphs)
 
     def attention_areas_text(self) -> str:
-        results = self._control_point_results()
-        lines: list[str] = []
-        for row in sorted(
-            results,
-            key=lambda item: (
-                0 if item.result == CONTROL_RESULT_NEVYHOVUJE else 1,
-                item.source_area_label,
-                item.source_section_label,
-                item.source_control_point_label,
-                item.id,
-            ),
-        ):
-            label = self._attention_area_label(row)
-            if row.result == CONTROL_RESULT_NEVYHOVUJE:
-                lines.append(f"🔴 {label}")
-            elif row.result == CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM:
-                lines.append(f"🟡 {label}")
-        return "\n".join(lines) if lines else "—"
-
-    @staticmethod
-    def _attention_area_label(row) -> str:
-        for attr in ("source_control_point_label", "note", "source_section_label"):
-            value = _text(getattr(row, attr, ""))
-            if value:
-                return value
-        return "—"
+        return format_attention_areas_text(
+            self._control_point_results(),
+            self._export_findings(),
+            task_title_by_finding_id=self._task_title_by_finding_id(),
+        )
 
     def leader_recommendation_text(self) -> str:
         raw = _text(getattr(self.inspection, "doporuceni_vedouciho", ""))
@@ -636,7 +648,7 @@ class InspectionExportContext:
         )
 
     def findings_lines(self) -> list[str]:
-        findings = finding_service.get_for_entity(ENTITY_PROVERKY, self.inspection_id)
+        findings = self._export_findings()
         if not findings:
             return []
 

@@ -549,7 +549,7 @@ class AudityProtokolExportTestCase(unittest.TestCase):
                 section_id="sekce",
                 section_label="Sekce",
                 control_point_id="q_rec",
-                control_point_label="Evidence preventivních opatření není vždy úplná.",
+                control_point_label="Evidence preventivních opatření je úplná.",
             ),
             result=CONTROL_RESULT_VYHOVUJE_S_DOPORUCENIM,
         )
@@ -562,9 +562,23 @@ class AudityProtokolExportTestCase(unittest.TestCase):
                 section_id="sekce",
                 section_label="Sekce",
                 control_point_id="q_bad",
-                control_point_label="Analýza příčin neshod není prováděna jednotným způsobem.",
+                control_point_label="Analýza příčin neshod je prováděna jednotným způsobem.",
             ),
             result=CONTROL_RESULT_NEVYHOVUJE,
+        )
+        finding_service.create(
+            ENTITY_AUDITY,
+            audit.id,
+            description="Analýza příčin neshod není prováděna jednotným způsobem.",
+            source_control_point_id="q_bad",
+            status=FINDING_STATUS_OTEVRENE,
+        )
+        finding_service.create(
+            ENTITY_AUDITY,
+            audit.id,
+            description="Evidence preventivních opatření není vždy úplná.",
+            source_control_point_id="q_rec",
+            status=FINDING_STATUS_OTEVRENE,
         )
 
         path = protokol_audit_service.generate_for_audit(audit)

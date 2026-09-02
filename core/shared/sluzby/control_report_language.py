@@ -39,6 +39,10 @@ AUDIT_EMPTY_FOUND_SENTENCE = (
     "Během auditu nebyly zjištěny žádné neshody ani příležitosti ke zlepšení."
 )
 
+FINDINGS_OVERVIEW_EMPTY_SENTENCE = (
+    "Nejsou evidována žádná zjištění k podrobnému uvedení."
+)
+
 
 def format_feminine_found_clause(
     count: int,
