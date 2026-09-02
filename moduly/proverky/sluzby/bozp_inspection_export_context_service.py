@@ -37,6 +37,9 @@ from core.shared.sluzby.control_report_language import (
     format_during_found_sentence,
     format_feminine_found_clause,
 )
+from core.shared.sluzby.control_report_overview import (
+    format_result_overview_rating_lines,
+)
 from core.shared.sluzby.control_result_service import control_result_service
 from core.shared.sluzby.finding_service import finding_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
@@ -541,17 +544,19 @@ class InspectionExportContext:
     def results_overview_text(self) -> str:
         stats = self._activity_statistics()
         summary = bozp_inspection_service.get_conclusion_summary(self.inspection_id)
-        return "\n".join(
+        lines = format_result_overview_rating_lines(
+            stats,
+            scope_label="Kontrolovaných oblastí",
+            scope_count=stats.areas_checked,
+            points_label="Kontrolních bodů",
+        )
+        lines.extend(
             [
-                f"Kontrolovaných oblastí: {stats.areas_checked}",
-                f"Kontrolních bodů: {stats.control_points_checked}",
-                f"Vyhovuje: {stats.ratings_vyhovuje}",
-                f"Vyhovuje s doporučením: {stats.ratings_vyhovuje_s_doporucenim}",
-                f"Nevyhovuje: {stats.ratings_nevyhovuje}",
                 f"Zjištění: {stats.findings_total}",
                 f"Otevřené úkoly: {summary['tasks_active']}",
             ]
         )
+        return "\n".join(lines)
 
     def strengths_text(self) -> str:
         """Odrážky silných stránek bez nadpisu; prázdné → prázdný řetězec."""
