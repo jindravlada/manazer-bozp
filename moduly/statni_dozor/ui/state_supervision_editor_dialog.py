@@ -10,6 +10,7 @@ import logging
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QAbstractScrollArea,
     QCheckBox,
     QComboBox,
     QDialog,
@@ -104,17 +105,14 @@ from moduly.statni_dozor.constants import (
     GROUP_COURSE_TIMELINE,
     GROUP_FINDINGS,
     GROUP_INFORMING,
-    GROUP_INITIAL_INFORMATION,
     GROUP_NOTIFICATION,
     GROUP_OBJECTIONS,
     GROUP_PARTICIPANTS,
     GROUP_PLANNED_START,
-    GROUP_PREPARATION,
     GROUP_PROTOCOL,
     GROUP_REPRESENTATION,
     GROUP_REQUIRED_DOCUMENTS,
     GROUP_RESULT,
-    GROUP_SUBJECT,
     LABEL_ANNOUNCED_AT,
     LABEL_AUTHORITY,
     LABEL_AUTHORITY_ADDRESS,
@@ -125,7 +123,6 @@ from moduly.statni_dozor.constants import (
     LABEL_ENDED_AT,
     LABEL_FILE_NUMBER,
     LABEL_FINAL_SUMMARY,
-    LABEL_INITIAL_INFORMATION,
     LABEL_MANAGEMENT_NOTIFIED_AT,
     LABEL_NOTIFICATION_METHOD,
     LABEL_NOTIFICATION_NOTE,
@@ -171,7 +168,6 @@ from moduly.statni_dozor.constants import (
     TAB_SUBJECT_PREPARATION,
     TIMELINE_COLUMN_HEADERS,
     TIMELINE_HINT,
-    TOOLTIP_INITIAL_INFORMATION,
     TOOLTIP_PREPARATION_NOTE,
     TOOLTIP_SUBJECT,
 )
@@ -321,10 +317,77 @@ def _short_note_edit() -> QTextEdit:
     return edit
 
 
+def _compact_note_edit(*, min_lines: int = 3, max_lines: int = 4) -> QTextEdit:
+    """Víceřádkové pole s několika viditelnými řádky; delší text se rolovat."""
+    edit = QTextEdit()
+    edit.setAcceptRichText(False)
+    edit.setTabChangesFocus(True)
+    edit.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
+    edit.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+    line = max(edit.fontMetrics().lineSpacing(), 16)
+    chrome = 18
+    edit.setMinimumHeight(min_lines * line + chrome)
+    edit.setMaximumHeight(max_lines * line + chrome)
+    edit.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
+    return edit
+
+
+def _labeled_field(label_text: str, widget: QWidget) -> QWidget:
+    host = QWidget()
+    layout = QVBoxLayout(host)
+    layout.setContentsMargins(0, 0, 0, 0)
+    layout.setSpacing(4)
+    label = QLabel(f"{label_text}:")
+    label.setWordWrap(True)
+    layout.addWidget(label)
+    layout.addWidget(widget)
+    host.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
+    return host
+
+
+def _two_column_row(
+    left_label: str,
+    left_widget: QWidget,
+    right_label: str,
+    right_widget: QWidget,
+) -> QWidget:
+    host = QWidget()
+    host.setObjectName("ss_two_column_row")
+    row = QHBoxLayout(host)
+    row.setContentsMargins(0, 0, 0, 0)
+    row.setSpacing(16)
+    row.addWidget(_labeled_field(left_label, left_widget), 1)
+    row.addWidget(_labeled_field(right_label, right_widget), 1)
+    return host
+
+
+def _full_width_row(label_text: str, widget: QWidget) -> QWidget:
+    return _labeled_field(label_text, widget)
+
+
 def _normalize_datetime(value: datetime | None) -> datetime | None:
     if value is None:
         return None
     return value.replace(microsecond=0)
+
+
+def compose_subject_display_text(
+    subject: str | None,
+    initial_information: str | None,
+) -> str:
+    """Složí předmět pro editor ze staršího sloupce ``initial_information``.
+
+    Nic nezapisuje. Stejné texty po ořezání nezdvojuje.
+    """
+    subject_text = str(subject or "").strip()
+    initial_text = str(initial_information or "").strip()
+    if not initial_text:
+        return subject_text
+    if not subject_text:
+        return initial_text
+    if subject_text == initial_text:
+        return subject_text
+    return f"{subject_text}\n\n{initial_text}"
 
 
 def _participant_role_label(role: str | None) -> str:
@@ -564,7 +627,7 @@ class StateSupervisionEditorDialog(QDialog):
         layout = QVBoxLayout(page)
 
         notification = QGroupBox(GROUP_NOTIFICATION)
-        notification_form = QFormLayout(notification)
+        notification_layout = QVBoxLayout(notification)
         self.notification_method_combo = QComboBox()
         self.notification_method_combo.addItem(NOTIFICATION_METHOD_EMPTY_LABEL, None)
         for method in STATE_SUPERVISION_NOTIFICATION_METHOD_ORDER:
@@ -574,39 +637,63 @@ class StateSupervisionEditorDialog(QDialog):
             )
         self.announced_at_edit = NullableDateTimeEdit()
         self.file_number_edit = QLineEdit()
-        self.notification_note_edit = _short_note_edit()
-        notification_form.addRow(f"{LABEL_NOTIFICATION_METHOD}:", self.notification_method_combo)
-        notification_form.addRow(f"{LABEL_ANNOUNCED_AT}:", self.announced_at_edit)
-        notification_form.addRow(f"{LABEL_FILE_NUMBER}:", self.file_number_edit)
-        notification_form.addRow(f"{LABEL_NOTIFICATION_NOTE}:", self.notification_note_edit)
+        self.notification_note_edit = _compact_note_edit(min_lines=3, max_lines=3)
+        notification_layout.addWidget(
+            _two_column_row(
+                LABEL_NOTIFICATION_METHOD,
+                self.notification_method_combo,
+                LABEL_ANNOUNCED_AT,
+                self.announced_at_edit,
+            )
+        )
+        notification_layout.addWidget(
+            _full_width_row(LABEL_FILE_NUMBER, self.file_number_edit)
+        )
+        notification_layout.addWidget(
+            _full_width_row(LABEL_NOTIFICATION_NOTE, self.notification_note_edit)
+        )
 
         planned = QGroupBox(GROUP_PLANNED_START)
-        planned_form = QFormLayout(planned)
+        planned_layout = QVBoxLayout(planned)
         self.planned_start_at_edit = NullableDateTimeEdit()
         self.planned_start_place_edit = QLineEdit()
         self.planned_control_place_edit = QLineEdit()
-        planned_form.addRow(f"{LABEL_PLANNED_START_AT}:", self.planned_start_at_edit)
-        planned_form.addRow(f"{LABEL_PLANNED_START_PLACE}:", self.planned_start_place_edit)
-        planned_form.addRow(f"{LABEL_PLANNED_CONTROL_PLACE}:", self.planned_control_place_edit)
+        planned_layout.addWidget(
+            _two_column_row(
+                LABEL_PLANNED_START_AT,
+                self.planned_start_at_edit,
+                LABEL_PLANNED_START_PLACE,
+                self.planned_start_place_edit,
+            )
+        )
+        planned_layout.addWidget(
+            _full_width_row(LABEL_PLANNED_CONTROL_PLACE, self.planned_control_place_edit)
+        )
 
         actual = QGroupBox(GROUP_ACTUAL_COURSE)
-        actual_form = QFormLayout(actual)
+        actual_layout = QVBoxLayout(actual)
         self.started_at_edit = NullableDateTimeEdit()
         self.ended_at_edit = NullableDateTimeEdit()
-        actual_form.addRow(f"{LABEL_STARTED_AT}:", self.started_at_edit)
-        actual_form.addRow(f"{LABEL_ENDED_AT}:", self.ended_at_edit)
+        actual_layout.addWidget(
+            _two_column_row(
+                LABEL_STARTED_AT,
+                self.started_at_edit,
+                LABEL_ENDED_AT,
+                self.ended_at_edit,
+            )
+        )
 
         informing = QGroupBox(GROUP_INFORMING)
-        informing_form = QFormLayout(informing)
+        informing_layout = QVBoxLayout(informing)
         self.trade_union_notified_at_edit = NullableDateTimeEdit()
         self.management_notified_at_edit = NullableDateTimeEdit()
-        informing_form.addRow(
-            f"{LABEL_TRADE_UNION_NOTIFIED_AT}:",
-            self.trade_union_notified_at_edit,
-        )
-        informing_form.addRow(
-            f"{LABEL_MANAGEMENT_NOTIFIED_AT}:",
-            self.management_notified_at_edit,
+        informing_layout.addWidget(
+            _two_column_row(
+                LABEL_TRADE_UNION_NOTIFIED_AT,
+                self.trade_union_notified_at_edit,
+                LABEL_MANAGEMENT_NOTIFIED_AT,
+                self.management_notified_at_edit,
+            )
         )
 
         representation = QGroupBox(GROUP_REPRESENTATION)
@@ -619,13 +706,12 @@ class StateSupervisionEditorDialog(QDialog):
             self.power_of_attorney_note_edit,
         )
 
-        layout.addWidget(notification)
-        layout.addWidget(planned)
-        layout.addWidget(actual)
-        layout.addWidget(informing)
-        layout.addWidget(representation)
-        layout.addWidget(self._build_participants_section())
-        layout.addStretch(1)
+        layout.addWidget(notification, 0)
+        layout.addWidget(planned, 0)
+        layout.addWidget(actual, 0)
+        layout.addWidget(informing, 0)
+        layout.addWidget(representation, 0)
+        layout.addWidget(self._build_participants_section(), 1)
         return page
 
     def _build_participants_section(self) -> QWidget:
@@ -672,7 +758,7 @@ class StateSupervisionEditorDialog(QDialog):
         self.participants_table.setTextElideMode(Qt.TextElideMode.ElideRight)
         self.participants_table.setMinimumHeight(140)
         self.participants_table.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
         )
         configure_table_columns(self.participants_table, "state_supervision_participants")
         layout.addWidget(self.participants_table, 1)
@@ -695,40 +781,42 @@ class StateSupervisionEditorDialog(QDialog):
 
     def _build_subject_tab(self) -> QWidget:
         page = QWidget()
+        page.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         layout = QVBoxLayout(page)
+        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setSpacing(8)
 
-        subject_box = QGroupBox(GROUP_SUBJECT)
+        subject_box = QGroupBox(LABEL_SUBJECT)
+        subject_box.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum
+        )
         subject_layout = QVBoxLayout(subject_box)
-        self.subject_edit = _medium_note_edit()
-        self.subject_edit.setMaximumHeight(130)
+        self.subject_edit = _compact_note_edit(min_lines=3, max_lines=4)
         set_widget_tooltip(self.subject_edit, TOOLTIP_SUBJECT)
-        subject_layout.addWidget(QLabel(f"{LABEL_SUBJECT}:"))
-        subject_layout.addWidget(self.subject_edit, 1)
+        subject_layout.addWidget(self.subject_edit)
 
-        initial_box = QGroupBox(GROUP_INITIAL_INFORMATION)
-        initial_layout = QVBoxLayout(initial_box)
-        self.initial_information_edit = _medium_note_edit()
-        self.initial_information_edit.setMaximumHeight(130)
-        set_widget_tooltip(self.initial_information_edit, TOOLTIP_INITIAL_INFORMATION)
-        initial_layout.addWidget(QLabel(f"{LABEL_INITIAL_INFORMATION}:"))
-        initial_layout.addWidget(self.initial_information_edit, 1)
-
-        preparation_box = QGroupBox(GROUP_PREPARATION)
+        preparation_box = QGroupBox(LABEL_PREPARATION_NOTE)
+        preparation_box.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum
+        )
         preparation_layout = QVBoxLayout(preparation_box)
-        self.preparation_note_edit = _medium_note_edit(stretch=True)
-        self.preparation_note_edit.setMaximumHeight(140)
+        self.preparation_note_edit = _compact_note_edit(min_lines=3, max_lines=4)
         set_widget_tooltip(self.preparation_note_edit, TOOLTIP_PREPARATION_NOTE)
-        preparation_layout.addWidget(QLabel(f"{LABEL_PREPARATION_NOTE}:"))
-        preparation_layout.addWidget(self.preparation_note_edit, 1)
+        preparation_layout.addWidget(self.preparation_note_edit)
 
-        layout.addWidget(subject_box, 1)
-        layout.addWidget(initial_box, 1)
-        layout.addWidget(preparation_box, 1)
-        layout.addWidget(self._build_documents_section(), 3)
+        documents = self._build_documents_section()
+        documents.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
+
+        layout.addWidget(subject_box, 0)
+        layout.addWidget(preparation_box, 0)
+        layout.addWidget(documents, 1)
         return page
 
     def _build_documents_section(self) -> QWidget:
         box = QGroupBox(GROUP_REQUIRED_DOCUMENTS)
+        box.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         layout = QVBoxLayout(box)
 
         toolbar = QHBoxLayout()
@@ -769,9 +857,18 @@ class StateSupervisionEditorDialog(QDialog):
         self.documents_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.documents_table.setSortingEnabled(False)
         self.documents_table.setTextElideMode(Qt.TextElideMode.ElideRight)
-        self.documents_table.setMinimumHeight(140)
+        self.documents_table.setMinimumHeight(120)
         self.documents_table.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
+        self.documents_table.setSizeAdjustPolicy(
+            QAbstractScrollArea.SizeAdjustPolicy.AdjustIgnored
+        )
+        self.documents_table.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded
+        )
+        self.documents_table.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded
         )
         configure_table_columns(self.documents_table, "state_supervision_required_documents")
         layout.addWidget(self.documents_table, 1)
@@ -1069,7 +1166,6 @@ class StateSupervisionEditorDialog(QDialog):
             self.power_of_attorney_checkbox,
             self.power_of_attorney_note_edit,
             self.subject_edit,
-            self.initial_information_edit,
             self.preparation_note_edit,
             self.result_combo,
             self.final_summary_edit,
@@ -1109,9 +1205,11 @@ class StateSupervisionEditorDialog(QDialog):
             self.power_of_attorney_note_edit.setPlainText(
                 str(record.power_of_attorney_note or "")
             )
-            self.subject_edit.setPlainText(str(record.subject or ""))
-            self.initial_information_edit.setPlainText(
-                str(record.initial_information or "")
+            self.subject_edit.setPlainText(
+                compose_subject_display_text(
+                    record.subject,
+                    record.initial_information,
+                )
             )
             self.preparation_note_edit.setPlainText(str(record.preparation_note or ""))
             self.result_combo.setCurrentText(str(record.result or ""))
@@ -1193,7 +1291,7 @@ class StateSupervisionEditorDialog(QDialog):
             "power_of_attorney_required": self.power_of_attorney_checkbox.isChecked(),
             "power_of_attorney_note": self.power_of_attorney_note_edit.toPlainText().strip(),
             "subject": self.subject_edit.toPlainText().strip(),
-            "initial_information": self.initial_information_edit.toPlainText().strip(),
+            "initial_information": None,
             "preparation_note": self.preparation_note_edit.toPlainText().strip(),
             "result": self.result_combo.currentText().strip(),
             "final_summary": self.final_summary_edit.toPlainText().strip(),

@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-02 – STATE-SUPERVISION-EDITOR-LAYOUT-7B1
+
+**Co se povedlo:** První záložka je dvousloupcová bez splitteru; tabulka dokladů dostala zbývající výšku (294 px při 1600×900, 474 px při 1920×1080). Starší `initial_information` se slučuje do předmětu až při skutečném uložení.
+
+**Co už bychom dnes udělali jinak:** Nenechat tři roztažené textové skupiny na stejné záložce s tabulkou. Jejich `sizeHint` vytlačí viewport tabulky pod lištu tlačítek, takže poslední řádek nejde vybrat a scrollbar se neobjeví.
+
+**Co bylo zbytečně složité:** —
+
+**Nové pravidlo:** Záložka s tabulkou pod formulářem: textové bloky `stretch 0`, tabulka `stretch 1` a `SizeAdjustPolicy.AdjustIgnored`. Výšku tabulky neodvozovat od počtu řádků. Legacy sloupec se nesmí mazat migrací; sloučit ho do kanonického pole až při uložení záznamu.
+
+**Aktualizované dokumenty:** —
+
 ### 2026-08-30 – AUDIT-METHOD-LONG-OPERATION-4B
 
 **Co se povedlo:** Použít, Uložit a zavřít i zavírací Uložit jdou jedním persistovacím tokem mimo GUI vlákno; dávkový zápis druhů z 4A zůstal.

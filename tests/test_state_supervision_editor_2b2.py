@@ -41,7 +41,6 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.statni_dozor.constants import (
         ACTION_SAVE_AND_CLOSE,
         AUTHORITY_REQUIRED_MESSAGE,
-        LABEL_INITIAL_INFORMATION,
         LABEL_PREPARATION_NOTE,
         LABEL_SUBJECT,
         TAB_ANNOUNCEMENT,
@@ -124,16 +123,17 @@ class StateSupervisionEditor2b2TestCase(unittest.TestCase):
         self.assertEqual(dialog.tabs.count(), 5)
         dialog.close()
 
-    def test_02_three_multiline_fields(self) -> None:
+    def test_02_two_multiline_fields_without_initial_editor(self) -> None:
         dialog = StateSupervisionEditorDialog()
+        self.assertFalse(hasattr(dialog, "initial_information_edit"))
         for widget, label in (
             (dialog.subject_edit, LABEL_SUBJECT),
-            (dialog.initial_information_edit, LABEL_INITIAL_INFORMATION),
             (dialog.preparation_note_edit, LABEL_PREPARATION_NOTE),
         ):
             self.assertIsInstance(widget, QTextEdit, label)
             self.assertFalse(widget.acceptRichText())
-            self.assertGreaterEqual(widget.minimumHeight(), 90)
+            self.assertGreaterEqual(widget.minimumHeight(), 56)
+            self.assertLessEqual(widget.maximumHeight(), 130)
             self.assertTrue(widget.lineWrapMode())
         dialog.close()
 
@@ -146,9 +146,14 @@ class StateSupervisionEditor2b2TestCase(unittest.TestCase):
         dialog = StateSupervisionEditorDialog(supervision_id=record.id)
         self.assertFalse(dialog._editor.is_dirty())
         self.assertFalse(dialog._editor.save_button.isEnabled())
-        self.assertEqual(dialog.subject_edit.toPlainText(), _CZECH_SUBJECT)
-        self.assertEqual(dialog.initial_information_edit.toPlainText(), _CZECH_INITIAL)
+        self.assertEqual(
+            dialog.subject_edit.toPlainText(),
+            f"{_CZECH_SUBJECT}\n\n{_CZECH_INITIAL}",
+        )
         self.assertEqual(dialog.preparation_note_edit.toPlainText(), _CZECH_PREPARATION)
+        loaded = state_supervision_service.get_supervision(record.id)
+        self.assertEqual(loaded.subject, _CZECH_SUBJECT)
+        self.assertEqual(loaded.initial_information, _CZECH_INITIAL)
         dialog.close()
 
     def test_04_create_with_second_tab_texts(self) -> None:
@@ -157,13 +162,12 @@ class StateSupervisionEditor2b2TestCase(unittest.TestCase):
         dialog.authority_combo.setCurrentText(f"KHS {self.marker}")
         dialog.workplace_selector.set_workplace_id(self.workplace.id)
         dialog.subject_edit.setPlainText(_CZECH_SUBJECT)
-        dialog.initial_information_edit.setPlainText(_CZECH_INITIAL)
         dialog.preparation_note_edit.setPlainText(_CZECH_PREPARATION)
         self.assertTrue(self._save(dialog))
         self.assertEqual(_count_supervisions(), before + 1)
         loaded = state_supervision_service.get_supervision(dialog.supervision_id)
         self.assertEqual(loaded.subject, _CZECH_SUBJECT)
-        self.assertEqual(loaded.initial_information, _CZECH_INITIAL)
+        self.assertIsNone(loaded.initial_information)
         self.assertEqual(loaded.preparation_note, _CZECH_PREPARATION)
         self.assertEqual(loaded.workplace_id, self.workplace.id)
         self.assertFalse(dialog._editor.is_dirty())
@@ -173,7 +177,6 @@ class StateSupervisionEditor2b2TestCase(unittest.TestCase):
         record = self._create(subject="Původní předmět")
         dialog = StateSupervisionEditorDialog(supervision_id=record.id)
         dialog.subject_edit.setPlainText("Upravený předmět")
-        dialog.initial_information_edit.setPlainText("Nová informace od inspektora")
         dialog.preparation_note_edit.setPlainText("Zajistit doprovod")
         self.assertTrue(self._save(dialog))
         self.assertFalse(dialog._editor.is_dirty())
@@ -182,13 +185,10 @@ class StateSupervisionEditor2b2TestCase(unittest.TestCase):
 
         reopened = StateSupervisionEditorDialog(supervision_id=record.id)
         self.assertEqual(reopened.subject_edit.toPlainText(), "Upravený předmět")
-        self.assertEqual(
-            reopened.initial_information_edit.toPlainText(),
-            "Nová informace od inspektora",
-        )
         self.assertEqual(reopened.preparation_note_edit.toPlainText(), "Zajistit doprovod")
         loaded = state_supervision_service.get_supervision(record.id)
         self.assertEqual(loaded.subject, "Upravený předmět")
+        self.assertIsNone(loaded.initial_information)
         reopened.close()
 
     def test_06_empty_values_and_clear_saved_text(self) -> None:
@@ -199,7 +199,6 @@ class StateSupervisionEditor2b2TestCase(unittest.TestCase):
         )
         dialog = StateSupervisionEditorDialog(supervision_id=record.id)
         dialog.subject_edit.clear()
-        dialog.initial_information_edit.setPlainText("")
         dialog.preparation_note_edit.setPlainText("   ")
         self.assertTrue(self._save(dialog))
         loaded = state_supervision_service.get_supervision(record.id)
@@ -269,7 +268,6 @@ class StateSupervisionEditor2b2TestCase(unittest.TestCase):
         record = self._create(subject="Původní")
         dialog = StateSupervisionEditorDialog(supervision_id=record.id)
         dialog.subject_edit.setPlainText("Rozepsaný předmět")
-        dialog.initial_information_edit.setPlainText("Rozepsaná informace")
         with patch.object(
             state_supervision_service,
             "update_supervision",
@@ -283,10 +281,6 @@ class StateSupervisionEditor2b2TestCase(unittest.TestCase):
                     self.assertFalse(self._save(dialog))
         self.assertTrue(dialog._editor.is_dirty())
         self.assertEqual(dialog.subject_edit.toPlainText(), "Rozepsaný předmět")
-        self.assertEqual(
-            dialog.initial_information_edit.toPlainText(),
-            "Rozepsaná informace",
-        )
         self.assertEqual(
             state_supervision_service.get_supervision(record.id).subject,
             "Původní",
