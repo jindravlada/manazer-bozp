@@ -44,6 +44,11 @@ from core.shared.sluzby.control_report_language import FINDINGS_OVERVIEW_EMPTY_S
 from core.shared.sluzby.control_report_overview import (
     format_result_overview_rating_lines,
 )
+from core.shared.sluzby.control_report_task_deadlines import (
+    format_linked_tasks_assessment_sentence,
+    format_linked_tasks_overview_lines,
+    summarize_linked_task_deadlines,
+)
 from core.shared.sluzby.control_result_service import control_result_service
 from core.shared.sluzby.finding_service import finding_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
@@ -344,18 +349,38 @@ class InspectionExportContext:
         object.__setattr__(self, "_export_findings_cache", findings)
         return findings
 
+    def _export_tasks_by_id(self) -> dict[int, object]:
+        cached = getattr(self, "_export_tasks_by_id_cache", None)
+        if cached is not None:
+            return cached
+        task_ids = finding_task_ids(self._export_findings())
+        tasks_by_id = {
+            int(task.id): task for task in task_service.get_tasks_by_ids(task_ids)
+        } if task_ids else {}
+        object.__setattr__(self, "_export_tasks_by_id_cache", tasks_by_id)
+        return tasks_by_id
+
     def _task_title_by_finding_id(self) -> dict[int, str]:
         cached = getattr(self, "_task_title_by_finding_id_cache", None)
         if cached is not None:
             return cached
-        findings = self._export_findings()
-        task_ids = finding_task_ids(findings)
-        tasks_by_id = {
-            int(task.id): task for task in task_service.get_tasks_by_ids(task_ids)
-        } if task_ids else {}
-        mapping = map_task_titles_by_finding_id(findings, tasks_by_id)
+        mapping = map_task_titles_by_finding_id(
+            self._export_findings(),
+            self._export_tasks_by_id(),
+        )
         object.__setattr__(self, "_task_title_by_finding_id_cache", mapping)
         return mapping
+
+    def _linked_tasks_summary(self):
+        cached = getattr(self, "_linked_tasks_deadline_summary_cache", None)
+        if cached is not None:
+            return cached
+        summary = summarize_linked_task_deadlines(
+            self._export_findings(),
+            self._export_tasks_by_id(),
+        )
+        object.__setattr__(self, "_linked_tasks_deadline_summary_cache", summary)
+        return summary
 
     def appendix_control_points_text(self) -> OdtRichContent:
         """Příloha B – protokol: jen kontrolní otázky; podrobná zpráva: i komentáře a foto."""
@@ -562,11 +587,15 @@ class InspectionExportContext:
             second_sentence += "Bylo prokázáno systémové selhání v některých oblastech."
         else:
             second_sentence += "Prověrka neprokázala systémové selhání."
+        task_sentence = format_linked_tasks_assessment_sentence(
+            self._linked_tasks_summary()
+        )
+        if task_sentence:
+            second_sentence = f"{second_sentence} {task_sentence}"
         return f"{first_sentence}\n{second_sentence}"
 
     def results_overview_text(self) -> str:
         stats = self._activity_statistics()
-        summary = bozp_inspection_service.get_conclusion_summary(self.inspection_id)
         lines = format_result_overview_rating_lines(
             stats,
             scope_label="Kontrolovaných oblastí",
@@ -579,7 +608,9 @@ class InspectionExportContext:
                 INSPECTION_FINDING_REPORT_TYPE_ORDER,
             )
         )
-        lines.append(f"Otevřené úkoly: {summary['tasks_active']}")
+        lines.extend(
+            format_linked_tasks_overview_lines(self._linked_tasks_summary())
+        )
         return "\n".join(lines)
 
     def strengths_text(self) -> str:
