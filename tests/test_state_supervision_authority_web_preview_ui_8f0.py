@@ -56,7 +56,9 @@ from moduly.statni_dozor.constants import (
     WEB_CHECK_UI_DIALOG_TITLE,
     WEB_CHECK_UI_DIFFERENCES_TEXT,
     WEB_CHECK_UI_EMPTY_FILTER_TEXT,
-    WEB_CHECK_UI_EMPTY_WEB_VALUE_TOOLTIP,
+    WEB_APPLY_UI_BUTTON_LABEL,
+    WEB_APPLY_UI_ERASE_TOOLTIP,
+    WEB_APPLY_UI_PROTECTED_NOTICE,
     WEB_CHECK_UI_ERROR_NETWORK,
     WEB_CHECK_UI_ERROR_OTHER,
     WEB_CHECK_UI_ERROR_STRUCTURE,
@@ -108,6 +110,7 @@ from moduly.statni_dozor.sluzby.control_authority_web.diff_models import (
 )
 from moduly.statni_dozor.sluzby.control_authority_web.labels import (
     format_web_diff_value,
+    web_apply_parent_action_text,
     web_check_error_user_message,
     web_diff_action_label,
     web_diff_field_label,
@@ -681,10 +684,16 @@ class StateSupervisionAuthorityWebPreviewUi8f0TestCase(unittest.TestCase):
                 self.assertEqual(parent.text(0), WEB_CHECK_UI_UNKNOWN_STATUS_LABEL)
             else:
                 self.assertEqual(parent.text(0), WEB_DIFF_STATUS_USER_LABELS[status])
-            if action in WEB_DIFF_ACTION_USER_LABELS:
-                self.assertEqual(parent.text(3), WEB_DIFF_ACTION_USER_LABELS[action])
-            if review:
-                self.assertEqual(parent.text(3), WEB_DIFF_ACTION_USER_LABELS[WEB_DIFF_ACTION_REVIEW] if action == WEB_DIFF_ACTION_REVIEW else parent.text(3))
+            if status in {
+                WEB_DIFF_STATUS_PROTECTED,
+                WEB_DIFF_STATUS_PROTECTED_MISSING_REMOTE,
+            }:
+                self.assertEqual(parent.text(3), WEB_APPLY_UI_PROTECTED_NOTICE)
+            else:
+                self.assertEqual(
+                    parent.text(3),
+                    web_apply_parent_action_text(status, action),
+                )
         changed = _parent_by_status(dialog, WEB_DIFF_STATUS_CHANGED)
         assert changed is not None
         for field, label in WEB_DIFF_FIELD_USER_LABELS.items():
@@ -719,7 +728,7 @@ class StateSupervisionAuthorityWebPreviewUi8f0TestCase(unittest.TestCase):
         child = parent.child(0)
         self.assertEqual(child.text(1), "111 222")
         self.assertEqual(child.text(2), EMPTY_VALUE)
-        self.assertEqual(child.toolTip(2), WEB_CHECK_UI_EMPTY_WEB_VALUE_TOOLTIP)
+        self.assertEqual(child.toolTip(2), WEB_APPLY_UI_ERASE_TOOLTIP)
         self.assertEqual(
             dialog.tree.textElideMode(), Qt.TextElideMode.ElideRight
         )
@@ -747,8 +756,11 @@ class StateSupervisionAuthorityWebPreviewUi8f0TestCase(unittest.TestCase):
             if widget is not dialog.open_source_button
         ]
         self.assertIn("Zavřít", buttons)
-        self.assertNotIn("Použít", " ".join(buttons))
-        self.assertNotIn("Použít změny", " ".join(buttons))
+        self.assertIn(WEB_APPLY_UI_BUTTON_LABEL, buttons)
+        self.assertFalse(dialog.apply_button.isEnabled())
+        self.assertTrue(dialog.close_button.isDefault())
+        self.assertFalse(dialog.apply_button.isDefault())
+        self.assertFalse(dialog.apply_button.autoDefault())
         self.assertIsNotNone(
             dialog.close_box.button(QDialogButtonBox.StandardButton.Close)
         )
@@ -801,9 +813,8 @@ class StateSupervisionAuthorityWebPreviewUi8f0TestCase(unittest.TestCase):
         self.assertEqual(_catalog_stamps(self.db), stamps)
         preview_source = inspect.getsource(ControlAuthorityWebPreviewDialog)
         tab_source = inspect.getsource(ControlAuthorityCatalogTab)
-        self.assertNotIn("apply_authority_web_changes", preview_source)
         self.assertNotIn("apply_authority_web_changes", tab_source)
-        self.assertNotIn("Použít", preview_source)
+        self.assertIn("apply_authority_web_changes", preview_source)
         dialog.close()
         editor.close()
 

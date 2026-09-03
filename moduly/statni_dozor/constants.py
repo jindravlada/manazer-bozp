@@ -1097,3 +1097,48 @@ WEB_DIFF_SUMMARY_CHANGED = "Změněné údaje"
 WEB_DIFF_SUMMARY_NEW = "Nová pracoviště"
 WEB_DIFF_SUMMARY_MISSING = "Na webu nenalezena"
 WEB_DIFF_SUMMARY_REVIEW = "Vyžadují ruční posouzení"
+
+# Výběr a potvrzení webových změn (STATE-SUPERVISION-AUTHORITY-WEB-APPLY-UI-8F1)
+WEB_APPLY_UI_BUTTON_LABEL = "Použít vybrané změny"
+WEB_APPLY_UI_CONFIRM_TITLE = "Použít změny katalogu?"
+WEB_APPLY_UI_CONFIRM_APPLY = "Použít změny"
+WEB_APPLY_UI_CONFIRM_CANCEL = "Zrušit"
+WEB_APPLY_UI_CONFIRM_BODY = (
+    "Použijí se pouze označené změny. Historické kontroly zůstanou beze změny."
+)
+WEB_APPLY_UI_PROTECTED_NOTICE = (
+    "Tento záznam byl ručně upraven. Vybrané údaje budou přepsány hodnotami z webu."
+)
+WEB_APPLY_UI_PROTECTED_BATCH_WARNING = "Výběr obsahuje ručně upravené záznamy."
+WEB_APPLY_UI_MISSING_HINT = (
+    "Pracoviště nebylo v úplném výsledku oficiálního zdroje nalezeno. "
+    "Deaktivace nesmaže historické kontroly."
+)
+WEB_APPLY_UI_ERASE_TOOLTIP = "Použitím změny bude současná hodnota vymazána."
+WEB_APPLY_UI_ACTION_CREATE = "Založit nové pracoviště"
+WEB_APPLY_UI_ACTION_DEACTIVATE = "Deaktivovat pracoviště"
+WEB_APPLY_UI_ACTION_REACTIVATE = "Znovu aktivovat pracoviště"
+WEB_APPLY_UI_DUPLICATE_HINT = "Možnou duplicitu vyřešte ručně v katalogu."
+WEB_APPLY_UI_CONFLICT_HINT = "Konflikt identity je nutné vyřešit ručně."
+WEB_APPLY_UI_UNKNOWN_HINT = "Tuto položku nelze automaticky použít."
+WEB_APPLY_UI_NONE_SELECTED = "Nejsou vybrány žádné změny."
+WEB_APPLY_UI_SELECTED_COUNT = "Vybráno změn: {count}"
+WEB_APPLY_UI_STALE = (
+    "Katalog se od provedení webové kontroly změnil. "
+    "Zavřete tento náhled a spusťte kontrolu znovu."
+)
+WEB_APPLY_UI_REFRESH_FAILED = (
+    "Změny byly uloženy, ale přehled katalogu se nepodařilo obnovit. "
+    "Obnovte jej prosím ručně."
+)
+WEB_APPLY_UI_SUCCESS = (
+    "Změny byly použity. Aktualizováno: {updated}, založeno: {created}, "
+    "deaktivováno: {deactivated}, aktivováno: {reactivated}."
+)
+WEB_APPLY_UI_ERROR = "Vybrané změny se nepodařilo použít."
+WEB_APPLY_UI_CONFIRM_UPDATED = "Aktualizovaná pole"
+WEB_APPLY_UI_CONFIRM_NEW = "Nová pracoviště"
+WEB_APPLY_UI_CONFIRM_DEACTIVATE = "Deaktivovaná pracoviště"
+WEB_APPLY_UI_CONFIRM_REACTIVATE = "Znovu aktivovaná pracoviště"
+WEB_APPLY_UI_CONFIRM_PROTECTED = "Ručně upravené záznamy"
+WEB_APPLY_UI_CONFIRM_ERASED = "Vymazané hodnoty"

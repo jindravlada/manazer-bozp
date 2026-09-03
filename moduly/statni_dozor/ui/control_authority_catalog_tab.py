@@ -47,6 +47,7 @@ from moduly.statni_dozor.constants import (
     OFFICE_ACTIVE_UNDER_INACTIVE_AUTHORITY_MESSAGE,
     OFFICE_CATALOG_TOOLTIP,
     OFFICE_NOT_FOUND_MESSAGE,
+    WEB_APPLY_UI_REFRESH_FAILED,
     WEB_CHECK_UI_BUTTON_LABEL,
     WEB_CHECK_UI_DIALOG_TITLE,
     WEB_CHECK_UI_ERROR_OTHER,
@@ -66,6 +67,7 @@ from moduly.statni_dozor.sluzby.control_authority_web.check import (
     has_web_adapter,
 )
 from moduly.statni_dozor.sluzby.control_authority_web.labels import (
+    web_apply_success_message,
     web_check_error_user_message,
 )
 from moduly.statni_dozor.ui.control_authority_dialog import ControlAuthorityDialog
@@ -626,6 +628,37 @@ class ControlAuthorityCatalogTab(QWidget):
             return
         dialog = ControlAuthorityWebPreviewDialog(self, result)
         self._exec_dialog(dialog)
+        self._handle_web_apply_outcome(dialog)
+
+    def _handle_web_apply_outcome(self, dialog: ControlAuthorityWebPreviewDialog) -> None:
+        if not self._web_check_ui_alive():
+            return
+        result = getattr(dialog, "apply_result", None)
+        if result is None:
+            return
+        authority = self._selected_web_authority()
+        select = None
+        if authority is not None:
+            select = ("authority", int(authority.id))
+        else:
+            kind, record_id = self._selected()
+            if kind is not None and record_id is not None:
+                select = (kind, record_id)
+        try:
+            self.refresh(select=select)
+            if self._load_error:
+                raise RuntimeError("Obnovení stromu katalogu selhalo.")
+        except Exception:
+            logger.exception("Obnovení katalogu po použití webových změn selhalo.")
+            QMessageBox.warning(
+                self, WEB_CHECK_UI_DIALOG_TITLE, WEB_APPLY_UI_REFRESH_FAILED
+            )
+            return
+        QMessageBox.information(
+            self,
+            WEB_CHECK_UI_DIALOG_TITLE,
+            web_apply_success_message(result),
+        )
 
     def _on_web_check_failed(self, message: str) -> None:
         if not self._web_check_ui_alive():

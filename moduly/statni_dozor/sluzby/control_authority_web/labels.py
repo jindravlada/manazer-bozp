@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import datetime
 
 from moduly.statni_dozor.constants import (
@@ -35,14 +36,37 @@ from moduly.statni_dozor.constants import (
     WEB_DIFF_ERROR_MISSING_KEY,
     WEB_DIFF_ERROR_UNKNOWN_OBSERVED_FIELD,
     WEB_DIFF_FIELD_USER_LABELS,
-    WEB_DIFF_STATUS_CHANGED,
-    WEB_DIFF_STATUS_MISSING_REMOTE,
-    WEB_DIFF_STATUS_NEW,
-    WEB_DIFF_STATUS_UNCHANGED,
     WEB_DIFF_STATUS_USER_LABELS,
     WEB_DIFF_SUMMARY_CHANGED,
     WEB_DIFF_SUMMARY_MISSING,
     WEB_DIFF_SUMMARY_NEW,
+    WEB_APPLY_ERROR_STALE,
+    WEB_APPLY_UI_ACTION_CREATE,
+    WEB_APPLY_UI_ACTION_DEACTIVATE,
+    WEB_APPLY_UI_ACTION_REACTIVATE,
+    WEB_APPLY_UI_CONFIRM_DEACTIVATE,
+    WEB_APPLY_UI_CONFIRM_ERASED,
+    WEB_APPLY_UI_CONFIRM_NEW,
+    WEB_APPLY_UI_CONFIRM_PROTECTED,
+    WEB_APPLY_UI_CONFIRM_REACTIVATE,
+    WEB_APPLY_UI_CONFIRM_UPDATED,
+    WEB_APPLY_UI_CONFLICT_HINT,
+    WEB_APPLY_UI_DUPLICATE_HINT,
+    WEB_APPLY_UI_ERROR,
+    WEB_APPLY_UI_NONE_SELECTED,
+    WEB_APPLY_UI_SELECTED_COUNT,
+    WEB_APPLY_UI_STALE,
+    WEB_APPLY_UI_SUCCESS,
+    WEB_APPLY_UI_UNKNOWN_HINT,
+    WEB_DIFF_STATUS_CHANGED,
+    WEB_DIFF_STATUS_IDENTITY_CONFLICT,
+    WEB_DIFF_STATUS_INACTIVE_PRESENT,
+    WEB_DIFF_STATUS_MISSING_REMOTE,
+    WEB_DIFF_STATUS_NEW,
+    WEB_DIFF_STATUS_POSSIBLE_DUPLICATE,
+    WEB_DIFF_STATUS_PROTECTED,
+    WEB_DIFF_STATUS_PROTECTED_MISSING_REMOTE,
+    WEB_DIFF_STATUS_UNCHANGED,
     WEB_DIFF_SUMMARY_REVIEW,
     WEB_DIFF_SUMMARY_UNCHANGED,
 )
@@ -167,3 +191,69 @@ def web_check_error_user_message(exc: BaseException) -> str:
     if cause_code == WEB_CHECK_ERROR_UNSUPPORTED:
         return WEB_CHECK_UI_ERROR_UNSUPPORTED
     return WEB_CHECK_UI_ERROR_OTHER
+
+
+@dataclass(frozen=True)
+class WebApplySelectionSummary:
+    update_fields: int = 0
+    creates: int = 0
+    deactivates: int = 0
+    reactivates: int = 0
+    protected_records: int = 0
+    erasures: int = 0
+
+    @property
+    def total(self) -> int:
+        return self.update_fields + self.creates + self.deactivates + self.reactivates
+
+
+def web_apply_parent_action_text(status: str, recommended_action: str) -> str:
+    if status == WEB_DIFF_STATUS_NEW:
+        return WEB_APPLY_UI_ACTION_CREATE
+    if status in {WEB_DIFF_STATUS_MISSING_REMOTE, WEB_DIFF_STATUS_PROTECTED_MISSING_REMOTE}:
+        return WEB_APPLY_UI_ACTION_DEACTIVATE
+    if status == WEB_DIFF_STATUS_INACTIVE_PRESENT:
+        return WEB_APPLY_UI_ACTION_REACTIVATE
+    if status == WEB_DIFF_STATUS_POSSIBLE_DUPLICATE:
+        return WEB_APPLY_UI_DUPLICATE_HINT
+    if status == WEB_DIFF_STATUS_IDENTITY_CONFLICT:
+        return WEB_APPLY_UI_CONFLICT_HINT
+    if status not in WEB_DIFF_STATUS_USER_LABELS:
+        return WEB_APPLY_UI_UNKNOWN_HINT
+    return web_diff_action_label(recommended_action)
+
+
+def web_apply_selection_count_text(count: int) -> str:
+    if count <= 0:
+        return WEB_APPLY_UI_NONE_SELECTED
+    return WEB_APPLY_UI_SELECTED_COUNT.format(count=count)
+
+
+def web_apply_confirm_lines(summary: WebApplySelectionSummary) -> tuple[str, ...]:
+    return (
+        f"{WEB_APPLY_UI_CONFIRM_UPDATED}: {summary.update_fields}",
+        f"{WEB_APPLY_UI_CONFIRM_NEW}: {summary.creates}",
+        f"{WEB_APPLY_UI_CONFIRM_DEACTIVATE}: {summary.deactivates}",
+        f"{WEB_APPLY_UI_CONFIRM_REACTIVATE}: {summary.reactivates}",
+        f"{WEB_APPLY_UI_CONFIRM_PROTECTED}: {summary.protected_records}",
+        f"{WEB_APPLY_UI_CONFIRM_ERASED}: {summary.erasures}",
+    )
+
+
+def web_apply_success_message(result) -> str:
+    return WEB_APPLY_UI_SUCCESS.format(
+        updated=len(getattr(result, "updated_ids", ()) or ()),
+        created=len(getattr(result, "created_ids", ()) or ()),
+        deactivated=len(getattr(result, "deactivated_ids", ()) or ()),
+        reactivated=len(getattr(result, "reactivated_ids", ()) or ()),
+    )
+
+
+def web_apply_error_user_message(exc: BaseException) -> str:
+    code = str(getattr(exc, "code", "") or "")
+    if code == WEB_APPLY_ERROR_STALE:
+        return WEB_APPLY_UI_STALE
+    text = str(exc).strip()
+    if text:
+        return text
+    return WEB_APPLY_UI_ERROR
