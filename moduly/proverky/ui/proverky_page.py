@@ -16,6 +16,15 @@ from PySide6.QtWidgets import (
 from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
+from core.shared.constants import (
+    ENTITY_PROVERKY,
+    FINDING_TYPE_NEDOSTATEK,
+    FINDING_TYPE_NESHODA,
+    FINDING_TYPE_PORUSENI_PREDPISU,
+    FINDING_TYPE_PRILEZITOST,
+    FINDING_TYPE_ZAVADA,
+)
+from core.shared.sluzby.finding_service import finding_service
 from moduly.proverky.constants import (
     DEFAULT_INSPECTION_STATUS_FILTER,
     INSPECTION_DETAILED_REPORT_BUTTON_LABEL,
@@ -50,15 +59,19 @@ from moduly.proverky.ui.rocni_zprava_dialog import RocniZpravaDialog
 
 
 class _InspectionRow:
-    def __init__(self, inspection):
+    def __init__(self, inspection, *, counts: dict[str, int]):
         self.id = inspection.id
         self.number = inspection.number
         self.inspection_date = inspection.inspection_date
         self.workplace_name = inspection.workplace_name
-        self.lead_inspector_name = ""
-        self.findings_count = bozp_inspection_service.findings_count(inspection.id)
+        self.findings_total_count = int(counts.get("total", 0) or 0)
+        self.zavady_count = int(counts.get("zavady", 0) or 0)
+        self.nedostatky_count = int(counts.get("nedostatky", 0) or 0)
+        self.poruseni_predpisu_count = int(counts.get("poruseni_predpisu", 0) or 0)
+        self.neshody_count = int(counts.get("neshody", 0) or 0)
+        self.pkz_count = int(counts.get("pkz", 0) or 0)
+        self.ostatni_count = int(counts.get("ostatni", 0) or 0)
         self.status = inspection.status
-        self.title = inspection.title
 
 
 class ProverkyPage(QWidget):
@@ -151,7 +164,56 @@ class ProverkyPage(QWidget):
 
     def refresh(self) -> None:
         inspections = self._filter_inspections(bozp_inspection_service.get_all())
-        rows = [_InspectionRow(inspection) for inspection in inspections]
+
+        inspection_ids = [int(inspection.id) for inspection in inspections]
+        findings = finding_service.get_for_entities(ENTITY_PROVERKY, inspection_ids)
+
+        counts_by_inspection_id: dict[int, dict[str, int]] = {
+            inspection_id: {
+                "total": 0,
+                "zavady": 0,
+                "nedostatky": 0,
+                "poruseni_predpisu": 0,
+                "neshody": 0,
+                "pkz": 0,
+                "ostatni": 0,
+            }
+            for inspection_id in inspection_ids
+        }
+
+        for finding in findings:
+            inspection_id = int(getattr(finding, "entity_id", 0) or 0)
+            bucket = counts_by_inspection_id.get(inspection_id)
+            if bucket is None:
+                continue
+
+            bucket["total"] += 1
+            code = str(getattr(finding, "finding_type", "") or "").strip()
+            if code == FINDING_TYPE_ZAVADA:
+                bucket["zavady"] += 1
+            elif code == FINDING_TYPE_NEDOSTATEK:
+                bucket["nedostatky"] += 1
+            elif code == FINDING_TYPE_PORUSENI_PREDPISU:
+                bucket["poruseni_predpisu"] += 1
+            elif code == FINDING_TYPE_NESHODA:
+                bucket["neshody"] += 1
+            elif code == FINDING_TYPE_PRILEZITOST:
+                bucket["pkz"] += 1
+
+        for bucket in counts_by_inspection_id.values():
+            bucket["ostatni"] = (
+                bucket["total"]
+                - bucket["zavady"]
+                - bucket["nedostatky"]
+                - bucket["poruseni_predpisu"]
+                - bucket["neshody"]
+                - bucket["pkz"]
+            )
+
+        rows = [
+            _InspectionRow(inspection, counts=counts_by_inspection_id.get(inspection.id, {}))
+            for inspection in inspections
+        ]
         self.table.load_inspections(rows)
         configure_table_columns(self.table, "bozp_inspections")
         self.table.clearSelection()

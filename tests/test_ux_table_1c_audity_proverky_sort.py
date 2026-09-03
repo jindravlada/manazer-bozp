@@ -285,10 +285,14 @@ class UxTable1cProverkySortTests(unittest.TestCase):
                 self.number = item.number
                 self.inspection_date = item.inspection_date
                 self.workplace_name = item.workplace_name
-                self.lead_inspector_name = ""
-                self.findings_count = bozp_inspection_service.findings_count(item.id)
+                self.findings_total_count = 0
+                self.zavady_count = 0
+                self.nedostatky_count = 0
+                self.poruseni_predpisu_count = 0
+                self.neshody_count = 0
+                self.pkz_count = 0
+                self.ostatni_count = 0
                 self.status = item.status
-                self.title = item.title or f"Prověrka {uuid.uuid4().hex[:4]}"
 
         return Row(inspection)
 
@@ -365,9 +369,9 @@ class UxTable1cProverkySortTests(unittest.TestCase):
 
         table = BozpInspectionTable()
         table.load_inspections([self._row(done), self._row(planned), self._row(running)])
-        table.sortItems(6, Qt.SortOrder.AscendingOrder)
+        table.sortItems(11, Qt.SortOrder.AscendingOrder)
         self.assertEqual(
-            _column_texts(table, 6),
+            _column_texts(table, 11),
             [
                 INSPECTION_STATUS_PLANOVANO,
                 INSPECTION_STATUS_PROBIHA,
