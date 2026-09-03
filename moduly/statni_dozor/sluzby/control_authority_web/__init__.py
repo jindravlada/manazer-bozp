@@ -27,6 +27,11 @@ from moduly.statni_dozor.sluzby.control_authority_web.models import (
     ControlAuthorityWebAdapterError,
     ControlAuthorityWebFetchResult,
 )
+from moduly.statni_dozor.sluzby.control_authority_web.suip_adapter import (
+    fetch_suip_offices,
+    parse_suip_hub_html,
+    parse_suip_office_html,
+)
 
 __all__ = [
     "ControlAuthorityCatalogSnapshotService",
@@ -43,5 +48,8 @@ __all__ = [
     "control_authority_catalog_snapshot_service",
     "diff_control_authority_offices",
     "fetch_du_offices",
+    "fetch_suip_offices",
     "parse_du_offices_html",
+    "parse_suip_hub_html",
+    "parse_suip_office_html",
 ]

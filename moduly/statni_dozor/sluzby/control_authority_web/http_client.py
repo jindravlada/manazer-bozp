@@ -12,7 +12,7 @@ import requests
 from requests import Response
 from requests.exceptions import SSLError, Timeout
 
-from core.version import APP_EXE_NAME, APP_NAME, APP_VERSION
+from core.version import APP_EXE_NAME, APP_VERSION
 from moduly.statni_dozor.constants import (
     WEB_ADAPTER_ERROR_HTTP,
     WEB_ADAPTER_ERROR_INVALID_URL,
@@ -41,7 +41,7 @@ _CHUNK_SIZE = 8192
 
 
 def default_user_agent() -> str:
-    return f"{APP_EXE_NAME}/{APP_VERSION} ({APP_NAME})"
+    return f"{APP_EXE_NAME}/{APP_VERSION}"
 
 
 @dataclass(frozen=True)
