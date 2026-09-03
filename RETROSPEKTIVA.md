@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-03 – STATE-SUPERVISION-AUTHORITY-WEB-MULTI-COVERAGE-9A3
+
+**Co se povedlo:** Registr webových adapterů je klíčovaný `coverage_id`. `check_authority_web("khs")` dál spouští jen `khs-regional`; další rozsah stejného orgánu půjde přidat bez změny UI.
+
+**Co už bychom dnes udělali jinak:** ČBÚ nechat s `coverage_id=cbu-regional`, i když pokrývá territorial. Přejmenování by rozbilo 9A1.
+
+**Co bylo zbytečně složité:** Dvě nezávislé implementace kontroly podle kódu orgánu a podle rozsahu. Stačí jedna cesta a primární coverage jako vstupní bod.
+
+**Jaké nové pravidlo z toho vzniklo:** Každý orgán má právě jeden primární adapter. Další coverage se kontrolují jen podle `coverage_id` a nesmí se slučovat do jednoho complete výsledku.
+
+---
+
 ### 2026-09-03 – STATE-SUPERVISION-KHS-TERRITORIAL-SEED-9A2
 
 **Co se povedlo:** Bundled katalog KHS má 48 ověřených územních pracovišť z aktuálních oficiálních webů; čistá instalace má 5 orgánů a 94 pracovišť. Krajský webový check dál vidí jen 14 regional klíčů.

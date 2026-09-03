@@ -53,8 +53,9 @@ from moduly.statni_dozor.sluzby.control_authority_web.catalog_snapshot_service i
     snapshot_from_office,
 )
 from moduly.statni_dozor.sluzby.control_authority_web.check import (
+    ControlAuthorityWebCheckError,
     ControlAuthorityWebCheckResult,
-    get_web_adapter_info,
+    get_web_adapter_info_by_coverage,
     has_web_adapter,
 )
 from moduly.statni_dozor.sluzby.control_authority_web.coverage import (
@@ -273,7 +274,13 @@ class ControlAuthorityWebApplyService:
                     code=code or check_result.authority_code
                 ),
             )
-        info = get_web_adapter_info(code)
+        coverage = check_result.coverage
+        if coverage is None:
+            coverage = check_result.adapter_info.coverage
+        try:
+            info = get_web_adapter_info_by_coverage(coverage.coverage_id)
+        except ControlAuthorityWebCheckError as exc:
+            raise _apply_error(exc.code, str(exc)) from exc
         if check_result.fetched_at is None:
             raise _apply_error(WEB_DIFF_ERROR_INCOMPLETE, WEB_DIFF_INCOMPLETE_MESSAGE)
         fetch_result = check_result.fetch_result
@@ -282,6 +289,8 @@ class ControlAuthorityWebApplyService:
         if (
             fetch_result.authority_code != info.authority_code
             or check_result.authority_code != info.authority_code
+            or coverage != info.coverage
+            or check_result.adapter_info.coverage != info.coverage
         ):
             raise _apply_error(
                 WEB_CHECK_ERROR_AUTHORITY_MISMATCH,
@@ -289,9 +298,6 @@ class ControlAuthorityWebApplyService:
             )
         records = tuple(check_result.remote_records)
         if tuple(fetch_result.records) != records:
-            raise _apply_error(WEB_DIFF_ERROR_INCOMPLETE, WEB_DIFF_INCOMPLETE_MESSAGE)
-        coverage = check_result.coverage
-        if coverage is None or coverage != info.coverage:
             raise _apply_error(WEB_DIFF_ERROR_INCOMPLETE, WEB_DIFF_INCOMPLETE_MESSAGE)
         try:
             assert_records_match_coverage(

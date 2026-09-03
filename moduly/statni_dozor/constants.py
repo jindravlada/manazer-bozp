@@ -987,6 +987,31 @@ WEB_CHECK_AUTHORITY_MISMATCH_MESSAGE = (
 WEB_CHECK_COVERAGE_KIND_MESSAGE = (
     "Webový adapter vrátil druh pracoviště mimo svůj deklarovaný rozsah."
 )
+WEB_CHECK_ERROR_UNSUPPORTED_COVERAGE = "unsupported_coverage"
+WEB_CHECK_ERROR_COVERAGE_REQUIRED = "coverage_id_required"
+WEB_CHECK_UNSUPPORTED_COVERAGE_MESSAGE = (
+    "Rozsah webového adapteru „{coverage_id}“ není podporován."
+)
+WEB_CHECK_DUPLICATE_COVERAGE_MESSAGE = (
+    "Duplicitní identifikátor rozsahu webového adapteru."
+)
+WEB_CHECK_DUPLICATE_PRIMARY_MESSAGE = (
+    "Kontrolní orgán má více primárních webových adapterů."
+)
+WEB_CHECK_MISSING_PRIMARY_MESSAGE = (
+    "Kontrolní orgán nemá primární webový adapter."
+)
+WEB_CHECK_REGISTRY_COVERAGE_KEY_MESSAGE = (
+    "Fetch webového adapteru je registrovaný pod jiným identifikátorem rozsahu."
+)
+WEB_CHECK_DISPLAY_ORDER_INVALID_MESSAGE = (
+    "Pořadí zobrazení rozsahu webového adapteru nesmí být záporné."
+)
+WEB_CHECK_COVERAGE_LABEL_KHS_REGIONAL = "Krajské hygienické stanice"
+WEB_CHECK_COVERAGE_LABEL_DU_OFFICES = "Pracoviště Drážního úřadu"
+WEB_CHECK_COVERAGE_LABEL_SUIP_REGIONAL = "Oblastní inspektoráty práce"
+WEB_CHECK_COVERAGE_LABEL_CBU_REGIONAL = "Obvodní báňské úřady"
+WEB_CHECK_COVERAGE_LABEL_HZS_REGIONAL = "HZS krajů"
 
 # Rozsah pokrytí webového adapteru (STATE-SUPERVISION-AUTHORITY-WEB-COVERAGE-9A1)
 WEB_COVERAGE_ID_DU_OFFICES = "du-offices"
