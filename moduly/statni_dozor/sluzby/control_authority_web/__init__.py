@@ -8,6 +8,17 @@ from moduly.statni_dozor.sluzby.control_authority_web.cbu_adapter import (
     fetch_cbu_offices,
     parse_cbu_office_html,
 )
+from moduly.statni_dozor.sluzby.control_authority_web.check import (
+    ControlAuthorityWebAdapterInfo,
+    ControlAuthorityWebAdapterRegistration,
+    ControlAuthorityWebCheckError,
+    ControlAuthorityWebCheckResult,
+    ControlAuthorityWebCheckService,
+    check_authority_web,
+    get_web_adapter_info,
+    has_web_adapter,
+    supported_authority_codes,
+)
 from moduly.statni_dozor.sluzby.control_authority_web.diff import (
     diff_control_authority_offices,
 )
@@ -54,9 +65,15 @@ __all__ = [
     "ControlAuthorityOfficeFieldChange",
     "ControlAuthorityOfficeWebRecord",
     "ControlAuthorityWebAdapterError",
+    "ControlAuthorityWebAdapterInfo",
+    "ControlAuthorityWebAdapterRegistration",
+    "ControlAuthorityWebCheckError",
+    "ControlAuthorityWebCheckResult",
+    "ControlAuthorityWebCheckService",
     "ControlAuthorityWebDiffError",
     "ControlAuthorityWebDiffResult",
     "ControlAuthorityWebFetchResult",
+    "check_authority_web",
     "control_authority_catalog_snapshot_service",
     "diff_control_authority_offices",
     "fetch_cbu_offices",
@@ -64,10 +81,13 @@ __all__ = [
     "fetch_hzs_offices",
     "fetch_khs_offices",
     "fetch_suip_offices",
+    "get_web_adapter_info",
+    "has_web_adapter",
     "parse_cbu_office_html",
     "parse_du_offices_html",
     "parse_hzs_offices_html",
     "parse_khs_offices_html",
     "parse_suip_hub_html",
     "parse_suip_office_html",
+    "supported_authority_codes",
 ]

@@ -962,3 +962,20 @@ WEB_DIFF_REASON_DUPLICATE_CITY_SCOPE = (
 WEB_DIFF_REASON_IDENTITY = (
     "Stejný technický klíč patří jinému kontrolnímu orgánu."
 )
+
+# Společná read-only webová kontrola (STATE-SUPERVISION-AUTHORITY-WEB-CHECK-CORE-8E0)
+WEB_CHECK_ERROR_UNSUPPORTED = "unsupported_authority"
+WEB_CHECK_ERROR_CODE_REQUIRED = "authority_code_required"
+WEB_CHECK_ERROR_ADAPTER = "adapter"
+WEB_CHECK_ERROR_UNEXPECTED_COUNT = "unexpected_office_count"
+WEB_CHECK_ERROR_AUTHORITY_MISMATCH = "authority_code_mismatch"
+WEB_CHECK_CODE_REQUIRED_MESSAGE = "Není vyplněn kód kontrolního orgánu."
+WEB_CHECK_UNSUPPORTED_MESSAGE = (
+    "Pro kontrolní orgán „{code}“ není dostupná webová kontrola."
+)
+WEB_CHECK_UNEXPECTED_COUNT_MESSAGE = (
+    "Oficiální stránka kontrolního orgánu vrátila neočekávaný počet pracovišť."
+)
+WEB_CHECK_AUTHORITY_MISMATCH_MESSAGE = (
+    "Webový adapter vrátil výsledek jiného kontrolního orgánu."
+)
