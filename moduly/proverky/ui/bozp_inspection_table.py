@@ -1,3 +1,5 @@
+import re
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QBrush, QPalette
 from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QTableWidget
@@ -15,6 +17,10 @@ from core.widgets.typed_table_sort import (
 )
 from moduly.proverky.constants import INSPECTION_SPIS_STATUSES
 
+COL_NUMBER = 1
+_INSPECTION_NUMBER_RE = re.compile(r"^(\d+)/(\d+)$")
+_NUMBER_SORT_YEAR_FACTOR = 1_000_000
+
 
 def _status_sort(status: str):
     try:
@@ -28,6 +34,19 @@ def _text_or_empty(display: str):
     if not display or display == "—":
         return typed_empty()
     return typed_text(display)
+
+
+def inspection_number_sort_value(number: str | None):
+    """Složený klíč: rok, pak číselné pořadí. Neplatné/prázdné → empty."""
+    raw = str(number or "").strip()
+    if not raw or raw == "—":
+        return typed_empty()
+    match = _INSPECTION_NUMBER_RE.fullmatch(raw)
+    if match is None:
+        return typed_empty()
+    sequence = int(match.group(1))
+    year = int(match.group(2))
+    return typed_int(year * _NUMBER_SORT_YEAR_FACTOR + sequence)
 
 def _apply_count_emphasis(item, value: int) -> None:
     """
@@ -91,6 +110,7 @@ class BozpInspectionTable(QTableWidget):
         self.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         enable_typed_sorting(self)
+        self.sortItems(COL_NUMBER, Qt.SortOrder.AscendingOrder)
 
     def load_inspections(self, inspections) -> None:
         with sorting_paused(self):
@@ -186,7 +206,7 @@ class BozpInspectionTable(QTableWidget):
                     ),
                     create_typed_item(
                         number,
-                        _text_or_empty(number),
+                        inspection_number_sort_value(number),
                         stable_id=record_id,
                     ),
                     create_typed_item(

@@ -266,8 +266,8 @@ class InspectionsPlanGeneration2Tests(unittest.TestCase):
                 _InspectionRow(low, counts={"total": 2, "zavady": 2}),
             ]
         )
-        self.assertEqual(table.item(0, 1).text(), "2/2027")
-        self.assertEqual(table.item(1, 1).text(), "1/2027")
+        self.assertEqual(table.item(0, 1).text(), "1/2027")
+        self.assertEqual(table.item(1, 1).text(), "2/2027")
         table.sortItems(4, Qt.SortOrder.AscendingOrder)
         self.assertEqual(table.item(0, 4).text(), "2")
         self.assertEqual(table.item(1, 4).text(), "10")
