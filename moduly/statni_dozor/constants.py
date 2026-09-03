@@ -735,3 +735,36 @@ AUTHORITY_CATALOG_SEED_COLLISION_MESSAGE = (
     "Výchozí katalog kontrolních orgánů nelze importovat, "
     "protože technický klíč koliduje s existujícím záznamem."
 )
+
+# Webové adaptéry kontrolních orgánů (STATE-SUPERVISION-AUTHORITY-WEB-DU-8D0)
+DU_AUTHORITY_CODE = "du"
+DU_OFFICES_SOURCE_URL = "https://du.gov.cz/kontakty/"
+DU_OFFICE_EXTERNAL_KEYS: tuple[str, ...] = ("du:praha", "du:plzen", "du:olomouc")
+WEB_ADAPTER_ERROR_NETWORK = "network"
+WEB_ADAPTER_ERROR_TIMEOUT = "timeout"
+WEB_ADAPTER_ERROR_HTTP = "http"
+WEB_ADAPTER_ERROR_INVALID_URL = "invalid_url"
+WEB_ADAPTER_ERROR_TOO_LARGE = "too_large"
+WEB_ADAPTER_ERROR_UNSUPPORTED_CONTENT = "unsupported_content"
+WEB_ADAPTER_ERROR_UNREADABLE_HTML = "unreadable_html"
+WEB_ADAPTER_ERROR_INCOMPLETE = "incomplete"
+WEB_ADAPTER_ERROR_DUPLICATE_KEY = "duplicate_key"
+WEB_ADAPTER_NETWORK_MESSAGE = "Stránku kontrolního orgánu se nepodařilo načíst."
+WEB_ADAPTER_TIMEOUT_MESSAGE = "Načtení stránky kontrolního orgánu vypršelo."
+WEB_ADAPTER_HTTP_MESSAGE = "Oficiální stránka kontrolního orgánu vrátila chybovou odpověď."
+WEB_ADAPTER_INVALID_URL_MESSAGE = "Adresa oficiální stránky kontrolního orgánu není povolená."
+WEB_ADAPTER_TOO_LARGE_MESSAGE = "Odpověď oficiální stránky kontrolního orgánu je příliš velká."
+WEB_ADAPTER_UNSUPPORTED_CONTENT_MESSAGE = (
+    "Oficiální stránka kontrolního orgánu nevrátila očekávaný HTML obsah."
+)
+WEB_ADAPTER_UNREADABLE_HTML_MESSAGE = (
+    "Strukturu oficiální stránky kontrolního orgánu nelze bezpečně přečíst."
+)
+WEB_ADAPTER_INCOMPLETE_MESSAGE = (
+    "Oficiální stránka kontrolního orgánu neobsahuje kompletní seznam pracovišť."
+)
+WEB_ADAPTER_DUPLICATE_KEY_MESSAGE = (
+    "Oficiální stránka kontrolního orgánu obsahuje duplicitní pracoviště."
+)
+WEB_ADAPTER_HTTP_TIMEOUT_SECONDS = 20
+WEB_ADAPTER_MAX_RESPONSE_BYTES = 1_048_576
