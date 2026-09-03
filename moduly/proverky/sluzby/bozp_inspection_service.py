@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from dataclasses import dataclass
+import re
 
 from core.shared.section_summary import (
     NOTES_MODE_SECTION_SUMMARY_V1,
@@ -38,6 +39,7 @@ _OPEN_FINDING_STATUSES = frozenset(
         FINDING_STATUS_V_PROCESU,
     }
 )
+_INSPECTION_NUMBER_RE = re.compile(r"^(\d+)/(\d+)$")
 
 
 @dataclass(frozen=True)
@@ -85,10 +87,13 @@ class BozpInspectionService:
         data = self._validated_fields(fields)
         if "notes_mode" not in data:
             data["notes_mode"] = NOTES_MODE_SECTION_SUMMARY_V1
+        year = int(data["year"])
+        number = self.allocate_number_for_year(year)
+        if self._number_exists(number):
+            raise ValueError(f"Číslo prověrky {number} už v roce {year} existuje.")
+        data["number"] = number
         inspection = BozpInspection(**data)
-        saved = self.repository.add(inspection)
-        saved.number = self._make_number(saved.id, saved.year)
-        return self.repository.update(saved)
+        return self.repository.add(inspection)
 
     def update_inspection(self, inspection_id: int, **fields) -> BozpInspection | None:
         inspection = self.repository.get_by_id(inspection_id)
@@ -316,10 +321,38 @@ class BozpInspectionService:
         if finished_at < started_at:
             raise ValueError(INSPECTION_INVALID_DATE_ORDER_MESSAGE)
 
+    def allocate_number_for_year(self, year: int) -> str:
+        """Další volné číslo `{pořadí}/{rok}` podle maxima v daném roce."""
+        number_year = int(year)
+        inspections = self.get_all()
+        existing_numbers = {
+            str(item.number or "").strip()
+            for item in inspections
+        }
+        used_sequences: set[int] = set()
+        for item in inspections:
+            sequence = self._sequence_from_number(item.number, number_year)
+            if sequence is not None:
+                used_sequences.add(sequence)
+        sequence = (max(used_sequences) + 1) if used_sequences else 1
+        while True:
+            number = f"{sequence}/{number_year}"
+            if number not in existing_numbers:
+                return number
+            sequence += 1
+
+    def _number_exists(self, number: str) -> bool:
+        wanted = str(number or "").strip()
+        return any(str(item.number or "").strip() == wanted for item in self.get_all())
+
     @staticmethod
-    def _make_number(inspection_id: int, year: int | None) -> str:
-        number_year = year or date.today().year
-        return f"{inspection_id}/{number_year}"
+    def _sequence_from_number(number: str | None, year: int) -> int | None:
+        match = _INSPECTION_NUMBER_RE.fullmatch(str(number or "").strip())
+        if match is None:
+            return None
+        if int(match.group(2)) != int(year):
+            return None
+        return int(match.group(1))
 
 
 bozp_inspection_service = BozpInspectionService()

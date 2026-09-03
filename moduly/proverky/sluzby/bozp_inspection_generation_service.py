@@ -1,7 +1,12 @@
 from dataclasses import dataclass
 from datetime import date
+import logging
 
 from moduly.nastaveni.constants.workplace_audit_constants import DEFAULT_PREFERRED_AUDIT_MONTHS
+from moduly.nastaveni.constants.workplace_hierarchy_constants import (
+    WORKPLACE_ITEM_TYPE_OPERATION,
+    WORKPLACE_ITEM_TYPES,
+)
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.nastaveni.sluzby.workplace_audit_planning import (
     parse_preferred_months_json,
@@ -13,6 +18,8 @@ from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_servi
 
 ANNUAL_INSPECTION_INTERVAL_MONTHS = 12
 
+logger = logging.getLogger(__name__)
+
 
 @dataclass(frozen=True)
 class InspectionGenerationResult:
@@ -23,7 +30,7 @@ class InspectionGenerationResult:
 class BozpInspectionGenerationService:
     def generate_for_year(self, year: int) -> InspectionGenerationResult:
         workplaces = settings_service.get_workplaces(include_inactive=False)
-        existing_workplace_ids = self._workplaces_with_inspection_for_year(year)
+        existing_operation_ids = self._operations_with_inspection_for_year(year)
         month_usage = self._month_usage_for_year(year)
 
         date_from = date(year, 1, 1)
@@ -31,9 +38,18 @@ class BozpInspectionGenerationService:
         created: list[BozpInspection] = []
         skipped = 0
 
-        for workplace in sorted(workplaces, key=lambda item: (item.id or 0, item.name)):
+        operations = [
+            workplace
+            for workplace in workplaces
+            if self._is_generatable_operation(workplace)
+        ]
+        operations.sort(key=lambda item: (item.id or 0, str(item.name or "")))
+
+        for workplace in operations:
             workplace_id = workplace.id
-            if workplace_id is None or workplace_id in existing_workplace_ids:
+            if workplace_id is None:
+                continue
+            if workplace_id in existing_operation_ids:
                 skipped += 1
                 continue
 
@@ -63,6 +79,7 @@ class BozpInspectionGenerationService:
                 inspection_type=DEFAULT_INSPECTION_TYPE,
             )
             created.append(inspection)
+            existing_operation_ids.add(workplace_id)
             month_usage[(planned_year, planned_month)] = month_usage.get((planned_year, planned_month), 0) + 1
 
         return InspectionGenerationResult(
@@ -70,7 +87,24 @@ class BozpInspectionGenerationService:
             skipped_existing=skipped,
         )
 
-    def _workplaces_with_inspection_for_year(self, year: int) -> set[int]:
+    def _is_generatable_operation(self, workplace) -> bool:
+        if workplace is None:
+            return False
+        item_type = str(getattr(workplace, "item_type", "") or "").strip()
+        if item_type not in WORKPLACE_ITEM_TYPES:
+            logger.warning(
+                "Generování prověrek: vynechán záznam id=%s name=%r item_type=%r "
+                "(nejednoznačná úroveň hierarchie).",
+                getattr(workplace, "id", None),
+                getattr(workplace, "name", ""),
+                item_type,
+            )
+            return False
+        if item_type != WORKPLACE_ITEM_TYPE_OPERATION:
+            return False
+        return bool(getattr(workplace, "active", True))
+
+    def _operations_with_inspection_for_year(self, year: int) -> set[int]:
         workplace_ids: set[int] = set()
         for inspection in bozp_inspection_service.get_for_year(year):
             if inspection.workplace_id is not None:

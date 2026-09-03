@@ -26,8 +26,8 @@ class GenerateInspectionsDialog(QDialog):
         layout = QVBoxLayout(self)
 
         info = QLabel(
-            "Automaticky založí roční prověrky BOZP pro aktivní pracoviště, "
-            "která pro vybraný rok ještě nemají záznam. Měsíce se rozloží rovnoměrně."
+            "Automaticky založí roční prověrky BOZP pro aktivní provozy, "
+            "které pro vybraný rok ještě nemají záznam. Měsíce se rozloží rovnoměrně."
         )
         info.setWordWrap(True)
         layout.addWidget(info)
@@ -53,7 +53,7 @@ class GenerateInspectionsDialog(QDialog):
             QMessageBox.information(
                 self,
                 "Generovat prověrky",
-                f"Pro rok {year} už existují prověrky u všech aktivních pracovišť.\n"
+                f"Pro rok {year} už existují prověrky u všech aktivních provozů.\n"
                 "Stávající záznamy nebyly změněny.",
             )
             return
@@ -62,19 +62,14 @@ class GenerateInspectionsDialog(QDialog):
             QMessageBox.information(
                 self,
                 "Generovat prověrky",
-                "Nejsou k dispozici žádná aktivní pracoviště pro generování.",
+                "Nejsou k dispozici žádné aktivní provozy pro generování.",
             )
             return
-
-        skipped_text = ""
-        if result.skipped_existing:
-            skipped_text = (
-                f"\nPřeskočeno stávajících pracovišť: {result.skipped_existing}."
-            )
 
         QMessageBox.information(
             self,
             "Generovat prověrky",
-            f"Bylo vytvořeno {len(result.created)} prověrek pro rok {year}.{skipped_text}",
+            f"Bylo vytvořeno {len(result.created)} prověrek pro rok {year}.\n"
+            f"Přeskočeno provozů, které už plán mají: {result.skipped_existing}.",
         )
         self.accept()
