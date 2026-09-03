@@ -114,22 +114,6 @@ def _remote_from_office(office, *, observed=None, **overrides) -> ControlAuthori
     return ControlAuthorityOfficeWebRecord(**payload)
 
 
-def _new_brno_remote(*, email: str | None = "tajne@example.cz") -> ControlAuthorityOfficeWebRecord:
-    return ControlAuthorityOfficeWebRecord(
-        authority_code=DU_AUTHORITY_CODE,
-        external_key=_NEW_KEY,
-        name="Drážní úřad – pracoviště Brno",
-        address="Nádražní 1, 602 00 Brno",
-        phone="541 000 000",
-        email=email,
-        website="https://example.invalid/brno",
-        territorial_scope="Jihomoravský kraj",
-        office_kind=OFFICE_KIND_TERRITORIAL,
-        source_url=DU_OFFICES_SOURCE_URL,
-        observed_fields=DU_OFFICE_OBSERVED_FIELDS,
-    )
-
-
 class _ApplyCoreMixin:
     catalog = control_authority_catalog_service
     snapshots = ControlAuthorityCatalogSnapshotService()
@@ -256,10 +240,12 @@ class _ApplyCoreMixin:
             records=records,
             is_complete=True,
         )
-        diff = diff_control_authority_offices(
-            fetch, self.snapshots.load_office_snapshots(DU_AUTHORITY_CODE)
-        )
         info = get_web_adapter_info(DU_AUTHORITY_CODE)
+        diff = diff_control_authority_offices(
+            fetch,
+            self.snapshots.load_office_snapshots(DU_AUTHORITY_CODE),
+            info.coverage,
+        )
         return ControlAuthorityWebCheckResult(
             authority_code=DU_AUTHORITY_CODE,
             adapter_info=info,
@@ -433,57 +419,63 @@ class StateSupervisionAuthorityWebApplyCore8e1TestCase(_ApplyCoreMixin, unittest
         self.assertEqual(self._office("du:praha").name, original.name)
 
     def test_05_create_new_web_office(self) -> None:
-        offices = self._offices()
+        olomouc = self._office("du:olomouc")
+        remote_olomouc = _remote_from_office(olomouc)
+        self._sql(
+            "UPDATE control_authority_offices SET external_key=NULL, name=?, address=? WHERE id=?",
+            ("Dočasně skryté Olomouc", "Skrytá 1, Olomouc", olomouc.id),
+        )
         remotes = [
-            _remote_from_office(offices["du:praha"]),
-            _remote_from_office(offices["du:plzen"]),
-            _new_brno_remote(),
+            _remote_from_office(self._office("du:praha")),
+            _remote_from_office(self._office("du:plzen")),
+            remote_olomouc,
         ]
         check = self._check(remotes)
-        item = self._diff_for(check, _NEW_KEY)
+        item = self._diff_for(check, "du:olomouc")
         result = apply_authority_web_changes(
             check,
-            [_selection(key=_NEW_KEY, local_id=None, action=WEB_APPLY_ACTION_CREATE)],
+            [_selection(key="du:olomouc", local_id=None, action=WEB_APPLY_ACTION_CREATE)],
         )
-        created = self.catalog.get_office_by_external_key(_NEW_KEY)
+        created = self.catalog.get_office_by_external_key("du:olomouc")
         self.assertIsNotNone(created)
         self.assertEqual(result.created_ids, (created.id,))
         self.assertEqual(created.origin, AUTHORITY_ORIGIN_WEB)
         self.assertTrue(created.active)
         self.assertIsNone(created.user_edited_at)
         self.assertEqual(created.last_checked_at, _FIXED_AT)
-        self.assertEqual(created.external_key, _NEW_KEY)
+        self.assertEqual(created.external_key, "du:olomouc")
         self.assertEqual(created.authority_id, self._authority().id)
-        self.assertEqual(created.name, "Drážní úřad – pracoviště Brno")
-        self.assertEqual(created.address, "Nádražní 1, 602 00 Brno")
-        self.assertIsNone(created.email)
-        self.assertIsNone(created.website)
-        self.assertIsNone(created.territorial_scope)
+        self.assertEqual(created.name, remote_olomouc.name)
+        self.assertEqual(created.address, remote_olomouc.address)
 
     def test_06_explicit_deactivate_missing_remote(self) -> None:
-        offices = self._offices()
-        remotes = [
-            _remote_from_office(offices["du:praha"]),
-            _remote_from_office(offices["du:plzen"]),
-            _new_brno_remote(),
-        ]
+        extra = self.catalog.create_imported_office(
+            authority_id=self._authority().id,
+            name="Drážní úřad – pracoviště Brno",
+            origin=AUTHORITY_ORIGIN_WEB,
+            address="Nádražní 1, 602 00 Brno",
+            office_kind=OFFICE_KIND_TERRITORIAL,
+            external_key=_NEW_KEY,
+            source_url=DU_OFFICES_SOURCE_URL,
+        )
+        remotes = self._matching_remotes()
         check = self._check(remotes)
-        item = self._diff_for(check, "du:olomouc")
+        item = self._diff_for(check, _NEW_KEY)
         result = apply_authority_web_changes(
             check,
             [
                 _selection(
-                    key="du:olomouc",
+                    key=_NEW_KEY,
                     local_id=item.local_id,
                     action=WEB_APPLY_ACTION_DEACTIVATE,
                 )
             ],
         )
-        deactivated = self._office("du:olomouc")
+        deactivated = self.catalog.get_office(int(extra.id))
         self.assertEqual(result.deactivated_ids, (deactivated.id,))
         self.assertFalse(deactivated.active)
         self.assertEqual(deactivated.last_checked_at, _FIXED_AT)
-        self.assertIsNone(self.catalog.get_office_by_external_key(_NEW_KEY))
+        self.assertEqual(deactivated.external_key, _NEW_KEY)
 
     def test_07_explicit_reactivate_inactive_present(self) -> None:
         office = self._office("du:olomouc")
@@ -542,33 +534,38 @@ class StateSupervisionAuthorityWebApplyCore8e1TestCase(_ApplyCoreMixin, unittest
 
     def test_10_possible_duplicate_cannot_be_applied(self) -> None:
         authority = self._authority()
+        olomouc = self._office("du:olomouc")
+        remote_olomouc = _remote_from_office(olomouc)
         self.catalog.create_office(
             authority_id=authority.id,
-            name="Drážní úřad – pracoviště Brno",
-            address="Jiná 9, Brno",
+            name=olomouc.name,
+            address="Jiná 9, Olomouc",
         )
-        offices = self._offices()
+        self._sql(
+            "UPDATE control_authority_offices SET external_key=NULL, name=?, address=? WHERE id=?",
+            ("Dočasně skryté Olomouc", "Skrytá 1, Olomouc", olomouc.id),
+        )
         remotes = [
-            _remote_from_office(offices["du:praha"]),
-            _remote_from_office(offices["du:plzen"]),
-            _new_brno_remote(),
+            _remote_from_office(self._office("du:praha")),
+            _remote_from_office(self._office("du:plzen")),
+            remote_olomouc,
         ]
         check = self._check(remotes)
-        item = self._diff_for(check, _NEW_KEY)
+        item = self._diff_for(check, "du:olomouc")
         self.assertEqual(item.status, "possible_duplicate")
         with self.assertRaises(ControlAuthorityWebApplyError) as ctx:
             apply_authority_web_changes(
                 check,
                 [
                     _selection(
-                        key=_NEW_KEY,
+                        key="du:olomouc",
                         local_id=item.local_id,
                         action=WEB_APPLY_ACTION_CREATE,
                     )
                 ],
             )
         self.assertEqual(ctx.exception.code, WEB_APPLY_ERROR_STATUS)
-        self.assertIsNone(self.catalog.get_office_by_external_key(_NEW_KEY))
+        self.assertIsNone(self.catalog.get_office_by_external_key("du:olomouc"))
 
     def test_11_identity_conflict_cannot_be_applied(self) -> None:
         remotes = self._matching_remotes(**{"du:praha": {"name": "Webový název"}})
@@ -831,28 +828,33 @@ class StateSupervisionAuthorityWebApplySafety8e1TestCase(_ApplyCoreMixin, unitte
         self.assertEqual(ctx.exception.code, WEB_APPLY_ERROR_STALE)
 
     def test_04_new_external_key_created_meanwhile_is_rejected(self) -> None:
-        offices = self._offices()
+        olomouc = self._office("du:olomouc")
+        remote_olomouc = _remote_from_office(olomouc)
+        self._sql(
+            "UPDATE control_authority_offices SET external_key=NULL, name=?, address=? WHERE id=?",
+            ("Dočasně skryté Olomouc", "Skrytá 1, Olomouc", olomouc.id),
+        )
         remotes = [
-            _remote_from_office(offices["du:praha"]),
-            _remote_from_office(offices["du:plzen"]),
-            _new_brno_remote(),
+            _remote_from_office(self._office("du:praha")),
+            _remote_from_office(self._office("du:plzen")),
+            remote_olomouc,
         ]
         check = self._check(remotes)
         self.catalog.create_imported_office(
             authority_id=self._authority().id,
-            name="Mezitím založené Brno",
+            name="Mezitím založené Olomouc",
             origin=AUTHORITY_ORIGIN_WEB,
-            external_key=_NEW_KEY,
+            external_key="du:olomouc",
         )
         with self.assertRaises(ControlAuthorityWebApplyError) as ctx:
             apply_authority_web_changes(
                 check,
-                [_selection(key=_NEW_KEY, local_id=None, action=WEB_APPLY_ACTION_CREATE)],
+                [_selection(key="du:olomouc", local_id=None, action=WEB_APPLY_ACTION_CREATE)],
             )
         self.assertEqual(ctx.exception.code, WEB_APPLY_ERROR_STALE)
         self.assertEqual(
-            self.catalog.get_office_by_external_key(_NEW_KEY).name,
-            "Mezitím založené Brno",
+            self.catalog.get_office_by_external_key("du:olomouc").name,
+            "Mezitím založené Olomouc",
         )
 
     def test_05_second_row_error_rolls_back_first(self) -> None:

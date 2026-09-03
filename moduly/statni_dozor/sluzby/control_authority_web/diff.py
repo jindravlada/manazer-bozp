@@ -8,6 +8,8 @@ from collections.abc import Sequence
 
 from moduly.statni_dozor.constants import (
     AUTHORITY_ORIGIN_MANUAL,
+    WEB_CHECK_COVERAGE_KIND_MESSAGE,
+    WEB_CHECK_ERROR_COVERAGE_KIND,
     WEB_DIFF_ACTION_CREATE,
     WEB_DIFF_ACTION_DEACTIVATE,
     WEB_DIFF_ACTION_NONE,
@@ -39,6 +41,13 @@ from moduly.statni_dozor.constants import (
     WEB_DIFF_STATUS_PROTECTED_MISSING_REMOTE,
     WEB_DIFF_STATUS_UNCHANGED,
     WEB_DIFF_STATUSES,
+)
+from moduly.statni_dozor.sluzby.control_authority_web.coverage import (
+    ControlAuthorityWebCoverage,
+    ControlAuthorityWebCoverageError,
+    local_kind_covered,
+    local_kind_unknown,
+    unknown_office_kind_warning,
 )
 from moduly.statni_dozor.sluzby.control_authority_web.diff_models import (
     ControlAuthorityOfficeCatalogSnapshot,
@@ -277,6 +286,21 @@ def _paired_diff(
     )
 
 
+def _observed_kind_matches_coverage(
+    remote: ControlAuthorityOfficeWebRecord,
+    coverage: ControlAuthorityWebCoverage,
+) -> None:
+    observed = frozenset(remote.observed_fields or ())
+    if "office_kind" not in observed:
+        return
+    kind = str(remote.office_kind or "").strip()
+    if kind not in coverage.covered_office_kinds:
+        raise ControlAuthorityWebCoverageError(
+            WEB_CHECK_COVERAGE_KIND_MESSAGE,
+            code=WEB_CHECK_ERROR_COVERAGE_KIND,
+        )
+
+
 def _missing_diff(
     local: ControlAuthorityOfficeCatalogSnapshot,
 ) -> ControlAuthorityOfficeDiff:
@@ -339,6 +363,7 @@ def _new_or_duplicate_diff(
 def diff_control_authority_offices(
     fetch_result: ControlAuthorityWebFetchResult,
     snapshots: Sequence[ControlAuthorityOfficeCatalogSnapshot],
+    coverage: ControlAuthorityWebCoverage | None = None,
 ) -> ControlAuthorityWebDiffResult:
     """Porovná úplný webový výsledek s čistými katalogovými snapshoty."""
     if not fetch_result.is_complete:
@@ -347,6 +372,10 @@ def diff_control_authority_offices(
             fetch_result.authority_code,
         )
         raise diff_error(WEB_DIFF_ERROR_INCOMPLETE)
+
+    if coverage is not None:
+        for remote in fetch_result.records:
+            _observed_kind_matches_coverage(remote, coverage)
 
     remote_by_key = _index_remote_keys(fetch_result.records)
     local_by_key = _index_local_keys(snapshots)
@@ -357,6 +386,7 @@ def diff_control_authority_offices(
     )
     items: list[ControlAuthorityOfficeDiff] = []
     matched_local_ids: set[int] = set()
+    warnings: list[str] = list(fetch_result.warnings)
 
     for remote in fetch_result.records:
         local = local_by_key.get(remote.external_key)
@@ -375,6 +405,15 @@ def diff_control_authority_offices(
             continue
         if local.id in matched_local_ids:
             continue
+        if coverage is None:
+            continue
+        if local_kind_unknown(local.office_kind):
+            warning = unknown_office_kind_warning(local.name)
+            if warning not in warnings:
+                warnings.append(warning)
+            continue
+        if not local_kind_covered(local.office_kind, coverage):
+            continue
         items.append(_missing_diff(local))
 
     counts = empty_status_counts()
@@ -391,7 +430,7 @@ def diff_control_authority_offices(
         fetched_at=fetch_result.fetched_at,
         items=tuple(items),
         status_counts=tuple((status, counts[status]) for status in WEB_DIFF_STATUSES),
-        warnings=tuple(fetch_result.warnings),
+        warnings=tuple(warnings),
         has_actionable_changes=has_actionable,
         has_conflicts=has_conflicts,
     )

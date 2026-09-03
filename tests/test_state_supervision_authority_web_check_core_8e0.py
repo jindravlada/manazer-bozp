@@ -58,6 +58,7 @@ from moduly.statni_dozor.sluzby.control_authority_web.check import (
     has_web_adapter,
     supported_authority_codes,
 )
+from moduly.statni_dozor.sluzby.control_authority_web.coverage import du_web_coverage
 from moduly.statni_dozor.sluzby.control_authority_web.diff import (
     diff_control_authority_offices,
 )
@@ -203,9 +204,9 @@ def _web_record(
         email=None,
         website=None,
         territorial_scope=None,
-        office_kind="regional",
+        office_kind="headquarters",
         source_url="https://example.gov.cz/",
-        observed_fields=observed or frozenset({"name", "office_kind", "source_url"}),
+        observed_fields=observed or frozenset({"name", "source_url"}),
     )
 
 
@@ -239,7 +240,7 @@ def _service_with_fetch(
         display_name="Drážní úřad",
         source_name="Kontakty Drážního úřadu",
         source_url=DU_OFFICES_SOURCE_URL,
-        expected_office_count=3,
+        coverage=du_web_coverage(),
     )
     registry = {
         info.authority_code: ControlAuthorityWebAdapterRegistration(info=info, fetch=fetch)
@@ -480,7 +481,9 @@ class StateSupervisionAuthorityWebCheckCore8e0TestCase(unittest.TestCase):
             clock=lambda: _FIXED_AT,
         )
         result = service.check_authority_web(KHS_AUTHORITY_CODE)
-        direct = diff_control_authority_offices(result.fetch_result, snaps)
+        direct = diff_control_authority_offices(
+            result.fetch_result, snaps, result.coverage
+        )
         self.assertEqual(result.status_counts, direct.status_counts)
         self.assertEqual(result.has_actionable_changes, direct.has_actionable_changes)
         self.assertEqual(result.has_conflicts, direct.has_conflicts)
@@ -504,8 +507,8 @@ class StateSupervisionAuthorityWebCheckCore8e0TestCase(unittest.TestCase):
         def fetch(*, http_get=None, clock=None):
             return _fetch_result(records, warnings=("varování adapteru",))
 
-        def compare(fetch_result, snapshots):
-            original = diff_control_authority_offices(fetch_result, snapshots)
+        def compare(fetch_result, snapshots, coverage=None):
+            original = diff_control_authority_offices(fetch_result, snapshots, coverage)
             return replace(original, warnings=original.warnings + ("varování comparatoru",))
 
         result = _service_with_fetch(fetch, compare=compare).check_authority_web(

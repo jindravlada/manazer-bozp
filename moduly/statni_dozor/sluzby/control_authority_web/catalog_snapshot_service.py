@@ -6,6 +6,9 @@ from moduly.statni_dozor.constants import WEB_DIFF_ERROR_AUTHORITY_NOT_FOUND
 from moduly.statni_dozor.repository.control_authority_catalog_repository import (
     ControlAuthorityCatalogRepository,
 )
+from moduly.statni_dozor.sluzby.control_authority_web.coverage import (
+    coverage_for_authority,
+)
 from moduly.statni_dozor.sluzby.control_authority_web.diff import (
     diff_control_authority_offices,
 )
@@ -76,7 +79,10 @@ class ControlAuthorityCatalogSnapshotService:
         snapshots = self.load_office_snapshots(
             authority_code or fetch_result.authority_code
         )
-        return diff_control_authority_offices(fetch_result, snapshots)
+        coverage = coverage_for_authority(
+            authority_code or fetch_result.authority_code
+        )
+        return diff_control_authority_offices(fetch_result, snapshots, coverage)
 
 
 control_authority_catalog_snapshot_service = ControlAuthorityCatalogSnapshotService()

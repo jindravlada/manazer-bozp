@@ -969,6 +969,7 @@ WEB_CHECK_ERROR_CODE_REQUIRED = "authority_code_required"
 WEB_CHECK_ERROR_ADAPTER = "adapter"
 WEB_CHECK_ERROR_UNEXPECTED_COUNT = "unexpected_office_count"
 WEB_CHECK_ERROR_AUTHORITY_MISMATCH = "authority_code_mismatch"
+WEB_CHECK_ERROR_COVERAGE_KIND = "observed_office_kind_mismatch"
 WEB_CHECK_CODE_REQUIRED_MESSAGE = "Není vyplněn kód kontrolního orgánu."
 WEB_CHECK_UNSUPPORTED_MESSAGE = (
     "Pro kontrolní orgán „{code}“ není dostupná webová kontrola."
@@ -978,6 +979,39 @@ WEB_CHECK_UNEXPECTED_COUNT_MESSAGE = (
 )
 WEB_CHECK_AUTHORITY_MISMATCH_MESSAGE = (
     "Webový adapter vrátil výsledek jiného kontrolního orgánu."
+)
+WEB_CHECK_COVERAGE_KIND_MESSAGE = (
+    "Webový adapter vrátil druh pracoviště mimo svůj deklarovaný rozsah."
+)
+
+# Rozsah pokrytí webového adapteru (STATE-SUPERVISION-AUTHORITY-WEB-COVERAGE-9A1)
+WEB_COVERAGE_ID_DU_OFFICES = "du-offices"
+WEB_COVERAGE_ID_SUIP_REGIONAL = "suip-regional"
+WEB_COVERAGE_ID_CBU_REGIONAL = "cbu-regional"
+WEB_COVERAGE_ID_KHS_REGIONAL = "khs-regional"
+WEB_COVERAGE_ID_HZS_REGIONAL = "hzs-regional"
+WEB_COVERAGE_ID_REQUIRED_MESSAGE = "Není vyplněn identifikátor rozsahu webového adapteru."
+WEB_COVERAGE_AUTHORITY_CODE_INVALID_MESSAGE = (
+    "Kód kontrolního orgánu rozsahu webového adapteru musí být vyplněný malými písmeny."
+)
+WEB_COVERAGE_KINDS_REQUIRED_MESSAGE = (
+    "Rozsah webového adapteru musí pokrývat alespoň jeden známý druh pracoviště."
+)
+WEB_COVERAGE_KIND_UNKNOWN_MESSAGE = (
+    "Rozsah webového adapteru obsahuje neznámý druh pracoviště."
+)
+WEB_COVERAGE_KEYS_REQUIRED_MESSAGE = (
+    "Rozsah webového adapteru musí obsahovat alespoň jeden očekávaný technický klíč."
+)
+WEB_COVERAGE_KEY_INVALID_MESSAGE = (
+    "Očekávaný technický klíč rozsahu webového adapteru nesmí být prázdný."
+)
+WEB_COVERAGE_KEY_AUTHORITY_MESSAGE = (
+    "Očekávaný technický klíč nepatří deklarovanému kontrolnímu orgánu."
+)
+WEB_COVERAGE_UNKNOWN_KIND_WARNING = (
+    "Rozsah místního pracoviště „{name}“ nelze bezpečně určit, "
+    "proto nebylo zařazeno do webové kontroly."
 )
 
 # Atomické použití vybraných webových změn (STATE-SUPERVISION-AUTHORITY-WEB-APPLY-CORE-8E1)

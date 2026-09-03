@@ -45,7 +45,17 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
-### 2026-09-02 – STATE-SUPERVISION-TIMELINE-COLUMNS-7B2
+### 2026-09-03 – STATE-SUPERVISION-AUTHORITY-WEB-COVERAGE-9A1
+
+**Co se povedlo:** Webové adaptery teď mají explicitní rozsah (coverage_id + office_kind + přesná množina klíčů). Úplný krajský výsledek KHS/HZS/SÚIP nenabídne deaktivaci územního pracoviště.
+
+**Co už bychom dnes udělali jinak:** ČBÚ má `coverage_id=cbu-regional`, ale seed i adapter používají `office_kind=territorial`; rozsah proto pokrývá territorial, ne regional.
+
+**Co bylo zbytečně složité:** Neúplný nebo záměnou klíčů poškozený remote výsledek se musí odmítnout dřív, než comparator vytvoří missing_remote.
+
+**Jaké nové pravidlo z toho vzniklo:** Úplnost adapteru se posuzuje podle přesné množiny expected_external_keys daného rozsahu, ne podle celého orgánu. Neznámý office_kind se do missing_remote nezařazuje.
+
+---
 
 **Co se povedlo:** Tabulky průběhu a zjištění vyplní viewport; poslední sloupec je Stretch, první Interactive se základními šířkami.
 

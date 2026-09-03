@@ -32,18 +32,12 @@ from moduly.statni_dozor.constants import (
     WEB_APPLY_STATUS_MESSAGE,
     WEB_CHECK_AUTHORITY_MISMATCH_MESSAGE,
     WEB_CHECK_ERROR_AUTHORITY_MISMATCH,
-    WEB_CHECK_ERROR_UNEXPECTED_COUNT,
     WEB_CHECK_ERROR_UNSUPPORTED,
-    WEB_CHECK_UNEXPECTED_COUNT_MESSAGE,
     WEB_CHECK_UNSUPPORTED_MESSAGE,
     WEB_DIFF_COMPARED_FIELD_SET,
     WEB_DIFF_COMPARED_FIELDS,
-    WEB_DIFF_DUPLICATE_REMOTE_MESSAGE,
-    WEB_DIFF_ERROR_DUPLICATE_REMOTE,
     WEB_DIFF_ERROR_INCOMPLETE,
-    WEB_DIFF_ERROR_MISSING_KEY,
     WEB_DIFF_INCOMPLETE_MESSAGE,
-    WEB_DIFF_MISSING_KEY_MESSAGE,
     WEB_DIFF_STATUS_CHANGED,
     WEB_DIFF_STATUS_INACTIVE_PRESENT,
     WEB_DIFF_STATUS_MISSING_REMOTE,
@@ -62,6 +56,10 @@ from moduly.statni_dozor.sluzby.control_authority_web.check import (
     ControlAuthorityWebCheckResult,
     get_web_adapter_info,
     has_web_adapter,
+)
+from moduly.statni_dozor.sluzby.control_authority_web.coverage import (
+    ControlAuthorityWebCoverageError,
+    assert_records_match_coverage,
 )
 from moduly.statni_dozor.sluzby.control_authority_web.diff_models import (
     ControlAuthorityOfficeCatalogSnapshot,
@@ -292,26 +290,17 @@ class ControlAuthorityWebApplyService:
         records = tuple(check_result.remote_records)
         if tuple(fetch_result.records) != records:
             raise _apply_error(WEB_DIFF_ERROR_INCOMPLETE, WEB_DIFF_INCOMPLETE_MESSAGE)
-        if len(records) != int(info.expected_office_count):
-            raise _apply_error(
-                WEB_CHECK_ERROR_UNEXPECTED_COUNT,
-                WEB_CHECK_UNEXPECTED_COUNT_MESSAGE,
+        coverage = check_result.coverage
+        if coverage is None or coverage != info.coverage:
+            raise _apply_error(WEB_DIFF_ERROR_INCOMPLETE, WEB_DIFF_INCOMPLETE_MESSAGE)
+        try:
+            assert_records_match_coverage(
+                records,
+                coverage,
+                fetch_authority_code=fetch_result.authority_code,
             )
-        seen: set[str] = set()
-        for record in records:
-            if record.authority_code != info.authority_code:
-                raise _apply_error(
-                    WEB_CHECK_ERROR_AUTHORITY_MISMATCH,
-                    WEB_CHECK_AUTHORITY_MISMATCH_MESSAGE,
-                )
-            key = str(record.external_key or "").strip()
-            if not key:
-                raise _apply_error(WEB_DIFF_ERROR_MISSING_KEY, WEB_DIFF_MISSING_KEY_MESSAGE)
-            if key in seen:
-                raise _apply_error(
-                    WEB_DIFF_ERROR_DUPLICATE_REMOTE, WEB_DIFF_DUPLICATE_REMOTE_MESSAGE
-                )
-            seen.add(key)
+        except ControlAuthorityWebCoverageError as exc:
+            raise _apply_error(exc.code, str(exc)) from exc
         for diff in check_result.diffs:
             if diff.authority_code != info.authority_code:
                 raise _apply_error(
@@ -347,6 +336,15 @@ class ControlAuthorityWebApplyService:
             seen_keys.add(key)
             diff = diffs_by_key.get(key)
             if diff is None:
+                raise _apply_error(WEB_APPLY_ERROR_SELECTION, WEB_APPLY_SELECTION_MESSAGE)
+            if (
+                selection.action == WEB_APPLY_ACTION_CREATE
+                and (
+                    check_result.coverage is None
+                    or selection.external_key
+                    not in check_result.coverage.expected_external_keys
+                )
+            ):
                 raise _apply_error(WEB_APPLY_ERROR_SELECTION, WEB_APPLY_SELECTION_MESSAGE)
             self._validate_action(selection, diff)
             planned.append((selection, diff))

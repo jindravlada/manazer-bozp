@@ -103,6 +103,7 @@ from moduly.statni_dozor.sluzby.control_authority_web.check import (
     has_web_adapter,
     supported_authority_codes,
 )
+from moduly.statni_dozor.sluzby.control_authority_web.coverage import du_web_coverage
 from moduly.statni_dozor.sluzby.control_authority_web.diff_models import (
     ControlAuthorityOfficeCatalogSnapshot,
     ControlAuthorityOfficeDiff,
@@ -138,7 +139,7 @@ _ADAPTER = ControlAuthorityWebAdapterInfo(
     display_name="Drážní úřad",
     source_name="Kontakty Drážního úřadu",
     source_url=_SOURCE_URL,
-    expected_office_count=3,
+    coverage=du_web_coverage(),
 )
 
 

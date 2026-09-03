@@ -50,8 +50,9 @@ from moduly.statni_dozor.constants import (
 from moduly.statni_dozor.sluzby.control_authority_web.catalog_snapshot_service import (
     ControlAuthorityCatalogSnapshotService,
 )
+from moduly.statni_dozor.sluzby.control_authority_web.coverage import du_web_coverage
 from moduly.statni_dozor.sluzby.control_authority_web.diff import (
-    diff_control_authority_offices,
+    diff_control_authority_offices as _diff_control_authority_offices,
 )
 from moduly.statni_dozor.sluzby.control_authority_web.diff_models import (
     ControlAuthorityOfficeCatalogSnapshot,
@@ -71,6 +72,11 @@ _REPO = Path(__file__).resolve().parents[1]
 _FIXTURE = _REPO / "tests" / "fixtures" / "statni_dozor" / "du_kontakty.html"
 _SEED = _REPO / AUTHORITY_CATALOG_SEED_RELATIVE_PATH
 _FIXED_AT = datetime(2026, 9, 3, 7, 40, 0)
+_DU_COVERAGE = du_web_coverage()
+
+
+def diff_control_authority_offices(fetch_result, snapshots):
+    return _diff_control_authority_offices(fetch_result, snapshots, _DU_COVERAGE)
 
 
 def _web(

@@ -11,41 +11,40 @@ from urllib.parse import urlparse
 
 from moduly.statni_dozor.constants import (
     CBU_AUTHORITY_CODE,
-    CBU_OFFICE_EXTERNAL_KEYS,
     CBU_OFFICES_SOURCE_URL,
     DU_AUTHORITY_CODE,
-    DU_OFFICE_EXTERNAL_KEYS,
     DU_OFFICES_SOURCE_URL,
     HZS_AUTHORITY_CODE,
-    HZS_OFFICE_EXTERNAL_KEYS,
     HZS_OFFICES_SOURCE_URL,
     KHS_AUTHORITY_CODE,
-    KHS_OFFICE_EXTERNAL_KEYS,
     KHS_OFFICES_SOURCE_URL,
     SUIP_AUTHORITY_CODE,
     SUIP_HUB_SOURCE_URL,
-    SUIP_OFFICE_EXTERNAL_KEYS,
     WEB_CHECK_AUTHORITY_MISMATCH_MESSAGE,
     WEB_CHECK_CODE_REQUIRED_MESSAGE,
     WEB_CHECK_ERROR_ADAPTER,
     WEB_CHECK_ERROR_AUTHORITY_MISMATCH,
     WEB_CHECK_ERROR_CODE_REQUIRED,
-    WEB_CHECK_ERROR_UNEXPECTED_COUNT,
     WEB_CHECK_ERROR_UNSUPPORTED,
-    WEB_CHECK_UNEXPECTED_COUNT_MESSAGE,
     WEB_CHECK_UNSUPPORTED_MESSAGE,
-    WEB_DIFF_DUPLICATE_REMOTE_MESSAGE,
     WEB_DIFF_ERROR_AUTHORITY_NOT_FOUND,
-    WEB_DIFF_ERROR_DUPLICATE_REMOTE,
     WEB_DIFF_ERROR_INCOMPLETE,
-    WEB_DIFF_ERROR_MISSING_KEY,
     WEB_DIFF_INCOMPLETE_MESSAGE,
-    WEB_DIFF_MISSING_KEY_MESSAGE,
 )
 from moduly.statni_dozor.sluzby.control_authority_web.catalog_snapshot_service import (
     ControlAuthorityCatalogSnapshotService,
 )
 from moduly.statni_dozor.sluzby.control_authority_web.cbu_adapter import fetch_cbu_offices
+from moduly.statni_dozor.sluzby.control_authority_web.coverage import (
+    ControlAuthorityWebCoverage,
+    ControlAuthorityWebCoverageError,
+    assert_records_match_coverage,
+    cbu_web_coverage,
+    du_web_coverage,
+    hzs_web_coverage,
+    khs_web_coverage,
+    suip_web_coverage,
+)
 from moduly.statni_dozor.sluzby.control_authority_web.diff import (
     diff_control_authority_offices,
 )
@@ -73,10 +72,7 @@ logger = logging.getLogger(__name__)
 
 WebAdapterFetch = Callable[..., ControlAuthorityWebFetchResult]
 SnapshotLoader = Callable[[str], tuple[ControlAuthorityOfficeCatalogSnapshot, ...]]
-CompareFn = Callable[
-    [ControlAuthorityWebFetchResult, tuple[ControlAuthorityOfficeCatalogSnapshot, ...]],
-    ControlAuthorityWebDiffResult,
-]
+CompareFn = Callable[..., ControlAuthorityWebDiffResult]
 
 
 @dataclass(frozen=True)
@@ -87,7 +83,18 @@ class ControlAuthorityWebAdapterInfo:
     display_name: str
     source_name: str
     source_url: str
-    expected_office_count: int
+    coverage: ControlAuthorityWebCoverage
+    expected_office_count: int = field(init=False)
+
+    def __post_init__(self) -> None:
+        coverage = self.coverage
+        if coverage.authority_code != str(self.authority_code or "").strip():
+            raise ValueError(WEB_CHECK_AUTHORITY_MISMATCH_MESSAGE)
+        object.__setattr__(
+            self,
+            "expected_office_count",
+            int(coverage.expected_office_count),
+        )
 
 
 @dataclass(frozen=True)
@@ -114,12 +121,17 @@ class ControlAuthorityWebCheckResult:
     has_conflicts: bool = False
     fetch_result: ControlAuthorityWebFetchResult | None = field(default=None)
     diff_result: ControlAuthorityWebDiffResult | None = field(default=None)
+    coverage: ControlAuthorityWebCoverage | None = field(default=None)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "remote_records", tuple(self.remote_records))
         object.__setattr__(self, "diffs", tuple(self.diffs))
         object.__setattr__(self, "status_counts", tuple(self.status_counts))
         object.__setattr__(self, "warnings", tuple(self.warnings))
+        coverage = self.coverage
+        if coverage is None:
+            coverage = self.adapter_info.coverage
+            object.__setattr__(self, "coverage", coverage)
 
 
 class ControlAuthorityWebCheckError(ValueError):
@@ -149,7 +161,7 @@ def _default_registry() -> Mapping[str, ControlAuthorityWebAdapterRegistration]:
                 display_name="Drážní úřad",
                 source_name="Kontakty Drážního úřadu",
                 source_url=_https_source_url(DU_OFFICES_SOURCE_URL),
-                expected_office_count=len(DU_OFFICE_EXTERNAL_KEYS),
+                coverage=du_web_coverage(),
             ),
             fetch=fetch_du_offices,
         ),
@@ -159,7 +171,7 @@ def _default_registry() -> Mapping[str, ControlAuthorityWebAdapterRegistration]:
                 display_name="Státní úřad inspekce práce",
                 source_name="Kontakty oblastních inspektorátů práce",
                 source_url=_https_source_url(SUIP_HUB_SOURCE_URL),
-                expected_office_count=len(SUIP_OFFICE_EXTERNAL_KEYS),
+                coverage=suip_web_coverage(),
             ),
             fetch=fetch_suip_offices,
         ),
@@ -169,7 +181,7 @@ def _default_registry() -> Mapping[str, ControlAuthorityWebAdapterRegistration]:
                 display_name="Český báňský úřad",
                 source_name="Obvodní báňské úřady",
                 source_url=_https_source_url(CBU_OFFICES_SOURCE_URL),
-                expected_office_count=len(CBU_OFFICE_EXTERNAL_KEYS),
+                coverage=cbu_web_coverage(),
             ),
             fetch=fetch_cbu_offices,
         ),
@@ -179,7 +191,7 @@ def _default_registry() -> Mapping[str, ControlAuthorityWebAdapterRegistration]:
                 display_name="Krajské hygienické stanice",
                 source_name="Ministerstvo zdravotnictví – Krajské hygienické stanice",
                 source_url=_https_source_url(KHS_OFFICES_SOURCE_URL),
-                expected_office_count=len(KHS_OFFICE_EXTERNAL_KEYS),
+                coverage=khs_web_coverage(),
             ),
             fetch=fetch_khs_offices,
         ),
@@ -189,7 +201,7 @@ def _default_registry() -> Mapping[str, ControlAuthorityWebAdapterRegistration]:
                 display_name="Hasičský záchranný sbor České republiky",
                 source_name="HZS krajů",
                 source_url=_https_source_url(HZS_OFFICES_SOURCE_URL),
-                expected_office_count=len(HZS_OFFICE_EXTERNAL_KEYS),
+                coverage=hzs_web_coverage(),
             ),
             fetch=fetch_hzs_offices,
         ),
@@ -227,6 +239,10 @@ def _wrap_domain_error(exc: BaseException) -> ControlAuthorityWebCheckError:
         return exc
     if isinstance(exc, ControlAuthorityWebAdapterError):
         wrapped = _check_error(exc.code or WEB_CHECK_ERROR_ADAPTER, str(exc))
+        wrapped.__cause__ = exc
+        return wrapped
+    if isinstance(exc, ControlAuthorityWebCoverageError):
+        wrapped = _check_error(exc.code, str(exc))
         wrapped.__cause__ = exc
         return wrapped
     if isinstance(exc, ControlAuthorityWebDiffError):
@@ -287,8 +303,12 @@ class ControlAuthorityWebCheckService:
         )
         self._assert_fetch_contract(fetch_result, info)
         try:
-            diff_result = self._compare(fetch_result, snapshots)
-        except (ControlAuthorityWebAdapterError, ControlAuthorityWebDiffError) as exc:
+            diff_result = self._compare(fetch_result, snapshots, info.coverage)
+        except (
+            ControlAuthorityWebAdapterError,
+            ControlAuthorityWebCoverageError,
+            ControlAuthorityWebDiffError,
+        ) as exc:
             logger.error("Porovnání webu s katalogem selhalo pro orgán %s.", info.authority_code)
             raise _wrap_domain_error(exc) from exc
         return ControlAuthorityWebCheckResult(
@@ -304,6 +324,7 @@ class ControlAuthorityWebCheckService:
             has_conflicts=bool(diff_result.has_conflicts),
             fetch_result=fetch_result,
             diff_result=diff_result,
+            coverage=info.coverage,
         )
 
     def _resolve_registration(
@@ -335,7 +356,11 @@ class ControlAuthorityWebCheckService:
                 snapshots = self._snapshot_service.load_office_snapshots(authority_code)
             else:
                 snapshots = self._snapshot_service(authority_code)
-        except (ControlAuthorityWebAdapterError, ControlAuthorityWebDiffError) as exc:
+        except (
+            ControlAuthorityWebAdapterError,
+            ControlAuthorityWebCoverageError,
+            ControlAuthorityWebDiffError,
+        ) as exc:
             logger.error("Místní katalog orgánu %s se nepodařilo načíst.", authority_code)
             raise _wrap_domain_error(exc) from exc
         return tuple(snapshots)
@@ -349,7 +374,11 @@ class ControlAuthorityWebCheckService:
     ) -> ControlAuthorityWebFetchResult:
         try:
             return registration.fetch(http_get=http_get, clock=clock)
-        except (ControlAuthorityWebAdapterError, ControlAuthorityWebDiffError) as exc:
+        except (
+            ControlAuthorityWebAdapterError,
+            ControlAuthorityWebCoverageError,
+            ControlAuthorityWebDiffError,
+        ) as exc:
             logger.error(
                 "Webový adapter orgánu %s selhal.",
                 registration.info.authority_code,
@@ -375,34 +404,19 @@ class ControlAuthorityWebCheckService:
             logger.error("Neúplný výsledek adapteru %s.", info.authority_code)
             raise _check_error(WEB_DIFF_ERROR_INCOMPLETE, WEB_DIFF_INCOMPLETE_MESSAGE)
         records = tuple(fetch_result.records)
-        if len(records) != int(info.expected_office_count):
+        try:
+            assert_records_match_coverage(
+                records,
+                info.coverage,
+                fetch_authority_code=fetch_result.authority_code,
+            )
+        except ControlAuthorityWebCoverageError as exc:
             logger.error(
-                "Adapter %s vrátil %s pracovišť, očekáváno %s.",
+                "Adapter %s nesplnil kontrakt rozsahu %s.",
                 info.authority_code,
-                len(records),
-                info.expected_office_count,
+                info.coverage.coverage_id,
             )
-            raise _check_error(
-                WEB_CHECK_ERROR_UNEXPECTED_COUNT,
-                WEB_CHECK_UNEXPECTED_COUNT_MESSAGE,
-            )
-        seen: set[str] = set()
-        for record in records:
-            if record.authority_code != info.authority_code:
-                raise _check_error(
-                    WEB_CHECK_ERROR_AUTHORITY_MISMATCH,
-                    WEB_CHECK_AUTHORITY_MISMATCH_MESSAGE,
-                )
-            key = str(record.external_key or "").strip()
-            if not key:
-                raise _check_error(
-                    WEB_DIFF_ERROR_MISSING_KEY, WEB_DIFF_MISSING_KEY_MESSAGE
-                )
-            if key in seen:
-                raise _check_error(
-                    WEB_DIFF_ERROR_DUPLICATE_REMOTE, WEB_DIFF_DUPLICATE_REMOTE_MESSAGE
-                )
-            seen.add(key)
+            raise _check_error(exc.code, str(exc)) from exc
 
 
 _DEFAULT_SERVICE = ControlAuthorityWebCheckService()
