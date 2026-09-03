@@ -736,7 +736,7 @@ AUTHORITY_CATALOG_SEED_COLLISION_MESSAGE = (
     "protože technický klíč koliduje s existujícím záznamem."
 )
 
-# Webové adaptéry kontrolních orgánů (8D0 DÚ, 8D2 SÚIP, 8D3 ČBÚ, 8D4 KHS)
+# Webové adaptéry kontrolních orgánů (8D0 DÚ, 8D2 SÚIP, 8D3 ČBÚ, 8D4 KHS, 8D5 HZS)
 DU_AUTHORITY_CODE = "du"
 DU_OFFICES_SOURCE_URL = "https://du.gov.cz/kontakty/"
 DU_OFFICE_EXTERNAL_KEYS: tuple[str, ...] = ("du:praha", "du:plzen", "du:olomouc")
@@ -803,6 +803,41 @@ KHS_OFFICE_EXTERNAL_KEYS: tuple[str, ...] = (
     "khs:zlinsky-kraj",
 )
 KHS_MAX_HTTP_REQUESTS = 1
+HZS_AUTHORITY_CODE = "hzs"
+HZS_OFFICES_SOURCE_URL = "https://hzscr.gov.cz/hzs-kraju"
+HZS_REGION_SLUGS: tuple[str, ...] = (
+    "hlavni-mesto-praha",
+    "stredocesky-kraj",
+    "jihocesky-kraj",
+    "plzensky-kraj",
+    "karlovarsky-kraj",
+    "ustecky-kraj",
+    "liberecky-kraj",
+    "kralovehradecky-kraj",
+    "pardubicky-kraj",
+    "vysocina-kraj",
+    "jihomoravsky-kraj",
+    "olomoucky-kraj",
+    "moravskoslezsky-kraj",
+    "zlinsky-kraj",
+)
+HZS_OFFICE_EXTERNAL_KEYS: tuple[str, ...] = (
+    "hzs:praha",
+    "hzs:stredocesky-kraj",
+    "hzs:jihocesky-kraj",
+    "hzs:plzensky-kraj",
+    "hzs:karlovarsky-kraj",
+    "hzs:ustecky-kraj",
+    "hzs:liberecky-kraj",
+    "hzs:kralovehradecky-kraj",
+    "hzs:pardubicky-kraj",
+    "hzs:kraj-vysocina",
+    "hzs:jihomoravsky-kraj",
+    "hzs:olomoucky-kraj",
+    "hzs:moravskoslezsky-kraj",
+    "hzs:zlinsky-kraj",
+)
+HZS_MAX_HTTP_REQUESTS = 1
 WEB_ADAPTER_ERROR_NETWORK = "network"
 WEB_ADAPTER_ERROR_TIMEOUT = "timeout"
 WEB_ADAPTER_ERROR_HTTP = "http"

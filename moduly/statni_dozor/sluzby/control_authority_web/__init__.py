@@ -26,6 +26,10 @@ from moduly.statni_dozor.sluzby.control_authority_web.http_client import (
     ControlAuthorityHttpClient,
     ControlAuthorityHttpResponse,
 )
+from moduly.statni_dozor.sluzby.control_authority_web.hzs_adapter import (
+    fetch_hzs_offices,
+    parse_hzs_offices_html,
+)
 from moduly.statni_dozor.sluzby.control_authority_web.khs_adapter import (
     fetch_khs_offices,
     parse_khs_offices_html,
@@ -57,10 +61,12 @@ __all__ = [
     "diff_control_authority_offices",
     "fetch_cbu_offices",
     "fetch_du_offices",
+    "fetch_hzs_offices",
     "fetch_khs_offices",
     "fetch_suip_offices",
     "parse_cbu_office_html",
     "parse_du_offices_html",
+    "parse_hzs_offices_html",
     "parse_khs_offices_html",
     "parse_suip_hub_html",
     "parse_suip_office_html",
