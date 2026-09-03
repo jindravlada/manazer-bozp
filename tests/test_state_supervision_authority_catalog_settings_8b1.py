@@ -197,7 +197,6 @@ class StateSupervisionAuthorityCatalogSettings8b1TestCase(unittest.TestCase):
         source = inspect.getsource(ControlAuthorityCatalogTab)
         self.assertNotIn("ico_edit", source)
         self.assertNotIn("IČ", source)
-        self.assertNotIn("Zkontrolovat na webu", source)
         self.assertNotIn("urllib.request", source)
         self.assertNotIn("urlopen", source)
 

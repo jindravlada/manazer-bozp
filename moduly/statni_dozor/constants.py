@@ -1018,3 +1018,82 @@ WEB_APPLY_EMPTY_FIELDS_MESSAGE = (
     "Pro aktualizaci musí být vybráno alespoň jedno pole."
 )
 WEB_APPLY_EMPTY_NAME_MESSAGE = "Webový záznam pracoviště musí mít vyplněný název."
+
+# Náhled webové kontroly (STATE-SUPERVISION-AUTHORITY-WEB-PREVIEW-UI-8F0)
+WEB_CHECK_UI_BUTTON_LABEL = "Zkontrolovat na webu"
+WEB_CHECK_UI_DIALOG_TITLE = "Kontrola údajů na webu"
+WEB_CHECK_UI_PROGRESS_TEXT = "Kontroluji údaje na oficiálním webu…"
+WEB_CHECK_UI_READONLY_NOTICE = (
+    "Údaje byly pouze porovnány. V katalogu zatím nebyla provedena žádná změna."
+)
+WEB_CHECK_UI_SHOW_UNCHANGED_LABEL = "Zobrazit i pracoviště beze změny"
+WEB_CHECK_UI_WARNINGS_TITLE = "Upozornění"
+WEB_CHECK_UI_EMPTY_FILTER_TEXT = (
+    "Žádné rozdíly k zobrazení. Zaškrtněte „Zobrazit i pracoviště beze změny“, "
+    "pokud chcete vidět celý seznam."
+)
+WEB_CHECK_UI_ALL_MATCH_TEXT = (
+    "Údaje všech pracovišť odpovídají oficiálnímu webovému zdroji."
+)
+WEB_CHECK_UI_DIFFERENCES_TEXT = (
+    "Byly nalezeny rozdíly. Před případnou aktualizací je zkontrolujte."
+)
+WEB_CHECK_UI_EMPTY_WEB_VALUE_TOOLTIP = "Webový zdroj uvádí prázdnou hodnotu."
+WEB_CHECK_UI_TOOLTIP_NO_SELECTION = (
+    "Vyberte kontrolní orgán nebo jeho pracoviště."
+)
+WEB_CHECK_UI_TOOLTIP_UNSUPPORTED = (
+    "Pro tento kontrolní orgán není dostupná webová kontrola."
+)
+WEB_CHECK_UI_TOOLTIP_SUPPORTED = (
+    "Porovná údaje pracovišť s oficiálním webovým zdrojem."
+)
+WEB_CHECK_UI_ERROR_NETWORK = (
+    "Oficiální web se nepodařilo načíst. Zkuste kontrolu později."
+)
+WEB_CHECK_UI_ERROR_STRUCTURE = (
+    "Údaje na oficiálním webu se nepodařilo bezpečně rozpoznat."
+)
+WEB_CHECK_UI_ERROR_UNSUPPORTED = (
+    "Pro tento kontrolní orgán není dostupná webová kontrola."
+)
+WEB_CHECK_UI_ERROR_OTHER = "Webovou kontrolu se nepodařilo dokončit."
+WEB_CHECK_UI_UNKNOWN_STATUS_LABEL = "Vyžaduje kontrolu"
+WEB_CHECK_UI_UNKNOWN_FIELD_LABEL = "Údaj"
+WEB_CHECK_UI_UNKNOWN_ACTION_LABEL = "Vyžaduje posouzení"
+WEB_DIFF_STATUS_USER_LABELS: dict[str, str] = {
+    WEB_DIFF_STATUS_UNCHANGED: "Beze změny",
+    WEB_DIFF_STATUS_NEW: "Nové pracoviště",
+    WEB_DIFF_STATUS_CHANGED: "Změněné údaje",
+    WEB_DIFF_STATUS_PROTECTED: "Ručně upraveno – vyžaduje kontrolu",
+    WEB_DIFF_STATUS_MISSING_REMOTE: "Na webu nenalezeno",
+    WEB_DIFF_STATUS_PROTECTED_MISSING_REMOTE: (
+        "Ručně upraveno a na webu nenalezeno"
+    ),
+    WEB_DIFF_STATUS_INACTIVE_PRESENT: "Neaktivní pracoviště nalezené na webu",
+    WEB_DIFF_STATUS_POSSIBLE_DUPLICATE: "Možná duplicita",
+    WEB_DIFF_STATUS_IDENTITY_CONFLICT: "Konflikt identity",
+}
+WEB_DIFF_FIELD_USER_LABELS: dict[str, str] = {
+    "name": "Název",
+    "address": "Adresa",
+    "phone": "Telefon",
+    "email": "E-mail",
+    "website": "Web",
+    "territorial_scope": "Územní působnost",
+    "office_kind": "Typ pracoviště",
+    "source_url": "Oficiální zdroj",
+}
+WEB_DIFF_ACTION_USER_LABELS: dict[str, str] = {
+    WEB_DIFF_ACTION_NONE: "Není potřeba žádná změna",
+    WEB_DIFF_ACTION_CREATE: "Lze založit nové pracoviště",
+    WEB_DIFF_ACTION_UPDATE: "Lze aktualizovat údaje",
+    WEB_DIFF_ACTION_DEACTIVATE: "Zvažte deaktivaci",
+    WEB_DIFF_ACTION_REACTIVATE: "Zvažte opětovnou aktivaci",
+    WEB_DIFF_ACTION_REVIEW: "Vyžaduje ruční posouzení",
+}
+WEB_DIFF_SUMMARY_UNCHANGED = "Beze změny"
+WEB_DIFF_SUMMARY_CHANGED = "Změněné údaje"
+WEB_DIFF_SUMMARY_NEW = "Nová pracoviště"
+WEB_DIFF_SUMMARY_MISSING = "Na webu nenalezena"
+WEB_DIFF_SUMMARY_REVIEW = "Vyžadují ruční posouzení"

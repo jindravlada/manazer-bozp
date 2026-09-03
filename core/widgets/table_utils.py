@@ -1374,4 +1374,18 @@ def configure_tree_columns(tree: QTreeWidget, profile: str) -> None:
         header.setSectionResizeMode(4, QHeaderView.Interactive)
         header.setSectionResizeMode(5, QHeaderView.Interactive)
         return
+    if profile == "control_authority_web_preview":
+        widths = {
+            0: 240,
+            1: 280,
+            2: 260,
+            3: 220,
+        }
+        for column, width in widths.items():
+            tree.setColumnWidth(column, width)
+        header.setSectionResizeMode(0, QHeaderView.Interactive)
+        header.setSectionResizeMode(1, QHeaderView.Stretch)
+        header.setSectionResizeMode(2, QHeaderView.Stretch)
+        header.setSectionResizeMode(3, QHeaderView.Interactive)
+        return
     header.setStretchLastSection(True)

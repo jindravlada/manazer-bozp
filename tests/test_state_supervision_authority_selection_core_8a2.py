@@ -674,7 +674,8 @@ class StateSupervisionAuthoritySelectionCore8a2ServiceTestCase(unittest.TestCase
         self.assertNotIn("AUTHORITY_SUGGESTIONS", editor_source)
         self.assertNotIn("ico_edit", editor_source)
         catalog_source = inspect.getsource(ControlAuthorityCatalogTab)
-        self.assertNotIn("Zkontrolovat na webu", catalog_source)
+        self.assertNotIn("urllib.request", catalog_source)
+        self.assertNotIn("urlopen", catalog_source)
         settings = NastaveniPage()
         titles = [settings.tabs.tabText(i) for i in range(settings.tabs.count())]
         self.assertEqual(

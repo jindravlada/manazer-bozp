@@ -22,6 +22,12 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.filter_bar import FilterBar
+from core.widgets.long_operation_dialog import LongOperationDialog
+from core.widgets.long_operation_runner import (
+    LongOperationCancelled,
+    LongOperationContext,
+    LongOperationRunner,
+)
 from core.widgets.table_utils import configure_tree_columns
 from moduly.statni_dozor.constants import (
     AUTHORITY_NOT_FOUND_MESSAGE,
@@ -41,14 +47,33 @@ from moduly.statni_dozor.constants import (
     OFFICE_ACTIVE_UNDER_INACTIVE_AUTHORITY_MESSAGE,
     OFFICE_CATALOG_TOOLTIP,
     OFFICE_NOT_FOUND_MESSAGE,
+    WEB_CHECK_UI_BUTTON_LABEL,
+    WEB_CHECK_UI_DIALOG_TITLE,
+    WEB_CHECK_UI_ERROR_OTHER,
+    WEB_CHECK_UI_PROGRESS_TEXT,
+    WEB_CHECK_UI_TOOLTIP_NO_SELECTION,
+    WEB_CHECK_UI_TOOLTIP_SUPPORTED,
+    WEB_CHECK_UI_TOOLTIP_UNSUPPORTED,
 )
 from moduly.statni_dozor.sluzby.control_authority_catalog_service import (
     ControlAuthorityCatalogError,
     control_authority_catalog_service,
 )
+from moduly.statni_dozor.sluzby.control_authority_web.check import (
+    ControlAuthorityWebCheckError,
+    ControlAuthorityWebCheckResult,
+    check_authority_web,
+    has_web_adapter,
+)
+from moduly.statni_dozor.sluzby.control_authority_web.labels import (
+    web_check_error_user_message,
+)
 from moduly.statni_dozor.ui.control_authority_dialog import ControlAuthorityDialog
 from moduly.statni_dozor.ui.control_authority_office_dialog import (
     ControlAuthorityOfficeDialog,
+)
+from moduly.statni_dozor.ui.control_authority_web_preview_dialog import (
+    ControlAuthorityWebPreviewDialog,
 )
 
 logger = logging.getLogger(__name__)
@@ -64,6 +89,23 @@ _COL_ADDRESS = 2
 _COL_CONTACT = 3
 _COL_ORIGIN = 4
 _COL_ACTIVE = 5
+
+
+def _run_control_authority_web_check(
+    context: LongOperationContext, snapshot: object
+) -> ControlAuthorityWebCheckResult:
+    """Worker webové kontroly. Nesmí sahat na Qt widgety."""
+    context.set_phase(WEB_CHECK_UI_PROGRESS_TEXT, indeterminate=True)
+    try:
+        result = check_authority_web(str(snapshot))
+        context.check_cancel()
+        return result
+    except LongOperationCancelled:
+        raise
+    except ControlAuthorityWebCheckError as exc:
+        raise RuntimeError(web_check_error_user_message(exc)) from exc
+    except Exception as exc:
+        raise RuntimeError(WEB_CHECK_UI_ERROR_OTHER) from exc
 
 
 class _ParentDimOverlay(QWidget):
@@ -129,6 +171,12 @@ class ControlAuthorityCatalogTab(QWidget):
         self._catalog = control_authority_catalog_service
         self._has_active_authority = False
         self._load_error = False
+        self._web_check_runner = LongOperationRunner(self)
+        self._web_check_progress: LongOperationDialog | None = None
+        self._web_check_runner.succeeded.connect(self._on_web_check_succeeded)
+        self._web_check_runner.failed.connect(self._on_web_check_failed)
+        self._web_check_runner.cancelled.connect(self._on_web_check_cancelled)
+        self._web_check_runner.finished.connect(self._on_web_check_finished)
 
         layout = QVBoxLayout(self)
         toolbar = QHBoxLayout()
@@ -143,6 +191,10 @@ class ControlAuthorityCatalogTab(QWidget):
         self.toggle_active_button = QPushButton("Deaktivovat")
         self.toggle_active_button.clicked.connect(self.toggle_selected_active)
         self.toggle_active_button.setEnabled(False)
+        self.web_check_button = QPushButton(WEB_CHECK_UI_BUTTON_LABEL)
+        self.web_check_button.clicked.connect(self.start_web_check)
+        self.web_check_button.setEnabled(False)
+        self.web_check_button.setToolTip(WEB_CHECK_UI_TOOLTIP_NO_SELECTION)
         self.show_inactive = QCheckBox(CATALOG_SHOW_INACTIVE_LABEL)
         self.show_inactive.toggled.connect(lambda *_args: self.refresh())
 
@@ -150,6 +202,7 @@ class ControlAuthorityCatalogTab(QWidget):
         toolbar.addWidget(self.new_office_button)
         toolbar.addWidget(self.edit_button)
         toolbar.addWidget(self.toggle_active_button)
+        toolbar.addWidget(self.web_check_button)
         toolbar.addStretch()
         toolbar.addWidget(self.show_inactive)
 
@@ -424,6 +477,12 @@ class ControlAuthorityCatalogTab(QWidget):
             iterator += 1
 
     def update_buttons(self) -> None:
+        try:
+            self._update_catalog_action_buttons()
+        finally:
+            self._update_web_check_button()
+
+    def _update_catalog_action_buttons(self) -> None:
         kind, record_id = self._selected()
         self.edit_button.setEnabled(kind is not None)
         self.new_office_button.setEnabled(False)
@@ -482,6 +541,109 @@ class ControlAuthorityCatalogTab(QWidget):
                     self.toggle_active_button.setToolTip(
                         OFFICE_ACTIVE_UNDER_INACTIVE_AUTHORITY_MESSAGE
                     )
+
+    def _selected_web_authority(self):
+        kind, record_id = self._selected()
+        if kind == "authority" and record_id is not None:
+            return self._catalog.get_authority(record_id)
+        if kind == "office" and record_id is not None:
+            office = self._catalog.get_office(record_id)
+            if office is None:
+                return None
+            return self._catalog.get_authority(int(office.authority_id))
+        return None
+
+    def _update_web_check_button(self) -> None:
+        if not hasattr(self, "web_check_button"):
+            return
+        if self._web_check_runner.is_running() or self._load_error:
+            self.web_check_button.setEnabled(False)
+            return
+        kind, _record_id = self._selected()
+        if kind is None:
+            self.web_check_button.setEnabled(False)
+            self.web_check_button.setToolTip(WEB_CHECK_UI_TOOLTIP_NO_SELECTION)
+            return
+        authority = self._selected_web_authority()
+        code = str(getattr(authority, "code", "") or "")
+        if authority is None or not has_web_adapter(code):
+            self.web_check_button.setEnabled(False)
+            self.web_check_button.setToolTip(WEB_CHECK_UI_TOOLTIP_UNSUPPORTED)
+            return
+        self.web_check_button.setEnabled(True)
+        self.web_check_button.setToolTip(WEB_CHECK_UI_TOOLTIP_SUPPORTED)
+
+    def _web_check_ui_alive(self) -> bool:
+        try:
+            self.objectName()
+            self.web_check_button.objectName()
+        except RuntimeError:
+            return False
+        return True
+
+    def _ensure_web_check_progress(self) -> LongOperationDialog:
+        dialog = self._web_check_progress
+        if dialog is not None:
+            try:
+                dialog.objectName()
+                return dialog
+            except RuntimeError:
+                self._web_check_progress = None
+        dialog = LongOperationDialog(
+            self,
+            title=WEB_CHECK_UI_DIALOG_TITLE,
+            runner=self._web_check_runner,
+            close_on_success=True,
+        )
+        self._web_check_progress = dialog
+        return dialog
+
+    def start_web_check(self) -> None:
+        if self._web_check_runner.is_running():
+            return
+        authority = self._selected_web_authority()
+        code = str(getattr(authority, "code", "") or "").strip()
+        if authority is None or not has_web_adapter(code):
+            return
+        self._ensure_web_check_progress()
+        started = self._web_check_runner.start(
+            _run_control_authority_web_check,
+            code,
+            blocked_widgets=(self.web_check_button,),
+        )
+        if not started:
+            return
+        self.web_check_button.setEnabled(False)
+
+    def _on_web_check_succeeded(self, result: object) -> None:
+        if not self._web_check_ui_alive():
+            return
+        if not isinstance(result, ControlAuthorityWebCheckResult):
+            logger.error("Webová kontrola vrátila neočekávaný výsledek.")
+            QMessageBox.warning(
+                self, WEB_CHECK_UI_DIALOG_TITLE, WEB_CHECK_UI_ERROR_OTHER
+            )
+            return
+        dialog = ControlAuthorityWebPreviewDialog(self, result)
+        self._exec_dialog(dialog)
+
+    def _on_web_check_failed(self, message: str) -> None:
+        if not self._web_check_ui_alive():
+            return
+        logger.error("Webová kontrola katalogu selhala.")
+        QMessageBox.warning(
+            self,
+            WEB_CHECK_UI_DIALOG_TITLE,
+            str(message or WEB_CHECK_UI_ERROR_OTHER),
+        )
+
+    def _on_web_check_cancelled(self) -> None:
+        return
+
+    def _on_web_check_finished(self) -> None:
+        if not self._web_check_ui_alive():
+            return
+        self.update_buttons()
 
     def add_authority(self) -> None:
         dialog = ControlAuthorityDialog(
