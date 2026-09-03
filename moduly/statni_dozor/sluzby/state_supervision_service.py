@@ -29,6 +29,7 @@ from moduly.statni_dozor.repository.state_supervision_repository import (
 _EMPTY_OPTIONAL_STRINGS = (
     "authority_ico",
     "authority_address",
+    "authority_office_name_snapshot",
     "notification_method",
     "notification_note",
     "planned_start_place",
@@ -50,6 +51,9 @@ _UPDATABLE_FIELDS = frozenset(
         "authority_ico",
         "authority_name",
         "authority_address",
+        "authority_id",
+        "authority_office_id",
+        "authority_office_name_snapshot",
         "workplace_id",
         "workplace_name_snapshot",
         "workplace_address_snapshot",
@@ -182,6 +186,12 @@ def _normalize_payload(fields: dict[str, Any]) -> dict[str, Any]:
     if "workplace_id" in payload:
         workplace_id = payload["workplace_id"]
         payload["workplace_id"] = int(workplace_id) if workplace_id else None
+    if "authority_id" in payload:
+        authority_id = payload["authority_id"]
+        payload["authority_id"] = int(authority_id) if authority_id else None
+    if "authority_office_id" in payload:
+        office_id = payload["authority_office_id"]
+        payload["authority_office_id"] = int(office_id) if office_id else None
     if "power_of_attorney_required" in payload:
         payload["power_of_attorney_required"] = bool(
             payload["power_of_attorney_required"]
