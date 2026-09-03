@@ -139,9 +139,9 @@ class UxTable1cAuditySortTests(unittest.TestCase):
 
         table = AuditTable()
         table.load_audits([done, planned, running])
-        table.sortItems(6, Qt.SortOrder.AscendingOrder)
+        table.sortItems(11, Qt.SortOrder.AscendingOrder)
         self.assertEqual(
-            _column_texts(table, 6),
+            _column_texts(table, 11),
             [AUDIT_STATUS_PLANOVANO, AUDIT_STATUS_PROBIHA, AUDIT_STATUS_DOKONCENO],
         )
         self.assertEqual(_column_ids(table), [planned.id, running.id, done.id])

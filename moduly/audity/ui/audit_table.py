@@ -1,3 +1,4 @@
+from PySide6.QtGui import QBrush, QPalette
 from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QTableWidget
 
 from core.widgets.info_tooltip import format_info_card
@@ -17,6 +18,20 @@ from moduly.audity.constants import (
     PLANNED_MONTH_NOT_SET_LABEL,
 )
 
+COL_ID = 0
+COL_NUMBER = 1
+COL_YEAR = 2
+COL_PLANNED_MONTH = 3
+COL_WORKPLACE = 4
+COL_AUDIT_DATE = 5
+COL_FINDINGS_TOTAL = 6
+COL_NESHODY = 7
+COL_POZOROVANI = 8
+COL_PKZ = 9
+COL_OSTATNI = 10
+COL_STATUS = 11
+COL_AUDIT_TYPE = 12
+
 
 def _status_sort(status: str):
     try:
@@ -26,11 +41,36 @@ def _status_sort(status: str):
     return typed_status(order, label=status or "")
 
 
+def _apply_count_emphasis(item, value: int) -> None:
+    """
+    Nenápadné zvýraznění počtů:
+    - 0: běžné písmo + lehce šedá barva (secondary/disabled text)
+    - >0: tučné písmo
+    """
+    font = item.font()
+    font.setBold(value > 0)
+    item.setFont(font)
+    if value == 0:
+        secondary = QPalette().color(QPalette.Disabled, QPalette.Text)
+        item.setForeground(QBrush(secondary))
+
+
+def _count_item(value: int, record_id: int):
+    count = int(value or 0)
+    item = create_typed_item(
+        str(count),
+        typed_int(count),
+        stable_id=record_id,
+    )
+    _apply_count_emphasis(item, count)
+    return item
+
+
 class AuditTable(QTableWidget):
     def __init__(self):
         super().__init__()
 
-        self.setColumnCount(8)
+        self.setColumnCount(13)
         self.setHorizontalHeaderLabels([
             "ID",
             "Číslo auditu",
@@ -38,11 +78,24 @@ class AuditTable(QTableWidget):
             "Plánovaný měsíc",
             "Auditovaný provoz",
             "Datum auditu",
+            "Celkem",
+            "Neshody",
+            "Pozorování",
+            "PKZ",
+            "Ostatní",
             "Stav",
             "Typ auditu",
         ])
 
-        self.setColumnHidden(0, True)
+        pkz_header = self.horizontalHeaderItem(COL_PKZ)
+        if pkz_header is not None:
+            pkz_header.setToolTip("Příležitosti ke zlepšení")
+
+        ostatni_header = self.horizontalHeaderItem(COL_OSTATNI)
+        if ostatni_header is not None:
+            ostatni_header.setToolTip("Ostatní a historické druhy zjištění")
+
+        self.setColumnHidden(COL_ID, True)
         self.verticalHeader().setVisible(False)
         self.verticalHeader().setDefaultSectionSize(24)
         self.verticalHeader().setMinimumSectionSize(24)
@@ -67,6 +120,11 @@ class AuditTable(QTableWidget):
                 number = getattr(audit, "number", None) or "—"
                 workplace = getattr(audit, "workplace_name", None) or "—"
                 audit_type = getattr(audit, "audit_type", None) or "—"
+                total_count = getattr(audit, "findings_total_count", None) or 0
+                neshody_count = getattr(audit, "neshody_count", None) or 0
+                pozorovani_count = getattr(audit, "pozorovani_count", None) or 0
+                pkz_count = getattr(audit, "pkz_count", None) or 0
+                ostatni_count = getattr(audit, "ostatni_count", None) or 0
 
                 cells = [
                     create_typed_item(
@@ -103,6 +161,11 @@ class AuditTable(QTableWidget):
                         typed_date(audit_date) if audit_date is not None else typed_empty(),
                         stable_id=record_id,
                     ),
+                    _count_item(total_count, record_id),
+                    _count_item(neshody_count, record_id),
+                    _count_item(pozorovani_count, record_id),
+                    _count_item(pkz_count, record_id),
+                    _count_item(ostatni_count, record_id),
                     create_typed_item(
                         status or "—",
                         _status_sort(status) if status else typed_empty(),
@@ -148,6 +211,11 @@ class AuditTable(QTableWidget):
                 ),
                 ("Auditovaný provoz:", getattr(audit, "workplace_name", None) or "—"),
                 ("Datum auditu:", AuditTable._format_date(getattr(audit, "audit_date", None))),
+                ("Celkem:", str(int(getattr(audit, "findings_total_count", 0) or 0))),
+                ("Neshody:", str(int(getattr(audit, "neshody_count", 0) or 0))),
+                ("Pozorování:", str(int(getattr(audit, "pozorovani_count", 0) or 0))),
+                ("Příležitosti ke zlepšení:", str(int(getattr(audit, "pkz_count", 0) or 0))),
+                ("Ostatní:", str(int(getattr(audit, "ostatni_count", 0) or 0))),
                 ("Stav:", getattr(audit, "status", None) or "—"),
                 ("Typ auditu:", getattr(audit, "audit_type", None) or "—"),
             ],

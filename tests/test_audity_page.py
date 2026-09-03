@@ -213,6 +213,11 @@ class AudityPageTestCase(unittest.TestCase):
                 "Plánovaný měsíc",
                 "Auditovaný provoz",
                 "Datum auditu",
+                "Celkem",
+                "Neshody",
+                "Pozorování",
+                "PKZ",
+                "Ostatní",
                 "Stav",
                 "Typ auditu",
             ],
@@ -248,7 +253,7 @@ class AudityPageTestCase(unittest.TestCase):
         page.refresh()
 
         statuses = {
-            page.table.item(row, 6).text()
+            page.table.item(row, 11).text()
             for row in range(page.table.rowCount())
         }
         self.assertEqual(statuses, {AUDIT_STATUS_PLANOVANO})
@@ -291,8 +296,8 @@ class AudityPageTestCase(unittest.TestCase):
         self.assertEqual(page.table.item(0, 2).text(), "2026")
         self.assertEqual(page.table.item(0, 3).text(), "duben")
         self.assertEqual(page.table.item(0, 5).text(), "15.04.2026")
-        self.assertEqual(page.table.item(0, 6).text(), AUDIT_STATUS_PLANOVANO)
-        self.assertEqual(page.table.item(0, 7).text(), AUDIT_TYPE_RADNY)
+        self.assertEqual(page.table.item(0, 11).text(), AUDIT_STATUS_PLANOVANO)
+        self.assertEqual(page.table.item(0, 12).text(), AUDIT_TYPE_RADNY)
 
     @patch("moduly.audity.ui.audity_page.exec_maximized")
     def test_open_audit_loads_existing_record(self, mock_exec) -> None:

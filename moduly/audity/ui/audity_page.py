@@ -14,6 +14,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.shared.constants import (
+    ENTITY_AUDITY,
+    FINDING_TYPE_NESHODA,
+    FINDING_TYPE_POZOROVANI,
+    FINDING_TYPE_PRILEZITOST,
+)
+from core.shared.sluzby.finding_service import finding_service
 from core.widgets.dialog_utils import exec_maximized
 from core.widgets.table_utils import configure_table_columns
 from moduly.audity.constants import (
@@ -49,6 +56,39 @@ from moduly.externi_audity.constants import EXTERNAL_AUDITS_BUTTON_LABEL
 from moduly.externi_audity.ui.external_audits_overview_dialog import (
     ExternalAuditsOverviewDialog,
 )
+
+_FINDING_COLUMN_BY_TYPE = {
+    FINDING_TYPE_NESHODA: "neshody",
+    FINDING_TYPE_POZOROVANI: "pozorovani",
+    FINDING_TYPE_PRILEZITOST: "pkz",
+}
+
+
+def _empty_finding_counts() -> dict[str, int]:
+    return {
+        "total": 0,
+        "neshody": 0,
+        "pozorovani": 0,
+        "pkz": 0,
+        "ostatni": 0,
+    }
+
+
+class _AuditRow:
+    def __init__(self, audit, *, counts: dict[str, int]):
+        self.id = audit.id
+        self.number = audit.number
+        self.year = audit.year
+        self.planned_month = audit.planned_month
+        self.workplace_name = audit.workplace_name
+        self.audit_date = audit.audit_date
+        self.status = audit.status
+        self.audit_type = audit.audit_type
+        self.findings_total_count = int(counts.get("total", 0) or 0)
+        self.neshody_count = int(counts.get("neshody", 0) or 0)
+        self.pozorovani_count = int(counts.get("pozorovani", 0) or 0)
+        self.pkz_count = int(counts.get("pkz", 0) or 0)
+        self.ostatni_count = int(counts.get("ostatni", 0) or 0)
 
 
 class AudityPage(QWidget):
@@ -152,7 +192,33 @@ class AudityPage(QWidget):
 
     def refresh(self) -> None:
         audits = self._filter_audits(audit_service.get_all())
-        self.table.load_audits(audits)
+        audit_ids = [int(audit.id) for audit in audits]
+        findings = finding_service.get_for_entities(ENTITY_AUDITY, audit_ids)
+
+        counts_by_audit_id: dict[int, dict[str, int]] = {
+            audit_id: _empty_finding_counts()
+            for audit_id in audit_ids
+        }
+
+        for finding in findings:
+            audit_id = int(getattr(finding, "entity_id", 0) or 0)
+            bucket = counts_by_audit_id.get(audit_id)
+            if bucket is None:
+                continue
+
+            bucket["total"] += 1
+            code = str(getattr(finding, "finding_type", "") or "").strip()
+            column = _FINDING_COLUMN_BY_TYPE.get(code)
+            if column is None:
+                bucket["ostatni"] += 1
+            else:
+                bucket[column] += 1
+
+        rows = [
+            _AuditRow(audit, counts=counts_by_audit_id.get(audit.id, _empty_finding_counts()))
+            for audit in audits
+        ]
+        self.table.load_audits(rows)
         configure_table_columns(self.table, "audity")
         self.table.clearSelection()
         self.table.setCurrentCell(-1, -1)
