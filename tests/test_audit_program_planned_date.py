@@ -130,14 +130,14 @@ class AuditProgramPlannedDateTestCase(unittest.TestCase):
     def test_start_audit_copies_planned_date_to_audit_spis(self) -> None:
         _, visit = self._create_program_with_visit()
 
-        audit = audit_program_service.create_audit_from_visit(visit.id)
+        audit = audit_program_service.create_audit_from_visit(visit.id, started_at=date(2026, 4, 10))
 
         self.assertEqual(audit.audit_date, date(2026, 4, 15))
 
     def test_start_audit_without_planned_date_keeps_current_behavior(self) -> None:
         _, visit = self._create_program_with_visit(planned_date=None)
 
-        audit = audit_program_service.create_audit_from_visit(visit.id)
+        audit = audit_program_service.create_audit_from_visit(visit.id, started_at=date(2026, 4, 10))
 
         self.assertIsNone(audit.audit_date)
         self.assertEqual(audit.planned_month, 4)
@@ -187,7 +187,7 @@ class AuditProgramPlannedDateTestCase(unittest.TestCase):
         after_generate_count = len(audit_service.get_all())
         self.assertEqual(after_generate_count, before_count)
 
-        audit = audit_program_service.create_audit_from_visit(visit.id)
+        audit = audit_program_service.create_audit_from_visit(visit.id, started_at=date(2026, 4, 10))
         after_start_count = len(audit_service.get_all())
         self.assertEqual(after_start_count, before_count + 1)
         self.assertEqual(audit.program_visit_id, visit.id)

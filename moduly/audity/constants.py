@@ -374,7 +374,11 @@ AUDIT_PROTOCOL_DIALOG_TITLE = "Protokol z interního auditu"
 AUDIT_DETAILED_REPORT_BUTTON_LABEL = "Podrobná zpráva z interního auditu..."
 AUDIT_DETAILED_REPORT_DIALOG_TITLE = "Podrobná zpráva z interního auditu"
 AUDIT_PROGRAM_VISIT_HAS_AUDIT = "Návštěva už má vytvořený audit."
+AUDIT_PROGRAM_VISIT_STARTED_ELSEWHERE = (
+    "Tuto návštěvu mezitím zahájil jiný proces. Nový audit nevznikl."
+)
 AUDIT_PROGRAM_VISIT_NO_AUDIT = "Návštěva nemá vytvořený audit."
+AUDIT_START_DATE_REQUIRED_MESSAGE = "Vyplňte datum zahájení auditu."
 
 AUDIT_PROGRAM_MANUAL_GENERATE_BLOCKED = (
     "Program byl ručně upraven. Automatické generování návštěv je vypnuto."

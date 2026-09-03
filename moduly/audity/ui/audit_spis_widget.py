@@ -136,6 +136,25 @@ class AuditSpisWidget(QWidget):
         display = (number or "").strip() or "—"
         self.number_label.setText(display)
 
+    def apply_visit_context(self, visit_context) -> None:
+        """Pracovní předvyplnění z plánované návštěvy. Nic nezapisuje."""
+        year = getattr(visit_context, "planned_year", None)
+        if year:
+            self._set_year(int(year))
+        self._set_planned_month(getattr(visit_context, "planned_month", None))
+        workplace_id = getattr(visit_context, "workplace_id", None)
+        workplace_name = getattr(visit_context, "workplace_name", None) or ""
+        self.workplace_selector.set_workplace(workplace_id, workplace_name)
+        planned_date = getattr(visit_context, "planned_date", None)
+        if planned_date is not None:
+            self.audit_date_edit.set_date_value(planned_date)
+        else:
+            self.audit_date_edit.clear_date()
+        self.started_at_edit.clear_date()
+        self._finished_at = None
+        self.set_number(None)
+        self._update_derived_status()
+
     def load_audit(self, audit) -> None:
         if audit is None:
             self._set_defaults()

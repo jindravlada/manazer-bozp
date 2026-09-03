@@ -28,13 +28,20 @@ from core.widgets.editor_dialog_controller import (
 from moduly.audity.constants import (
     AUDIT_LEAD_RECOMMENDATION_EMPTY_REVIEW_MESSAGE,
     AUDIT_LEAD_RECOMMENDATION_STALE_REVIEW_MESSAGE,
+    AUDIT_START_DATE_REQUIRED_MESSAGE,
     FINDING_SOURCE_LABEL,
     TAB_LABELS,
     TAB_MIMORADNE,
 )
+from moduly.audity.sluzby.audit_auditable_workplace_service import (
+    AUDITABLE_WORKPLACE_REQUIRED_MESSAGE,
+)
 from moduly.audity.sluzby.audit_commission_service import audit_commission_service
 from moduly.audity.sluzby.audit_deferred_edits import AuditDeferredEdits
-from moduly.audity.sluzby.audit_program_service import AuditVisitContext
+from moduly.audity.sluzby.audit_program_service import (
+    AuditVisitContext,
+    audit_program_service,
+)
 from moduly.audity.sluzby.audit_question_source_service import (
     AuditQuestionSourceError,
     audit_question_source_service,
@@ -76,8 +83,6 @@ class AuditDialog(QDialog):
         self._closing = False
         self._deferred = AuditDeferredEdits()
         if visit_context is None and audit is not None:
-            from moduly.audity.sluzby.audit_program_service import audit_program_service
-
             visit_context = audit_program_service.resolve_visit_context_for_audit(audit)
         self._visit_context = visit_context
 
@@ -139,6 +144,8 @@ class AuditDialog(QDialog):
             lambda: self.tabs.setCurrentWidget(self.conclusion_widget)
         )
         self.spis_widget.load_audit(audit)
+        if audit is None and visit_context is not None:
+            self.spis_widget.apply_visit_context(visit_context)
         # Úvod: jen kontext + text changes_since_last; historie lazy při otevření záložky.
         self.history_widget.load_audit(audit)
         self.history_widget.content_modified.connect(self._on_deferred_dirty)
@@ -256,6 +263,21 @@ class AuditDialog(QDialog):
         if self._persist():
             self._done_accept()
 
+    def _is_visit_draft(self) -> bool:
+        return self.audit is None and self._visit_context is not None
+
+    def _validate_visit_draft(self, data: dict) -> str | None:
+        if data.get("started_at") is None:
+            return AUDIT_START_DATE_REQUIRED_MESSAGE
+        workplace_id = data.get("workplace_id")
+        if workplace_id is None:
+            workplace_id = audit_service.resolve_workplace_id_by_name(
+                data.get("workplace_name", "")
+            )
+        if workplace_id is None or int(workplace_id) <= 0:
+            return AUDITABLE_WORKPLACE_REQUIRED_MESSAGE
+        return None
+
     def _persist(self) -> bool:
         """Zápis Spis/Závěr/komise + odložených zjištění/úkolů/výsledků kontroly."""
         valid, message = self.commission_widget.validate()
@@ -265,16 +287,31 @@ class AuditDialog(QDialog):
             return False
 
         data = self.get_data()
+        if self._is_visit_draft():
+            visit_error = self._validate_visit_draft(data)
+            if visit_error is not None:
+                QMessageBox.warning(self, "Nový audit", visit_error)
+                self.tabs.setCurrentWidget(self.spis_widget)
+                return False
+
         self.processes_widget.capture_section_summary()
         self.terrain_widget.capture_section_summary()
 
         if self.audit is None:
             payload = self.prepare_save_payload(data)
             try:
-                created = create_manual_audit_with_v2_snapshot(
-                    fields=payload,
-                    commission_members=data.get("commission_members"),
-                )
+                if self._visit_context is not None:
+                    created = audit_program_service.create_audit_from_visit(
+                        self._visit_context.visit_id,
+                        started_at=data["started_at"],
+                        fields=payload,
+                        commission_members=data.get("commission_members"),
+                    )
+                else:
+                    created = create_manual_audit_with_v2_snapshot(
+                        fields=payload,
+                        commission_members=data.get("commission_members"),
+                    )
             except (
                 AuditV2CreateError,
                 SystemAuditWorkplaceError,

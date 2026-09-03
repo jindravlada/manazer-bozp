@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-03 – AUDIT-START-DEFERRED-SAVE-1
+
+**Co se povedlo:** Zahájení Auditu z plánované návštěvy je až při úspěšném Uložit. Otevření editoru je read-only; `started_at` zůstane prázdné, dokud ho uživatel nezadá.
+
+**Co už bychom dnes udělali jinak:** Nevolat `create_audit_from_visit` z dvojkliku / Zahájit. Editor musí umět `audit_id=None` s pracovními daty z návštěvy.
+
+**Co bylo zbytečně složité:** Skryté auto-doplnění dnešního data. Stejný výsledek dává povinné pole a běžná validace.
+
+**Jaké nové pravidlo z toho vzniklo:** Nový Audit z návštěvy vzniká v jedné transakci (řádek, číslo, snapshot, vazba). Bez `started_at` se nezapisuje. Chyba kteréhokoli kroku rollbackne celek.
+
+---
+
 ### 2026-09-03 – STATE-SUPERVISION-AUTHORITY-WEB-COVERAGE-NAMESPACE-9A4
 
 **Co se povedlo:** Territorial coverage může omezit unmatched místní záznamy prefixem `external_key`. Ústecký rozsah tak neuvidí 42 cizích ÚP jen proto, že mají `office_kind=territorial`.

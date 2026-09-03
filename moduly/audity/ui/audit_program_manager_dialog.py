@@ -777,17 +777,19 @@ class AuditProgramManagerDialog(QDialog):
         if visit_id is None or AuditProgramPlanTreeWidget.node_type(item) != NODE_VISIT:
             return
 
-        try:
-            audit = audit_program_service.create_audit_from_visit(visit_id)
-        except ValueError as error:
-            QMessageBox.warning(self, self.windowTitle(), str(error))
+        visit = self._visit_for_tree_item(item)
+        if visit is None:
+            return
+        if visit.audit_id is not None:
+            self._open_audit_for_selection()
             return
 
         visit_context = audit_program_service.get_visit_audit_context(visit_id)
-        completed = self._open_audit_dialog(audit.id, visit_context=visit_context)
-        if not completed:
-            self._set_status(AUDIT_PROGRAM_STATUS_AUDIT_CREATED)
-        self._refresh_selected_program_views()
+        if visit_context is None:
+            QMessageBox.warning(self, self.windowTitle(), "Návštěva nebyla nalezena.")
+            return
+
+        self._open_audit_dialog(audit_id=None, visit_context=visit_context)
 
     def _open_audit_for_selection(self) -> None:
         item = self._selected_tree_item()
@@ -870,17 +872,25 @@ class AuditProgramManagerDialog(QDialog):
                 f"Podrobnou zprávu se nepodařilo vygenerovat.\n\n{exc}",
             )
 
-    def _open_audit_dialog(self, audit_id: int, *, visit_context=None) -> bool:
-        audit = audit_service.get_by_id(audit_id)
-        if audit is None:
-            QMessageBox.warning(self, self.windowTitle(), "Audit nebyl nalezen.")
-            self._refresh_selected_program_views()
-            return False
+    def _open_audit_dialog(self, audit_id: int | None = None, *, visit_context=None) -> bool:
+        audit = None
+        if audit_id is not None:
+            audit = audit_service.get_by_id(audit_id)
+            if audit is None:
+                QMessageBox.warning(self, self.windowTitle(), "Audit nebyl nalezen.")
+                self._refresh_selected_program_views()
+                return False
 
         dialog = AuditDialog(self, audit=audit, visit_context=visit_context)
         exec_maximized(dialog)
 
-        updated = audit_service.get_by_id(audit_id)
+        resolved_id = audit_id
+        if resolved_id is None and visit_context is not None:
+            visit = audit_program_service.repository.get_visit(visit_context.visit_id)
+            if visit is not None:
+                resolved_id = visit.audit_id
+
+        updated = audit_service.get_by_id(resolved_id) if resolved_id is not None else None
         completed = (
             updated is not None and updated.status == AUDIT_STATUS_DOKONCENO
         )
@@ -888,6 +898,8 @@ class AuditProgramManagerDialog(QDialog):
         self._refresh_selected_program_views()
         if completed:
             self._set_status(AUDIT_PROGRAM_STATUS_AUDIT_COMPLETED)
+        elif updated is not None:
+            self._set_status(AUDIT_PROGRAM_STATUS_AUDIT_CREATED)
         return completed
 
     def _fill_detail_panel(

@@ -88,7 +88,7 @@ class AuditProgramVisitAuditTestCase(unittest.TestCase):
     def test_create_audit_from_visit_prefills_and_links(self) -> None:
         program, visit = self._create_program_with_visit()
 
-        audit = audit_program_service.create_audit_from_visit(visit.id)
+        audit = audit_program_service.create_audit_from_visit(visit.id, started_at=date(2026, 4, 10))
 
         self.assertEqual(audit.program_id, program.id)
         self.assertEqual(audit.program_visit_id, visit.id)
@@ -96,6 +96,7 @@ class AuditProgramVisitAuditTestCase(unittest.TestCase):
         self.assertEqual(audit.planned_month, 4)
         self.assertEqual(audit.year, 2026)
         self.assertEqual(audit.audit_date, date(2026, 4, 15))
+        self.assertEqual(audit.started_at, date(2026, 4, 10))
         self.assertTrue(audit.title)
 
         refreshed_visit = audit_program_service.repository.get_visit(visit.id)
@@ -105,10 +106,10 @@ class AuditProgramVisitAuditTestCase(unittest.TestCase):
 
     def test_create_audit_from_visit_blocks_duplicate(self) -> None:
         _, visit = self._create_program_with_visit()
-        audit_program_service.create_audit_from_visit(visit.id)
+        audit_program_service.create_audit_from_visit(visit.id, started_at=date(2026, 4, 10))
 
         with self.assertRaises(ValueError):
-            audit_program_service.create_audit_from_visit(visit.id)
+            audit_program_service.create_audit_from_visit(visit.id, started_at=date(2026, 4, 10))
 
     def test_get_visit_audit_context(self) -> None:
         _, visit = self._create_program_with_visit()
@@ -122,7 +123,7 @@ class AuditProgramVisitAuditTestCase(unittest.TestCase):
 
     def test_sync_on_audit_completed_updates_visit_and_processes(self) -> None:
         _, visit = self._create_program_with_visit()
-        audit = audit_program_service.create_audit_from_visit(visit.id)
+        audit = audit_program_service.create_audit_from_visit(visit.id, started_at=date(2026, 4, 10))
         finished_at = date(2026, 4, 20)
 
         audit_program_service.sync_on_audit_completed(audit.id, finished_at=finished_at)
@@ -140,7 +141,7 @@ class AuditProgramVisitAuditTestCase(unittest.TestCase):
 
     def test_update_audit_completion_triggers_program_sync(self) -> None:
         _, visit = self._create_program_with_visit()
-        audit = audit_program_service.create_audit_from_visit(visit.id)
+        audit = audit_program_service.create_audit_from_visit(visit.id, started_at=date(2026, 4, 10))
         finished_at = date(2026, 4, 22)
 
         updated = audit_service.update_audit(
@@ -168,7 +169,7 @@ class AuditProgramVisitAuditTestCase(unittest.TestCase):
 
     def test_coverage_counts_completed_visits_and_processes(self) -> None:
         program, visit = self._create_program_with_visit()
-        audit = audit_program_service.create_audit_from_visit(visit.id)
+        audit = audit_program_service.create_audit_from_visit(visit.id, started_at=date(2026, 4, 10))
         audit_service.update_audit(
             audit.id,
             finished_at=date(2026, 4, 22),
@@ -185,7 +186,7 @@ class AuditProgramVisitAuditTestCase(unittest.TestCase):
 
     def test_get_visit_by_audit_id(self) -> None:
         _, visit = self._create_program_with_visit()
-        audit = audit_program_service.create_audit_from_visit(visit.id)
+        audit = audit_program_service.create_audit_from_visit(visit.id, started_at=date(2026, 4, 10))
 
         linked = audit_program_service.get_visit_by_audit_id(audit.id)
 

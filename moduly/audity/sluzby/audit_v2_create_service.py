@@ -121,9 +121,11 @@ def create_audit_with_v2_snapshot(
                         f"Návštěva {link_visit_id} neexistuje."
                     )
                 if visit_db.audit_id is not None:
-                    from moduly.audity.constants import AUDIT_PROGRAM_VISIT_HAS_AUDIT
+                    from moduly.audity.constants import (
+                        AUDIT_PROGRAM_VISIT_STARTED_ELSEWHERE,
+                    )
 
-                    raise AuditV2CreateError(AUDIT_PROGRAM_VISIT_HAS_AUDIT)
+                    raise AuditV2CreateError(AUDIT_PROGRAM_VISIT_STARTED_ELSEWHERE)
 
             audit = Audit(**validated)
             audit.methodology_source = AUDIT_METHODOLOGY_SOURCE_SNAPSHOT

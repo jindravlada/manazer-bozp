@@ -354,7 +354,7 @@ class AuditProgramManagerDialogTestCase(unittest.TestCase):
             planned_year=2026,
             planned_month=4,
         )
-        audit_program_service.create_audit_from_visit(visit.id)
+        audit_program_service.create_audit_from_visit(visit.id, started_at=date(2026, 4, 10))
 
         dialog = self._create_dialog()
         dialog._reload_program_list(select_program_id=program.id)
@@ -385,7 +385,7 @@ class AuditProgramManagerDialogTestCase(unittest.TestCase):
             planned_year=2026,
             planned_month=4,
         )
-        audit = audit_program_service.create_audit_from_visit(visit.id)
+        audit = audit_program_service.create_audit_from_visit(visit.id, started_at=date(2026, 4, 10))
         audit_service.update_audit(
             audit.id,
             started_at=date(2026, 4, 10),
@@ -423,7 +423,7 @@ class AuditProgramManagerDialogTestCase(unittest.TestCase):
             planned_year=2026,
             planned_month=4,
         )
-        audit = audit_program_service.create_audit_from_visit(visit.id)
+        audit = audit_program_service.create_audit_from_visit(visit.id, started_at=date(2026, 4, 10))
         audit_service.update_audit(
             audit.id,
             started_at=date(2026, 4, 10),

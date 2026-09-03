@@ -8,13 +8,14 @@ from moduly.audity.constants import (
     AUDIT_PROGRAM_STATUS_APPROVED,
     AUDIT_PROGRAM_STATUS_RUNNING,
     AUDIT_PROGRAM_STATUSES,
-    AUDIT_PROGRAM_VISIT_HAS_AUDIT,
     AUDIT_PROGRAM_VISIT_PROCESS_STATUS_COMPLETED,
     AUDIT_PROGRAM_VISIT_PROCESS_STATUS_PLANNED,
     AUDIT_PROGRAM_VISIT_PROCESS_STATUSES,
+    AUDIT_PROGRAM_VISIT_STARTED_ELSEWHERE,
     AUDIT_PROGRAM_VISIT_STATUS_COMPLETED,
     AUDIT_PROGRAM_VISIT_STATUS_SKIPPED,
     AUDIT_PROGRAM_VISIT_STATUSES,
+    AUDIT_START_DATE_REQUIRED_MESSAGE,
     DEFAULT_AUDIT_PROGRAM_STANDARDS,
     DEFAULT_AUDIT_PROGRAM_STATUS,
     DEFAULT_AUDIT_PROGRAM_VISIT_PROCESS_STATUS,
@@ -58,6 +59,12 @@ class AuditVisitContext:
     program_name: str
     planned_process_ids: tuple[str, ...]
     standards: tuple[str, ...]
+    workplace_id: int | None = None
+    workplace_name: str = ""
+    planned_year: int | None = None
+    planned_month: int | None = None
+    planned_date: date | None = None
+    title: str = ""
 
 
 @dataclass(frozen=True)
@@ -545,12 +552,19 @@ class AuditProgramService:
             return None
 
         planned_processes = self.repository.list_visit_processes(visit_id)
+        workplace_name = self._resolve_workplace_name(visit)
         return AuditVisitContext(
             program_id=program.id,
             visit_id=visit.id,
             program_name=program.name.strip(),
             planned_process_ids=tuple(item.process_id for item in planned_processes),
             standards=tuple(self.parse_standards(program.standards_json)),
+            workplace_id=visit.workplace_id,
+            workplace_name=workplace_name,
+            planned_year=visit.planned_year,
+            planned_month=visit.planned_month,
+            planned_date=visit.planned_date,
+            title=self._build_audit_title(program, visit, workplace_name),
         )
 
     def resolve_visit_context_for_audit(self, audit: Audit | None) -> AuditVisitContext | None:
@@ -558,16 +572,27 @@ class AuditProgramService:
             return None
         return self.get_visit_audit_context(audit.program_visit_id)
 
-    def create_audit_from_visit(self, visit_id: int) -> Audit:
+    def create_audit_from_visit(
+        self,
+        visit_id: int,
+        *,
+        started_at: date,
+        fields: dict | None = None,
+        commission_members: list[dict] | None = None,
+    ) -> Audit:
         """
-        Založí audit v2 ze návštěvy: audit + snapshot v jedné transakci.
+        Založí audit v2 ze návštěvy: audit + snapshot + vazba v jedné transakci.
 
-        Při chybě ROLLBACK — nezůstane audit, snapshot ani ``visit.audit_id``.
+        ``started_at`` musí zadat uživatel. Při chybě ROLLBACK — nezůstane audit,
+        číslo, snapshot ani ``visit.audit_id``.
         """
         from moduly.audity.sluzby.audit_v2_create_service import (
             AuditV2CreateError,
             create_audit_with_v2_snapshot,
         )
+
+        if started_at is None:
+            raise ValueError(AUDIT_START_DATE_REQUIRED_MESSAGE)
 
         visit = self.repository.get_visit(visit_id)
         if visit is None:
@@ -575,13 +600,15 @@ class AuditProgramService:
         if visit.status == AUDIT_PROGRAM_VISIT_STATUS_SKIPPED:
             raise ValueError("Zrušenou návštěvu nelze auditovat.")
         if visit.audit_id is not None:
-            raise ValueError(AUDIT_PROGRAM_VISIT_HAS_AUDIT)
+            raise ValueError(AUDIT_PROGRAM_VISIT_STARTED_ELSEWHERE)
 
         program = self.repository.get_program(visit.program_id)
         if program is None:
             raise ValueError(f"Program auditů {visit.program_id} neexistuje.")
 
-        if visit.workplace_id is None or int(visit.workplace_id) <= 0:
+        editor_fields = dict(fields or {})
+        workplace_id = editor_fields.get("workplace_id", visit.workplace_id)
+        if workplace_id is None or int(workplace_id) <= 0:
             raise ValueError("Návštěva nemá přiřazený provoz.")
 
         visit_processes = self.repository.list_visit_processes(visit_id)
@@ -591,28 +618,41 @@ class AuditProgramService:
             if str(item.process_id or "").strip()
         }
 
-        # Metodika max. jednou (ensure_catalogs uvnitř get_knowledge_tree).
-        knowledge_tree = audit_knowledge_service.get_knowledge_tree(ensure=True)
-
-        workplace_name = self._resolve_workplace_name(visit)
-        fields = {
-            "workplace_id": visit.workplace_id,
+        workplace_name = str(
+            editor_fields.get("workplace_name") or self._resolve_workplace_name(visit)
+        ).strip()
+        payload = {
+            "workplace_id": int(workplace_id),
             "workplace_name": workplace_name,
-            "year": visit.planned_year or date.today().year,
-            "planned_month": visit.planned_month,
-            "audit_date": visit.planned_date,
-            "started_at": date.today(),
-            "title": self._build_audit_title(program, visit, workplace_name),
+            "year": editor_fields.get("year") or visit.planned_year or date.today().year,
+            "planned_month": editor_fields.get(
+                "planned_month", visit.planned_month
+            ),
+            "audit_date": editor_fields.get("audit_date", visit.planned_date),
+            "started_at": started_at,
+            "title": editor_fields.get("title")
+            or self._build_audit_title(program, visit, workplace_name),
             "program_id": program.id,
             "program_visit_id": visit.id,
         }
+        for key, value in editor_fields.items():
+            if key in {"started_at", "program_id", "program_visit_id"}:
+                continue
+            if key not in payload or value is not None:
+                payload[key] = value
+        payload["started_at"] = started_at
+        payload["program_id"] = program.id
+        payload["program_visit_id"] = visit.id
+
+        # Metodika max. jednou (ensure_catalogs uvnitř get_knowledge_tree).
+        knowledge_tree = audit_knowledge_service.get_knowledge_tree(ensure=True)
 
         try:
             return create_audit_with_v2_snapshot(
-                fields=fields,
-                workplace_id=int(visit.workplace_id),
+                fields=payload,
+                workplace_id=int(workplace_id),
                 planned_process_ids=planned_process_ids,
-                commission_members=None,
+                commission_members=commission_members,
                 link_visit_id=int(visit_id),
                 knowledge_tree=knowledge_tree,
                 ensure_knowledge=False,

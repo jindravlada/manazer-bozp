@@ -2,6 +2,7 @@ import importlib
 import tempfile
 import unittest
 import uuid
+from datetime import date
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -754,7 +755,7 @@ class AudityProcessesTestCase(unittest.TestCase):
             process_name="Proces 2",
         )
         with classify_methodology_questions():
-            audit = audit_program_service.create_audit_from_visit(visit.id)
+            audit = audit_program_service.create_audit_from_visit(visit.id, started_at=date(2026, 4, 10))
 
         dialog = AuditDialog(audit=audit)
 

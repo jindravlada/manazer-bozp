@@ -425,7 +425,7 @@ class StartAuditMessagesTestCase(unittest.TestCase):
 
     def test_missing_system_workplace_message(self) -> None:
         with self.assertRaises(SystemAuditWorkplaceError) as ctx:
-            audit_program_service.create_audit_from_visit(self.visit.id)
+            audit_program_service.create_audit_from_visit(self.visit.id, started_at=date(2026, 4, 10))
         self.assertEqual(str(ctx.exception), AUDIT_START_MISSING_SYSTEM_WORKPLACE)
 
     def test_unclassified_blocks_with_overview(self) -> None:
@@ -444,7 +444,7 @@ class StartAuditMessagesTestCase(unittest.TestCase):
             audit_knowledge_service, "get_knowledge_tree", return_value=tree
         ):
             with self.assertRaises(AuditV2SnapshotError) as ctx:
-                audit_program_service.create_audit_from_visit(self.visit.id)
+                audit_program_service.create_audit_from_visit(self.visit.id, started_at=date(2026, 4, 10))
         message = str(ctx.exception)
         self.assertIn(AUDIT_START_UNCLASSIFIED_QUESTIONS, message)
         self.assertIn("Proces V2b", message)
@@ -472,7 +472,7 @@ class StartAuditMessagesTestCase(unittest.TestCase):
         with patch.object(
             audit_knowledge_service, "get_knowledge_tree", return_value=tree
         ):
-            audit = audit_program_service.create_audit_from_visit(self.visit.id)
+            audit = audit_program_service.create_audit_from_visit(self.visit.id, started_at=date(2026, 4, 10))
         self.assertEqual(audit.methodology_generation, AUDIT_METHODOLOGY_GENERATION_V2)
         self.assertEqual(audit.methodology_source, AUDIT_METHODOLOGY_SOURCE_SNAPSHOT)
         with get_session() as session:
@@ -520,7 +520,7 @@ class StartAuditMessagesTestCase(unittest.TestCase):
         with patch.object(
             audit_knowledge_service, "get_knowledge_tree", return_value=tree
         ):
-            audit = audit_program_service.create_audit_from_visit(visit.id)
+            audit = audit_program_service.create_audit_from_visit(visit.id, started_at=date(2026, 4, 10))
         with get_session() as session:
             snaps = list(
                 session.scalars(
