@@ -736,7 +736,7 @@ AUTHORITY_CATALOG_SEED_COLLISION_MESSAGE = (
     "protože technický klíč koliduje s existujícím záznamem."
 )
 
-# Webové adaptéry kontrolních orgánů (8D0 DÚ, 8D2 SÚIP, 8D3 ČBÚ)
+# Webové adaptéry kontrolních orgánů (8D0 DÚ, 8D2 SÚIP, 8D3 ČBÚ, 8D4 KHS)
 DU_AUTHORITY_CODE = "du"
 DU_OFFICES_SOURCE_URL = "https://du.gov.cz/kontakty/"
 DU_OFFICE_EXTERNAL_KEYS: tuple[str, ...] = ("du:praha", "du:plzen", "du:olomouc")
@@ -784,6 +784,25 @@ CBU_OFFICE_EXTERNAL_KEYS: tuple[str, ...] = (
     "cbu:obu-ostrava",
 )
 CBU_MAX_HTTP_REQUESTS = 7
+KHS_AUTHORITY_CODE = "khs"
+KHS_OFFICES_SOURCE_URL = "https://mzd.gov.cz/krajske-hygienicke-stanice/"
+KHS_OFFICE_EXTERNAL_KEYS: tuple[str, ...] = (
+    "khs:praha",
+    "khs:stredocesky-kraj",
+    "khs:jihocesky-kraj",
+    "khs:plzensky-kraj",
+    "khs:karlovarsky-kraj",
+    "khs:ustecky-kraj",
+    "khs:liberecky-kraj",
+    "khs:kralovehradecky-kraj",
+    "khs:pardubicky-kraj",
+    "khs:kraj-vysocina",
+    "khs:jihomoravsky-kraj",
+    "khs:olomoucky-kraj",
+    "khs:moravskoslezsky-kraj",
+    "khs:zlinsky-kraj",
+)
+KHS_MAX_HTTP_REQUESTS = 1
 WEB_ADAPTER_ERROR_NETWORK = "network"
 WEB_ADAPTER_ERROR_TIMEOUT = "timeout"
 WEB_ADAPTER_ERROR_HTTP = "http"
