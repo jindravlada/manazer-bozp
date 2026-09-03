@@ -5,6 +5,7 @@ from __future__ import annotations
 from core.shared.constants import (
     ENTITY_STATE_SUPERVISION,
     FINDING_TYPE_NEDOSTATEK,
+    FINDING_TYPE_OPATRENI,
     FINDING_TYPE_PORUSENI_PREDPISU,
     FINDING_TYPE_PRILEZITOST,
     FINDING_TYPE_ZAVADA,
@@ -17,6 +18,7 @@ MODULE_NAME = "Státní dozor"
 STATE_SUPERVISION_FINDING_TYPES = frozenset(
     {
         FINDING_TYPE_PRILEZITOST,
+        FINDING_TYPE_OPATRENI,
         FINDING_TYPE_NEDOSTATEK,
         FINDING_TYPE_ZAVADA,
         FINDING_TYPE_PORUSENI_PREDPISU,
@@ -32,6 +34,7 @@ def is_state_supervision_finding_type(finding_type: str) -> bool:
 
 STATE_SUPERVISION_FINDING_TYPE_ORDER: tuple[str, ...] = (
     FINDING_TYPE_PRILEZITOST,
+    FINDING_TYPE_OPATRENI,
     FINDING_TYPE_NEDOSTATEK,
     FINDING_TYPE_ZAVADA,
     FINDING_TYPE_PORUSENI_PREDPISU,
@@ -40,8 +43,10 @@ STATE_SUPERVISION_FINDING_TYPE_ORDER: tuple[str, ...] = (
 
 # Popisky pouze pro UI Státního dozoru. Nesmí se míchat s FINDING_TYPE_LABELS
 # (exporty auditů/prověrek). Zkratka PKZ zde označuje konkrétní Finding.
+# FINDING_TYPE_OPATRENI má zde vlastní popisek; jinde zůstává „Opatření“.
 STATE_SUPERVISION_FINDING_TYPE_LABELS: dict[str, str] = {
     FINDING_TYPE_PRILEZITOST: "Příležitost ke zlepšení (PKZ)",
+    FINDING_TYPE_OPATRENI: "Dohodnutý další postup",
     FINDING_TYPE_NEDOSTATEK: "Nedostatek",
     FINDING_TYPE_ZAVADA: "Závada",
     FINDING_TYPE_PORUSENI_PREDPISU: "Porušení požadavku",

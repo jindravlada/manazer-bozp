@@ -47,6 +47,7 @@ with patch.object(Path, "home", return_value=_TMP):
         FINDING_STATUS_VYPORADANO,
         FINDING_TYPE_NEDOSTATEK,
         FINDING_TYPE_NESHODA,
+        FINDING_TYPE_OPATRENI,
         FINDING_TYPE_PORUSENI_PREDPISU,
         FINDING_TYPE_POZOROVANI,
         FINDING_TYPE_PRILEZITOST,
@@ -138,6 +139,7 @@ class StateSupervisionFindingsCore5a1TestCase(unittest.TestCase):
 
         expected = {
             FINDING_TYPE_PRILEZITOST,
+            FINDING_TYPE_OPATRENI,
             FINDING_TYPE_NEDOSTATEK,
             FINDING_TYPE_ZAVADA,
             FINDING_TYPE_PORUSENI_PREDPISU,
@@ -148,6 +150,7 @@ class StateSupervisionFindingsCore5a1TestCase(unittest.TestCase):
             self.assertIn(code, VALID_FINDING_TYPES)
             self.assertTrue(is_state_supervision_finding_type(code))
         self.assertFalse(is_state_supervision_finding_type(FINDING_TYPE_NESHODA))
+        self.assertFalse(is_state_supervision_finding_type(FINDING_TYPE_POZOROVANI))
         self.assertNotIn("pkz", VALID_FINDING_TYPES)
         self.assertNotIn("PKZ", VALID_FINDING_TYPES)
         self.assertIn("pkz", KNOWLEDGE_EDITOR_SECTION_EDITABLE_LIST_FIELDS)
@@ -163,6 +166,7 @@ class StateSupervisionFindingsCore5a1TestCase(unittest.TestCase):
             "Porušení předpisu",
         )
         self.assertEqual(FINDING_TYPE_LABELS[FINDING_TYPE_ZJISTENI], "Zjištění")
+        self.assertEqual(FINDING_TYPE_LABELS[FINDING_TYPE_OPATRENI], "Opatření")
         self.assertEqual(
             AUDIT_FINDING_TYPE_LABELS[AUDIT_FINDING_TYPE_PKZ],
             "Příležitost ke zlepšování",
@@ -208,7 +212,7 @@ class StateSupervisionFindingsCore5a1TestCase(unittest.TestCase):
             for index, code in enumerate(sorted(STATE_SUPERVISION_FINDING_TYPES))
         ]
         saved = self.service.save_state_supervision_findings_batch(parent.id, drafts)
-        self.assertEqual(len(saved), 5)
+        self.assertEqual(len(saved), 6)
         self.assertEqual(
             {row.finding_type for row in saved},
             STATE_SUPERVISION_FINDING_TYPES,
@@ -223,7 +227,7 @@ class StateSupervisionFindingsCore5a1TestCase(unittest.TestCase):
                 parent.id,
                 [_draft(finding_type=FINDING_TYPE_POZOROVANI, description="Pozorování")],
             )
-        self.assertEqual(len(self.service.list_findings(parent.id)), 5)
+        self.assertEqual(len(self.service.list_findings(parent.id)), 6)
 
     def test_04_task_id_preserved_without_creating_task(self) -> None:
         parent = self._supervision()

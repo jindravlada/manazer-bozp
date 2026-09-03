@@ -55,6 +55,7 @@ with patch.object(Path, "home", return_value=_TMP):
         FINDING_STATUS_VYPORADANO,
         FINDING_TYPE_NEDOSTATEK,
         FINDING_TYPE_NESHODA,
+        FINDING_TYPE_OPATRENI,
         FINDING_TYPE_PORUSENI_PREDPISU,
         FINDING_TYPE_PRILEZITOST,
         FINDING_TYPE_ZAVADA,
@@ -270,6 +271,7 @@ class StateSupervisionFindingsUi5a3TestCase(unittest.TestCase):
     def test_02_type_labels_and_no_methodology_pkz(self) -> None:
         expected = {
             FINDING_TYPE_PRILEZITOST: "Příležitost ke zlepšení (PKZ)",
+            FINDING_TYPE_OPATRENI: "Dohodnutý další postup",
             FINDING_TYPE_NEDOSTATEK: "Nedostatek",
             FINDING_TYPE_ZAVADA: "Závada",
             FINDING_TYPE_PORUSENI_PREDPISU: "Porušení požadavku",
@@ -285,6 +287,7 @@ class StateSupervisionFindingsUi5a3TestCase(unittest.TestCase):
             "Porušení předpisu",
         )
         self.assertEqual(FINDING_TYPE_LABELS[FINDING_TYPE_ZJISTENI], "Zjištění")
+        self.assertEqual(FINDING_TYPE_LABELS[FINDING_TYPE_OPATRENI], "Opatření")
 
         sub = StateSupervisionFindingDialog(is_new=True)
         labels = [sub.type_combo.itemText(i) for i in range(sub.type_combo.count())]
