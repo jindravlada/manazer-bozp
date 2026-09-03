@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-03 – STATE-SUPERVISION-KHS-TERRITORIAL-SEED-9A2
+
+**Co se povedlo:** Bundled katalog KHS má 48 ověřených územních pracovišť z aktuálních oficiálních webů; čistá instalace má 5 orgánů a 94 pracovišť. Krajský webový check dál vidí jen 14 regional klíčů.
+
+**Co už bychom dnes udělali jinak:** Čtyři kraje (Karlovarský, Královéhradecký, Jihomoravský, Olomoucký) zůstanou mimo seed, dokud nebude jednoznačný živý oficiální seznam.
+
+**Co bylo zbytečně složité:** Ruční duplicita bez external_key se musí přesně shodovat v názvu i adrese; samotný název nestačí a klíč se k ručnímu řádku nepřipojuje.
+
+**Jaké nové pravidlo z toho vzniklo:** Územní pracoviště KHS se přidávají jen z ověřeného oficiálního HTTPS zdroje. Sídlo kraje, druhá budova, podatelna ani ukončené pracoviště se do seedu neukládají. Více ÚP může sdílet `display_order` rodiče + 1.
+
+---
+
 ### 2026-09-03 – STATE-SUPERVISION-AUTHORITY-WEB-COVERAGE-9A1
 
 **Co se povedlo:** Webové adaptery teď mají explicitní rozsah (coverage_id + office_kind + přesná množina klíčů). Úplný krajský výsledek KHS/HZS/SÚIP nenabídne deaktivaci územního pracoviště.

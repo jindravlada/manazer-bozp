@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "catalog_version": "2026-09-02",
-  "verified_at": "2026-09-02",
+  "catalog_version": "2026-09-03",
+  "verified_at": "2026-09-03",
   "sources": [
     {
       "title": "Státní úřad inspekce práce – kontakty a oblastní inspektoráty",
@@ -62,6 +62,46 @@
     {
       "title": "Drážní úřad – kontakty pracovišť Praha, Plzeň a Olomouc",
       "url": "https://du.gov.cz/kontakty/"
+    },
+    {
+      "title": "Hygienická stanice hl. m. Prahy – územní pracoviště",
+      "url": "https://www.hygpraha.cz/kontakty-rozcestnik/"
+    },
+    {
+      "title": "KHS Středočeského kraje – adresy územních pracovišť",
+      "url": "https://khsstc.cz/obsah-stranek-ve-snadnem-cteni-easy-to-read/"
+    },
+    {
+      "title": "KHS Jihočeského kraje – kontakty územních pracovišť",
+      "url": "https://www.khscb.cz/search.php?rstema=10&rstext=all-phpRS-all&rsvelikost=sab"
+    },
+    {
+      "title": "KHS Plzeňského kraje – územní pracoviště",
+      "url": "https://www.khsplzen.cz/o-nas/"
+    },
+    {
+      "title": "KHS Ústeckého kraje – pracoviště Teplice",
+      "url": "https://khsusti.cz/kontakt/pracoviste-teplice/"
+    },
+    {
+      "title": "KHS Libereckého kraje – kontakty územních pracovišť",
+      "url": "https://www.khslbc.cz/kontakty"
+    },
+    {
+      "title": "KHS Pardubického kraje – územní pracoviště",
+      "url": "https://khspce.cz/o-nas/informace-o-khs/"
+    },
+    {
+      "title": "KHS Kraje Vysočina – kde nás najdete",
+      "url": "https://khsjih.cz/stranky/18-kde-nas-najdete/"
+    },
+    {
+      "title": "KHS Moravskoslezského kraje – kontakty územních pracovišť",
+      "url": "https://www.khsova.cz/onas/povinne-informace106-kontakty"
+    },
+    {
+      "title": "KHS Zlínského kraje – územní pracoviště",
+      "url": "https://www.khszlin.cz/kontakt/"
     }
   ],
   "authorities": [
@@ -324,6 +364,61 @@
           "source_url": "https://www.hygpraha.cz"
         },
         {
+          "external_key": "khs:praha:praha-4",
+          "name": "Hygienická stanice hl. m. Prahy – Územní pracoviště Praha 4",
+          "address": "Němčická 1112/8, 142 00 Praha 4",
+          "website": "https://www.hygpraha.cz/hshmp-upp4/",
+          "office_kind": "territorial",
+          "display_order": 11,
+          "origin": "bundled",
+          "source_url": "https://www.hygpraha.cz/hshmp-upp4/",
+          "territorial_scope": "Praha 4, 11, 12"
+        },
+        {
+          "external_key": "khs:praha:praha-6",
+          "name": "Hygienická stanice hl. m. Prahy – Územní pracoviště Praha 6",
+          "address": "Nechanského 590/1, 160 00 Praha 6",
+          "website": "https://www.hygpraha.cz/hshmp-upp6/",
+          "office_kind": "territorial",
+          "display_order": 11,
+          "origin": "bundled",
+          "source_url": "https://www.hygpraha.cz/hshmp-upp6/",
+          "territorial_scope": "Praha 6"
+        },
+        {
+          "external_key": "khs:praha:praha-7",
+          "name": "Hygienická stanice hl. m. Prahy – Územní pracoviště Praha 7",
+          "address": "Dukelských hrdinů 347/11, 170 00 Praha 7",
+          "website": "https://www.hygpraha.cz/hshmp-upp7/",
+          "office_kind": "territorial",
+          "display_order": 11,
+          "origin": "bundled",
+          "source_url": "https://www.hygpraha.cz/hshmp-upp7/",
+          "territorial_scope": "Praha 2, 3, 5, 7, 13, 16, 17"
+        },
+        {
+          "external_key": "khs:praha:praha-9",
+          "name": "Hygienická stanice hl. m. Prahy – Územní pracoviště Praha 9",
+          "address": "Měšická 646/5, 190 00 Praha 9",
+          "website": "https://www.hygpraha.cz/hshmp-upp9/",
+          "office_kind": "territorial",
+          "display_order": 11,
+          "origin": "bundled",
+          "source_url": "https://www.hygpraha.cz/hshmp-upp9/",
+          "territorial_scope": "Praha 8, 9, 14, 18, 19, 20, 21"
+        },
+        {
+          "external_key": "khs:praha:praha-10",
+          "name": "Hygienická stanice hl. m. Prahy – Územní pracoviště Praha 10",
+          "address": "Rybalkova 293/39, 101 00 Praha 10",
+          "website": "https://www.hygpraha.cz/hshmp-upp10/",
+          "office_kind": "territorial",
+          "display_order": 11,
+          "origin": "bundled",
+          "source_url": "https://www.hygpraha.cz/hshmp-upp10/",
+          "territorial_scope": "Praha 10, 15, 22"
+        },
+        {
           "external_key": "khs:stredocesky-kraj",
           "name": "Krajská hygienická stanice Středočeského kraje se sídlem v Praze",
           "abbreviation": "KHS Středočeského kraje",
@@ -336,6 +431,106 @@
           "display_order": 20,
           "origin": "bundled",
           "source_url": "https://khsstc.cz"
+        },
+        {
+          "external_key": "khs:stredocesky-kraj:benesov",
+          "name": "KHS Středočeského kraje – Územní pracoviště Benešov",
+          "address": "Černoleská 2053, 256 01 Benešov",
+          "website": "https://khsstc.cz",
+          "office_kind": "territorial",
+          "display_order": 21,
+          "origin": "bundled",
+          "source_url": "https://khsstc.cz/obsah-stranek-ve-snadnem-cteni-easy-to-read/"
+        },
+        {
+          "external_key": "khs:stredocesky-kraj:beroun",
+          "name": "KHS Středočeského kraje – Územní pracoviště Beroun",
+          "address": "Politických vězňů 455, 266 01 Beroun",
+          "website": "https://khsstc.cz",
+          "office_kind": "territorial",
+          "display_order": 21,
+          "origin": "bundled",
+          "source_url": "https://khsstc.cz/obsah-stranek-ve-snadnem-cteni-easy-to-read/"
+        },
+        {
+          "external_key": "khs:stredocesky-kraj:kladno",
+          "name": "KHS Středočeského kraje – Územní pracoviště Kladno",
+          "address": "gen. Klapálka 1583, 272 01 Kladno",
+          "website": "https://khsstc.cz",
+          "office_kind": "territorial",
+          "display_order": 21,
+          "origin": "bundled",
+          "source_url": "https://khsstc.cz/obsah-stranek-ve-snadnem-cteni-easy-to-read/"
+        },
+        {
+          "external_key": "khs:stredocesky-kraj:kolin",
+          "name": "KHS Středočeského kraje – Územní pracoviště Kolín",
+          "address": "Karlovo náměstí 44, 280 02 Kolín",
+          "website": "https://khsstc.cz",
+          "office_kind": "territorial",
+          "display_order": 21,
+          "origin": "bundled",
+          "source_url": "https://khsstc.cz/obsah-stranek-ve-snadnem-cteni-easy-to-read/"
+        },
+        {
+          "external_key": "khs:stredocesky-kraj:kutna-hora",
+          "name": "KHS Středočeského kraje – Územní pracoviště Kutná Hora",
+          "address": "U Lorce 40, 284 01 Kutná Hora",
+          "website": "https://khsstc.cz",
+          "office_kind": "territorial",
+          "display_order": 21,
+          "origin": "bundled",
+          "source_url": "https://khsstc.cz/obsah-stranek-ve-snadnem-cteni-easy-to-read/"
+        },
+        {
+          "external_key": "khs:stredocesky-kraj:melnik",
+          "name": "KHS Středočeského kraje – Územní pracoviště Mělník",
+          "address": "Pražská 391, 276 01 Mělník",
+          "website": "https://khsstc.cz",
+          "office_kind": "territorial",
+          "display_order": 21,
+          "origin": "bundled",
+          "source_url": "https://khsstc.cz/obsah-stranek-ve-snadnem-cteni-easy-to-read/"
+        },
+        {
+          "external_key": "khs:stredocesky-kraj:mlada-boleslav",
+          "name": "KHS Středočeského kraje – Územní pracoviště Mladá Boleslav",
+          "address": "Bělská 151, 293 01 Mladá Boleslav",
+          "website": "https://khsstc.cz",
+          "office_kind": "territorial",
+          "display_order": 21,
+          "origin": "bundled",
+          "source_url": "https://khsstc.cz/obsah-stranek-ve-snadnem-cteni-easy-to-read/"
+        },
+        {
+          "external_key": "khs:stredocesky-kraj:nymburk",
+          "name": "KHS Středočeského kraje – Územní pracoviště Nymburk",
+          "address": "Palackého třída 1484/52, 288 02 Nymburk",
+          "website": "https://khsstc.cz",
+          "office_kind": "territorial",
+          "display_order": 21,
+          "origin": "bundled",
+          "source_url": "https://khsstc.cz/obsah-stranek-ve-snadnem-cteni-easy-to-read/"
+        },
+        {
+          "external_key": "khs:stredocesky-kraj:pribram",
+          "name": "KHS Středočeského kraje – Územní pracoviště Příbram",
+          "address": "U Nemocnice 85, 261 01 Příbram",
+          "website": "https://khsstc.cz",
+          "office_kind": "territorial",
+          "display_order": 21,
+          "origin": "bundled",
+          "source_url": "https://khsstc.cz/obsah-stranek-ve-snadnem-cteni-easy-to-read/"
+        },
+        {
+          "external_key": "khs:stredocesky-kraj:rakovnik",
+          "name": "KHS Středočeského kraje – Územní pracoviště Rakovník",
+          "address": "Na Sekyře 2123, 269 01 Rakovník",
+          "website": "https://khsstc.cz",
+          "office_kind": "territorial",
+          "display_order": 21,
+          "origin": "bundled",
+          "source_url": "https://khsstc.cz/obsah-stranek-ve-snadnem-cteni-easy-to-read/"
         },
         {
           "external_key": "khs:jihocesky-kraj",
@@ -352,6 +547,76 @@
           "source_url": "https://www.khscb.cz"
         },
         {
+          "external_key": "khs:jihocesky-kraj:cesky-krumlov",
+          "name": "KHS Jihočeského kraje – Územní pracoviště Český Krumlov",
+          "address": "Havraní 594, 381 01 Český Krumlov",
+          "website": "https://www.khscb.cz",
+          "office_kind": "territorial",
+          "display_order": 31,
+          "origin": "bundled",
+          "source_url": "https://www.khscb.cz/search.php?rstema=10&rstext=all-phpRS-all&rsvelikost=sab",
+          "phone": "387 712 720",
+          "email": "ck@khscb.cz"
+        },
+        {
+          "external_key": "khs:jihocesky-kraj:jindrichuv-hradec",
+          "name": "KHS Jihočeského kraje – Územní pracoviště Jindřichův Hradec",
+          "address": "Bezručova 857/II, 377 01 Jindřichův Hradec",
+          "website": "https://www.khscb.cz",
+          "office_kind": "territorial",
+          "display_order": 31,
+          "origin": "bundled",
+          "source_url": "https://www.khscb.cz/search.php?rstema=10&rstext=all-phpRS-all&rsvelikost=sab",
+          "phone": "387 712 510",
+          "email": "jh@khscb.cz"
+        },
+        {
+          "external_key": "khs:jihocesky-kraj:pisek",
+          "name": "KHS Jihočeského kraje – Územní pracoviště Písek",
+          "address": "Karla Čapka 2459, 397 01 Písek",
+          "website": "https://www.khscb.cz",
+          "office_kind": "territorial",
+          "display_order": 31,
+          "origin": "bundled",
+          "source_url": "https://www.khscb.cz/search.php?rstema=10&rstext=all-phpRS-all&rsvelikost=sab"
+        },
+        {
+          "external_key": "khs:jihocesky-kraj:prachatice",
+          "name": "KHS Jihočeského kraje – Územní pracoviště Prachatice",
+          "address": "Hradební 435, 383 01 Prachatice",
+          "website": "https://www.khscb.cz",
+          "office_kind": "territorial",
+          "display_order": 31,
+          "origin": "bundled",
+          "source_url": "https://www.khscb.cz/search.php?rstema=10&rstext=all-phpRS-all&rsvelikost=sab",
+          "phone": "387 712 906",
+          "email": "pt@khscb.cz"
+        },
+        {
+          "external_key": "khs:jihocesky-kraj:strakonice",
+          "name": "KHS Jihočeského kraje – Územní pracoviště Strakonice",
+          "address": "Žižkova 505, 386 01 Strakonice",
+          "website": "https://www.khscb.cz",
+          "office_kind": "territorial",
+          "display_order": 31,
+          "origin": "bundled",
+          "source_url": "https://www.khscb.cz/search.php?rstema=10&rstext=all-phpRS-all&rsvelikost=sab",
+          "phone": "387 712 828",
+          "email": "st@khscb.cz"
+        },
+        {
+          "external_key": "khs:jihocesky-kraj:tabor",
+          "name": "KHS Jihočeského kraje – Územní pracoviště Tábor",
+          "address": "Roháčova 2614, 390 02 Tábor",
+          "website": "https://www.khscb.cz",
+          "office_kind": "territorial",
+          "display_order": 31,
+          "origin": "bundled",
+          "source_url": "https://www.khscb.cz/search.php?rstema=10&rstext=all-phpRS-all&rsvelikost=sab",
+          "phone": "387 712 410",
+          "email": "ta@khscb.cz"
+        },
+        {
           "external_key": "khs:plzensky-kraj",
           "name": "Krajská hygienická stanice Plzeňského kraje se sídlem v Plzni",
           "abbreviation": "KHS Plzeňského kraje",
@@ -364,6 +629,39 @@
           "display_order": 40,
           "origin": "bundled",
           "source_url": "https://www.khsplzen.cz"
+        },
+        {
+          "external_key": "khs:plzensky-kraj:domazlice",
+          "name": "KHS Plzeňského kraje – Územní pracoviště Domažlice",
+          "address": "Branská 5, 344 22 Domažlice",
+          "website": "https://www.khsplzen.cz",
+          "office_kind": "territorial",
+          "display_order": 41,
+          "origin": "bundled",
+          "source_url": "https://www.khsplzen.cz/o-nas/",
+          "phone": "739 652 845"
+        },
+        {
+          "external_key": "khs:plzensky-kraj:klatovy",
+          "name": "KHS Plzeňského kraje – Územní pracoviště Klatovy",
+          "address": "Randova 34, 339 01 Klatovy",
+          "website": "https://www.khsplzen.cz",
+          "office_kind": "territorial",
+          "display_order": 41,
+          "origin": "bundled",
+          "source_url": "https://www.khsplzen.cz/o-nas/",
+          "phone": "731 478 977"
+        },
+        {
+          "external_key": "khs:plzensky-kraj:tachov",
+          "name": "KHS Plzeňského kraje – Územní pracoviště Tachov",
+          "address": "Rokycanova 140, 347 01 Tachov",
+          "website": "https://www.khsplzen.cz",
+          "office_kind": "territorial",
+          "display_order": 41,
+          "origin": "bundled",
+          "source_url": "https://www.khsplzen.cz/o-nas/",
+          "phone": "731 478 576"
         },
         {
           "external_key": "khs:karlovarsky-kraj",
@@ -394,6 +692,72 @@
           "source_url": "https://www.khsusti.cz"
         },
         {
+          "external_key": "khs:ustecky-kraj:decin",
+          "name": "KHS Ústeckého kraje – Územní pracoviště Děčín",
+          "address": "Březinova 444/3, 406 83 Děčín",
+          "website": "https://khsusti.cz/kontakt/pracoviste-decin/",
+          "office_kind": "territorial",
+          "display_order": 61,
+          "origin": "bundled",
+          "source_url": "https://khsusti.cz/kontakt/pracoviste-decin/",
+          "phone": "477 755 210"
+        },
+        {
+          "external_key": "khs:ustecky-kraj:chomutov",
+          "name": "KHS Ústeckého kraje – Územní pracoviště Chomutov",
+          "address": "Kochova 1185, 430 12 Chomutov",
+          "website": "https://khsusti.cz/kontakt/pracoviste-chomutov/",
+          "office_kind": "territorial",
+          "display_order": 61,
+          "origin": "bundled",
+          "source_url": "https://khsusti.cz/kontakt/pracoviste-chomutov/",
+          "phone": "477 755 310"
+        },
+        {
+          "external_key": "khs:ustecky-kraj:litomerice",
+          "name": "KHS Ústeckého kraje – Územní pracoviště Litoměřice",
+          "address": "Mírové náměstí 162/35, 412 46 Litoměřice",
+          "website": "https://khsusti.cz/kontakt/pracoviste-litomerice/",
+          "office_kind": "territorial",
+          "display_order": 61,
+          "origin": "bundled",
+          "source_url": "https://khsusti.cz/kontakt/pracoviste-litomerice/",
+          "phone": "477 755 510"
+        },
+        {
+          "external_key": "khs:ustecky-kraj:louny",
+          "name": "KHS Ústeckého kraje – Územní pracoviště Louny",
+          "address": "Poděbradova 749, 440 38 Louny",
+          "website": "https://khsusti.cz/kontakt/pracoviste-louny/",
+          "office_kind": "territorial",
+          "display_order": 61,
+          "origin": "bundled",
+          "source_url": "https://khsusti.cz/kontakt/pracoviste-louny/",
+          "phone": "477 755 610"
+        },
+        {
+          "external_key": "khs:ustecky-kraj:most",
+          "name": "KHS Ústeckého kraje – Územní pracoviště Most",
+          "address": "J.E.Purkyně 270/5, 434 64 Most",
+          "website": "https://khsusti.cz/kontakt/pracoviste-most/",
+          "office_kind": "territorial",
+          "display_order": 61,
+          "origin": "bundled",
+          "source_url": "https://khsusti.cz/kontakt/pracoviste-most/",
+          "phone": "477 755 410"
+        },
+        {
+          "external_key": "khs:ustecky-kraj:teplice",
+          "name": "KHS Ústeckého kraje – Územní pracoviště Teplice",
+          "address": "Jiřího Wolkera 1342/4, 415 01 Teplice",
+          "website": "https://khsusti.cz/kontakt/pracoviste-teplice/",
+          "office_kind": "territorial",
+          "display_order": 61,
+          "origin": "bundled",
+          "source_url": "https://khsusti.cz/kontakt/pracoviste-teplice/",
+          "phone": "477 755 710"
+        },
+        {
           "external_key": "khs:liberecky-kraj",
           "name": "Krajská hygienická stanice Libereckého kraje se sídlem v Liberci",
           "abbreviation": "KHS Libereckého kraje",
@@ -406,6 +770,42 @@
           "display_order": 70,
           "origin": "bundled",
           "source_url": "https://www.khslbc.cz"
+        },
+        {
+          "external_key": "khs:liberecky-kraj:ceska-lipa",
+          "name": "KHS Libereckého kraje – Územní pracoviště Česká Lípa",
+          "address": "5. května 813, 470 42 Česká Lípa",
+          "website": "https://www.khslbc.cz",
+          "office_kind": "territorial",
+          "display_order": 71,
+          "origin": "bundled",
+          "source_url": "https://www.khslbc.cz/kontakty",
+          "phone": "487 820 001",
+          "email": "sekretariat.cl@khslbc.cz"
+        },
+        {
+          "external_key": "khs:liberecky-kraj:jablonec-nad-nisou",
+          "name": "KHS Libereckého kraje – Územní pracoviště Jablonec nad Nisou",
+          "address": "Podhorská 62, 466 01 Jablonec nad Nisou",
+          "website": "https://www.khslbc.cz",
+          "office_kind": "territorial",
+          "display_order": 71,
+          "origin": "bundled",
+          "source_url": "https://www.khslbc.cz/kontakty",
+          "phone": "483 368 511",
+          "email": "sekretariat.jb@khslbc.cz"
+        },
+        {
+          "external_key": "khs:liberecky-kraj:semily",
+          "name": "KHS Libereckého kraje – Územní pracoviště Semily",
+          "address": "Ke Stadionu 204, 513 01 Semily",
+          "website": "https://www.khslbc.cz",
+          "office_kind": "territorial",
+          "display_order": 71,
+          "origin": "bundled",
+          "source_url": "https://www.khslbc.cz/kontakty",
+          "phone": "481 623 661",
+          "email": "sekretariat.se@khslbc.cz"
         },
         {
           "external_key": "khs:kralovehradecky-kraj",
@@ -436,6 +836,39 @@
           "source_url": "https://www.khspce.cz"
         },
         {
+          "external_key": "khs:pardubicky-kraj:chrudim",
+          "name": "KHS Pardubického kraje – Územní pracoviště Chrudim",
+          "address": "Čáslavská 1146, 537 32 Chrudim",
+          "website": "https://khspce.cz/uzemni-pracoviste-chrudim/",
+          "office_kind": "territorial",
+          "display_order": 91,
+          "origin": "bundled",
+          "source_url": "https://khspce.cz/uzemni-pracoviste-chrudim/",
+          "phone": "469 688 632"
+        },
+        {
+          "external_key": "khs:pardubicky-kraj:svitavy",
+          "name": "KHS Pardubického kraje – Územní pracoviště Svitavy",
+          "address": "Milady Horákové 375/12, 568 02 Svitavy",
+          "website": "https://khspce.cz/uzemni-pracoviste-svitavy/",
+          "office_kind": "territorial",
+          "display_order": 91,
+          "origin": "bundled",
+          "source_url": "https://khspce.cz/uzemni-pracoviste-svitavy/",
+          "phone": "461 535 045"
+        },
+        {
+          "external_key": "khs:pardubicky-kraj:usti-nad-orlici",
+          "name": "KHS Pardubického kraje – Územní pracoviště Ústí nad Orlicí",
+          "address": "Smetanova 43, 562 01 Ústí nad Orlicí",
+          "website": "https://khspce.cz/uzemni-pracoviste-usti-nad-orlici/",
+          "office_kind": "territorial",
+          "display_order": 91,
+          "origin": "bundled",
+          "source_url": "https://khspce.cz/uzemni-pracoviste-usti-nad-orlici/",
+          "phone": "465 525 419"
+        },
+        {
           "external_key": "khs:kraj-vysocina",
           "name": "Krajská hygienická stanice kraje Vysočina se sídlem v Jihlavě",
           "abbreviation": "KHS kraje Vysočina",
@@ -448,6 +881,50 @@
           "display_order": 100,
           "origin": "bundled",
           "source_url": "https://www.khsjih.cz"
+        },
+        {
+          "external_key": "khs:kraj-vysocina:havlickuv-brod",
+          "name": "KHS Kraje Vysočina – Územní pracoviště Havlíčkův Brod",
+          "address": "Štáflova 2003, 580 02 Havlíčkův Brod",
+          "website": "https://khsjih.cz",
+          "office_kind": "territorial",
+          "display_order": 101,
+          "origin": "bundled",
+          "source_url": "https://khsjih.cz/stranky/18-kde-nas-najdete/",
+          "phone": "569 474 211"
+        },
+        {
+          "external_key": "khs:kraj-vysocina:pelhrimov",
+          "name": "KHS Kraje Vysočina – Územní pracoviště Pelhřimov",
+          "address": "Pražská 127, 393 01 Pelhřimov",
+          "website": "https://khsjih.cz",
+          "office_kind": "territorial",
+          "display_order": 101,
+          "origin": "bundled",
+          "source_url": "https://khsjih.cz/stranky/18-kde-nas-najdete/",
+          "phone": "565 301 350"
+        },
+        {
+          "external_key": "khs:kraj-vysocina:trebic",
+          "name": "KHS Kraje Vysočina – Územní pracoviště Třebíč",
+          "address": "Bráfova 31, 674 01 Třebíč",
+          "website": "https://khsjih.cz",
+          "office_kind": "territorial",
+          "display_order": 101,
+          "origin": "bundled",
+          "source_url": "https://khsjih.cz/stranky/18-kde-nas-najdete/",
+          "phone": "568 858 311"
+        },
+        {
+          "external_key": "khs:kraj-vysocina:zdar-nad-sazavou",
+          "name": "KHS Kraje Vysočina – Územní pracoviště Žďár nad Sázavou",
+          "address": "Tyršova 3, 591 01 Žďár nad Sázavou",
+          "website": "https://khsjih.cz",
+          "office_kind": "territorial",
+          "display_order": 101,
+          "origin": "bundled",
+          "source_url": "https://khsjih.cz/stranky/18-kde-nas-najdete/",
+          "phone": "566 650 811"
         },
         {
           "external_key": "khs:jihomoravsky-kraj",
@@ -492,6 +969,66 @@
           "source_url": "https://www.khsova.cz"
         },
         {
+          "external_key": "khs:moravskoslezsky-kraj:bruntal",
+          "name": "KHS Moravskoslezského kraje – Územní pracoviště Bruntál",
+          "address": "Zahradní 5, 792 11 Bruntál",
+          "website": "https://www.khsova.cz/onas/uzemni-pracoviste-bruntal",
+          "office_kind": "territorial",
+          "display_order": 131,
+          "origin": "bundled",
+          "source_url": "https://www.khsova.cz/onas/povinne-informace106-kontakty",
+          "phone": "554 774 111",
+          "email": "podatelna.br@khsova.cz"
+        },
+        {
+          "external_key": "khs:moravskoslezsky-kraj:frydek-mistek",
+          "name": "KHS Moravskoslezského kraje – Územní pracoviště Frýdek-Místek",
+          "address": "tř. Palackého 121, 738 02 Frýdek-Místek",
+          "website": "https://www.khsova.cz/onas/uzemni-pracoviste-frydek-mistek",
+          "office_kind": "territorial",
+          "display_order": 131,
+          "origin": "bundled",
+          "source_url": "https://www.khsova.cz/onas/povinne-informace106-kontakty",
+          "phone": "558 418 111",
+          "email": "podatelna.fm@khsova.cz"
+        },
+        {
+          "external_key": "khs:moravskoslezsky-kraj:karvina",
+          "name": "KHS Moravskoslezského kraje – Územní pracoviště Karviná",
+          "address": "Těreškovové 2206, 734 01 Karviná-Mizerov",
+          "website": "https://www.khsova.cz/onas/uzemni-pracoviste-karvina",
+          "office_kind": "territorial",
+          "display_order": 131,
+          "origin": "bundled",
+          "source_url": "https://www.khsova.cz/onas/povinne-informace106-kontakty",
+          "phone": "596 397 111",
+          "email": "podatelna.ka@khsova.cz"
+        },
+        {
+          "external_key": "khs:moravskoslezsky-kraj:novy-jicin",
+          "name": "KHS Moravskoslezského kraje – Územní pracoviště Nový Jičín",
+          "address": "Štefánikova 9, 741 01 Nový Jičín",
+          "website": "https://www.khsova.cz/onas/uzemni-pracoviste-novy-jicin",
+          "office_kind": "territorial",
+          "display_order": 131,
+          "origin": "bundled",
+          "source_url": "https://www.khsova.cz/onas/povinne-informace106-kontakty",
+          "phone": "556 770 370",
+          "email": "podatelna.nj@khsova.cz"
+        },
+        {
+          "external_key": "khs:moravskoslezsky-kraj:opava",
+          "name": "KHS Moravskoslezského kraje – Územní pracoviště Opava",
+          "address": "Olomoucká 82, 746 01 Opava",
+          "website": "https://www.khsova.cz/onas/uzemni-pracoviste-opava",
+          "office_kind": "territorial",
+          "display_order": 131,
+          "origin": "bundled",
+          "source_url": "https://www.khsova.cz/onas/povinne-informace106-kontakty",
+          "phone": "553 668 841",
+          "email": "podatelna.op@khsova.cz"
+        },
+        {
           "external_key": "khs:zlinsky-kraj",
           "name": "Krajská hygienická stanice Zlínského kraje se sídlem ve Zlíně",
           "abbreviation": "KHS Zlínského kraje",
@@ -504,6 +1041,39 @@
           "display_order": 140,
           "origin": "bundled",
           "source_url": "https://www.khszlin.cz"
+        },
+        {
+          "external_key": "khs:zlinsky-kraj:kromeriz",
+          "name": "KHS Zlínského kraje – Územní pracoviště Kroměříž",
+          "address": "Havlíčkova 792/13, 761 01 Kroměříž",
+          "website": "https://www.khszlin.cz/kontakt/uzemni-pracoviste-kromeriz/",
+          "office_kind": "territorial",
+          "display_order": 141,
+          "origin": "bundled",
+          "source_url": "https://www.khszlin.cz/kontakt/uzemni-pracoviste-kromeriz/",
+          "phone": "573 504 111"
+        },
+        {
+          "external_key": "khs:zlinsky-kraj:uherske-hradiste",
+          "name": "KHS Zlínského kraje – Územní pracoviště Uherské Hradiště",
+          "address": "Františkánská 144, 686 01 Uherské Hradiště",
+          "website": "https://www.khszlin.cz/kontakt/uzemni-pracoviste-uherske-hradiste/",
+          "office_kind": "territorial",
+          "display_order": 141,
+          "origin": "bundled",
+          "source_url": "https://www.khszlin.cz/kontakt/uzemni-pracoviste-uherske-hradiste/",
+          "phone": "572 430 714"
+        },
+        {
+          "external_key": "khs:zlinsky-kraj:vsetin",
+          "name": "KHS Zlínského kraje – Územní pracoviště Vsetín",
+          "address": "4. května 287, 755 01 Vsetín",
+          "website": "https://www.khszlin.cz/kontakt/uzemni-pracoviste-vsetin/",
+          "office_kind": "territorial",
+          "display_order": 141,
+          "origin": "bundled",
+          "source_url": "https://www.khszlin.cz/kontakt/uzemni-pracoviste-vsetin/",
+          "phone": "571 498 011"
         }
       ]
     },

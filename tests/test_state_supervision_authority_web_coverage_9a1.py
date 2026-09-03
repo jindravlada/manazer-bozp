@@ -712,15 +712,11 @@ class StateSupervisionAuthorityWebCoverageKhsRegression9a1TestCase(unittest.Test
 
         authority = self.catalog.get_authority_by_code(KHS_AUTHORITY_CODE)
         self.assertIsNotNone(authority)
-        teplce = self.catalog.create_imported_office(
-            authority_id=int(authority.id),
-            name=_TEPLICE_NAME,
-            origin=AUTHORITY_ORIGIN_WEB,
-            address="Jiřího Wolkera 1342/4, 415 01 Teplice",
-            office_kind=OFFICE_KIND_TERRITORIAL,
-            external_key=_TEPLICE_KEY,
-            source_url="https://khsusti.cz/kontakt/pracoviste-teplice/",
-        )
+        teplce = self.catalog.get_office_by_external_key(_TEPLICE_KEY)
+        self.assertIsNotNone(teplce)
+        assert teplce is not None
+        self.assertEqual(teplce.name, _TEPLICE_NAME)
+        self.assertEqual(teplce.office_kind, OFFICE_KIND_TERRITORIAL)
         before = self._dump()
         html = _FIXTURE.read_text(encoding="utf-8")
 

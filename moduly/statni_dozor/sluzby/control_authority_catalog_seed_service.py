@@ -20,6 +20,7 @@ from moduly.statni_dozor.constants import (
     AUTHORITY_CATALOG_SEED_DUPLICATE_KEY_MESSAGE,
     AUTHORITY_CATALOG_SEED_KEY_REQUIRED_MESSAGE,
     AUTHORITY_CATALOG_SEED_ICO_FORBIDDEN_MESSAGE,
+    AUTHORITY_CATALOG_SEED_MANUAL_DUPLICATE_SKIP_MESSAGE,
     AUTHORITY_CATALOG_SEED_RELATIVE_PATH,
     AUTHORITY_CATALOG_SEED_SCHEMA_INVALID_MESSAGE,
     AUTHORITY_CATALOG_SEED_SCHEMA_VERSION,
@@ -85,6 +86,10 @@ class SeedImportResult:
 
 def bundled_catalog_path() -> Path:
     return resolve_project_root() / AUTHORITY_CATALOG_SEED_RELATIVE_PATH
+
+
+def _normalize_catalog_text(value: object) -> str:
+    return " ".join(str(value or "").split())
 
 
 def _startup_error(detail: str) -> ControlAuthorityCatalogSeedError:
@@ -237,7 +242,6 @@ def validate_catalog(payload: dict[str, Any]) -> dict[str, Any]:
                 "Kontrolní orgán musí mít alespoň jedno pracoviště."
             )
         offices: list[dict[str, Any]] = []
-        seen_office_orders: set[int] = set()
         for office in offices_raw:
             if not isinstance(office, dict):
                 raise ControlAuthorityCatalogSeedError("Pracoviště musí být objekt.")
@@ -266,11 +270,6 @@ def validate_catalog(payload: dict[str, Any]) -> dict[str, Any]:
                 office.get("display_order", 0),
                 OFFICE_DISPLAY_ORDER_INVALID_MESSAGE,
             )
-            if office_order in seen_office_orders:
-                raise ControlAuthorityCatalogSeedError(
-                    OFFICE_DISPLAY_ORDER_INVALID_MESSAGE
-                )
-            seen_office_orders.add(office_order)
             offices.append(
                 {
                     "external_key": office_key,
@@ -487,6 +486,16 @@ class ControlAuthorityCatalogSeedService:
                     if existing is not None and not existing.active:
                         offices_skipped += 1
                         continue
+                    if existing is not None and self._manual_name_address_duplicate(
+                        office, authority_id=int(existing.id), session=session
+                    ):
+                        logger.warning(
+                            AUTHORITY_CATALOG_SEED_MANUAL_DUPLICATE_SKIP_MESSAGE.format(
+                                name=office["name"]
+                            )
+                        )
+                        offices_skipped += 1
+                        continue
                     new_offices.append(office_payload)
                     continue
                 parent_id = int(existing_office.authority_id)
@@ -544,6 +553,31 @@ class ControlAuthorityCatalogSeedService:
             if _is_protected(existing) or not existing.active:
                 return existing
         return existing
+
+    def _manual_name_address_duplicate(
+        self,
+        office: dict[str, Any],
+        *,
+        authority_id: int,
+        session: Session,
+    ) -> ControlAuthorityOffice | None:
+        seed_name = _normalize_catalog_text(office.get("name"))
+        seed_address = _normalize_catalog_text(office.get("address"))
+        if not seed_name or not seed_address:
+            return None
+        for local in self.catalog_service.list_offices(
+            authority_id=authority_id,
+            include_inactive=True,
+            session=session,
+        ):
+            if str(local.external_key or "").strip():
+                continue
+            if _normalize_catalog_text(local.name) != seed_name:
+                continue
+            if _normalize_catalog_text(local.address) != seed_address:
+                continue
+            return local
+        return None
 
     def _assert_authority_compatible(
         self,

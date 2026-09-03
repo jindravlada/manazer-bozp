@@ -155,7 +155,11 @@ class StateSupervisionAuthorityWebKhs8d4TestCase(unittest.TestCase):
     def test_03_external_keys_match_seed(self) -> None:
         payload = json.loads(_SEED.read_text(encoding="utf-8"))
         khs = next(item for item in payload["authorities"] if item["code"] == "khs")
-        seed_keys = tuple(office["external_key"] for office in khs["offices"])
+        seed_keys = tuple(
+            office["external_key"]
+            for office in khs["offices"]
+            if office.get("office_kind") == OFFICE_KIND_REGIONAL
+        )
         self.assertEqual(seed_keys, KHS_OFFICE_EXTERNAL_KEYS)
         self.assertEqual(len(seed_keys), 14)
         self.assertEqual(tuple(item.external_key for item in _parse_fixture()), seed_keys)

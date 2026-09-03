@@ -669,7 +669,7 @@ AUTHORITY_ORIGIN_LABELS: dict[str, str] = {
 OFFICE_KIND_USER_LABELS: dict[str, str] = {
     OFFICE_KIND_HEADQUARTERS: "Centrální",
     OFFICE_KIND_REGIONAL: "Regionální",
-    OFFICE_KIND_TERRITORIAL: "Územní",
+    OFFICE_KIND_TERRITORIAL: "Územní pracoviště",
     OFFICE_KIND_OTHER: "Jiné",
 }
 CATALOG_ROW_KIND_AUTHORITY = "Kontrolní orgán"
@@ -734,6 +734,10 @@ AUTHORITY_CATALOG_SEED_ADDRESS_REQUIRED_MESSAGE = (
 AUTHORITY_CATALOG_SEED_COLLISION_MESSAGE = (
     "Výchozí katalog kontrolních orgánů nelze importovat, "
     "protože technický klíč koliduje s existujícím záznamem."
+)
+AUTHORITY_CATALOG_SEED_MANUAL_DUPLICATE_SKIP_MESSAGE = (
+    "Ruční pracoviště „{name}“ se stejnou adresou už existuje; "
+    "výchozí záznam se proto nepřidal."
 )
 
 # Webové adaptéry kontrolních orgánů (8D0 DÚ, 8D2 SÚIP, 8D3 ČBÚ, 8D4 KHS, 8D5 HZS)

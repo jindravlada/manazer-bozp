@@ -185,7 +185,7 @@ class StateSupervisionAuthorityCatalogSettings8b1TestCase(unittest.TestCase):
             self.tab.tree.topLevelItem(i).childCount()
             for i in range(self.tab.tree.topLevelItemCount())
         )
-        self.assertEqual(office_count, 46)
+        self.assertEqual(office_count, 94)
         parent = self.tab.tree.topLevelItem(0)
         self.assertEqual(parent.text(1), CATALOG_ROW_KIND_AUTHORITY)
         self.assertGreater(parent.childCount(), 0)

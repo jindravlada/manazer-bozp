@@ -53,10 +53,11 @@ EXPECTED_ABBREVIATIONS = {
 EXPECTED_OFFICE_COUNTS = {
     "suip": 8,
     "cbu": 7,
-    "khs": 14,
+    "khs": 62,
     "hzs": 14,
     "du": 3,
 }
+EXPECTED_TOTAL_OFFICES = 94
 EXPECTED_OFFICE_KEYS = {
     "suip": (
         "suip:oip-praha",
@@ -111,6 +112,10 @@ EXPECTED_OFFICE_KEYS = {
     ),
     "du": ("du:praha", "du:plzen", "du:olomouc"),
 }
+
+
+def _regional_office_keys(keys: tuple[str, ...]) -> tuple[str, ...]:
+    return tuple(key for key in keys if key.count(":") == 1)
 
 
 def _count(db_path: Path, table: str) -> int:
@@ -238,8 +243,8 @@ class StateSupervisionAuthorityCatalogSeed8a1ContentTestCase(unittest.TestCase):
             )
         )
         self.assertEqual(self.raw["schema_version"], 1)
-        self.assertEqual(self.raw["catalog_version"], "2026-09-02")
-        self.assertEqual(self.raw["verified_at"], "2026-09-02")
+        self.assertEqual(self.raw["catalog_version"], "2026-09-03")
+        self.assertEqual(self.raw["verified_at"], "2026-09-03")
         self.assertGreaterEqual(len(self.raw["sources"]), 5)
         authorities = self.validated["authorities"]
         self.assertEqual(len(authorities), 5)
@@ -261,7 +266,10 @@ class StateSupervisionAuthorityCatalogSeed8a1ContentTestCase(unittest.TestCase):
             offices = authority["offices"]
             self.assertEqual(len(offices), EXPECTED_OFFICE_COUNTS[authority["code"]])
             keys = tuple(office["external_key"] for office in offices)
-            self.assertEqual(keys, EXPECTED_OFFICE_KEYS[authority["code"]])
+            if authority["code"] == "khs":
+                self.assertEqual(_regional_office_keys(keys), EXPECTED_OFFICE_KEYS["khs"])
+            else:
+                self.assertEqual(keys, EXPECTED_OFFICE_KEYS[authority["code"]])
             for office in offices:
                 self.assertTrue(office["name"].strip())
                 self.assertTrue(office["address"].strip())
@@ -276,8 +284,8 @@ class StateSupervisionAuthorityCatalogSeed8a1ContentTestCase(unittest.TestCase):
                 seen_keys.add(office["external_key"])
                 seen_urls.add(office["source_url"])
             total += len(offices)
-        self.assertEqual(total, 46)
-        self.assertEqual(len(seen_keys), 46)
+        self.assertEqual(total, EXPECTED_TOTAL_OFFICES)
+        self.assertEqual(len(seen_keys), EXPECTED_TOTAL_OFFICES)
         self.assertGreaterEqual(len(seen_urls), 5)
         du = next(item for item in self.validated["authorities"] if item["code"] == "du")
         self.assertEqual(du["offices"][0]["office_kind"], "headquarters")
@@ -389,7 +397,7 @@ class StateSupervisionAuthorityCatalogSeed8a1UpgradeTestCase(unittest.TestCase):
         before = _supervision_rows(self.db_path)
         initialize_database()
         self.assertEqual(_count(self.db_path, AUTHORITIES_TABLE), 5)
-        self.assertEqual(_count(self.db_path, OFFICES_TABLE), 46)
+        self.assertEqual(_count(self.db_path, OFFICES_TABLE), EXPECTED_TOTAL_OFFICES)
         self.assertEqual(_supervision_rows(self.db_path), before)
         self.assertTrue(is_transition_complete(self.ws, TRANSITION_ID))
         self.assertNotIn("ico", _columns(self.db_path, AUTHORITIES_TABLE))
@@ -510,7 +518,7 @@ class StateSupervisionAuthorityCatalogSeed8a1ImportTestCase(unittest.TestCase):
 
     def test_01_clean_install_inserts_seed(self) -> None:
         self.assertEqual(_count(self.db, AUTHORITIES_TABLE), 5)
-        self.assertEqual(_count(self.db, OFFICES_TABLE), 46)
+        self.assertEqual(_count(self.db, OFFICES_TABLE), EXPECTED_TOTAL_OFFICES)
         authorities = self.catalog.list_authorities(include_inactive=True)
         self.assertEqual(tuple(item.code for item in authorities), EXPECTED_CODES)
         for authority in authorities:
@@ -521,10 +529,11 @@ class StateSupervisionAuthorityCatalogSeed8a1ImportTestCase(unittest.TestCase):
                 authority_id=authority.id, include_inactive=True
             )
             self.assertEqual(len(offices), EXPECTED_OFFICE_COUNTS[authority.code])
-            self.assertEqual(
-                tuple(office.external_key for office in offices),
-                EXPECTED_OFFICE_KEYS[authority.code],
-            )
+            keys = tuple(office.external_key for office in offices)
+            if authority.code == "khs":
+                self.assertEqual(_regional_office_keys(keys), EXPECTED_OFFICE_KEYS["khs"])
+            else:
+                self.assertEqual(keys, EXPECTED_OFFICE_KEYS[authority.code])
             for office in offices:
                 self.assertEqual(office.origin, AUTHORITY_ORIGIN_BUNDLED)
                 self.assertIsNone(office.user_edited_at)
@@ -563,7 +572,7 @@ class StateSupervisionAuthorityCatalogSeed8a1ImportTestCase(unittest.TestCase):
         office_reloaded = self.catalog.get_office_by_external_key("suip:oip-praha")
         self.assertEqual(office_reloaded.address, "Ruční adresa 1")
         self.assertEqual(_count(self.db, AUTHORITIES_TABLE), 5)
-        self.assertEqual(_count(self.db, OFFICES_TABLE), 46)
+        self.assertEqual(_count(self.db, OFFICES_TABLE), EXPECTED_TOTAL_OFFICES)
 
     def test_04_deactivated_office_is_not_reactivated(self) -> None:
         office = self.catalog.get_office_by_external_key("cbu:obu-ostrava")
@@ -612,7 +621,7 @@ class StateSupervisionAuthorityCatalogSeed8a1ImportTestCase(unittest.TestCase):
         result = self.seed.import_catalog(payload)
         self.assertFalse(result.committed)
         self.assertIsNotNone(self.catalog.get_office_by_external_key(removed_key))
-        self.assertEqual(_count(self.db, OFFICES_TABLE), 46)
+        self.assertEqual(_count(self.db, OFFICES_TABLE), EXPECTED_TOTAL_OFFICES)
 
     def test_07_key_collision_rolls_back_batch(self) -> None:
         self.addCleanup(self._restore_catalog)
