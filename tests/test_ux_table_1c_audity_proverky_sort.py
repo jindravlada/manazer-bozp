@@ -49,7 +49,7 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.audity.sluzby.audit_service import audit_service
     from moduly.audity.ui.audit_findings_widget import AuditFindingsWidget
-    from moduly.audity.ui.audit_table import AuditTable
+    from moduly.audity.ui.audit_table import COL_STATUS, AuditTable
     from moduly.audity.ui.audit_tasks_widget import AuditTasksWidget
     from moduly.proverky.constants import (
         INSPECTION_STATUS_DOKONCENO,
@@ -139,9 +139,9 @@ class UxTable1cAuditySortTests(unittest.TestCase):
 
         table = AuditTable()
         table.load_audits([done, planned, running])
-        table.sortItems(11, Qt.SortOrder.AscendingOrder)
+        table.sortItems(COL_STATUS, Qt.SortOrder.AscendingOrder)
         self.assertEqual(
-            _column_texts(table, 11),
+            _column_texts(table, COL_STATUS),
             [AUDIT_STATUS_PLANOVANO, AUDIT_STATUS_PROBIHA, AUDIT_STATUS_DOKONCENO],
         )
         self.assertEqual(_column_ids(table), [planned.id, running.id, done.id])

@@ -381,18 +381,22 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             4: 220,  # Auditovaný provoz — výchozí, roztáhne se
             5: 105,  # Datum auditu
             6: 65,   # Celkem
-            7: 70,   # Neshody
-            8: 95,   # Pozorování
-            9: 50,   # PKZ
-            10: 90,  # Ostatní
-            11: 110, # Stav
-            12: 90,  # Typ auditu
+            7: 55,   # Závady
+            8: 85,   # Nedostatky
+            9: 95,   # Porušení
+            10: 70,  # Neshody
+            11: 95,  # Pozorování
+            12: 85,  # Zjištění
+            13: 50,  # PKZ
+            14: 90,  # Ostatní
+            15: 110, # Stav
+            16: 90,  # Typ auditu
         }
         for column, width in widths.items():
             table.setColumnWidth(column, width)
         table.setColumnHidden(0, True)
         header.setSectionResizeMode(4, QHeaderView.ResizeMode.Stretch)
-        for column in (1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12):
+        for column in (1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16):
             header.setSectionResizeMode(column, QHeaderView.ResizeMode.Interactive)
 
     elif profile == "bozp_inspections":

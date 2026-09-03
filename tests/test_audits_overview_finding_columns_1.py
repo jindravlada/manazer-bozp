@@ -1,4 +1,4 @@
-"""AUDITS-OVERVIEW-FINDING-COLUMNS-1: skutečné počty podle druhu Finding."""
+"""AUDITS-OVERVIEW-FINDING-COLUMNS-2: podrobný rozpis druhů Finding v přehledu."""
 
 from __future__ import annotations
 
@@ -42,11 +42,16 @@ with patch.object(Path, "home", return_value=_TMP):
         FINDING_STATUS_OTEVRENE,
         FINDING_STATUS_V_PROCESU,
         FINDING_STATUS_VYPORADANO,
+        FINDING_TYPE_BEZPROSTREDNI_PRICINA,
         FINDING_TYPE_NEDOSTATEK,
         FINDING_TYPE_NESHODA,
+        FINDING_TYPE_OPATRENI,
+        FINDING_TYPE_POKYN,
         FINDING_TYPE_PORUSENI_PREDPISU,
         FINDING_TYPE_POZOROVANI,
         FINDING_TYPE_PRILEZITOST,
+        FINDING_TYPE_SYSTEMOVA_PRICINA,
+        FINDING_TYPE_ZAKLADNI_PRICINA,
         FINDING_TYPE_ZAVADA,
         FINDING_TYPE_ZJISTENI,
     )
@@ -66,22 +71,60 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.audity.sluzby.audit_program_service import audit_program_service
     from moduly.audity.sluzby.audit_service import audit_service
+    from moduly.audity.ui.audit_program_manager_dialog import AuditProgramManagerDialog
     from moduly.audity.ui.audit_table import (
         COL_AUDIT_DATE,
         COL_AUDIT_TYPE,
         COL_FINDINGS_TOTAL,
+        COL_NEDOSTATKY,
         COL_NESHODY,
         COL_OSTATNI,
         COL_PKZ,
+        COL_PORUSENI,
         COL_POZOROVANI,
         COL_STATUS,
         COL_WORKPLACE,
+        COL_ZAVADY,
+        COL_ZJISTENI,
         AuditTable,
     )
     from moduly.audity.ui.audity_page import AudityPage
     import moduly.audity.ui.audity_page as page_module
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from moduly.ukoly.sluzby.task_service import task_service
+    from tests.audit_v2a_test_support import prepare_v2_audit_create
+
+
+_COUNT_COLUMNS = (
+    COL_FINDINGS_TOTAL,
+    COL_ZAVADY,
+    COL_NEDOSTATKY,
+    COL_PORUSENI,
+    COL_NESHODY,
+    COL_POZOROVANI,
+    COL_ZJISTENI,
+    COL_PKZ,
+    COL_OSTATNI,
+)
+
+_VISIBLE_HEADERS = [
+    "Číslo auditu",
+    "Rok",
+    "Plánovaný měsíc",
+    "Auditovaný provoz",
+    "Datum auditu",
+    "Celkem",
+    "Závady",
+    "Nedostatky",
+    "Porušení",
+    "Neshody",
+    "Pozorování",
+    "Zjištění",
+    "PKZ",
+    "Ostatní",
+    "Stav",
+    "Typ auditu",
+]
 
 
 def _read_int(table, row: int, column: int) -> int:
@@ -96,8 +139,12 @@ def _dummy_row(
     row_id: int,
     number: str,
     total: int,
+    zavady: int = 0,
+    nedostatky: int = 0,
+    poruseni: int = 0,
     neshody: int = 0,
     pozorovani: int = 0,
+    zjisteni: int = 0,
     pkz: int = 0,
     ostatni: int = 0,
     workplace: str = "W",
@@ -115,8 +162,12 @@ def _dummy_row(
             "workplace_name": workplace,
             "audit_date": audit_date,
             "findings_total_count": total,
+            "zavady_count": zavady,
+            "nedostatky_count": nedostatky,
+            "poruseni_count": poruseni,
             "neshody_count": neshody,
             "pozorovani_count": pozorovani,
+            "zjisteni_count": zjisteni,
             "pkz_count": pkz,
             "ostatni_count": ostatni,
             "status": status,
@@ -154,17 +205,35 @@ class AuditsOverviewFindingColumnsTest(unittest.TestCase):
         row: int,
         *,
         celkem: int,
-        neshody: int,
-        pozorovani: int,
-        pkz: int,
-        ostatni: int,
+        zavady: int = 0,
+        nedostatky: int = 0,
+        poruseni: int = 0,
+        neshody: int = 0,
+        pozorovani: int = 0,
+        zjisteni: int = 0,
+        pkz: int = 0,
+        ostatni: int = 0,
     ) -> None:
         self.assertEqual(_read_int(table, row, COL_FINDINGS_TOTAL), celkem)
+        self.assertEqual(_read_int(table, row, COL_ZAVADY), zavady)
+        self.assertEqual(_read_int(table, row, COL_NEDOSTATKY), nedostatky)
+        self.assertEqual(_read_int(table, row, COL_PORUSENI), poruseni)
         self.assertEqual(_read_int(table, row, COL_NESHODY), neshody)
         self.assertEqual(_read_int(table, row, COL_POZOROVANI), pozorovani)
+        self.assertEqual(_read_int(table, row, COL_ZJISTENI), zjisteni)
         self.assertEqual(_read_int(table, row, COL_PKZ), pkz)
         self.assertEqual(_read_int(table, row, COL_OSTATNI), ostatni)
-        self.assertEqual(neshody + pozorovani + pkz + ostatni, celkem)
+        self.assertEqual(
+            zavady
+            + nedostatky
+            + poruseni
+            + neshody
+            + pozorovani
+            + zjisteni
+            + pkz
+            + ostatni,
+            celkem,
+        )
 
     def test_01_table_column_order(self) -> None:
         table = AuditTable()
@@ -172,73 +241,30 @@ class AuditsOverviewFindingColumnsTest(unittest.TestCase):
             table.horizontalHeaderItem(i).text()
             for i in range(1, table.columnCount())
         ]
+        self.assertEqual(visible, _VISIBLE_HEADERS)
         self.assertEqual(
-            visible,
-            [
-                "Číslo auditu",
-                "Rok",
-                "Plánovaný měsíc",
-                "Auditovaný provoz",
-                "Datum auditu",
-                "Celkem",
-                "Neshody",
-                "Pozorování",
-                "PKZ",
-                "Ostatní",
-                "Stav",
-                "Typ auditu",
-            ],
+            table.horizontalHeaderItem(COL_PORUSENI).toolTip(),
+            "Porušení předpisů",
         )
         self.assertEqual(
             table.horizontalHeaderItem(COL_PKZ).toolTip(),
             "Příležitosti ke zlepšení",
         )
-        self.assertIn("historick", table.horizontalHeaderItem(COL_OSTATNI).toolTip().lower())
+        tooltip = table.horizontalHeaderItem(COL_OSTATNI).toolTip().lower()
+        self.assertIn("ostatn", tooltip)
+        self.assertIn("příčinn", tooltip)
+        self.assertIn("historick", tooltip)
 
-    def test_02_canonical_audit_types_go_to_correct_columns(self) -> None:
-        audit = audit_service.create_audit(workplace_name="W", year=date.today().year)
-        finding_service.create(
-            ENTITY_AUDITY,
-            audit.id,
-            finding_type=FINDING_TYPE_NESHODA,
-            description="Neshoda",
-            status=FINDING_STATUS_OTEVRENE,
-        )
-        finding_service.create(
-            ENTITY_AUDITY,
-            audit.id,
-            finding_type=FINDING_TYPE_POZOROVANI,
-            description="Pozorování",
-            status=FINDING_STATUS_OTEVRENE,
-        )
-        finding_service.create(
-            ENTITY_AUDITY,
-            audit.id,
-            finding_type=FINDING_TYPE_PRILEZITOST,
-            description="PKZ",
-            status=FINDING_STATUS_OTEVRENE,
-        )
-
-        page = self._prepare_page()
-        row = self._row_index_by_audit_id(page, audit.id)
-        self._assert_finding_counts(
-            page.table,
-            row,
-            celkem=3,
-            neshody=1,
-            pozorovani=1,
-            pkz=1,
-            ostatni=0,
-        )
-        page.close()
-
-    def test_03_known_other_types_go_to_ostatni(self) -> None:
+    def test_02_each_canonical_type_goes_to_own_column(self) -> None:
         audit = audit_service.create_audit(workplace_name="W", year=date.today().year)
         for finding_type, description in (
             (FINDING_TYPE_ZAVADA, "Závada"),
             (FINDING_TYPE_NEDOSTATEK, "Nedostatek"),
-            (FINDING_TYPE_PORUSENI_PREDPISU, "Porušení předpisu"),
-            (FINDING_TYPE_ZJISTENI, "Obecné zjištění"),
+            (FINDING_TYPE_PORUSENI_PREDPISU, "Porušení"),
+            (FINDING_TYPE_NESHODA, "Neshoda"),
+            (FINDING_TYPE_POZOROVANI, "Pozorování"),
+            (FINDING_TYPE_ZJISTENI, "Zjištění"),
+            (FINDING_TYPE_PRILEZITOST, "PKZ"),
         ):
             finding_service.create(
                 ENTITY_AUDITY,
@@ -253,11 +279,42 @@ class AuditsOverviewFindingColumnsTest(unittest.TestCase):
         self._assert_finding_counts(
             page.table,
             row,
-            celkem=4,
-            neshody=0,
-            pozorovani=0,
-            pkz=0,
-            ostatni=4,
+            celkem=7,
+            zavady=1,
+            nedostatky=1,
+            poruseni=1,
+            neshody=1,
+            pozorovani=1,
+            zjisteni=1,
+            pkz=1,
+            ostatni=0,
+        )
+        page.close()
+
+    def test_03_causal_opatreni_and_pokyn_go_to_ostatni(self) -> None:
+        audit = audit_service.create_audit(workplace_name="W", year=date.today().year)
+        for finding_type, description in (
+            (FINDING_TYPE_BEZPROSTREDNI_PRICINA, "Bezprostřední"),
+            (FINDING_TYPE_SYSTEMOVA_PRICINA, "Systémová"),
+            (FINDING_TYPE_ZAKLADNI_PRICINA, "Základní"),
+            (FINDING_TYPE_OPATRENI, "Opatření"),
+            (FINDING_TYPE_POKYN, "Pokyn"),
+        ):
+            finding_service.create(
+                ENTITY_AUDITY,
+                audit.id,
+                finding_type=finding_type,
+                description=description,
+                status=FINDING_STATUS_OTEVRENE,
+            )
+
+        page = self._prepare_page()
+        row = self._row_index_by_audit_id(page, audit.id)
+        self._assert_finding_counts(
+            page.table,
+            row,
+            celkem=5,
+            ostatni=5,
         )
         page.close()
 
@@ -282,45 +339,31 @@ class AuditsOverviewFindingColumnsTest(unittest.TestCase):
             page.table,
             row,
             celkem=1,
-            neshody=0,
-            pozorovani=0,
-            pkz=0,
             ostatni=1,
         )
         page.close()
 
-    def test_05_control_example_and_category_sum(self) -> None:
+    def test_05_control_example_sum_and_no_double_count(self) -> None:
         audit = audit_service.create_audit(workplace_name="W", year=date.today().year)
-        for _ in range(2):
-            finding_service.create(
-                ENTITY_AUDITY,
-                audit.id,
-                finding_type=FINDING_TYPE_NESHODA,
-                description="Neshoda",
-                status=FINDING_STATUS_OTEVRENE,
-            )
-        finding_service.create(
-            ENTITY_AUDITY,
-            audit.id,
-            finding_type=FINDING_TYPE_POZOROVANI,
-            description="Pozorování",
-            status=FINDING_STATUS_OTEVRENE,
+        specs = (
+            (FINDING_TYPE_ZAVADA, 2),
+            (FINDING_TYPE_NEDOSTATEK, 1),
+            (FINDING_TYPE_PORUSENI_PREDPISU, 1),
+            (FINDING_TYPE_NESHODA, 2),
+            (FINDING_TYPE_POZOROVANI, 1),
+            (FINDING_TYPE_ZJISTENI, 3),
+            (FINDING_TYPE_PRILEZITOST, 4),
+            (FINDING_TYPE_SYSTEMOVA_PRICINA, 1),
         )
-        for _ in range(3):
-            finding_service.create(
-                ENTITY_AUDITY,
-                audit.id,
-                finding_type=FINDING_TYPE_PRILEZITOST,
-                description="PKZ",
-                status=FINDING_STATUS_OTEVRENE,
-            )
-        finding_service.create(
-            ENTITY_AUDITY,
-            audit.id,
-            finding_type=FINDING_TYPE_ZAVADA,
-            description="Závada",
-            status=FINDING_STATUS_OTEVRENE,
-        )
+        for finding_type, count in specs:
+            for index in range(count):
+                finding_service.create(
+                    ENTITY_AUDITY,
+                    audit.id,
+                    finding_type=finding_type,
+                    description=f"{finding_type}-{index}",
+                    status=FINDING_STATUS_OTEVRENE,
+                )
         with get_session() as session:
             session.add(
                 Finding(
@@ -339,12 +382,22 @@ class AuditsOverviewFindingColumnsTest(unittest.TestCase):
         self._assert_finding_counts(
             page.table,
             row,
-            celkem=8,
+            celkem=16,
+            zavady=2,
+            nedostatky=1,
+            poruseni=1,
             neshody=2,
             pozorovani=1,
-            pkz=3,
+            zjisteni=3,
+            pkz=4,
             ostatni=2,
         )
+        category_sum = sum(
+            _read_int(page.table, row, column)
+            for column in _COUNT_COLUMNS
+            if column != COL_FINDINGS_TOTAL
+        )
+        self.assertEqual(category_sum, _read_int(page.table, row, COL_FINDINGS_TOTAL))
         page.close()
 
     def test_06_all_finding_statuses_are_counted(self) -> None:
@@ -369,9 +422,6 @@ class AuditsOverviewFindingColumnsTest(unittest.TestCase):
             row,
             celkem=3,
             neshody=3,
-            pozorovani=0,
-            pkz=0,
-            ostatni=0,
         )
         page.close()
 
@@ -379,15 +429,7 @@ class AuditsOverviewFindingColumnsTest(unittest.TestCase):
         audit = audit_service.create_audit(workplace_name="W", year=date.today().year)
         page = self._prepare_page()
         row = self._row_index_by_audit_id(page, audit.id)
-        self._assert_finding_counts(
-            page.table,
-            row,
-            celkem=0,
-            neshody=0,
-            pozorovani=0,
-            pkz=0,
-            ostatni=0,
-        )
+        self._assert_finding_counts(page.table, row, celkem=0)
         page.close()
 
     def test_08_overview_uses_batch_loading_no_n_plus_one(self) -> None:
@@ -426,7 +468,7 @@ class AuditsOverviewFindingColumnsTest(unittest.TestCase):
             page.refresh()
 
         self.assertEqual(get_for_entities_mock.call_count, 1)
-        args, kwargs = get_for_entities_mock.call_args
+        args, _kwargs = get_for_entities_mock.call_args
         self.assertEqual(args[0], ENTITY_AUDITY)
         page.close()
 
@@ -478,14 +520,7 @@ class AuditsOverviewFindingColumnsTest(unittest.TestCase):
 
         page = self._prepare_page()
         row = self._row_index_by_audit_id(page, audit.id)
-        numeric_cols = (
-            COL_FINDINGS_TOTAL,
-            COL_NESHODY,
-            COL_POZOROVANI,
-            COL_PKZ,
-            COL_OSTATNI,
-        )
-        for col in numeric_cols:
+        for col in _COUNT_COLUMNS:
             item = page.table.item(row, col)
             self.assertIsNotNone(item)
             self.assertEqual(item.background().style(), Qt.BrushStyle.NoBrush)
@@ -497,44 +532,85 @@ class AuditsOverviewFindingColumnsTest(unittest.TestCase):
         self.assertTrue(neshody_item.font().bold())
         self.assertEqual(neshody_item.foreground().style(), Qt.BrushStyle.NoBrush)
 
-        for col in (COL_POZOROVANI, COL_PKZ, COL_OSTATNI):
+        zero_cols = (
+            COL_ZAVADY,
+            COL_NEDOSTATKY,
+            COL_PORUSENI,
+            COL_POZOROVANI,
+            COL_ZJISTENI,
+            COL_PKZ,
+            COL_OSTATNI,
+        )
+        for col in zero_cols:
             item = page.table.item(row, col)
             self.assertFalse(item.font().bold())
             self.assertNotEqual(item.foreground().style(), Qt.BrushStyle.NoBrush)
 
         page.table.selectRow(row)
-        for col in numeric_cols:
+        for col in _COUNT_COLUMNS:
             item = page.table.item(row, col)
             self.assertEqual(item.background().style(), Qt.BrushStyle.NoBrush)
         page.close()
 
-    def test_11_numeric_sorting_places_2_before_10(self) -> None:
+    def test_11_numeric_sorting_on_all_count_columns(self) -> None:
         table = AuditTable()
         table.load_audits(
             [
-                _dummy_row(row_id=1, number="1/2026", total=2, ostatni=2),
-                _dummy_row(row_id=10, number="10/2026", total=10, ostatni=10),
-                _dummy_row(row_id=2, number="2/2026", total=1, ostatni=1),
+                _dummy_row(
+                    row_id=1,
+                    number="1/2026",
+                    total=2,
+                    zavady=2,
+                    nedostatky=2,
+                    poruseni=2,
+                    neshody=2,
+                    pozorovani=2,
+                    zjisteni=2,
+                    pkz=2,
+                    ostatni=2,
+                ),
+                _dummy_row(
+                    row_id=10,
+                    number="10/2026",
+                    total=10,
+                    zavady=10,
+                    nedostatky=10,
+                    poruseni=10,
+                    neshody=10,
+                    pozorovani=10,
+                    zjisteni=10,
+                    pkz=10,
+                    ostatni=10,
+                ),
+                _dummy_row(
+                    row_id=2,
+                    number="2/2026",
+                    total=1,
+                    zavady=1,
+                    nedostatky=1,
+                    poruseni=1,
+                    neshody=1,
+                    pozorovani=1,
+                    zjisteni=1,
+                    pkz=1,
+                    ostatni=1,
+                ),
             ]
         )
 
-        table.sortItems(COL_FINDINGS_TOTAL, Qt.SortOrder.AscendingOrder)
-        self.assertEqual(
-            [int(table.item(row, 0).text()) for row in range(table.rowCount())],
-            [2, 1, 10],
-        )
-
-        table.sortItems(COL_FINDINGS_TOTAL, Qt.SortOrder.DescendingOrder)
-        self.assertEqual(
-            [int(table.item(row, 0).text()) for row in range(table.rowCount())],
-            [10, 1, 2],
-        )
-
-        table.sortItems(COL_OSTATNI, Qt.SortOrder.AscendingOrder)
-        self.assertEqual(
-            [int(table.item(row, 0).text()) for row in range(table.rowCount())],
-            [2, 1, 10],
-        )
+        for column in _COUNT_COLUMNS:
+            table.sortItems(column, Qt.SortOrder.AscendingOrder)
+            self.assertEqual(
+                [int(table.item(row, 0).text()) for row in range(table.rowCount())],
+                [2, 1, 10],
+                msg=f"ascending column {column}",
+            )
+            table.sortItems(column, Qt.SortOrder.DescendingOrder)
+            self.assertEqual(
+                [int(table.item(row, 0).text()) for row in range(table.rowCount())],
+                [10, 1, 2],
+                msg=f"descending column {column}",
+            )
 
     def test_12_double_click_opens_selected_audit(self) -> None:
         audit_a = audit_service.create_audit(workplace_name="A", year=date.today().year)
@@ -558,6 +634,7 @@ class AuditsOverviewFindingColumnsTest(unittest.TestCase):
 
     def test_13_viewports_filled_without_horizontal_scrollbar(self) -> None:
         page = self._prepare_page()
+        measured: dict[tuple[int, int], dict[str, int]] = {}
         for width, height in ((1600, 900), (1920, 1080)):
             page.resize(width, height)
             page.show()
@@ -575,6 +652,16 @@ class AuditsOverviewFindingColumnsTest(unittest.TestCase):
                 right = header.sectionViewportPosition(column) + header.sectionSize(column)
                 nxt = header.sectionViewportPosition(column + 1)
                 self.assertLessEqual(right, nxt + 1)
+
+            measured[(width, height)] = {
+                "viewport": viewport,
+                "used": used,
+                **{
+                    page.table.horizontalHeaderItem(i).text(): page.table.columnWidth(i)
+                    for i in range(page.table.columnCount())
+                },
+            }
+        print("AUDITS-OVERVIEW-FINDING-COLUMNS-2 widths:", measured)
         page.close()
 
     def test_14_program_visits_without_audit_row_are_not_shown(self) -> None:
@@ -616,7 +703,7 @@ class AuditsOverviewFindingColumnsTest(unittest.TestCase):
         self.assertNotIn(workplace.name, workplaces)
         page.close()
 
-    def test_15_exports_and_report_summaries_stay_unchanged(self) -> None:
+    def test_15_exports_manager_and_deferred_start_stay_functional(self) -> None:
         audit = audit_service.create_audit(workplace_name="W", year=date.today().year)
         finding_service.create(
             ENTITY_AUDITY,
@@ -663,24 +750,61 @@ class AuditsOverviewFindingColumnsTest(unittest.TestCase):
                 "moduly.audity.ui.audity_page.protokol_audit_service.open_detailed_report_for_audit",
                 side_effect=AssertionError("overview generated detailed report"),
             ),
+            patch("moduly.audity.ui.audity_page.exec_maximized") as exec_mock,
         ):
             page.refresh()
+            page.open_program_manager()
+            exec_mock.assert_called_once()
+            self.assertIsInstance(exec_mock.call_args[0][0], AuditProgramManagerDialog)
 
         row = self._row_index_by_audit_id(page, audit.id)
         self._assert_finding_counts(
             page.table,
             row,
             celkem=2,
+            zavady=1,
             neshody=1,
-            pozorovani=0,
-            pkz=0,
-            ostatni=1,
         )
 
         after = control_activity_statistics_service.compute(ENTITY_AUDITY, audit.id)
         self.assertEqual(after.findings_total, before.findings_total)
         self.assertEqual(after.ratings_nevyhovuje, before.ratings_nevyhovuje)
         page.close()
+
+        v2 = prepare_v2_audit_create()
+        system_wp, operation_wp = v2.__enter__()
+        try:
+            program = audit_program_service.create_program(
+                name="Program odloženého zahájení",
+                date_from=date(2026, 4, 1),
+                date_to=date(2029, 3, 31),
+                standards=list(DEFAULT_AUDIT_PROGRAM_STANDARDS),
+            )
+            audit_program_service.add_workplace(
+                program.id,
+                workplace_id=operation_wp.id,
+                workplace_name=operation_wp.name,
+                audit_interval_months=6,
+            )
+            visit = audit_program_service.add_visit(
+                program.id,
+                workplace_id=operation_wp.id,
+                planned_year=2026,
+                planned_month=4,
+                planned_date=date(2026, 4, 15),
+            )
+            self.assertIsNone(visit.audit_id)
+            started = date(2026, 4, 12)
+            created = audit_program_service.create_audit_from_visit(
+                visit.id,
+                started_at=started,
+            )
+            self.assertEqual(created.started_at, started)
+            refreshed = audit_program_service.repository.get_visit(visit.id)
+            assert refreshed is not None
+            self.assertEqual(refreshed.audit_id, created.id)
+        finally:
+            v2.__exit__(None, None, None)
 
     def test_16_existing_identity_columns_remain(self) -> None:
         table = AuditTable()
@@ -691,7 +815,8 @@ class AuditsOverviewFindingColumnsTest(unittest.TestCase):
         self.assertEqual(labels[COL_AUDIT_DATE], "Datum auditu")
         self.assertEqual(labels[COL_STATUS], "Stav")
         self.assertEqual(labels[COL_AUDIT_TYPE], "Typ auditu")
-        self.assertNotIn("Zjištění", labels)
+        self.assertIn("Zjištění", labels)
+        self.assertEqual(labels[COL_ZJISTENI], "Zjištění")
 
 
 if __name__ == "__main__":

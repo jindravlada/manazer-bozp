@@ -52,7 +52,7 @@ class AuditTableErgonomicsTestCase(unittest.TestCase):
             header.sectionResizeMode(4),
             QHeaderView.ResizeMode.Stretch,
         )
-        for column in (1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12):
+        for column in (1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16):
             self.assertEqual(
                 header.sectionResizeMode(column),
                 QHeaderView.ResizeMode.Interactive,
