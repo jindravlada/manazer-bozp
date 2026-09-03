@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-03 – STATE-SUPERVISION-AUTHORITY-WEB-COVERAGE-NAMESPACE-9A4
+
+**Co se povedlo:** Territorial coverage může omezit unmatched místní záznamy prefixem `external_key`. Ústecký rozsah tak neuvidí 42 cizích ÚP jen proto, že mají `office_kind=territorial`.
+
+**Co už bychom dnes udělali jinak:** Hranici jmenného prostoru držet v prefixu zakončeném dvojtečkou. `khs:ustecky-kraj` není dítětem `khs:ustecky-kraj:`.
+
+**Co bylo zbytečně složité:** Prefix slouží hlavně unmatched local a remote kontraktu. Přesná shoda klíče se dál porovnává stejně; possible_duplicate smí hledat v celém orgánu, ale nesmí nic slučovat.
+
+**Jaké nové pravidlo z toho vzniklo:** Neprázdné `covered_external_key_prefixes` zužují missing_remote i povolené remote/expected klíče. Prázdná množina zachová dosavadní chování podle `office_kind`. Apply nesmí přijmout výběr mimo vybraný rozsah.
+
+---
+
 ### 2026-09-03 – STATE-SUPERVISION-AUTHORITY-WEB-MULTI-COVERAGE-9A3
 
 **Co se povedlo:** Registr webových adapterů je klíčovaný `coverage_id`. `check_authority_web("khs")` dál spouští jen `khs-regional`; další rozsah stejného orgánu půjde přidat bez změny UI.

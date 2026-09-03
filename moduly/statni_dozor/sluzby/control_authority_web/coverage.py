@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from moduly.statni_dozor.constants import (
     CBU_AUTHORITY_CODE,
@@ -22,8 +22,10 @@ from moduly.statni_dozor.constants import (
     SUIP_OFFICE_EXTERNAL_KEYS,
     WEB_CHECK_AUTHORITY_MISMATCH_MESSAGE,
     WEB_CHECK_COVERAGE_KIND_MESSAGE,
+    WEB_CHECK_COVERAGE_PREFIX_MESSAGE,
     WEB_CHECK_ERROR_AUTHORITY_MISMATCH,
     WEB_CHECK_ERROR_COVERAGE_KIND,
+    WEB_CHECK_ERROR_COVERAGE_PREFIX,
     WEB_CHECK_ERROR_UNEXPECTED_COUNT,
     WEB_CHECK_UNEXPECTED_COUNT_MESSAGE,
     WEB_COVERAGE_AUTHORITY_CODE_INVALID_MESSAGE,
@@ -35,9 +37,12 @@ from moduly.statni_dozor.constants import (
     WEB_COVERAGE_ID_SUIP_REGIONAL,
     WEB_COVERAGE_KEY_AUTHORITY_MESSAGE,
     WEB_COVERAGE_KEY_INVALID_MESSAGE,
+    WEB_COVERAGE_KEY_OUTSIDE_PREFIX_MESSAGE,
     WEB_COVERAGE_KEYS_REQUIRED_MESSAGE,
     WEB_COVERAGE_KIND_UNKNOWN_MESSAGE,
     WEB_COVERAGE_KINDS_REQUIRED_MESSAGE,
+    WEB_COVERAGE_PREFIX_AUTHORITY_MESSAGE,
+    WEB_COVERAGE_PREFIX_INVALID_MESSAGE,
     WEB_COVERAGE_UNKNOWN_KIND_WARNING,
     WEB_DIFF_DUPLICATE_REMOTE_MESSAGE,
     WEB_DIFF_ERROR_DUPLICATE_REMOTE,
@@ -82,9 +87,77 @@ def _require_office_kinds(values: Iterable[object]) -> frozenset[str]:
     return kinds
 
 
+_PREFIX_CHARS = frozenset("abcdefghijklmnopqrstuvwxyz0123456789:-")
+
+
 def _key_belongs_to_authority(key: str, authority_code: str) -> bool:
     prefix = f"{authority_code}:"
     return key.startswith(prefix) and bool(key[len(prefix) :].strip())
+
+
+def _has_eight_digit_run(value: str) -> bool:
+    run = 0
+    for char in value:
+        if char.isdigit():
+            run += 1
+            if run >= 8:
+                return True
+        else:
+            run = 0
+    return False
+
+
+def _key_matches_prefixes(key: str, prefixes: frozenset[str]) -> bool:
+    if not prefixes:
+        return True
+    return any(key.startswith(prefix) for prefix in prefixes)
+
+
+def local_key_in_coverage_namespace(
+    key: object,
+    coverage: ControlAuthorityWebCoverage,
+) -> bool:
+    """True, pokud unmatched klíč spadá do jmenného prostoru coverage."""
+    prefixes = coverage.covered_external_key_prefixes
+    if not prefixes:
+        return True
+    text = str(key or "").strip()
+    if not text:
+        return False
+    return _key_matches_prefixes(text, prefixes)
+
+
+def _require_key_prefixes(
+    values: Iterable[object],
+    *,
+    authority_code: str,
+) -> frozenset[str]:
+    if isinstance(values, (str, bytes)):
+        raise ValueError(WEB_COVERAGE_PREFIX_INVALID_MESSAGE)
+    prefixes: list[str] = []
+    seen: set[str] = set()
+    authority_prefix = f"{authority_code}:"
+    for raw in values:
+        prefix = str(raw or "")
+        if not prefix or prefix != prefix.strip():
+            raise ValueError(WEB_COVERAGE_PREFIX_INVALID_MESSAGE)
+        if prefix != prefix.lower() or not prefix.isascii():
+            raise ValueError(WEB_COVERAGE_PREFIX_INVALID_MESSAGE)
+        if any(char.isspace() for char in prefix):
+            raise ValueError(WEB_COVERAGE_PREFIX_INVALID_MESSAGE)
+        if not prefix.endswith(":"):
+            raise ValueError(WEB_COVERAGE_PREFIX_INVALID_MESSAGE)
+        if any(char not in _PREFIX_CHARS for char in prefix):
+            raise ValueError(WEB_COVERAGE_PREFIX_INVALID_MESSAGE)
+        if _has_eight_digit_run(prefix):
+            raise ValueError(WEB_COVERAGE_PREFIX_INVALID_MESSAGE)
+        if not prefix.startswith(authority_prefix) or prefix == authority_prefix:
+            raise ValueError(WEB_COVERAGE_PREFIX_AUTHORITY_MESSAGE)
+        if prefix in seen:
+            continue
+        seen.add(prefix)
+        prefixes.append(prefix)
+    return frozenset(prefixes)
 
 
 def _require_external_keys(
@@ -117,6 +190,7 @@ class ControlAuthorityWebCoverage:
     authority_code: str
     covered_office_kinds: frozenset[str]
     expected_external_keys: frozenset[str]
+    covered_external_key_prefixes: frozenset[str] = field(default_factory=frozenset)
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "coverage_id", _require_coverage_id(self.coverage_id))
@@ -127,14 +201,20 @@ class ControlAuthorityWebCoverage:
             "covered_office_kinds",
             _require_office_kinds(self.covered_office_kinds),
         )
-        object.__setattr__(
-            self,
-            "expected_external_keys",
-            _require_external_keys(
-                self.expected_external_keys,
-                authority_code=authority_code,
-            ),
+        prefixes = _require_key_prefixes(
+            self.covered_external_key_prefixes or (),
+            authority_code=authority_code,
         )
+        object.__setattr__(self, "covered_external_key_prefixes", prefixes)
+        keys = _require_external_keys(
+            self.expected_external_keys,
+            authority_code=authority_code,
+        )
+        object.__setattr__(self, "expected_external_keys", keys)
+        if prefixes:
+            for key in keys:
+                if not _key_matches_prefixes(key, prefixes):
+                    raise ValueError(WEB_COVERAGE_KEY_OUTSIDE_PREFIX_MESSAGE)
 
     @property
     def expected_office_count(self) -> int:
@@ -149,6 +229,7 @@ def du_web_coverage() -> ControlAuthorityWebCoverage:
             {OFFICE_KIND_HEADQUARTERS, OFFICE_KIND_TERRITORIAL}
         ),
         expected_external_keys=frozenset(DU_OFFICE_EXTERNAL_KEYS),
+        covered_external_key_prefixes=frozenset(),
     )
 
 
@@ -158,6 +239,7 @@ def suip_web_coverage() -> ControlAuthorityWebCoverage:
         authority_code=SUIP_AUTHORITY_CODE,
         covered_office_kinds=frozenset({OFFICE_KIND_REGIONAL}),
         expected_external_keys=frozenset(SUIP_OFFICE_EXTERNAL_KEYS),
+        covered_external_key_prefixes=frozenset(),
     )
 
 
@@ -167,6 +249,7 @@ def cbu_web_coverage() -> ControlAuthorityWebCoverage:
         authority_code=CBU_AUTHORITY_CODE,
         covered_office_kinds=frozenset({OFFICE_KIND_TERRITORIAL}),
         expected_external_keys=frozenset(CBU_OFFICE_EXTERNAL_KEYS),
+        covered_external_key_prefixes=frozenset(),
     )
 
 
@@ -176,6 +259,7 @@ def khs_web_coverage() -> ControlAuthorityWebCoverage:
         authority_code=KHS_AUTHORITY_CODE,
         covered_office_kinds=frozenset({OFFICE_KIND_REGIONAL}),
         expected_external_keys=frozenset(KHS_OFFICE_EXTERNAL_KEYS),
+        covered_external_key_prefixes=frozenset(),
     )
 
 
@@ -185,6 +269,7 @@ def hzs_web_coverage() -> ControlAuthorityWebCoverage:
         authority_code=HZS_AUTHORITY_CODE,
         covered_office_kinds=frozenset({OFFICE_KIND_REGIONAL}),
         expected_external_keys=frozenset(HZS_OFFICE_EXTERNAL_KEYS),
+        covered_external_key_prefixes=frozenset(),
     )
 
 
@@ -269,6 +354,11 @@ def assert_records_match_coverage(
         if key in seen:
             raise _coverage_error(
                 WEB_DIFF_ERROR_DUPLICATE_REMOTE, WEB_DIFF_DUPLICATE_REMOTE_MESSAGE
+            )
+        if not local_key_in_coverage_namespace(key, coverage):
+            raise _coverage_error(
+                WEB_CHECK_ERROR_COVERAGE_PREFIX,
+                WEB_CHECK_COVERAGE_PREFIX_MESSAGE,
             )
         seen.add(key)
         observed = frozenset(getattr(record, "observed_fields", ()) or ())

@@ -987,6 +987,10 @@ WEB_CHECK_AUTHORITY_MISMATCH_MESSAGE = (
 WEB_CHECK_COVERAGE_KIND_MESSAGE = (
     "Webový adapter vrátil druh pracoviště mimo svůj deklarovaný rozsah."
 )
+WEB_CHECK_ERROR_COVERAGE_PREFIX = "external_key_prefix_mismatch"
+WEB_CHECK_COVERAGE_PREFIX_MESSAGE = (
+    "Webový adapter vrátil technický klíč mimo deklarovaný jmenný prostor rozsahu."
+)
 WEB_CHECK_ERROR_UNSUPPORTED_COVERAGE = "unsupported_coverage"
 WEB_CHECK_ERROR_COVERAGE_REQUIRED = "coverage_id_required"
 WEB_CHECK_UNSUPPORTED_COVERAGE_MESSAGE = (
@@ -1041,6 +1045,16 @@ WEB_COVERAGE_KEY_AUTHORITY_MESSAGE = (
 WEB_COVERAGE_UNKNOWN_KIND_WARNING = (
     "Rozsah místního pracoviště „{name}“ nelze bezpečně určit, "
     "proto nebylo zařazeno do webové kontroly."
+)
+WEB_COVERAGE_PREFIX_INVALID_MESSAGE = (
+    "Prefix technického klíče rozsahu webového adapteru musí být malými ASCII "
+    "písmeny, bez mezer a zakončený dvojtečkou."
+)
+WEB_COVERAGE_PREFIX_AUTHORITY_MESSAGE = (
+    "Prefix technického klíče nepatří deklarovanému kontrolnímu orgánu."
+)
+WEB_COVERAGE_KEY_OUTSIDE_PREFIX_MESSAGE = (
+    "Očekávaný technický klíč nespadá do deklarovaného jmenného prostoru rozsahu."
 )
 
 # Atomické použití vybraných webových změn (STATE-SUPERVISION-AUTHORITY-WEB-APPLY-CORE-8E1)

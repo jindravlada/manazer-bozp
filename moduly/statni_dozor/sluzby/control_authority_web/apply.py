@@ -61,6 +61,7 @@ from moduly.statni_dozor.sluzby.control_authority_web.check import (
 from moduly.statni_dozor.sluzby.control_authority_web.coverage import (
     ControlAuthorityWebCoverageError,
     assert_records_match_coverage,
+    local_key_in_coverage_namespace,
 )
 from moduly.statni_dozor.sluzby.control_authority_web.diff_models import (
     ControlAuthorityOfficeCatalogSnapshot,
@@ -312,6 +313,23 @@ class ControlAuthorityWebApplyService:
                 raise _apply_error(
                     WEB_APPLY_ERROR_SELECTION, WEB_APPLY_SELECTION_MESSAGE
                 )
+            if not local_key_in_coverage_namespace(diff.external_key, coverage):
+                raise _apply_error(
+                    WEB_APPLY_ERROR_SELECTION, WEB_APPLY_SELECTION_MESSAGE
+                )
+            if (
+                diff.local is not None
+                and (diff.local.external_key or "").strip()
+                and not local_key_in_coverage_namespace(diff.local.external_key, coverage)
+                and diff.status
+                in {
+                    WEB_DIFF_STATUS_MISSING_REMOTE,
+                    WEB_DIFF_STATUS_PROTECTED_MISSING_REMOTE,
+                }
+            ):
+                raise _apply_error(
+                    WEB_APPLY_ERROR_SELECTION, WEB_APPLY_SELECTION_MESSAGE
+                )
 
     def _validate_selections(
         self,
@@ -343,13 +361,20 @@ class ControlAuthorityWebApplyService:
             diff = diffs_by_key.get(key)
             if diff is None:
                 raise _apply_error(WEB_APPLY_ERROR_SELECTION, WEB_APPLY_SELECTION_MESSAGE)
+            coverage = check_result.coverage
             if (
                 selection.action == WEB_APPLY_ACTION_CREATE
                 and (
-                    check_result.coverage is None
-                    or selection.external_key
-                    not in check_result.coverage.expected_external_keys
+                    coverage is None
+                    or selection.external_key not in coverage.expected_external_keys
+                    or not local_key_in_coverage_namespace(
+                        selection.external_key, coverage
+                    )
                 )
+            ):
+                raise _apply_error(WEB_APPLY_ERROR_SELECTION, WEB_APPLY_SELECTION_MESSAGE)
+            if coverage is not None and not local_key_in_coverage_namespace(
+                selection.external_key, coverage
             ):
                 raise _apply_error(WEB_APPLY_ERROR_SELECTION, WEB_APPLY_SELECTION_MESSAGE)
             self._validate_action(selection, diff)

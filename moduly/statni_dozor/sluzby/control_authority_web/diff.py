@@ -9,7 +9,9 @@ from collections.abc import Sequence
 from moduly.statni_dozor.constants import (
     AUTHORITY_ORIGIN_MANUAL,
     WEB_CHECK_COVERAGE_KIND_MESSAGE,
+    WEB_CHECK_COVERAGE_PREFIX_MESSAGE,
     WEB_CHECK_ERROR_COVERAGE_KIND,
+    WEB_CHECK_ERROR_COVERAGE_PREFIX,
     WEB_DIFF_ACTION_CREATE,
     WEB_DIFF_ACTION_DEACTIVATE,
     WEB_DIFF_ACTION_NONE,
@@ -45,6 +47,7 @@ from moduly.statni_dozor.constants import (
 from moduly.statni_dozor.sluzby.control_authority_web.coverage import (
     ControlAuthorityWebCoverage,
     ControlAuthorityWebCoverageError,
+    local_key_in_coverage_namespace,
     local_kind_covered,
     local_kind_unknown,
     unknown_office_kind_warning,
@@ -301,6 +304,18 @@ def _observed_kind_matches_coverage(
         )
 
 
+def _remote_key_matches_coverage_prefixes(
+    remote: ControlAuthorityOfficeWebRecord,
+    coverage: ControlAuthorityWebCoverage,
+) -> None:
+    if local_key_in_coverage_namespace(remote.external_key, coverage):
+        return
+    raise ControlAuthorityWebCoverageError(
+        WEB_CHECK_COVERAGE_PREFIX_MESSAGE,
+        code=WEB_CHECK_ERROR_COVERAGE_PREFIX,
+    )
+
+
 def _missing_diff(
     local: ControlAuthorityOfficeCatalogSnapshot,
 ) -> ControlAuthorityOfficeDiff:
@@ -376,6 +391,7 @@ def diff_control_authority_offices(
     if coverage is not None:
         for remote in fetch_result.records:
             _observed_kind_matches_coverage(remote, coverage)
+            _remote_key_matches_coverage_prefixes(remote, coverage)
 
     remote_by_key = _index_remote_keys(fetch_result.records)
     local_by_key = _index_local_keys(snapshots)
@@ -408,11 +424,14 @@ def diff_control_authority_offices(
         if coverage is None:
             continue
         if local_kind_unknown(local.office_kind):
-            warning = unknown_office_kind_warning(local.name)
-            if warning not in warnings:
-                warnings.append(warning)
+            if local_key_in_coverage_namespace(key, coverage):
+                warning = unknown_office_kind_warning(local.name)
+                if warning not in warnings:
+                    warnings.append(warning)
             continue
         if not local_kind_covered(local.office_kind, coverage):
+            continue
+        if not local_key_in_coverage_namespace(key, coverage):
             continue
         items.append(_missing_diff(local))
 

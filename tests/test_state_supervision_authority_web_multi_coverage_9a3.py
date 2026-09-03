@@ -276,6 +276,7 @@ def _secondary_coverage() -> ControlAuthorityWebCoverage:
         authority_code=KHS_AUTHORITY_CODE,
         covered_office_kinds=frozenset({OFFICE_KIND_TERRITORIAL}),
         expected_external_keys=frozenset({_TEPLICE_KEY}),
+        covered_external_key_prefixes=frozenset(),
     )
 
 
