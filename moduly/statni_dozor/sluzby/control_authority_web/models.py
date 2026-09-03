@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 
 from moduly.statni_dozor.constants import (
@@ -24,6 +24,9 @@ from moduly.statni_dozor.constants import (
     WEB_ADAPTER_TOO_LARGE_MESSAGE,
     WEB_ADAPTER_UNREADABLE_HTML_MESSAGE,
     WEB_ADAPTER_UNSUPPORTED_CONTENT_MESSAGE,
+    WEB_DIFF_COMPARED_FIELD_SET,
+    WEB_DIFF_ERROR_UNKNOWN_OBSERVED_FIELD,
+    WEB_DIFF_UNKNOWN_OBSERVED_FIELD_MESSAGE,
 )
 
 _MESSAGES = {
@@ -36,6 +39,7 @@ _MESSAGES = {
     WEB_ADAPTER_ERROR_UNREADABLE_HTML: WEB_ADAPTER_UNREADABLE_HTML_MESSAGE,
     WEB_ADAPTER_ERROR_INCOMPLETE: WEB_ADAPTER_INCOMPLETE_MESSAGE,
     WEB_ADAPTER_ERROR_DUPLICATE_KEY: WEB_ADAPTER_DUPLICATE_KEY_MESSAGE,
+    WEB_DIFF_ERROR_UNKNOWN_OBSERVED_FIELD: WEB_DIFF_UNKNOWN_OBSERVED_FIELD_MESSAGE,
 }
 
 
@@ -53,6 +57,14 @@ class ControlAuthorityOfficeWebRecord:
     territorial_scope: str | None
     office_kind: str | None
     source_url: str
+    observed_fields: frozenset[str] = field(default_factory=frozenset)
+
+    def __post_init__(self) -> None:
+        observed = frozenset(self.observed_fields or ())
+        unknown = observed - WEB_DIFF_COMPARED_FIELD_SET
+        if unknown:
+            raise adapter_error(WEB_DIFF_ERROR_UNKNOWN_OBSERVED_FIELD)
+        object.__setattr__(self, "observed_fields", observed)
 
 
 @dataclass(frozen=True)

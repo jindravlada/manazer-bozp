@@ -85,6 +85,7 @@ def _web(
     office_kind: str | None = OFFICE_KIND_HEADQUARTERS,
     authority_code: str = DU_AUTHORITY_CODE,
     source_url: str = DU_OFFICES_SOURCE_URL,
+    observed_fields: frozenset[str] | None = None,
 ) -> ControlAuthorityOfficeWebRecord:
     return ControlAuthorityOfficeWebRecord(
         authority_code=authority_code,
@@ -97,6 +98,11 @@ def _web(
         territorial_scope=territorial_scope,
         office_kind=office_kind,
         source_url=source_url,
+        observed_fields=(
+            observed_fields
+            if observed_fields is not None
+            else frozenset(WEB_DIFF_COMPARED_FIELDS)
+        ),
     )
 
 
@@ -493,7 +499,10 @@ class StateSupervisionAuthorityWebDiff8d1TestCase(unittest.TestCase):
         for item in result.items:
             self.assertEqual(item.status, WEB_DIFF_STATUS_CHANGED)
             fields = tuple(change.field for change in item.field_changes)
-            self.assertEqual(fields, ("name", "email", "website"))
+            self.assertEqual(fields, ("name",))
+            self.assertNotIn("email", fields)
+            self.assertNotIn("website", fields)
+            self.assertNotIn("territorial_scope", fields)
             self.assertNotIn("display_order", fields)
             self.assertNotIn("origin", fields)
             self.assertNotIn("last_checked_at", fields)

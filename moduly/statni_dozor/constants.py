@@ -806,11 +806,22 @@ WEB_DIFF_COMPARED_FIELDS: tuple[str, ...] = (
     "office_kind",
     "source_url",
 )
+WEB_DIFF_COMPARED_FIELD_SET: frozenset[str] = frozenset(WEB_DIFF_COMPARED_FIELDS)
+DU_OFFICE_OBSERVED_FIELDS: frozenset[str] = frozenset(
+    {
+        "name",
+        "address",
+        "phone",
+        "office_kind",
+        "source_url",
+    }
+)
 WEB_DIFF_ERROR_INCOMPLETE = "incomplete_result"
 WEB_DIFF_ERROR_MISSING_KEY = "missing_external_key"
 WEB_DIFF_ERROR_DUPLICATE_REMOTE = "duplicate_remote_key"
 WEB_DIFF_ERROR_DUPLICATE_LOCAL = "duplicate_local_key"
 WEB_DIFF_ERROR_AUTHORITY_NOT_FOUND = "authority_not_found"
+WEB_DIFF_ERROR_UNKNOWN_OBSERVED_FIELD = "unknown_observed_field"
 WEB_DIFF_INCOMPLETE_MESSAGE = (
     "Výsledek webového adapteru není úplný a nelze podle něj navrhovat změny katalogu."
 )
@@ -825,6 +836,9 @@ WEB_DIFF_DUPLICATE_LOCAL_MESSAGE = (
 )
 WEB_DIFF_AUTHORITY_NOT_FOUND_MESSAGE = (
     "Kontrolní orgán v katalogu neexistuje."
+)
+WEB_DIFF_UNKNOWN_OBSERVED_FIELD_MESSAGE = (
+    "Webový záznam pracoviště obsahuje pole, které nelze porovnávat."
 )
 WEB_DIFF_REASON_NEW = "Pracoviště na oficiálním webu v katalogu chybí."
 WEB_DIFF_REASON_CHANGED = "Údaje pracoviště se na oficiálním webu liší."

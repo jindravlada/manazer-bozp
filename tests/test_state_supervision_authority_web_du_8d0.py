@@ -18,6 +18,7 @@ from moduly.statni_dozor.constants import (
     AUTHORITY_CATALOG_SEED_RELATIVE_PATH,
     DU_AUTHORITY_CODE,
     DU_OFFICE_EXTERNAL_KEYS,
+    DU_OFFICE_OBSERVED_FIELDS,
     DU_OFFICES_SOURCE_URL,
     OFFICE_KIND_HEADQUARTERS,
     OFFICE_KIND_TERRITORIAL,
@@ -137,6 +138,10 @@ class StateSupervisionAuthorityWebDu8d0TestCase(unittest.TestCase):
             self.assertNotIn("61379425", str(record))
             self.assertIsNone(record.website)
             self.assertIsNone(record.territorial_scope)
+            self.assertEqual(record.observed_fields, DU_OFFICE_OBSERVED_FIELDS)
+            self.assertNotIn("email", record.observed_fields)
+            self.assertNotIn("website", record.observed_fields)
+            self.assertNotIn("territorial_scope", record.observed_fields)
             self.assertEqual(record.source_url, DU_OFFICES_SOURCE_URL)
             blob = " ".join(
                 str(value)
@@ -159,6 +164,8 @@ class StateSupervisionAuthorityWebDu8d0TestCase(unittest.TestCase):
         )
         records = parse_du_offices_html(html)
         self.assertEqual(records[0].email, "praha@du.gov.cz")
+        self.assertIn("email", records[0].observed_fields)
+        self.assertNotIn("email", records[1].observed_fields)
         self.assertIsNone(records[1].email)
         self.assertIsNone(records[2].email)
 

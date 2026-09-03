@@ -121,7 +121,10 @@ def _field_changes(
     remote: ControlAuthorityOfficeWebRecord,
 ) -> tuple[ControlAuthorityOfficeFieldChange, ...]:
     changes: list[ControlAuthorityOfficeFieldChange] = []
+    observed = frozenset(remote.observed_fields)
     for field in WEB_DIFF_COMPARED_FIELDS:
+        if field not in observed:
+            continue
         old = _original(local, field)
         new = _original(remote, field)
         if not _values_equal(field, old, new):

@@ -177,6 +177,11 @@ def parse_du_offices_html(
         if not name or not address:
             logger.error("Pracoviště %s nemá název nebo adresu.", city)
             raise adapter_error(WEB_ADAPTER_ERROR_INCOMPLETE)
+        observed = {"name", "address", "office_kind", "source_url"}
+        if "telefon" in pairs:
+            observed.add("phone")
+        if "email" in pairs:
+            observed.add("email")
         found[city] = ControlAuthorityOfficeWebRecord(
             authority_code=DU_AUTHORITY_CODE,
             external_key=_CITY_KEY[city],
@@ -188,6 +193,7 @@ def parse_du_offices_html(
             territorial_scope=None,
             office_kind=_CITY_KIND[city],
             source_url=source_url,
+            observed_fields=frozenset(observed),
         )
 
     if extra or len(found) != 3:
