@@ -396,20 +396,22 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             1: 90,   # Číslo
             2: 115,  # Datum prověrky
             3: 180,  # Pracoviště
-            4: 70,   # Celkem
+            4: 65,   # Celkem
             5: 55,   # Závady
             6: 85,   # Nedostatky
             7: 95,   # Porušení
             8: 70,   # Neshody
-            9: 50,   # PKZ
-            10: 75,  # Ostatní
-            11: 120, # Stav
+            9: 95,   # Pozorování
+            10: 85,  # Zjištění
+            11: 50,  # PKZ
+            12: 90,  # Ostatní
+            13: 120, # Stav
         }
         for column, width in widths.items():
             table.setColumnWidth(column, width)
         table.setColumnHidden(0, True)
         header.setSectionResizeMode(3, QHeaderView.Stretch)
-        for column in (1, 2, 4, 5, 6, 7, 8, 9, 10, 11):
+        for column in (1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13):
             header.setSectionResizeMode(column, QHeaderView.ResizeMode.Interactive)
 
     elif profile == "bozp_coordinations":

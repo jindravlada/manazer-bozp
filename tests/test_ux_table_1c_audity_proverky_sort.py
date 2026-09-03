@@ -369,9 +369,9 @@ class UxTable1cProverkySortTests(unittest.TestCase):
 
         table = BozpInspectionTable()
         table.load_inspections([self._row(done), self._row(planned), self._row(running)])
-        table.sortItems(11, Qt.SortOrder.AscendingOrder)
+        table.sortItems(13, Qt.SortOrder.AscendingOrder)
         self.assertEqual(
-            _column_texts(table, 11),
+            _column_texts(table, 13),
             [
                 INSPECTION_STATUS_PLANOVANO,
                 INSPECTION_STATUS_PROBIHA,

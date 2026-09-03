@@ -20,8 +20,10 @@ from core.shared.constants import (
     ENTITY_PROVERKY,
     FINDING_TYPE_NEDOSTATEK,
     FINDING_TYPE_NESHODA,
+    FINDING_TYPE_POZOROVANI,
     FINDING_TYPE_PORUSENI_PREDPISU,
     FINDING_TYPE_PRILEZITOST,
+    FINDING_TYPE_ZJISTENI,
     FINDING_TYPE_ZAVADA,
 )
 from core.shared.sluzby.finding_service import finding_service
@@ -69,6 +71,8 @@ class _InspectionRow:
         self.nedostatky_count = int(counts.get("nedostatky", 0) or 0)
         self.poruseni_predpisu_count = int(counts.get("poruseni_predpisu", 0) or 0)
         self.neshody_count = int(counts.get("neshody", 0) or 0)
+        self.pozorovani_count = int(counts.get("pozorovani", 0) or 0)
+        self.zjisteni_count = int(counts.get("zjisteni", 0) or 0)
         self.pkz_count = int(counts.get("pkz", 0) or 0)
         self.ostatni_count = int(counts.get("ostatni", 0) or 0)
         self.status = inspection.status
@@ -175,6 +179,8 @@ class ProverkyPage(QWidget):
                 "nedostatky": 0,
                 "poruseni_predpisu": 0,
                 "neshody": 0,
+                "pozorovani": 0,
+                "zjisteni": 0,
                 "pkz": 0,
                 "ostatni": 0,
             }
@@ -197,6 +203,10 @@ class ProverkyPage(QWidget):
                 bucket["poruseni_predpisu"] += 1
             elif code == FINDING_TYPE_NESHODA:
                 bucket["neshody"] += 1
+            elif code == FINDING_TYPE_POZOROVANI:
+                bucket["pozorovani"] += 1
+            elif code == FINDING_TYPE_ZJISTENI:
+                bucket["zjisteni"] += 1
             elif code == FINDING_TYPE_PRILEZITOST:
                 bucket["pkz"] += 1
 
@@ -207,6 +217,8 @@ class ProverkyPage(QWidget):
                 - bucket["nedostatky"]
                 - bucket["poruseni_predpisu"]
                 - bucket["neshody"]
+                - bucket["pozorovani"]
+                - bucket["zjisteni"]
                 - bucket["pkz"]
             )
 

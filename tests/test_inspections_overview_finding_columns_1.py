@@ -105,9 +105,11 @@ class InspectionsOverviewFindingColumnsTest(unittest.TestCase):
             "nedostatky": 6,
             "poruseni": 7,
             "neshody": 8,
-            "pkz": 9,
-            "ostatni": 10,
-            "stav": 11,
+            "pozorovani": 9,
+            "zjisteni": 10,
+            "pkz": 11,
+            "ostatni": 12,
+            "stav": 13,
         }
 
     def _assert_finding_counts(
@@ -120,6 +122,8 @@ class InspectionsOverviewFindingColumnsTest(unittest.TestCase):
         nedostatky: int,
         poruseni: int,
         neshody: int,
+        pozorovani: int,
+        zjisteni: int,
         pkz: int,
         ostatni: int,
     ) -> None:
@@ -129,10 +133,12 @@ class InspectionsOverviewFindingColumnsTest(unittest.TestCase):
         self.assertEqual(_read_int(table, row, cols["nedostatky"]), nedostatky)
         self.assertEqual(_read_int(table, row, cols["poruseni"]), poruseni)
         self.assertEqual(_read_int(table, row, cols["neshody"]), neshody)
+        self.assertEqual(_read_int(table, row, cols["pozorovani"]), pozorovani)
+        self.assertEqual(_read_int(table, row, cols["zjisteni"]), zjisteni)
         self.assertEqual(_read_int(table, row, cols["pkz"]), pkz)
         self.assertEqual(_read_int(table, row, cols["ostatni"]), ostatni)
         self.assertEqual(
-            zavady + nedostatky + poruseni + neshody + pkz + ostatni,
+            zavady + nedostatky + poruseni + neshody + pozorovani + zjisteni + pkz + ostatni,
             celkem,
         )
 
@@ -178,14 +184,55 @@ class InspectionsOverviewFindingColumnsTest(unittest.TestCase):
             nedostatky=1,
             poruseni=0,
             neshody=0,
+            pozorovani=0,
+            zjisteni=0,
             pkz=0,
             ostatni=0,
         )
+
+        cols = self._column_indices()
+        numeric_cols = list(range(cols["celkem"], cols["ostatni"] + 1))
+
+        # Pozn.: typed sorting nesmí být ovlivněn fontem/barvami, ale tady ověřujeme jen UX emfas.
+        for col in numeric_cols:
+            item = page.table.item(row, col)
+            self.assertIsNotNone(item)
+            self.assertEqual(item.background().style(), Qt.BrushStyle.NoBrush)
+
+        # Nenulová hodnota = bold + žádná explicitní grey-foreground.
+        total_item = page.table.item(row, cols["celkem"])
+        self.assertTrue(total_item.font().bold())
+        self.assertEqual(total_item.foreground().style(), Qt.BrushStyle.NoBrush)
+
+        ned_item = page.table.item(row, cols["nedostatky"])
+        self.assertTrue(ned_item.font().bold())
+        self.assertEqual(ned_item.foreground().style(), Qt.BrushStyle.NoBrush)
+
+        # Nulová hodnota = normální písmo + sekundární/grey foreground.
+        for col in (
+            cols["zavady"],
+            cols["poruseni"],
+            cols["neshody"],
+            cols["pozorovani"],
+            cols["zjisteni"],
+            cols["pkz"],
+            cols["ostatni"],
+        ):
+            item = page.table.item(row, col)
+            self.assertFalse(item.font().bold())
+            self.assertNotEqual(item.foreground().style(), Qt.BrushStyle.NoBrush)
+
+        # Výběr řádku nesmí změnit pozadí buněk (readability zůstává).
+        page.table.selectRow(row)
+        for col in numeric_cols:
+            item = page.table.item(row, col)
+            self.assertIsNotNone(item)
+            self.assertEqual(item.background().style(), Qt.BrushStyle.NoBrush)
         page.close()
 
-    def test_04_table_column_order_11_visible_columns(self) -> None:
+    def test_04_table_column_order_13_visible_columns(self) -> None:
         table = BozpInspectionTable()
-        visible = [table.horizontalHeaderItem(i).text() for i in range(1, 12)]
+        visible = [table.horizontalHeaderItem(i).text() for i in range(1, 14)]
         expected = [
             "Číslo",
             "Datum prověrky",
@@ -195,6 +242,8 @@ class InspectionsOverviewFindingColumnsTest(unittest.TestCase):
             "Nedostatky",
             "Porušení",
             "Neshody",
+            "Pozorování",
+            "Zjištění",
             "PKZ",
             "Ostatní",
             "Stav",
@@ -242,23 +291,39 @@ class InspectionsOverviewFindingColumnsTest(unittest.TestCase):
             description="PKZ",
             status=FINDING_STATUS_OTEVRENE,
         )
+        finding_service.create(
+            ENTITY_PROVERKY,
+            inspection.id,
+            finding_type=FINDING_TYPE_POZOROVANI,
+            description="Pozorování",
+            status=FINDING_STATUS_OTEVRENE,
+        )
+        finding_service.create(
+            ENTITY_PROVERKY,
+            inspection.id,
+            finding_type=FINDING_TYPE_ZJISTENI,
+            description="Zjištění",
+            status=FINDING_STATUS_OTEVRENE,
+        )
 
         page = self._prepare_page()
         row = self._row_index_by_inspection_id(page, inspection.id)
         self._assert_finding_counts(
             page.table,
             row,
-            celkem=5,
+            celkem=7,
             zavady=1,
             nedostatky=1,
             poruseni=1,
             neshody=1,
+            pozorovani=1,
+            zjisteni=1,
             pkz=1,
             ostatni=0,
         )
         page.close()
 
-    def test_06_pozorovani_and_zjisteni_go_to_ostatni(self) -> None:
+    def test_06_pozorovani_and_zjisteni_have_own_columns(self) -> None:
         inspection = bozp_inspection_service.create_inspection(
             workplace_name="W",
             year=date.today().year,
@@ -289,8 +354,10 @@ class InspectionsOverviewFindingColumnsTest(unittest.TestCase):
             nedostatky=0,
             poruseni=0,
             neshody=0,
+            pozorovani=1,
+            zjisteni=1,
             pkz=0,
-            ostatni=2,
+            ostatni=0,
         )
         page.close()
 
@@ -324,6 +391,8 @@ class InspectionsOverviewFindingColumnsTest(unittest.TestCase):
             nedostatky=0,
             poruseni=0,
             neshody=0,
+            pozorovani=0,
+            zjisteni=0,
             pkz=0,
             ostatni=1,
         )
@@ -358,6 +427,8 @@ class InspectionsOverviewFindingColumnsTest(unittest.TestCase):
             nedostatky=0,
             poruseni=0,
             neshody=0,
+            pozorovani=0,
+            zjisteni=0,
             pkz=0,
             ostatni=0,
         )
@@ -410,8 +481,10 @@ class InspectionsOverviewFindingColumnsTest(unittest.TestCase):
             nedostatky=0,
             poruseni=0,
             neshody=1,
+            pozorovani=1,
+            zjisteni=5,
             pkz=0,
-            ostatni=6,
+            ostatni=0,
         )
         page.close()
 
@@ -467,9 +540,14 @@ class InspectionsOverviewFindingColumnsTest(unittest.TestCase):
         nedostatky = _read_int(page.table, row, cols["nedostatky"])
         poruseni = _read_int(page.table, row, cols["poruseni"])
         neshody = _read_int(page.table, row, cols["neshody"])
+        pozorovani = _read_int(page.table, row, cols["pozorovani"])
+        zjisteni = _read_int(page.table, row, cols["zjisteni"])
         pkz = _read_int(page.table, row, cols["pkz"])
         ostatni = _read_int(page.table, row, cols["ostatni"])
-        self.assertEqual(zavady + nedostatky + poruseni + neshody + pkz + ostatni, celkem)
+        self.assertEqual(
+            zavady + nedostatky + poruseni + neshody + pozorovani + zjisteni + pkz + ostatni,
+            celkem,
+        )
         page.close()
 
     def test_11_inspection_without_findings_shows_zeroes(self) -> None:
@@ -488,6 +566,8 @@ class InspectionsOverviewFindingColumnsTest(unittest.TestCase):
             nedostatky=0,
             poruseni=0,
             neshody=0,
+            pozorovani=0,
+            zjisteni=0,
             pkz=0,
             ostatni=0,
         )

@@ -1,3 +1,5 @@
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QBrush, QPalette
 from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QTableWidget
 
 from core.widgets.info_tooltip import format_info_card
@@ -27,12 +29,25 @@ def _text_or_empty(display: str):
         return typed_empty()
     return typed_text(display)
 
+def _apply_count_emphasis(item, value: int) -> None:
+    """
+    Nenápadné zvýraznění počtů:
+    - 0: běžné písmo + lehce šedá barva (secondary/disabled text)
+    - >0: tučné písmo
+    """
+    font = item.font()
+    font.setBold(value > 0)
+    item.setFont(font)
+    if value == 0:
+        secondary = QPalette().color(QPalette.Disabled, QPalette.Text)
+        item.setForeground(QBrush(secondary))
+
 
 class BozpInspectionTable(QTableWidget):
     def __init__(self):
         super().__init__()
 
-        self.setColumnCount(12)
+        self.setColumnCount(14)
         self.setHorizontalHeaderLabels([
             "ID",
             "Číslo",
@@ -43,6 +58,8 @@ class BozpInspectionTable(QTableWidget):
             "Nedostatky",
             "Porušení",
             "Neshody",
+            "Pozorování",
+            "Zjištění",
             "PKZ",
             "Ostatní",
             "Stav",
@@ -50,7 +67,8 @@ class BozpInspectionTable(QTableWidget):
 
         # UX-TIP: Dlouhý význam jen v tooltipu hlavičky.
         header_col_poruseni = 7
-        header_col_pkz = 9
+        header_col_pkz = 11
+        header_col_ostatni = 12
         poruseni_header = self.horizontalHeaderItem(header_col_poruseni)
         if poruseni_header is not None:
             poruseni_header.setToolTip("Porušení předpisů")
@@ -58,6 +76,10 @@ class BozpInspectionTable(QTableWidget):
         pkz_header = self.horizontalHeaderItem(header_col_pkz)
         if pkz_header is not None:
             pkz_header.setToolTip("Příležitosti ke zlepšení")
+
+        ostatni_header = self.horizontalHeaderItem(header_col_ostatni)
+        if ostatni_header is not None:
+            ostatni_header.setToolTip("Jiné nebo historické druhy zjištění")
 
         self.setColumnHidden(0, True)
         self.verticalHeader().setVisible(False)
@@ -88,8 +110,73 @@ class BozpInspectionTable(QTableWidget):
                     getattr(inspection, "poruseni_predpisu_count", None) or 0
                 )
                 neshody_count = getattr(inspection, "neshody_count", None) or 0
+                pozorovani_count = getattr(inspection, "pozorovani_count", None) or 0
+                zjisteni_count = getattr(inspection, "zjisteni_count", None) or 0
                 pkz_count = getattr(inspection, "pkz_count", None) or 0
                 ostatni_count = getattr(inspection, "ostatni_count", None) or 0
+
+                total_item = create_typed_item(
+                    str(int(total_count)),
+                    typed_int(int(total_count)),
+                    stable_id=record_id,
+                )
+                _apply_count_emphasis(total_item, int(total_count))
+
+                zavady_item = create_typed_item(
+                    str(int(zavady_count)),
+                    typed_int(int(zavady_count)),
+                    stable_id=record_id,
+                )
+                _apply_count_emphasis(zavady_item, int(zavady_count))
+
+                nedostatky_item = create_typed_item(
+                    str(int(nedostatky_count)),
+                    typed_int(int(nedostatky_count)),
+                    stable_id=record_id,
+                )
+                _apply_count_emphasis(nedostatky_item, int(nedostatky_count))
+
+                poruseni_item = create_typed_item(
+                    str(int(poruseni_predpisu_count)),
+                    typed_int(int(poruseni_predpisu_count)),
+                    stable_id=record_id,
+                )
+                _apply_count_emphasis(poruseni_item, int(poruseni_predpisu_count))
+
+                neshody_item = create_typed_item(
+                    str(int(neshody_count)),
+                    typed_int(int(neshody_count)),
+                    stable_id=record_id,
+                )
+                _apply_count_emphasis(neshody_item, int(neshody_count))
+
+                pozorovani_item = create_typed_item(
+                    str(int(pozorovani_count)),
+                    typed_int(int(pozorovani_count)),
+                    stable_id=record_id,
+                )
+                _apply_count_emphasis(pozorovani_item, int(pozorovani_count))
+
+                zjisteni_item = create_typed_item(
+                    str(int(zjisteni_count)),
+                    typed_int(int(zjisteni_count)),
+                    stable_id=record_id,
+                )
+                _apply_count_emphasis(zjisteni_item, int(zjisteni_count))
+
+                pkz_item = create_typed_item(
+                    str(int(pkz_count)),
+                    typed_int(int(pkz_count)),
+                    stable_id=record_id,
+                )
+                _apply_count_emphasis(pkz_item, int(pkz_count))
+
+                ostatni_item = create_typed_item(
+                    str(int(ostatni_count)),
+                    typed_int(int(ostatni_count)),
+                    stable_id=record_id,
+                )
+                _apply_count_emphasis(ostatni_item, int(ostatni_count))
 
                 cells = [
                     create_typed_item(
@@ -116,41 +203,15 @@ class BozpInspectionTable(QTableWidget):
                         _text_or_empty(workplace),
                         stable_id=record_id,
                     ),
-                    create_typed_item(
-                        str(int(total_count)),
-                        typed_int(int(total_count)),
-                        stable_id=record_id,
-                    ),
-                    create_typed_item(
-                        str(int(zavady_count)),
-                        typed_int(int(zavady_count)),
-                        stable_id=record_id,
-                    ),
-                    create_typed_item(
-                        str(int(nedostatky_count)),
-                        typed_int(int(nedostatky_count)),
-                        stable_id=record_id,
-                    ),
-                    create_typed_item(
-                        str(int(poruseni_predpisu_count)),
-                        typed_int(int(poruseni_predpisu_count)),
-                        stable_id=record_id,
-                    ),
-                    create_typed_item(
-                        str(int(neshody_count)),
-                        typed_int(int(neshody_count)),
-                        stable_id=record_id,
-                    ),
-                    create_typed_item(
-                        str(int(pkz_count)),
-                        typed_int(int(pkz_count)),
-                        stable_id=record_id,
-                    ),
-                    create_typed_item(
-                        str(int(ostatni_count)),
-                        typed_int(int(ostatni_count)),
-                        stable_id=record_id,
-                    ),
+                    total_item,
+                    zavady_item,
+                    nedostatky_item,
+                    poruseni_item,
+                    neshody_item,
+                    pozorovani_item,
+                    zjisteni_item,
+                    pkz_item,
+                    ostatni_item,
                     create_typed_item(
                         status or "—",
                         _status_sort(status) if status else typed_empty(),
@@ -180,6 +241,8 @@ class BozpInspectionTable(QTableWidget):
                 ("Nedostatky:", str(int(getattr(inspection, "nedostatky_count", 0) or 0))),
                 ("Porušení předpisů:", str(int(getattr(inspection, "poruseni_predpisu_count", 0) or 0))),
                 ("Neshody:", str(int(getattr(inspection, "neshody_count", 0) or 0))),
+                ("Pozorování:", str(int(getattr(inspection, "pozorovani_count", 0) or 0))),
+                ("Zjištění:", str(int(getattr(inspection, "zjisteni_count", 0) or 0))),
                 ("Příležitosti ke zlepšení:", str(int(getattr(inspection, "pkz_count", 0) or 0))),
                 ("Ostatní:", str(int(getattr(inspection, "ostatni_count", 0) or 0))),
                 ("Stav:", getattr(inspection, "status", None) or "—"),
