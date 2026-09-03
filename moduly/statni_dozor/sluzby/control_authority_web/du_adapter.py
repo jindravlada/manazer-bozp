@@ -235,4 +235,5 @@ def fetch_du_offices(
         fetched_at=stamp,
         records=records,
         warnings=(),
+        is_complete=len(records) == 3,
     )

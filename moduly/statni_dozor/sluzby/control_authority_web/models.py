@@ -64,10 +64,12 @@ class ControlAuthorityWebFetchResult:
     fetched_at: datetime
     records: tuple[ControlAuthorityOfficeWebRecord, ...]
     warnings: tuple[str, ...] = ()
+    is_complete: bool = False
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "records", tuple(self.records))
         object.__setattr__(self, "warnings", tuple(self.warnings))
+        object.__setattr__(self, "is_complete", bool(self.is_complete))
 
 
 class ControlAuthorityWebAdapterError(ValueError):

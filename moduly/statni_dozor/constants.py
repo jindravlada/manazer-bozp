@@ -768,3 +768,85 @@ WEB_ADAPTER_DUPLICATE_KEY_MESSAGE = (
 )
 WEB_ADAPTER_HTTP_TIMEOUT_SECONDS = 20
 WEB_ADAPTER_MAX_RESPONSE_BYTES = 1_048_576
+
+# Porovnání webu s katalogem (STATE-SUPERVISION-AUTHORITY-WEB-DIFF-8D1)
+WEB_DIFF_STATUS_UNCHANGED = "unchanged"
+WEB_DIFF_STATUS_NEW = "new"
+WEB_DIFF_STATUS_CHANGED = "changed"
+WEB_DIFF_STATUS_MISSING_REMOTE = "missing_remote"
+WEB_DIFF_STATUS_PROTECTED_MISSING_REMOTE = "protected_missing_remote"
+WEB_DIFF_STATUS_INACTIVE_PRESENT = "inactive_present"
+WEB_DIFF_STATUS_PROTECTED = "protected"
+WEB_DIFF_STATUS_POSSIBLE_DUPLICATE = "possible_duplicate"
+WEB_DIFF_STATUS_IDENTITY_CONFLICT = "identity_conflict"
+WEB_DIFF_STATUSES: tuple[str, ...] = (
+    WEB_DIFF_STATUS_UNCHANGED,
+    WEB_DIFF_STATUS_NEW,
+    WEB_DIFF_STATUS_CHANGED,
+    WEB_DIFF_STATUS_MISSING_REMOTE,
+    WEB_DIFF_STATUS_PROTECTED_MISSING_REMOTE,
+    WEB_DIFF_STATUS_INACTIVE_PRESENT,
+    WEB_DIFF_STATUS_PROTECTED,
+    WEB_DIFF_STATUS_POSSIBLE_DUPLICATE,
+    WEB_DIFF_STATUS_IDENTITY_CONFLICT,
+)
+WEB_DIFF_ACTION_NONE = "none"
+WEB_DIFF_ACTION_CREATE = "create"
+WEB_DIFF_ACTION_UPDATE = "update"
+WEB_DIFF_ACTION_DEACTIVATE = "deactivate"
+WEB_DIFF_ACTION_REACTIVATE = "reactivate"
+WEB_DIFF_ACTION_REVIEW = "review"
+WEB_DIFF_COMPARED_FIELDS: tuple[str, ...] = (
+    "name",
+    "address",
+    "phone",
+    "email",
+    "website",
+    "territorial_scope",
+    "office_kind",
+    "source_url",
+)
+WEB_DIFF_ERROR_INCOMPLETE = "incomplete_result"
+WEB_DIFF_ERROR_MISSING_KEY = "missing_external_key"
+WEB_DIFF_ERROR_DUPLICATE_REMOTE = "duplicate_remote_key"
+WEB_DIFF_ERROR_DUPLICATE_LOCAL = "duplicate_local_key"
+WEB_DIFF_ERROR_AUTHORITY_NOT_FOUND = "authority_not_found"
+WEB_DIFF_INCOMPLETE_MESSAGE = (
+    "Výsledek webového adapteru není úplný a nelze podle něj navrhovat změny katalogu."
+)
+WEB_DIFF_MISSING_KEY_MESSAGE = (
+    "Webový záznam pracoviště musí mít vyplněný technický klíč."
+)
+WEB_DIFF_DUPLICATE_REMOTE_MESSAGE = (
+    "Webový výsledek obsahuje duplicitní technický klíč pracoviště."
+)
+WEB_DIFF_DUPLICATE_LOCAL_MESSAGE = (
+    "Místní katalog obsahuje duplicitní technický klíč pracoviště."
+)
+WEB_DIFF_AUTHORITY_NOT_FOUND_MESSAGE = (
+    "Kontrolní orgán v katalogu neexistuje."
+)
+WEB_DIFF_REASON_NEW = "Pracoviště na oficiálním webu v katalogu chybí."
+WEB_DIFF_REASON_CHANGED = "Údaje pracoviště se na oficiálním webu liší."
+WEB_DIFF_REASON_PROTECTED = (
+    "Záznam je ručně chráněný; webová data ho automaticky nepřepíší."
+)
+WEB_DIFF_REASON_MISSING = "Pracoviště se na oficiálním webu nenašlo."
+WEB_DIFF_REASON_PROTECTED_MISSING = (
+    "Ručně chráněné pracoviště se na oficiálním webu nenašlo."
+)
+WEB_DIFF_REASON_INACTIVE = (
+    "Neaktivní pracoviště je na oficiálním webu stále uvedeno."
+)
+WEB_DIFF_REASON_DUPLICATE_NAME = (
+    "Místní záznam má shodný název, ale jiný technický klíč."
+)
+WEB_DIFF_REASON_DUPLICATE_ADDRESS = (
+    "Místní záznam má shodnou adresu, ale jiný technický klíč."
+)
+WEB_DIFF_REASON_DUPLICATE_CITY_SCOPE = (
+    "Místní záznam má shodné město i územní působnost, ale jiný technický klíč."
+)
+WEB_DIFF_REASON_IDENTITY = (
+    "Stejný technický klíč patří jinému kontrolnímu orgánu."
+)

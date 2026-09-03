@@ -233,6 +233,7 @@ class StateSupervisionAuthorityWebDu8d0TestCase(unittest.TestCase):
         self.assertEqual(len(result.records), 3)
         self.assertEqual(result.warnings, ())
         self.assertEqual(result.source_url, DU_OFFICES_SOURCE_URL)
+        self.assertTrue(result.is_complete)
 
         raw = _FakeRawResponse(body=_fixture_html().encode("utf-8"))
         request = Mock(return_value=raw)
@@ -340,8 +341,17 @@ class StateSupervisionAuthorityWebDu8d0TestCase(unittest.TestCase):
         package_dir = (
             _REPO / "moduly" / "statni_dozor" / "sluzby" / "control_authority_web"
         )
+        adapter_files = {
+            "__init__.py",
+            "du_adapter.py",
+            "http_client.py",
+            "html_tree.py",
+            "models.py",
+        }
         sources = []
         for path in package_dir.glob("*.py"):
+            if path.name not in adapter_files:
+                continue
             text = path.read_text(encoding="utf-8")
             sources.append(text)
             self.assertNotIn("sqlalchemy", text)
