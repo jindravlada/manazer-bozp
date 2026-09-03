@@ -373,7 +373,6 @@ with patch.object(Path, "home", return_value=_SVC_HOME):
         AUTHORITY_ORIGIN_BUNDLED,
         AUTHORITY_ORIGIN_MANUAL,
         AUTHORITY_ORIGIN_WEB,
-        AUTHORITY_SUGGESTIONS,
         OFFICE_ACTIVE_UNDER_INACTIVE_AUTHORITY_MESSAGE,
         OFFICE_KIND_REGIONAL,
         OFFICE_KIND_TERRITORIAL,
@@ -742,9 +741,9 @@ class StateSupervisionAuthorityCatalogCore8a0ServiceTestCase(unittest.TestCase):
         self.assertNotIn("Qt", service_source)
         editor_source = inspect.getsource(StateSupervisionEditorDialog)
         self.assertEqual(editor_source.count("self.tabs.addTab("), 5)
-        self.assertIn("AUTHORITY_SUGGESTIONS", editor_source)
-        self.assertIn("ico_edit", editor_source)
-        self.assertIn("LABEL_AUTHORITY_ICO", editor_source)
+        self.assertNotIn("AUTHORITY_SUGGESTIONS", editor_source)
+        self.assertNotIn("ico_edit", editor_source)
+        self.assertNotIn("LABEL_AUTHORITY_ICO", editor_source)
 
         record = state_supervision_service.create_supervision(
             authority_name=f"OIP {self.marker}",
@@ -768,9 +767,8 @@ class StateSupervisionAuthorityCatalogCore8a0ServiceTestCase(unittest.TestCase):
             ],
         )
         self.assertTrue(hasattr(dialog, "authority_combo"))
-        self.assertTrue(hasattr(dialog, "ico_edit"))
-        self.assertFalse(hasattr(dialog, "office_combo"))
-        self.assertEqual(list(AUTHORITY_SUGGESTIONS)[0], "Obvodní báňský úřad (OBÚ)")
+        self.assertTrue(hasattr(dialog, "office_combo"))
+        self.assertFalse(hasattr(dialog, "ico_edit"))
         dialog.close()
         reopened = state_supervision_service.get_supervision(record.id)
         self.assertEqual(reopened.authority_ico, "11112222")

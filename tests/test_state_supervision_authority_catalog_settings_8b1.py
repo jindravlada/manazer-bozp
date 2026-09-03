@@ -76,7 +76,6 @@ from moduly.statni_dozor.constants import (
     AUTHORITY_ORIGIN_BUNDLED,
     AUTHORITY_ORIGIN_MANUAL,
     AUTHORITY_ORIGIN_WEB,
-    AUTHORITY_SUGGESTIONS,
     CATALOG_FILTER_EMPTY_TEXT,
     CATALOG_LOAD_ERROR_TEXT,
     CATALOG_NEW_AUTHORITY_LABEL,
@@ -476,7 +475,7 @@ class StateSupervisionAuthorityCatalogSettings8b1TestCase(unittest.TestCase):
 
         editor_source = inspect.getsource(StateSupervisionEditorDialog)
         self.assertEqual(editor_source.count("self.tabs.addTab("), 5)
-        self.assertIn("AUTHORITY_SUGGESTIONS", editor_source)
+        self.assertNotIn("AUTHORITY_SUGGESTIONS", editor_source)
         record = state_supervision_service.create_supervision(
             authority_name=f"OIP {self.marker}",
             authority_ico="99887766",
@@ -493,9 +492,8 @@ class StateSupervisionAuthorityCatalogSettings8b1TestCase(unittest.TestCase):
                 TAB_ATTACHMENTS,
             ],
         )
-        self.assertTrue(hasattr(dialog, "ico_edit"))
-        self.assertFalse(hasattr(dialog, "office_combo"))
-        self.assertEqual(list(AUTHORITY_SUGGESTIONS)[0], "Obvodní báňský úřad (OBÚ)")
+        self.assertTrue(hasattr(dialog, "office_combo"))
+        self.assertFalse(hasattr(dialog, "ico_edit"))
         dialog.close()
         reopened = state_supervision_service.get_supervision(record.id)
         self.assertEqual(reopened.authority_ico, "99887766")

@@ -219,14 +219,6 @@ TAB_COURSE = "Průběh kontroly"
 TAB_CONCLUSION = "Závěr a opatření"
 TAB_ATTACHMENTS = "Přílohy"
 
-AUTHORITY_SUGGESTIONS: tuple[str, ...] = (
-    "Obvodní báňský úřad (OBÚ)",
-    "Oblastní inspektorát práce (OIP)",
-    "Krajská hygienická stanice (KHS)",
-    "Hasičský záchranný sbor (HZS)",
-    "Drážní úřad (DÚ)",
-)
-
 AUTHORITY_REQUIRED_MESSAGE = "Není vyplněn kontrolní orgán."
 ENDED_BEFORE_STARTED_MESSAGE = (
     "Datum a čas ukončení nesmí být dříve než datum a čas zahájení."
@@ -275,7 +267,8 @@ RESULT_SUGGESTIONS: tuple[str, ...] = (
 
 LABEL_AUTHORITY = "Kontrolní orgán"
 LABEL_AUTHORITY_ICO = "IČ"
-LABEL_AUTHORITY_ADDRESS = "Adresa kontrolního orgánu"
+LABEL_AUTHORITY_ADDRESS = "Adresa"
+LABEL_AUTHORITY_OFFICE = "Příslušné pracoviště"
 LABEL_WORKPLACE = "Provoz / pracoviště"
 LABEL_STATUS = "Stav kontroly"
 LABEL_NOTIFICATION_METHOD = "Způsob ohlášení"
@@ -696,6 +689,10 @@ CATALOG_FILTER_EMPTY_TEXT = (
     "Zadanému hledání neodpovídá žádný kontrolní orgán ani příslušné pracoviště."
 )
 CATALOG_LOAD_ERROR_TEXT = "Katalog kontrolních orgánů se nepodařilo načíst."
+CATALOG_UNAVAILABLE_EDITOR_TEXT = (
+    "Katalog kontrolních orgánů není dostupný. "
+    "Orgán i pracoviště lze zadat ručně."
+)
 CATALOG_REFRESH_AFTER_SAVE_MESSAGE = (
     "Záznam je uložený, ale přehled se nepodařilo obnovit."
 )

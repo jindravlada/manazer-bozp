@@ -55,7 +55,6 @@ with patch.object(Path, "home", return_value=_TMP):
         ACTION_NEW,
         ACTION_SAVE_AND_CLOSE,
         AUTHORITY_REQUIRED_MESSAGE,
-        AUTHORITY_SUGGESTIONS,
         COL_STATUS,
         DEFAULT_STATUS,
         DIALOG_TITLE_NEW,
@@ -203,7 +202,7 @@ class StateSupervisionEditor2b1TestCase(unittest.TestCase):
         self.assertIn(created_id, self._visible_ids(tab))
 
         def edit_via_editor(dialog):
-            dialog.ico_edit.setText("12345678")
+            dialog.address_edit.setText("Nová adresa")
             self._save(dialog)
             return QDialog.DialogCode.Accepted
 
@@ -215,7 +214,8 @@ class StateSupervisionEditor2b1TestCase(unittest.TestCase):
 
         self.assertEqual(tab.table.selected_supervision_id(), created_id)
         loaded = state_supervision_service.get_supervision(created_id)
-        self.assertEqual(loaded.authority_ico, "12345678")
+        self.assertEqual(loaded.authority_address, "Nová adresa")
+        self.assertIsNone(loaded.authority_ico)
         tab.close()
 
     def test_03_new_default_status_and_required_authority(self) -> None:
@@ -303,7 +303,8 @@ class StateSupervisionEditor2b1TestCase(unittest.TestCase):
         self.assertFalse(dialog._editor.is_dirty())
         self.assertFalse(dialog._editor.save_button.isEnabled())
         self.assertEqual(dialog.authority_combo.currentText(), record.authority_name)
-        self.assertEqual(dialog.ico_edit.text(), "87654321")
+        self.assertFalse(hasattr(dialog, "ico_edit"))
+        self.assertEqual(dialog.office_combo.currentText(), "")
         self.assertEqual(dialog.address_edit.text(), "Praha 1")
         self.assertEqual(dialog.workplace_selector.current_workplace_id(), self.workplace.id)
         self.assertEqual(dialog.status_combo.currentData(), STATUS_IN_PROGRESS)
@@ -334,6 +335,7 @@ class StateSupervisionEditor2b1TestCase(unittest.TestCase):
         self.assertEqual(reopened.file_number_edit.text(), "ČJ-uloženo")
         loaded = state_supervision_service.get_supervision(record.id)
         self.assertEqual(loaded.subject, "Předmět mimo tento krok")
+        self.assertEqual(loaded.authority_ico, "87654321")
         self.assertIsNone(loaded.closed_at)
         reopened.close()
 
@@ -439,13 +441,12 @@ class StateSupervisionEditor2b1TestCase(unittest.TestCase):
         ):
             self.assertIn(method, method_codes)
 
-        for suggestion in AUTHORITY_SUGGESTIONS:
-            self.assertGreaterEqual(dialog.authority_combo.findText(suggestion), 0)
         self.assertIsInstance(dialog.workplace_selector, WorkplaceSelector)
         self.assertTrue(dialog.authority_combo.isEditable())
+        self.assertTrue(dialog.office_combo.isEditable())
+        self.assertGreaterEqual(dialog.authority_combo.count(), 1)
 
         dialog.authority_combo.setCurrentText("OIP Praha – oblastní inspektorát")
-        dialog.ico_edit.setText("00012345")
         dialog.address_edit.setText("Kolbenova 1, Praha")
         dialog.workplace_selector.set_workplace_id(self.workplace.id)
         dialog.notification_method_combo.setCurrentIndex(phone_index)
@@ -457,7 +458,7 @@ class StateSupervisionEditor2b1TestCase(unittest.TestCase):
         self.assertTrue(self._save(dialog))
         loaded = state_supervision_service.get_supervision(dialog.supervision_id)
         self.assertEqual(loaded.authority_name, "OIP Praha – oblastní inspektorát")
-        self.assertEqual(loaded.authority_ico, "00012345")
+        self.assertIsNone(loaded.authority_ico)
         self.assertEqual(loaded.authority_address, "Kolbenova 1, Praha")
         self.assertEqual(loaded.workplace_id, self.workplace.id)
         self.assertEqual(loaded.workplace_name_snapshot, self.workplace.name)

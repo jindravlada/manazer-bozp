@@ -445,7 +445,6 @@ with patch.object(Path, "home", return_value=_SVC_HOME):
         AUTHORITY_CATALOG_SEED_URL_INVALID_MESSAGE,
         AUTHORITY_ORIGIN_BUNDLED,
         AUTHORITY_ORIGIN_MANUAL,
-        AUTHORITY_SUGGESTIONS,
         OFFICE_KIND_REGIONAL,
         TAB_ANNOUNCEMENT,
         TAB_ATTACHMENTS,
@@ -699,8 +698,8 @@ class StateSupervisionAuthorityCatalogSeed8a1ImportTestCase(unittest.TestCase):
     def test_10_isolation_editor_settings_dashboard(self) -> None:
         editor_source = inspect.getsource(StateSupervisionEditorDialog)
         self.assertEqual(editor_source.count("self.tabs.addTab("), 5)
-        self.assertIn("AUTHORITY_SUGGESTIONS", editor_source)
-        self.assertIn("ico_edit", editor_source)
+        self.assertNotIn("AUTHORITY_SUGGESTIONS", editor_source)
+        self.assertNotIn("ico_edit", editor_source)
         record = state_supervision_service.create_supervision(
             authority_name=f"OIP {self.marker}",
             authority_ico="11112222",
@@ -720,9 +719,8 @@ class StateSupervisionAuthorityCatalogSeed8a1ImportTestCase(unittest.TestCase):
             ],
         )
         self.assertTrue(hasattr(dialog, "authority_combo"))
-        self.assertTrue(hasattr(dialog, "ico_edit"))
-        self.assertFalse(hasattr(dialog, "office_combo"))
-        self.assertEqual(list(AUTHORITY_SUGGESTIONS)[0], "Obvodní báňský úřad (OBÚ)")
+        self.assertTrue(hasattr(dialog, "office_combo"))
+        self.assertFalse(hasattr(dialog, "ico_edit"))
         dialog.close()
         reopened = state_supervision_service.get_supervision(record.id)
         self.assertEqual(reopened.authority_ico, "11112222")

@@ -66,7 +66,7 @@ from moduly.statni_dozor.constants import (
     ACTION_REMOVE,
     ACTION_SAVE_AND_CLOSE,
     AUTHORITY_REQUIRED_MESSAGE,
-    AUTHORITY_SUGGESTIONS,
+    CATALOG_UNAVAILABLE_EDITOR_TEXT,
     CLOSED_AT_REQUIRED_MESSAGE,
     CLOSED_BEFORE_ENDED_MESSAGE,
     DEFAULT_STATUS,
@@ -117,7 +117,7 @@ from moduly.statni_dozor.constants import (
     LABEL_AUTHORITY,
     LABEL_AUTHORITY_ADDRESS,
     LABEL_AUTHORITY_CONFIRMATION_AT,
-    LABEL_AUTHORITY_ICO,
+    LABEL_AUTHORITY_OFFICE,
     LABEL_CLOSED_AT,
     LABEL_COMPLETION_EVIDENCE_SENT_AT,
     LABEL_ENDED_AT,
@@ -155,6 +155,7 @@ from moduly.statni_dozor.constants import (
     SAVE_ERROR_MESSAGE,
     WORKSPACE_REFRESH_FAILED_MESSAGE,
     MODULE_NAME,
+    OFFICE_CATALOG_TOOLTIP,
     STATE_SUPERVISION_FINDING_TYPE_LABELS,
     STATE_SUPERVISION_NOTIFICATION_METHOD_EDITOR_LABELS,
     STATE_SUPERVISION_NOTIFICATION_METHOD_ORDER,
@@ -210,6 +211,14 @@ from moduly.statni_dozor.sluzby.state_supervision_service import (
 from moduly.statni_dozor.sluzby.state_supervision_timeline_item_service import (
     state_supervision_timeline_item_service,
 )
+from moduly.statni_dozor.sluzby.control_authority_catalog_service import (
+    control_authority_catalog_service,
+)
+from moduly.statni_dozor.ui.control_authority_selector import (
+    ControlAuthorityOfficeSelector,
+    ControlAuthoritySelector,
+    authority_display_label,
+)
 from moduly.statni_dozor.ui.state_supervision_attachment_staging_widget import (
     StateSupervisionAttachmentStagingWidget,
 )
@@ -231,8 +240,10 @@ logger = logging.getLogger(__name__)
 
 _EDITOR_FIELDS = (
     "status",
-    "authority_ico",
     "authority_name",
+    "authority_id",
+    "authority_office_id",
+    "authority_office_name_snapshot",
     "authority_address",
     "workplace_id",
     "workplace_name_snapshot",
@@ -465,6 +476,13 @@ class StateSupervisionEditorDialog(QDialog):
         self._participant_drafts: list[StateSupervisionParticipantDraft] = []
         self._attachment_staging = AttachmentStagingState()
         self._finding_task_busy = False
+        self._authority_id: int | None = None
+        self._authority_name = ""
+        self._office_id: int | None = None
+        self._office_name: str | None = None
+        self._last_catalog_office_address: str | None = None
+        self._authority_sync = False
+        self._catalog_available = True
 
         if supervision_id is not None:
             self._record = state_supervision_service.get_supervision(supervision_id)
@@ -525,6 +543,10 @@ class StateSupervisionEditorDialog(QDialog):
         self._apply_target_tab(target_tab)
         self._focus_projection_child(focus_kind, focus_child_id)
         self._editor.capture_baseline()
+        self.authority_combo.currentIndexChanged.connect(self._on_authority_user_change)
+        self.authority_combo.currentTextChanged.connect(self._on_authority_user_change)
+        self.office_combo.currentIndexChanged.connect(self._on_office_user_change)
+        self.office_combo.currentTextChanged.connect(self._on_office_user_change)
 
     @property
     def saved(self) -> bool:
@@ -602,12 +624,19 @@ class StateSupervisionEditorDialog(QDialog):
 
     def _build_header(self) -> QWidget:
         host = QWidget()
-        form = QFormLayout(host)
+        layout = QVBoxLayout(host)
+        layout.setContentsMargins(0, 0, 0, 0)
+        form = QFormLayout()
         form.setContentsMargins(0, 0, 0, 0)
+        form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
 
-        self.authority_combo = SearchComboBox(values=list(AUTHORITY_SUGGESTIONS))
-        self.authority_combo.setCurrentText("")
-        self.ico_edit = QLineEdit()
+        self.catalog_warning_label = QLabel(CATALOG_UNAVAILABLE_EDITOR_TEXT)
+        self.catalog_warning_label.setWordWrap(True)
+        self.catalog_warning_label.hide()
+
+        self.authority_combo = ControlAuthoritySelector()
+        self.office_combo = ControlAuthorityOfficeSelector()
+        set_widget_tooltip(self.office_combo, OFFICE_CATALOG_TOOLTIP)
         self.address_edit = QLineEdit()
         self.workplace_selector = WorkplaceSelector(include_empty=True)
         self.status_combo = QComboBox()
@@ -615,11 +644,29 @@ class StateSupervisionEditorDialog(QDialog):
             self.status_combo.addItem(STATE_SUPERVISION_STATUS_LABELS[status], status)
         self._set_combo_data(self.status_combo, DEFAULT_STATUS)
 
+        self.authority_combo.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
+        self.office_combo.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
+        self.address_edit.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+        )
+
         form.addRow(f"{LABEL_AUTHORITY}:", self.authority_combo)
-        form.addRow(f"{LABEL_AUTHORITY_ICO}:", self.ico_edit)
+        form.addRow(f"{LABEL_AUTHORITY_OFFICE}:", self.office_combo)
         form.addRow(f"{LABEL_AUTHORITY_ADDRESS}:", self.address_edit)
         form.addRow(f"{LABEL_WORKPLACE}:", self.workplace_selector)
         form.addRow(f"{LABEL_STATUS}:", self.status_combo)
+
+        self._catalog_available = self.authority_combo.reload()
+        if not self._catalog_available:
+            self.catalog_warning_label.show()
+
+        layout.addWidget(self.catalog_warning_label)
+        layout.addLayout(form)
+        host.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
         return host
 
     def _build_announcement_tab(self) -> QWidget:
@@ -1143,6 +1190,147 @@ class StateSupervisionEditorDialog(QDialog):
         index = combo.findData(value)
         combo.setCurrentIndex(index if index >= 0 else 0)
 
+    def _lookup_catalog_authority(self, authority_id: int | None):
+        if authority_id is None:
+            return None
+        record = self.authority_combo.record_by_id(authority_id)
+        if record is not None:
+            return record
+        try:
+            return control_authority_catalog_service.get_authority(int(authority_id))
+        except Exception:
+            logger.exception("Načtení kontrolního orgánu z katalogu v editoru selhalo.")
+            self._mark_catalog_unavailable()
+            return None
+
+    def _lookup_catalog_office(self, office_id: int | None):
+        if office_id is None:
+            return None
+        record = self.office_combo.record_by_id(office_id)
+        if record is not None:
+            return record
+        try:
+            return control_authority_catalog_service.get_office(int(office_id))
+        except Exception:
+            logger.exception(
+                "Načtení příslušného pracoviště z katalogu v editoru selhalo."
+            )
+            self._mark_catalog_unavailable()
+            return None
+
+    def _mark_catalog_unavailable(self) -> None:
+        self._catalog_available = False
+        self.catalog_warning_label.show()
+
+    def _maybe_clear_catalog_address(self, previous_catalog_address: str | None) -> None:
+        previous = str(previous_catalog_address or "").strip()
+        if not previous:
+            return
+        if self.address_edit.text().strip() == previous:
+            self.address_edit.clear()
+
+    def _clear_office_working_state(self, *, apply_address_rule: bool) -> None:
+        previous_address = self._last_catalog_office_address
+        self._office_id = None
+        self._office_name = None
+        self._last_catalog_office_address = None
+        self.office_combo.setCurrentText("")
+        if apply_address_rule:
+            self._maybe_clear_catalog_address(previous_address)
+
+    def _apply_catalog_office(self, office) -> None:
+        self._office_id = int(office.id)
+        self._office_name = str(office.name or "").strip() or None
+        address = str(office.address or "").strip()
+        self.address_edit.setText(address)
+        self._last_catalog_office_address = address or None
+        parent = self._lookup_catalog_authority(
+            office.authority_id
+            if getattr(office, "authority_id", None)
+            else self._authority_id
+        )
+        if parent is not None:
+            self._authority_id = int(parent.id)
+            self._authority_name = str(parent.name or "").strip()
+
+    def _apply_authority_change(self, authority_id: int | None, name: str) -> None:
+        previous_office_address = self._last_catalog_office_address
+        self._authority_id = int(authority_id) if authority_id else None
+        self._authority_name = str(name or "").strip()
+        self._authority_sync = True
+        try:
+            office_ok = self.office_combo.reload(self._authority_id)
+            if not office_ok:
+                self._mark_catalog_unavailable()
+            self._office_id = None
+            self._office_name = None
+            self._last_catalog_office_address = None
+            self.office_combo.setCurrentText("")
+            self._maybe_clear_catalog_address(previous_office_address)
+        finally:
+            self._authority_sync = False
+
+    def _on_authority_user_change(self, *_args) -> None:
+        if self._authority_sync:
+            return
+        catalog_id = self.authority_combo.catalog_id_for_current_text()
+        text = self.authority_combo.display_text()
+        if catalog_id is not None:
+            record = self.authority_combo.record_by_id(catalog_id)
+            catalog_name = (
+                str(record.name or "").strip() if record is not None else text
+            )
+            if (
+                catalog_id == self._authority_id
+                and catalog_name == self._authority_name
+            ):
+                return
+            if catalog_id == self._authority_id:
+                self._authority_name = catalog_name
+                self._editor.refresh_dirty()
+                return
+            self._apply_authority_change(catalog_id, catalog_name)
+            self._editor.refresh_dirty()
+            return
+        if not text:
+            if self._authority_id is None and not self._authority_name:
+                return
+            self._apply_authority_change(None, "")
+            self._editor.refresh_dirty()
+            return
+        if text == (self._authority_name or ""):
+            return
+        self._apply_authority_change(None, text)
+        self._editor.refresh_dirty()
+
+    def _on_office_user_change(self, *_args) -> None:
+        if self._authority_sync:
+            return
+        catalog_id = self.office_combo.catalog_id_for_current_text()
+        text = self.office_combo.display_text()
+        if catalog_id is not None:
+            office = self.office_combo.record_by_id(catalog_id)
+            if office is None:
+                return
+            office_name = str(office.name or "").strip()
+            if catalog_id == self._office_id and office_name == (self._office_name or ""):
+                return
+            self._apply_catalog_office(office)
+            self._editor.refresh_dirty()
+            return
+        if not text:
+            if self._office_id is None and not self._office_name:
+                return
+            self._clear_office_working_state(apply_address_rule=True)
+            self._editor.refresh_dirty()
+            return
+        if text == (self._office_name or ""):
+            return
+        self._office_id = None
+        self._office_name = text
+        self._last_catalog_office_address = None
+        self._editor.refresh_dirty()
+
     def _apply_record(self, record: StateSupervision) -> None:
         self._record = record
         self._supervision_id = int(record.id)
@@ -1154,7 +1342,7 @@ class StateSupervisionEditorDialog(QDialog):
 
         blockers = [
             self.authority_combo,
-            self.ico_edit,
+            self.office_combo,
             self.address_edit,
             self.workplace_selector,
             self.status_combo,
@@ -1175,9 +1363,49 @@ class StateSupervisionEditorDialog(QDialog):
         ]
         for widget in blockers:
             widget.blockSignals(True)
+        self._authority_sync = True
         try:
-            self.authority_combo.setCurrentText(str(record.authority_name or ""))
-            self.ico_edit.setText(str(record.authority_ico or ""))
+            self._authority_id = (
+                int(record.authority_id) if record.authority_id else None
+            )
+            self._authority_name = str(record.authority_name or "").strip()
+            self._office_id = (
+                int(record.authority_office_id) if record.authority_office_id else None
+            )
+            snapshot_office = str(record.authority_office_name_snapshot or "").strip()
+            self._office_name = snapshot_office or None
+            self._last_catalog_office_address = None
+
+            catalog_authority = self._lookup_catalog_authority(self._authority_id)
+            if (
+                catalog_authority is not None
+                and bool(catalog_authority.active)
+                and str(catalog_authority.name or "").strip() == self._authority_name
+            ):
+                self.authority_combo.setCurrentText(
+                    authority_display_label(catalog_authority)
+                )
+            else:
+                self.authority_combo.setCurrentText(self._authority_name)
+
+            office_ok = self.office_combo.reload(self._authority_id)
+            if not office_ok:
+                self._mark_catalog_unavailable()
+
+            catalog_office = self._lookup_catalog_office(self._office_id)
+            if catalog_office is not None:
+                catalog_address = str(catalog_office.address or "").strip()
+                if catalog_address:
+                    self._last_catalog_office_address = catalog_address
+            if (
+                catalog_office is not None
+                and bool(catalog_office.active)
+                and str(catalog_office.name or "").strip() == (self._office_name or "")
+            ):
+                self.office_combo.setCurrentText(str(catalog_office.name or ""))
+            else:
+                self.office_combo.setCurrentText(self._office_name or "")
+
             self.address_edit.setText(str(record.authority_address or ""))
             self.workplace_selector.set_workplace_id(
                 record.workplace_id,
@@ -1233,6 +1461,7 @@ class StateSupervisionEditorDialog(QDialog):
             )
             self.closed_at_edit.set_datetime(_normalize_datetime(record.closed_at))
         finally:
+            self._authority_sync = False
             for widget in blockers:
                 widget.blockSignals(False)
 
@@ -1264,8 +1493,10 @@ class StateSupervisionEditorDialog(QDialog):
         status = self.status_combo.currentData() or DEFAULT_STATUS
         method = self.notification_method_combo.currentData()
         return {
-            "authority_name": self.authority_combo.currentText().strip(),
-            "authority_ico": self.ico_edit.text().strip(),
+            "authority_name": self._authority_name,
+            "authority_id": self._authority_id,
+            "authority_office_id": self._office_id,
+            "authority_office_name_snapshot": self._office_name,
             "authority_address": self.address_edit.text().strip(),
             "workplace_id": workplace_id,
             "workplace_name_snapshot": name_snapshot,

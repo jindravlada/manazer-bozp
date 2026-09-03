@@ -416,7 +416,6 @@ with patch.object(Path, "home", return_value=_SVC_HOME):
     from moduly.periodicke_cinnosti.constants import TAB_PERIODIC, TAB_TASKS_MEETINGS
     from moduly.rocni_plan.constants import TAB_YEARLY_PLAN
     from moduly.statni_dozor.constants import (
-        AUTHORITY_SUGGESTIONS,
         TAB_ANNOUNCEMENT,
         TAB_ATTACHMENTS,
         TAB_CONCLUSION,
@@ -631,11 +630,12 @@ class StateSupervisionAuthoritySelectionCore8a2ServiceTestCase(unittest.TestCase
             record.updated_at,
         )
         dialog = StateSupervisionEditorDialog(supervision_id=record.id)
-        self.assertTrue(hasattr(dialog, "ico_edit"))
-        self.assertEqual(dialog.ico_edit.text(), "87654321")
-        self.assertFalse(hasattr(dialog, "office_combo"))
-        self.assertIn("AUTHORITY_SUGGESTIONS", inspect.getsource(StateSupervisionEditorDialog))
-        self.assertEqual(list(AUTHORITY_SUGGESTIONS)[0], "Obvodní báňský úřad (OBÚ)")
+        self.assertFalse(hasattr(dialog, "ico_edit"))
+        self.assertTrue(hasattr(dialog, "office_combo"))
+        self.assertEqual(dialog.office_combo.currentText(), "")
+        self.assertNotIn("AUTHORITY_SUGGESTIONS", inspect.getsource(StateSupervisionEditorDialog))
+        self.assertNotIn("authority_ico", inspect.getsource(StateSupervisionEditorDialog.get_data))
+        self.assertNotIn("ico_edit", inspect.getsource(StateSupervisionEditorDialog.get_snapshot))
         dialog.close()
         reopened = self.service.get_supervision(record.id)
         self.assertEqual(
@@ -671,8 +671,8 @@ class StateSupervisionAuthoritySelectionCore8a2ServiceTestCase(unittest.TestCase
     def test_11_isolation_editor_settings_dashboard_agenda(self) -> None:
         editor_source = inspect.getsource(StateSupervisionEditorDialog)
         self.assertEqual(editor_source.count("self.tabs.addTab("), 5)
-        self.assertIn("AUTHORITY_SUGGESTIONS", editor_source)
-        self.assertIn("ico_edit", editor_source)
+        self.assertNotIn("AUTHORITY_SUGGESTIONS", editor_source)
+        self.assertNotIn("ico_edit", editor_source)
         catalog_source = inspect.getsource(ControlAuthorityCatalogTab)
         self.assertNotIn("Zkontrolovat na webu", catalog_source)
         settings = NastaveniPage()
