@@ -37,6 +37,7 @@ def snapshot_from_office(office, authority_code: str) -> ControlAuthorityOfficeC
         origin=str(office.origin),
         user_edited_at=office.user_edited_at,
         last_checked_at=office.last_checked_at,
+        updated_at=office.updated_at,
     )
 
 

@@ -979,3 +979,42 @@ WEB_CHECK_UNEXPECTED_COUNT_MESSAGE = (
 WEB_CHECK_AUTHORITY_MISMATCH_MESSAGE = (
     "Webový adapter vrátil výsledek jiného kontrolního orgánu."
 )
+
+# Atomické použití vybraných webových změn (STATE-SUPERVISION-AUTHORITY-WEB-APPLY-CORE-8E1)
+WEB_APPLY_ACTION_CREATE = "create"
+WEB_APPLY_ACTION_UPDATE = "update"
+WEB_APPLY_ACTION_DEACTIVATE = "deactivate"
+WEB_APPLY_ACTION_REACTIVATE = "reactivate"
+WEB_APPLY_ACTIONS: frozenset[str] = frozenset(
+    {
+        WEB_APPLY_ACTION_CREATE,
+        WEB_APPLY_ACTION_UPDATE,
+        WEB_APPLY_ACTION_DEACTIVATE,
+        WEB_APPLY_ACTION_REACTIVATE,
+    }
+)
+WEB_APPLY_ERROR_STALE = "stale_preview"
+WEB_APPLY_ERROR_INVALID_ACTION = "invalid_action"
+WEB_APPLY_ERROR_PROTECTED = "protected_unconfirmed"
+WEB_APPLY_ERROR_STATUS = "incompatible_status"
+WEB_APPLY_ERROR_DUPLICATE_SELECTION = "duplicate_selection"
+WEB_APPLY_ERROR_SELECTION = "invalid_selection"
+WEB_APPLY_ERROR_FIELDS = "invalid_selected_fields"
+WEB_APPLY_ERROR_EMPTY_NAME = "empty_remote_name"
+WEB_APPLY_STALE_MESSAGE = (
+    "Katalog se od provedení webové kontroly změnil. Spusťte kontrolu znovu."
+)
+WEB_APPLY_INVALID_ACTION_MESSAGE = "Vybraná akce není povolená."
+WEB_APPLY_PROTECTED_MESSAGE = (
+    "Ručně chráněný záznam nelze změnit bez výslovného potvrzení."
+)
+WEB_APPLY_STATUS_MESSAGE = (
+    "Vybraná akce neodpovídá výsledku webové kontroly."
+)
+WEB_APPLY_DUPLICATE_SELECTION_MESSAGE = "Stejná položka je ve výběru vícekrát."
+WEB_APPLY_SELECTION_MESSAGE = "Výběr neodpovídá výsledku webové kontroly."
+WEB_APPLY_FIELDS_MESSAGE = "Vybraná pole neodpovídají zjištěným změnám."
+WEB_APPLY_EMPTY_FIELDS_MESSAGE = (
+    "Pro aktualizaci musí být vybráno alespoň jedno pole."
+)
+WEB_APPLY_EMPTY_NAME_MESSAGE = "Webový záznam pracoviště musí mít vyplněný název."

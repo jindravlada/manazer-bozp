@@ -54,6 +54,7 @@ class ControlAuthorityOfficeCatalogSnapshot:
     origin: str
     user_edited_at: datetime | None
     last_checked_at: datetime | None
+    updated_at: datetime | None = None
 
 
 @dataclass(frozen=True)

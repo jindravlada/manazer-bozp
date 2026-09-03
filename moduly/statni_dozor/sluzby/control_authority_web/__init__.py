@@ -1,5 +1,12 @@
 """Read-only webové adaptéry katalogu kontrolních orgánů."""
 
+from moduly.statni_dozor.sluzby.control_authority_web.apply import (
+    ControlAuthorityOfficeWebApplySelection,
+    ControlAuthorityWebApplyError,
+    ControlAuthorityWebApplyResult,
+    ControlAuthorityWebApplyService,
+    apply_authority_web_changes,
+)
 from moduly.statni_dozor.sluzby.control_authority_web.catalog_snapshot_service import (
     ControlAuthorityCatalogSnapshotService,
     control_authority_catalog_snapshot_service,
@@ -63,16 +70,21 @@ __all__ = [
     "ControlAuthorityOfficeCatalogSnapshot",
     "ControlAuthorityOfficeDiff",
     "ControlAuthorityOfficeFieldChange",
+    "ControlAuthorityOfficeWebApplySelection",
     "ControlAuthorityOfficeWebRecord",
     "ControlAuthorityWebAdapterError",
     "ControlAuthorityWebAdapterInfo",
     "ControlAuthorityWebAdapterRegistration",
+    "ControlAuthorityWebApplyError",
+    "ControlAuthorityWebApplyResult",
+    "ControlAuthorityWebApplyService",
     "ControlAuthorityWebCheckError",
     "ControlAuthorityWebCheckResult",
     "ControlAuthorityWebCheckService",
     "ControlAuthorityWebDiffError",
     "ControlAuthorityWebDiffResult",
     "ControlAuthorityWebFetchResult",
+    "apply_authority_web_changes",
     "check_authority_web",
     "control_authority_catalog_snapshot_service",
     "diff_control_authority_offices",

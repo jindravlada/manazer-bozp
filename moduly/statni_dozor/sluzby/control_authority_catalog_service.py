@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from collections.abc import Mapping
 from datetime import datetime
 from typing import Any
 
@@ -30,12 +31,17 @@ from moduly.statni_dozor.constants import (
     OFFICE_NAME_REQUIRED_MESSAGE,
     OFFICE_NOT_FOUND_MESSAGE,
     OFFICE_ORIGIN_INVALID_MESSAGE,
+    WEB_DIFF_COMPARED_FIELD_SET,
 )
 from moduly.statni_dozor.modely.control_authority import ControlAuthority
 from moduly.statni_dozor.modely.control_authority_office import ControlAuthorityOffice
 from moduly.statni_dozor.repository.control_authority_catalog_repository import (
     ControlAuthorityCatalogRepository,
 )
+
+
+_UNSET = object()
+_OFFICE_FIELD_INVALID_MESSAGE = "Pole pracoviště nelze aktualizovat."
 
 
 class ControlAuthorityCatalogError(ValueError):
@@ -481,6 +487,9 @@ class ControlAuthorityCatalogService:
         external_key: str | None = None,
         source_url: str | None = None,
         last_checked_at: datetime | None = None,
+        field_values: Mapping[str, str | None] | None = None,
+        user_edited_at: Any = _UNSET,
+        active: bool | None = None,
         session: Session | None = None,
     ) -> ControlAuthorityOffice:
         return self._update_office(
@@ -499,6 +508,9 @@ class ControlAuthorityCatalogService:
             external_key=external_key,
             source_url=source_url,
             last_checked_at=last_checked_at,
+            field_values=field_values,
+            user_edited_at=user_edited_at,
+            active=active,
             from_import=True,
             session=session,
         )
@@ -507,12 +519,17 @@ class ControlAuthorityCatalogService:
         self,
         office_id: int,
         *,
+        last_checked_at: datetime | None = None,
+        mark_user_edited: bool = True,
         session: Session | None = None,
     ) -> ControlAuthorityOffice:
         with self.repository.session(session) as (sess, owns):
             record = self._require_office(office_id, session=sess)
             record.active = False
-            record.user_edited_at = datetime.now()
+            if mark_user_edited:
+                record.user_edited_at = datetime.now()
+            if last_checked_at is not None:
+                record.last_checked_at = last_checked_at
             record.updated_at = datetime.now()
             saved = self.repository.update_office(record, session=sess)
             if owns:
@@ -525,6 +542,8 @@ class ControlAuthorityCatalogService:
         self,
         office_id: int,
         *,
+        last_checked_at: datetime | None = None,
+        mark_user_edited: bool = True,
         session: Session | None = None,
     ) -> ControlAuthorityOffice:
         with self.repository.session(session) as (sess, owns):
@@ -535,7 +554,10 @@ class ControlAuthorityCatalogService:
                     OFFICE_ACTIVE_UNDER_INACTIVE_AUTHORITY_MESSAGE
                 )
             record.active = True
-            record.user_edited_at = datetime.now()
+            if mark_user_edited:
+                record.user_edited_at = datetime.now()
+            if last_checked_at is not None:
+                record.last_checked_at = last_checked_at
             record.updated_at = datetime.now()
             saved = self.repository.update_office(record, session=sess)
             if owns:
@@ -770,6 +792,9 @@ class ControlAuthorityCatalogService:
         from_import: bool,
         origin: str | None = None,
         last_checked_at: datetime | None = None,
+        field_values: Mapping[str, str | None] | None = None,
+        user_edited_at: Any = _UNSET,
+        active: bool | None = None,
         session: Session | None = None,
     ) -> ControlAuthorityOffice:
         with self.repository.session(session) as (sess, owns):
@@ -811,6 +836,14 @@ class ControlAuthorityCatalogService:
                 record.external_key = key
             if source_url is not None:
                 record.source_url = _blank_to_none(source_url)
+            if field_values:
+                self._apply_office_field_values(record, field_values)
+            if active is not None:
+                if bool(active) and not parent.active:
+                    raise ControlAuthorityCatalogError(
+                        OFFICE_ACTIVE_UNDER_INACTIVE_AUTHORITY_MESSAGE
+                    )
+                record.active = bool(active)
             if from_import:
                 if origin is not None:
                     record.origin = _require_origin(
@@ -820,6 +853,8 @@ class ControlAuthorityCatalogService:
                     )
                 if last_checked_at is not None:
                     record.last_checked_at = last_checked_at
+                if user_edited_at is not _UNSET:
+                    record.user_edited_at = user_edited_at
             else:
                 record.origin = AUTHORITY_ORIGIN_MANUAL
                 record.user_edited_at = datetime.now()
@@ -835,6 +870,21 @@ class ControlAuthorityCatalogService:
                 sess.refresh(saved)
                 sess.expunge(saved)
             return saved
+
+    def _apply_office_field_values(
+        self,
+        record: ControlAuthorityOffice,
+        field_values: Mapping[str, str | None],
+    ) -> None:
+        for field, value in field_values.items():
+            if field not in WEB_DIFF_COMPARED_FIELD_SET:
+                raise ControlAuthorityCatalogError(_OFFICE_FIELD_INVALID_MESSAGE)
+            if field == "name":
+                record.name = _require_name(value, OFFICE_NAME_REQUIRED_MESSAGE)
+            elif field == "office_kind":
+                record.office_kind = _optional_office_kind(value)
+            else:
+                setattr(record, field, _blank_to_none(value))
 
     def _require_authority(
         self,
