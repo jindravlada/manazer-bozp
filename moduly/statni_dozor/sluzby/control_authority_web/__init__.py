@@ -4,6 +4,10 @@ from moduly.statni_dozor.sluzby.control_authority_web.catalog_snapshot_service i
     ControlAuthorityCatalogSnapshotService,
     control_authority_catalog_snapshot_service,
 )
+from moduly.statni_dozor.sluzby.control_authority_web.cbu_adapter import (
+    fetch_cbu_offices,
+    parse_cbu_office_html,
+)
 from moduly.statni_dozor.sluzby.control_authority_web.diff import (
     diff_control_authority_offices,
 )
@@ -47,8 +51,10 @@ __all__ = [
     "ControlAuthorityWebFetchResult",
     "control_authority_catalog_snapshot_service",
     "diff_control_authority_offices",
+    "fetch_cbu_offices",
     "fetch_du_offices",
     "fetch_suip_offices",
+    "parse_cbu_office_html",
     "parse_du_offices_html",
     "parse_suip_hub_html",
     "parse_suip_office_html",

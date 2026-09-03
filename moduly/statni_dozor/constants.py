@@ -736,7 +736,7 @@ AUTHORITY_CATALOG_SEED_COLLISION_MESSAGE = (
     "protože technický klíč koliduje s existujícím záznamem."
 )
 
-# Webové adaptéry kontrolních orgánů (8D0 DÚ, 8D2 SÚIP)
+# Webové adaptéry kontrolních orgánů (8D0 DÚ, 8D2 SÚIP, 8D3 ČBÚ)
 DU_AUTHORITY_CODE = "du"
 DU_OFFICES_SOURCE_URL = "https://du.gov.cz/kontakty/"
 DU_OFFICE_EXTERNAL_KEYS: tuple[str, ...] = ("du:praha", "du:plzen", "du:olomouc")
@@ -763,6 +763,27 @@ SUIP_OFFICE_EXTERNAL_KEYS: tuple[str, ...] = (
     "suip:oip-moravskoslezsky-olomoucky",
 )
 SUIP_MAX_HTTP_REQUESTS = 9
+CBU_AUTHORITY_CODE = "cbu"
+CBU_OFFICES_SOURCE_URL = "https://cbu.gov.cz/obu"
+CBU_OBU_CODES: tuple[str, ...] = (
+    "praha",
+    "plzen",
+    "sokolov",
+    "most",
+    "hk",
+    "brno",
+    "ostrava",
+)
+CBU_OFFICE_EXTERNAL_KEYS: tuple[str, ...] = (
+    "cbu:obu-praha",
+    "cbu:obu-plzen",
+    "cbu:obu-sokolov",
+    "cbu:obu-most",
+    "cbu:obu-hradec-kralove",
+    "cbu:obu-brno",
+    "cbu:obu-ostrava",
+)
+CBU_MAX_HTTP_REQUESTS = 7
 WEB_ADAPTER_ERROR_NETWORK = "network"
 WEB_ADAPTER_ERROR_TIMEOUT = "timeout"
 WEB_ADAPTER_ERROR_HTTP = "http"
