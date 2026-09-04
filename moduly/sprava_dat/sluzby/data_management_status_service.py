@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from core.backup.completeness import VERDICT_COMPLETE_WITH_LIMITATIONS, VERDICT_INCOMPLETE
 from core.backup.constants import INTEGRITY_VALID_WITH_WARNINGS
@@ -253,10 +253,16 @@ class DataManagementStatusService:
     def _parse_timestamp(value: str) -> datetime | None:
         if not value:
             return None
+        text = str(value).strip()
+        if text.endswith("Z"):
+            text = text[:-1] + "+00:00"
         try:
-            return datetime.fromisoformat(value)
+            parsed = datetime.fromisoformat(text)
         except ValueError:
             return None
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=datetime.now().astimezone().tzinfo)
+        return parsed.astimezone(timezone.utc)
 
     @staticmethod
     def _transfer_status_text(

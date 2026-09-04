@@ -139,6 +139,16 @@ class PreimportBackupStatusTestCase(unittest.TestCase):
             "04.09.2026 10:00:00",
         )
 
+    def test_mixed_naive_and_aware_timestamps_do_not_crash(self) -> None:
+        _save_verified_backup(created_at="2026-09-04T10:00:00+02:00")
+        _save_registry_import(created_at="2026-07-10T12:00:00")
+        _save_consistent_diagnostic()
+
+        status, warnings = data_management_status_service.compute_status()
+
+        self.assertEqual(status, "V pořádku")
+        self.assertEqual(warnings, [])
+
     def test_older_complete_backup_keeps_attention(self) -> None:
         _save_verified_backup(created_at="2026-07-01T08:00:00")
         _save_registry_import()
