@@ -1667,6 +1667,9 @@ class AiPeerReviewWidget(QWidget):
             HazardCatalogPackageIncorporateError,
             hazard_catalog_package_incorporate_service,
         )
+        from moduly.rizeni_rizik.ui.hazard_catalog_ai_measure_recommendation_edit_dialog import (
+            HazardCatalogAiMeasureRecommendationEditDialog,
+        )
         from moduly.rizeni_rizik.ui.hazard_catalog_ai_package_edit_dialog import (
             HazardCatalogAiPackageEditDialog,
         )
@@ -1680,6 +1683,7 @@ class AiPeerReviewWidget(QWidget):
             )
             return
 
+        review_id: int | None = None
         if self._package_session is not None:
             item = self._package_session.get_package(record_id)
             if item is None:
@@ -1691,20 +1695,8 @@ class AiPeerReviewWidget(QWidget):
                 self._load_proposals_table()
                 return
             package = item.package
-            if package.is_measure_recommendation:
-                QMessageBox.information(
-                    self,
-                    AI_PEER_REVIEW_DIALOG_TITLE,
-                    "Doporučení k opatřením nelze editovat jako balík události. "
-                    "Převzít nebo zamítnout lze přímo ze seznamu.",
-                )
-                return
-            dialog = HazardCatalogAiPackageEditDialog(
-                self,
-                package=package,
-                package_record_id=item.db_id or 0,
-                review_id=item.review_id,
-            )
+            review_id = item.review_id
+            package_record_id = item.db_id or 0
         else:
             record = ai_peer_review_service.package_repository.get_by_id(record_id)
             if record is None:
@@ -1716,24 +1708,30 @@ class AiPeerReviewWidget(QWidget):
                 self._load_proposals_table()
                 return
             package = ai_peer_review_service.package_repository.package_from_record(record)
-            if package.is_measure_recommendation:
-                QMessageBox.information(
-                    self,
-                    AI_PEER_REVIEW_DIALOG_TITLE,
-                    "Doporučení k opatřením nelze editovat jako balík události. "
-                    "Převzít nebo zamítnout lze přímo ze seznamu.",
-                )
+            review_id = record.ai_peer_review_id
+            package_record_id = record_id
+
+        if package.is_measure_recommendation:
+            dialog = HazardCatalogAiMeasureRecommendationEditDialog(
+                self,
+                package=package,
+                package_record_id=package_record_id,
+                review_id=review_id,
+            )
+            if not dialog.exec():
                 return
+        else:
             dialog = HazardCatalogAiPackageEditDialog(
                 self,
                 package=package,
-                package_record_id=record_id,
+                package_record_id=package_record_id,
+                review_id=review_id,
             )
+            from core.widgets.dialog_utils import exec_maximized
 
-        from core.widgets.dialog_utils import exec_maximized
+            if not exec_maximized(dialog):
+                return
 
-        if not exec_maximized(dialog):
-            return
         updated = dialog.get_package()
         if updated is None:
             return

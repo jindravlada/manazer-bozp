@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-04 – RISK-AI-MEASURE-RECOMMENDATION-EDIT-1
+
+**Co se povedlo:** Doporučení k opatřením jde upravit před zapracováním, aniž by se otevíral editor balíku události.
+
+**Co už bychom dnes udělali jinak:** Fronta by od začátku rozlišovala editor podle typu návrhu.
+
+**Co bylo zbytečně složité:** Informační blokace místo editoru.
+
+**Jaké nové pravidlo z toho vzniklo:** Identita a cíl AI návrhu se při úpravě ve frontě nemění.
+
+---
+
 ### 2026-09-04 – AUDIT-PROGRAM-STATEMENTS-ODT-1
 
 **Co se povedlo:** Tisk tvrzení vybrané návštěvy bez zahájení Auditu. Zahájený audit tiskne zmrazený snapshot.

@@ -311,6 +311,11 @@ class CatalogEditorSession:
             raise ValueError("Návrhový balík neexistuje v pracovní session.")
         if item.session_status != SESSION_PACKAGE_PENDING:
             raise ValueError("Upravovat lze pouze balík čekající na odborné posouzení.")
+        if item.package.is_measure_recommendation:
+            package = item.package.with_editable_measure_fields(
+                proposed_text=package.proposed_text,
+                reasoning=package.reasoning,
+            )
         item.package = deepcopy(package)
         item.payload_dirty = True
         self._packages_dirty = True

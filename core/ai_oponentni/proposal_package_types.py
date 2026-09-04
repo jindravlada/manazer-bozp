@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 
 def _optional_int(value: object) -> int | None:
@@ -131,6 +131,21 @@ class AiProposalPackage:
         from core.ai_oponentni.constants import AI_MEASURE_RECOMMENDATION_TYPES
 
         return self.package_type in AI_MEASURE_RECOMMENDATION_TYPES
+
+    def with_editable_measure_fields(
+        self,
+        *,
+        proposed_text: str,
+        reasoning: str,
+    ) -> AiProposalPackage:
+        """Vrátí kopii s upraveným zněním; identita a cíl zůstanou beze změny."""
+        if not self.is_measure_recommendation:
+            raise ValueError("Upravit jako doporučení k opatření lze jen measure_recommendation.")
+        return replace(
+            self,
+            proposed_text=(proposed_text or "").strip(),
+            reasoning=(reasoning or "").strip(),
+        )
 
     @property
     def requires_user_decision(self) -> bool:

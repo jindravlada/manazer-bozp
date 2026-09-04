@@ -186,6 +186,12 @@ class HazardCatalogPackageIncorporateService:
             raise HazardCatalogPackageIncorporateError(
                 "Upravovat lze pouze balík čekající na odborné posouzení.",
             )
+        existing = self.package_repository.package_from_record(record)
+        if existing.is_measure_recommendation:
+            package = existing.with_editable_measure_fields(
+                proposed_text=package.proposed_text,
+                reasoning=package.reasoning,
+            )
         record.package_id = package.package_id
         record.package_type = package.package_type
         record.target_event_export_id = package.target_event_export_id or ""
@@ -513,6 +519,10 @@ class HazardCatalogPackageIncorporateService:
         if package.package_type == AI_MEASURE_REC_NO_CHANGE:
             raise HazardCatalogPackageIncorporateError(
                 "Doporučení „Beze změn“ nelze převzít – nevyžaduje rozhodnutí."
+            )
+        if not (package.proposed_text or "").strip():
+            raise HazardCatalogPackageIncorporateError(
+                "Doporučení musí obsahovat text opatření."
             )
 
         if package.package_type == AI_MEASURE_REC_EDIT_EXISTING:

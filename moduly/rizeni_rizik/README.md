@@ -522,8 +522,8 @@ AI oponentura katalogu jako ucelené návrhové balíky (schema 2.0):
 UI a zapracování návrhových balíků:
 
 - po výběru balíku se zobrazí Detail balíku (událost, posouzení, opatření, právní vazby, zdůvodnění)
-- akce **Upravit balík…**, **Zapracovat balík**, **Zamítnout balík**
-- editor upravuje celý balík najednou (nikoliv izolované objekty)
+- akce **Upravit návrh…**, **Zapracovat balík**, **Zamítnout balík**
+- editor upravuje celý balík události, nebo samostatně doporučení k opatření
 - zapracování probíhá v jedné DB transakci (událost → posouzení → opatření → právní vazby → revize +1 → historie) s rollbackem při chybě
 
 ## Fáze R20b.1
@@ -542,6 +542,14 @@ Zapracování návrhů AI do MASTER obsahu katalogu:
 - hromadné zapracování v jedné transakci se zvýšením Revize o 1
 - historie změn s důvodem „Převzaty návrhy AI“
 - detekce duplicit s volbami Přeskočit / Sloučit / Upravit / Zrušit
+
+## RISK-AI-MEASURE-RECOMMENDATION-EDIT-1
+
+Editace doporučení k opatřením ve frontě AI:
+
+- `proposal_package` otevírá editor balíku události
+- `measure_recommendation` otevírá jednoduchý editor opatření (znění a zdůvodnění)
+- typ návrhu a `target_export_id` nelze změnit; zápis do katalogu až po Zapracovat
 
 ## RISK-REVIEW-1
 
