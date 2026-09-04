@@ -132,6 +132,21 @@ class OdtRichContent:
         return self.plain_text()
 
 
+@dataclass(frozen=True)
+class OdtXmlFragment:
+    """Hotový ODF fragment (např. tabulka) nahrazující odstavec s placeholdérem."""
+
+    xml: str
+
+    def plain_text(self) -> str:
+        text = re.sub(r"<text:line-break\s*/>", "\n", self.xml)
+        text = re.sub(r"<[^>]+>", " ", text)
+        return re.sub(r"\s+", " ", text).strip()
+
+    def __str__(self) -> str:
+        return self.plain_text()
+
+
 class OdtExportEngine:
     """
     Univerzální exportní engine pro ODT šablony.
@@ -183,6 +198,8 @@ class OdtExportEngine:
                 )
                 if value.paragraphs:
                     needs_export_styles = True
+            elif isinstance(value, OdtXmlFragment):
+                normalized_values[key_text] = _ODT_FRAGMENT_PREFIX + str(value.xml or "")
             else:
                 escaped = self._escape_odt_text(value, image_registry)
                 normalized_values[key_text] = escaped

@@ -2,10 +2,12 @@
 
 import traceback
 from datetime import date
+from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog,
+    QFileDialog,
     QFrame,
     QGridLayout,
     QHBoxLayout,
@@ -21,6 +23,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.export import open_export_file
 from core.widgets.dialog_utils import configure_close_push_button, exec_maximized
 from moduly.audity.constants import (
     AUDIT_PROGRAM_ADD_BUTTON,
@@ -29,6 +32,8 @@ from moduly.audity.constants import (
     AUDIT_PROGRAM_CENTER_PANEL_TITLE,
     AUDIT_PROGRAM_DETAIL_ACTIONS_LABEL,
     AUDIT_PROGRAM_DETAIL_STANDARDS_LABEL,
+    AUDIT_PROGRAM_EXPORT_PLAN_BUTTON,
+    AUDIT_PROGRAM_EXPORT_PLAN_DIALOG_TITLE,
     AUDIT_PROGRAM_FINAL_REPORT_BUTTON,
     AUDIT_PROGRAM_PREVIOUS_PROGRAM_LABEL,
     audit_program_distribute_processes_button_label,
@@ -69,6 +74,9 @@ from moduly.audity.constants import (
 )
 from moduly.audity.modely.audit_program import AuditProgram
 from moduly.audity.sluzby.audit_service import audit_service
+from moduly.audity.sluzby.audit_program_plan_export_service import (
+    audit_program_plan_export_service,
+)
 from moduly.audity.sluzby.audit_program_service import (
     AuditProgramCoverage,
     AuditProgramOverview,
@@ -258,16 +266,19 @@ class AuditProgramManagerDialog(QDialog):
             audit_program_distribute_processes_button_label(False)
         )
         self._refresh_overview_btn = QPushButton(AUDIT_PROGRAM_REFRESH_OVERVIEW_BUTTON)
+        self._export_plan_btn = QPushButton(AUDIT_PROGRAM_EXPORT_PLAN_BUTTON)
         self._final_report_btn = QPushButton(AUDIT_PROGRAM_FINAL_REPORT_BUTTON)
         self._generate_visits_btn.clicked.connect(self._generate_visits)
         self._supplement_workplaces_btn.clicked.connect(self._supplement_workplaces)
         self._distribute_processes_btn.clicked.connect(self._distribute_processes)
         self._refresh_overview_btn.clicked.connect(self._refresh_overview)
+        self._export_plan_btn.clicked.connect(self._export_plan)
         self._final_report_btn.clicked.connect(self._open_final_report_dialog)
         actions.addWidget(self._generate_visits_btn)
         actions.addWidget(self._supplement_workplaces_btn)
         actions.addWidget(self._distribute_processes_btn)
         actions.addWidget(self._refresh_overview_btn)
+        actions.addWidget(self._export_plan_btn)
         actions.addWidget(self._final_report_btn)
         card_layout.addLayout(actions)
 
@@ -504,6 +515,44 @@ class AuditProgramManagerDialog(QDialog):
             return
         exec_maximized(ZaverecnaZpravaProgramuAudituDialog(self, program_id=program_id))
 
+    def _export_plan(self) -> None:
+        program_id = self._selected_program_id
+        if program_id is None:
+            return
+        overview = audit_program_service.get_program_overview(program_id)
+        if overview is None or not overview.visits:
+            return
+
+        from core.services.storage_service import storage_service
+
+        storage_service.ensure_structure()
+        default_name = audit_program_plan_export_service.default_filename(program_id)
+        default_dir = storage_service.exports_dir
+        path_str, _ = QFileDialog.getSaveFileName(
+            self,
+            AUDIT_PROGRAM_EXPORT_PLAN_DIALOG_TITLE,
+            str(default_dir / default_name),
+            "Dokument ODT (*.odt)",
+        )
+        if not path_str:
+            return
+
+        try:
+            path = audit_program_plan_export_service.generate_for_program(
+                program_id,
+                Path(path_str),
+            )
+        except Exception as exc:
+            traceback.print_exc()
+            QMessageBox.warning(
+                self,
+                AUDIT_PROGRAM_EXPORT_PLAN_DIALOG_TITLE,
+                f"Plán se nepodařilo exportovat.\n\n{exc}",
+            )
+            return
+
+        open_export_file(path, title=AUDIT_PROGRAM_EXPORT_PLAN_DIALOG_TITLE)
+
     def _on_program_selected(
         self,
         current: QListWidgetItem | None,
@@ -531,7 +580,7 @@ class AuditProgramManagerDialog(QDialog):
 
         self._hint_label.setVisible(False)
         self._detail_card.setVisible(True)
-        self._set_action_buttons_enabled(True)
+        self._set_action_buttons_enabled(True, has_visits=bool(overview.visits))
         self._fill_detail_panel(overview, coverage)
         self._plan_tree.populate(overview)
         self._planned_visits_widget.load_program(program_id)
@@ -977,12 +1026,13 @@ class AuditProgramManagerDialog(QDialog):
             label.setText("")
         self._program_status_badge.setProperty("programStatus", "")
 
-    def _set_action_buttons_enabled(self, enabled: bool) -> None:
+    def _set_action_buttons_enabled(self, enabled: bool, *, has_visits: bool = False) -> None:
         self._edit_program_btn.setEnabled(enabled)
         self._generate_visits_btn.setEnabled(enabled)
         self._supplement_workplaces_btn.setEnabled(enabled)
         self._distribute_processes_btn.setEnabled(enabled)
         self._refresh_overview_btn.setEnabled(enabled)
+        self._export_plan_btn.setEnabled(enabled and has_visits)
         self._final_report_btn.setEnabled(enabled)
 
     def _set_status(self, message: str) -> None:

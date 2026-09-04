@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-04 – AUDIT-PROGRAM-ODT-EXPORT-1
+
+**Co se povedlo:** Manažer auditů umí předložit představenstvu plán programu jako ODT. Harmonogram bere skutečné návštěvy, souhrn procesů skutečná přiřazení, bez zakládání Auditů.
+
+**Co už bychom dnes udělali jinak:** Tabulky plánu rovnou jako ODF fragment se `table:header-rows`, ne jako textový seznam.
+
+**Co bylo zbytečně složité:** Nic. Stačil stávající ODT engine a samostatná šablona.
+
+**Jaké nové pravidlo z toho vzniklo:** Schvalovaný plán programu nesmí obsahovat provozní stav Auditů. Chybějící přiřazení procesů je upozornění, ne důvod k pádu exportu.
+
+---
+
 ### 2026-09-04 – DATA-SUMMARY-PREIMPORT-BACKUP-2
 
 **Co se povedlo:** Chybějící předimportní záloha po úspěšném importu RPP už nesnižuje stav dat, pokud existuje novější ověřená úplná záloha a diagnostika je v pořádku.
