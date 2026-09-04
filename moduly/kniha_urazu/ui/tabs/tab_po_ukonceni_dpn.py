@@ -371,6 +371,25 @@ class TabPoUkonceniDpn(QWidget):
             return
         spin.setValue(value)
 
+    def _build_percent_with_reduction(
+        self, reduction_label: QLabel
+    ) -> tuple[QWidget, NoWheelSpinBox, QLabel]:
+        spin = self._build_percent_spin()
+        caption = QLabel(LABEL_REDUCTION)
+        caption.setObjectName("MutedText")
+        reduction_label.setTextInteractionFlags(
+            Qt.TextInteractionFlag.NoTextInteraction
+        )
+        row = QWidget()
+        layout = QHBoxLayout(row)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(12)
+        layout.addWidget(spin)
+        layout.addWidget(caption)
+        layout.addWidget(reduction_label)
+        layout.addStretch()
+        return row, spin, caption
+
     def _build_responsibility_section(self) -> QGroupBox:
         group = QGroupBox(SECTION_ROZSAH_NAHRADY)
         form = QFormLayout(group)
@@ -381,19 +400,22 @@ class TabPoUkonceniDpn(QWidget):
         hint.setWordWrap(True)
         form.addRow(hint)
 
-        self.proposed_percent = self._build_percent_spin()
         self.proposed_reduction_label = QLabel()
         self.proposed_reduction_label.setObjectName("ProposedReductionLabel")
-        self.recognized_percent = self._build_percent_spin()
         self.recognized_reduction_label = QLabel()
         self.recognized_reduction_label.setObjectName("RecognizedReductionLabel")
+
+        proposed_row, self.proposed_percent, self.proposed_reduction_caption = (
+            self._build_percent_with_reduction(self.proposed_reduction_label)
+        )
+        recognized_row, self.recognized_percent, self.recognized_reduction_caption = (
+            self._build_percent_with_reduction(self.recognized_reduction_label)
+        )
         self.responsibility_note = QTextEdit()
         self.responsibility_note.setFixedHeight(60)
 
-        form.addRow(LABEL_PROPOSED_COMPENSATION, self.proposed_percent)
-        form.addRow(LABEL_REDUCTION, self.proposed_reduction_label)
-        form.addRow(LABEL_RECOGNIZED_COMPENSATION, self.recognized_percent)
-        form.addRow(LABEL_REDUCTION, self.recognized_reduction_label)
+        form.addRow(LABEL_PROPOSED_COMPENSATION, proposed_row)
+        form.addRow(LABEL_RECOGNIZED_COMPENSATION, recognized_row)
         form.addRow(LABEL_COMPENSATION_NOTE, self.responsibility_note)
 
         self.proposed_percent.valueChanged.connect(self._refresh_reduction_display)
@@ -412,12 +434,12 @@ class TabPoUkonceniDpn(QWidget):
         recognized = self._percent_value(self.recognized_percent)
         self.proposed_reduction_label.setText(self._reduction_text(proposed))
         self.recognized_reduction_label.setText(self._reduction_text(recognized))
-        self._responsibility_form.setRowVisible(
-            self.proposed_reduction_label, proposed is not None
-        )
-        self._responsibility_form.setRowVisible(
-            self.recognized_reduction_label, recognized is not None
-        )
+        show_proposed = proposed is not None
+        show_recognized = recognized is not None
+        self.proposed_reduction_caption.setVisible(show_proposed)
+        self.proposed_reduction_label.setVisible(show_proposed)
+        self.recognized_reduction_caption.setVisible(show_recognized)
+        self.recognized_reduction_label.setVisible(show_recognized)
 
     def set_dpn_ended(self, ended: bool) -> None:
         self._dpn_ended = bool(ended)

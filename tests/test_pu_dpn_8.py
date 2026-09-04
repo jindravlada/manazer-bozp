@@ -138,8 +138,9 @@ class PuDpn8TestCase(unittest.TestCase):
         tab.recognized_percent.setValue(60)
         self.assertEqual(tab.proposed_reduction_label.text(), "0 %")
         self.assertEqual(tab.recognized_reduction_label.text(), "40 %")
-        self.assertTrue(tab._responsibility_form.isRowVisible(tab.proposed_reduction_label))
-        self.assertTrue(tab._responsibility_form.isRowVisible(tab.recognized_reduction_label))
+        self.assertTrue(tab.proposed_reduction_label.isVisibleTo(tab))
+        self.assertTrue(tab.recognized_reduction_label.isVisibleTo(tab))
+        self.assertTrue(tab.proposed_reduction_caption.isVisibleTo(tab))
 
         tab.proposed_percent.setValue(0)
         self.assertEqual(tab.proposed_reduction_label.text(), "100 %")
@@ -148,14 +149,15 @@ class PuDpn8TestCase(unittest.TestCase):
     def test_empty_hides_reduction(self) -> None:
         accident, dialog, tab = self._open()
         self.assertIsNone(tab.get_dpn_employer_responsibility()[RESP_PROPOSED_PERCENT])
-        self.assertFalse(tab._responsibility_form.isRowVisible(tab.proposed_reduction_label))
-        self.assertFalse(tab._responsibility_form.isRowVisible(tab.recognized_reduction_label))
+        self.assertFalse(tab.proposed_reduction_label.isVisibleTo(tab))
+        self.assertFalse(tab.recognized_reduction_label.isVisibleTo(tab))
         self.assertEqual(tab.proposed_reduction_label.text(), "")
         tab.proposed_percent.setValue(60)
-        self.assertTrue(tab._responsibility_form.isRowVisible(tab.proposed_reduction_label))
+        self.assertTrue(tab.proposed_reduction_label.isVisibleTo(tab))
+        self.assertTrue(tab.proposed_reduction_caption.isVisibleTo(tab))
         self.assertEqual(tab.proposed_reduction_label.text(), "40 %")
         tab.proposed_percent.setValue(-1)
-        self.assertFalse(tab._responsibility_form.isRowVisible(tab.proposed_reduction_label))
+        self.assertFalse(tab.proposed_reduction_label.isVisibleTo(tab))
         dialog.close()
 
     def test_old_data_loads_same_values_with_new_labels(self) -> None:
