@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.widgets.no_wheel_guards import NoWheelSpinBox
 from core.widgets.nullable_date_edit import NullableDateEdit
 from moduly.kniha_urazu.sluzby.accident_dpn_care import (
     CARE_EXAM_DATE,
@@ -40,6 +41,15 @@ from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
     normalize_dpn_record_update,
     parse_saved_date,
 )
+from moduly.kniha_urazu.sluzby.accident_dpn_responsibility import (
+    PERCENT_MAX,
+    PERCENT_MIN,
+    RESP_NOTE,
+    RESP_PROPOSED_PERCENT,
+    RESP_RECOGNIZED_PERCENT,
+    empty_dpn_employer_responsibility,
+    normalize_dpn_employer_responsibility,
+)
 
 
 TAB_PO_UKONCENI_DPN = "Po ukončení DPN"
@@ -58,8 +68,6 @@ SECTION_TITLES = (
     SECTION_MIRA_ODPOVEDNOSTI,
 )
 
-SECTION_PLACEHOLDER = "Obsah této sekce bude doplněn v dalších krocích."
-
 OVERVIEW_SOURCE_HINT = (
     "Stav vychází z Ohlašovací povinnosti. Splnění evidujte tam – "
     "tato sekce je jen přehled a stejný úkon se zadává jen jednou."
@@ -69,6 +77,14 @@ EXAM_NO_HEALTH_HINT = (
     "Uvádějte jen, zda a proč byla prohlídka vyžadována. "
     "Diagnózy a jiné zdravotní údaje se sem nezadávají."
 )
+
+RESPONSIBILITY_HINT = (
+    "Navržená míra je stanovisko zaměstnavatele před řešením pojistné události. "
+    "Skutečně uznaná míra je výsledná hodnota použitá při vypořádání. "
+    "Částky odškodnění se zde neevidují."
+)
+
+PERCENT_EMPTY_VALUE = -1
 
 
 class TabPoUkonceniDpn(QWidget):
@@ -107,12 +123,7 @@ class TabPoUkonceniDpn(QWidget):
         self.section_groups.append(care_group)
         sections_layout.addWidget(care_group)
 
-        mira_group = QGroupBox(SECTION_MIRA_ODPOVEDNOSTI)
-        mira_layout = QVBoxLayout(mira_group)
-        placeholder = QLabel(SECTION_PLACEHOLDER)
-        placeholder.setObjectName("MutedText")
-        placeholder.setWordWrap(True)
-        mira_layout.addWidget(placeholder)
+        mira_group = self._build_responsibility_section()
         self.section_groups.append(mira_group)
         sections_layout.addWidget(mira_group)
 
@@ -227,6 +238,49 @@ class TabPoUkonceniDpn(QWidget):
         self.return_mode.currentIndexChanged.connect(self._refresh_care_relevance)
         return group
 
+    def _build_percent_spin(self) -> NoWheelSpinBox:
+        spin = NoWheelSpinBox()
+        spin.setRange(PERCENT_EMPTY_VALUE, PERCENT_MAX)
+        spin.setSpecialValueText(" ")
+        spin.setSuffix(" %")
+        spin.setValue(PERCENT_EMPTY_VALUE)
+        spin.setMaximumWidth(120)
+        return spin
+
+    def _percent_value(self, spin: NoWheelSpinBox) -> int | None:
+        value = spin.value()
+        if value < PERCENT_MIN:
+            return None
+        return value
+
+    def _set_percent_value(self, spin: NoWheelSpinBox, value: int | None) -> None:
+        if value is None:
+            spin.setValue(PERCENT_EMPTY_VALUE)
+            return
+        spin.setValue(value)
+
+    def _build_responsibility_section(self) -> QGroupBox:
+        group = QGroupBox(SECTION_MIRA_ODPOVEDNOSTI)
+        form = QFormLayout(group)
+
+        hint = QLabel(RESPONSIBILITY_HINT)
+        hint.setObjectName("MutedText")
+        hint.setWordWrap(True)
+        form.addRow(hint)
+
+        self.proposed_percent = self._build_percent_spin()
+        self.recognized_percent = self._build_percent_spin()
+        self.responsibility_note = QTextEdit()
+        self.responsibility_note.setFixedHeight(60)
+
+        form.addRow("Navržená míra odpovědnosti zaměstnavatele:", self.proposed_percent)
+        form.addRow(
+            "Skutečně uznaná míra odpovědnosti zaměstnavatele:",
+            self.recognized_percent,
+        )
+        form.addRow("Poznámka k odpovědnosti:", self.responsibility_note)
+        return group
+
     def set_dpn_ended(self, ended: bool) -> None:
         self._dpn_ended = bool(ended)
         self.info_panel.setVisible(not self._dpn_ended)
@@ -329,3 +383,22 @@ class TabPoUkonceniDpn(QWidget):
         self.exam_required_ne.blockSignals(False)
         self.return_mode.blockSignals(False)
         self._refresh_care_relevance()
+
+    def get_dpn_employer_responsibility(self) -> dict:
+        return normalize_dpn_employer_responsibility(
+            {
+                RESP_PROPOSED_PERCENT: self._percent_value(self.proposed_percent),
+                RESP_RECOGNIZED_PERCENT: self._percent_value(self.recognized_percent),
+                RESP_NOTE: self.responsibility_note.toPlainText(),
+            }
+        )
+
+    def load_dpn_employer_responsibility(self, state: dict | None) -> None:
+        data = (
+            normalize_dpn_employer_responsibility(state)
+            if state
+            else empty_dpn_employer_responsibility()
+        )
+        self._set_percent_value(self.proposed_percent, data[RESP_PROPOSED_PERCENT])
+        self._set_percent_value(self.recognized_percent, data[RESP_RECOGNIZED_PERCENT])
+        self.responsibility_note.setPlainText(data[RESP_NOTE])

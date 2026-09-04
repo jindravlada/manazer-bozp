@@ -8,6 +8,9 @@ from moduly.kniha_urazu.repository.accident_repository import AccidentRepository
 from moduly.kniha_urazu.sluzby.accident_dpn_care import (
     apply_dpn_care_return_to_saved_data,
 )
+from moduly.kniha_urazu.sluzby.accident_dpn_responsibility import (
+    apply_dpn_employer_responsibility_to_saved_data,
+)
 from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
     apply_dpn_record_update_to_saved_data,
     has_pn,
@@ -86,6 +89,7 @@ class AccidentService:
     def create_accident(self, **data):
         dpn_record_update = data.pop("dpn_record_update", None)
         dpn_care_return = data.pop("dpn_care_return", None)
+        dpn_employer_responsibility = data.pop("dpn_employer_responsibility", None)
         self._enrich_workplace(data)
         self._sync_legacy_fields(data)
 
@@ -102,7 +106,12 @@ class AccidentService:
         saved = self.repository.update(saved)
         self._create_verify_kind_task(saved)
         self._stamp_combined_record_duty_generation(saved)
-        self._sync_dpn_investigation_json(saved, dpn_record_update, dpn_care_return)
+        self._sync_dpn_investigation_json(
+            saved,
+            dpn_record_update,
+            dpn_care_return,
+            dpn_employer_responsibility,
+        )
         self._sync_reporting_tasks(saved)
         return saved
 
@@ -113,6 +122,7 @@ class AccidentService:
 
         dpn_record_update = data.pop("dpn_record_update", None)
         dpn_care_return = data.pop("dpn_care_return", None)
+        dpn_employer_responsibility = data.pop("dpn_employer_responsibility", None)
         self._enrich_workplace(data)
         self._sync_legacy_fields(data)
 
@@ -122,7 +132,12 @@ class AccidentService:
 
         saved = self.repository.update(accident)
         self._resolve_verify_kind_task_if_needed(saved)
-        self._sync_dpn_investigation_json(saved, dpn_record_update, dpn_care_return)
+        self._sync_dpn_investigation_json(
+            saved,
+            dpn_record_update,
+            dpn_care_return,
+            dpn_employer_responsibility,
+        )
         self._sync_reporting_tasks(saved)
         return saved
 
@@ -151,6 +166,7 @@ class AccidentService:
         accident: Accident,
         dpn_record_update=None,
         dpn_care_return=None,
+        dpn_employer_responsibility=None,
     ) -> None:
         from moduly.kniha_urazu.sluzby.investigation_service import investigation_service
 
@@ -166,6 +182,11 @@ class AccidentService:
             updated,
             accident=accident,
             ui_state=dpn_care_return,
+        )
+        updated = apply_dpn_employer_responsibility_to_saved_data(
+            updated,
+            accident=accident,
+            ui_state=dpn_employer_responsibility,
         )
         if updated == current:
             return
