@@ -28,10 +28,8 @@ with patch.object(Path, "home", return_value=_TMP):
     initialize_database()
 
     from core.ai_oponentni.constants import (
-        AI_CATALOG_PEER_REVIEW_EXPORT_TYPE,
         AI_PEER_REVIEW_OBJECTIVE_MISSING_SOURCES,
         AI_PEER_REVIEW_TAB_TITLE,
-        AI_PEER_REVIEW_ZIP_FILES,
     )
     from core.ai_oponentni.modely.ai_peer_review import AiPeerReview, AiPeerReviewBatch
     from core.ai_oponentni.modely.ai_unassigned_proposal import (
@@ -255,23 +253,28 @@ class HazardCatalogAiPeerReviewR18fTestCase(unittest.TestCase):
         )
         zadani = content.zadani_json
         assert zadani is not None
-        self.assertEqual(zadani["export_type"], AI_CATALOG_PEER_REVIEW_EXPORT_TYPE)
-        self.assertEqual(zadani["catalog_source"]["reference"], catalog_source_reference(self.template.id))
-        self.assertEqual(zadani["catalog_source"]["name"], "Portálový jeřáb")
-        self.assertEqual(zadani["risk_source"]["export_id"], "SOURCE-001")
-        self.assertEqual(zadani["risk_source"]["events"][0]["export_id"], "EVENT-001")
+        self.assertNotIn("request_mode", zadani)
+        self.assertNotIn("export_type", zadani)
+        source_data = zadani["source_data"]
         self.assertEqual(
-            zadani["risk_source"]["events"][0]["assessments"][0]["export_id"],
+            source_data["catalog_source"]["reference"],
+            catalog_source_reference(self.template.id),
+        )
+        self.assertEqual(source_data["catalog_source"]["name"], "Portálový jeřáb")
+        self.assertEqual(source_data["risk_source"]["export_id"], "SOURCE-001")
+        self.assertEqual(source_data["risk_source"]["events"][0]["export_id"], "EVENT-001")
+        self.assertEqual(
+            source_data["risk_source"]["events"][0]["assessments"][0]["export_id"],
             "ASSESSMENT-001",
         )
         self.assertEqual(
-            zadani["risk_source"]["events"][0]["assessments"][0]["existing_measures"][0][
+            source_data["risk_source"]["events"][0]["assessments"][0]["existing_measures"][0][
                 "export_id"
             ],
             "EXISTING-MEASURE-001",
         )
         self.assertEqual(
-            zadani["risk_source"]["events"][0]["assessments"][0]["required_measures"][0][
+            source_data["risk_source"]["events"][0]["assessments"][0]["required_measures"][0][
                 "export_id"
             ],
             "REQUIRED-MEASURE-001",
@@ -314,16 +317,20 @@ class HazardCatalogAiPeerReviewR18fTestCase(unittest.TestCase):
         self.assertIn("Kontext pro AI", content.prompt_text)
         self.assertNotIn("Charakteristika pracoviště", content.prompt_text)
 
-    def test_zip_json_txt_import_formats(self) -> None:
-        target = self.export_dir / "catalog_export.zip"
+    def test_json_txt_zip_import_formats(self) -> None:
+        target = self.export_dir / "AI_REVIEW_REQUEST_KZR.json"
         export_result = ai_peer_review_service.export_package(
             self.provider,
             self.template.id,
             target,
             options=AiPeerReviewExportOptions(),
         )
-        with zipfile.ZipFile(target, "r") as zf:
-            self.assertEqual(set(zf.namelist()), set(AI_PEER_REVIEW_ZIP_FILES))
+        self.assertTrue(target.is_file())
+        self.assertFalse(zipfile.is_zipfile(target))
+        payload = json.loads(target.read_text(encoding="utf-8"))
+        self.assertEqual(payload["schema_version"], "2.0")
+        self.assertNotIn("request_mode", payload)
+        self.assertIn("source_data", payload)
 
         txt_path = self.export_dir / "odpoved.txt"
         txt_path.write_text(CATALOG_SAMPLE_RESPONSE, encoding="utf-8")

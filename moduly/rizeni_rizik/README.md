@@ -424,7 +424,8 @@ Oponentura AI v Katalogu zdrojů rizik:
 - záložka **Oponentní posouzení AI** v editoru zdroje rizika (po prvním uložení)
 - provider `hazard_catalog_source` s exportem MASTER hierarchie (`SOURCE` → `EVENT` → `ASSESSMENT` → opatření)
 - exportní dialog bez cíle „Hledat chybějící zdroje analýzy“, pole **Obecný kontext zdroje rizika**
-- import JSON/TXT/ZIP pouze do evidence konzultace (návrhy se nezapisují do MASTER obsahu)
+- katalog ukládá jeden soubor `AI_REVIEW_REQUEST_{reference}.json` (bez ZIP)
+- import JSON/TXT/ZIP odpovědi pouze do evidence konzultace (návrhy se nezapisují do MASTER obsahu)
 - v identifikaci pracoviště je nový export/import AI vypnutý; historická konzultace zůstává zobrazena
 
 ## Fáze R18f.1 (evidence importu)
@@ -510,7 +511,7 @@ Dokončení workflow po ručním rozhodnutí:
 
 AI oponentura katalogu jako ucelené návrhové balíky (schema 2.0):
 
-- export katalogu používá `schema_odpovedi.json` verze 2.0 s `proposal_packages`
+- export katalogu používá `schema_odpovedi` verze 2.0 s `proposal_packages` (vnořené v `AI_REVIEW_REQUEST.json`)
 - každý balík obsahuje událost (nebo vazbu na EVENT-…), posouzení, opatření a právní vazby
 - validace odmítne neúplné balíky; neplatný balík se neimportuje částečně
 - atomizovaný import schema 1.1 nelze načíst do nových katalogových konzultací
@@ -542,6 +543,16 @@ Zapracování návrhů AI do MASTER obsahu katalogu:
 - hromadné zapracování v jedné transakci se zvýšením Revize o 1
 - historie změn s důvodem „Převzaty návrhy AI“
 - detekce duplicit s volbami Přeskočit / Sloučit / Upravit / Zrušit
+
+## RISK-AI-SINGLE-FILE-EXPORT-1
+
+Jediný soubor podkladů pro Copilot u katalogu zdrojů rizik:
+
+- export vytvoří `AI_REVIEW_REQUEST_{reference}.json` (instrukce, `source_data`, `response_schema`)
+- bez ZIP a bez doprovodných souborů; bez volby režimu v UI
+- prázdný i naplněný katalog jdou stejnou cestou; prázdný katalog se neodmítá
+- mapa exportních ID zůstává jen v DB; zápis do katalogu až po Zapracovat / Zamítnout
+- identifikace rizik ponechává ZIP schema 1.1
 
 ## RISK-AI-MEASURE-RECOMMENDATION-EDIT-1
 

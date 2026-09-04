@@ -117,6 +117,10 @@ def _looks_like_package_schema_response(payload: dict) -> bool:
 
 def _looks_like_export_or_response_schema(payload: dict) -> bool:
     """Exportní ZIP (zadani/schema) nebo JSON Schema – není odpověď AI."""
+    if "ai_instruction" in payload or "source_data" in payload:
+        return True
+    if payload.get("user_instruction"):
+        return True
     if "$defs" in payload:
         return True
     if payload.get("type") == "object" and isinstance(payload.get("properties"), dict):

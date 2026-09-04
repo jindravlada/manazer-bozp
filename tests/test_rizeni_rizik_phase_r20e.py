@@ -254,8 +254,8 @@ class PhaseR20eTestCase(unittest.TestCase):
             options=AiPeerReviewExportOptions(),
         )
         assert content.zadani_json is not None
-        catalog_source = content.zadani_json["catalog_source"]
-        risk_source = content.zadani_json["risk_source"]
+        catalog_source = content.zadani_json["source_data"]["catalog_source"]
+        risk_source = content.zadani_json["source_data"]["risk_source"]
         self.assertNotIn("application_scope", catalog_source)
         self.assertNotIn("application_scope_label", catalog_source)
         self.assertNotIn("application_scope", risk_source)

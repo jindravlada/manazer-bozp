@@ -2,16 +2,13 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-
 from core.ai_oponentni.constants import (
-    AI_CATALOG_PEER_REVIEW_EXPORT_TYPE,
     AI_PEER_REVIEW_DEFAULT_CHANGE_TRACKING,
     AI_PEER_REVIEW_EXPORT_SCOPE_FULL,
-    AI_PEER_REVIEW_FOCUS_AREA_LABELS,
-    AI_PEER_REVIEW_OBJECTIVE_LABELS,
     AI_PEER_REVIEW_RESPONSE_SCHEMA_2_0,
     AI_PEER_REVIEW_SCHEMA_VERSION_2_0,
+    AI_REVIEW_REQUEST_USER_INSTRUCTION,
+    AI_REVIEW_RESPONSE_FILENAME,
 )
 from core.ai_oponentni.modely.ai_proposal_package import (
     PACKAGE_STATUS_PENDING,
@@ -29,6 +26,7 @@ from core.ai_oponentni.repository.ai_unassigned_proposal_repository import (
 )
 from core.ai_oponentni.sluzby.ai_peer_review_service import AiPeerReviewError
 from core.ai_oponentni.sluzby.prompt_builder import (
+    build_catalog_ai_instruction,
     build_catalog_source_ai_peer_review_prompt,
     normalize_catalog_objectives,
     normalize_focus_areas,
@@ -44,7 +42,6 @@ from core.ai_oponentni.types import (
     AiPeerReviewExportOptions,
     AiProposal,
 )
-from core.version import APP_VERSION
 from moduly.rizeni_rizik.sluzby.hazard_source_category_service import (
     hazard_source_category_service,
 )
@@ -80,6 +77,7 @@ class HazardCatalogSourcePeerReviewProvider:
     source_type = SOURCE_TYPE_HAZARD_CATALOG_SOURCE
     evidence_only_import = True
     uses_proposal_packages = True
+    exports_single_request_json = True
 
     def can_export(self, source_id: int | None) -> bool:
         if not source_id:
@@ -122,9 +120,8 @@ class HazardCatalogSourcePeerReviewProvider:
         data_text = self._hierarchy_to_data_text(hierarchy)
         overview_text, summary_lines = self._build_overview(hierarchy)
         object_count = self._count_objects(built["risk_source"])
-        zadani_json = self._hierarchy_to_zadani_json(
+        zadani_json = self._build_request_json(
             hierarchy,
-            object_count=object_count,
             briefing=briefing,
         )
         batch = AiPeerReviewBatchContent(
@@ -379,12 +376,14 @@ class HazardCatalogSourcePeerReviewProvider:
                 assessments += 1
                 existing_measures += len(assessment_node.get("existing_measures") or [])
                 required_measures += len(assessment_node.get("required_measures") or [])
+        legal_links = len(risk_source.get("legal_links") or [])
         return {
             "sources": 1,
             "events": events,
             "assessments": assessments,
             "existing_measures": existing_measures,
             "required_measures": required_measures,
+            "legal_links": legal_links,
         }
 
     @staticmethod
@@ -414,70 +413,105 @@ class HazardCatalogSourcePeerReviewProvider:
             "catalog_source_reference": catalog_source_reference(template.id),
         }
 
-    def _hierarchy_to_zadani_json(
+    def _build_request_json(
         self,
         hierarchy: dict,
         *,
-        object_count: int,
         briefing: dict,
     ) -> dict:
+        catalog_source = dict(hierarchy["catalog_source"])
+        catalog_source["general_context"] = briefing["general_context"]
+        counts = hierarchy["counts"]
         return {
             "schema_version": AI_PEER_REVIEW_SCHEMA_VERSION_2_0,
-            "response_schema_version": AI_PEER_REVIEW_SCHEMA_VERSION_2_0,
-            "export_type": AI_CATALOG_PEER_REVIEW_EXPORT_TYPE,
-            "export_scope": AI_PEER_REVIEW_EXPORT_SCOPE_FULL,
-            "batch_number": 1,
-            "batch_count": 1,
-            "source_count": 1,
-            "object_count": object_count,
-            "recommended_limit_exceeded": False,
-            "change_tracking": dict(AI_PEER_REVIEW_DEFAULT_CHANGE_TRACKING),
-            "exported_at": datetime.now().isoformat(timespec="seconds"),
-            "application_version": APP_VERSION,
-            "opponent_role": briefing["opponent_role"],
-            "opponent_role_label": briefing["opponent_role_label"],
-            "peer_review_objectives": list(briefing["objectives"]),
-            "peer_review_objective_labels": [
-                AI_PEER_REVIEW_OBJECTIVE_LABELS[item_id]
-                for item_id in briefing["objectives"]
-            ],
-            "peer_review_focus_areas": list(briefing["focus_areas"]),
-            "peer_review_focus_area_labels": [
-                AI_PEER_REVIEW_FOCUS_AREA_LABELS[item_id]
-                for item_id in briefing["focus_areas"]
-            ],
-            "general_context": briefing["general_context"],
-            "catalog_source": dict(hierarchy["catalog_source"]),
-            "risk_source": hierarchy["risk_source"],
-            "hierarchy": [
-                "source",
-                "event",
-                "assessment",
-                "existing_measure",
-                "required_measure",
-            ],
-            "consultation_request": {
-                "request_summary": (
-                    "Proveď oponentní posouzení katalogového zdroje rizika "
-                    "a navrhni možné opomenuté položky."
-                ),
-                "opponent_role": briefing["opponent_role"],
-                "opponent_role_label": briefing["opponent_role_label"],
-                "objectives": list(briefing["objectives"]),
-                "focus_areas": list(briefing["focus_areas"]),
-                "rules": [
-                    "Nehodnotit závažnost rizik.",
-                    "Nejprve posoudit Navazující opatření, poté Zásady bezpečné práce, "
-                    "teprve potom zvažovat nová opatření.",
-                    "Nenavrhovat nové opatření, pokud lze stejného cíle dosáhnout "
-                    "úpravou stávajícího opatření nebo Zásad bezpečné práce.",
-                    "Pokud jsou stávající opatření dostatečná, nenavrhovat jejich změnu.",
-                    "U návrhů uvádět parent_export_id / target_export_id "
-                    "(SOURCE/EVENT/ASSESSMENT/EXISTING-MEASURE/REQUIRED-MEASURE/LEGAL-LINK).",
-                    "Ke každému návrhu uvést stručné odborné zdůvodnění.",
-                    "Posuzovat podle aktuálně platných právních předpisů ČR v oblasti BOZP.",
-                ],
+            "user_instruction": AI_REVIEW_REQUEST_USER_INSTRUCTION,
+            "ai_instruction": build_catalog_ai_instruction(
+                role=briefing["opponent_role"],
+                objectives=briefing["objectives"],
+                focus_areas=briefing["focus_areas"],
+            ),
+            "processing": {
+                "output_filename": AI_REVIEW_RESPONSE_FILENAME,
+                "language": "cs",
             },
+            "response_schema": AI_PEER_REVIEW_RESPONSE_SCHEMA_2_0,
+            "source_data": {
+                "catalog_source": catalog_source,
+                "risk_source": self._public_risk_source(hierarchy["risk_source"]),
+                "counts": {
+                    "events": counts["events"],
+                    "assessments": counts["assessments"],
+                    "existing_measures": counts["existing_measures"],
+                    "required_measures": counts["required_measures"],
+                    "legal_links": counts["legal_links"],
+                },
+            },
+        }
+
+    @staticmethod
+    def _public_measure(node: dict) -> dict:
+        return {
+            "export_id": node.get("export_id") or "",
+            "description": node.get("description") or "",
+            "note": node.get("note") or "",
+        }
+
+    @staticmethod
+    def _public_legal_link(node: dict) -> dict:
+        reference = (
+            str(node.get("legal_document_label") or "").strip()
+            or str(node.get("reference") or "").strip()
+        )
+        return {
+            "export_id": node.get("export_id") or "",
+            "reference": reference,
+            "note": node.get("note") or "",
+        }
+
+    @classmethod
+    def _public_assessment(cls, node: dict) -> dict:
+        return {
+            "export_id": node.get("export_id") or "",
+            "exposed_group": node.get("exposed_group") or "",
+            "severity": node.get("severity") or "",
+            "severity_label": node.get("severity_label") or "",
+            "conclusion": node.get("conclusion") or "",
+            "note": node.get("note") or "",
+            "existing_measures": [
+                cls._public_measure(measure)
+                for measure in node.get("existing_measures") or []
+            ],
+            "required_measures": [
+                cls._public_measure(measure)
+                for measure in node.get("required_measures") or []
+            ],
+        }
+
+    @classmethod
+    def _public_event(cls, node: dict) -> dict:
+        return {
+            "export_id": node.get("export_id") or "",
+            "name": node.get("name") or "",
+            "description": node.get("description") or "",
+            "note": node.get("note") or "",
+            "assessments": [
+                cls._public_assessment(assessment)
+                for assessment in node.get("assessments") or []
+            ],
+        }
+
+    @classmethod
+    def _public_risk_source(cls, risk_source: dict) -> dict:
+        return {
+            "export_id": risk_source.get("export_id") or "",
+            "name": risk_source.get("name") or "",
+            "events": [
+                cls._public_event(event) for event in risk_source.get("events") or []
+            ],
+            "legal_links": [
+                cls._public_legal_link(link)
+                for link in risk_source.get("legal_links") or []
+            ],
         }
 
     def _hierarchy_to_data_text(self, hierarchy: dict) -> str:

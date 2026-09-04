@@ -11,10 +11,13 @@ from pathlib import Path
 
 from core.ai_oponentni.constants import (
     AI_PEER_REVIEW_CATALOG_REQUIRES_SCHEMA_2_0,
+    AI_PEER_REVIEW_JSON_FILE_FILTER,
     AI_PEER_REVIEW_PARSE_NO_PACKAGES,
     AI_PEER_REVIEW_PARSE_NO_PROPOSALS,
     AI_PEER_REVIEW_SCHEMA_VERSION_2_0,
+    AI_PEER_REVIEW_ZIP_FILE_FILTER,
     AI_PEER_REVIEW_ZIP_FILES,
+    AI_REVIEW_REQUEST_FILENAME_PREFIX,
 )
 from core.ai_oponentni.modely.ai_peer_review import AiPeerReview, AiPeerReviewBatch
 from core.ai_oponentni.modely.ai_proposal_package import (
@@ -196,15 +199,34 @@ class AiPeerReviewService:
         ]
         self.unassigned_repository.add_many(models)
 
-    def default_export_filename(self, source_label: str, exported_at: datetime) -> str:
-        stamp = exported_at.strftime("%Y-%m-%d_%H%M")
+    def default_export_filename(
+        self,
+        source_label: str,
+        exported_at: datetime,
+        *,
+        provider: AiPeerReviewProvider | None = None,
+    ) -> str:
         safe = (
             (source_label or "posouzeni")
             .replace("/", "-")
             .replace(" ", "_")
             .replace(":", "-")
         )
+        if self.provider_exports_single_request_json(provider):
+            return f"{AI_REVIEW_REQUEST_FILENAME_PREFIX}_{safe}.json"
+        stamp = exported_at.strftime("%Y-%m-%d_%H%M")
         return f"AI_oponentura_{safe}_{stamp}.zip"
+
+    @staticmethod
+    def provider_exports_single_request_json(
+        provider: AiPeerReviewProvider | None,
+    ) -> bool:
+        return bool(getattr(provider, "exports_single_request_json", False))
+
+    def export_file_filter(self, provider: AiPeerReviewProvider) -> str:
+        if self.provider_exports_single_request_json(provider):
+            return AI_PEER_REVIEW_JSON_FILE_FILTER
+        return AI_PEER_REVIEW_ZIP_FILE_FILTER
 
     def export_package(
         self,
@@ -236,15 +258,17 @@ class AiPeerReviewService:
         target.parent.mkdir(parents=True, exist_ok=True)
 
         try:
-            self._write_export_archive(target, content)
+            if self.provider_exports_single_request_json(provider):
+                self._write_single_request_json(target, content)
+                self._validate_written_request_json(target)
+            else:
+                self._write_export_archive(target, content)
+                self._validate_written_archive(target, content)
         except OSError as error:
             target.unlink(missing_ok=True)
             raise AiPeerReviewError(
                 f"Nepodařilo se vytvořit exportní soubor: {error}"
             ) from error
-
-        try:
-            self._validate_written_archive(target, content)
         except AiPeerReviewError:
             target.unlink(missing_ok=True)
             raise
@@ -324,6 +348,47 @@ class AiPeerReviewService:
                 json.dumps(batch.schema_json, ensure_ascii=False, indent=2) + "\n",
             )
         return buffer.getvalue()
+
+    def _write_single_request_json(
+        self,
+        target: Path,
+        content: AiPeerReviewExportContent,
+    ) -> None:
+        payload = content.batches[0].zadani_json
+        content.batches[0].filename = target.name
+        target.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+
+    def _validate_written_request_json(self, target: Path) -> None:
+        try:
+            raw = target.read_text(encoding="utf-8")
+            loaded = json.loads(raw)
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+            raise AiPeerReviewError(
+                "Vytvořený exportní JSON je neplatný."
+            ) from error
+        if not isinstance(loaded, dict):
+            raise AiPeerReviewError("Vytvořený exportní JSON je neplatný.")
+        required = (
+            "schema_version",
+            "user_instruction",
+            "ai_instruction",
+            "processing",
+            "response_schema",
+            "source_data",
+        )
+        missing = [key for key in required if key not in loaded]
+        if missing:
+            raise AiPeerReviewError("Exportní JSON neobsahuje očekávané pole.")
+        if "request_mode" in loaded:
+            raise AiPeerReviewError("Exportní JSON nesmí obsahovat request_mode.")
+        processing = loaded.get("processing")
+        if isinstance(processing, dict) and "request_mode" in processing:
+            raise AiPeerReviewError("Exportní JSON nesmí obsahovat request_mode.")
+        if zipfile.is_zipfile(target):
+            raise AiPeerReviewError("Katalogový export musí být jeden JSON, nikoli ZIP.")
 
     def _write_export_archive(
         self,

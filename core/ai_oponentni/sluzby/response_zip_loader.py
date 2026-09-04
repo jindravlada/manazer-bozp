@@ -14,6 +14,7 @@ from core.ai_oponentni.constants import (
     AI_PEER_REVIEW_ZIP_CORRUPT,
     AI_PEER_REVIEW_ZIP_NO_RESPONSE,
     AI_PEER_REVIEW_ZIP_SIZE_EXCEEDED,
+    AI_REVIEW_REQUEST_FILENAME_PREFIX,
 )
 
 _SUPPORTED_SUFFIXES = {".json", ".txt"}
@@ -92,7 +93,7 @@ def _list_supported_entries(zip_path: Path) -> tuple[list[str], bool]:
                 if not _is_safe_zip_entry(info.filename):
                     continue
                 basename = PurePosixPath(info.filename).name.casefold()
-                if basename in AI_PEER_REVIEW_EXPORT_RESPONSE_BASENAMES:
+                if _is_export_request_basename(basename):
                     # RISK-AI-17: export zadání nikdy není odpověď AI.
                     had_export_files = True
                     continue
@@ -112,6 +113,14 @@ def _list_supported_entries(zip_path: Path) -> tuple[list[str], bool]:
         raise AiPeerReviewZipLoadError(AI_PEER_REVIEW_ZIP_CORRUPT) from error
 
     return sorted(candidates, key=_entry_sort_key), had_export_files
+
+
+def _is_export_request_basename(basename: str) -> bool:
+    folded = (basename or "").casefold()
+    if folded in AI_PEER_REVIEW_EXPORT_RESPONSE_BASENAMES:
+        return True
+    prefix = AI_REVIEW_REQUEST_FILENAME_PREFIX.casefold()
+    return folded.startswith(prefix) and folded.endswith(".json")
 
 
 def _read_zip_entry_text(zip_path: Path, entry_name: str) -> str:

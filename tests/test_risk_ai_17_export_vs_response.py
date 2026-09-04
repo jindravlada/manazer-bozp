@@ -87,6 +87,27 @@ _SAMPLE_ZADANI = {
     "hierarchy": {},
 }
 
+_SAMPLE_REQUEST = {
+    "schema_version": "2.0",
+    "user_instruction": "Zpracuj dle instrukcí.",
+    "ai_instruction": {
+        "role": "experienced_safety_technician",
+        "role_label": "Zkušený bezpečnostní technik",
+        "goal": [],
+        "rules": [],
+    },
+    "processing": {
+        "output_filename": "AI_REVIEW_RESPONSE.json",
+        "language": "cs",
+    },
+    "response_schema": _SAMPLE_SCHEMA_ODPOVEDI,
+    "source_data": {
+        "catalog_source": {"reference": "KZR-0001"},
+        "risk_source": {"export_id": "SOURCE-001", "events": []},
+        "counts": {"events": 0},
+    },
+}
+
 
 class RiskAi17ExportVsResponseTestCase(unittest.TestCase):
     def test_looks_like_rejects_schema_and_zadani(self) -> None:
@@ -94,6 +115,7 @@ class RiskAi17ExportVsResponseTestCase(unittest.TestCase):
         self.assertFalse(_looks_like_package_schema_response(_SAMPLE_ZADANI))
         self.assertTrue(_looks_like_export_or_response_schema(_SAMPLE_SCHEMA_ODPOVEDI))
         self.assertTrue(_looks_like_export_or_response_schema(_SAMPLE_ZADANI))
+        self.assertTrue(_looks_like_export_or_response_schema(_SAMPLE_REQUEST))
         self.assertTrue(_looks_like_package_schema_response(_SAMPLE_RESPONSE))
         self.assertFalse(_looks_like_export_or_response_schema(_SAMPLE_RESPONSE))
 
@@ -111,6 +133,15 @@ class RiskAi17ExportVsResponseTestCase(unittest.TestCase):
         with self.assertRaises(AiPeerReviewParseError) as ctx:
             parse_ai_peer_review_response(
                 json.dumps(_SAMPLE_ZADANI, ensure_ascii=False),
+                expected_source_identification_number="KZR-0001",
+                require_proposal_packages=True,
+            )
+        self.assertEqual(str(ctx.exception), AI_PEER_REVIEW_NOT_AI_RESPONSE)
+
+    def test_review_request_json_is_not_ai_response(self) -> None:
+        with self.assertRaises(AiPeerReviewParseError) as ctx:
+            parse_ai_peer_review_response(
+                json.dumps(_SAMPLE_REQUEST, ensure_ascii=False),
                 expected_source_identification_number="KZR-0001",
                 require_proposal_packages=True,
             )

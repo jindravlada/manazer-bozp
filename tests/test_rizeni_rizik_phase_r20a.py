@@ -337,13 +337,11 @@ Chybí kompletní scénář.
             options=AiPeerReviewExportOptions(),
         )
         self.assertTrue(target.is_file())
-        import zipfile
-
-        with zipfile.ZipFile(target, "r") as zf:
-            schema = json.loads(zf.read("schema_odpovedi.json"))
-            zadani = json.loads(zf.read("zadani.json"))
+        payload = json.loads(target.read_text(encoding="utf-8"))
+        schema = payload["response_schema"]
         self.assertEqual(schema["schema_version"], AI_PEER_REVIEW_SCHEMA_VERSION_2_0)
-        self.assertEqual(zadani["response_schema_version"], AI_PEER_REVIEW_SCHEMA_VERSION_2_0)
+        self.assertEqual(payload["schema_version"], AI_PEER_REVIEW_SCHEMA_VERSION_2_0)
+        self.assertNotIn("request_mode", payload)
         self.assertIn("proposal_package", schema["$defs"])
         self.assertIsNotNone(export_result.review.id)
 

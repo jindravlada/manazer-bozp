@@ -647,18 +647,23 @@ class AiPeerReviewWidget(QWidget):
         default_name = ai_peer_review_service.default_export_filename(
             content.source_label,
             datetime.now(),
+            provider=self._provider,
         )
+        file_filter = ai_peer_review_service.export_file_filter(self._provider)
         target, _ = QFileDialog.getSaveFileName(
             self,
             AI_PEER_REVIEW_DIALOG_TITLE,
             default_name,
-            "ZIP soubory (*.zip)",
+            file_filter,
         )
         if not target:
             return False
 
         target_path = Path(target)
-        if target_path.suffix.lower() != ".zip":
+        if ai_peer_review_service.provider_exports_single_request_json(self._provider):
+            if target_path.suffix.lower() != ".json":
+                target_path = target_path.with_suffix(".json")
+        elif target_path.suffix.lower() != ".zip":
             target_path = target_path.with_suffix(".zip")
 
         try:

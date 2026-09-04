@@ -57,6 +57,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ---
 
+### 2026-09-04 – RISK-AI-SINGLE-FILE-EXPORT-1
+
+**Co se povedlo:** Katalogový export je jeden JSON, který Copilot zpracuje bez doprovodných souborů.
+
+**Co už bychom dnes udělali jinak:** Režimy starter/review zbytečně štěpily UI; stačí univerzální instrukce podle `source_data`.
+
+**Co bylo zbytečně složité:** ZIP s pěti soubory, z toho dva duplicitní výpisy.
+
+**Jaké nové pravidlo z toho vzniklo:** Podklady pro AI jdou jako jeden UTF-8 JSON. Interní ID a mapa exportu zůstávají v DB.
+
+---
+
 ### 2026-09-04 – AUDIT-PROGRAM-STATEMENTS-ODT-1
 
 **Co se povedlo:** Tisk tvrzení vybrané návštěvy bez zahájení Auditu. Zahájený audit tiskne zmrazený snapshot.

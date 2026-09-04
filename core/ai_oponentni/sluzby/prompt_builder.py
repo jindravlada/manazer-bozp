@@ -342,6 +342,68 @@ def build_ai_peer_review_prompt(
     return "\n".join(lines).rstrip() + "\n"
 
 
+def catalog_universal_processing_rules() -> list[str]:
+    """Společná pravidla pro prázdný i naplněný katalog (jeden export)."""
+    return [
+        "Pokud katalog neobsahuje žádné nežádoucí události, vytvoř jeho první "
+        "odborný návrh.",
+        "Pokud katalog již obsahuje data, proveď jejich oponenturu a navrhni "
+        "chybějící nebo potřebné doplnění.",
+        "Prázdný katalog je legitimní vstup a nesmí být důvodem k odmítnutí.",
+        "Navrhuj nežádoucí události, ohrožené skupiny, zásady bezpečné práce, "
+        "navazující opatření a právní vazby.",
+        "Neopakuj položky, které již v katalogu existují.",
+        "Nové události vracej jako proposal_package typu new_event.",
+        "Doplnění existující události navaž na její exportní ID.",
+        "Vrať pouze JSON podle response_schema, bez Markdownu a komentářů.",
+        "Právní vazby jsou pouze návrhy k odbornému ověření.",
+    ]
+
+
+def build_catalog_ai_instruction(
+    *,
+    role: str | None = None,
+    objectives: Sequence[str] | None = None,
+    focus_areas: Sequence[str] | None = None,
+) -> dict:
+    """Strukturované instrukce pro AI_REVIEW_REQUEST.json."""
+    role_id = normalize_opponent_role(role)
+    objective_ids = normalize_catalog_objectives(objectives)
+    focus_ids = normalize_focus_areas(focus_areas)
+    goals = [AI_PEER_REVIEW_OBJECTIVE_LABELS[item_id] for item_id in objective_ids]
+    if focus_ids:
+        goals.extend(AI_PEER_REVIEW_FOCUS_AREA_LABELS[item_id] for item_id in focus_ids)
+
+    rules = list(catalog_universal_processing_rules())
+    rules.extend(
+        [
+            "Nevracej izolovaná opatření bez kompletního posouzení "
+            "(u nových událostí v proposal_packages).",
+            "Nevracej izolované ohrožené skupiny bez události a následku.",
+            "Každý návrh nové události musí být jeden ucelený balík "
+            "s úplným odborným kontextem.",
+            "Při doplnění existující události použij package_type extend_event "
+            "a target_event_export_id (EVENT-…).",
+            "Ke každému balíku i doporučení k opatřením napiš stručné odborné "
+            "zdůvodnění.",
+            "Nenavrhuj zjevně nereálné scénáře.",
+            "Nevymýšlej technologie, zařízení ani činnosti, které nejsou "
+            "z source_data ani z obecného kontextu zdroje patrné.",
+            "Posuzuj podle aktuálně platných právních předpisů České republiky "
+            "v oblasti BOZP.",
+            "Nevydávej návrhy za úplné ani definitivní.",
+        ]
+    )
+    rules.append("\n".join(measure_review_order_section()).strip())
+    rules.append("\n".join(measure_formulation_style_section()).strip())
+    return {
+        "role": role_id,
+        "role_label": AI_PEER_REVIEW_ROLE_LABELS[role_id],
+        "goal": goals,
+        "rules": rules,
+    }
+
+
 def build_catalog_source_ai_peer_review_prompt(
     *,
     role: str | None = None,
@@ -414,6 +476,7 @@ def build_catalog_source_ai_peer_review_prompt(
     lines.append("PRAVIDLA")
     lines.append("-" * 40)
     rules = [
+        *catalog_universal_processing_rules(),
         "Nevracej izolovaná opatření bez kompletního posouzení "
         "(u nových událostí v proposal_packages).",
         "Nevracej izolované ohrožené skupiny bez události a následku.",
@@ -423,15 +486,13 @@ def build_catalog_source_ai_peer_review_prompt(
         "co se může stát → komu → jaký může být následek → "
         "jaká opatření existují nebo mají být přijata → "
         "jaká legislativa může souviset.",
-        "Neopakuj již existující položky z exportu bez důvodu.",
         "Nenavrhuj zjevně nereálné scénáře.",
         "Nevymýšlej technologie, zařízení ani činnosti, které nejsou z exportu "
         "ani z obecného kontextu zdroje patrné.",
         "Respektuj skutečný charakter katalogového zdroje rizika.",
         "Ke každému balíku i doporučení k opatřením napiš stručné odborné zdůvodnění.",
-        "Právní předpisy uváděj pouze jako návrh k odbornému ověření.",
         "Nevydávej návrhy za úplné ani definitivní.",
-        "Odpověď strukturoj podle schema_odpovedi.json "
+        "Odpověď strukturoj podle response_schema "
         "(nebo použij textový formát níže).",
     ]
     for rule in rules:

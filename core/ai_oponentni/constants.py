@@ -4,6 +4,8 @@ AI_PEER_REVIEW_TAB_TITLE = "Oponentní posouzení AI"
 
 AI_PEER_REVIEW_INTRO_TEXT = (
     "Exportujte podklady pro nezávislé odborné oponentní posouzení externí AI. "
+    "Katalog zdrojů rizik uloží jeden soubor JSON; v Copilotu stačí zadat: "
+    "Zpracuj dle instrukcí. "
     "AI navrhne možné opomenuté skutečnosti; konečné rozhodnutí vždy provádí uživatel. "
     "AI sama nic do evidence nezapisuje."
 )
@@ -140,9 +142,16 @@ AI_PEER_REVIEW_EXPORT_RESPONSE_BASENAMES = frozenset(
     name.casefold() for name in AI_PEER_REVIEW_ZIP_FILES
 )
 
+AI_REVIEW_REQUEST_FILENAME_PREFIX = "AI_REVIEW_REQUEST"
+AI_REVIEW_REQUEST_USER_INSTRUCTION = "Zpracuj dle instrukcí."
+AI_REVIEW_RESPONSE_FILENAME = "AI_REVIEW_RESPONSE.json"
+AI_PEER_REVIEW_JSON_FILE_FILTER = "JSON soubory (*.json)"
+AI_PEER_REVIEW_ZIP_FILE_FILTER = "ZIP soubory (*.zip)"
+
 AI_PEER_REVIEW_NOT_AI_RESPONSE = (
-    "Vybrali jste exportní ZIP pro AI. "
-    "Pro import výsledků vyberte soubor *_odpoved.json."
+    "Vybrali jste exportní podklady pro AI, nikoli odpověď. "
+    "Pro import výsledků vyberte soubor AI_REVIEW_RESPONSE.json "
+    "nebo *_odpoved.json."
 )
 
 AI_PEER_REVIEW_SCHEMA_VERSION = "1.1"
