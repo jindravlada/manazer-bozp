@@ -57,7 +57,7 @@ class DataManagementStatusServiceTestCase(unittest.TestCase):
         status, warnings = data_management_status_service.compute_status()
         self.assertEqual(status, "Vyžaduje pozornost")
         self.assertTrue(any("záloha" in warning.lower() for warning in warnings))
-        self.assertTrue(any("diagnostika" in warning.lower() for warning in warnings))
+        self.assertFalse(any("diagnostika" in warning.lower() for warning in warnings))
 
     def test_missing_backup_file_is_problem(self) -> None:
         missing = storage_module.storage_service.backups_dir / "missing.mbbackup"

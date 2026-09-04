@@ -211,11 +211,15 @@ class SummaryTab(QWidget):
             self.open_backup_button.setEnabled(False)
             return
 
-        self.backup_summary_label.setText(
-            f"Datum a čas: {data_management_settings_service.format_timestamp(record.created_at)}\n"
-            f"Název souboru: {Path(record.path).name}\n"
-            f"Stav: {status}"
-        )
+        lines = [
+            f"Datum a čas: {data_management_settings_service.format_timestamp(record.created_at)}",
+            f"Název souboru: {Path(record.path).name}",
+            f"Stav: {status}",
+        ]
+        limitation = data_management_status_service.backup_limitation_text()
+        if limitation:
+            lines.append(f"Omezení: {limitation}")
+        self.backup_summary_label.setText("\n".join(lines))
         self.open_backup_button.setEnabled(bool(record.path))
 
     def _update_restore_section(self) -> None:

@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-04 – DATA-SUMMARY-OPTIONAL-EXPORTS-1
+
+**Co se povedlo:** Chybějící soubor dříve úspěšného přenosového exportu už nesnižuje celkový stav dat. Souhrn rozlišuje informační stav na kartě od skutečné chyby zálohy, obnovy, importu nebo diagnostiky.
+
+**Co už bychom dnes udělali jinak:** Hlavní důvody nahoře držet jen u databáze a úplné zálohy. Přenosový export je volitelný výstup, soubor se po úspěchu smí přesunout.
+
+**Co bylo zbytečně složité:** Stejná hláška „soubor nenalezen“ pro zálohu i export. U zálohy je to problém, u exportu jen informace na kartě.
+
+**Jaké nové pravidlo z toho vzniklo:** Chybějící soubor ověřeného exportu (RPP, číselníky i jiný přenos) nesmí sám způsobit „Vyžaduje pozornost“. INCOMPLETE záloha a neověřená/poškozená záloha ano. VALID_WITH_WARNINGS se neznačí jako poškození.
+
+---
+
 ### 2026-09-04 – FULL-BACKUP-SNAPSHOT-PHOTOS-1
 
 **Co se povedlo:** Zmrazené fotografie metodické podpory (`snapshot_support_photos/`) jsou v defaultní úplné záloze. Neznámý datový kořen už nemůže zůstat tiše mimo balíček.
