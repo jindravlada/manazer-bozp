@@ -46,6 +46,10 @@ from moduly.kniha_urazu.sluzby.breath_alcohol import (
     is_extreme_breath_alcohol,
 )
 from moduly.kniha_urazu.ui.tabs.tab_dalsi import TabDalsiUdaje
+from moduly.kniha_urazu.ui.tabs.tab_po_ukonceni_dpn import (
+    TAB_PO_UKONCENI_DPN,
+    TabPoUkonceniDpn,
+)
 from moduly.kniha_urazu.ui.tabs.tab_pracoviste import TabPracoviste
 from moduly.kniha_urazu.ui.tabs.tab_svedci import TabSvedci
 from moduly.kniha_urazu.ui.tabs.tab_uraz import TabUraz
@@ -70,6 +74,7 @@ class AccidentDialog(QDialog):
         self.tab_pracoviste_widget = TabPracoviste()
         self.tab_dalsi_widget = TabDalsiUdaje()
         self.tab_svedci_widget = TabSvedci()
+        self.tab_po_ukonceni_dpn_widget = TabPoUkonceniDpn()
         self.tab_attachments_widget = AttachmentWidget(
             entity_type=ENTITY_ACCIDENT,
             entity_id=accident.id if accident is not None else None,
@@ -82,6 +87,7 @@ class AccidentDialog(QDialog):
         self.tabs.addTab(wrap_in_scroll_area(self.tab_dalsi_widget), "Další údaje")
         self.tabs.addTab(wrap_in_scroll_area(self.tab_attachments_widget), "Přílohy")
         self.tabs.addTab(wrap_in_scroll_area(self.tab_svedci_widget), "Svědci")
+        self.tabs.addTab(wrap_in_scroll_area(self.tab_po_ukonceni_dpn_widget), TAB_PO_UKONCENI_DPN)
 
         layout.addWidget(self.tabs, 1)
 
@@ -405,17 +411,24 @@ class AccidentDialog(QDialog):
         self.tab_uraz_widget.druh_urazu.currentTextChanged.connect(self._refresh_dpn_kind_warning)
         self.tab_zamestnanec_widget.dpn_od.dateChanged.connect(self._refresh_dpn_kind_warning)
         self.tab_zamestnanec_widget.dpn_do.dateChanged.connect(self._refresh_dpn_kind_warning)
+        self.tab_zamestnanec_widget.dpn_do.dateChanged.connect(self._refresh_po_ukonceni_dpn)
 
     def _workplace_changed(self):
         pass
 
     def _refresh_logic(self):
         self._refresh_dpn_kind_warning()
+        self._refresh_po_ukonceni_dpn()
         self.tab_uraz_widget.refresh_date_and_kind_hints()
 
     def _refresh_dpn_kind_warning(self, *_args) -> None:
         self.tab_zamestnanec_widget.refresh_dpn_kind_warning(
             self.tab_uraz_widget.druh_urazu.value()
+        )
+
+    def _refresh_po_ukonceni_dpn(self, *_args) -> None:
+        self.tab_po_ukonceni_dpn_widget.set_from_dpn_do(
+            self.tab_zamestnanec_widget.dpn_do.get_date()
         )
 
     def _load(self, accident):
@@ -432,6 +445,7 @@ class AccidentDialog(QDialog):
             self._set_widget_value(getattr(self, name), getattr(accident, name))
 
         self._refresh_dpn_kind_warning()
+        self._refresh_po_ukonceni_dpn()
         self.tab_uraz_widget.refresh_date_and_kind_hints()
 
 

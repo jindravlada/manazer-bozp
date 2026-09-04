@@ -311,6 +311,11 @@ def is_dpn_end_in_future(
     return dpn_do > (today or date.today())
 
 
+def is_dpn_ended(dpn_do: date | None) -> bool:
+    """True, pokud je vyplněno existující pole ``Accident.dpn_do``."""
+    return dpn_do is not None
+
+
 ACCIDENT_DATE_FUTURE_MESSAGE = "Datum pracovního úrazu nemůže být v budoucnosti."
 RECORD_DATE_BEFORE_ACCIDENT_MESSAGE = (
     "Datum zápisu nemůže být dřívější než datum pracovního úrazu."
