@@ -1,6 +1,6 @@
 import json
 import unicodedata
-from datetime import datetime, timedelta, time
+from datetime import datetime, timedelta, time, date
 from pathlib import Path
 
 from PySide6.QtCore import Qt
@@ -35,6 +35,16 @@ from PySide6.QtWidgets import (
 
 from core.widgets.dialog_utils import create_save_cancel_box, configure_form_tab_navigation
 from moduly.kniha_urazu.ui.setreni.accident_findings_widget import AccidentFindingsWidget
+from moduly.kniha_urazu.sluzby.accident_case_closure import (
+    AccidentCaseClosureCheck,
+    CASE_CLOSED_LABEL,
+    CASE_CLOSED_NO,
+    CASE_CLOSED_YES,
+    CLOSURE_BLOCKED_TITLE,
+    CLOSURE_DATE_LABEL,
+    evaluate_accident_case_closure,
+    is_saved_case_closed,
+)
 from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
     CSSZ_STATUS_DONE,
     CSSZ_STATUS_OPTIONAL,
@@ -142,13 +152,14 @@ class SetreniDialog(QDialog):
     def _save_administrativa(self) -> None:
         if self.accident is None:
             return
+        self._apply_case_closure_guard()
         merged = dict(self._zajisteni_saved_data)
         merged.update(self._administrativa_save_data())
         investigation_service.save_zajisteni_dukazu(
             self.accident.id,
             json.dumps(merged, ensure_ascii=False),
         )
-        closed = merged.get("admin_pripad_uzavren") == "ANO"
+        closed = merged.get("admin_pripad_uzavren") == CASE_CLOSED_YES
         if getattr(self.accident, "closed", False) != closed:
             updated = accident_service.update_accident(self.accident.id, closed=closed)
             if updated is not None:
@@ -162,6 +173,44 @@ class SetreniDialog(QDialog):
             saved_data=merged,
         )
         self._zajisteni_saved_data = merged
+
+    def _was_case_closed(self) -> bool:
+        return is_saved_case_closed(self._zajisteni_saved_data, self.accident)
+
+    def _evaluate_case_closure(self) -> AccidentCaseClosureCheck:
+        merged = dict(self._zajisteni_saved_data)
+        merged.update(self._administrativa_save_data())
+        return evaluate_accident_case_closure(
+            self.accident,
+            saved_data=merged,
+            today=date.today(),
+        )
+
+    def _connect_case_closure_guard(self) -> None:
+        if not hasattr(self, "admin_pripad_uzavren"):
+            return
+        for child in self.admin_pripad_uzavren.findChildren(QRadioButton):
+            if child.text() == CASE_CLOSED_YES:
+                child.toggled.connect(self._on_case_closed_toggled)
+
+    def _on_case_closed_toggled(self, checked: bool) -> None:
+        if not checked:
+            return
+        if self._was_case_closed():
+            return
+        self._apply_case_closure_guard(show_message=True)
+
+    def _apply_case_closure_guard(self, *, show_message: bool = True) -> None:
+        if self._radio_choice_value(self.admin_pripad_uzavren) != CASE_CLOSED_YES:
+            return
+        if self._was_case_closed():
+            return
+        check = self._evaluate_case_closure()
+        if check.allowed:
+            return
+        self._set_radio_choice(self.admin_pripad_uzavren, CASE_CLOSED_NO)
+        if show_message and check.message:
+            QMessageBox.warning(self, CLOSURE_BLOCKED_TITLE, check.message)
 
     def _open_mu_investigation(self) -> None:
         if self.accident is None:
@@ -2895,7 +2944,11 @@ class SetreniDialog(QDialog):
         if saved.get("admin_ukonceni"):
             self._set_date_widget(self.admin_ukonceni, saved.get("admin_ukonceni"))
         self.admin_pripad_uzavren = self._radio_choice(["ANO", "NE"])
-        self._set_radio_choice(self.admin_pripad_uzavren, saved.get("admin_pripad_uzavren", "NE"))
+        self._set_radio_choice(
+            self.admin_pripad_uzavren,
+            saved.get("admin_pripad_uzavren", CASE_CLOSED_NO),
+        )
+        self._connect_case_closure_guard()
 
         def saved_row(rows, *, key="", name=""):
             for item in rows or []:
@@ -3494,8 +3547,8 @@ class SetreniDialog(QDialog):
             layout.addWidget(nemocenske)
 
         end_form = QFormLayout()
-        end_form.addRow("Datum ukončení šetření:", self.admin_ukonceni)
-        end_form.addRow("Případ uzavřen:", self.admin_pripad_uzavren)
+        end_form.addRow(f"{CLOSURE_DATE_LABEL}:", self.admin_ukonceni)
+        end_form.addRow(f"{CASE_CLOSED_LABEL}:", self.admin_pripad_uzavren)
         layout.addLayout(end_form)
         layout.addStretch()
         scroll.setWidget(content)

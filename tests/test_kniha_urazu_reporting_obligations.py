@@ -507,13 +507,17 @@ class SetreniDialogExecTestCase(unittest.TestCase):
         dialog._set_radio_choice(dialog.admin_pripad_uzavren, "ANO")
 
         with patch(
-            "moduly.kniha_urazu.ui.setreni.setreni_dialog.investigation_service.save_zajisteni_dukazu"
-        ) as mock_save:
+            "moduly.kniha_urazu.sluzby.accident_reporting_obligations.employer_union_organization_active",
+            return_value=False,
+        ):
             with patch(
-                "moduly.kniha_urazu.ui.setreni.setreni_dialog.accident_service.update_accident",
-                return_value=accident,
-            ) as mock_update:
-                dialog._save_administrativa()
+                "moduly.kniha_urazu.ui.setreni.setreni_dialog.investigation_service.save_zajisteni_dukazu"
+            ) as mock_save:
+                with patch(
+                    "moduly.kniha_urazu.ui.setreni.setreni_dialog.accident_service.update_accident",
+                    return_value=accident,
+                ) as mock_update:
+                    dialog._save_administrativa()
 
         mock_save.assert_called_once()
         mock_update.assert_called_once_with(7, closed=True)
