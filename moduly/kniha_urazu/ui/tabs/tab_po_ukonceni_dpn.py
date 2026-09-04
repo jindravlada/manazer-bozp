@@ -40,6 +40,11 @@ SECTION_TITLES = (
 
 SECTION_PLACEHOLDER = "Obsah této sekce bude doplněn v dalších krocích."
 
+OVERVIEW_SOURCE_HINT = (
+    "Stav vychází z Ohlašovací povinnosti. Splnění evidujte tam – "
+    "tato sekce je jen přehled a stejný úkon se zadává jen jednou."
+)
+
 
 class TabPoUkonceniDpn(QWidget):
     """Poslední záložka spisu úrazu – základ fáze po ukončení DPN."""
@@ -94,6 +99,11 @@ class TabPoUkonceniDpn(QWidget):
         group = QGroupBox(SECTION_AKTUALIZACE_ZAZNAMU)
         form = QFormLayout(group)
 
+        self.overview_hint = QLabel(OVERVIEW_SOURCE_HINT)
+        self.overview_hint.setObjectName("MutedText")
+        self.overview_hint.setWordWrap(True)
+        form.addRow(self.overview_hint)
+
         self.portal_suip_done = QCheckBox("provedeno")
         self.portal_suip_date = NullableDateEdit()
         portal_row = QWidget()
@@ -116,6 +126,14 @@ class TabPoUkonceniDpn(QWidget):
 
         form.addRow("Aktualizace na Portálu SÚIP:", portal_row)
         form.addRow("Podepsaný aktualizovaný záznam:", signed_row)
+
+        for widget in (
+            self.portal_suip_done,
+            self.portal_suip_date,
+            self.signed_record_done,
+            self.signed_record_date,
+        ):
+            widget.setEnabled(False)
         return group
 
     def set_dpn_ended(self, ended: bool) -> None:
@@ -123,6 +141,13 @@ class TabPoUkonceniDpn(QWidget):
         self.info_panel.setVisible(not self._dpn_ended)
         self.sections_widget.setVisible(self._dpn_ended)
         self.sections_widget.setEnabled(self._dpn_ended)
+        for widget in (
+            self.portal_suip_done,
+            self.portal_suip_date,
+            self.signed_record_done,
+            self.signed_record_date,
+        ):
+            widget.setEnabled(False)
 
     def set_from_dpn_do(self, dpn_do) -> None:
         self.set_dpn_ended(is_dpn_ended(dpn_do))

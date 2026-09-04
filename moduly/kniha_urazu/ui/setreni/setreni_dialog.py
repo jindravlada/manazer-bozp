@@ -39,11 +39,16 @@ from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
     CSSZ_STATUS_DONE,
     CSSZ_STATUS_OPTIONAL,
     CSSZ_STATUS_REQUIRED,
+    OBLIGATION_AKTUALIZACE_OIP_OBU_PORTAL,
+    OBLIGATION_AKTUALIZACE_OO,
+    OBLIGATION_AKTUALIZACE_ZAMESTNANEC,
     OBLIGATION_CSSZ_USSZ_NEMOCENSKE,
     OBLIGATION_OIP_OBU_OHLASENI,
     OBLIGATION_OO_OHLASENI,
     OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU,
     METHOD_PORTAL_SUIP,
+    POST_DPN_OBLIGATION_KEYS,
+    SECTION_AKTUALIZACE_PO_DPN,
     SECTION_NEMOCENSKE,
     SECTION_ODESLANI,
     SECTION_OHLASENI,
@@ -167,7 +172,8 @@ class SetreniDialog(QDialog):
         return (
             list(getattr(self, "admin_zaznam_rows", []))
             + list(getattr(self, "admin_odeslani_rows", []))
-            + list(getattr(self, "admin_predani_rows", []))
+            +             list(getattr(self, "admin_predani_rows", []))
+            + list(getattr(self, "admin_dpn_rows", []))
             + list(getattr(self, "admin_nemocenske_rows", []))
         )
 
@@ -712,7 +718,8 @@ class SetreniDialog(QDialog):
         return (
             list(getattr(self, "admin_zaznam_rows", []))
             + list(getattr(self, "admin_odeslani_rows", []))
-            + list(getattr(self, "admin_predani_rows", []))
+            +             list(getattr(self, "admin_predani_rows", []))
+            + list(getattr(self, "admin_dpn_rows", []))
             + list(getattr(self, "admin_nemocenske_rows", []))
         )
 
@@ -2781,6 +2788,8 @@ class SetreniDialog(QDialog):
             zpusob = self._radio_choice_value(row["zpusob"])
             if key == OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU:
                 zpusob = zpusob or METHOD_PORTAL_SUIP
+            elif key == OBLIGATION_AKTUALIZACE_OIP_OBU_PORTAL:
+                zpusob = zpusob or METHOD_PORTAL_SUIP
             elif key == OBLIGATION_OIP_OBU_OHLASENI and oip_notice_uses_fixed_portal_suip(
                 self.accident
             ):
@@ -2888,6 +2897,7 @@ class SetreniDialog(QDialog):
         self.admin_zaznam_rows = []
         self.admin_odeslani_rows = []
         self.admin_predani_rows = []
+        self.admin_dpn_rows = []
         self.admin_nemocenske_rows = []
 
         for definition in obligation_definitions_for_accident(
@@ -2903,7 +2913,7 @@ class SetreniDialog(QDialog):
             if definition.key not in {
                 OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU,
                 OBLIGATION_CSSZ_USSZ_NEMOCENSKE,
-            }:
+            } | POST_DPN_OBLIGATION_KEYS:
                 display_name = (saved_data.get("nazev") or "").strip() or definition.label
             if definition.section == SECTION_OHLASENI:
                 agenda = "ohlaseni"
@@ -2926,6 +2936,8 @@ class SetreniDialog(QDialog):
                 self.admin_odeslani_rows.append(row)
             elif definition.section == SECTION_NEMOCENSKE:
                 self.admin_nemocenske_rows.append(row)
+            elif definition.section == SECTION_AKTUALIZACE_PO_DPN:
+                self.admin_dpn_rows.append(row)
             else:
                 self.admin_predani_rows.append(row)
 
@@ -2938,10 +2950,11 @@ class SetreniDialog(QDialog):
             key == OBLIGATION_OIP_OBU_OHLASENI
             and oip_notice_uses_fixed_portal_suip(self.accident)
         )
+        post_dpn_portal = key == OBLIGATION_AKTUALIZACE_OIP_OBU_PORTAL
 
         if key == OBLIGATION_CSSZ_USSZ_NEMOCENSKE:
             zpusoby = ["Datová schránka", "E-mail", "Listinná podoba", "Jiný způsob"]
-        elif key == OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU:
+        elif key == OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU or post_dpn_portal:
             zpusoby = [METHOD_PORTAL_SUIP]
         elif portal_only_oip_notice:
             zpusoby = [METHOD_PORTAL_SUIP]
@@ -2977,7 +2990,7 @@ class SetreniDialog(QDialog):
         row["cas"].setPlaceholderText("např. 14:35")
         row["upresneni"].setPlaceholderText("Upřesnit způsob odeslání / předání")
 
-        if key == OBLIGATION_CSSZ_USSZ_NEMOCENSKE:
+        if key == OBLIGATION_CSSZ_USSZ_NEMOCENSKE or key in POST_DPN_OBLIGATION_KEYS:
             row["lhuta"] = None
         elif "Kooperativa" in nazev or "Zákonná pojišťovna" in nazev:
             row["lhuta"] = None
@@ -3002,9 +3015,12 @@ class SetreniDialog(QDialog):
 
         # Způsob nevybírat automaticky – potvrzuje ho uživatel až po provedení.
         saved_method = (data.get("zpusob") or "").strip()
-        if key == OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU:
+        if key == OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU or post_dpn_portal:
             self._set_radio_choice(row["zpusob"], METHOD_PORTAL_SUIP)
             row["fixed_sending_method"] = METHOD_PORTAL_SUIP
+            if post_dpn_portal:
+                row["show_method_upresneni"] = True
+                row["upresneni"].setPlaceholderText("číslo podání nebo poznámka k aktualizaci")
         elif portal_only_oip_notice:
             self._set_radio_choice(row["zpusob"], METHOD_PORTAL_SUIP)
             row["fixed_sending_method"] = METHOD_PORTAL_SUIP
@@ -3289,6 +3305,26 @@ class SetreniDialog(QDialog):
             for row in visible_predani_rows:
                 predani_layout.addWidget(self._admin_row_group(row, "předání"))
             layout.addWidget(predani)
+
+        visible_dpn_rows = [
+            row for row in getattr(self, "admin_dpn_rows", []) if self._admin_row_relevant(row)
+        ]
+        if visible_dpn_rows:
+            dpn = QGroupBox("AKTUALIZACE ZÁZNAMU PO UKONČENÍ DPN")
+            dpn_layout = QVBoxLayout(dpn)
+            for row in visible_dpn_rows:
+                key = row.get("key")
+                if key == OBLIGATION_AKTUALIZACE_OIP_OBU_PORTAL:
+                    mode = "aktualizace"
+                elif key in {
+                    OBLIGATION_AKTUALIZACE_ZAMESTNANEC,
+                    OBLIGATION_AKTUALIZACE_OO,
+                }:
+                    mode = "předání"
+                else:
+                    mode = "odeslání"
+                dpn_layout.addWidget(self._admin_row_group(row, mode))
+            layout.addWidget(dpn)
 
         visible_nemocenske_rows = [
             row for row in self.admin_nemocenske_rows if self._admin_row_relevant(row)

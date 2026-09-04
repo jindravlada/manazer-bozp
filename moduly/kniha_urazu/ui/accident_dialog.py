@@ -33,7 +33,7 @@ from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
     DPN_START_BEFORE_ACCIDENT_MESSAGE,
     RECORD_DATE_BEFORE_ACCIDENT_MESSAGE,
     dpn_calendar_days,
-    dpn_record_update_from_saved_data,
+    dpn_record_update_overview_from_saved_data,
     is_accident_date_in_future,
     is_dpn_end_before_start,
     is_dpn_end_in_future,
@@ -467,7 +467,7 @@ class AccidentDialog(QDialog):
         if not isinstance(saved, dict):
             saved = {}
         self.tab_po_ukonceni_dpn_widget.load_dpn_record_update(
-            dpn_record_update_from_saved_data(saved)
+            dpn_record_update_overview_from_saved_data(accident, saved)
         )
 
     def _field_names(self):
@@ -512,6 +512,5 @@ class AccidentDialog(QDialog):
         data.update(self.tab_pracoviste_widget.get_data())
         data.update(self.tab_dalsi_widget.get_data())
         data.update(self.tab_svedci_widget.get_data())
-        data["dpn_record_update"] = self.tab_po_ukonceni_dpn_widget.get_dpn_record_update()
         data.update({name: self._get_widget_value(getattr(self, name)) for name in self._field_names() if hasattr(self, name)})
         return data

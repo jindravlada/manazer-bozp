@@ -9,6 +9,7 @@ from typing import Any
 from core.shared.constants import ENTITY_ACCIDENT
 from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
     OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN,
+    POST_DPN_OBLIGATION_KEYS,
     SECTION_ODESLANI,
     SECTION_OHLASENI,
     SECTION_PREDANI,
@@ -80,6 +81,7 @@ class AccidentReportingTaskService:
             for item in obligations
             if item.section in _RECORD_SECTIONS
             and item.key != OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN
+            and item.key not in POST_DPN_OBLIGATION_KEYS
         ]
 
         self._sync_group(

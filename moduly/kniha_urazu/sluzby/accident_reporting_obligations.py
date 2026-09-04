@@ -28,12 +28,18 @@ OBLIGATION_OO_PREDANI = "oo_predani"
 OBLIGATION_RODINA_PREDANI = "rodina_predani"
 OBLIGATION_CSSZ_USSZ_NEMOCENSKE = "cssz_ussz_nemocenske"
 OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN = "aktualizace_zaznamu_po_dpn"
+OBLIGATION_AKTUALIZACE_OIP_OBU_PORTAL = "aktualizace_oip_obu_portal"
+OBLIGATION_AKTUALIZACE_ZP = "aktualizace_zp"
+OBLIGATION_AKTUALIZACE_ZAMESTNANEC = "aktualizace_zamestnanec"
+OBLIGATION_AKTUALIZACE_OO = "aktualizace_oo"
+OBLIGATION_AKTUALIZACE_POLICIE = "aktualizace_policie"
 
 SECTION_OHLASENI = "ohlaseni"
 SECTION_ZAZNAM = "zaznam"
 SECTION_ODESLANI = "odeslani"
 SECTION_PREDANI = "predani"
 SECTION_NEMOCENSKE = "nemocenske"
+SECTION_AKTUALIZACE_PO_DPN = "aktualizace_po_dpn"
 
 CATEGORY_NO_PN = "no_pn"
 CATEGORY_PN_UP_TO_3 = "pn_up_to_3"
@@ -56,13 +62,28 @@ OBLIGATION_LABELS: dict[str, str] = {
     OBLIGATION_OO_PREDANI: "Odborová organizace – předání podepsaného záznamu o pracovním úrazu",
     OBLIGATION_RODINA_PREDANI: "Rodinní příslušníci – předání záznamu o pracovním úrazu",
     OBLIGATION_CSSZ_USSZ_NEMOCENSKE: "ČSSZ / ÚSSZ – podklady k nemocenskému",
-    OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN: "Aktualizace záznamu po ukončení DPN",
+    OBLIGATION_AKTUALIZACE_OIP_OBU_PORTAL: (
+        "OIP / OBÚ – aktualizace záznamu přes Portál SÚIP"
+    ),
+    OBLIGATION_AKTUALIZACE_ZP: (
+        "Zdravotní pojišťovna postiženého – zaslání aktualizovaného záznamu o pracovním úrazu"
+    ),
+    OBLIGATION_AKTUALIZACE_ZAMESTNANEC: (
+        "Postižený zaměstnanec – předání aktualizovaného záznamu o pracovním úrazu"
+    ),
+    OBLIGATION_AKTUALIZACE_OO: (
+        "Odborová organizace – předání aktualizovaného záznamu o pracovním úrazu"
+    ),
+    OBLIGATION_AKTUALIZACE_POLICIE: (
+        "Policie ČR – zaslání aktualizovaného záznamu o pracovním úrazu"
+    ),
 }
 
 LEGACY_LABEL_ALIASES: dict[str, str] = {
     "Záznam o pracovním úrazu – Portál SÚIP": OBLIGATION_VYHOTOVENI_ZAZNAMU,
     "Postižený zaměstnanec – předání podepsaného záznamu o pracovním úrazu": OBLIGATION_ZAMESTNANEC_PREDANI,
     "Odborová organizace – předání podepsaného záznamu o pracovním úrazu": OBLIGATION_OO_PREDANI,
+    "Aktualizace záznamu po ukončení DPN": "",
     "Kooperativa": "",
 }
 
@@ -83,6 +104,20 @@ LEGACY_RECORD_DUTY_KEYS = frozenset({
 
 METHOD_PORTAL_SUIP = "Portál SÚIP"
 PORTAL_SUIP_OIP_NOTICE_FROM = date(2026, 1, 1)
+
+POST_DPN_SOURCE_OBLIGATION: dict[str, str] = {
+    OBLIGATION_AKTUALIZACE_OIP_OBU_PORTAL: "",
+    OBLIGATION_AKTUALIZACE_ZP: OBLIGATION_ZP_ZASLANI,
+    OBLIGATION_AKTUALIZACE_ZAMESTNANEC: OBLIGATION_ZAMESTNANEC_PREDANI,
+    OBLIGATION_AKTUALIZACE_OO: OBLIGATION_OO_PREDANI,
+    OBLIGATION_AKTUALIZACE_POLICIE: OBLIGATION_POLICIE_ZASLANI,
+}
+POST_DPN_OBLIGATION_KEYS = frozenset(POST_DPN_SOURCE_OBLIGATION)
+POST_DPN_SIGNED_RECORD_KEYS = frozenset(
+    key
+    for key in POST_DPN_OBLIGATION_KEYS
+    if key != OBLIGATION_AKTUALIZACE_OIP_OBU_PORTAL
+)
 
 DPN_RECORD_UPDATE_KEY = "dpn_record_update"
 DPN_RECORD_UPDATE_PORTAL_DONE = "portal_suip_done"
@@ -333,6 +368,35 @@ def is_dpn_record_update_relevant(accident: AccidentLike | None) -> bool:
     return requires_accident_record(accident)
 
 
+def is_post_dpn_obligation_key(obligation_key: str) -> bool:
+    return obligation_key in POST_DPN_OBLIGATION_KEYS
+
+
+def is_post_dpn_obligation_relevant(
+    accident: AccidentLike | None,
+    obligation_key: str,
+    *,
+    union_organization_active: bool | None = None,
+    saved_data: dict[str, Any] | None = None,
+    record_duty_generation: str | None = None,
+) -> bool:
+    """Konkrétní povinnost po DPN jen pokud vzniká i původní povinnost danému adresátovi."""
+    if obligation_key not in POST_DPN_SOURCE_OBLIGATION:
+        return False
+    if not is_dpn_record_update_relevant(accident):
+        return False
+    source_key = POST_DPN_SOURCE_OBLIGATION[obligation_key]
+    if not source_key:
+        return True
+    return is_obligation_relevant(
+        accident,
+        source_key,
+        union_organization_active=union_organization_active,
+        saved_data=saved_data,
+        record_duty_generation=record_duty_generation,
+    )
+
+
 def empty_dpn_record_update() -> dict[str, Any]:
     return {
         DPN_RECORD_UPDATE_PORTAL_DONE: False,
@@ -542,6 +606,19 @@ def obligation_key_from_row(row: dict[str, Any]) -> str:
     if legacy is not None:
         return legacy
 
+    nazev_lower = str(nazev).lower()
+    if "aktualizovan" in nazev_lower or "aktualizace záznamu přes portál" in nazev_lower:
+        if "portál súip" in nazev_lower or "portal suip" in nazev_lower:
+            return OBLIGATION_AKTUALIZACE_OIP_OBU_PORTAL
+        if "Zdravotní pojišťovna" in nazev:
+            return OBLIGATION_AKTUALIZACE_ZP
+        if "Postižený zaměstnanec" in nazev:
+            return OBLIGATION_AKTUALIZACE_ZAMESTNANEC
+        if "Odborová organizace" in nazev:
+            return OBLIGATION_AKTUALIZACE_OO
+        if "Policie ČR" in nazev:
+            return OBLIGATION_AKTUALIZACE_POLICIE
+
     if "Odborová organizace" in nazev and "ohlášení" in nazev:
         return OBLIGATION_OO_OHLASENI
     if "OIP / OBÚ" in nazev and "ohlášení" in nazev:
@@ -639,7 +716,17 @@ def is_obligation_relevant(
         return False
 
     if obligation_key == OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN:
-        return is_dpn_record_update_relevant(accident)
+        # Souhrnná položka z PU-DPN-2 už není zdrojem pravdy ani čekající povinností ZoÚ.
+        return False
+
+    if obligation_key in POST_DPN_OBLIGATION_KEYS:
+        return is_post_dpn_obligation_relevant(
+            accident,
+            obligation_key,
+            union_organization_active=union_organization_active,
+            saved_data=saved_data,
+            record_duty_generation=record_duty_generation,
+        )
 
     return False
 
@@ -686,10 +773,17 @@ def cssz_row_has_recorded_data(row: dict[str, Any] | None) -> bool:
 
 
 def cssz_saved_row(saved_data: dict[str, Any] | None) -> dict[str, Any]:
-    if not saved_data:
+    return obligation_row_from_saved_data(saved_data, OBLIGATION_CSSZ_USSZ_NEMOCENSKE)
+
+
+def obligation_row_from_saved_data(
+    saved_data: dict[str, Any] | None,
+    obligation_key: str,
+) -> dict[str, Any]:
+    if not saved_data or not obligation_key:
         return {}
     for row in collect_obligation_rows_from_saved_data(saved_data):
-        if obligation_key_from_row(row) == OBLIGATION_CSSZ_USSZ_NEMOCENSKE:
+        if obligation_key_from_row(row) == obligation_key:
             return row
     return {}
 
@@ -719,6 +813,20 @@ def is_obligation_visible(
 ) -> bool:
     if obligation_key == OBLIGATION_CSSZ_USSZ_NEMOCENSKE:
         return is_cssz_nemocenske_visible(accident, row=row, saved_data=saved_data)
+    if obligation_key in POST_DPN_OBLIGATION_KEYS:
+        if is_obligation_relevant(
+            accident,
+            obligation_key,
+            union_organization_active=union_organization_active,
+            saved_data=saved_data,
+            record_duty_generation=record_duty_generation,
+        ):
+            return True
+        if cssz_row_has_recorded_data(row):
+            return True
+        return cssz_row_has_recorded_data(
+            obligation_row_from_saved_data(saved_data, obligation_key)
+        )
     return is_obligation_relevant(
         accident,
         obligation_key,
@@ -783,7 +891,9 @@ def cssz_row_ui_state(
 def _section_for_key(key: str) -> str:
     if key == OBLIGATION_CSSZ_USSZ_NEMOCENSKE:
         return SECTION_NEMOCENSKE
-    if key in {OBLIGATION_VYHOTOVENI_ZAZNAMU, OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU, OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN}:
+    if key in POST_DPN_OBLIGATION_KEYS:
+        return SECTION_AKTUALIZACE_PO_DPN
+    if key in {OBLIGATION_VYHOTOVENI_ZAZNAMU, OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU}:
         return SECTION_ZAZNAM
     if key in {
         OBLIGATION_OIP_OBU_ZASLANI,
@@ -940,6 +1050,8 @@ def obligation_default_deadline(
         return None
     if obligation_key == OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN:
         return None
+    if obligation_key in POST_DPN_OBLIGATION_KEYS or section == SECTION_AKTUALIZACE_PO_DPN:
+        return None
     if "ČSSZ" in label or "ÚSSZ" in label:
         return None
 
@@ -1018,14 +1130,6 @@ def obligation_rows_for_summary(
             row.setdefault("nazev", obligation.label)
         row.setdefault("section", obligation.section)
 
-        if obligation.key == OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN:
-            update_state = dpn_record_update_from_saved_data(saved_data)
-            if dpn_record_update_is_done(update_state):
-                completion = dpn_record_update_completion_date(update_state)
-                if completion is not None:
-                    row["datum"] = completion.isoformat()
-                row["predano"] = True
-
         if row_is_done(row):
             result.append(row)
             continue
@@ -1063,6 +1167,53 @@ def row_is_done(row: dict[str, Any]) -> bool:
     if row.get("datum"):
         return True
     return False
+
+
+def dpn_record_update_overview_from_saved_data(
+    accident: AccidentLike | None,
+    saved_data: dict[str, Any] | None,
+    *,
+    union_organization_active: bool | None = None,
+) -> dict[str, Any]:
+    """Souhrn záložky Po ukončení DPN – čte stav z Ohlašovací povinnosti."""
+    rows_by_key: dict[str, dict[str, Any]] = {}
+    for row in obligation_rows_for_summary(
+        accident,
+        saved_data,
+        union_organization_active=union_organization_active,
+    ):
+        key = obligation_key_from_row(row)
+        if key:
+            rows_by_key[key] = row
+
+    portal_row = rows_by_key.get(OBLIGATION_AKTUALIZACE_OIP_OBU_PORTAL, {})
+    portal_done = row_is_done(portal_row)
+    portal_date = parse_saved_date(portal_row.get("datum")) if portal_row else None
+
+    signed_keys = [
+        key
+        for key in POST_DPN_SIGNED_RECORD_KEYS
+        if is_obligation_relevant(
+            accident,
+            key,
+            union_organization_active=union_organization_active,
+            saved_data=saved_data,
+        )
+    ]
+    signed_rows = [rows_by_key.get(key, {}) for key in signed_keys]
+    signed_done = bool(signed_keys) and all(row_is_done(row) for row in signed_rows)
+    signed_dates = [parse_saved_date(row.get("datum")) for row in signed_rows]
+    present = [item for item in signed_dates if item is not None]
+    signed_date = max(present) if signed_done and present else None
+
+    return normalize_dpn_record_update(
+        {
+            DPN_RECORD_UPDATE_PORTAL_DONE: portal_done,
+            DPN_RECORD_UPDATE_PORTAL_DATE: portal_date,
+            DPN_RECORD_UPDATE_SIGNED_DONE: signed_done,
+            DPN_RECORD_UPDATE_SIGNED_DATE: signed_date,
+        }
+    )
 
 
 def row_status(row: dict[str, Any], today: date) -> str:

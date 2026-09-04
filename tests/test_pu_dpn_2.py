@@ -36,8 +36,14 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.kniha_urazu.modely.investigation import AccidentInvestigation
     from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
         DPN_RECORD_UPDATE_KEY,
+        OBLIGATION_AKTUALIZACE_OIP_OBU_PORTAL,
+        OBLIGATION_AKTUALIZACE_OO,
+        OBLIGATION_AKTUALIZACE_POLICIE,
+        OBLIGATION_AKTUALIZACE_ZAMESTNANEC,
+        OBLIGATION_AKTUALIZACE_ZP,
         OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN,
         OBLIGATION_OO_OHLASENI,
+        POST_DPN_OBLIGATION_KEYS,
         applicable_obligations,
         dpn_record_update_from_saved_data,
         dpn_record_update_is_done,
@@ -108,6 +114,8 @@ class PuDpn2TestCase(unittest.TestCase):
         for item in applicable_obligations(accident, saved_data=saved_data):
             if item.key == OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN:
                 continue
+            if item.key in POST_DPN_OBLIGATION_KEYS:
+                continue
             rows.append({"key": item.key, "datum": "2026-04-05"})
         return rows
 
@@ -134,7 +142,15 @@ class PuDpn2TestCase(unittest.TestCase):
         )
         self.assertTrue(is_dpn_record_update_relevant(with_end))
         keys = [item.key for item in applicable_obligations(with_end)]
-        self.assertEqual(keys.count(OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN), 1)
+        self.assertNotIn(OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN, keys)
+        for key in (
+            OBLIGATION_AKTUALIZACE_OIP_OBU_PORTAL,
+            OBLIGATION_AKTUALIZACE_ZP,
+            OBLIGATION_AKTUALIZACE_ZAMESTNANEC,
+            OBLIGATION_AKTUALIZACE_OO,
+        ):
+            self.assertEqual(keys.count(key), 1)
+        self.assertNotIn(OBLIGATION_AKTUALIZACE_POLICIE, keys)
 
         short_pn = self._create(druh_urazu=KIND_UP_TO_3, dpn_do=date(2026, 4, 3))
         self.assertFalse(is_dpn_record_update_relevant(short_pn))
@@ -164,8 +180,15 @@ class PuDpn2TestCase(unittest.TestCase):
         accident_service.update_accident(accident.id, dpn_do=date(2026, 4, 18))
         reloaded = accident_service.get_by_id(accident.id)
         second_keys = [item.key for item in applicable_obligations(reloaded)]
-        self.assertEqual(first_keys.count(OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN), 1)
         self.assertEqual(first_keys, second_keys)
+        for key in (
+            OBLIGATION_AKTUALIZACE_OIP_OBU_PORTAL,
+            OBLIGATION_AKTUALIZACE_ZP,
+            OBLIGATION_AKTUALIZACE_ZAMESTNANEC,
+            OBLIGATION_AKTUALIZACE_OO,
+        ):
+            self.assertEqual(first_keys.count(key), 1)
+        self.assertNotIn(OBLIGATION_AKTUALIZACE_POLICIE, first_keys)
 
         dialog = AccidentDialog(accident=reloaded)
         dialog.tab_zamestnanec_widget.dpn_do.set_date_value(date(2026, 4, 19))
@@ -176,12 +199,16 @@ class PuDpn2TestCase(unittest.TestCase):
         dialog.close()
 
         current = accident_service.get_by_id(reloaded.id)
-        self.assertEqual(
-            [item.key for item in applicable_obligations(current)].count(
-                OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN
-            ),
-            1,
-        )
+        current_keys = [item.key for item in applicable_obligations(current)]
+        for key in (
+            OBLIGATION_AKTUALIZACE_OIP_OBU_PORTAL,
+            OBLIGATION_AKTUALIZACE_ZP,
+            OBLIGATION_AKTUALIZACE_ZAMESTNANEC,
+            OBLIGATION_AKTUALIZACE_OO,
+        ):
+            self.assertEqual(current_keys.count(key), 1)
+        self.assertNotIn(OBLIGATION_AKTUALIZACE_POLICIE, current_keys)
+        self.assertNotIn(OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN, current_keys)
         self.assertNotIn(DPN_RECORD_UPDATE_KEY, self._saved_data(reloaded.id))
 
     def test_completing_update_returns_zou_to_green(self) -> None:
@@ -189,6 +216,8 @@ class PuDpn2TestCase(unittest.TestCase):
         dialog = AccidentDialog(accident=accident)
         tab = dialog.tab_po_ukonceni_dpn_widget
         self.assertTrue(tab.is_content_active())
+        self.assertFalse(tab.portal_suip_done.isEnabled())
+        self.assertFalse(tab.signed_record_done.isEnabled())
         tab.portal_suip_done.setChecked(True)
         tab.portal_suip_date.set_date_value(date(2026, 4, 16))
         tab.signed_record_done.setChecked(True)
@@ -197,14 +226,10 @@ class PuDpn2TestCase(unittest.TestCase):
         dialog.close()
 
         saved = self._saved_data(accident.id)
-        self.assertTrue(dpn_record_update_is_done(dpn_record_update_from_saved_data(saved)))
+        self.assertFalse(dpn_record_update_is_done(dpn_record_update_from_saved_data(saved)))
         reloaded = accident_service.get_by_id(accident.id)
-        rows = obligation_rows_for_summary(reloaded, saved)
         original_rows = self._done_rows(reloaded, saved)
-        rows_by_key = {row["key"]: row for row in rows}
-        for row in original_rows:
-            rows_by_key[row["key"]] = row
-        self.assertEqual(self._summary(reloaded, list(rows_by_key.values()), saved), "done")
+        self.assertEqual(self._summary(reloaded, original_rows, saved), "waiting")
 
     def test_clearing_dpn_do_removes_unfulfilled_keeps_done(self) -> None:
         accident = self._create(dpn_do=date(2026, 4, 15))
@@ -268,6 +293,7 @@ class PuDpn2TestCase(unittest.TestCase):
                 + dialog.admin_zaznam_rows
                 + dialog.admin_odeslani_rows
                 + dialog.admin_predani_rows
+                + getattr(dialog, "admin_dpn_rows", [])
             )
         ]
         self.assertNotIn(OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN, keys)

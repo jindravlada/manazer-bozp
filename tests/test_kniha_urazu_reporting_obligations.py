@@ -32,6 +32,11 @@ with patch.object(Path, "home", return_value=_TMP):
         OBLIGATION_POLICIE_ZASLANI,
         OBLIGATION_RODINA_PREDANI,
         OBLIGATION_VYHOTOVENI_ZAZNAMU,
+        OBLIGATION_AKTUALIZACE_OIP_OBU_PORTAL,
+        OBLIGATION_AKTUALIZACE_OO,
+        OBLIGATION_AKTUALIZACE_POLICIE,
+        OBLIGATION_AKTUALIZACE_ZAMESTNANEC,
+        OBLIGATION_AKTUALIZACE_ZP,
         OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN,
         OBLIGATION_ZAMESTNANEC_PREDANI,
         OBLIGATION_ZP_OHLASENI,
@@ -104,11 +109,16 @@ class KnihaUrazuReportingObligationsTestCase(unittest.TestCase):
                 OBLIGATION_EZOP,
                 OBLIGATION_ZAMESTNANEC_PREDANI,
                 OBLIGATION_OO_PREDANI,
-                OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN,
+                OBLIGATION_AKTUALIZACE_OIP_OBU_PORTAL,
+                OBLIGATION_AKTUALIZACE_ZP,
+                OBLIGATION_AKTUALIZACE_ZAMESTNANEC,
+                OBLIGATION_AKTUALIZACE_OO,
             },
         )
         self.assertNotIn(OBLIGATION_OIP_OBU_OHLASENI, keys)
         self.assertNotIn(OBLIGATION_POLICIE_OHLASENI, keys)
+        self.assertNotIn(OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN, keys)
+        self.assertNotIn(OBLIGATION_AKTUALIZACE_POLICIE, keys)
 
     def test_serious_accident_with_short_pn_shows_record_and_oip_ohlaseni(self) -> None:
         accident = AccidentStub(
@@ -128,9 +138,14 @@ class KnihaUrazuReportingObligationsTestCase(unittest.TestCase):
                 OBLIGATION_EZOP,
                 OBLIGATION_ZAMESTNANEC_PREDANI,
                 OBLIGATION_OO_PREDANI,
-                OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN,
+                OBLIGATION_AKTUALIZACE_OIP_OBU_PORTAL,
+                OBLIGATION_AKTUALIZACE_ZP,
+                OBLIGATION_AKTUALIZACE_ZAMESTNANEC,
+                OBLIGATION_AKTUALIZACE_OO,
             },
         )
+        self.assertNotIn(OBLIGATION_AKTUALIZACE_POLICIE, keys)
+        self.assertNotIn(OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN, keys)
 
     def test_fatal_accident_shows_full_matrix(self) -> None:
         accident = AccidentStub(druh_urazu="smrtelný")
