@@ -45,7 +45,7 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
     from moduly.audity.sluzby.audit_program_plan_export_context_service import (
-        MISSING_VISIT_PROCESSES_WARNING,
+        VISIT_PROCESSES_NOT_ASSIGNED,
         audit_program_plan_export_context_service,
     )
     from moduly.audity.sluzby.audit_program_plan_export_service import (
@@ -219,23 +219,12 @@ class AuditProgramOdtExportTestCase(unittest.TestCase):
         self.assertIsNone(
             audit_program_service.repository.get_visit(first.id).audit_id
         )
-
-        process_ids = [row.process_id for row in context.process_rows]
-        self.assertEqual(len(process_ids), len(set(process_ids)))
-        self.assertEqual(len(context.process_rows), 2)
-        process_a_row = next(
-            row for row in context.process_rows if row.process_id == process_a.id
-        )
-        process_b_row = next(
-            row for row in context.process_rows if row.process_id == process_b.id
-        )
-        self.assertEqual(process_a_row.visit_count, 3)
-        self.assertEqual(process_b_row.visit_count, 1)
+        self.assertEqual(context.schedule_rows[0].process_names, (process_a.nazev,))
+        self.assertEqual(context.schedule_rows[1].process_names, (process_a.nazev,))
         self.assertEqual(
-            process_a_row.workplaces,
-            tuple(sorted({self._workplace_a.name, self._workplace_b.name})),
+            context.schedule_rows[2].process_names,
+            (process_a.nazev, process_b.nazev),
         )
-        self.assertEqual(process_b_row.workplaces, (self._workplace_a.name,))
 
         path = self._export(program.id)
         with zipfile.ZipFile(path) as zin:
@@ -258,8 +247,10 @@ class AuditProgramOdtExportTestCase(unittest.TestCase):
         self.assertEqual(content.count('<table:table table:name="Harmonogram"'), 1)
         self.assertEqual(
             content.count('<table:table-row table:style-name="PlanBodyRow">'),
-            5,  # 3 harmonogram + 2 souhrn procesů
+            3,
         )
+        self.assertNotIn("Souhrn auditovaných procesů", plain)
+        self.assertNotIn("Počet plánovaných ověření", plain)
 
     def test_visit_without_audit_and_missing_processes_warning(self) -> None:
         program = self._create_program()
@@ -273,7 +264,8 @@ class AuditProgramOdtExportTestCase(unittest.TestCase):
         self.assertIsNone(visit.audit_id)
         path = self._export(program.id)
         plain = _odt_plain_text(_odt_content(path))
-        self.assertIn(MISSING_VISIT_PROCESSES_WARNING, plain)
+        self.assertIn(VISIT_PROCESSES_NOT_ASSIGNED, plain)
+        self.assertNotIn("Souhrn auditovaných procesů", plain)
         self.assertIn(self._workplace_a.name, plain)
         self.assertIn("duben", plain)
         self.assertEqual(audit_program_service.repository.get_visit(visit.id).audit_id, None)

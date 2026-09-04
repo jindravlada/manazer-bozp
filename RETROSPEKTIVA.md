@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-04 – AUDIT-PROGRAM-ODT-DETAIL-4
+
+**Co se povedlo:** Harmonogram ukazuje u každé návštěvy její auditované procesy. Schvalovaný plán už nemíchá souhrn za celý program.
+
+**Co už bychom dnes udělali jinak:** Procesy dát do sloupce návštěvy hned, ne do samostatné agregace.
+
+**Co bylo zbytečně složité:** Nic.
+
+**Jaké nové pravidlo z toho vzniklo:** Řádek plánu popisuje jednu návštěvu. Chybějící přiřazení se píše do buňky návštěvy, ne do souhrnné sekce.
+
+---
+
 ### 2026-09-04 – AUDIT-PROGRAM-ODT-PREVIEW-3
 
 **Co se povedlo:** Tlačítko Exportovat plán rovnou otevře dočasný ODT. Uživatel si v LibreOffice uloží nebo vyexportuje PDF sám.
