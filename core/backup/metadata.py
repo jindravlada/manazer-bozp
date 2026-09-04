@@ -106,9 +106,11 @@ class BackupMetadata:
     database_quick_check: str | None = None
     database_size: int | None = None
     database_empty: bool | None = None
+    included_workspace_roots: list[str] | None = None
+    unknown_workspace_roots: list[str] | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        data: dict[str, Any] = {
             "format_version": self.format_version,
             "created_at": self.created_at,
             "app_version": self.app_version,
@@ -124,6 +126,11 @@ class BackupMetadata:
             "database_empty": self.database_empty,
             "package_status": self.package_status,
         }
+        if self.included_workspace_roots is not None:
+            data["included_workspace_roots"] = list(self.included_workspace_roots)
+        if self.unknown_workspace_roots is not None:
+            data["unknown_workspace_roots"] = list(self.unknown_workspace_roots)
+        return data
 
     def to_json(self, *, indent: int | None = 2) -> str:
         return json.dumps(self.to_dict(), ensure_ascii=False, indent=indent) + (
@@ -212,6 +219,15 @@ class BackupMetadata:
         if database_empty is not None:
             database_empty = bool(database_empty)
 
+        included_workspace_roots = _optional_str_list(
+            data.get("included_workspace_roots"),
+            field_name="included_workspace_roots",
+        )
+        unknown_workspace_roots = _optional_str_list(
+            data.get("unknown_workspace_roots"),
+            field_name="unknown_workspace_roots",
+        )
+
         meta = cls(
             format_version=format_version,
             created_at=created_at,
@@ -227,6 +243,8 @@ class BackupMetadata:
             database_quick_check=database_quick_check,
             database_size=database_size,
             database_empty=database_empty,
+            included_workspace_roots=included_workspace_roots,
+            unknown_workspace_roots=unknown_workspace_roots,
         )
         validate_backup_metadata(meta)
         return meta
@@ -238,6 +256,17 @@ class BackupMetadata:
         except json.JSONDecodeError as exc:
             raise BackupMetadataError(f"Neplatný JSON metadat: {exc}") from exc
         return cls.from_dict(data)
+
+
+def _optional_str_list(raw: Any, *, field_name: str) -> list[str] | None:
+    if raw is None:
+        return None
+    if not isinstance(raw, list):
+        raise BackupMetadataError(f"{field_name} musí být seznam.")
+    values = [str(item).strip() for item in raw]
+    if any(not item for item in values):
+        raise BackupMetadataError(f"{field_name} obsahuje prázdnou položku.")
+    return values
 
 
 def _require_keys(data: Mapping[str, Any], keys: Sequence[str]) -> None:
@@ -271,6 +300,8 @@ def create_backup_metadata(
     database_quick_check: str | None = None,
     database_size: int | None = None,
     database_empty: bool | None = None,
+    included_workspace_roots: Sequence[str] | None = None,
+    unknown_workspace_roots: Sequence[str] | None = None,
     created_at: str | None = None,
     platform_name: str | None = None,
     validate: bool = True,
@@ -304,6 +335,16 @@ def create_backup_metadata(
         database_quick_check=database_quick_check,
         database_size=database_size,
         database_empty=database_empty,
+        included_workspace_roots=(
+            list(included_workspace_roots)
+            if included_workspace_roots is not None
+            else None
+        ),
+        unknown_workspace_roots=(
+            list(unknown_workspace_roots)
+            if unknown_workspace_roots is not None
+            else None
+        ),
     )
     if validate:
         # Při creating povolíme i prázdný manifest; při complete musí být validní.
@@ -416,6 +457,16 @@ def mark_package_complete(meta: BackupMetadata) -> BackupMetadata:
         database_quick_check=meta.database_quick_check,
         database_size=meta.database_size,
         database_empty=meta.database_empty,
+        included_workspace_roots=(
+            list(meta.included_workspace_roots)
+            if meta.included_workspace_roots is not None
+            else None
+        ),
+        unknown_workspace_roots=(
+            list(meta.unknown_workspace_roots)
+            if meta.unknown_workspace_roots is not None
+            else None
+        ),
     )
 
 

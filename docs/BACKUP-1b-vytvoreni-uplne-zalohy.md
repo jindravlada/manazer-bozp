@@ -47,7 +47,8 @@ archive.mbbackup
 │   ├── control_results/…
 │   ├── ciselniky/…
 │   ├── templates/…
-│   └── konfigurace/…
+│   ├── konfigurace/…
+│   └── snapshot_support_photos/…   # zmrazené fotografie metodické podpory
 └── settings/
     └── settings.json          # pokud existuje (UI téma / okno)
 ```
@@ -55,8 +56,12 @@ archive.mbbackup
 ### Zahrnuto
 
 - SQLite evidence (`database/`)
-- `prilohy/`, `control_results/`, `ciselniky/`, `templates/`, `konfigurace/`
+- `prilohy/`, `control_results/`, `ciselniky/`, `templates/`, `konfigurace/`, `snapshot_support_photos/`
 - UI nastavení do `settings/` (mezera z BACKUP-0)
+
+Prázdný nebo chybějící `snapshot_support_photos/` zálohu neblokuje. Neznámé kořeny
+první úrovně workspace se do archivu **nevkládají**; záloha se označí `INCOMPLETE`
+a názvy kořenů se zapíší do logu i do `metadata.unknown_workspace_roots`.
 
 ### Nezahrnuto (kategorie D / provoz)
 

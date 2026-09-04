@@ -74,6 +74,14 @@ def _build_rich_source(root: Path) -> tuple[Path, Path, Path]:
         encoding="utf-8",
     )
 
+    from core.backup.hashing import sha256_bytes as _sha256_bytes
+
+    ssp_payload = b"\xff\xd8frozen-support"
+    ssp_hash = _sha256_bytes(ssp_payload)
+    ssp_dir = workspace / "snapshot_support_photos" / ssp_hash[:2]
+    ssp_dir.mkdir(parents=True)
+    (ssp_dir / f"{ssp_hash}.jpg").write_bytes(ssp_payload)
+
     # Dočasné / provozní – nesmí být nutná pro COMPLETE kritických dat
     (workspace / "zalohy").mkdir(parents=True)
     (workspace / "zalohy" / "stara.zip").write_bytes(b"ZIP")
@@ -258,6 +266,12 @@ def test_e2e_clean_restore_between_different_roots(tmp_path: Path):
     # export/ není v defaultní záloze
     assert not (target_ws / "export" / "out.pdf").exists()
 
+    ssp_files = list((target_ws / "snapshot_support_photos").rglob("*.jpg"))
+    assert len(ssp_files) == 1
+    assert sha256_file(ssp_files[0]) == sha256_file(
+        next((source_ws / "snapshot_support_photos").rglob("*.jpg"))
+    )
+
     # Absolutní cesty detekovány jako omezení
     abs_findings = scan_absolute_paths(target_db)
     kinds = {f.classification for f in abs_findings}
@@ -272,6 +286,7 @@ def test_inventory_covers_backup_roots_only(tmp_path: Path):
     assert any(p.startswith("ciselniky/") for p in inv)
     assert not any(p.startswith("export/") for p in inv)
     assert not any(p.startswith("zalohy/") for p in inv)
+    assert any(p.startswith("snapshot_support_photos/") for p in inv)
     for root in BACKUP_WORKSPACE_ROOTS:
         # alespoň konfigurace existuje
         if root == "konfigurace":

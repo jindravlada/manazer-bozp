@@ -5,6 +5,7 @@ Bez UI a bez obnovy – pouze interní API.
 
 from __future__ import annotations
 
+import logging
 import os
 import tempfile
 import zipfile
@@ -12,6 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
+from core.backup.completeness import VERDICT_COMPLETE
 from core.backup.constants import (
     BACKUP_EXTENSION,
     COMPONENT_DATABASE,
@@ -41,26 +43,20 @@ from core.backup.sqlite_snapshot import (
     inspect_sqlite_file,
     read_sqlite_user_version,
 )
-
-# Adresáře workspace (A+B z BACKUP-0) mapované pod archive ``workspace/``.
-DEFAULT_WORKSPACE_INCLUDE_DIRS: tuple[str, ...] = (
-    "prilohy",
-    "control_results",
-    "ciselniky",
-    "templates",
-    "konfigurace",
+from core.backup.workspace_roots import (
+    BACKUP_WORKSPACE_ROOTS,
+    NON_BACKUP_WORKSPACE_ROOTS,
+    classify_workspace_roots,
+    resolve_included_workspace_roots,
 )
 
-# Provozní / dočasná data (D) – nikdy do úplné zálohy.
-DEFAULT_WORKSPACE_EXCLUDE_DIRS: frozenset[str] = frozenset(
-    {
-        "zalohy",
-        "import",
-        "logy",
-        "export",
-        "databaze",  # DB jde přes backup API do database/
-    }
-)
+logger = logging.getLogger(__name__)
+
+# Adresáře workspace mapované pod archive ``workspace/``.
+DEFAULT_WORKSPACE_INCLUDE_DIRS: tuple[str, ...] = BACKUP_WORKSPACE_ROOTS
+
+# Provozní / dočasná data – nikdy do defaultní úplné zálohy.
+DEFAULT_WORKSPACE_EXCLUDE_DIRS: frozenset[str] = frozenset(NON_BACKUP_WORKSPACE_ROOTS)
 
 DATABASE_ARCHIVE_NAME = "database/manager_bozp.db"
 PARTIAL_SUFFIX = ".partial"
@@ -83,6 +79,9 @@ class CreateInstanceBackupResult:
     database_integrity: str = "ok"
     staging_dir: Path | None = None
     partial_path_used: Path | None = None
+    coverage_verdict: str = VERDICT_COMPLETE
+    unknown_workspace_roots: tuple[str, ...] = ()
+    included_workspace_roots: tuple[str, ...] = ()
 
 
 @dataclass
@@ -225,6 +224,22 @@ def create_instance_backup(
 
     include = include_dirs or DEFAULT_WORKSPACE_INCLUDE_DIRS
     settings_file = resolve_settings_file(settings_path)
+    declared_roots = resolve_included_workspace_roots(
+        include,
+        include_exports=include_exports,
+    )
+    root_scan = classify_workspace_roots(
+        workspace_root,
+        include_dirs=include,
+        include_exports=include_exports,
+    )
+    if root_scan.unknown:
+        for message in root_scan.messages:
+            logger.warning("%s", message)
+        logger.warning(
+            "Neznámé kořeny se do archivu nevkládají: %s",
+            ", ".join(root_scan.unknown),
+        )
 
     partial = target.with_name(target.name + PARTIAL_SUFFIX)
     staging_parent = target.parent
@@ -308,6 +323,8 @@ def create_instance_backup(
             database_size=db_size,
             database_empty=db_empty,
             schema_version=schema_version,
+            included_workspace_roots=declared_roots,
+            unknown_workspace_roots=root_scan.unknown,
             validate=True,
         )
         metadata = mark_package_complete(metadata)
@@ -366,6 +383,9 @@ def create_instance_backup(
             database_integrity=integrity,
             staging_dir=staging_dir,
             partial_path_used=partial,
+            coverage_verdict=root_scan.verdict,
+            unknown_workspace_roots=root_scan.unknown,
+            included_workspace_roots=declared_roots,
         )
     except Exception:
         # Úklid neplatných artefaktů – nikdy nenechat complete cílový soubor

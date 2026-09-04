@@ -7,9 +7,15 @@ BACKUP-2a: bezpečná obnova instance (bez UI).
 BACKUP-2d: ověření úplnosti zálohy.
 """
 
-from core.backup.completeness import (
+from core.backup.workspace_roots import (
     BACKUP_WORKSPACE_ROOTS,
     NON_BACKUP_WORKSPACE_ROOTS,
+    SNAPSHOT_SUPPORT_PHOTOS_DIR,
+    SNAPSHOT_SUPPORT_PHOTOS_LIMITATION,
+    classify_workspace_roots,
+    package_covers_snapshot_support_photos,
+)
+from core.backup.completeness import (
     VERDICT_COMPLETE,
     VERDICT_COMPLETE_WITH_LIMITATIONS,
     VERDICT_INCOMPLETE,
@@ -116,6 +122,10 @@ __all__ = [
     "BACKUP_FORMAT_VERSION",
     "BACKUP_WORKSPACE_ROOTS",
     "NON_BACKUP_WORKSPACE_ROOTS",
+    "SNAPSHOT_SUPPORT_PHOTOS_DIR",
+    "SNAPSHOT_SUPPORT_PHOTOS_LIMITATION",
+    "classify_workspace_roots",
+    "package_covers_snapshot_support_photos",
     "VERDICT_COMPLETE",
     "VERDICT_COMPLETE_WITH_LIMITATIONS",
     "VERDICT_INCOMPLETE",

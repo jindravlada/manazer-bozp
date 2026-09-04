@@ -25,8 +25,10 @@ Záloha **není** verdikt COMPLETE, protože:
 3. `konfigurace/sprava_dat.json` může obsahovat absolutní cesty k minulým zálohám.
 4. `export/`, `zalohy/`, `import/`, `logy/` nejsou v defaultní záloze (záměr).
 
-Produkční seznam komponent zálohy **nebyl měněn** – audit neprokázal chybějící
-kritická data uvnitř workspace; mezery jsou u externích / provozních dat.
+Produkční seznam `BACKUP_WORKSPACE_ROOTS` musí obsahovat `snapshot_support_photos`.
+Neznámý kořen první úrovně workspace → verdikt `INCOMPLETE` (kořen se do archivu nevkládá).
+Starší `*.mbbackup` bez deklarovaného pokrytí tohoto kořene lze obnovit; kontrola
+vrátí `VALID_WITH_WARNINGS` / `COMPLETE_WITH_LIMITATIONS`, nikoli poškození archivu.
 
 ---
 
@@ -46,6 +48,7 @@ předpisy, Správa dat, `SettingsManager`, cesty AppImage/`project_root`), nejen
 | `ciselniky/` | `EditableCatalogService`, metodiky, referenční fotky | A/B | Ano | Soubory JSON/JPG | Ano |
 | `templates/` | uživatelské ODT + `ensure_default_templates` | B | Ano | Soubory | Ano |
 | `konfigurace/sprava_dat.json` | `DataManagementSettingsService` | A | Ano | JSON (často absolutní cesty k ZIP) | Evidence OK; odkazy „Otevřít“ ne |
+| `snapshot_support_photos/` | zmrazené fotky metodické podpory auditů | A | Ano | Soubor SHA-adresovaný | Ano |
 | `export/` | exportní služby | D | Ne (volitelně `include_exports`) | Soubory | — |
 | `import/` | staging dialogů | D | Ne | Dočasné | — |
 | `logy/` | provoz | D | Ne | — | — |
@@ -79,7 +82,7 @@ skutečném domácím adresáři.
 ### Zahrnuto správně
 
 - SQLite evidence (včetně metadat AI/právních záznamů, úkolů, úrazů, auditů, …)
-- `prilohy/`, `control_results/`, `ciselniky/`, `templates/`, `konfigurace/`
+- `prilohy/`, `control_results/`, `ciselniky/`, `templates/`, `konfigurace/`, `snapshot_support_photos/`
 - `settings/settings.json`
 
 ### Zahrnuto částečně
@@ -172,8 +175,9 @@ API: `scan_absolute_paths()`, `classify_absolute_path()`.
 | E2E testy `tests/test_backup_2d_completeness_e2e.py` | Důkaz čisté obnovy a detekce mezer |
 | Tento dokument | Audit + verdikt |
 
-**Žádná změna** `DEFAULT_WORKSPACE_INCLUDE_DIRS` ani formátu metadata v1 – testy
-neprokázaly ztrátu kritických workspace dat.
+**Poznámka (FULL-BACKUP-SNAPSHOT-PHOTOS-1):** `DEFAULT_WORKSPACE_INCLUDE_DIRS`
+nyní zahrnuje `snapshot_support_photos`. Metadata v1 zůstávají zpětně čitelná;
+přibyla volitelná pole `included_workspace_roots` a `unknown_workspace_roots`.
 
 ---
 

@@ -30,6 +30,10 @@ from core.backup.hashing import hashes_equal, sha256_bytes
 from core.backup.metadata import BackupMetadata, BackupMetadataError
 from core.backup.paths import BackupPathError, normalize_archive_path
 from core.backup.sqlite_snapshot import SqliteSnapshotError, inspect_sqlite_file
+from core.backup.workspace_roots import (
+    SNAPSHOT_SUPPORT_PHOTOS_LIMITATION,
+    package_covers_snapshot_support_photos,
+)
 
 
 class BackupPackageVerificationError(ValueError):
@@ -327,6 +331,28 @@ def inspect_backup_integrity(
                 message = str(exc)
                 if not any(message in issue.message for issue in issues):
                     issues.append(_error("invalid_metadata", message))
+
+            if metadata is not None:
+                covers_photos = package_covers_snapshot_support_photos(
+                    included_workspace_roots=metadata.included_workspace_roots,
+                    file_paths=[entry.path for entry in metadata.files],
+                )
+                if not covers_photos:
+                    issues.append(
+                        _warning(
+                            "snapshot_support_photos_uncovered",
+                            SNAPSHOT_SUPPORT_PHOTOS_LIMITATION,
+                        )
+                    )
+                if metadata.unknown_workspace_roots:
+                    listed = ", ".join(metadata.unknown_workspace_roots)
+                    issues.append(
+                        _warning(
+                            "unknown_workspace_roots",
+                            "Úplná záloha je INCOMPLETE: neznámé datové kořeny "
+                            f"workspace: {listed}.",
+                        )
+                    )
 
             included: list[str] = []
             if metadata is not None:

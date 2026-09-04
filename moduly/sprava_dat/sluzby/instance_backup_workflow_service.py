@@ -16,6 +16,7 @@ from core.backup import (
     RESTORE_ERR_FAILED_AFTER_SWAP_ROLLED_BACK,
     RESTORE_ERR_FAILED_BEFORE_SWAP,
     RESTORE_ERR_ROLLBACK_FAILED,
+    VERDICT_INCOMPLETE,
     CreateInstanceBackupResult,
     InstanceBackupError,
     InstanceRestoreError,
@@ -226,6 +227,14 @@ class InstanceBackupWorkflowService:
         self.persist_last_instance_backup(result)
 
         meta = result.metadata
+        coverage_note = ""
+        if result.coverage_verdict == VERDICT_INCOMPLETE:
+            listed = ", ".join(result.unknown_workspace_roots) or "neznámé"
+            coverage_note = (
+                f"<br><br><b>Záloha není bezvýhradně úplná (INCOMPLETE).</b> "
+                f"Neznámé datové kořeny nebyly vloženy do archivu: "
+                f"<code>{listed}</code>."
+            )
         summary = (
             f"<b>Záloha byla úspěšně vytvořena.</b><br><br>"
             f"Soubor: <code>{result.path}</code><br>"
@@ -233,6 +242,7 @@ class InstanceBackupWorkflowService:
             f"Verze aplikace: {meta.app_version}<br>"
             f"Souborů v balíčku: {len(meta.files)}<br>"
             f"Integrita DB: {result.database_integrity}"
+            f"{coverage_note}"
         )
         MessageWithDetailsDialog(
             parent,
@@ -251,6 +261,14 @@ class InstanceBackupWorkflowService:
     def persist_last_instance_backup(result: CreateInstanceBackupResult) -> BackupRecord:
         """Uloží metadata poslední kompletní zálohy (*.mbbackup) pro Souhrn / Stav dat."""
         meta = result.metadata
+        coverage = getattr(result, "coverage_verdict", None)
+        unknown = getattr(result, "unknown_workspace_roots", ())
+        if not isinstance(coverage, str):
+            coverage = None
+        try:
+            unknown_list = [str(item) for item in (unknown or ()) if isinstance(item, str)]
+        except TypeError:
+            unknown_list = []
         record = BackupRecord(
             created_at=str(
                 meta.created_at or datetime.now().isoformat(timespec="seconds")
@@ -264,6 +282,8 @@ class InstanceBackupWorkflowService:
                 "file_count": len(meta.files),
                 "database_integrity": result.database_integrity,
                 "backup_format": "mbbackup",
+                **({"coverage_verdict": coverage} if coverage is not None else {}),
+                "unknown_workspace_roots": unknown_list,
             },
             backup_type=BACKUP_TYPE_INSTANCE,
         )
@@ -371,9 +391,11 @@ class InstanceBackupWorkflowService:
         app_ver = meta.app_version if meta else "neznámá"
         warning_note = ""
         if report.status == INTEGRITY_VALID_WITH_WARNINGS:
+            warning_lines = "<br>".join(f"• {w.message}" for w in report.warnings[:8])
             warning_note = (
-                "<br><br><b>Upozornění:</b> záloha je platná s výhradami. "
-                "Obnova je možná, ale doporučujeme nejdřív zkontrolovat detaily."
+                "<br><br><b>Omezení této zálohy:</b> balíček není poškozený "
+                "a lze ho obnovit."
+                f"<br>{warning_lines}"
             )
 
         summary = (

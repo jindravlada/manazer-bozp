@@ -15,6 +15,7 @@ from core.backup import (
     METADATA_FILENAME,
     PACKAGE_KIND_INSTANCE_BACKUP,
     PACKAGE_STATUS_COMPLETE,
+    SNAPSHOT_SUPPORT_PHOTOS_DIR,
     BackupPackageVerificationError,
     InstanceBackupError,
     create_instance_backup,
@@ -120,6 +121,7 @@ def test_metadata_and_manifest_content(tmp_path: Path):
     assert "workspace/konfigurace/sprava_dat.json" in paths
     assert "workspace/control_results/foto.jpg" in paths
     assert "settings/settings.json" in paths
+    assert SNAPSHOT_SUPPORT_PHOTOS_DIR in (result.metadata.included_workspace_roots or [])
 
     # Kategorie D mimo balíček
     assert not any("zalohy" in p for p in paths)

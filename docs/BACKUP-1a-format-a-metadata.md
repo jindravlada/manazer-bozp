@@ -73,6 +73,8 @@ porušení čtení starších platných balíčků, pokud validátor podporuje d
 | `database_quick_check` | Výsledek `PRAGMA quick_check` (BACKUP-1c) |
 | `database_size` | Velikost DB souboru v bajtech (BACKUP-1c) |
 | `database_empty` | Zda DB nemá uživatelské objekty (BACKUP-1c) |
+| `included_workspace_roots` | Deklarovaný seznam datových kořenů workspace (včetně `snapshot_support_photos`, i když je prázdný) |
+| `unknown_workspace_roots` | Kořeny první úrovně, které záloha záměrně nevybrala (INCOMPLETE) |
 
 ### Co se **neukládá**
 

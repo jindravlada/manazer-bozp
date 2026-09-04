@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-04 – FULL-BACKUP-SNAPSHOT-PHOTOS-1
+
+**Co se povedlo:** Zmrazené fotografie metodické podpory (`snapshot_support_photos/`) jsou v defaultní úplné záloze. Neznámý datový kořen už nemůže zůstat tiše mimo balíček.
+
+**Co už bychom dnes udělali jinak:** Seznam kořenů držet na jednom místě od začátku. Pevný include bez kontroly první úrovně workspace nový adresář přehlédne.
+
+**Co bylo zbytečně složité:** Completeness porovnávala jen známé kořeny, takže chybějící snapshot fotky hlásila jako COMPLETE_WITH_LIMITATIONS.
+
+**Jaké nové pravidlo z toho vzniklo:** Každý kořen první úrovně workspace je buď v úplné záloze, nebo výslovně vyloučený. Jinak INCOMPLETE a názvy v logu/metadatech. Starší balíček bez deklarace `snapshot_support_photos` se obnoví, ale neoznačí se jako bezvýhradně úplný.
+
+---
+
 ### 2026-09-03 – AUDIT-START-DEFERRED-SAVE-1
 
 **Co se povedlo:** Zahájení Auditu z plánované návštěvy je až při úspěšném Uložit. Otevření editoru je read-only; `started_at` zůstane prázdné, dokud ho uživatel nezadá.

@@ -2,29 +2,18 @@
 
 from __future__ import annotations
 
+import json
 import sqlite3
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from core.backup.hashing import sha256_file
 from core.backup.sqlite_snapshot import read_sqlite_user_version, sqlite_integrity_check
-
-# Relativní kořeny workspace, které mají být v úplné záloze (A+B).
-BACKUP_WORKSPACE_ROOTS: tuple[str, ...] = (
-    "prilohy",
-    "control_results",
-    "ciselniky",
-    "templates",
-    "konfigurace",
-)
-
-# Provozní / dočasné – záměrně mimo defaultní zálohu.
-NON_BACKUP_WORKSPACE_ROOTS: tuple[str, ...] = (
-    "zalohy",
-    "import",
-    "logy",
-    "export",
-    "databaze",
+from core.backup.workspace_roots import (
+    BACKUP_WORKSPACE_ROOTS,
+    NON_BACKUP_WORKSPACE_ROOTS,
+    SNAPSHOT_SUPPORT_PHOTOS_DIR,
+    classify_workspace_roots,
 )
 
 # Sloupce, které typicky odkazují na soubory (relativní nebo absolutní).
@@ -74,6 +63,7 @@ class CompletenessCompareResult:
     broken_file_references: list[str] = field(default_factory=list)
     absolute_paths: list[AbsolutePathFinding] = field(default_factory=list)
     settings_match: bool | None = None
+    unknown_workspace_roots: list[str] = field(default_factory=list)
     verdict: str = VERDICT_COMPLETE_WITH_LIMITATIONS
     limitations: list[str] = field(default_factory=list)
 
@@ -84,6 +74,7 @@ class CompletenessCompareResult:
             and not self.missing_files_in_restored
             and not self.hash_mismatches
             and not self.broken_file_references
+            and not self.unknown_workspace_roots
             and self.database_integrity_restored == "ok"
             and self.user_version_source == self.user_version_restored
             and self.settings_match is not False
@@ -250,6 +241,27 @@ def resolve_db_file_reference(
     return None
 
 
+def _support_snapshot_photo_rels(payload_text: str) -> list[str]:
+    try:
+        payload = json.loads(payload_text or "{}")
+    except json.JSONDecodeError:
+        return []
+    if not isinstance(payload, dict):
+        return []
+    section = payload.get("section")
+    photos = section.get("referencni_fotografie") if isinstance(section, dict) else None
+    if not isinstance(photos, list):
+        return []
+    rels: list[str] = []
+    for photo in photos:
+        if not isinstance(photo, dict) or photo.get("missing"):
+            continue
+        rel = str(photo.get("soubor") or "").strip()
+        if rel.startswith(f"{SNAPSHOT_SUPPORT_PHOTOS_DIR}/"):
+            rels.append(rel)
+    return rels
+
+
 def check_db_file_references(workspace_root: Path, db_path: Path) -> list[str]:
     """Vrátí seznam rozbitých povinných souborových odkazů (relativní workspace soubory)."""
     broken: list[str] = []
@@ -286,6 +298,29 @@ def check_db_file_references(workspace_root: Path, db_path: Path) -> list[str]:
                         broken.append(
                             f"{table}.{column}#{rowid} missing:{target.relative_to(workspace_root).as_posix()}"
                         )
+        if "audit_question_support_snapshots" in tables:
+            info = {
+                row[1]
+                for row in conn.execute(
+                    'PRAGMA table_info("audit_question_support_snapshots")'
+                ).fetchall()
+            }
+            if "support_payload_json" in info:
+                rows = conn.execute(
+                    "SELECT rowid, support_payload_json "
+                    "FROM audit_question_support_snapshots "
+                    "WHERE support_payload_json IS NOT NULL "
+                    "AND TRIM(support_payload_json) != ''"
+                ).fetchall()
+                root = Path(workspace_root)
+                for rowid, payload in rows:
+                    for rel in _support_snapshot_photo_rels(str(payload)):
+                        target = root / rel
+                        if not target.is_file():
+                            broken.append(
+                                f"audit_question_support_snapshots.support_payload_json"
+                                f"#{rowid} missing:{rel}"
+                            )
     finally:
         conn.close()
     return broken
@@ -340,6 +375,9 @@ def compare_instances(
 
     broken_refs = check_db_file_references(restored_workspace, restored_db)
     abs_paths = scan_absolute_paths(restored_db)
+    source_scan = classify_workspace_roots(source_workspace)
+    restored_scan = classify_workspace_roots(restored_workspace)
+    unknown_roots = sorted(set(source_scan.unknown) | set(restored_scan.unknown))
 
     settings_match: bool | None = None
     if source_settings is not None and restored_settings is not None:
@@ -368,6 +406,11 @@ def compare_instances(
     limitations.append(
         "konfigurace/sprava_dat.json může obsahovat absolutní cesty k minulým zálohám."
     )
+    if unknown_roots:
+        listed = ", ".join(unknown_roots)
+        limitations.append(
+            f"Neznámé datové kořeny workspace nejsou v úplné záloze: {listed}."
+        )
 
     result = CompletenessCompareResult(
         database_integrity_source=src_integrity,
@@ -384,6 +427,7 @@ def compare_instances(
         broken_file_references=broken_refs,
         absolute_paths=abs_paths,
         settings_match=settings_match,
+        unknown_workspace_roots=unknown_roots,
         limitations=limitations,
     )
 
