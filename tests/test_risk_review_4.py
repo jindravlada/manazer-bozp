@@ -156,7 +156,7 @@ class RiskReview4TestCase(unittest.TestCase):
     def test_column_order(self) -> None:
         self.assertEqual(
             RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS,
-            ["ID", "Navazující opatření", "Vyhovuje", "Nevyhovuje", "Foto", "Poznámka"],
+            ["ID", "Kontrolní otázky", "Vyhovuje", "Nevyhovuje", "Foto", "Poznámka"],
         )
         widget = RiskMeasureReviewChecklistWidget()
         rows = risk_measure_review_service.list_checklist_rows(self.review.id)

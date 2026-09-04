@@ -280,7 +280,7 @@ class HazardRiskAssessmentPhaseR10TestCase(unittest.TestCase):
         )
         self.assertEqual(
             display_name,
-            "Posunovač — Uzavřeno — 5 existujících opatření — 2 potřebná opatření",
+            "Posunovač — Uzavřeno — 5 existujících opatření — 2 kontrolní otázky",
         )
 
     def test_widget_display_name_includes_status(self) -> None:

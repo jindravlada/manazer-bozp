@@ -88,7 +88,7 @@ def format_proposal_package_detail(
         else:
             lines.append("- (žádná)")
         lines.append("")
-        lines.append("Navazující opatření:")
+        lines.append("Kontrolní otázky pro revizi rizik:")
         if assessment.required_measures:
             for measure in assessment.required_measures:
                 lines.append(f"- {measure.description}")

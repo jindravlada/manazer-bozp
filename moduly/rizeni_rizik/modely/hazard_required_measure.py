@@ -25,7 +25,7 @@ class HazardRequiredMeasure(Base):
     )
 
     def display_title(self) -> str:
-        """Název opatření (title, zpětně kompatibilní s description)."""
+        """Znění kontrolní otázky (title, zpětně kompatibilní s description)."""
         return (self.title or self.description or "").strip()
 
     def display_description(self) -> str:

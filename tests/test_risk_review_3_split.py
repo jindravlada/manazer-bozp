@@ -266,7 +266,7 @@ class RiskReview3SplitTestCase(unittest.TestCase):
     def test_checklist_headers_without_paper_columns(self) -> None:
         self.assertEqual(
             RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS,
-            ["ID", "Navazující opatření", "Vyhovuje", "Nevyhovuje", "Foto", "Poznámka"],
+            ["ID", "Kontrolní otázky", "Vyhovuje", "Nevyhovuje", "Foto", "Poznámka"],
         )
         self.assertNotIn("Poznámka č.", RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS)
         self.assertNotIn("Výsledek přezkoumání", RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS)

@@ -57,7 +57,8 @@ with patch.object(Path, "home", return_value=_TMP):
         RISK_SEVERITY_MODERATE,
     )
     from moduly.rizeni_rizik.constants_library import (
-        CATALOG_AI_MEASURE_REC_EDIT_DIALOG_TITLE,
+        CATALOG_AI_CONTROL_QUESTION_EDIT_DIALOG_TITLE,
+        CATALOG_AI_CONTROL_QUESTION_NEW_DIALOG_TITLE,
         CATALOG_AI_PACKAGE_EDIT_BUTTON,
         CATALOG_AI_PACKAGE_EDIT_DIALOG_TITLE,
         HAZARD_LIBRARY_SCOPE_ALL,
@@ -316,7 +317,7 @@ class RiskAiMeasureRecommendationEdit1TestCase(unittest.TestCase):
         )
         self.assertEqual(
             captured["dialog"].windowTitle(),
-            CATALOG_AI_MEASURE_REC_EDIT_DIALOG_TITLE,
+            CATALOG_AI_CONTROL_QUESTION_NEW_DIALOG_TITLE,
         )
         self.assertEqual(widget.edit_proposal_btn.text(), CATALOG_AI_PACKAGE_EDIT_BUTTON)
 
@@ -575,7 +576,7 @@ class RiskAiMeasureRecommendationEdit1TestCase(unittest.TestCase):
         )
         self.assertEqual(
             dialog.windowTitle(),
-            CATALOG_AI_MEASURE_REC_EDIT_DIALOG_TITLE,
+            CATALOG_AI_CONTROL_QUESTION_EDIT_DIALOG_TITLE,
         )
         dialog.reject()
 

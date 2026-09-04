@@ -97,7 +97,7 @@ class HazardRequiredMeasureService:
             note=note,
         )
         if not resolved_title:
-            raise HazardRequiredMeasureError("Název opatření je povinný.")
+            raise HazardRequiredMeasureError("Znění kontrolní otázky je povinné.")
 
         self._validate_assessment(hazard_identification_id, hazard_risk_assessment_id)
         self._validate_unique_active_title(
@@ -139,7 +139,7 @@ class HazardRequiredMeasureService:
             note=note,
         )
         if not resolved_title:
-            raise HazardRequiredMeasureError("Název opatření je povinný.")
+            raise HazardRequiredMeasureError("Znění kontrolní otázky je povinné.")
 
         self._validate_assessment(hazard_identification_id, hazard_risk_assessment_id)
         self._validate_unique_active_title(
@@ -228,7 +228,7 @@ class HazardRequiredMeasureService:
                 continue
             if normalize_required_measure_title(measure.display_title()) == normalized:
                 raise HazardRequiredMeasureError(
-                    f"U vybraného posouzení již existuje aktivní navazující opatření "
+                    f"U vybraného posouzení již existuje aktivní kontrolní otázka "
                     f"s názvem „{title.strip()}“."
                 )
 

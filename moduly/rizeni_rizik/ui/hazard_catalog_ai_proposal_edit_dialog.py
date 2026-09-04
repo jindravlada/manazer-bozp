@@ -122,7 +122,12 @@ class HazardCatalogAiProposalEditDialog(QDialog):
             CATALOG_PROPOSAL_KIND_REQUIRED_MEASURE,
         }:
             self.description.setPlainText(self.payload.description or proposal.name)
-            form.addRow("Popis opatření *:", self.description)
+            description_label = (
+                "Kontrolní otázka *:"
+                if self.kind == CATALOG_PROPOSAL_KIND_REQUIRED_MEASURE
+                else "Popis opatření *:"
+            )
+            form.addRow(description_label, self.description)
             self.note.setPlainText(self.payload.note or proposal.reasoning or "")
             form.addRow("Poznámka:", self.note)
         elif self.kind == CATALOG_PROPOSAL_KIND_EXPOSED_GROUP:
@@ -206,7 +211,12 @@ class HazardCatalogAiProposalEditDialog(QDialog):
             CATALOG_PROPOSAL_KIND_REQUIRED_MEASURE,
         }:
             if not self.description.toPlainText().strip():
-                QMessageBox.warning(self, self.windowTitle(), "Popis opatření je povinný.")
+                missing = (
+                    "Znění kontrolní otázky je povinné."
+                    if self.kind == CATALOG_PROPOSAL_KIND_REQUIRED_MEASURE
+                    else "Popis opatření je povinný."
+                )
+                QMessageBox.warning(self, self.windowTitle(), missing)
                 return
             self.proposal.name = self.description.toPlainText().strip()
             self.payload = merge_payload(

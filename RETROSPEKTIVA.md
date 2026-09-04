@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-04 – RISK-CONTROL-QUESTIONS-1
+
+**Co se povedlo:** Uživatel vidí kontrolní otázky, interní model zůstal kompatibilní.
+
+**Co už bychom dnes udělali jinak:** Význam `required_measures` pojmenovat jako otázky hned při vzniku checklistu.
+
+**Co bylo zbytečně složité:** Dvojí jazyk opatření vs. otázky v AI instrukcích.
+
+**Jaké nové pravidlo z toho vzniklo:** Technické názvy polí se kvůli kompatibilitě nemění; mění se jen uživatelský význam.
+
+---
+
 ### 2026-09-04 – RISK-AI-MEASURE-RECOMMENDATION-EDIT-1
 
 **Co se povedlo:** Doporučení k opatřením jde upravit před zapracováním, aniž by se otevíral editor balíku události.

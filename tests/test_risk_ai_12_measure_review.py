@@ -108,14 +108,17 @@ class RiskAi12PromptAndSchemaTestCase(unittest.TestCase):
     def test_catalog_prompt_has_measure_review_order(self) -> None:
         prompt = build_catalog_source_ai_peer_review_prompt()
         self.assertIn(MEASURE_REVIEW_ORDER_HEADING, prompt)
-        self.assertIn("Nejprve posuď stávající Navazující opatření.", prompt)
+        self.assertIn(
+            "Nejprve posuď stávající kontrolní otázky pro revizi rizik.",
+            prompt,
+        )
         self.assertIn("Následně posuď Zásady bezpečné práce.", prompt)
         self.assertIn(
-            "Nenavrhuj nové opatření, pokud lze stejného cíle dosáhnout",
+            "Nenavrhuj novou kontrolní otázku, pokud lze stejné ověření pokrýt",
             prompt,
         )
         self.assertIn(
-            "Pokud jsou stávající opatření dostatečná, nenavrhuj jejich změnu.",
+            "Pokud jsou stávající zásady a kontrolní otázky dostatečné",
             prompt,
         )
         self.assertIn("measure_recommendations", prompt)
@@ -202,7 +205,7 @@ class RiskAi12ParseAndImportTestCase(unittest.TestCase):
 
     def test_export_contains_zasady_and_navazujici(self) -> None:
         self.assertIn("Zásady bezpečné práce", self.export.data_text)
-        self.assertIn("Navazující opatření", self.export.data_text)
+        self.assertIn("Kontrolní otázky pro revizi rizik", self.export.data_text)
         self.assertIn("Používejte OOPP při manipulaci.", self.export.data_text)
         self.assertIn("Kontrolujte uchycení břemene.", self.export.data_text)
         dumped = json.dumps(self.export.zadani_json, ensure_ascii=False)

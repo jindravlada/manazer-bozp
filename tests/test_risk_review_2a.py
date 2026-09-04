@@ -151,7 +151,7 @@ class RiskReview2aTestCase(unittest.TestCase):
 
         self.assertEqual(
             RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS,
-            ["ID", "Navazující opatření", "Vyhovuje", "Nevyhovuje", "Foto", "Poznámka"],
+            ["ID", "Kontrolní otázky", "Vyhovuje", "Nevyhovuje", "Foto", "Poznámka"],
         )
         self.assertNotIn("Riziko", RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS)
         self.assertNotIn("Poznámka č.", RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS)

@@ -138,14 +138,14 @@ class RiskReview1TestCase(unittest.TestCase):
 
     def test_measure_terminology_renamed(self) -> None:
         self.assertEqual(EXISTING_MEASURES_TITLE, "Zásady bezpečné práce")
-        self.assertEqual(REQUIRED_MEASURES_TITLE, "Navazující opatření")
+        self.assertEqual(REQUIRED_MEASURES_TITLE, "Kontrolní otázky pro revizi rizik")
         self.assertEqual(
             HAZARD_LIBRARY_TEMPLATE_EXISTING_MEASURES_TITLE,
             "Zásady bezpečné práce",
         )
         self.assertEqual(
             HAZARD_LIBRARY_TEMPLATE_REQUIRED_MEASURES_TITLE,
-            "Navazující opatření",
+            "Kontrolní otázky pro revizi rizik",
         )
 
     def test_module_has_review_tab(self) -> None:

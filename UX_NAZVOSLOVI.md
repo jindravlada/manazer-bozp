@@ -188,6 +188,11 @@ Nesmí se zaměňovat (např. „Generovat kontroly“ v modulu Prověrky).
 |---|---|
 | Zaměstnanec | Pracovník *(v UI, pokud není specifický kontext THP)* |
 | Pracoviště | Místo výkonu práce *(kromě explicitní záložky)* |
+| Kontrolní otázky pro revizi rizik | Navazující opatření / potřebná opatření *(u položek `required_measures`)* |
+| Kontrolní otázka | Navazující opatření *(jednotné číslo u `required_measures`)* |
+| Kontrolní otázky | Navazující opatření *(krátký název sloupce)* |
+| Nová kontrolní otázka | Nové navazující opatření |
+| Úprava kontrolní otázky | Úprava navazujícího opatření |
 | Opatření | Nápravné opatření / úkol *(pokud jde o finding measure)* |
 | Souhrnné sdělení | Poznámka auditora / Komentář *(u nového režimu okruhu Auditů a Prověrek)* |
 

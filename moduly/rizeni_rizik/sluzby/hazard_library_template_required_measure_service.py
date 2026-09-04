@@ -49,7 +49,9 @@ class HazardLibraryTemplateRequiredMeasureService:
     ) -> HazardLibraryTemplateRequiredMeasure:
         normalized_description = description.strip()
         if not normalized_description:
-            raise HazardLibraryTemplateRequiredMeasureError("Popis opatření je povinný.")
+            raise HazardLibraryTemplateRequiredMeasureError(
+                "Znění kontrolní otázky je povinné."
+            )
 
         self._validate_assessment(template_id, template_assessment_id)
         self._validate_unique_active_description(
@@ -85,7 +87,9 @@ class HazardLibraryTemplateRequiredMeasureService:
 
         normalized_description = description.strip()
         if not normalized_description:
-            raise HazardLibraryTemplateRequiredMeasureError("Popis opatření je povinný.")
+            raise HazardLibraryTemplateRequiredMeasureError(
+                "Znění kontrolní otázky je povinné."
+            )
 
         self._validate_assessment(template_id, template_assessment_id)
         self._validate_unique_active_description(
@@ -170,7 +174,7 @@ class HazardLibraryTemplateRequiredMeasureService:
                 continue
             if normalize_template_measure_description(measure.description) == normalized:
                 raise HazardLibraryTemplateRequiredMeasureError(
-                    "U posouzení již existuje aktivní potřebné opatření se stejným popisem."
+                    "U posouzení již existuje aktivní kontrolní otázka se stejným zněním."
                 )
 
 

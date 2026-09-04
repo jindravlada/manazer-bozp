@@ -49,7 +49,7 @@ class HazardRequiredMeasureDialog(QDialog):
         self.active_checkbox = QCheckBox("Aktivní")
         self.active_checkbox.setChecked(True)
 
-        form.addRow("Název *:", self.title_edit)
+        form.addRow("Kontrolní otázka *:", self.title_edit)
         form.addRow("Popis:", self.description)
         form.addRow("", self.active_checkbox)
 

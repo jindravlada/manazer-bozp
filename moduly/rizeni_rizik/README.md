@@ -146,11 +146,11 @@ Existující opatření u posouzení rizika (UI: Zásady bezpečné práce):
 
 ## Fáze R09
 
-Potřebná další opatření u posouzení rizika (UI: Navazující opatření):
+Potřebná další opatření u posouzení rizika (UI: Kontrolní otázky pro revizi rizik):
 
 - model `HazardRequiredMeasure` v tabulce `hazard_required_measures`
-- sekce Navazující opatření pod zásadami bezpečné práce v záložce Posouzení rizik
-- samostatné ukládání opatření, počty aktivních navazujících opatření u posouzení
+- sekce Kontrolní otázky pro revizi rizik pod zásadami bezpečné práce v záložce Posouzení rizik
+- samostatné ukládání položek, počty aktivních kontrolních otázek u posouzení
 - režim pouze pro čtení u dokončené nebo archivované identifikace
 
 ## Fáze R10
@@ -562,6 +562,17 @@ Editace doporučení k opatřením ve frontě AI:
 - `measure_recommendation` otevírá jednoduchý editor opatření (znění a zdůvodnění)
 - typ návrhu a `target_export_id` nelze změnit; zápis do katalogu až po Zapracovat
 
+## RISK-CONTROL-QUESTIONS-1
+
+Uživatelský význam `required_measures` jsou kontrolní otázky pro revizi rizik:
+
+- sekce **Kontrolní otázky pro revizi rizik**, jednotné číslo **Kontrolní otázka**, sloupec **Kontrolní otázky**
+- interní názvy (`required_measures`, tabulky, `REQUIRED-MEASURE-…`, schema 2.0 typ) beze změny
+- bez migrace a bez automatické úpravy historických textů
+- AI má vracet ověřitelné otázky s odpovědí Ano / Ne / Netýká se
+- Zásady (`existing_measures`) zůstávají zásadami / opatřeními
+- zapracování AI nezakládá Task ani Finding
+
 ## RISK-REVIEW-1
 
 Přezkoumání opatření rizik:
@@ -569,22 +580,22 @@ Přezkoumání opatření rizik:
 - záložka Přezkoumání opatření v modulu Řízení rizik
 - entity `RiskMeasureReview` a `RiskMeasureReviewItem` (vazba na `hazard_required_measures.id`)
 - editor hlavičky (checklist se generuje v další fázi)
-- UI přejmenování: Zásady bezpečné práce / Navazující opatření
+- UI přejmenování: Zásady bezpečné práce / Kontrolní otázky pro revizi rizik
 
 ## RISK-REVIEW-2
 
 Generování checklistu přezkoumání:
 
-- Navazující opatření mají `title` (Název) a volitelný popis (`note`)
+- kontrolní otázky mají `title` (Název) a volitelný popis (`note`); tabulka `hazard_required_measures`
 - při vytvoření přezkoumání se z rozsahu Provoz/Pracoviště/Část vygenerují položky checklistu
 - položky odkazují na `follow_up_measure_id`; při znovuotevření se negenerují znovu
-- editor zobrazuje tabulku Riziko / Navazující opatření / Výsledek / Poznámka
+- editor zobrazuje tabulku Riziko / Kontrolní otázky / Výsledek / Poznámka
 
 ## RISK-REVIEW-2a
 
 Zjednodušení checklistu pro terén:
 
-- sloupce Navazující opatření / Vyhovuje / Poznámka č. / Foto
+- sloupce Kontrolní otázky / Vyhovuje / Poznámka č. / Foto
 - sekce Poznámky pod checklistem (zatím jen rozvržení)
 - kompaktní rozložení vhodné pro A4
 

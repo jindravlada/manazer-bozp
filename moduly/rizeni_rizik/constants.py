@@ -19,6 +19,11 @@ MODULE_KEY = "rizeni_rizik"
 MODULE_NAME = "Řízení rizik"
 MODULE_DESCRIPTION = "Identifikace nebezpečí a řízení rizik na provozech a pracovištích."
 
+# RISK-CONTROL-QUESTIONS-1 – uživatelské názvy required_measures (interní názvy beze změny)
+CONTROL_QUESTIONS_SECTION_TITLE = "Kontrolní otázky pro revizi rizik"
+CONTROL_QUESTION_SINGULAR = "Kontrolní otázka"
+CONTROL_QUESTIONS_COLUMN_TITLE = "Kontrolní otázky"
+
 HAZARD_IDENTIFICATION_STATUS_DRAFT = "draft"
 HAZARD_IDENTIFICATION_STATUS_IN_PROGRESS = "in_progress"
 HAZARD_IDENTIFICATION_STATUS_COMPLETED = "completed"
@@ -347,9 +352,9 @@ def format_risk_assessment_display_name(
         parts.append(f"{existing_measure_count} {suffix}")
     if required_measure_count:
         suffix = (
-            "potřebné opatření"
+            CONTROL_QUESTION_SINGULAR.casefold()
             if required_measure_count == 1
-            else "potřebná opatření"
+            else CONTROL_QUESTIONS_COLUMN_TITLE.casefold()
         )
         parts.append(f"{required_measure_count} {suffix}")
     if len(parts) == 1:
@@ -427,8 +432,8 @@ EXISTING_MEASURE_COLUMN_COUNT = 4
 
 EXISTING_MEASURE_TABLE_HEADERS = ["ID", "Opatření", "Poznámka", "Aktivní"]
 
-REQUIRED_MEASURES_TITLE = "Navazující opatření"
-HAZARD_REQUIRED_MEASURE_DIALOG_TITLE = "Navazující opatření"
+REQUIRED_MEASURES_TITLE = CONTROL_QUESTIONS_SECTION_TITLE
+HAZARD_REQUIRED_MEASURE_DIALOG_TITLE = CONTROL_QUESTION_SINGULAR
 REQUIRED_MEASURE_SELECT_ASSESSMENT = "Vyberte posouzení rizika."
 
 REQUIRED_MEASURE_COL_ID = 0
@@ -440,7 +445,12 @@ REQUIRED_MEASURE_COLUMN_COUNT = 4
 # Zpětná kompatibilita se starším názvem sloupce.
 REQUIRED_MEASURE_COL_NOTE = REQUIRED_MEASURE_COL_DESCRIPTION
 
-REQUIRED_MEASURE_TABLE_HEADERS = ["ID", "Název", "Popis", "Aktivní"]
+REQUIRED_MEASURE_TABLE_HEADERS = [
+    "ID",
+    CONTROL_QUESTION_SINGULAR,
+    "Popis",
+    "Aktivní",
+]
 
 HAZARD_IDENTIFICATION_UNSAVED_PROMPT = "Uložit změny před zavřením?"
 HAZARD_IDENTIFICATION_UNSAVED_SAVE = "Uložit"
@@ -455,10 +465,10 @@ RISK_MEASURE_REVIEW_TAB_TITLE = "Přezkoumání opatření"
 RISK_MEASURE_REVIEW_DIALOG_TITLE = "Přezkoumání opatření"
 RISK_MEASURE_REVIEW_CHECKLIST_TITLE = "Checklist přezkoumání"
 RISK_MEASURE_REVIEW_CHECKLIST_PLACEHOLDER = (
-    "Kontrolní body budou vytvořeny z navazujících opatření v další fázi."
+    "Kontrolní body budou vytvořeny z kontrolních otázek v další fázi."
 )
 RISK_MEASURE_REVIEW_CHECKLIST_EMPTY = (
-    "Pro zvolený rozsah nebyla nalezena žádná aktivní navazující opatření."
+    "Pro zvolený rozsah nebyla nalezena žádná aktivní kontrolní otázka."
 )
 
 RISK_MEASURE_REVIEW_STATUS_DRAFT = "draft"
@@ -529,7 +539,7 @@ RISK_MEASURE_REVIEW_ITEM_COLUMN_COUNT = 6
 
 RISK_MEASURE_REVIEW_ITEM_TABLE_HEADERS = [
     "ID",
-    "Navazující opatření",
+    CONTROL_QUESTIONS_COLUMN_TITLE,
     "Vyhovuje",
     "Nevyhovuje",
     "Foto",

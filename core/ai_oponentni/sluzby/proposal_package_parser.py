@@ -40,7 +40,8 @@ _EXISTING_MEASURES_RE = re.compile(
     re.IGNORECASE,
 )
 _REQUIRED_MEASURES_RE = re.compile(
-    r"^(potřebná\s+opatření|navazující\s+opatření)\s*:\s*$",
+    r"^(potřebná\s+opatření|navazující\s+opatření|"
+    r"kontrolní\s+otázky(?:\s+pro\s+revizi\s+rizik)?)\s*:\s*$",
     re.IGNORECASE,
 )
 _LEGAL_LINKS_RE = re.compile(r"^právní\s+vazby\s*:\s*$", re.IGNORECASE)
@@ -269,12 +270,16 @@ def _normalize_measure_recommendation_type(value: object) -> str | None:
         "upravit_navazujici_opatreni": AI_MEASURE_REC_EDIT_REQUIRED,
         "upravit_navazujici": AI_MEASURE_REC_EDIT_REQUIRED,
         "edit_required_measure": AI_MEASURE_REC_EDIT_REQUIRED,
+        "upravit_kontrolni_otazku": AI_MEASURE_REC_EDIT_REQUIRED,
+        "upravit_kontrolni_otazky": AI_MEASURE_REC_EDIT_REQUIRED,
         "upravit_zasady_bezpecne_prace": AI_MEASURE_REC_EDIT_EXISTING,
         "upravit_zasady": AI_MEASURE_REC_EDIT_EXISTING,
         "edit_existing_measure": AI_MEASURE_REC_EDIT_EXISTING,
         "nove_navazujici_opatreni": AI_MEASURE_REC_NEW_REQUIRED,
         "nove_navazujici": AI_MEASURE_REC_NEW_REQUIRED,
         "new_required_measure": AI_MEASURE_REC_NEW_REQUIRED,
+        "nova_kontrolni_otazka": AI_MEASURE_REC_NEW_REQUIRED,
+        "nove_kontrolni_otazky": AI_MEASURE_REC_NEW_REQUIRED,
     }
     resolved = aliases.get(normalized)
     if resolved is not None:

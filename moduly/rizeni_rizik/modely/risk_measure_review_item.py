@@ -8,7 +8,7 @@ from moduly.rizeni_rizik.constants import RISK_MEASURE_REVIEW_ITEM_RESULT_NOT_CH
 
 
 class RiskMeasureReviewItem(Base):
-    """Položka checklistu přezkoumání – vazba na navazující opatření."""
+    """Položka checklistu přezkoumání – vazba na kontrolní otázku (`required_measures`)."""
 
     __tablename__ = "risk_measure_review_items"
 

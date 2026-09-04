@@ -201,7 +201,7 @@ def format_package_summary(
             event_line,
             f"Posouzení: {package.assessment_count}",
             f"Zásady bezpečné práce: {package.existing_measure_count}",
-            f"Navazující opatření: {package.required_measure_count}",
+            f"Kontrolní otázky: {package.required_measure_count}",
             f"Právní vazby: {package.legal_link_count}",
         ],
     )
@@ -272,14 +272,14 @@ class _AssessmentEditor(QWidget):
         self.existing_measures.setPlaceholderText("Jedno opatření na řádek")
         _configure_plain_text(self.existing_measures, min_height=60)
         self.required_measures = QPlainTextEdit()
-        self.required_measures.setPlaceholderText("Jedno opatření na řádek")
+        self.required_measures.setPlaceholderText("Jedna otázka na řádek")
         _configure_plain_text(self.required_measures, min_height=60)
 
         layout.addRow(targets_wrap)
         layout.addRow("Závažnost *:", self.severity)
         layout.addRow("Závěr:", self.conclusion)
         layout.addRow("Zásady bezpečné práce:", self.existing_measures)
-        layout.addRow("Navazující opatření:", self.required_measures)
+        layout.addRow("Kontrolní otázky pro revizi rizik:", self.required_measures)
 
         if assessment is not None:
             group_ids = list(assessment.exposed_group_ids)

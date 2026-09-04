@@ -1,4 +1,4 @@
-"""Editor doporučení k opatření z AI oponentury (schema 2.0)."""
+"""Editor doporučení k zásadám nebo kontrolní otázce z AI oponentury (schema 2.0)."""
 
 from __future__ import annotations
 
@@ -14,13 +14,20 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-from core.ai_oponentni.constants import AI_PEER_REVIEW_PACKAGE_TYPE_LABELS
+from core.ai_oponentni.constants import (
+    AI_MEASURE_REC_EDIT_REQUIRED,
+    AI_MEASURE_REC_NEW_REQUIRED,
+    AI_PEER_REVIEW_PACKAGE_TYPE_LABELS,
+)
 from core.ai_oponentni.proposal_package_types import AiProposalPackage
 from core.ai_oponentni.repository.ai_proposal_package_repository import (
     AiProposalPackageRepository,
 )
 from core.widgets.dialog_utils import create_save_cancel_box
 from moduly.rizeni_rizik.constants_library import (
+    CATALOG_AI_CONTROL_QUESTION_EDIT_DIALOG_TITLE,
+    CATALOG_AI_CONTROL_QUESTION_NEW_DIALOG_TITLE,
+    CATALOG_AI_CONTROL_QUESTION_PROPOSED_REQUIRED,
     CATALOG_AI_MEASURE_REC_EDIT_DIALOG_TITLE,
     CATALOG_AI_MEASURE_REC_PROPOSED_REQUIRED,
 )
@@ -149,6 +156,27 @@ def resolve_measure_recommendation_target(
     )
 
 
+def _control_question_recommendation(package: AiProposalPackage) -> bool:
+    return package.package_type in {
+        AI_MEASURE_REC_EDIT_REQUIRED,
+        AI_MEASURE_REC_NEW_REQUIRED,
+    }
+
+
+def _recommendation_dialog_title(package: AiProposalPackage) -> str:
+    if package.package_type == AI_MEASURE_REC_NEW_REQUIRED:
+        return CATALOG_AI_CONTROL_QUESTION_NEW_DIALOG_TITLE
+    if package.package_type == AI_MEASURE_REC_EDIT_REQUIRED:
+        return CATALOG_AI_CONTROL_QUESTION_EDIT_DIALOG_TITLE
+    return CATALOG_AI_MEASURE_REC_EDIT_DIALOG_TITLE
+
+
+def _recommendation_proposed_required(package: AiProposalPackage) -> str:
+    if _control_question_recommendation(package):
+        return CATALOG_AI_CONTROL_QUESTION_PROPOSED_REQUIRED
+    return CATALOG_AI_MEASURE_REC_PROPOSED_REQUIRED
+
+
 class HazardCatalogAiMeasureRecommendationEditDialog(QDialog):
     def __init__(
         self,
@@ -168,7 +196,7 @@ class HazardCatalogAiMeasureRecommendationEditDialog(QDialog):
             review_id=review_id,
         )
 
-        self.setWindowTitle(CATALOG_AI_MEASURE_REC_EDIT_DIALOG_TITLE)
+        self.setWindowTitle(_recommendation_dialog_title(package))
         self.setWindowModality(Qt.WindowModality.WindowModal)
         self.resize(620, 520)
 
@@ -221,8 +249,8 @@ class HazardCatalogAiMeasureRecommendationEditDialog(QDialog):
         if not proposed:
             QMessageBox.warning(
                 self,
-                CATALOG_AI_MEASURE_REC_EDIT_DIALOG_TITLE,
-                CATALOG_AI_MEASURE_REC_PROPOSED_REQUIRED,
+                self.windowTitle(),
+                _recommendation_proposed_required(self._package),
             )
             self.proposed_text.setFocus()
             return

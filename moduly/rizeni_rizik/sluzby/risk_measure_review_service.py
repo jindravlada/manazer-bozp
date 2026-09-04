@@ -79,7 +79,7 @@ def resolve_current_thp_worker_id() -> int | None:
 
 
 def split_checklist_measure_lines(text: str) -> list[str]:
-    """Rozdělí text navazujícího opatření na kontrolní body (RISK-CHECKLIST-1/2).
+    """Rozdělí text kontrolní otázky na kontrolní body (RISK-CHECKLIST-1/2).
 
     Hranice = Enter (``\\n`` / ``\\r\\n`` / ``\\r``). Prázdné řádky a okolní
     mezery se vynechají / oříznou.
@@ -394,7 +394,7 @@ class RiskMeasureReviewService:
         """Vrátí identifikaci / posouzení pro otevření revize opatření."""
         measure = hazard_required_measure_service.get_by_id(follow_up_measure_id)
         if measure is None:
-            raise RiskMeasureReviewError("Navazující opatření nebylo nalezeno.")
+            raise RiskMeasureReviewError("Kontrolní otázka nebyla nalezena.")
         assessment = hazard_risk_assessment_service.get_by_id(
             measure.hazard_risk_assessment_id
         )
@@ -489,7 +489,7 @@ class RiskMeasureReviewService:
         workplace_id: int | None = None,
         workplace_part_id: int | None = None,
     ) -> list:
-        """Aktivní navazující opatření v rozsahu (bez duplicit dle measure.id)."""
+        """Aktivní kontrolní otázky v rozsahu (bez duplicit dle measure.id)."""
         if workplace_id is None:
             workplace_part_id = None
 

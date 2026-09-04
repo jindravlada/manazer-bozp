@@ -308,7 +308,7 @@ class HazardRequiredMeasurePhaseR09TestCase(unittest.TestCase):
         name_item = widget.table.item(0, RISK_ASSESSMENT_COL_EXPOSED_GROUP)
         assert name_item is not None
         self.assertIn("5 existujících opatření", name_item.text())
-        self.assertIn("2 potřebná opatření", name_item.text())
+        self.assertIn("2 kontrolní otázky", name_item.text())
 
     def test_read_only_required_measures_for_completed_identification(self) -> None:
         completed = hazard_identification_service.update_identification(

@@ -203,7 +203,7 @@ class AiProposalPackagesR20bTestCase(unittest.TestCase):
         self.assertIn("UDÁLOST", text)
         self.assertIn("POSOUZENÍ", text)
         self.assertIn("Zásady bezpečné práce", text)
-        self.assertIn("Navazující opatření", text)
+        self.assertIn("Kontrolní otázky pro revizi rizik", text)
         self.assertIn("PRÁVNÍ VAZBY", text)
         self.assertIn("ZDŮVODNĚNÍ AI", text)
         self.assertIn("Pád z výšky", text)

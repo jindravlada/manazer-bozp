@@ -147,6 +147,20 @@ def classify_catalog_proposal(proposal: AiUnassignedProposal) -> str:
         ("posouzen", "posouzeni"),
     ):
         return CATALOG_PROPOSAL_KIND_EXPOSED_GROUP
+    if area_matches(
+        area,
+        (
+            "kontroln",
+            "otázk",
+            "otazk",
+            "navazuj",
+            "potřeb",
+            "potreb",
+            "dalš",
+            "dals",
+        ),
+    ):
+        return CATALOG_PROPOSAL_KIND_REQUIRED_MEASURE
     if area_matches(area, ("posouzen", "rizik", "násled", "nasled", "ohrožen", "ohrozen")):
         return CATALOG_PROPOSAL_KIND_ASSESSMENT
     if area_matches(area, ("potřeb", "potreb", "dalš", "dals")):
@@ -156,6 +170,8 @@ def classify_catalog_proposal(proposal: AiUnassignedProposal) -> str:
         (
             "existujíc",
             "existujic",
+            "zásad",
+            "zasad",
             "ochrann",
             "organizač",
             "organizac",

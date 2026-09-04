@@ -167,7 +167,7 @@ class HazardRequiredMeasuresWidget(QWidget):
             QMessageBox.information(
                 self,
                 HAZARD_REQUIRED_MEASURE_DIALOG_TITLE,
-                "Vyberte potřebné opatření.",
+                "Vyberte kontrolní otázku.",
             )
             return
 
@@ -190,7 +190,7 @@ class HazardRequiredMeasuresWidget(QWidget):
             QMessageBox.information(
                 self,
                 HAZARD_REQUIRED_MEASURE_DIALOG_TITLE,
-                "Vyberte potřebné opatření.",
+                "Vyberte kontrolní otázku.",
             )
             return
         if measure.active:
@@ -221,7 +221,7 @@ class HazardRequiredMeasuresWidget(QWidget):
             QMessageBox.information(
                 self,
                 HAZARD_REQUIRED_MEASURE_DIALOG_TITLE,
-                "Vyberte potřebné opatření.",
+                "Vyberte kontrolní otázku.",
             )
             return
         if not measure.active:
@@ -257,7 +257,7 @@ class HazardRequiredMeasuresWidget(QWidget):
             QMessageBox.information(
                 self,
                 HAZARD_REQUIRED_MEASURE_DIALOG_TITLE,
-                "Navazující opatření jsou u dokončené nebo archivované identifikace "
+                "Kontrolní otázky jsou u dokončené nebo archivované identifikace "
                 "pouze pro čtení.",
             )
             return False

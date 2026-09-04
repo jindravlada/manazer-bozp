@@ -208,7 +208,7 @@ class RiskReview4aTestCase(unittest.TestCase):
             ]
         )
         self.assertNotIn(
-            "Navazující opatření | Vyhovuje | Nevyhovuje | Foto | Poznámka",
+            "Kontrolní otázky | Vyhovuje | Nevyhovuje | Foto | Poznámka",
             text,
         )
         self.assertIn("Ochranný kryt frézky", text)

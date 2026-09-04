@@ -693,8 +693,9 @@ class HazardIdentificationPeerReviewProvider:
                 "focus_areas": list(briefing["focus_areas"]),
                 "rules": [
                     "Nehodnotit závažnost rizik.",
-                    "Nejprve posoudit Navazující opatření, poté Zásady bezpečné práce, "
-                    "teprve potom zvažovat nová opatření.",
+                    "Nejprve posoudit kontrolní otázky pro revizi rizik, "
+                    "poté Zásady bezpečné práce, "
+                    "teprve potom zvažovat nové otázky.",
                     "Nenavrhovat nové opatření, pokud lze stejného cíle dosáhnout "
                     "úpravou stávajícího opatření nebo Zásad bezpečné práce.",
                     "Pokud jsou stávající opatření dostatečná, nenavrhovat jejich změnu.",
@@ -804,7 +805,7 @@ class HazardIdentificationPeerReviewProvider:
         lines.append("-" * 40)
         lines.append(
             "Analýza pracoviště → Nežádoucí události → Posouzení "
-            "→ Zásady bezpečné práce → Navazující opatření"
+            "→ Zásady bezpečné práce → Kontrolní otázky pro revizi rizik"
         )
         lines.append("")
 
@@ -864,7 +865,7 @@ class HazardIdentificationPeerReviewProvider:
                     else:
                         lines.append("                        (žádná)")
 
-                    lines.append("                    Navazující opatření")
+                    lines.append("                    Kontrolní otázky pro revizi rizik")
                     if assessment["required_measures"]:
                         for measure in assessment["required_measures"]:
                             lines.append(
@@ -890,7 +891,7 @@ class HazardIdentificationPeerReviewProvider:
             f"Nežádoucí události: {counts['events']}",
             f"Posouzení rizik: {counts['assessments']}",
             f"Zásady bezpečné práce: {counts['existing_measures']}",
-            f"Navazující opatření: {counts['required_measures']}",
+            f"Kontrolní otázky: {counts['required_measures']}",
         ]
         overview = "\n".join(
             [

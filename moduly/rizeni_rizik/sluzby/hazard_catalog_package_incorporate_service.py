@@ -469,7 +469,7 @@ class HazardCatalogPackageIncorporateService:
             )
             if updated is None:
                 raise HazardCatalogPackageIncorporateError(
-                    "Cílové Navazující opatření nebylo nalezeno."
+                    "Cílová kontrolní otázka nebyla nalezena."
                 )
             required_measure_count = 1
         elif package.package_type == AI_MEASURE_REC_NEW_REQUIRED:
@@ -550,7 +550,7 @@ class HazardCatalogPackageIncorporateService:
             measure = session.get(HazardLibraryTemplateRequiredMeasure, int(target["id"]))
             if measure is None or not measure.active:
                 raise HazardCatalogPackageIncorporateError(
-                    "Cílové Navazující opatření nebylo nalezeno."
+                    "Cílová kontrolní otázka nebyla nalezena."
                 )
             measure.description = package.proposed_text.strip()
             measure.note = self._join_notes(measure.note or "", package.reasoning)
@@ -1412,7 +1412,7 @@ class HazardCatalogPackageIncorporateService:
             assessment = working_copy.get_assessment(int(target["id"]))
             if assessment is None or not assessment.active:
                 raise HazardCatalogPackageIncorporateError(
-                    "Cílové posouzení pro nové Navazující opatření nebylo nalezeno."
+                    "Cílové posouzení pro novou kontrolní otázku nebylo nalezeno."
                 )
             if not (package.proposed_text or "").strip():
                 raise HazardCatalogPackageIncorporateError(
@@ -1575,7 +1575,7 @@ class HazardCatalogPackageIncorporateService:
             )
             if updated is None:
                 raise HazardCatalogPackageIncorporateError(
-                    "Cílové Navazující opatření nebylo nalezeno."
+                    "Cílová kontrolní otázka nebyla nalezena."
                 )
             required_measure_count = 1
         elif package.package_type == AI_MEASURE_REC_NEW_REQUIRED:

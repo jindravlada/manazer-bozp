@@ -1413,7 +1413,7 @@ class HazardIdentificationWorkingCopy:
         else:
             measure_title = (title or description).strip()
             if not measure_title:
-                raise HazardRequiredMeasureError("Název opatření je povinný.")
+                raise HazardRequiredMeasureError("Znění kontrolní otázky je povinné.")
             measure_description = measure_title
             measure_note = note.strip()
             unique_key = measure_title
@@ -1494,7 +1494,7 @@ class HazardIdentificationWorkingCopy:
         else:
             measure_title = (title or description).strip()
             if not measure_title:
-                raise HazardRequiredMeasureError("Název opatření je povinný.")
+                raise HazardRequiredMeasureError("Znění kontrolní otázky je povinné.")
             unique_key = measure_title
             measure_description = measure_title
             measure_note = note.strip()
@@ -1600,7 +1600,7 @@ class HazardIdentificationWorkingCopy:
                     f"U vybraného posouzení již existuje aktivní opatření "
                     f"s popisem „{description.strip()}“."
                     if existing
-                    else f"U vybraného posouzení již existuje aktivní navazující opatření "
+                    else f"U vybraného posouzení již existuje aktivní kontrolní otázka "
                     f"s názvem „{description.strip()}“."
                 )
                 raise (

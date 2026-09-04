@@ -98,7 +98,7 @@ AI_PEER_REVIEW_OBJECTIVE_LABELS = {
         "Posoudit Zásady bezpečné práce a navrhnout úpravy, jsou-li potřeba"
     ),
     AI_PEER_REVIEW_OBJECTIVE_REQUIRED_MEASURES: (
-        "Posoudit Navazující opatření a navrhnout úpravy nebo doplnění"
+        "Posoudit kontrolní otázky pro revizi rizik a navrhnout úpravy nebo doplnění"
     ),
     AI_PEER_REVIEW_OBJECTIVE_LEGAL_REQUIREMENTS: (
         "Navrhnout související právní požadavky"
@@ -207,9 +207,9 @@ AI_PEER_REVIEW_PACKAGE_TYPE_LABELS = {
     AI_PEER_REVIEW_PACKAGE_TYPE_NEW_EVENT: "Nová událost",
     AI_PEER_REVIEW_PACKAGE_TYPE_EXTEND_EVENT: "Doplnění události",
     AI_MEASURE_REC_NO_CHANGE: "Beze změn",
-    AI_MEASURE_REC_EDIT_REQUIRED: "Úprava Navazujícího opatření",
+    AI_MEASURE_REC_EDIT_REQUIRED: "Úprava kontrolní otázky",
     AI_MEASURE_REC_EDIT_EXISTING: "Úprava Zásad bezpečné práce",
-    AI_MEASURE_REC_NEW_REQUIRED: "Nové Navazující opatření",
+    AI_MEASURE_REC_NEW_REQUIRED: "Nová kontrolní otázka",
 }
 
 AI_PEER_REVIEW_FORMAT_JSON_1_1 = "JSON 1.1"
@@ -357,7 +357,7 @@ AI_PEER_REVIEW_RESPONSE_SCHEMA = {
                     "description": (
                         "Oblast návrhu, např. Analýza pracoviště, "
                         "Nežádoucí událost, Ohrožená skupina, "
-                        "Zásady bezpečné práce, Navazující opatření."
+                        "Zásady bezpečné práce, Kontrolní otázky pro revizi rizik."
                     ),
                 },
                 "name": {
@@ -399,7 +399,8 @@ AI_PEER_REVIEW_RESPONSE_SCHEMA_2_0 = {
     "description": (
         "Očekávaný formát odpovědi AI pro oponentní posouzení katalogu zdrojů rizik. "
         "Návrhové balíky (událost / posouzení) a/nebo doporučení k opatřením "
-        "(revize Zásad bezpečné práce a Navazujících opatření)."
+        "a kontrolním otázkám (revize Zásad bezpečné práce a kontrolních otázek "
+        "pro revizi rizik)."
     ),
     "type": "object",
     "required": [
@@ -431,8 +432,8 @@ AI_PEER_REVIEW_RESPONSE_SCHEMA_2_0 = {
             "type": "array",
             "items": {"$ref": "#/$defs/measure_recommendation"},
             "description": (
-                "Doporučení k stávajícím nebo novým opatřením "
-                "(Zásady bezpečné práce / Navazující opatření)."
+                "Doporučení k Zásadám bezpečné práce nebo ke kontrolním otázkám "
+                "pro revizi rizik."
             ),
         },
     },
@@ -453,19 +454,26 @@ AI_PEER_REVIEW_RESPONSE_SCHEMA_2_0 = {
                         "upravit_zasady_bezpecne_prace",
                         "nove_navazujici_opatreni",
                     ],
+                    "description": (
+                        "Technické hodnoty se nemění. "
+                        "upravit_navazujici_opatreni = úprava kontrolní otázky, "
+                        "nove_navazujici_opatreni = nová kontrolní otázka, "
+                        "upravit_zasady_bezpecne_prace = úprava Zásad bezpečné práce."
+                    ),
                 },
                 "target_export_id": {
                     "type": ["string", "null"],
                     "description": (
-                        "Exportní ID stávajícího opatření "
-                        "(REQUIRED-MEASURE-… / EXISTING-MEASURE-…) "
-                        "nebo posouzení (ASSESSMENT-…) u nového Navazujícího opatření."
+                        "Exportní ID stávající položky "
+                        "(REQUIRED-MEASURE-… u kontrolní otázky, "
+                        "EXISTING-MEASURE-… u Zásady bezpečné práce) "
+                        "nebo posouzení (ASSESSMENT-…) u nové kontrolní otázky."
                     ),
                 },
                 "proposed_text": {
                     "type": "string",
                     "description": (
-                        "Navrhované nové znění nebo text nového opatření "
+                        "Navrhované znění Zásady bezpečné práce nebo kontrolní otázky "
                         "(u typu beze_zmen může zůstat prázdné)."
                     ),
                 },
@@ -512,6 +520,10 @@ AI_PEER_REVIEW_RESPONSE_SCHEMA_2_0 = {
                 },
                 "required_measures": {
                     "type": "array",
+                    "description": (
+                        "Kontrolní otázky pro revizi rizik. "
+                        "Technický název pole required_measures se nemění."
+                    ),
                     "items": {"$ref": "#/$defs/measure"},
                 },
             },

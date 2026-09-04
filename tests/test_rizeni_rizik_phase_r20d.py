@@ -220,7 +220,7 @@ class AiProposalPackageEditorR20dTestCase(unittest.TestCase):
         self.assertNotIn(self.event_export_id, summary)
         self.assertIn("Posouzení: 2", summary)
         self.assertIn("Zásady bezpečné práce: 1", summary)
-        self.assertIn("Navazující opatření: 3", summary)
+        self.assertIn("Kontrolní otázky: 3", summary)
         self.assertIn("Právní vazby: 1", summary)
 
     def test_assessment_section_titles(self) -> None:

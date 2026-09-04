@@ -91,16 +91,15 @@ _STYLE_MARKERS = (
     "přímé pokyny zaměstnanci",
     "Pravidla bezpečné práce",
     "Nepoužívejte pouze jmenné fráze",
-    "Navazující opatření nejsou pokyny zaměstnanci",
-    "Kontrola řádného uvázání pracovní obuvi",
-    "nikoliv jako přímý příkaz zaměstnanci",
-    "Je text určen zaměstnanci?",
+    "umožňovat odpověď Ano / Ne / Netýká se",
+    "Kontrolní otázka není úkol",
+    "Je text pokynem zaměstnanci?",
     "takový návrh nesmíte navrhnout",
     "Zakázané formulace",
     "Preferujte aktivní věty",
     "vhodně",
     "Nepopisujte organizaci práce zaměstnavatele",
-    "raději opatření vůbec nenavrhujte",
+    "raději ji vůbec nenavrhujte",
     "Používejte...",
     "Riziko je zřejmé.",
 )
@@ -122,9 +121,12 @@ class AiRiskOp2MeasureFormulationPromptTestCase(unittest.TestCase):
         for section in _LEGACY_PROMPT_SECTIONS:
             self.assertIn(section, prompt)
         self.assertIn("Nehodnoť závažnost rizik.", prompt)
-        self.assertIn("Pokud jsou stávající opatření dostatečná, nenavrhuj jejich změnu.", prompt)
         self.assertIn(
-            "Nenavrhuj nové opatření, pokud lze stejného cíle dosáhnout",
+            "Pokud jsou stávající zásady a kontrolní otázky dostatečné",
+            prompt,
+        )
+        self.assertIn(
+            "Nenavrhuj novou kontrolní otázku, pokud lze stejné ověření pokrýt",
             prompt,
         )
         self.assertIn("Oblast: <název oblasti>", prompt)

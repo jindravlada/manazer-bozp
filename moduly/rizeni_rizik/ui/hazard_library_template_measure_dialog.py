@@ -63,7 +63,12 @@ class HazardLibraryTemplateMeasureDialog(QDialog):
         self.active_checkbox = QCheckBox("Aktivní")
         self.active_checkbox.setChecked(True)
 
-        form.addRow("Popis opatření *:", self.description)
+        description_label = (
+            "Popis opatření *:"
+            if measure_type == "existing"
+            else "Kontrolní otázka *:"
+        )
+        form.addRow(description_label, self.description)
         form.addRow("Poznámka:", self.note)
         form.addRow("", self.active_checkbox)
 

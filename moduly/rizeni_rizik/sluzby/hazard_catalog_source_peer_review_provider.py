@@ -534,7 +534,7 @@ class HazardCatalogSourcePeerReviewProvider:
         lines.append("-" * 40)
         lines.append(
             "Zdroj rizika → Právní vazby → Nežádoucí události → Posouzení "
-            "→ Zásady bezpečné práce → Navazující opatření"
+            "→ Zásady bezpečné práce → Kontrolní otázky pro revizi rizik"
         )
         lines.append("")
         lines.append(f"Zdroj rizika [{risk_source['export_id']}]")
@@ -606,7 +606,7 @@ class HazardCatalogSourcePeerReviewProvider:
                 else:
                     lines.append("                        (žádná)")
 
-                lines.append("                    Navazující opatření")
+                lines.append("                    Kontrolní otázky pro revizi rizik")
                 if assessment["required_measures"]:
                     for measure in assessment["required_measures"]:
                         lines.append(
@@ -626,7 +626,7 @@ class HazardCatalogSourcePeerReviewProvider:
             f"Nežádoucí události: {counts['events']}",
             f"Posouzení rizik: {counts['assessments']}",
             f"Zásady bezpečné práce: {counts['existing_measures']}",
-            f"Navazující opatření: {counts['required_measures']}",
+            f"Kontrolní otázky: {counts['required_measures']}",
         ]
         overview = "\n".join(
             [

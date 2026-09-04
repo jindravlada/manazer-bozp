@@ -17,32 +17,35 @@ from core.ai_oponentni.constants import (
     AI_PEER_REVIEW_ROLES,
 )
 
-# Kapitola RISK-AI-13 – rozlišení stylu Zásad a Navazujících opatření.
-MEASURE_FORMULATION_STYLE_HEADING = "=== Styl formulace opatření ==="
+# Kapitola RISK-AI-13 / RISK-CONTROL-QUESTIONS-1 – Zásady vs kontrolní otázky.
+MEASURE_FORMULATION_STYLE_HEADING = "=== Styl formulace opatření a otázek ==="
 
-# Kapitola RISK-AI-12 – pořadí posouzení stávajících opatření.
+# Kapitola RISK-AI-12 – pořadí posouzení stávajících položek.
 MEASURE_REVIEW_ORDER_HEADING = "=== Posouzení stávajících opatření ==="
 
 
 def measure_review_order_section() -> list[str]:
-    """Pokyny pro revizi Zásad a Navazujících opatření (RISK-AI-12)."""
+    """Pokyny pro revizi Zásad a kontrolních otázek."""
     return [
         MEASURE_REVIEW_ORDER_HEADING,
         "",
-        "Posuzuj opatření v tomto pořadí:",
-        "1. Nejprve posuď stávající Navazující opatření.",
+        "Posuzuj položky v tomto pořadí:",
+        "1. Nejprve posuď stávající kontrolní otázky pro revizi rizik.",
         "2. Následně posuď Zásady bezpečné práce.",
-        "3. Teprve potom zvažuj návrh nových Navazujících opatření.",
+        "3. Teprve potom zvažuj návrh nových kontrolních otázek.",
         "",
-        "Nenavrhuj nové opatření, pokud lze stejného cíle dosáhnout "
-        "úpravou stávajícího opatření nebo Zásad bezpečné práce.",
+        "Nenavrhuj novou kontrolní otázku, pokud lze stejné ověření pokrýt "
+        "úpravou stávající otázky.",
+        "Nenavrhuj novou Zásadu bezpečné práce, pokud lze stejného cíle "
+        "dosáhnout úpravou stávající zásady.",
         "",
-        "Pokud jsou stávající opatření dostatečná, nenavrhuj jejich změnu.",
+        "Pokud jsou stávající zásady a kontrolní otázky dostatečné, "
+        "nenavrhuj jejich změnu.",
     ]
 
 
 def measure_formulation_style_section() -> list[str]:
-    """Styl formulace Zásad vs Navazujících opatření (RISK-AI-13)."""
+    """Styl formulace Zásad vs kontrolních otázek pro revizi rizik."""
     return [
         MEASURE_FORMULATION_STYLE_HEADING,
         "",
@@ -94,57 +97,47 @@ def measure_formulation_style_section() -> list[str]:
         "Nepopisujte organizaci práce zaměstnavatele. "
         "Zásady mají popisovat bezpečné chování osoby, které jsou určeny.",
         "",
-        "B) Navazující opatření",
+        "B) Kontrolní otázky pro revizi rizik",
         "",
-        "Navazující opatření nejsou pokyny zaměstnanci.",
-        "Jsou určena zaměstnavateli nebo vedoucím zaměstnancům "
-        "jako kontrolní nebo organizační opatření.",
+        "Pole required_measures obsahuje kontrolní otázky pro revizi rizik.",
+        "Slouží při konkrétní revizi k ověření, zda jsou zásady a opatření "
+        "skutečně dodržovány.",
         "",
-        "Nesmíte měnit jejich význam na pokyny zaměstnanci.",
+        "Každá kontrolní otázka musí:",
+        "- být formulována jako otázka,",
+        "- ověřovat jednu konkrétní skutečnost,",
+        "- umožňovat odpověď Ano / Ne / Netýká se,",
+        "- navazovat na konkrétní událost a její zásady bezpečné práce,",
+        "- neobsahovat odpovědnou osobu ani termín,",
+        "- neopakovat jinou otázku.",
+        "",
+        "Kontrolní otázka není úkol, jednorázové nápravné opatření, "
+        "termínovaný požadavek ani pokyn typu „Provést revizi do…“.",
         "",
         "Příklad:",
+        "Zásada: \"Kontroly, revize a údržba musí být prováděny "
+        "ve stanovených termínech.\"",
+        "Kontrolní otázka: \"Jsou kontroly, revize a údržba prováděny "
+        "ve stanovených termínech?\"",
         "",
-        "Původní:",
-        "\"Pracovní obuv zaměstnanců – uvázání tkaniček, čistota podrážky.\"",
-        "",
-        "NESMÍ být změněno na:",
-        "\"Před nástupem na drážní vozidlo si upevněte pracovní obuv...\"",
-        "(To už je zásada bezpečné práce.)",
-        "",
-        "Naopak je vhodné například:",
-        "\"Kontrola řádného uvázání pracovní obuvi zaměstnanců "
-        "a čistoty podrážek před zahájením práce.\"",
-        "",
-        "nebo:",
-        "\"Ověření stavu pracovní obuvi zaměstnanců "
-        "(uvázání tkaniček, čistota podrážek).\"",
-        "",
-        "Stejná zásada platí pro všechna Navazující opatření.",
-        "Mají zůstat formulována jako:",
-        "- kontrola,",
-        "- ověření,",
-        "- zajištění,",
-        "- organizace,",
-        "- školení,",
-        "- evidence,",
-        "- plánování,",
-        "- údržba,",
-        "- revize,",
-        "- dohled,",
-        "",
-        "nikoliv jako přímý příkaz zaměstnanci.",
+        "Pokud katalog neobsahuje žádné události, navrhni kontrolní otázky "
+        "spolu s novými událostmi.",
+        "Pokud katalog již obsahuje data, hledej chybějící nebo nevhodně "
+        "formulované kontrolní otázky.",
         "",
         "C) Kontrola významu před návrhem úpravy",
         "",
-        "Při návrhu úpravy Navazujícího opatření nejprve určete:",
+        "Při návrhu úpravy nejprve určete:",
         "",
-        "Je text určen zaměstnanci?",
-        "ANO → patří mezi Zásady bezpečné práce.",
-        "NE → jde o Navazující opatření.",
+        "Je text pokynem zaměstnanci?",
+        "ANO → patří mezi Zásady bezpečné práce "
+        "(typ upravit_zasady_bezpecne_prace).",
+        "NE, jde o ověření dodržování → jde o kontrolní otázku "
+        "(typ upravit_navazujici_opatreni / nove_navazujici_opatreni).",
         "",
         "Pokud by návrh změnil tuto kategorii "
-        "(např. z organizačního opatření na pokyn zaměstnanci), "
-        "takový návrh nesmíte navrhnout.",
+        "(např. ze zásady na otázku nebo naopak), "
+        "takový návrh nesmíte navrhnout v nesprávném typu.",
         "",
         "D) Společná pravidla pro oba typy",
         "",
@@ -165,8 +158,8 @@ def measure_formulation_style_section() -> list[str]:
         "",
         "pokud lze napsat konkrétní znění.",
         "",
-        "Pokud nelze vytvořit vhodné znění v souladu s typem opatření, "
-        "raději opatření vůbec nenavrhujte.",
+        "Pokud nelze vytvořit vhodné znění v souladu s typem položky, "
+        "raději ji vůbec nenavrhujte.",
     ]
 
 
@@ -275,7 +268,7 @@ def build_ai_peer_review_prompt(
         "Podklady jsou hierarchické:\n"
         "\n"
         "Analýza pracoviště → Nežádoucí události → Posouzení\n"
-        "→ Zásady bezpečné práce → Navazující opatření\n"
+        "→ Zásady bezpečné práce → Kontrolní otázky pro revizi rizik\n"
         "\n"
         "Každý objekt má stabilní exportní ID (ITEM-…, EVENT-…, ASSESSMENT-…).\n"
         "Při návrhu doplnění uveď rodiče pomocí tohoto ID (pole Rodič)."
@@ -313,9 +306,9 @@ def build_ai_peer_review_prompt(
         "Jsou v analýze všechny významné zdroje?",
         "Chybí některé běžné nežádoucí události?",
         "Chybí některé skupiny ohrožených osob?",
-        "Jsou stávající Navazující opatření dostatečná?",
+        "Jsou stávající kontrolní otázky pro revizi rizik dostatečné?",
         "Jsou Zásady bezpečné práce dostatečné, nebo vyžadují úpravu?",
-        "Chybí skutečně nové Navazující opatření, které nelze nahradit úpravou?",
+        "Chybí skutečně nová kontrolní otázka, kterou nelze nahradit úpravou?",
         "Chybí některé důležité právní požadavky?",
         "Na co se při podobných pracovištích nejčastěji zapomíná?",
     ]
@@ -351,7 +344,11 @@ def catalog_universal_processing_rules() -> list[str]:
         "chybějící nebo potřebné doplnění.",
         "Prázdný katalog je legitimní vstup a nesmí být důvodem k odmítnutí.",
         "Navrhuj nežádoucí události, ohrožené skupiny, zásady bezpečné práce, "
-        "navazující opatření a právní vazby.",
+        "kontrolní otázky pro revizi rizik a právní vazby.",
+        "Pokud katalog neobsahuje žádné nežádoucí události, navrhni spolu s nimi "
+        "i první kontrolní otázky.",
+        "Pokud katalog již obsahuje data, hledej chybějící nebo nevhodně "
+        "formulované kontrolní otázky.",
         "Neopakuj položky, které již v katalogu existují.",
         "Nové události vracej jako proposal_package typu new_event.",
         "Doplnění existující události navaž na její exportní ID.",
@@ -465,7 +462,7 @@ def build_catalog_source_ai_peer_review_prompt(
         "Podklady jsou hierarchické:\n"
         "\n"
         "Zdroj rizika → Nežádoucí události → Posouzení\n"
-        "→ Zásady bezpečné práce → Navazující opatření\n"
+        "→ Zásady bezpečné práce → Kontrolní otázky pro revizi rizik\n"
         "\n"
         "Každý objekt má stabilní exportní ID "
         "(SOURCE-…, EVENT-…, ASSESSMENT-…, EXISTING-MEASURE-…, REQUIRED-MEASURE-…).\n"
@@ -510,9 +507,9 @@ def build_catalog_source_ai_peer_review_prompt(
         "Jsou v katalogovém zdroji popsány všechny významné nežádoucí události?",
         "Chybí některé běžné nežádoucí události?",
         "Chybí některé skupiny ohrožených osob?",
-        "Jsou stávající Navazující opatření dostatečná?",
+        "Jsou stávající kontrolní otázky pro revizi rizik dostatečné?",
         "Jsou Zásady bezpečné práce dostatečné, nebo vyžadují úpravu?",
-        "Chybí skutečně nové Navazující opatření, které nelze nahradit úpravou?",
+        "Chybí skutečně nová kontrolní otázka, kterou nelze nahradit úpravou?",
         "Chybí některé důležité právní požadavky?",
         "Na co se u podobných zdrojů rizika nejčastěji zapomíná?",
     ]
@@ -533,7 +530,7 @@ def build_catalog_source_ai_peer_review_prompt(
         "- reasoning (stručné odborné zdůvodnění)\n"
         "- proposed_text (navrhované znění; u beze_zmen může být prázdné)\n"
         "- target_export_id: REQUIRED-MEASURE-… / EXISTING-MEASURE-… "
-        "při úpravě, ASSESSMENT-… při novém Navazujícím opatření\n"
+        "při úpravě, ASSESSMENT-… při nové kontrolní otázce\n"
         "\n"
         "Ucelené návrhové balíky (proposal_packages) používej pro nové události. "
         "Každý balík musí obsahovat událost nebo vazbu na existující EVENT-…, "

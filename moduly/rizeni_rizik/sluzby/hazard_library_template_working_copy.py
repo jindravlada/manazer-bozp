@@ -918,7 +918,11 @@ class HazardLibraryTemplateWorkingCopy:
                 HazardLibraryTemplateExistingMeasureError
                 if existing
                 else HazardLibraryTemplateRequiredMeasureError
-            )("Popis opatření je povinný.")
+            )(
+                "Popis opatření je povinný."
+                if existing
+                else "Znění kontrolní otázky je povinné."
+            )
         bucket = assessment.existing_measures if existing else assessment.required_measures
         self._validate_unique_measure(
             bucket,
@@ -970,7 +974,11 @@ class HazardLibraryTemplateWorkingCopy:
                 HazardLibraryTemplateExistingMeasureError
                 if existing
                 else HazardLibraryTemplateRequiredMeasureError
-            )("Popis opatření je povinný.")
+            )(
+                "Popis opatření je povinný."
+                if existing
+                else "Znění kontrolní otázky je povinné."
+            )
         bucket = assessment.existing_measures if existing else assessment.required_measures
         self._validate_unique_measure(
             bucket,
