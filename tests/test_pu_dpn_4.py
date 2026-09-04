@@ -42,6 +42,7 @@ with patch.object(Path, "home", return_value=_TMP):
         CARE_EXAM_RESULT,
         CARE_RETURN_DATE,
         CARE_RETURN_MODE,
+        CARE_SEVERE_CONSEQUENCES,
         DPN_CARE_RETURN_KEY,
         EXAM_REQUIRED_NO,
         EXAM_REQUIRED_YES,
@@ -129,12 +130,9 @@ class PuDpn4TestCase(unittest.TestCase):
 
     def _fill_care(self, tab, *, exam_required=EXAM_REQUIRED_YES) -> None:
         if exam_required == EXAM_REQUIRED_YES:
-            tab.exam_required_ano.setChecked(True)
-            tab.exam_reason.setPlainText("delší trvání DPN")
+            tab.severe_consequences_ano.setChecked(True)
             tab.exam_date.set_date_value(date(2026, 4, 22))
             tab.exam_result.setCurrentIndex(tab.exam_result.findData(EXAM_RESULT_FIT))
-        else:
-            tab.exam_required_ne.setChecked(True)
         tab.return_date.set_date_value(date(2026, 4, 25))
         tab.return_mode.setCurrentIndex(tab.return_mode.findData(RETURN_MODE_SAME))
 
@@ -155,7 +153,10 @@ class PuDpn4TestCase(unittest.TestCase):
         self.assertEqual(data[CARE_EXAM_RESULT], "")
         self.assertEqual(data[CARE_RETURN_DATE], "2026-04-25")
         self.assertEqual(data[CARE_RETURN_MODE], RETURN_MODE_SAME)
-        self.assertTrue(exam_details_relevant(data))
+        self.assertFalse(exam_details_relevant(data))
+        self.assertTrue(
+            exam_details_relevant({CARE_SEVERE_CONSEQUENCES: EXAM_REQUIRED_YES})
+        )
         self.assertTrue(return_date_relevant(data))
         self.assertFalse(
             return_date_relevant({CARE_RETURN_MODE: RETURN_MODE_NOT_STARTED})
@@ -166,7 +167,7 @@ class PuDpn4TestCase(unittest.TestCase):
         updated = apply_dpn_care_return_to_saved_data(
             {},
             accident=accident,
-            ui_state={CARE_EXAM_REQUIRED: EXAM_REQUIRED_NO},
+            ui_state={CARE_RETURN_MODE: RETURN_MODE_SAME},
         )
         care = dpn_care_return_from_saved_data(updated)
         self.assertEqual(care[CARE_EXAM_REQUIRED], EXAM_REQUIRED_NO)
@@ -180,7 +181,7 @@ class PuDpn4TestCase(unittest.TestCase):
         self.assertFalse(tab.is_content_active())
         self.assertFalse(tab.sections_widget.isEnabled())
         self.assertTrue(tab.sections_widget.isHidden())
-        self.assertFalse(tab.exam_required_ano.isEnabled())
+        self.assertFalse(tab.severe_consequences_ano.isEnabled())
         self.assertFalse(tab.return_mode.isEnabled())
         dialog.close()
 
@@ -191,8 +192,8 @@ class PuDpn4TestCase(unittest.TestCase):
         dialog.tab_zamestnanec_widget.dpn_do.set_date_value(date(2026, 4, 20))
         self.assertTrue(tab.is_content_active())
         self.assertTrue(tab.sections_widget.isEnabled())
-        self.assertTrue(tab.exam_required_ano.isEnabled())
-        self.assertTrue(tab.exam_required_ne.isEnabled())
+        self.assertTrue(tab.severe_consequences_ano.isEnabled())
+        self.assertTrue(tab.severe_consequences_ne.isEnabled())
         self.assertTrue(tab.return_mode.isEnabled())
         self.assertIsNone(tab.return_date.get_date())
         self.assertIsNone(tab.get_dpn_care_return()[CARE_RETURN_DATE])
@@ -203,21 +204,18 @@ class PuDpn4TestCase(unittest.TestCase):
         dialog = AccidentDialog(accident=accident)
         tab = dialog.tab_po_ukonceni_dpn_widget
 
-        tab.exam_required_ne.setChecked(True)
         self.assertFalse(tab._exam_form.isRowVisible(tab.exam_date))
         self.assertFalse(tab._exam_form.isRowVisible(tab.exam_result))
-        self.assertFalse(tab._exam_form.isRowVisible(tab.exam_reason))
+        self.assertFalse(tab._exam_form.isRowVisible(tab.exam_deadline))
         self.assertFalse(tab.exam_date.isEnabled())
         self.assertFalse(tab.exam_result.isEnabled())
-        self.assertFalse(tab.exam_reason.isEnabled())
 
-        tab.exam_required_ano.setChecked(True)
+        tab.severe_consequences_ano.setChecked(True)
         self.assertTrue(tab._exam_form.isRowVisible(tab.exam_date))
         self.assertTrue(tab._exam_form.isRowVisible(tab.exam_result))
-        self.assertTrue(tab._exam_form.isRowVisible(tab.exam_reason))
+        self.assertTrue(tab._exam_form.isRowVisible(tab.exam_deadline))
         self.assertTrue(tab.exam_date.isEnabled())
         self.assertTrue(tab.exam_result.isEnabled())
-        self.assertTrue(tab.exam_reason.isEnabled())
         dialog.close()
 
     def test_return_date_hidden_when_not_started(self) -> None:
@@ -239,7 +237,7 @@ class PuDpn4TestCase(unittest.TestCase):
 
         saved = dpn_care_return_from_saved_data(self._saved_data(accident.id))
         self.assertEqual(saved[CARE_EXAM_REQUIRED], EXAM_REQUIRED_YES)
-        self.assertEqual(saved[CARE_EXAM_REASON], "delší trvání DPN")
+        self.assertEqual(saved[CARE_SEVERE_CONSEQUENCES], EXAM_REQUIRED_YES)
         self.assertEqual(saved[CARE_EXAM_DATE], "2026-04-22")
         self.assertEqual(saved[CARE_EXAM_RESULT], EXAM_RESULT_FIT)
         self.assertEqual(saved[CARE_RETURN_DATE], "2026-04-25")
@@ -249,8 +247,7 @@ class PuDpn4TestCase(unittest.TestCase):
         tab = reopened.tab_po_ukonceni_dpn_widget
         reloaded = tab.get_dpn_care_return()
         self.assertEqual(reloaded, saved)
-        self.assertTrue(tab.exam_required_ano.isChecked())
-        self.assertEqual(tab.exam_reason.toPlainText(), "delší trvání DPN")
+        self.assertTrue(tab.severe_consequences_ano.isChecked())
         self.assertEqual(tab.exam_date.get_date(), date(2026, 4, 22))
         self.assertEqual(tab.exam_result.currentData(), EXAM_RESULT_FIT)
         self.assertEqual(tab.return_date.get_date(), date(2026, 4, 25))
@@ -261,7 +258,6 @@ class PuDpn4TestCase(unittest.TestCase):
         accident = self._create(dpn_do=date(2026, 4, 20))
         dialog = AccidentDialog(accident=accident)
         tab = dialog.tab_po_ukonceni_dpn_widget
-        tab.exam_required_ne.setChecked(True)
         tab.return_mode.setCurrentIndex(tab.return_mode.findData(RETURN_MODE_SAME))
         tab.return_date.set_date_value(date(2026, 4, 21))
         accident_service.update_accident(accident.id, **dialog.get_data())
@@ -280,7 +276,6 @@ class PuDpn4TestCase(unittest.TestCase):
         self.assertEqual(dialog.tab_zamestnanec_widget.dpn_do.get_date(), date(2026, 4, 20))
         self.assertIsNone(tab.return_date.get_date())
 
-        tab.exam_required_ne.setChecked(True)
         tab.return_mode.setCurrentIndex(tab.return_mode.findData(RETURN_MODE_SAME))
         tab.return_date.set_date_value(date(2026, 4, 28))
         accident_service.update_accident(accident.id, **dialog.get_data())

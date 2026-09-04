@@ -1,3 +1,4 @@
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QButtonGroup,
     QCheckBox,
@@ -16,19 +17,25 @@ from PySide6.QtWidgets import (
 from core.widgets.no_wheel_guards import NoWheelSpinBox
 from core.widgets.nullable_date_edit import NullableDateEdit
 from moduly.kniha_urazu.sluzby.accident_dpn_care import (
+    CARE_CATEGORY_1_NO_RISK,
+    CARE_DPN_OVER_8_WEEKS,
     CARE_EXAM_DATE,
+    CARE_EXAM_DEADLINE,
     CARE_EXAM_REASON,
-    CARE_EXAM_REQUIRED,
     CARE_EXAM_RESULT,
+    CARE_FITNESS_CHANGE_PRESUMED,
     CARE_RETURN_DATE,
     CARE_RETURN_MODE,
+    CARE_SEVERE_CONSEQUENCES,
+    CARE_UNCONSCIOUSNESS_OR_SEVERE_HARM,
     EXAM_REQUIRED_NO,
     EXAM_REQUIRED_YES,
     EXAM_RESULTS,
     RETURN_MODES,
     empty_dpn_care_return,
+    evaluate_dpn_care_return,
     exam_details_relevant,
-    normalize_dpn_care_return,
+    exam_required_banner_text,
     return_date_relevant,
 )
 from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
@@ -60,6 +67,7 @@ DPN_NOT_ENDED_MESSAGE = (
 
 SECTION_AKTUALIZACE_ZAZNAMU = "Aktualizace záznamu o pracovním úrazu"
 SECTION_PECE_NAVRA = "Péče a návrat do práce"
+SECTION_EXAM_EVALUATION = "Vyhodnocení mimořádné pracovnělékařské prohlídky"
 SECTION_MIRA_ODPOVEDNOSTI = "Míra odpovědnosti zaměstnavatele"
 
 SECTION_TITLES = (
@@ -74,8 +82,17 @@ OVERVIEW_SOURCE_HINT = (
 )
 
 EXAM_NO_HEALTH_HINT = (
-    "Uvádějte jen, zda a proč byla prohlídka vyžadována. "
+    "Označte jen důvody mimořádné prohlídky. "
     "Diagnózy a jiné zdravotní údaje se sem nezadávají."
+)
+
+BANNER_STYLE_REQUIRED = (
+    "font-weight: bold; color: #842029; background: #f8d7da; "
+    "border: 1px solid #d39a9f; border-radius: 3px; padding: 8px;"
+)
+BANNER_STYLE_NOT_REQUIRED = (
+    "font-weight: bold; color: #0b5d1e; background: #d9f0dd; "
+    "border: 1px solid #91c79c; border-radius: 3px; padding: 8px;"
 )
 
 RESPONSIBILITY_HINT = (
@@ -132,6 +149,9 @@ class TabPoUkonceniDpn(QWidget):
         layout.addStretch()
 
         self._dpn_ended = False
+        self._dpn_od = None
+        self._dpn_do = None
+        self._legacy_exam_reason = ""
         self.set_dpn_ended(False)
 
     def _build_zou_update_section(self) -> QGroupBox:
@@ -175,12 +195,29 @@ class TabPoUkonceniDpn(QWidget):
             widget.setEnabled(False)
         return group
 
+    def _make_ano_ne_row(self) -> tuple[QWidget, QRadioButton, QRadioButton]:
+        ano = QRadioButton("Ano")
+        ne = QRadioButton("Ne")
+        group = QButtonGroup(self)
+        group.addButton(ano)
+        group.addButton(ne)
+        row = QWidget()
+        layout = QHBoxLayout(row)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(8)
+        layout.addWidget(ano)
+        layout.addWidget(ne)
+        layout.addStretch()
+        ano.toggled.connect(self._refresh_care_relevance)
+        ne.toggled.connect(self._refresh_care_relevance)
+        return row, ano, ne
+
     def _build_care_return_section(self) -> QGroupBox:
         group = QGroupBox(SECTION_PECE_NAVRA)
         layout = QVBoxLayout(group)
         layout.setSpacing(10)
 
-        exam_group = QGroupBox("Mimořádná pracovnělékařská prohlídka")
+        exam_group = QGroupBox(SECTION_EXAM_EVALUATION)
         self._exam_form = QFormLayout(exam_group)
 
         exam_hint = QLabel(EXAM_NO_HEALTH_HINT)
@@ -188,34 +225,66 @@ class TabPoUkonceniDpn(QWidget):
         exam_hint.setWordWrap(True)
         self._exam_form.addRow(exam_hint)
 
-        self.exam_required_ano = QRadioButton("Ano")
-        self.exam_required_ne = QRadioButton("Ne")
-        self.exam_required_group = QButtonGroup(self)
-        self.exam_required_group.addButton(self.exam_required_ano)
-        self.exam_required_group.addButton(self.exam_required_ne)
+        self.dpn_over_8_weeks_value = QLabel(EXAM_REQUIRED_NO)
+        self._exam_form.addRow("DPN delší než 8 týdnů:", self.dpn_over_8_weeks_value)
 
-        exam_required_row = QWidget()
-        exam_required_layout = QHBoxLayout(exam_required_row)
-        exam_required_layout.setContentsMargins(0, 0, 0, 0)
-        exam_required_layout.setSpacing(8)
-        exam_required_layout.addWidget(self.exam_required_ano)
-        exam_required_layout.addWidget(self.exam_required_ne)
-        exam_required_layout.addStretch()
-        self._exam_form.addRow("Prohlídka vyžadována:", exam_required_row)
+        (
+            self.category_1_row,
+            self.category_1_no_risk_ano,
+            self.category_1_no_risk_ne,
+        ) = self._make_ano_ne_row()
+        self._exam_form.addRow(
+            "Práce kategorie 1 bez profesního rizika:",
+            self.category_1_row,
+        )
 
-        self.exam_reason = QTextEdit()
-        self.exam_reason.setFixedHeight(60)
-        self._exam_form.addRow("Důvod:", self.exam_reason)
+        (
+            self.severe_consequences_row,
+            self.severe_consequences_ano,
+            self.severe_consequences_ne,
+        ) = self._make_ano_ne_row()
+        self._exam_form.addRow("Úraz měl těžké následky:", self.severe_consequences_row)
+
+        (
+            self.unconsciousness_row,
+            self.unconsciousness_ano,
+            self.unconsciousness_ne,
+        ) = self._make_ano_ne_row()
+        self._exam_form.addRow(
+            "V souvislosti s úrazem došlo k bezvědomí nebo jiné těžké újmě na zdraví:",
+            self.unconsciousness_row,
+        )
+
+        (
+            self.fitness_change_row,
+            self.fitness_change_ano,
+            self.fitness_change_ne,
+        ) = self._make_ano_ne_row()
+        self._exam_form.addRow(
+            "Existuje důvodný předpoklad změny nebo ztráty zdravotní způsobilosti:",
+            self.fitness_change_row,
+        )
+
+        self.exam_required_banner = QLabel()
+        self.exam_required_banner.setObjectName("ExamRequiredBanner")
+        self.exam_required_banner.setWordWrap(True)
+        self.exam_required_banner.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.exam_required_banner.setMinimumHeight(36)
+        self._exam_form.addRow(self.exam_required_banner)
+
+        self.exam_deadline = NullableDateEdit()
+        self.exam_deadline.setEnabled(False)
+        self._exam_form.addRow("Termín pro provedení prohlídky:", self.exam_deadline)
 
         self.exam_date = NullableDateEdit()
-        self._exam_form.addRow("Datum prohlídky:", self.exam_date)
+        self._exam_form.addRow("Prohlídka provedena dne:", self.exam_date)
 
         self.exam_result = QComboBox()
         self.exam_result.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
         self.exam_result.addItem("", "")
         for label in EXAM_RESULTS:
             self.exam_result.addItem(label, label)
-        self._exam_form.addRow("Výsledek:", self.exam_result)
+        self._exam_form.addRow("Výsledek prohlídky:", self.exam_result)
 
         return_group = QGroupBox("Návrat do práce")
         self._return_form = QFormLayout(return_group)
@@ -233,9 +302,8 @@ class TabPoUkonceniDpn(QWidget):
         layout.addWidget(exam_group)
         layout.addWidget(return_group)
 
-        self.exam_required_ano.toggled.connect(self._refresh_care_relevance)
-        self.exam_required_ne.toggled.connect(self._refresh_care_relevance)
         self.return_mode.currentIndexChanged.connect(self._refresh_care_relevance)
+        self.return_date.dateChanged.connect(self._refresh_care_relevance)
         return group
 
     def _build_percent_spin(self) -> NoWheelSpinBox:
@@ -296,17 +364,32 @@ class TabPoUkonceniDpn(QWidget):
         self._refresh_care_relevance()
 
     def set_from_dpn_do(self, dpn_do) -> None:
+        self._dpn_do = dpn_do
         self.set_dpn_ended(is_dpn_ended(dpn_do))
+
+    def set_from_dpn_range(self, dpn_od, dpn_do) -> None:
+        self._dpn_od = dpn_od
+        self.set_from_dpn_do(dpn_do)
 
     def is_content_active(self) -> bool:
         return self._dpn_ended
 
-    def _exam_required_value(self) -> str:
-        if self.exam_required_ano.isChecked():
+    def _ano_ne_value(self, ano: QRadioButton, ne: QRadioButton) -> str:
+        if ano.isChecked():
             return EXAM_REQUIRED_YES
-        if self.exam_required_ne.isChecked():
+        if ne.isChecked():
             return EXAM_REQUIRED_NO
         return ""
+
+    def _set_ano_ne_value(
+        self, ano: QRadioButton, ne: QRadioButton, value: str
+    ) -> None:
+        ano.blockSignals(True)
+        ne.blockSignals(True)
+        ano.setChecked(value == EXAM_REQUIRED_YES)
+        ne.setChecked(value == EXAM_REQUIRED_NO)
+        ano.blockSignals(False)
+        ne.blockSignals(False)
 
     def _combo_value(self, combo: QComboBox) -> str:
         data = combo.currentData()
@@ -322,18 +405,56 @@ class TabPoUkonceniDpn(QWidget):
                 return
         combo.setCurrentIndex(0)
 
+    def _raw_dpn_care_return(self) -> dict:
+        return {
+            CARE_EXAM_REASON: self._legacy_exam_reason,
+            CARE_EXAM_DATE: self.exam_date.get_date(),
+            CARE_EXAM_RESULT: self._combo_value(self.exam_result),
+            CARE_CATEGORY_1_NO_RISK: self._ano_ne_value(
+                self.category_1_no_risk_ano, self.category_1_no_risk_ne
+            ),
+            CARE_SEVERE_CONSEQUENCES: self._ano_ne_value(
+                self.severe_consequences_ano, self.severe_consequences_ne
+            ),
+            CARE_UNCONSCIOUSNESS_OR_SEVERE_HARM: self._ano_ne_value(
+                self.unconsciousness_ano, self.unconsciousness_ne
+            ),
+            CARE_FITNESS_CHANGE_PRESUMED: self._ano_ne_value(
+                self.fitness_change_ano, self.fitness_change_ne
+            ),
+            CARE_RETURN_DATE: self.return_date.get_date(),
+            CARE_RETURN_MODE: self._combo_value(self.return_mode),
+        }
+
     def _refresh_care_relevance(self, *_args) -> None:
         state = self.get_dpn_care_return()
-        exam_needed = exam_details_relevant(state)
+        exam_needed = exam_details_relevant(
+            state, dpn_od=self._dpn_od, dpn_do=self._dpn_do
+        )
         show_return_date = return_date_relevant(state)
+        over_8_weeks = state.get(CARE_DPN_OVER_8_WEEKS) == EXAM_REQUIRED_YES
         active = self._dpn_ended
 
-        self.exam_reason.setEnabled(active and exam_needed)
+        self.dpn_over_8_weeks_value.setText(
+            EXAM_REQUIRED_YES if over_8_weeks else EXAM_REQUIRED_NO
+        )
+        self.exam_required_banner.setText(exam_required_banner_text(exam_needed))
+        self.exam_required_banner.setStyleSheet(
+            BANNER_STYLE_REQUIRED if exam_needed else BANNER_STYLE_NOT_REQUIRED
+        )
+
+        self.exam_deadline.blockSignals(True)
+        self.exam_deadline.set_date_value(parse_saved_date(state.get(CARE_EXAM_DEADLINE)))
+        self.exam_deadline.blockSignals(False)
+
         self.exam_date.setEnabled(active and exam_needed)
         self.exam_result.setEnabled(active and exam_needed)
         self.return_date.setEnabled(active and show_return_date)
+        self.category_1_no_risk_ano.setEnabled(active and over_8_weeks)
+        self.category_1_no_risk_ne.setEnabled(active and over_8_weeks)
 
-        self._exam_form.setRowVisible(self.exam_reason, exam_needed)
+        self._exam_form.setRowVisible(self.category_1_row, over_8_weeks)
+        self._exam_form.setRowVisible(self.exam_deadline, exam_needed)
         self._exam_form.setRowVisible(self.exam_date, exam_needed)
         self._exam_form.setRowVisible(self.exam_result, exam_needed)
         self._return_form.setRowVisible(self.return_date, show_return_date)
@@ -356,32 +477,47 @@ class TabPoUkonceniDpn(QWidget):
         self.signed_record_date.set_date_value(parse_saved_date(data[DPN_RECORD_UPDATE_SIGNED_DATE]))
 
     def get_dpn_care_return(self) -> dict:
-        return normalize_dpn_care_return(
-            {
-                CARE_EXAM_REQUIRED: self._exam_required_value(),
-                CARE_EXAM_REASON: self.exam_reason.toPlainText(),
-                CARE_EXAM_DATE: self.exam_date.get_date(),
-                CARE_EXAM_RESULT: self._combo_value(self.exam_result),
-                CARE_RETURN_DATE: self.return_date.get_date(),
-                CARE_RETURN_MODE: self._combo_value(self.return_mode),
-            }
+        return evaluate_dpn_care_return(
+            self._raw_dpn_care_return(),
+            dpn_od=self._dpn_od,
+            dpn_do=self._dpn_do,
         )
 
     def load_dpn_care_return(self, state: dict | None) -> None:
-        data = normalize_dpn_care_return(state) if state else empty_dpn_care_return()
-        self.exam_required_ano.blockSignals(True)
-        self.exam_required_ne.blockSignals(True)
+        data = evaluate_dpn_care_return(
+            state if state else empty_dpn_care_return(),
+            dpn_od=self._dpn_od,
+            dpn_do=self._dpn_do,
+        )
+        self._legacy_exam_reason = data.get(CARE_EXAM_REASON) or ""
         self.return_mode.blockSignals(True)
-        self.exam_required_ano.setChecked(data[CARE_EXAM_REQUIRED] == EXAM_REQUIRED_YES)
-        self.exam_required_ne.setChecked(data[CARE_EXAM_REQUIRED] == EXAM_REQUIRED_NO)
-        self.exam_reason.setPlainText(data[CARE_EXAM_REASON])
+        self.return_date.blockSignals(True)
+        self._set_ano_ne_value(
+            self.category_1_no_risk_ano,
+            self.category_1_no_risk_ne,
+            data[CARE_CATEGORY_1_NO_RISK],
+        )
+        self._set_ano_ne_value(
+            self.severe_consequences_ano,
+            self.severe_consequences_ne,
+            data[CARE_SEVERE_CONSEQUENCES],
+        )
+        self._set_ano_ne_value(
+            self.unconsciousness_ano,
+            self.unconsciousness_ne,
+            data[CARE_UNCONSCIOUSNESS_OR_SEVERE_HARM],
+        )
+        self._set_ano_ne_value(
+            self.fitness_change_ano,
+            self.fitness_change_ne,
+            data[CARE_FITNESS_CHANGE_PRESUMED],
+        )
         self.exam_date.set_date_value(parse_saved_date(data[CARE_EXAM_DATE]))
         self._set_combo_value(self.exam_result, data[CARE_EXAM_RESULT])
         self.return_date.set_date_value(parse_saved_date(data[CARE_RETURN_DATE]))
         self._set_combo_value(self.return_mode, data[CARE_RETURN_MODE])
-        self.exam_required_ano.blockSignals(False)
-        self.exam_required_ne.blockSignals(False)
         self.return_mode.blockSignals(False)
+        self.return_date.blockSignals(False)
         self._refresh_care_relevance()
 
     def get_dpn_employer_responsibility(self) -> dict:

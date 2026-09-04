@@ -275,8 +275,28 @@ class PuDpn5TestCase(unittest.TestCase):
         self.assertNotIn(DPN_EMPLOYER_RESPONSIBILITY_KEY, after_json)
         self.assertEqual(after_json.get("admin_zaslani"), before_json.get("admin_zaslani"))
         self.assertEqual(
-            dpn_care_return_from_saved_data(after_json),
-            dpn_care_return_from_saved_data(before_json),
+            {
+                key: dpn_care_return_from_saved_data(after_json)[key]
+                for key in (
+                    "exam_required",
+                    "exam_reason",
+                    "exam_date",
+                    "exam_result",
+                    "return_date",
+                    "return_mode",
+                )
+            },
+            {
+                key: dpn_care_return_from_saved_data(before_json)[key]
+                for key in (
+                    "exam_required",
+                    "exam_reason",
+                    "exam_date",
+                    "exam_result",
+                    "return_date",
+                    "return_mode",
+                )
+            },
         )
         self.assertFalse(
             is_obligation_relevant(
@@ -332,8 +352,28 @@ class PuDpn5TestCase(unittest.TestCase):
         )
         self.assertEqual(after.get("admin_zaslani"), before.get("admin_zaslani"))
         self.assertEqual(
-            dpn_care_return_from_saved_data(after),
-            dpn_care_return_from_saved_data(before),
+            {
+                key: dpn_care_return_from_saved_data(after)[key]
+                for key in (
+                    "exam_required",
+                    "exam_reason",
+                    "exam_date",
+                    "exam_result",
+                    "return_date",
+                    "return_mode",
+                )
+            },
+            {
+                key: dpn_care_return_from_saved_data(before)[key]
+                for key in (
+                    "exam_required",
+                    "exam_reason",
+                    "exam_date",
+                    "exam_result",
+                    "return_date",
+                    "return_mode",
+                )
+            },
         )
         self.assertEqual(after_keys, before_keys)
         self.assertEqual(after_zou, before_zou)

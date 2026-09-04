@@ -418,6 +418,7 @@ class AccidentDialog(QDialog):
         self.tab_uraz_widget.druh_urazu.currentTextChanged.connect(self._refresh_dpn_kind_warning)
         self.tab_zamestnanec_widget.dpn_od.dateChanged.connect(self._refresh_dpn_kind_warning)
         self.tab_zamestnanec_widget.dpn_do.dateChanged.connect(self._refresh_dpn_kind_warning)
+        self.tab_zamestnanec_widget.dpn_od.dateChanged.connect(self._refresh_po_ukonceni_dpn)
         self.tab_zamestnanec_widget.dpn_do.dateChanged.connect(self._refresh_po_ukonceni_dpn)
 
     def _workplace_changed(self):
@@ -434,8 +435,9 @@ class AccidentDialog(QDialog):
         )
 
     def _refresh_po_ukonceni_dpn(self, *_args) -> None:
-        self.tab_po_ukonceni_dpn_widget.set_from_dpn_do(
-            self.tab_zamestnanec_widget.dpn_do.get_date()
+        self.tab_po_ukonceni_dpn_widget.set_from_dpn_range(
+            self.tab_zamestnanec_widget.dpn_od.get_date(),
+            self.tab_zamestnanec_widget.dpn_do.get_date(),
         )
 
     def _load(self, accident):
