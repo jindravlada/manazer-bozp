@@ -43,6 +43,10 @@ from moduly.audity.constants import (
     AUDIT_PROGRAM_OPEN_AUDIT_BUTTON,
     AUDIT_PROGRAM_PLAN_TAB_TREE,
     AUDIT_PROGRAM_PLAN_TAB_VISITS,
+    AUDIT_PROGRAM_PRINT_STATEMENTS_BUTTON,
+    AUDIT_PROGRAM_PRINT_STATEMENTS_DIALOG_TITLE,
+    AUDIT_PROGRAM_PRINT_STATEMENTS_EMPTY,
+    AUDIT_PROGRAM_PRINT_STATEMENTS_OPEN_FAILED,
     AUDIT_PROGRAM_REFRESH_OVERVIEW_BUTTON,
     AUDIT_PROGRAM_RIGHT_PANEL_TITLE,
     AUDIT_PROGRAM_SKIP_VISIT_BUTTON,
@@ -75,6 +79,12 @@ from moduly.audity.modely.audit_program import AuditProgram
 from moduly.audity.sluzby.audit_service import audit_service
 from moduly.audity.sluzby.audit_program_plan_export_service import (
     audit_program_plan_export_service,
+)
+from moduly.audity.sluzby.audit_program_statements_export_context_service import (
+    AuditProgramStatementsEmptyError,
+)
+from moduly.audity.sluzby.audit_program_statements_export_service import (
+    audit_program_statements_export_service,
 )
 from moduly.audity.sluzby.audit_program_service import (
     AuditProgramCoverage,
@@ -315,6 +325,7 @@ class AuditProgramManagerDialog(QDialog):
         self._move_process_btn = QPushButton(AUDIT_PROGRAM_MOVE_PROCESS_BUTTON)
         self._start_audit_btn = QPushButton(AUDIT_PROGRAM_START_AUDIT_BUTTON)
         self._open_audit_btn = QPushButton(AUDIT_PROGRAM_OPEN_AUDIT_BUTTON)
+        self._print_statements_btn = QPushButton(AUDIT_PROGRAM_PRINT_STATEMENTS_BUTTON)
         self._protocol_btn = QPushButton(AUDIT_PROTOCOL_BUTTON_LABEL)
         self._protocol_btn.setEnabled(False)
         self._protocol_btn.setToolTip(
@@ -331,6 +342,7 @@ class AuditProgramManagerDialog(QDialog):
         self._move_process_btn.clicked.connect(self._move_selected_process)
         self._start_audit_btn.clicked.connect(self._start_audit_for_selection)
         self._open_audit_btn.clicked.connect(self._open_audit_for_selection)
+        self._print_statements_btn.clicked.connect(self._print_statements_for_selection)
         self._protocol_btn.clicked.connect(self._export_protocol_for_selection)
         self._detailed_report_btn.clicked.connect(
             self._export_detailed_report_for_selection
@@ -341,6 +353,7 @@ class AuditProgramManagerDialog(QDialog):
         tree_toolbar.addWidget(self._move_process_btn)
         tree_toolbar.addWidget(self._start_audit_btn)
         tree_toolbar.addWidget(self._open_audit_btn)
+        tree_toolbar.addWidget(self._print_statements_btn)
         tree_toolbar.addWidget(self._protocol_btn)
         tree_toolbar.addWidget(self._detailed_report_btn)
         tree_toolbar.addStretch()
@@ -552,6 +565,49 @@ class AuditProgramManagerDialog(QDialog):
                 f"{AUDIT_PROGRAM_EXPORT_PLAN_OPEN_FAILED}\n\n{path}",
             )
 
+    def _print_statements_for_selection(self) -> None:
+        item = self._selected_tree_item()
+        visit_id = AuditProgramPlanTreeWidget.node_id(item)
+        if visit_id is None or AuditProgramPlanTreeWidget.node_type(item) != NODE_VISIT:
+            return
+
+        try:
+            path = audit_program_statements_export_service.generate_preview_for_visit(
+                visit_id
+            )
+        except AuditProgramStatementsEmptyError as exc:
+            QMessageBox.information(
+                self,
+                AUDIT_PROGRAM_PRINT_STATEMENTS_DIALOG_TITLE,
+                str(exc) or AUDIT_PROGRAM_PRINT_STATEMENTS_EMPTY,
+            )
+            return
+        except Exception as exc:
+            traceback.print_exc()
+            QMessageBox.warning(
+                self,
+                AUDIT_PROGRAM_PRINT_STATEMENTS_DIALOG_TITLE,
+                f"Auditní tvrzení se nepodařilo vytvořit.\n\n{exc}",
+            )
+            return
+
+        try:
+            opened = open_local_file(
+                path,
+                parent=self,
+                title=AUDIT_PROGRAM_PRINT_STATEMENTS_DIALOG_TITLE,
+                show_error=False,
+            )
+        except Exception:
+            traceback.print_exc()
+            opened = False
+        if not opened:
+            QMessageBox.warning(
+                self,
+                AUDIT_PROGRAM_PRINT_STATEMENTS_DIALOG_TITLE,
+                f"{AUDIT_PROGRAM_PRINT_STATEMENTS_OPEN_FAILED}\n\n{path}",
+            )
+
     def _on_program_selected(
         self,
         current: QListWidgetItem | None,
@@ -605,6 +661,7 @@ class AuditProgramManagerDialog(QDialog):
         self._open_audit_btn.setEnabled(
             node_type == NODE_VISIT and self._visit_has_audit(item)
         )
+        self._print_statements_btn.setEnabled(node_type == NODE_VISIT)
         self._protocol_btn.setEnabled(
             node_type == NODE_VISIT and self._visit_has_completed_audit(item)
         )
@@ -651,6 +708,7 @@ class AuditProgramManagerDialog(QDialog):
         self._move_process_btn.setEnabled(enabled)
         self._start_audit_btn.setEnabled(enabled)
         self._open_audit_btn.setEnabled(enabled)
+        self._print_statements_btn.setEnabled(enabled)
         self._protocol_btn.setEnabled(enabled)
         self._detailed_report_btn.setEnabled(enabled)
 
@@ -667,6 +725,10 @@ class AuditProgramManagerDialog(QDialog):
             menu.addAction(AUDIT_PROGRAM_ADD_VISIT_BUTTON, self._create_visit_for_selection)
         elif node_type == NODE_VISIT:
             menu.addAction(AUDIT_PROGRAM_EDIT_VISIT_BUTTON, self._edit_selected_visit)
+            menu.addAction(
+                AUDIT_PROGRAM_PRINT_STATEMENTS_BUTTON,
+                self._print_statements_for_selection,
+            )
             if self._visit_can_start_audit(item):
                 menu.addAction(AUDIT_PROGRAM_START_AUDIT_BUTTON, self._start_audit_for_selection)
             if self._visit_has_audit(item):

@@ -125,6 +125,49 @@ class AuditQuestionSnapshotService:
         """
         if audit_id is None or int(audit_id) <= 0:
             raise ValueError("audit_id musí být kladné číslo.")
+        # Nový audit nemá override — prázdná mapa (bez N+1).
+        overrides = audit_verification_service.overrides_map(audit_id)
+        return self._build_v2_drafts(
+            int(audit_id),
+            workplace_id=workplace_id,
+            system_workplace_id=system_workplace_id,
+            planned_process_ids=planned_process_ids,
+            ensure=ensure,
+            knowledge_tree=knowledge_tree,
+            overrides=overrides,
+        )
+
+    def build_v2_preview_drafts(
+        self,
+        *,
+        workplace_id: int,
+        system_workplace_id: int,
+        planned_process_ids: set[str] | tuple[str, ...] | list[str] | None = None,
+        ensure: bool = True,
+        knowledge_tree: list[KnowledgeTreeNode] | None = None,
+    ) -> list[AuditQuestionSnapshotDraft]:
+        """Read-only sada tvrzení v2 bez auditu, override a zápisu do DB."""
+        return self._build_v2_drafts(
+            0,
+            workplace_id=workplace_id,
+            system_workplace_id=system_workplace_id,
+            planned_process_ids=planned_process_ids,
+            ensure=ensure,
+            knowledge_tree=knowledge_tree,
+            overrides={},
+        )
+
+    def _build_v2_drafts(
+        self,
+        audit_id: int,
+        *,
+        workplace_id: int,
+        system_workplace_id: int,
+        planned_process_ids: set[str] | tuple[str, ...] | list[str] | None,
+        ensure: bool,
+        knowledge_tree: list[KnowledgeTreeNode] | None,
+        overrides: dict[tuple[str, str, str], str],
+    ) -> list[AuditQuestionSnapshotDraft]:
         if workplace_id is None or int(workplace_id) <= 0:
             raise AuditV2SnapshotError("workplace_id auditu musí být kladné číslo.")
         if system_workplace_id is None or int(system_workplace_id) <= 0:
@@ -141,8 +184,6 @@ class AuditQuestionSnapshotService:
             workplace_id=int(workplace_id),
             system_workplace_id=int(system_workplace_id),
         )
-        # Nový audit nemá override — prázdná mapa (bez N+1).
-        overrides = audit_verification_service.overrides_map(audit_id)
 
         drafts, unclassified = self._build_from_tree_v2(
             int(audit_id),

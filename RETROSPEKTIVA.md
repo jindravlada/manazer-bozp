@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-04 – AUDIT-PROGRAM-STATEMENTS-ODT-1
+
+**Co se povedlo:** Tisk tvrzení vybrané návštěvy bez zahájení Auditu. Zahájený audit tiskne zmrazený snapshot.
+
+**Co už bychom dnes udělali jinak:** Stejný režim otevření jako u plánu (dočasný ODT) hned, ne přes Uložit jako.
+
+**Co bylo zbytečně složité:** Nic.
+
+**Jaké nové pravidlo z toho vzniklo:** Rozsah tisku bere kanonická služba snapshotu / editoru. Otevření ani tisk nesmí založit Audit.
+
+---
+
 ### 2026-09-04 – AUDIT-PROGRAM-ODT-DETAIL-4
 
 **Co se povedlo:** Harmonogram ukazuje u každé návštěvy její auditované procesy. Schvalovaný plán už nemíchá souhrn za celý program.

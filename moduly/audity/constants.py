@@ -348,6 +348,25 @@ AUDIT_PROGRAM_EXPORT_PLAN_DIALOG_TITLE = "Exportovat plán interních auditů"
 AUDIT_PROGRAM_EXPORT_PLAN_OPEN_FAILED = (
     "Plán byl exportován, ale nepodařilo se jej otevřít. Otevřete jej prosím ručně."
 )
+AUDIT_PROGRAM_PRINT_STATEMENTS_BUTTON = "Vytisknout auditní tvrzení"
+AUDIT_PROGRAM_PRINT_STATEMENTS_DIALOG_TITLE = "Vytisknout auditní tvrzení"
+AUDIT_PROGRAM_PRINT_STATEMENTS_DOCUMENT_TITLE = "Auditní tvrzení"
+AUDIT_PROGRAM_PRINT_STATEMENTS_EMPTY = (
+    "Vybraná návštěva nemá žádná použitelná auditní tvrzení."
+)
+AUDIT_PROGRAM_PRINT_STATEMENTS_OPEN_FAILED = (
+    "Auditní tvrzení byla vygenerována, ale nepodařilo se je otevřít. "
+    "Otevřete je prosím ručně."
+)
+AUDIT_PROGRAM_PRINT_STATEMENTS_STATUS_CURRENT = (
+    "Aktuální metodika – audit dosud nebyl zahájen"
+)
+AUDIT_PROGRAM_PRINT_STATEMENTS_STATUS_FROZEN = "Zmrazená metodika auditu č. {number}"
+AUDIT_PROGRAM_PRINT_STATEMENTS_RESULT_V = "V – Vyhovuje"
+AUDIT_PROGRAM_PRINT_STATEMENTS_RESULT_VD = "VD – Vyhovuje s doporučením"
+AUDIT_PROGRAM_PRINT_STATEMENTS_RESULT_N = "N – Nevyhovuje"
+AUDIT_PROGRAM_PRINT_STATEMENTS_RESULT_NP = "NP – Nelze posoudit"
+AUDIT_PROGRAM_PRINT_STATEMENTS_RESULT_MARKS = "V / VD / N / NP"
 AUDIT_PROGRAM_FINAL_REPORT_BUTTON = "Závěrečná zpráva programu"
 AUDIT_PROGRAM_PREVIOUS_PROGRAM_LABEL = "Navazuje na program:"
 
