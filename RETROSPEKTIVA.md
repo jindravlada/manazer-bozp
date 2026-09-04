@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-04 – AUDIT-PROGRAM-ODT-EXPORT-2
+
+**Co se povedlo:** Po úspěšném exportu plánu se ODT otevře ve výchozí aplikaci. Chyba otevření soubor nenechá zmizet.
+
+**Co už bychom dnes udělali jinak:** Otevření hned napojit na `open_local_file`, ne přes obálku exportu.
+
+**Co bylo zbytečně složité:** Nic.
+
+**Jaké nové pravidlo z toho vzniklo:** Selhání otevření nesmí vypadat jako selhání exportu. Cesta k hotovému souboru musí zůstat v hlášce.
+
+---
+
 ### 2026-09-04 – AUDIT-PROGRAM-ODT-EXPORT-1
 
 **Co se povedlo:** Manažer auditů umí předložit představenstvu plán programu jako ODT. Harmonogram bere skutečné návštěvy, souhrn procesů skutečná přiřazení, bez zakládání Auditů.

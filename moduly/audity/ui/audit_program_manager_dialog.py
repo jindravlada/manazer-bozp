@@ -23,7 +23,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.export import open_export_file
+from core.export import open_local_file
 from core.widgets.dialog_utils import configure_close_push_button, exec_maximized
 from moduly.audity.constants import (
     AUDIT_PROGRAM_ADD_BUTTON,
@@ -34,6 +34,7 @@ from moduly.audity.constants import (
     AUDIT_PROGRAM_DETAIL_STANDARDS_LABEL,
     AUDIT_PROGRAM_EXPORT_PLAN_BUTTON,
     AUDIT_PROGRAM_EXPORT_PLAN_DIALOG_TITLE,
+    AUDIT_PROGRAM_EXPORT_PLAN_OPEN_FAILED,
     AUDIT_PROGRAM_FINAL_REPORT_BUTTON,
     AUDIT_PROGRAM_PREVIOUS_PROGRAM_LABEL,
     audit_program_distribute_processes_button_label,
@@ -551,7 +552,22 @@ class AuditProgramManagerDialog(QDialog):
             )
             return
 
-        open_export_file(path, title=AUDIT_PROGRAM_EXPORT_PLAN_DIALOG_TITLE)
+        try:
+            opened = open_local_file(
+                path,
+                parent=self,
+                title=AUDIT_PROGRAM_EXPORT_PLAN_DIALOG_TITLE,
+                show_error=False,
+            )
+        except Exception:
+            traceback.print_exc()
+            opened = False
+        if not opened:
+            QMessageBox.warning(
+                self,
+                AUDIT_PROGRAM_EXPORT_PLAN_DIALOG_TITLE,
+                f"{AUDIT_PROGRAM_EXPORT_PLAN_OPEN_FAILED}\n\n{path}",
+            )
 
     def _on_program_selected(
         self,

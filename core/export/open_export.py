@@ -258,16 +258,18 @@ def open_local_file(
     parent: QWidget | None = None,
     title: str = "Soubor",
     failure_context: str = "file",
+    show_error: bool = True,
 ) -> bool:
     """Open a local file with a system handler, isolated from AppImage env on Linux."""
     resolved = Path(path).resolve()
 
     if not resolved.exists():
-        QMessageBox.warning(
-            parent,
-            title,
-            f"Soubor nebyl nalezen:\n{resolved}",
-        )
+        if show_error:
+            QMessageBox.warning(
+                parent,
+                title,
+                f"Soubor nebyl nalezen:\n{resolved}",
+            )
         return False
 
     if _is_appimage():
@@ -277,7 +279,7 @@ def open_local_file(
     else:
         opened = _open_with_qt_desktop(resolved) or _open_with_xdg_open(resolved)
 
-    if not opened:
+    if not opened and show_error:
         _show_open_failed(
             parent,
             title,

@@ -345,6 +345,9 @@ AUDIT_PROGRAM_USE_SUPPLEMENT_PROCESSES_LABEL = False
 AUDIT_PROGRAM_REFRESH_OVERVIEW_BUTTON = "Přepočítat přehled"
 AUDIT_PROGRAM_EXPORT_PLAN_BUTTON = "Exportovat plán"
 AUDIT_PROGRAM_EXPORT_PLAN_DIALOG_TITLE = "Exportovat plán interních auditů"
+AUDIT_PROGRAM_EXPORT_PLAN_OPEN_FAILED = (
+    "Plán byl exportován, ale nepodařilo se jej otevřít. Otevřete jej prosím ručně."
+)
 AUDIT_PROGRAM_FINAL_REPORT_BUTTON = "Závěrečná zpráva programu"
 AUDIT_PROGRAM_PREVIOUS_PROGRAM_LABEL = "Navazuje na program:"
 
