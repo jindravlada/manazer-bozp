@@ -562,6 +562,17 @@ Editace doporučení k opatřením ve frontě AI:
 - `measure_recommendation` otevírá jednoduchý editor opatření (znění a zdůvodnění)
 - typ návrhu a `target_export_id` nelze změnit; zápis do katalogu až po Zapracovat
 
+## RISK-REVIEW-TERMINOLOGY-2
+
+Uživatelský název Přezkoumání opatření je **Revize posouzení rizik**:
+
+- záložka **Revize posouzení rizik**, tlačítka **Nová revize** a **Provést revizi**
+- záložka provedení **Kontrolní otázky**, tisk **Vytisknout kontrolní otázky**
+- nadpis ODT **Kontrolní otázky pro revizi posouzení rizik**
+- interní entity, tabulky, šablona `PrezkoumaniOpatreniChecklist.odt` a hodnoty Vyhovuje / Nevyhovuje beze změny
+- bez migrace, bez nového exportu a bez odpovědi Netýká se
+- **Revize opatření** zůstává způsobem řešení nevyhovující otázky
+
 ## RISK-CONTROL-QUESTIONS-1
 
 Uživatelský význam `required_measures` jsou kontrolní otázky pro revizi rizik:

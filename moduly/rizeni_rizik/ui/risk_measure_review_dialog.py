@@ -63,7 +63,7 @@ class RiskMeasureReviewDialog(QDialog):
         self.note = QPlainTextEdit()
         self.note.setMinimumHeight(80)
 
-        form.addRow("Číslo přezkoumání:", self.number_label)
+        form.addRow("Číslo revize:", self.number_label)
         form.addRow("Datum *:", self.review_date)
         form.addRow("Kontrolující *:", self.reviewer)
         form.addRow("Provoz *:", self.operation)
@@ -159,7 +159,7 @@ class RiskMeasureReviewDialog(QDialog):
                     QMessageBox.warning(
                         self,
                         RISK_MEASURE_REVIEW_DIALOG_TITLE,
-                        "Přezkoumání nebylo nalezeno.",
+                        "Revize nebyla nalezena.",
                     )
                     return False
                 self.review = updated

@@ -18,6 +18,7 @@ from moduly.rizeni_rizik.constants import (
     RISK_MEASURE_REVIEW_CHECKLIST_TITLE,
     RISK_MEASURE_REVIEW_EXECUTE_DIALOG_TITLE,
     RISK_MEASURE_REVIEW_PRINT_BUTTON,
+    RISK_MEASURE_REVIEW_PRINT_FAILED,
     RISK_MEASURE_REVIEW_TASKS_TITLE,
 )
 from moduly.rizeni_rizik.sluzby.risk_measure_review_checklist_export_service import (
@@ -130,7 +131,7 @@ class RiskMeasureReviewExecutionDialog(QDialog):
             QMessageBox.warning(
                 self,
                 RISK_MEASURE_REVIEW_EXECUTE_DIALOG_TITLE,
-                "Přezkoumání nebylo nalezeno.",
+                "Revize nebyla nalezena.",
             )
             return False
         self.review = updated
@@ -160,7 +161,7 @@ class RiskMeasureReviewExecutionDialog(QDialog):
                 QMessageBox.warning(
                     self,
                     RISK_MEASURE_REVIEW_EXECUTE_DIALOG_TITLE,
-                    "Přezkoumání nebylo nalezeno.",
+                    "Revize nebyla nalezena.",
                 )
                 return False
             self.review = updated
@@ -185,7 +186,7 @@ class RiskMeasureReviewExecutionDialog(QDialog):
             QMessageBox.warning(
                 self,
                 RISK_MEASURE_REVIEW_PRINT_BUTTON,
-                f"Checklist se nepodařilo vytvořit.\n\n{error}",
+                f"{RISK_MEASURE_REVIEW_PRINT_FAILED}\n\n{error}",
             )
 
     def _on_changed(self, *_args) -> None:

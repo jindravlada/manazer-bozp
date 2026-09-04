@@ -202,7 +202,7 @@ class RiskMeasureReviewNonCompliantPointWidget(QFrame):
         if not self._ensure_persisted():
             return
         if self.review_id is None:
-            QMessageBox.warning(self, RISK_MEASURE_REVIEW_TASKS_TITLE, "Přezkoumání není uložené.")
+            QMessageBox.warning(self, RISK_MEASURE_REVIEW_TASKS_TITLE, "Revize není uložená.")
             return
 
         def _create_task(data: dict):
@@ -270,7 +270,7 @@ class RiskMeasureReviewTasksWidget(QWidget):
 
         layout = QVBoxLayout(self)
 
-        self.info_label = QLabel("Úkoly lze zobrazit až po uložení přezkoumání.")
+        self.info_label = QLabel("Úkoly lze zobrazit až po uložení revize.")
         self.info_label.setWordWrap(True)
 
         non_compliant_header = QLabel("Nevyhovující kontrolní body")
@@ -330,7 +330,7 @@ class RiskMeasureReviewTasksWidget(QWidget):
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
         enable_typed_sorting(self.table)
 
-        self.empty_label = QLabel("Přezkoumání zatím nemá žádné úkoly.")
+        self.empty_label = QLabel("Revize zatím nemá žádné úkoly.")
         self.empty_label.setAlignment(Qt.AlignCenter)
 
         layout.addWidget(self.info_label)
@@ -432,9 +432,9 @@ class RiskMeasureReviewTasksWidget(QWidget):
         self.empty_label.setVisible(not tasks)
         self.table.setVisible(bool(tasks))
         self.empty_label.setText(
-            "Přezkoumání zatím nemá žádné úkoly."
+            "Revize zatím nemá žádné úkoly."
             if self.review_id is not None
-            else "Úkoly lze zobrazit až po uložení přezkoumání."
+            else "Úkoly lze zobrazit až po uložení revize."
         )
 
         with sorting_paused(self.table):
@@ -479,7 +479,7 @@ class RiskMeasureReviewTasksWidget(QWidget):
             QMessageBox.information(
                 self,
                 RISK_MEASURE_REVIEW_TASKS_TITLE,
-                "Úkol lze založit až po uložení přezkoumání.",
+                "Úkol lze založit až po uložení revize.",
             )
             return
 

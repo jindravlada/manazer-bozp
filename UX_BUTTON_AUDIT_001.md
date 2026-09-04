@@ -272,7 +272,7 @@ Roční plán: „Vyberte prověrku.“
 
 ## 8. Řízení rizik
 
-**Shell:** `rizeni_rizik_page.py` – záložky: **Identifikace** | **Katalog zdrojů rizik** | **Přezkoumání opatření**
+**Shell:** `rizeni_rizik_page.py` – záložky: **Identifikace** | **Katalog zdrojů rizik** | **Revize posouzení rizik**
 
 ### 8.1 Identifikace (`HazardIdentificationsTab`)
 
@@ -298,13 +298,13 @@ Roční plán: „Vyberte prověrku.“
 
 \*Text z `HAZARD_LIBRARY_NEW_BUTTON`.
 
-### 8.3 Přezkoumání opatření (`risk_measure_reviews_tab.py`)
+### 8.3 Revize posouzení rizik (`risk_measure_reviews_tab.py`)
 
 | Text | Proměnná | Sel | Stav | En | Ctx | Dbl | Vyberte |
 |---|---|---|---|---|---|---|---|
-| Nové přezkoumání | `new_btn` | 0 | — | ne | ne | ne | ne |
+| Nová revize | `new_btn` | 0 | — | ne | ne | ne | ne |
 | Upravit | `edit_btn` | 1 | — | ano | ano | ano | ne |
-| Provést přezkoumání | `execute_btn` | 1 | ne archiv | ano | ano | ne | ne |
+| Provést revizi | `execute_btn` | 1 | ne archiv | ano | ano | ne | ne |
 | Archivovat | `archive_btn` | 1 | ne archiv | ano | ano | ne | ne |
 | Obnovit | `restore_btn` | 1 | archiv | ano | ano | ne | ne |
 
@@ -547,7 +547,7 @@ Společný vzor číselníků (po APPLY-010):
 | **Dvě samostatná** Aktivovat + Deaktivovat | Nastavení, Identifikace, Katalog, Koordinace (+ většina nested tabů), hazard measures/photos/inventory | Enable podle `active` |
 | **Dyn `setText`** Deaktivovat ↔ Obnovit | Předpisy, Kontroly změn, Změny; sections/versions/sanctions; EntityLinks | Jedno tlačítko |
 | **Dyn `setText`** Archivovat ↔ Obnovit | Řídicí procesy | Jedno tlačítko |
-| **Dvě samostatná** Archivovat + Obnovit | Přezkoumání opatření | Podle archived |
+| **Dvě samostatná** Archivovat + Obnovit | Revize posouzení rizik | Podle archived |
 | **Dvě samostatná** Deaktivovat + Obnovit | Audity knowledge reference photos | |
 | **Jedno kombinované** Aktivovat / Deaktivovat | `TableToolbar` (nepoužito v live modulech) | Legacy label |
 | **Jedno kombinované** Aktivní / neaktivní | Prověrky knowledge editor | |

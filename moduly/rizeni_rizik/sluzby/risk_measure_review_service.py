@@ -283,7 +283,7 @@ class RiskMeasureReviewService:
         """
         review = self.repository.get_by_id(review_id)
         if review is None:
-            raise RiskMeasureReviewError("Přezkoumání nebylo nalezeno.")
+            raise RiskMeasureReviewError("Revize nebyla nalezena.")
         cleaned_title = (title or "").strip()
         if not cleaned_title:
             raise RiskMeasureReviewError("Název úkolu je povinný.")
@@ -365,7 +365,7 @@ class RiskMeasureReviewService:
         """Založí úkol k nevyhovujícímu bodu a označí řešení jako úkol."""
         item = self.item_repository.get_by_id(item_id)
         if item is None or int(item.review_id) != int(review_id):
-            raise RiskMeasureReviewError("Kontrolní bod nepatří k tomuto přezkoumání.")
+            raise RiskMeasureReviewError("Kontrolní bod nepatří k této revizi.")
         if self._normalize_item_result(item) != RISK_MEASURE_REVIEW_ITEM_RESULT_NON_COMPLIANT:
             raise RiskMeasureReviewError(
                 "Úkol lze založit jen u nevyhovujícího kontrolního bodu."
@@ -687,7 +687,7 @@ class RiskMeasureReviewService:
         status: str,
     ) -> dict:
         if review_date is None:
-            raise RiskMeasureReviewError("Datum přezkoumání je povinné.")
+            raise RiskMeasureReviewError("Datum revize je povinné.")
         if not reviewer_person_id:
             raise RiskMeasureReviewError("Vyberte kontrolující osobu.")
         reviewer_name = self._resolve_reviewer_display_name(reviewer_person_id)
@@ -735,11 +735,11 @@ class RiskMeasureReviewService:
             RISK_MEASURE_REVIEW_STATUS_ARCHIVED
         }
         if status not in editor_statuses:
-            raise RiskMeasureReviewError("Neplatný stav přezkoumání.")
+            raise RiskMeasureReviewError("Neplatný stav revize.")
         if status == RISK_MEASURE_REVIEW_STATUS_COMPLETED and not isinstance(
             review_date, date
         ):
-            raise RiskMeasureReviewError("Datum přezkoumání je povinné.")
+            raise RiskMeasureReviewError("Datum revize je povinné.")
 
         return {
             "reviewer_person_id": int(reviewer_person_id),

@@ -65,7 +65,7 @@ class RiskMeasureReviewChecklistExportService:
 
     def generate_for_review(self, review: RiskMeasureReview) -> Path:
         if review is None or not getattr(review, "id", None):
-            raise ValueError("Není vybrané uložené přezkoumání.")
+            raise ValueError("Není vybraná uložená revize.")
 
         storage_service.ensure_structure()
         stamp = datetime.now().strftime("%Y%m%d_%H%M%S")

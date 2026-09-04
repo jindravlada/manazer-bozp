@@ -94,7 +94,7 @@ def task_source_short_label(task, *, context: TaskSourceContext | None = None) -
     if source_module == ENTITY_MEETING:
         return "Schůzka"
     if source_module == ENTITY_RISK_MEASURE_REVIEW:
-        return "Přezkoumání"
+        return "Revize"
     if source_module == ENTITY_FINDING and task.source_record_id:
         finding = _finding_for_source(task.source_record_id, context)
         if finding is not None:
@@ -134,7 +134,7 @@ def _legacy_source_short_label(source: str) -> str:
         ENTITY_MU_INVESTIGATION: "MU",
         ENTITY_LEGAL_REQUIREMENT: "Právní pož.",
         ENTITY_MEETING: "Schůzka",
-        ENTITY_RISK_MEASURE_REVIEW: "Přezkoumání",
+        ENTITY_RISK_MEASURE_REVIEW: "Revize",
     }
     return mapping.get(source or "", source or "—")
 
@@ -179,10 +179,10 @@ def _risk_measure_review_source_label(review_id: int) -> str:
 
     review = risk_measure_review_service.get_by_id(review_id)
     if review is None:
-        return "Přezkoumání opatření"
+        return "Revize posouzení rizik"
     if review.review_number:
-        return f"Přezkoumání opatření {review.review_number}"
-    return f"Přezkoumání opatření #{review_id}"
+        return f"Revize posouzení rizik {review.review_number}"
+    return f"Revize posouzení rizik #{review_id}"
 
 
 def _meeting_source_label(meeting_id: int) -> str:
@@ -298,6 +298,6 @@ def _legacy_source_label(source: str) -> str:
         ENTITY_MU_INVESTIGATION: "Vyšetřování MU",
         ENTITY_LEGAL_REQUIREMENT: "Právní požadavek",
         ENTITY_MEETING: "Schůzka",
-        ENTITY_RISK_MEASURE_REVIEW: "Přezkoumání opatření",
+        ENTITY_RISK_MEASURE_REVIEW: "Revize posouzení rizik",
     }
     return mapping.get(source or "", source or "—")

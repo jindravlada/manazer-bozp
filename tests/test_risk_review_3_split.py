@@ -163,7 +163,7 @@ class RiskReview3SplitTestCase(unittest.TestCase):
 
     def test_tab_has_execute_button(self) -> None:
         tab = RiskMeasureReviewsTab()
-        self.assertEqual(tab.execute_btn.text(), "Provést přezkoumání")
+        self.assertEqual(tab.execute_btn.text(), "Provést revizi")
         self.assertFalse(tab.execute_btn.isEnabled())
 
     def test_open_execution_loads_follow_up_measures(self) -> None:

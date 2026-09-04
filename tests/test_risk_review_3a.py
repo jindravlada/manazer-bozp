@@ -164,7 +164,7 @@ class RiskReview3aTestCase(unittest.TestCase):
         widget = RiskMeasureReviewTasksWidget()
         widget.set_review_id(self.review.id)
         self.assertEqual(widget.table.rowCount(), 0)
-        self.assertEqual(widget.empty_label.text(), "Přezkoumání zatím nemá žádné úkoly.")
+        self.assertEqual(widget.empty_label.text(), "Revize zatím nemá žádné úkoly.")
 
     def test_no_finding_entities_in_service_api(self) -> None:
         self.assertFalse(hasattr(risk_measure_review_service, "list_findings"))

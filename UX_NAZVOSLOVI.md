@@ -179,6 +179,8 @@ Nové moduly používají anglické kódy (`draft`, `closed`, …) + mapu UI pop
 | **Audit** | Modul / záznam auditu |
 | **Kontrola** | Kontrolní bod, kontrola dodržování, SD portál „Kontroly“, datum „Kontrola do“ |
 | **Revize** | Revize zařízení / dokumentu (technická nebo dokumentová) |
+| **Revize posouzení rizik** | Záznam v Řízení rizik (dříve Přezkoumání opatření); není totéž co Revize opatření |
+| **Revize opatření** | Způsob řešení nevyhovující kontrolní otázky v revizi posouzení rizik |
 
 Nesmí se zaměňovat (např. „Generovat kontroly“ v modulu Prověrky).
 
@@ -190,9 +192,13 @@ Nesmí se zaměňovat (např. „Generovat kontroly“ v modulu Prověrky).
 | Pracoviště | Místo výkonu práce *(kromě explicitní záložky)* |
 | Kontrolní otázky pro revizi rizik | Navazující opatření / potřebná opatření *(u položek `required_measures`)* |
 | Kontrolní otázka | Navazující opatření *(jednotné číslo u `required_measures`)* |
-| Kontrolní otázky | Navazující opatření *(krátký název sloupce)* |
+| Kontrolní otázky | Navazující opatření *(krátký název sloupce)*; dříve také Checklist přezkoumání |
 | Nová kontrolní otázka | Nové navazující opatření |
 | Úprava kontrolní otázky | Úprava navazujícího opatření |
+| Revize posouzení rizik | Přezkoumání opatření |
+| Nová revize | Nové přezkoumání |
+| Provést revizi | Provést přezkoumání |
+| Vytisknout kontrolní otázky | Vytisknout checklist |
 | Opatření | Nápravné opatření / úkol *(pokud jde o finding measure)* |
 | Souhrnné sdělení | Poznámka auditora / Komentář *(u nového režimu okruhu Auditů a Prověrek)* |
 

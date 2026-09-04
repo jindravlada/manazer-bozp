@@ -459,11 +459,12 @@ HAZARD_IDENTIFICATION_UNSAVED_STAY = "Zrušit"
 HAZARD_IDENTIFICATION_CANCEL_CONFIRM = "Zahodit všechny neuložené změny a zavřít editor?"
 HAZARD_IDENTIFICATION_SAVE_SUCCESS = "Změny byly uloženy."
 
-# --- Přezkoumání opatření (RISK-REVIEW-1) ---
+# --- Revize posouzení rizik (uživatelský název; interní review beze změny) ---
 
-RISK_MEASURE_REVIEW_TAB_TITLE = "Přezkoumání opatření"
-RISK_MEASURE_REVIEW_DIALOG_TITLE = "Přezkoumání opatření"
-RISK_MEASURE_REVIEW_CHECKLIST_TITLE = "Checklist přezkoumání"
+RISK_MEASURE_REVIEW_TAB_TITLE = "Revize posouzení rizik"
+RISK_MEASURE_REVIEW_DIALOG_TITLE = "Revize posouzení rizik"
+RISK_MEASURE_REVIEW_NEW_BUTTON = "Nová revize"
+RISK_MEASURE_REVIEW_CHECKLIST_TITLE = CONTROL_QUESTIONS_COLUMN_TITLE
 RISK_MEASURE_REVIEW_CHECKLIST_PLACEHOLDER = (
     "Kontrolní body budou vytvořeny z kontrolních otázek v další fázi."
 )
@@ -528,7 +529,7 @@ RISK_MEASURE_REVIEW_ITEM_RESOLUTION_LABELS = {
     RISK_MEASURE_REVIEW_ITEM_RESOLUTION_MEASURE_REVISION: "Revize opatření",
 }
 
-# RISK-REVIEW-4 – checklist provedení přezkoumání
+# RISK-REVIEW-4 – kontrolní otázky provedení revize
 RISK_MEASURE_REVIEW_ITEM_COL_ID = 0
 RISK_MEASURE_REVIEW_ITEM_COL_MEASURE = 1
 RISK_MEASURE_REVIEW_ITEM_COL_COMPLIANT = 2
@@ -553,13 +554,14 @@ RISK_MEASURE_REVIEW_ITEM_COL_NOTE_NUMBER = RISK_MEASURE_REVIEW_ITEM_COL_NOTE
 RISK_MEASURE_REVIEW_NOTES_TITLE = "Poznámky"
 RISK_MEASURE_REVIEW_NOTES_LINE_COUNT = 3
 
-RISK_MEASURE_REVIEW_EXECUTE_DIALOG_TITLE = "Provést přezkoumání"
-RISK_MEASURE_REVIEW_PRINT_BUTTON = "Vytisknout checklist"
-RISK_MEASURE_REVIEW_PRINT_DIALOG_TITLE = "Checklist přezkoumání opatření"
+RISK_MEASURE_REVIEW_EXECUTE_DIALOG_TITLE = "Provést revizi"
+RISK_MEASURE_REVIEW_PRINT_BUTTON = "Vytisknout kontrolní otázky"
+RISK_MEASURE_REVIEW_PRINT_DIALOG_TITLE = "Kontrolní otázky pro revizi posouzení rizik"
 RISK_MEASURE_REVIEW_PRINT_STUB_MESSAGE = (
-    "Tisk checklistu bude doplněn v další fázi."
+    "Tisk kontrolních otázek bude doplněn v další fázi."
 )
-RISK_MEASURE_REVIEW_PRINT_EMPTY = "Checklist neobsahuje žádné kontrolní body."
+RISK_MEASURE_REVIEW_PRINT_EMPTY = "Revize neobsahuje žádné kontrolní otázky."
+RISK_MEASURE_REVIEW_PRINT_FAILED = "Seznam kontrolních otázek se nepodařilo vytvořit."
 
 ENTITY_RISK_MEASURE_REVIEW_ITEM = "risk_measure_review_item"
 RISK_MEASURE_REVIEW_ITEM_PHOTOS_TITLE = "Fotografie kontrolního bodu"
@@ -570,10 +572,10 @@ RISK_MEASURE_REVIEW_ITEM_PHOTOS_TITLE = "Fotografie kontrolního bodu"
 ENTITY_RISK_MEASURE_REVIEW = "risk_measure_review"
 RISK_MEASURE_REVIEW_TASKS_TITLE = "Úkoly"
 RISK_MEASURE_REVIEW_NON_COMPLIANT_EMPTY = (
-    "Žádné nevyhovující kontrolní body. Označte bod jako „Nevyhovuje“ v checklistu."
+    "Žádné nevyhovující kontrolní body. Označte bod jako „Nevyhovuje“ v kontrolních otázkách."
 )
 RISK_MEASURE_REVIEW_RESOLUTION_REQUIRED = (
-    "Před dokončením přezkoumání musí mít každý nevyhovující kontrolní bod "
+    "Před dokončením revize musí mít každý nevyhovující kontrolní bod "
     "zvolený způsob řešení (úkol nebo revize opatření)."
 )
 RISK_MEASURE_REVIEW_CREATE_TASK_LABEL = "Založit úkol"

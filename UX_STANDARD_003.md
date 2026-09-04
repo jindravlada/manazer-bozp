@@ -49,7 +49,7 @@ Akce nezávislé na výběru. Vždy aktivní.
 | Nový úraz | Kniha úrazů |
 | Nové vyšetřování | Vyšetřování MU |
 | Nový audit, Nová prověrka | Audity, Prověrky |
-| Nová identifikace, Nový zdroj rizika, Nové přezkoumání | Řízení rizik |
+| Nová identifikace, Nový zdroj rizika, Nová revize | Řízení rizik |
 | Nová koordinace | Koordinace BOZP |
 | Nový proces, Nový | Právní požadavky |
 | Přidat THP pracovníka, Nová osoba, Přidat roli, Přidat… | Nastavení |
@@ -70,10 +70,10 @@ Vyžaduje právě jeden výběr + stav záznamu.
 | Příklady z auditu | Modul / oblast |
 |---|---|
 | Aktivovat, Deaktivovat | Nastavení, Rizika, Koordinace |
-| Archivovat, Obnovit | Přezkoumání opatření; Řídicí procesy (dnes dyn) |
+| Archivovat, Obnovit | Revize posouzení rizik; Řídicí procesy (dnes dyn) |
 | Deaktivovat ↔ Obnovit (dyn) | Právní předpisy / kontroly / změny |
 | Splněno, Vrátit do aktivních, Zrušit / netrvá | Úkoly (legacy) |
-| Provést přezkoumání | Přezkoumání opatření |
+| Provést revizi | Revize posouzení rizik |
 | Označit jako vyhodnocené | Zjištěné změny |
 | Smazat | MU, Audity, Prověrky (trvalé smazání záznamu) |
 | Lifecycle (např. Vrátit k dopracování) | Koordinace |
@@ -293,7 +293,7 @@ Pro páry v evidenci / mimo evidenci (archiv):
 [Archivovat] [Obnovit]
 ```
 
-Vzor: **Přezkoumání opatření**.
+Vzor: **Revize posouzení rizik**.
 
 - **Archivovat** jen u nearchivovaného záznamu.
 - **Obnovit** jen u archivovaného.
@@ -333,7 +333,7 @@ Tato dyn tlačítka **nejsou** náhradou za Aktivovat/Deaktivovat.
 
 | Akce | Pravidlo |
 |---|---|
-| Provést přezkoumání | Samostatné tlačítko ve skupině C/D; enabled jen pokud dává smysl stav |
+| Provést revizi | Samostatné tlačítko ve skupině C/D; enabled jen pokud dává smysl stav |
 | Označit jako… | Samostatné; enabled podle stavu (např. nevyhodnoceno) |
 | Splněno / Vrátit do aktivních / Zrušit / netrvá | Samostatná tlačítka (Úkoly); ne slučovat |
 | Smazat | Samostatné ve skupině C; s potvrzením; ne jako Deaktivovat |
@@ -498,10 +498,10 @@ Pořadí = cílový stav po APPLY STANDARD 003 (může se lišit od dnešního k
 [Nový zdroj rizika] | [Upravit] | [Aktivovat] [Deaktivovat] | [Spravovat kategorie…]
 ```
 
-### Řízení rizik – Přezkoumání opatření
+### Řízení rizik – Revize posouzení rizik
 
 ```text
-[Nové přezkoumání] | [Upravit] | [Provést přezkoumání] [Archivovat] [Obnovit]
+[Nová revize] | [Upravit] | [Provést revizi] [Archivovat] [Obnovit]
 ```
 
 - Stavová skupina C obsahuje Provést + Archivovat + Obnovit (vše nad výběrem)  

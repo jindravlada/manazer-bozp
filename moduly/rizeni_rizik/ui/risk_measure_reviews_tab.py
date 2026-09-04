@@ -18,6 +18,7 @@ from moduly.rizeni_rizik.constants import (
     RISK_MEASURE_REVIEW_DIALOG_TITLE,
     RISK_MEASURE_REVIEW_EXECUTE_DIALOG_TITLE,
     RISK_MEASURE_REVIEW_FILTER_ALL,
+    RISK_MEASURE_REVIEW_NEW_BUTTON,
     RISK_MEASURE_REVIEW_STATUS_ARCHIVED,
     RISK_MEASURE_REVIEW_STATUS_COMPLETED,
     RISK_MEASURE_REVIEW_STATUS_DRAFT,
@@ -40,9 +41,9 @@ class RiskMeasureReviewsTab(QWidget):
         layout = QVBoxLayout(self)
 
         toolbar = QHBoxLayout()
-        self.new_btn = QPushButton("Nové přezkoumání")
+        self.new_btn = QPushButton(RISK_MEASURE_REVIEW_NEW_BUTTON)
         self.edit_btn = QPushButton("Upravit")
-        self.execute_btn = QPushButton("Provést přezkoumání")
+        self.execute_btn = QPushButton(RISK_MEASURE_REVIEW_EXECUTE_DIALOG_TITLE)
         self.archive_btn = QPushButton("Archivovat")
         self.restore_btn = QPushButton("Obnovit")
         self.edit_btn.setEnabled(False)
@@ -78,7 +79,7 @@ class RiskMeasureReviewsTab(QWidget):
 
         self.table = RiskMeasureReviewTable()
         configure_table_columns(self.table, "risk_measure_reviews")
-        self.text_filter = FilterBar(self.table, placeholder="🔍 Hledat přezkoumání...")
+        self.text_filter = FilterBar(self.table, placeholder="🔍 Hledat revizi...")
 
         layout.addLayout(toolbar)
         layout.addWidget(self.text_filter)
@@ -121,7 +122,9 @@ class RiskMeasureReviewsTab(QWidget):
         menu = QMenu(self)
         edit_action = menu.addAction("Upravit", self.edit_selected_review)
         edit_action.setEnabled(single)
-        execute_action = menu.addAction("Provést přezkoumání", self.execute_selected_review)
+        execute_action = menu.addAction(
+            RISK_MEASURE_REVIEW_EXECUTE_DIALOG_TITLE, self.execute_selected_review
+        )
         execute_action.setEnabled(single and review is not None and review.archived_at is None)
         archive_action = menu.addAction("Archivovat", self.archive_selected_review)
         archive_action.setEnabled(single and review is not None and review.archived_at is None)
@@ -150,7 +153,7 @@ class RiskMeasureReviewsTab(QWidget):
             QMessageBox.information(
                 self,
                 RISK_MEASURE_REVIEW_EXECUTE_DIALOG_TITLE,
-                "Archivované přezkoumání nelze provádět. Nejprve jej obnovte.",
+                "Archivovanou revizi nelze provádět. Nejprve ji obnovte.",
             )
             return
         dialog = RiskMeasureReviewExecutionDialog(self, review=review)
@@ -165,13 +168,13 @@ class RiskMeasureReviewsTab(QWidget):
             QMessageBox.information(
                 self,
                 RISK_MEASURE_REVIEW_DIALOG_TITLE,
-                "Přezkoumání je již archivováno.",
+                "Revize je již archivována.",
             )
             return
         answer = QMessageBox.question(
             self,
             "Archivovat",
-            f"Opravdu archivovat přezkoumání {review.review_number}?",
+            f"Opravdu archivovat revizi {review.review_number}?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No,
         )
@@ -187,13 +190,13 @@ class RiskMeasureReviewsTab(QWidget):
             QMessageBox.information(
                 self,
                 RISK_MEASURE_REVIEW_DIALOG_TITLE,
-                "Přezkoumání není archivováno.",
+                "Revize není archivována.",
             )
             return
         answer = QMessageBox.question(
             self,
             "Obnovit",
-            f"Opravdu obnovit přezkoumání {review.review_number}?",
+            f"Opravdu obnovit revizi {review.review_number}?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No,
         )

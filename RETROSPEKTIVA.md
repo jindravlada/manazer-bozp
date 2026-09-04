@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-04 – RISK-REVIEW-TERMINOLOGY-2
+
+**Co se povedlo:** Uživatel vidí Revizi posouzení rizik místo Přezkoumání opatření, bez zásahu do dat.
+
+**Co už bychom dnes udělali jinak:** Záložku pojmenovat podle účelu (revize posouzení) hned při vzniku.
+
+**Co bylo zbytečně složité:** Slovo checklist vedle kontrolních otázek.
+
+**Jaké nové pravidlo z toho vzniklo:** Revize posouzení rizik není totéž co Revize opatření. Technické názvy a historické výsledky se kvůli přejmenování nemění.
+
+---
+
 ### 2026-09-04 – RISK-CONTROL-QUESTIONS-1
 
 **Co se povedlo:** Uživatel vidí kontrolní otázky, interní model zůstal kompatibilní.

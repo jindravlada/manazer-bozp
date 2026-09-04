@@ -291,7 +291,7 @@ class RiskReview4TestCase(unittest.TestCase):
         self.assertTrue(path.exists())
         with zipfile.ZipFile(path) as archive:
             xml = archive.read("content.xml").decode("utf-8")
-        self.assertIn("Checklist přezkoumání opatření", xml)
+        self.assertIn("Kontrolní otázky pro revizi posouzení rizik", xml)
         self.assertIn("Provoz RR4", xml)
         self.assertIn("Dvouruční ovládání", xml)
 

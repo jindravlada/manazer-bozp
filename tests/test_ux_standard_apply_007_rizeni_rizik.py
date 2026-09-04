@@ -386,7 +386,7 @@ class UxStandardApply007RizeniRizikTestCase(unittest.TestCase):
             tab._show_table_context_menu(QPoint(10, 10))
 
         self.assertEqual(labels[0], "Upravit")
-        self.assertIn("Provést přezkoumání", labels)
+        self.assertIn("Provést revizi", labels)
         self.assertIn("Archivovat", labels)
         self.assertIn("Obnovit", labels)
 
