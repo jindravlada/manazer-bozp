@@ -33,6 +33,8 @@ OBLIGATION_AKTUALIZACE_ZP = "aktualizace_zp"
 OBLIGATION_AKTUALIZACE_ZAMESTNANEC = "aktualizace_zamestnanec"
 OBLIGATION_AKTUALIZACE_OO = "aktualizace_oo"
 OBLIGATION_AKTUALIZACE_POLICIE = "aktualizace_policie"
+OBLIGATION_ZAKONNA_POJISTOVNA_HLASENI = "zakonna_pojistovna_hlaseni"
+OBLIGATION_ZAKONNA_POJISTOVNA_AKTUALIZACE_ZOU = "zakonna_pojistovna_aktualizace_zou"
 
 SECTION_OHLASENI = "ohlaseni"
 SECTION_ZAZNAM = "zaznam"
@@ -40,6 +42,7 @@ SECTION_ODESLANI = "odeslani"
 SECTION_PREDANI = "predani"
 SECTION_NEMOCENSKE = "nemocenske"
 SECTION_AKTUALIZACE_PO_DPN = "aktualizace_po_dpn"
+SECTION_ZAKONNA_POJISTOVNA = "zakonna_pojistovna"
 
 CATEGORY_NO_PN = "no_pn"
 CATEGORY_PN_UP_TO_3 = "pn_up_to_3"
@@ -77,6 +80,12 @@ OBLIGATION_LABELS: dict[str, str] = {
     OBLIGATION_AKTUALIZACE_POLICIE: (
         "Policie ČR – zaslání aktualizovaného záznamu o pracovním úrazu"
     ),
+    OBLIGATION_ZAKONNA_POJISTOVNA_HLASENI: (
+        "Zákonná pojišťovna – nahlášení pojistné události"
+    ),
+    OBLIGATION_ZAKONNA_POJISTOVNA_AKTUALIZACE_ZOU: (
+        "Zákonná pojišťovna – doplnění aktualizovaného záznamu o pracovním úrazu"
+    ),
 }
 
 LEGACY_LABEL_ALIASES: dict[str, str] = {
@@ -84,7 +93,7 @@ LEGACY_LABEL_ALIASES: dict[str, str] = {
     "Postižený zaměstnanec – předání podepsaného záznamu o pracovním úrazu": OBLIGATION_ZAMESTNANEC_PREDANI,
     "Odborová organizace – předání podepsaného záznamu o pracovním úrazu": OBLIGATION_OO_PREDANI,
     "Aktualizace záznamu po ukončení DPN": "",
-    "Kooperativa": "",
+    "Kooperativa": OBLIGATION_ZAKONNA_POJISTOVNA_HLASENI,
 }
 
 _RECORD_MATRIX_CATEGORIES = frozenset({
@@ -118,6 +127,16 @@ POST_DPN_SIGNED_RECORD_KEYS = frozenset(
     for key in POST_DPN_OBLIGATION_KEYS
     if key != OBLIGATION_AKTUALIZACE_OIP_OBU_PORTAL
 )
+ZAKONNA_POJISTOVNA_KEYS = frozenset({
+    OBLIGATION_ZAKONNA_POJISTOVNA_HLASENI,
+    OBLIGATION_ZAKONNA_POJISTOVNA_AKTUALIZACE_ZOU,
+})
+
+ZAKONNA_HLASENI_STATUS_DONE = "✔ Nahlášeno"
+ZAKONNA_HLASENI_STATUS_WAITING = "Dosud nenahlášeno"
+ZAKONNA_AKTUALIZACE_STATUS_DONE = "✔ Doplněno"
+ZAKONNA_AKTUALIZACE_STATUS_WAITING = "Dosud nedoplněno"
+ZAKONNA_TOGETHER_CHECKBOX_LABEL = "Nahlášení včetně aktuálního podepsaného ZoÚ"
 
 DPN_RECORD_UPDATE_KEY = "dpn_record_update"
 DPN_RECORD_UPDATE_PORTAL_DONE = "portal_suip_done"
@@ -607,6 +626,10 @@ def obligation_key_from_row(row: dict[str, Any]) -> str:
         return legacy
 
     nazev_lower = str(nazev).lower()
+    if "zákonná pojišťovna" in nazev_lower or nazev == "Kooperativa":
+        if "aktualizovan" in nazev_lower or "doplnění" in nazev_lower:
+            return OBLIGATION_ZAKONNA_POJISTOVNA_AKTUALIZACE_ZOU
+        return OBLIGATION_ZAKONNA_POJISTOVNA_HLASENI
     if "aktualizovan" in nazev_lower or "aktualizace záznamu přes portál" in nazev_lower:
         if "portál súip" in nazev_lower or "portal suip" in nazev_lower:
             return OBLIGATION_AKTUALIZACE_OIP_OBU_PORTAL
@@ -715,6 +738,10 @@ def is_obligation_relevant(
         # ČSSZ/ÚSSZ není adresát NV 322/2025 Sb. – nesmí vstoupit do ZoÚ, úkolů ani matice záznamu.
         return False
 
+    if obligation_key in ZAKONNA_POJISTOVNA_KEYS:
+        # Pojistná událost je samostatná agenda – nesmí blokovat indikátor ZoÚ.
+        return False
+
     if obligation_key == OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN:
         # Souhrnná položka z PU-DPN-2 už není zdrojem pravdy ani čekající povinností ZoÚ.
         return False
@@ -813,6 +840,16 @@ def is_obligation_visible(
 ) -> bool:
     if obligation_key == OBLIGATION_CSSZ_USSZ_NEMOCENSKE:
         return is_cssz_nemocenske_visible(accident, row=row, saved_data=saved_data)
+    if obligation_key == OBLIGATION_ZAKONNA_POJISTOVNA_HLASENI:
+        return True
+    if obligation_key == OBLIGATION_ZAKONNA_POJISTOVNA_AKTUALIZACE_ZOU:
+        if is_dpn_record_update_relevant(accident):
+            return True
+        if cssz_row_has_recorded_data(row):
+            return True
+        return cssz_row_has_recorded_data(
+            obligation_row_from_saved_data(saved_data, obligation_key)
+        )
     if obligation_key in POST_DPN_OBLIGATION_KEYS:
         if is_obligation_relevant(
             accident,
@@ -865,6 +902,8 @@ def is_obligation_required(
 ) -> bool:
     if obligation_key == OBLIGATION_CSSZ_USSZ_NEMOCENSKE:
         return cssz_nemocenske_is_required(accident, today=today)
+    if obligation_key in ZAKONNA_POJISTOVNA_KEYS:
+        return False
     return is_obligation_relevant(
         accident,
         obligation_key,
@@ -888,9 +927,34 @@ def cssz_row_ui_state(
     return "optional"
 
 
+def zakonna_row_ui_state(row: dict[str, Any] | None) -> str:
+    """Stav položky zákonné pojišťovny: ``done`` / ``waiting`` (bez termínu)."""
+    if row_is_done(row or {}):
+        return "done"
+    return "waiting"
+
+
+def zakonna_together_checkbox_default(
+    *,
+    dpn_ended: bool,
+    hlaseni_row: dict[str, Any] | None,
+    aktualizace_row: dict[str, Any] | None,
+) -> bool:
+    """True, pokud jde o jedno nahlášení až po DPN spolu s aktuálním ZoÚ."""
+    if not dpn_ended:
+        return False
+    if not row_is_done(hlaseni_row or {}):
+        return True
+    hlaseni_date = parse_saved_date((hlaseni_row or {}).get("datum"))
+    update_date = parse_saved_date((aktualizace_row or {}).get("datum"))
+    return hlaseni_date is not None and hlaseni_date == update_date
+
+
 def _section_for_key(key: str) -> str:
     if key == OBLIGATION_CSSZ_USSZ_NEMOCENSKE:
         return SECTION_NEMOCENSKE
+    if key in ZAKONNA_POJISTOVNA_KEYS:
+        return SECTION_ZAKONNA_POJISTOVNA
     if key in POST_DPN_OBLIGATION_KEYS:
         return SECTION_AKTUALIZACE_PO_DPN
     if key in {OBLIGATION_VYHOTOVENI_ZAZNAMU, OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU}:
@@ -1052,6 +1116,8 @@ def obligation_default_deadline(
         return None
     if obligation_key in POST_DPN_OBLIGATION_KEYS or section == SECTION_AKTUALIZACE_PO_DPN:
         return None
+    if obligation_key in ZAKONNA_POJISTOVNA_KEYS or section == SECTION_ZAKONNA_POJISTOVNA:
+        return None
     if "ČSSZ" in label or "ÚSSZ" in label:
         return None
 
@@ -1121,6 +1187,8 @@ def obligation_rows_for_summary(
         saved_data=saved_data,
     ):
         if obligation.key == OBLIGATION_CSSZ_USSZ_NEMOCENSKE:
+            continue
+        if obligation.key in ZAKONNA_POJISTOVNA_KEYS:
             continue
         row = dict(rows_by_key.get(obligation.key, {}))
         row.setdefault("key", obligation.key)
@@ -1260,6 +1328,8 @@ def obligations_summary_state(
     statuses = [
         row_status(rows_by_key.get(obligation.key, {"key": obligation.key}), today)
         for obligation in applicable
+        if obligation.key not in ZAKONNA_POJISTOVNA_KEYS
+        and obligation.key != OBLIGATION_CSSZ_USSZ_NEMOCENSKE
     ]
 
     if "overdue" in statuses:

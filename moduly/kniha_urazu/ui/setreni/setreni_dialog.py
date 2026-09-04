@@ -46,6 +46,8 @@ from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
     OBLIGATION_OIP_OBU_OHLASENI,
     OBLIGATION_OO_OHLASENI,
     OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU,
+    OBLIGATION_ZAKONNA_POJISTOVNA_AKTUALIZACE_ZOU,
+    OBLIGATION_ZAKONNA_POJISTOVNA_HLASENI,
     METHOD_PORTAL_SUIP,
     POST_DPN_OBLIGATION_KEYS,
     SECTION_AKTUALIZACE_PO_DPN,
@@ -53,9 +55,17 @@ from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
     SECTION_ODESLANI,
     SECTION_OHLASENI,
     SECTION_PREDANI,
+    SECTION_ZAKONNA_POJISTOVNA,
     SECTION_ZAZNAM,
     INVESTIGATION_BEFORE_ACCIDENT_WARNING,
+    ZAKONNA_AKTUALIZACE_STATUS_DONE,
+    ZAKONNA_AKTUALIZACE_STATUS_WAITING,
+    ZAKONNA_HLASENI_STATUS_DONE,
+    ZAKONNA_HLASENI_STATUS_WAITING,
+    ZAKONNA_POJISTOVNA_KEYS,
+    ZAKONNA_TOGETHER_CHECKBOX_LABEL,
     cssz_row_ui_state,
+    is_dpn_ended,
     is_fatal_accident,
     is_investigation_before_accident,
     is_row_visible,
@@ -63,6 +73,7 @@ from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
     has_pn_over_3_days,
     obligation_default_deadline,
     obligation_definitions_for_accident,
+    obligation_key_from_row,
     obligation_notification_date,
     oip_notice_uses_fixed_portal_suip,
     record_duty_keys_hidden_for_generation,
@@ -70,6 +81,8 @@ from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
     requires_police_obligation,
     resolve_record_duty_generation,
     row_status,
+    zakonna_row_ui_state,
+    zakonna_together_checkbox_default,
 )
 from moduly.kniha_urazu.sluzby.accident_service import accident_service
 from moduly.kniha_urazu.sluzby.investigation_service import investigation_service
@@ -174,6 +187,7 @@ class SetreniDialog(QDialog):
             + list(getattr(self, "admin_odeslani_rows", []))
             +             list(getattr(self, "admin_predani_rows", []))
             + list(getattr(self, "admin_dpn_rows", []))
+            + list(getattr(self, "admin_zakonna_rows", []))
             + list(getattr(self, "admin_nemocenske_rows", []))
         )
 
@@ -720,6 +734,7 @@ class SetreniDialog(QDialog):
             + list(getattr(self, "admin_odeslani_rows", []))
             +             list(getattr(self, "admin_predani_rows", []))
             + list(getattr(self, "admin_dpn_rows", []))
+            + list(getattr(self, "admin_zakonna_rows", []))
             + list(getattr(self, "admin_nemocenske_rows", []))
         )
 
@@ -2886,6 +2901,8 @@ class SetreniDialog(QDialog):
             for item in rows or []:
                 if key and item.get("key") == key:
                     return item
+                if key and obligation_key_from_row(item) == key:
+                    return item
                 if name and item.get("nazev") == name:
                     return item
             return {}
@@ -2898,6 +2915,7 @@ class SetreniDialog(QDialog):
         self.admin_odeslani_rows = []
         self.admin_predani_rows = []
         self.admin_dpn_rows = []
+        self.admin_zakonna_rows = []
         self.admin_nemocenske_rows = []
 
         for definition in obligation_definitions_for_accident(
@@ -2913,7 +2931,7 @@ class SetreniDialog(QDialog):
             if definition.key not in {
                 OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU,
                 OBLIGATION_CSSZ_USSZ_NEMOCENSKE,
-            } | POST_DPN_OBLIGATION_KEYS:
+            } | POST_DPN_OBLIGATION_KEYS | ZAKONNA_POJISTOVNA_KEYS:
                 display_name = (saved_data.get("nazev") or "").strip() or definition.label
             if definition.section == SECTION_OHLASENI:
                 agenda = "ohlaseni"
@@ -2938,6 +2956,8 @@ class SetreniDialog(QDialog):
                 self.admin_nemocenske_rows.append(row)
             elif definition.section == SECTION_AKTUALIZACE_PO_DPN:
                 self.admin_dpn_rows.append(row)
+            elif definition.section == SECTION_ZAKONNA_POJISTOVNA:
+                self.admin_zakonna_rows.append(row)
             else:
                 self.admin_predani_rows.append(row)
 
@@ -2988,9 +3008,18 @@ class SetreniDialog(QDialog):
         }
         row["predano"].setChecked(bool(data.get("predano", False)))
         row["cas"].setPlaceholderText("např. 14:35")
-        row["upresneni"].setPlaceholderText("Upřesnit způsob odeslání / předání")
+        if key == OBLIGATION_ZAKONNA_POJISTOVNA_HLASENI:
+            row["upresneni"].setPlaceholderText("číslo pojistné události nebo poznámka")
+        elif key == OBLIGATION_ZAKONNA_POJISTOVNA_AKTUALIZACE_ZOU:
+            row["upresneni"].setPlaceholderText("poznámka k doplnění ZoÚ")
+        else:
+            row["upresneni"].setPlaceholderText("Upřesnit způsob odeslání / předání")
 
-        if key == OBLIGATION_CSSZ_USSZ_NEMOCENSKE or key in POST_DPN_OBLIGATION_KEYS:
+        if (
+            key == OBLIGATION_CSSZ_USSZ_NEMOCENSKE
+            or key in POST_DPN_OBLIGATION_KEYS
+            or key in ZAKONNA_POJISTOVNA_KEYS
+        ):
             row["lhuta"] = None
         elif "Kooperativa" in nazev or "Zákonná pojišťovna" in nazev:
             row["lhuta"] = None
@@ -3094,6 +3123,30 @@ class SetreniDialog(QDialog):
                     )
                 return
 
+            if row.get("key") in ZAKONNA_POJISTOVNA_KEYS:
+                done = zakonna_row_ui_state(state_dict) == "done"
+                if row.get("key") == OBLIGATION_ZAKONNA_POJISTOVNA_HLASENI:
+                    label.setText(
+                        ZAKONNA_HLASENI_STATUS_DONE if done else ZAKONNA_HLASENI_STATUS_WAITING
+                    )
+                else:
+                    label.setText(
+                        ZAKONNA_AKTUALIZACE_STATUS_DONE
+                        if done
+                        else ZAKONNA_AKTUALIZACE_STATUS_WAITING
+                    )
+                if done:
+                    label.setStyleSheet(
+                        "font-weight: bold; color: #0b5d1e; background: #d9f0dd; "
+                        "border: 1px solid #91c79c; border-radius: 3px;"
+                    )
+                else:
+                    label.setStyleSheet(
+                        "font-weight: bold; color: #334155; background: #eef2f6; "
+                        "border: 1px solid #c5d0dc; border-radius: 3px;"
+                    )
+                return
+
             state = row_status(state_dict, datetime.now().date())
             if state == "done":
                 label.setText("✔ Odesláno / předáno")
@@ -3136,6 +3189,78 @@ class SetreniDialog(QDialog):
             form.addRow(f"Způsob {mode}:", row["zpusob"])
             form.addRow("Upřesnění:", row["upresneni"])
         return group
+
+    def _zakonna_row_by_key(self, key):
+        for row in getattr(self, "admin_zakonna_rows", []):
+            if row.get("key") == key:
+                return row
+        return None
+
+    def _init_zakonna_together_checkbox(self):
+        checkbox = getattr(self, "zakonna_together_checkbox", None)
+        if checkbox is None:
+            return
+        hlaseni = self._zakonna_row_by_key(OBLIGATION_ZAKONNA_POJISTOVNA_HLASENI)
+        aktualizace = self._zakonna_row_by_key(OBLIGATION_ZAKONNA_POJISTOVNA_AKTUALIZACE_ZOU)
+        if aktualizace is None or not self._admin_row_relevant(aktualizace):
+            return
+        dpn_ended = is_dpn_ended(
+            getattr(self.accident, "dpn_do", None) if self.accident is not None else None
+        )
+        checkbox.setChecked(
+            zakonna_together_checkbox_default(
+                dpn_ended=dpn_ended,
+                hlaseni_row=self._admin_row_state_dict(hlaseni) if hlaseni else {},
+                aktualizace_row=self._admin_row_state_dict(aktualizace) if aktualizace else {},
+            )
+        )
+        checkbox.toggled.connect(self._sync_zakonna_together)
+        if hlaseni is not None and hlaseni.get("datum") is not None:
+            try:
+                hlaseni["datum"].dateChanged.connect(self._sync_zakonna_together)
+            except Exception:
+                pass
+        self._apply_zakonna_together_enabled()
+        if checkbox.isChecked():
+            self._copy_zakonna_hlaseni_to_aktualizace()
+
+    def _apply_zakonna_together_enabled(self):
+        checkbox = getattr(self, "zakonna_together_checkbox", None)
+        aktualizace = self._zakonna_row_by_key(OBLIGATION_ZAKONNA_POJISTOVNA_AKTUALIZACE_ZOU)
+        if aktualizace is None:
+            return
+        together = bool(checkbox is not None and checkbox.isChecked())
+        for field in ("datum", "cas"):
+            widget = aktualizace.get(field)
+            if widget is not None:
+                widget.setEnabled(not together)
+
+    def _copy_zakonna_hlaseni_to_aktualizace(self):
+        hlaseni = self._zakonna_row_by_key(OBLIGATION_ZAKONNA_POJISTOVNA_HLASENI)
+        aktualizace = self._zakonna_row_by_key(OBLIGATION_ZAKONNA_POJISTOVNA_AKTUALIZACE_ZOU)
+        if hlaseni is None or aktualizace is None:
+            return
+        sent = self._admin_date_value(hlaseni.get("datum"))
+        if sent is None:
+            return
+        widget = aktualizace.get("datum")
+        if widget is None:
+            return
+        try:
+            widget.blockSignals(True)
+            self._set_date_widget(widget, sent)
+        finally:
+            widget.blockSignals(False)
+        cas = hlaseni.get("cas")
+        target_cas = aktualizace.get("cas")
+        if cas is not None and target_cas is not None:
+            target_cas.setText(cas.text())
+
+    def _sync_zakonna_together(self, *_args):
+        self._apply_zakonna_together_enabled()
+        checkbox = getattr(self, "zakonna_together_checkbox", None)
+        if checkbox is not None and checkbox.isChecked():
+            self._copy_zakonna_hlaseni_to_aktualizace()
 
 
     def _form_templates_dir(self):
@@ -3325,6 +3450,38 @@ class SetreniDialog(QDialog):
                     mode = "odeslání"
                 dpn_layout.addWidget(self._admin_row_group(row, mode))
             layout.addWidget(dpn)
+
+        visible_zakonna_rows = [
+            row
+            for row in getattr(self, "admin_zakonna_rows", [])
+            if self._admin_row_relevant(row)
+        ]
+        if visible_zakonna_rows:
+            zakonna = QGroupBox("ZÁKONNÁ POJIŠŤOVNA")
+            zakonna_layout = QVBoxLayout(zakonna)
+            info = QLabel(
+                "Agenda pojistné události. Neovlivňuje stav Záznamu o úrazu."
+            )
+            info.setWordWrap(True)
+            info.setObjectName("MutedText")
+            zakonna_layout.addWidget(info)
+            self.zakonna_together_checkbox = QCheckBox(ZAKONNA_TOGETHER_CHECKBOX_LABEL)
+            aktualizace_visible = any(
+                row.get("key") == OBLIGATION_ZAKONNA_POJISTOVNA_AKTUALIZACE_ZOU
+                for row in visible_zakonna_rows
+            )
+            self.zakonna_together_checkbox.setVisible(aktualizace_visible)
+            zakonna_layout.addWidget(self.zakonna_together_checkbox)
+            for row in visible_zakonna_rows:
+                if row.get("key") == OBLIGATION_ZAKONNA_POJISTOVNA_HLASENI:
+                    mode = "nahlášení"
+                else:
+                    mode = "doplnění"
+                zakonna_layout.addWidget(self._admin_row_group(row, mode))
+            self._init_zakonna_together_checkbox()
+            layout.addWidget(zakonna)
+        else:
+            self.zakonna_together_checkbox = None
 
         visible_nemocenske_rows = [
             row for row in self.admin_nemocenske_rows if self._admin_row_relevant(row)
