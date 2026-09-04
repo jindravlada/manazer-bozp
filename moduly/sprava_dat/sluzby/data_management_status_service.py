@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from core.backup.completeness import VERDICT_COMPLETE_WITH_LIMITATIONS, VERDICT_INCOMPLETE
 from core.backup.constants import INTEGRITY_VALID_WITH_WARNINGS
 from core.backup.workspace_roots import (
@@ -5,6 +7,7 @@ from core.backup.workspace_roots import (
     UNKNOWN_ROOTS_MESSAGE_PREFIX,
 )
 from moduly.sprava_dat.sluzby.data_management_settings_service import (
+    BackupRecord,
     CodebooksExportRecord,
     CodebooksImportRecord,
     RegistryExportRecord,
@@ -66,9 +69,8 @@ class DataManagementStatusService:
         import_record = data_management_settings_service.get_last_registry_import()
         if self._import_failed(import_record.import_result if import_record else None):
             warnings.append("Poslední import registru se nezdařil.")
-        elif import_record and import_record.safety_backup_path:
-            if not data_management_settings_service.file_exists(import_record.safety_backup_path):
-                warnings.append("Bezpečnostní záloha před importem registru nebyla nalezena.")
+        elif self._missing_registry_preimport_backup_requires_attention(import_record):
+            warnings.append("Bezpečnostní záloha před importem registru nebyla nalezena.")
 
         diagnostic = data_management_settings_service.get_last_diagnostic()
         if self._diagnostic_inconsistent(diagnostic):
@@ -163,6 +165,54 @@ class DataManagementStatusService:
         issue_count = payload.get("issue_count")
         return isinstance(issue_count, int) and issue_count > 0
 
+    def _missing_registry_preimport_backup_requires_attention(
+        self,
+        import_record: RegistryImportRecord | None,
+    ) -> bool:
+        if import_record is None or not import_record.safety_backup_path:
+            return False
+        if data_management_settings_service.file_exists(import_record.safety_backup_path):
+            return False
+        if self._preimport_backup_superseded_by_newer_full_backup(import_record):
+            return False
+        return True
+
+    def _preimport_backup_superseded_by_newer_full_backup(
+        self,
+        import_record: RegistryImportRecord,
+    ) -> bool:
+        if not self._import_succeeded(import_record.import_result):
+            return False
+        if self._diagnostic_inconsistent(
+            data_management_settings_service.get_last_diagnostic()
+        ):
+            return False
+        if self._diagnostic_inconsistent(
+            data_management_settings_service.get_last_attachment_diagnostic()
+        ):
+            return False
+        backup = self._verified_available_complete_backup()
+        if backup is None:
+            return False
+        backup_at = self._parse_timestamp(backup.created_at)
+        import_at = self._parse_timestamp(import_record.created_at)
+        if backup_at is None or import_at is None:
+            return False
+        return backup_at > import_at
+
+    def _verified_available_complete_backup(self) -> BackupRecord | None:
+        backup = data_management_settings_service.get_last_backup()
+        if backup is None:
+            return None
+        manifest = backup.manifest or {}
+        if not manifest.get("verified"):
+            return None
+        if manifest.get("coverage_verdict") == VERDICT_INCOMPLETE:
+            return None
+        if not data_management_settings_service.file_exists(backup.path):
+            return None
+        return backup
+
     @classmethod
     def _import_failed(cls, import_result: dict | None) -> bool:
         if not isinstance(import_result, dict) or not import_result:
@@ -178,6 +228,35 @@ class DataManagementStatusService:
         if isinstance(nested, dict) and nested is not import_result:
             return cls._import_failed(nested)
         return False
+
+    @classmethod
+    def _import_succeeded(cls, import_result: dict | None) -> bool:
+        if not isinstance(import_result, dict) or not import_result:
+            return False
+        if cls._import_failed(import_result):
+            return False
+        if import_result.get("success") is True:
+            return True
+        if import_result.get("verified") is True:
+            return True
+        if isinstance(import_result.get("record_counts"), dict):
+            return True
+        error_count = import_result.get("error_count")
+        if isinstance(error_count, int):
+            return True
+        nested = import_result.get("import_result")
+        if isinstance(nested, dict) and nested is not import_result:
+            return cls._import_succeeded(nested)
+        return False
+
+    @staticmethod
+    def _parse_timestamp(value: str) -> datetime | None:
+        if not value:
+            return None
+        try:
+            return datetime.fromisoformat(value)
+        except ValueError:
+            return None
 
     @staticmethod
     def _transfer_status_text(

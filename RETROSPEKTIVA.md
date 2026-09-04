@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-04 – DATA-SUMMARY-PREIMPORT-BACKUP-2
+
+**Co se povedlo:** Chybějící předimportní záloha po úspěšném importu RPP už nesnižuje stav dat, pokud existuje novější ověřená úplná záloha a diagnostika je v pořádku.
+
+**Co už bychom dnes udělali jinak:** Předimportní ZIP je pojistka k jednomu importu. Po pozdější úplné záloze už její soubor nemusí existovat.
+
+**Co bylo zbytečně složité:** Stejná hláška pro chybějící soubor u aktuální úplné zálohy i u historické předimportní zálohy.
+
+**Jaké nové pravidlo z toho vzniklo:** Chybějící bezpečnostní záloha před úspěšným importem RPP nesmí sama způsobit „Vyžaduje pozornost“, pokud je k dispozici ověřená úplná záloha novější než import. Na kartě importu může zůstat jako historie.
+
+---
+
 ### 2026-09-04 – DATA-SUMMARY-OPTIONAL-EXPORTS-1
 
 **Co se povedlo:** Chybějící soubor dříve úspěšného přenosového exportu už nesnižuje celkový stav dat. Souhrn rozlišuje informační stav na kartě od skutečné chyby zálohy, obnovy, importu nebo diagnostiky.
