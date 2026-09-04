@@ -287,18 +287,11 @@ class TabPoUkonceniDpn(QWidget):
         self.exam_required_banner.setMinimumHeight(36)
         self._exam_form.addRow(self.exam_required_banner)
 
-        self._return_group = QGroupBox("Návrat do práce")
-        self._return_form = QFormLayout(self._return_group)
-
+        self._return_date_widget = QWidget()
+        self._return_form = QFormLayout(self._return_date_widget)
+        self._return_form.setContentsMargins(0, 0, 0, 0)
         self.return_date = NullableDateEdit()
         self._return_form.addRow("Datum skutečného návratu do práce:", self.return_date)
-
-        self.return_mode = QComboBox()
-        self.return_mode.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
-        self.return_mode.addItem("", "")
-        for label in RETURN_MODES:
-            self.return_mode.addItem(label, label)
-        self._return_form.addRow("Způsob návratu:", self.return_mode)
 
         self._exam_followup_widget = QWidget()
         self._exam_followup_form = QFormLayout(self._exam_followup_widget)
@@ -329,9 +322,20 @@ class TabPoUkonceniDpn(QWidget):
             self.exam_result.addItem(label, label)
         self._exam_followup_form.addRow("Výsledek prohlídky:", self.exam_result)
 
+        self._return_mode_widget = QWidget()
+        self._return_mode_form = QFormLayout(self._return_mode_widget)
+        self._return_mode_form.setContentsMargins(0, 0, 0, 0)
+        self.return_mode = QComboBox()
+        self.return_mode.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
+        self.return_mode.addItem("", "")
+        for label in RETURN_MODES:
+            self.return_mode.addItem(label, label)
+        self._return_mode_form.addRow("Způsob návratu:", self.return_mode)
+
         layout.addWidget(exam_group)
-        layout.addWidget(self._return_group)
+        layout.addWidget(self._return_date_widget)
         layout.addWidget(self._exam_followup_widget)
+        layout.addWidget(self._return_mode_widget)
 
         self.return_mode.currentIndexChanged.connect(self._refresh_care_relevance)
         self.return_date.dateChanged.connect(self._refresh_care_relevance)
@@ -404,6 +408,16 @@ class TabPoUkonceniDpn(QWidget):
 
     def is_content_active(self) -> bool:
         return self._dpn_ended
+
+    def visible_care_sequence(self) -> tuple[str, ...]:
+        """Pořadí viditelných polí návratu a provedení prohlídky."""
+        items: list[str] = []
+        if self._return_form.isRowVisible(self.return_date):
+            items.append("return_date")
+        if not self._exam_followup_widget.isHidden():
+            items.extend(["exam_deadline", "exam_date", "exam_result"])
+        items.append("return_mode")
+        return tuple(items)
 
     def _ano_ne_value(self, ano: QRadioButton, ne: QRadioButton) -> str:
         if ano.isChecked():

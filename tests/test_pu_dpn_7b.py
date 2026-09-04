@@ -95,8 +95,9 @@ class PuDpn7bTestCase(unittest.TestCase):
     def test_return_date_is_before_exam_completion_fields(self) -> None:
         accident, dialog, tab = self._open_required()
         care_layout = tab.section_groups[1].layout()
-        self.assertIs(care_layout.itemAt(1).widget(), tab._return_group)
+        self.assertIs(care_layout.itemAt(1).widget(), tab._return_date_widget)
         self.assertIs(care_layout.itemAt(2).widget(), tab._exam_followup_widget)
+        self.assertIs(care_layout.itemAt(3).widget(), tab._return_mode_widget)
         dialog.close()
 
     def test_deadline_computed_after_return_date(self) -> None:
