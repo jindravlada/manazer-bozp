@@ -1,4 +1,4 @@
-"""Míra odpovědnosti zaměstnavatele po ukončení DPN – JSON šetření, bez odškodnění."""
+"""Rozsah náhrady pracovního úrazu po ukončení DPN – JSON šetření, bez částek odškodnění."""
 
 from __future__ import annotations
 
@@ -51,6 +51,14 @@ def normalize_percent(value: Any) -> int | None:
     return percent
 
 
+def reduction_percent(value: Any) -> int | None:
+    """Krácení náhrady: 100 − rozsah. Prázdný rozsah nemá krácení."""
+    percent = normalize_percent(value)
+    if percent is None:
+        return None
+    return PERCENT_MAX - percent
+
+
 def normalize_dpn_employer_responsibility(state: dict[str, Any] | None) -> dict[str, Any]:
     data = state if isinstance(state, dict) else {}
     return {
@@ -86,7 +94,7 @@ def apply_dpn_employer_responsibility_to_saved_data(
     accident: AccidentLike | None,
     ui_state: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Zapíše míru odpovědnosti. Návrh a skutečnost se navzájem nekopírují."""
+    """Zapíše rozsah náhrady. Návrh a skutečnost se navzájem nekopírují."""
     data = dict(saved_data or {})
     existing = dpn_employer_responsibility_from_saved_data(data)
     if ui_state is None:

@@ -56,6 +56,7 @@ from moduly.kniha_urazu.sluzby.accident_dpn_responsibility import (
     RESP_RECOGNIZED_PERCENT,
     empty_dpn_employer_responsibility,
     normalize_dpn_employer_responsibility,
+    reduction_percent,
 )
 
 
@@ -68,12 +69,13 @@ DPN_NOT_ENDED_MESSAGE = (
 SECTION_AKTUALIZACE_ZAZNAMU = "Aktualizace záznamu o pracovním úrazu"
 SECTION_PECE_NAVRA = "Péče a návrat do práce"
 SECTION_EXAM_EVALUATION = "Vyhodnocení mimořádné pracovnělékařské prohlídky"
-SECTION_MIRA_ODPOVEDNOSTI = "Míra odpovědnosti zaměstnavatele"
+SECTION_ROZSAH_NAHRADY = "Rozsah náhrady pracovního úrazu"
+SECTION_MIRA_ODPOVEDNOSTI = SECTION_ROZSAH_NAHRADY
 
 SECTION_TITLES = (
     SECTION_AKTUALIZACE_ZAZNAMU,
     SECTION_PECE_NAVRA,
-    SECTION_MIRA_ODPOVEDNOSTI,
+    SECTION_ROZSAH_NAHRADY,
 )
 
 OVERVIEW_SOURCE_HINT = (
@@ -111,12 +113,19 @@ EXAM_DEADLINE_NEED_RETURN = (
 )
 
 RESPONSIBILITY_HINT = (
-    "Navržená míra je stanovisko zaměstnavatele před řešením pojistné události. "
-    "Skutečně uznaná míra je výsledná hodnota použitá při vypořádání. "
+    "Navržený rozsah náhrady je stanovisko zaměstnavatele před řešením "
+    "pojistné události. Skutečně uznaný rozsah je výsledná hodnota použitá "
+    "při vypořádání. 100 % znamená plnou náhradu zaměstnanci. "
     "Částky odškodnění se zde neevidují."
 )
 
+LABEL_PROPOSED_COMPENSATION = "Navržený rozsah náhrady zaměstnanci:"
+LABEL_RECOGNIZED_COMPENSATION = "Skutečně uznaný rozsah náhrady zaměstnanci:"
+LABEL_REDUCTION = "Krácení náhrady:"
+LABEL_COMPENSATION_NOTE = "Poznámka k rozsahu náhrady:"
+
 PERCENT_EMPTY_VALUE = -1
+PERCENT_SUFFIX = " %"
 
 
 class TabPoUkonceniDpn(QWidget):
@@ -345,7 +354,7 @@ class TabPoUkonceniDpn(QWidget):
         spin = NoWheelSpinBox()
         spin.setRange(PERCENT_EMPTY_VALUE, PERCENT_MAX)
         spin.setSpecialValueText(" ")
-        spin.setSuffix(" %")
+        spin.setSuffix(PERCENT_SUFFIX)
         spin.setValue(PERCENT_EMPTY_VALUE)
         spin.setMaximumWidth(120)
         return spin
@@ -363,8 +372,9 @@ class TabPoUkonceniDpn(QWidget):
         spin.setValue(value)
 
     def _build_responsibility_section(self) -> QGroupBox:
-        group = QGroupBox(SECTION_MIRA_ODPOVEDNOSTI)
+        group = QGroupBox(SECTION_ROZSAH_NAHRADY)
         form = QFormLayout(group)
+        self._responsibility_form = form
 
         hint = QLabel(RESPONSIBILITY_HINT)
         hint.setObjectName("MutedText")
@@ -372,17 +382,42 @@ class TabPoUkonceniDpn(QWidget):
         form.addRow(hint)
 
         self.proposed_percent = self._build_percent_spin()
+        self.proposed_reduction_label = QLabel()
+        self.proposed_reduction_label.setObjectName("ProposedReductionLabel")
         self.recognized_percent = self._build_percent_spin()
+        self.recognized_reduction_label = QLabel()
+        self.recognized_reduction_label.setObjectName("RecognizedReductionLabel")
         self.responsibility_note = QTextEdit()
         self.responsibility_note.setFixedHeight(60)
 
-        form.addRow("Navržená míra odpovědnosti zaměstnavatele:", self.proposed_percent)
-        form.addRow(
-            "Skutečně uznaná míra odpovědnosti zaměstnavatele:",
-            self.recognized_percent,
-        )
-        form.addRow("Poznámka k odpovědnosti:", self.responsibility_note)
+        form.addRow(LABEL_PROPOSED_COMPENSATION, self.proposed_percent)
+        form.addRow(LABEL_REDUCTION, self.proposed_reduction_label)
+        form.addRow(LABEL_RECOGNIZED_COMPENSATION, self.recognized_percent)
+        form.addRow(LABEL_REDUCTION, self.recognized_reduction_label)
+        form.addRow(LABEL_COMPENSATION_NOTE, self.responsibility_note)
+
+        self.proposed_percent.valueChanged.connect(self._refresh_reduction_display)
+        self.recognized_percent.valueChanged.connect(self._refresh_reduction_display)
+        self._refresh_reduction_display()
         return group
+
+    def _reduction_text(self, percent: int | None) -> str:
+        reduced = reduction_percent(percent)
+        if reduced is None:
+            return ""
+        return f"{reduced}{PERCENT_SUFFIX}"
+
+    def _refresh_reduction_display(self, *_args) -> None:
+        proposed = self._percent_value(self.proposed_percent)
+        recognized = self._percent_value(self.recognized_percent)
+        self.proposed_reduction_label.setText(self._reduction_text(proposed))
+        self.recognized_reduction_label.setText(self._reduction_text(recognized))
+        self._responsibility_form.setRowVisible(
+            self.proposed_reduction_label, proposed is not None
+        )
+        self._responsibility_form.setRowVisible(
+            self.recognized_reduction_label, recognized is not None
+        )
 
     def set_dpn_ended(self, ended: bool) -> None:
         self._dpn_ended = bool(ended)
@@ -591,3 +626,4 @@ class TabPoUkonceniDpn(QWidget):
         self._set_percent_value(self.proposed_percent, data[RESP_PROPOSED_PERCENT])
         self._set_percent_value(self.recognized_percent, data[RESP_RECOGNIZED_PERCENT])
         self.responsibility_note.setPlainText(data[RESP_NOTE])
+        self._refresh_reduction_display()
