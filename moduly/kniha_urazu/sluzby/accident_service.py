@@ -5,6 +5,9 @@ import json
 from core.shared.constants import ENTITY_ACCIDENT
 from moduly.kniha_urazu.modely.accident import Accident
 from moduly.kniha_urazu.repository.accident_repository import AccidentRepository
+from moduly.kniha_urazu.sluzby.accident_dpn_care import (
+    apply_dpn_care_return_to_saved_data,
+)
 from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
     apply_dpn_record_update_to_saved_data,
     has_pn,
@@ -82,6 +85,7 @@ class AccidentService:
 
     def create_accident(self, **data):
         dpn_record_update = data.pop("dpn_record_update", None)
+        dpn_care_return = data.pop("dpn_care_return", None)
         self._enrich_workplace(data)
         self._sync_legacy_fields(data)
 
@@ -98,7 +102,7 @@ class AccidentService:
         saved = self.repository.update(saved)
         self._create_verify_kind_task(saved)
         self._stamp_combined_record_duty_generation(saved)
-        self._sync_dpn_record_update(saved, dpn_record_update)
+        self._sync_dpn_investigation_json(saved, dpn_record_update, dpn_care_return)
         self._sync_reporting_tasks(saved)
         return saved
 
@@ -108,6 +112,7 @@ class AccidentService:
             return None
 
         dpn_record_update = data.pop("dpn_record_update", None)
+        dpn_care_return = data.pop("dpn_care_return", None)
         self._enrich_workplace(data)
         self._sync_legacy_fields(data)
 
@@ -117,7 +122,7 @@ class AccidentService:
 
         saved = self.repository.update(accident)
         self._resolve_verify_kind_task_if_needed(saved)
-        self._sync_dpn_record_update(saved, dpn_record_update)
+        self._sync_dpn_investigation_json(saved, dpn_record_update, dpn_care_return)
         self._sync_reporting_tasks(saved)
         return saved
 
@@ -141,7 +146,12 @@ class AccidentService:
             return {}
         return data if isinstance(data, dict) else {}
 
-    def _sync_dpn_record_update(self, accident: Accident, ui_state) -> None:
+    def _sync_dpn_investigation_json(
+        self,
+        accident: Accident,
+        dpn_record_update=None,
+        dpn_care_return=None,
+    ) -> None:
         from moduly.kniha_urazu.sluzby.investigation_service import investigation_service
 
         if accident is None or getattr(accident, "id", None) is None:
@@ -150,7 +160,12 @@ class AccidentService:
         updated = apply_dpn_record_update_to_saved_data(
             current,
             accident=accident,
-            ui_state=ui_state,
+            ui_state=dpn_record_update,
+        )
+        updated = apply_dpn_care_return_to_saved_data(
+            updated,
+            accident=accident,
+            ui_state=dpn_care_return,
         )
         if updated == current:
             return

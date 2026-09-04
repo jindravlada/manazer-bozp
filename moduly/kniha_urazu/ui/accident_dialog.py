@@ -25,6 +25,9 @@ from core.widgets.dialog_utils import (
 from core.widgets.date_edit import DateEdit
 from core.widgets.nullable_date_edit import NullableDateEdit
 from core.widgets.workplace_selector import WorkplaceSelector
+from moduly.kniha_urazu.sluzby.accident_dpn_care import (
+    dpn_care_return_from_saved_data,
+)
 from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
     ACCIDENT_DATE_FUTURE_MESSAGE,
     DPN_END_BEFORE_START_MESSAGE,
@@ -453,6 +456,7 @@ class AccidentDialog(QDialog):
     def _load_dpn_record_update(self, accident) -> None:
         if accident is None or getattr(accident, "id", None) is None:
             self.tab_po_ukonceni_dpn_widget.load_dpn_record_update(None)
+            self.tab_po_ukonceni_dpn_widget.load_dpn_care_return(None)
             return
         import json
 
@@ -468,6 +472,9 @@ class AccidentDialog(QDialog):
             saved = {}
         self.tab_po_ukonceni_dpn_widget.load_dpn_record_update(
             dpn_record_update_overview_from_saved_data(accident, saved)
+        )
+        self.tab_po_ukonceni_dpn_widget.load_dpn_care_return(
+            dpn_care_return_from_saved_data(saved)
         )
 
     def _field_names(self):
@@ -513,4 +520,5 @@ class AccidentDialog(QDialog):
         data.update(self.tab_dalsi_widget.get_data())
         data.update(self.tab_svedci_widget.get_data())
         data.update({name: self._get_widget_value(getattr(self, name)) for name in self._field_names() if hasattr(self, name)})
+        data["dpn_care_return"] = self.tab_po_ukonceni_dpn_widget.get_dpn_care_return()
         return data
