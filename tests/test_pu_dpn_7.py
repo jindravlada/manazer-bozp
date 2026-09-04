@@ -352,7 +352,7 @@ class PuDpn7TestCase(unittest.TestCase):
         care = dpn_care_return_from_saved_data(self._saved_data(reloaded.id))
         self.assertEqual(care[CARE_RETURN_DATE], "2026-04-28")
         self.assertNotEqual(care[CARE_RETURN_DATE], reloaded.dpn_do.isoformat())
-        self.assertEqual(care[CARE_EXAM_DEADLINE], add_workdays(date(2026, 4, 28), 5).isoformat())
+        self.assertEqual(care[CARE_EXAM_DEADLINE], "2026-05-06")
 
     def test_save_reload_computed_result(self) -> None:
         accident = self._create(

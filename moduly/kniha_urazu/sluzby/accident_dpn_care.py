@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
+from core.shared.working_days import add_czech_workdays
 from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
     AccidentLike,
-    add_workdays,
     dpn_calendar_days,
     is_dpn_ended,
     parse_saved_date,
@@ -134,7 +134,7 @@ def exam_deadline_from_return_date(return_date: Any) -> str | None:
     parsed = parse_saved_date(return_date)
     if parsed is None:
         return None
-    return add_workdays(parsed, EXAM_DEADLINE_WORKDAYS).isoformat()
+    return add_czech_workdays(parsed, EXAM_DEADLINE_WORKDAYS).isoformat()
 
 
 def extraordinary_exam_required(
