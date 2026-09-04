@@ -14,12 +14,6 @@ from PySide6.QtWidgets import (
 from core.widgets.code_selector import CodeSelector
 from core.widgets.nullable_date_edit import NullableDateEdit
 from moduly.kniha_urazu.services.ciselnik_service import kniha_urazu_ciselnik_service
-from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
-    DPN_KIND_MISMATCH_MESSAGE,
-    accident_kind_info_message,
-    dpn_calendar_days,
-    is_dpn_kind_mismatch,
-)
 
 
 REQUIRED_STYLE = "border: 2px solid #d32f2f; background: #fff6f6;"
@@ -80,29 +74,6 @@ class TabZamestnanec(QWidget):
         self.druh_vykonavane_prace = CodeSelector(kniha_urazu_ciselnik_service.cz_isco())
         self.druh_vykonavane_prace.set_value("")
 
-        self.dpn_od = NullableDateEdit()
-        self.dpn_do = NullableDateEdit()
-        self.dpn_od.dateChanged.connect(self._refresh_dpn_duration)
-        self.dpn_do.dateChanged.connect(self._refresh_dpn_duration)
-
-        self._current_druh_urazu = ""
-
-        self.dpn_duration_label = QLabel()
-        self.dpn_duration_label.setObjectName("InfoText")
-
-        self.druh_urazu_info_label = QLabel()
-        self.druh_urazu_info_label.setObjectName("InfoText")
-        self.druh_urazu_info_label.setWordWrap(True)
-        self.druh_urazu_info_label.setVisible(False)
-
-        self.dpn_kind_warning_label = QLabel()
-        self.dpn_kind_warning_label.setObjectName("WarningText")
-        self.dpn_kind_warning_label.setWordWrap(True)
-        self.dpn_kind_warning_label.setStyleSheet("color: #b45309;")
-        self.dpn_kind_warning_label.setVisible(False)
-
-        self._refresh_dpn_duration()
-
         self._required_widgets = {
             "Jméno a příjmení": self.jmeno_prijmeni,
             "Pohlaví": self.pohlavi_muz,
@@ -127,11 +98,6 @@ class TabZamestnanec(QWidget):
         self._add_required_row(form, "Vztah k zaměstnavateli:", self.vztah_k_zamestnavateli)
         self._add_required_row(form, "Den vzniku právního vztahu:", self.den_vzniku_pravniho_vztahu)
         self._add_required_row(form, "Druh vykonávané práce:", self.druh_vykonavane_prace)
-        form.addRow("DPN následkem úrazu od:", self.dpn_od)
-        form.addRow("DPN následkem úrazu do:", self.dpn_do)
-        form.addRow("", self.dpn_duration_label)
-        form.addRow("", self.druh_urazu_info_label)
-        form.addRow("", self.dpn_kind_warning_label)
 
         layout.addLayout(form)
         layout.addStretch()
@@ -139,36 +105,6 @@ class TabZamestnanec(QWidget):
     def _add_required_row(self, form: QFormLayout, label_text: str, widget_or_layout):
         label = QLabel(f"<b>{label_text}</b>")
         form.addRow(label, widget_or_layout)
-
-    def _refresh_dpn_duration(self) -> None:
-        days = dpn_calendar_days(self.dpn_od.get_date(), self.dpn_do.get_date())
-        if days is None:
-            text = "—"
-        else:
-            text = f"{days} dní"
-        self.dpn_duration_label.setText(f"Pracovní neschopnost celkem: {text}")
-        self.refresh_dpn_kind_warning()
-
-    def refresh_dpn_kind_warning(self, druh_urazu: str | None = None) -> None:
-        if druh_urazu is not None:
-            self._current_druh_urazu = druh_urazu
-        days = dpn_calendar_days(self.dpn_od.get_date(), self.dpn_do.get_date())
-        if is_dpn_kind_mismatch(self._current_druh_urazu, days):
-            self.dpn_kind_warning_label.setText(DPN_KIND_MISMATCH_MESSAGE)
-            self.dpn_kind_warning_label.setVisible(True)
-        else:
-            self.dpn_kind_warning_label.clear()
-            self.dpn_kind_warning_label.setVisible(False)
-        self._refresh_kind_info()
-
-    def _refresh_kind_info(self) -> None:
-        message = accident_kind_info_message(self._current_druh_urazu)
-        if message:
-            self.druh_urazu_info_label.setText(message)
-            self.druh_urazu_info_label.setVisible(True)
-        else:
-            self.druh_urazu_info_label.clear()
-            self.druh_urazu_info_label.setVisible(False)
 
     def _pohlavi(self) -> str:
         if self.pohlavi_muz.isChecked():
@@ -242,8 +178,6 @@ class TabZamestnanec(QWidget):
             "druh_vykonavane_prace": self.druh_vykonavane_prace.value(),
             "cz_isco_kod": "",
             "cz_isco_nazev": "",
-            "dpn_od": self.dpn_od.get_date(),
-            "dpn_do": self.dpn_do.get_date(),
         }
 
     def load_data(self, accident):
@@ -259,7 +193,3 @@ class TabZamestnanec(QWidget):
         self.vztah_k_zamestnavateli.set_value(accident.vztah_k_zamestnavateli or "")
         self.den_vzniku_pravniho_vztahu.set_date_value(accident.den_vzniku_pravniho_vztahu)
         self.druh_vykonavane_prace.set_value(accident.druh_vykonavane_prace or "")
-        self.dpn_od.set_date_value(accident.dpn_od)
-        self.dpn_do.set_date_value(accident.dpn_do)
-        self._refresh_dpn_duration()
-        self.refresh_dpn_kind_warning(getattr(accident, "druh_urazu", "") or "")

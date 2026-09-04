@@ -34,7 +34,7 @@ with patch.object(Path, "home", return_value=_TMP):
         is_dpn_kind_mismatch,
     )
     from moduly.kniha_urazu.ui.accident_dialog import AccidentDialog
-    from moduly.kniha_urazu.ui.tabs.tab_zamestnanec import TabZamestnanec
+    from moduly.kniha_urazu.ui.tabs.tab_uraz import TabUraz
 
 
 KIND_UP_TO_3 = "pracovní úraz s pracovní neschopností nepřesahující 3 kalendářní dny"
@@ -61,7 +61,7 @@ class DpnKindCheckPhase96cTestCase(unittest.TestCase):
         self.assertTrue(is_dpn_kind_mismatch(KIND_OVER_3, 3))
 
     def test_ui_shows_and_clears_warning(self) -> None:
-        tab = TabZamestnanec()
+        tab = TabUraz()
         tab.dpn_od.set_date_value(date(2026, 1, 1))
         tab.dpn_do.set_date_value(date(2026, 1, 25))
         tab.refresh_dpn_kind_warning(KIND_UP_TO_3)
@@ -81,23 +81,22 @@ class DpnKindCheckPhase96cTestCase(unittest.TestCase):
         self.assertTrue(tab.dpn_kind_warning_label.isHidden())
 
     def test_opening_existing_mismatched_record_shows_warning(self) -> None:
-        tab = TabZamestnanec()
+        tab = TabUraz()
         accident = SimpleNamespace(
-            jmeno_prijmeni="",
-            pohlavi="",
-            datum_narozeni=None,
-            osobni_cislo="",
-            statni_obcanstvi="Česko",
-            adresa_pobytu="",
-            adresa_dorucovani="",
-            telefon_email="",
-            zdravotni_pojistovna="",
-            vztah_k_zamestnavateli="",
-            den_vzniku_pravniho_vztahu=None,
-            druh_vykonavane_prace="",
+            id=1,
+            druh_urazu=KIND_UP_TO_3,
+            podezreni_trestny_cin="NE",
+            accident_date=date(2026, 2, 1),
+            accident_time="10:00",
             dpn_od=date(2026, 2, 1),
             dpn_do=date(2026, 2, 25),
-            druh_urazu=KIND_UP_TO_3,
+            druh_zraneni="",
+            zranena_cast_tela="",
+            hromadny_uraz="NE",
+            celkovy_pocet_zranenych=1,
+            cinnost_pri_urazu="",
+            misto_urazu="",
+            popis_urazoveho_deje="",
         )
         tab.load_data(accident)
 
@@ -106,10 +105,10 @@ class DpnKindCheckPhase96cTestCase(unittest.TestCase):
 
         dialog = AccidentDialog()
         dialog.tab_uraz_widget.druh_urazu.set_value(KIND_UP_TO_3)
-        dialog.tab_zamestnanec_widget.dpn_od.set_date_value(date(2026, 2, 1))
-        dialog.tab_zamestnanec_widget.dpn_do.set_date_value(date(2026, 2, 25))
+        dialog.tab_uraz_widget.dpn_od.set_date_value(date(2026, 2, 1))
+        dialog.tab_uraz_widget.dpn_do.set_date_value(date(2026, 2, 25))
         dialog._refresh_dpn_kind_warning()
-        self.assertFalse(dialog.tab_zamestnanec_widget.dpn_kind_warning_label.isHidden())
+        self.assertFalse(dialog.tab_uraz_widget.dpn_kind_warning_label.isHidden())
 
     def test_save_is_not_blocked_when_dpn_length_unknown(self) -> None:
         """Prvotní zápis: délka DPN ještě není známá → uložení nesmí blokovat."""
@@ -117,10 +116,10 @@ class DpnKindCheckPhase96cTestCase(unittest.TestCase):
         dialog.tab_uraz_widget.accident_date.set_date_iso(date(2026, 3, 1).isoformat())
         dialog.tab_podatel_widget.datum_zapisu.set_date_value(date(2026, 3, 1))
         dialog.tab_uraz_widget.druh_urazu.set_value(KIND_UP_TO_3)
-        dialog.tab_zamestnanec_widget.dpn_od.set_date_value(date(2026, 3, 1))
+        dialog.tab_uraz_widget.dpn_od.set_date_value(date(2026, 3, 1))
         # dpn_do prázdné = DPN stále trvá / délka neznámá
         dialog._refresh_dpn_kind_warning()
-        self.assertTrue(dialog.tab_zamestnanec_widget.dpn_kind_warning_label.isHidden())
+        self.assertTrue(dialog.tab_uraz_widget.dpn_kind_warning_label.isHidden())
 
         for tab in (
             dialog.tab_podatel_widget,
@@ -143,10 +142,10 @@ class DpnKindCheckPhase96cTestCase(unittest.TestCase):
         dialog.tab_uraz_widget.accident_date.set_date_iso(date(2026, 3, 1).isoformat())
         dialog.tab_podatel_widget.datum_zapisu.set_date_value(date(2026, 3, 1))
         dialog.tab_uraz_widget.druh_urazu.set_value(KIND_UP_TO_3)
-        dialog.tab_zamestnanec_widget.dpn_od.set_date_value(date(2026, 3, 1))
-        dialog.tab_zamestnanec_widget.dpn_do.set_date_value(date(2026, 3, 25))
+        dialog.tab_uraz_widget.dpn_od.set_date_value(date(2026, 3, 1))
+        dialog.tab_uraz_widget.dpn_do.set_date_value(date(2026, 3, 25))
         dialog._refresh_dpn_kind_warning()
-        self.assertFalse(dialog.tab_zamestnanec_widget.dpn_kind_warning_label.isHidden())
+        self.assertFalse(dialog.tab_uraz_widget.dpn_kind_warning_label.isHidden())
 
         for tab in (
             dialog.tab_podatel_widget,

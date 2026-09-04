@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QRadioButton,
+    QSizePolicy,
     QSpinBox,
     QTextEdit,
     QVBoxLayout,
@@ -16,10 +17,15 @@ from PySide6.QtWidgets import (
 from core.widgets.code_selector import CodeSelector
 from core.widgets.date_edit import DateEdit
 from core.widgets.multi_code_selector import MultiCodeSelector
+from core.widgets.nullable_date_edit import NullableDateEdit
 from moduly.kniha_urazu.services.ciselnik_service import kniha_urazu_ciselnik_service
 from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
     ACCIDENT_DATE_DELAY_WARNING,
+    DPN_KIND_MISMATCH_MESSAGE,
+    accident_kind_info_message,
+    dpn_calendar_days,
     is_accident_date_delayed,
+    is_dpn_kind_mismatch,
 )
 
 
@@ -30,6 +36,9 @@ NORMAL_STYLE = ""
 class TabUraz(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
+
+        self._injury_date_is_saved = False
+        self._injury_date_baseline: date | None = None
 
         layout = QVBoxLayout(self)
         form = QFormLayout()
@@ -65,6 +74,36 @@ class TabUraz(QWidget):
 
         self.accident_time = QLineEdit()
         self.accident_time.setPlaceholderText("HH:MM")
+
+        self.dpn_od = NullableDateEdit()
+        self.dpn_do = NullableDateEdit()
+        self.dpn_od.dateChanged.connect(self._refresh_dpn_duration)
+        self.dpn_do.dateChanged.connect(self._refresh_dpn_duration)
+
+        self._current_druh_urazu = ""
+
+        self.dpn_duration_label = QLabel()
+        self.dpn_duration_label.setObjectName("InfoText")
+
+        self.druh_urazu_info_label = QLabel()
+        self.druh_urazu_info_label.setObjectName("InfoText")
+        self.druh_urazu_info_label.setWordWrap(True)
+        self.druh_urazu_info_label.setVisible(False)
+
+        self.dpn_kind_warning_label = QLabel()
+        self.dpn_kind_warning_label.setObjectName("WarningText")
+        self.dpn_kind_warning_label.setWordWrap(True)
+        self.dpn_kind_warning_label.setStyleSheet("color: #b45309;")
+        self.dpn_kind_warning_label.setVisible(False)
+
+        self.accident_datetime_row = self._equal_halves_row(
+            self._labeled_half("Datum úrazu:", self.accident_date, required=True),
+            self._labeled_half("Čas úrazu:", self.accident_time, required=True),
+        )
+        self.dpn_range_row = self._equal_halves_row(
+            self._labeled_half("DPN následkem úrazu od:", self.dpn_od),
+            self._labeled_half("DPN následkem úrazu do:", self.dpn_do),
+        )
 
         self.druh_zraneni = MultiCodeSelector(kniha_urazu_ciselnik_service.druh_zraneni())
         self.zranena_cast_tela = MultiCodeSelector(kniha_urazu_ciselnik_service.zranena_cast_tela())
@@ -110,9 +149,12 @@ class TabUraz(QWidget):
 
         self._add_required_row(form, "Druh úrazu:", self.druh_urazu)
         form.addRow("Podezření na trestný čin:", tc_layout)
-        self._add_required_row(form, "Datum úrazu:", self.accident_date)
-        form.addRow("", self.accident_date_delay_warning)
-        self._add_required_row(form, "Čas úrazu:", self.accident_time)
+        form.addRow(self.accident_datetime_row)
+        form.addRow(self.accident_date_delay_warning)
+        form.addRow(self.dpn_range_row)
+        form.addRow(self.dpn_duration_label)
+        form.addRow(self.druh_urazu_info_label)
+        form.addRow(self.dpn_kind_warning_label)
         self._add_required_row(form, "Druh zranění:", self.druh_zraneni)
         self._add_required_row(form, "Zraněná část těla:", self.zranena_cast_tela)
         self._add_required_row(form, "Hromadný úraz:", hromadny_layout)
@@ -124,26 +166,94 @@ class TabUraz(QWidget):
         layout.addLayout(form)
         layout.addStretch()
 
+        self._refresh_dpn_duration()
         self._refresh_accident_date_delay_warning()
 
     def _add_required_row(self, form: QFormLayout, label_text: str, widget_or_layout):
         label = QLabel(f"<b>{label_text}</b>")
         form.addRow(label, widget_or_layout)
 
+    def _labeled_half(self, label_text: str, widget: QWidget, *, required: bool = False) -> QWidget:
+        half = QWidget()
+        half.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        form = QFormLayout(half)
+        form.setContentsMargins(0, 0, 0, 0)
+        label = QLabel(f"<b>{label_text}</b>" if required else label_text)
+        form.addRow(label, widget)
+        return half
+
+    def _equal_halves_row(self, left: QWidget, right: QWidget) -> QWidget:
+        row = QWidget()
+        layout = QHBoxLayout(row)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(16)
+        layout.addWidget(left, 1)
+        layout.addWidget(right, 1)
+        return row
+
     def get_accident_date(self) -> date:
         qdate = self.accident_date.date()
         return date(qdate.year(), qdate.month(), qdate.day())
 
+    def injury_date_changed_from_baseline(self) -> bool:
+        if not self._injury_date_is_saved:
+            return False
+        return self.get_accident_date() != self._injury_date_baseline
+
+    def commit_injury_date_baseline(self) -> None:
+        self._injury_date_is_saved = True
+        self._injury_date_baseline = self.get_accident_date()
+        self._refresh_accident_date_delay_warning()
+
     def _refresh_accident_date_delay_warning(self, *_args) -> None:
-        if is_accident_date_delayed(self.get_accident_date()):
+        if self._should_show_accident_date_delay_warning():
             self.accident_date_delay_warning.setText(ACCIDENT_DATE_DELAY_WARNING)
             self.accident_date_delay_warning.setVisible(True)
         else:
             self.accident_date_delay_warning.clear()
             self.accident_date_delay_warning.setVisible(False)
 
+    def _should_show_accident_date_delay_warning(self) -> bool:
+        current = self.get_accident_date()
+        if not is_accident_date_delayed(current):
+            return False
+        if not self._injury_date_is_saved:
+            return True
+        return current != self._injury_date_baseline
+
     def refresh_date_and_kind_hints(self) -> None:
         self._refresh_accident_date_delay_warning()
+        self.refresh_dpn_kind_warning()
+
+    def _refresh_dpn_duration(self) -> None:
+        days = dpn_calendar_days(self.dpn_od.get_date(), self.dpn_do.get_date())
+        if days is None:
+            text = "—"
+        else:
+            text = f"{days} dní"
+        self.dpn_duration_label.setText(f"Pracovní neschopnost celkem: {text}")
+        self.refresh_dpn_kind_warning()
+
+    def refresh_dpn_kind_warning(self, druh_urazu: str | None = None) -> None:
+        if druh_urazu is not None:
+            self._current_druh_urazu = druh_urazu
+        days = dpn_calendar_days(self.dpn_od.get_date(), self.dpn_do.get_date())
+        if is_dpn_kind_mismatch(self._current_druh_urazu, days):
+            self.dpn_kind_warning_label.setText(DPN_KIND_MISMATCH_MESSAGE)
+            self.dpn_kind_warning_label.setVisible(True)
+        else:
+            self.dpn_kind_warning_label.clear()
+            self.dpn_kind_warning_label.setVisible(False)
+        self._refresh_kind_info()
+
+    def _refresh_kind_info(self) -> None:
+        message = accident_kind_info_message(self._current_druh_urazu)
+        if message:
+            self.druh_urazu_info_label.setText(message)
+            self.druh_urazu_info_label.setVisible(True)
+        else:
+            self.druh_urazu_info_label.clear()
+            self.druh_urazu_info_label.setVisible(False)
 
     def _radio_value(self, yes_button: QRadioButton, no_button: QRadioButton) -> str:
         if yes_button.isChecked():
@@ -222,6 +332,8 @@ class TabUraz(QWidget):
             "podezreni_trestny_cin": self._radio_value(self.podezreni_trestny_cin_ano, self.podezreni_trestny_cin_ne),
             "accident_date": self.get_accident_date(),
             "accident_time": self._format_time_value(self.accident_time.text()),
+            "dpn_od": self.dpn_od.get_date(),
+            "dpn_do": self.dpn_do.get_date(),
             "druh_zraneni": self.druh_zraneni.value(),
             "zranena_cast_tela": self.zranena_cast_tela.value(),
             "hromadny_uraz": self._radio_value(self.hromadny_uraz_ano, self.hromadny_uraz_ne),
@@ -233,6 +345,9 @@ class TabUraz(QWidget):
         }
 
     def load_data(self, accident):
+        self._injury_date_is_saved = getattr(accident, "id", None) is not None
+        self._injury_date_baseline = getattr(accident, "accident_date", None)
+
         self.druh_urazu.set_value(accident.druh_urazu or "")
         self._set_radio_value(accident.podezreni_trestny_cin, self.podezreni_trestny_cin_ano, self.podezreni_trestny_cin_ne, default_no=True)
 
@@ -240,6 +355,8 @@ class TabUraz(QWidget):
             self.accident_date.set_date_iso(accident.accident_date.isoformat())
 
         self.accident_time.setText(self._format_time_value(accident.accident_time))
+        self.dpn_od.set_date_value(accident.dpn_od)
+        self.dpn_do.set_date_value(accident.dpn_do)
         self.druh_zraneni.set_value(accident.druh_zraneni or "")
         self.zranena_cast_tela.set_value(accident.zranena_cast_tela or "")
         self._set_radio_value(accident.hromadny_uraz, self.hromadny_uraz_ano, self.hromadny_uraz_ne, default_no=True)
@@ -247,4 +364,6 @@ class TabUraz(QWidget):
         self.cinnost_pri_urazu.set_value(accident.cinnost_pri_urazu or "")
         self.misto_urazu.setPlainText(accident.misto_urazu or "")
         self.popis_urazoveho_deje.setPlainText(accident.popis_urazoveho_deje or "")
+        self._refresh_dpn_duration()
+        self.refresh_dpn_kind_warning(getattr(accident, "druh_urazu", "") or "")
         self.refresh_date_and_kind_hints()

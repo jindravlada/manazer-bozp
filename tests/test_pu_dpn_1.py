@@ -131,7 +131,7 @@ class PuDpn1TestCase(unittest.TestCase):
         dialog = AccidentDialog(accident=accident)
         self._assert_inactive(dialog)
 
-        dialog.tab_zamestnanec_widget.dpn_do.set_date_value(date(2026, 4, 20))
+        dialog.tab_uraz_widget.dpn_do.set_date_value(date(2026, 4, 20))
         self._assert_active(dialog)
 
     def test_tab_returns_inactive_when_dpn_end_is_cleared(self) -> None:
@@ -139,7 +139,7 @@ class PuDpn1TestCase(unittest.TestCase):
         dialog = AccidentDialog(accident=accident)
         self._assert_active(dialog)
 
-        dialog.tab_zamestnanec_widget.dpn_do.clear_date()
+        dialog.tab_uraz_widget.dpn_do.clear_date()
         self._assert_inactive(dialog)
 
     def test_existing_accident_opens_without_changing_other_data(self) -> None:

@@ -32,11 +32,11 @@ with patch.object(Path, "home", return_value=_TMP):
     from core.services.cz_nace_service import cz_nace_service
     from moduly.kniha_urazu.sluzby.accident_reporting_obligations import dpn_calendar_days
     from moduly.kniha_urazu.ui.accident_dialog import AccidentDialog
+    from moduly.kniha_urazu.ui.tabs.tab_uraz import TabUraz
     from moduly.kniha_urazu.ui.tabs.tab_zapisovatel_zamestnavatel import (
         SITUACE_OPTIONS,
         TabZapisovatelZamestnavatel,
     )
-    from moduly.kniha_urazu.ui.tabs.tab_zamestnanec import TabZamestnanec
 
 
 class AccidentBasicsPhase96bTestCase(unittest.TestCase):
@@ -137,7 +137,7 @@ class AccidentBasicsPhase96bTestCase(unittest.TestCase):
         self.assertIn("Jiné", items)
 
     def test_dpn_duration_recalculates_inclusively(self) -> None:
-        tab = TabZamestnanec()
+        tab = TabUraz()
         self.assertIn("—", tab.dpn_duration_label.text())
 
         start = date(2026, 3, 1)

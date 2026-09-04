@@ -306,7 +306,7 @@ class PuDpn7TestCase(unittest.TestCase):
         self.assertEqual(tab.dpn_over_8_weeks_value.text(), EXAM_REQUIRED_NO)
         self.assertFalse(tab._exam_form.isRowVisible(tab.category_1_row))
         self.assertEqual(tab.exam_required_banner.text(), EXAM_REQUIRED_BANNER_NO)
-        dialog.tab_zamestnanec_widget.dpn_do.set_date_value(DPN_OVER_8_WEEKS_TO)
+        dialog.tab_uraz_widget.dpn_do.set_date_value(DPN_OVER_8_WEEKS_TO)
         self.assertEqual(tab.dpn_over_8_weeks_value.text(), EXAM_REQUIRED_YES)
         self.assertTrue(tab._exam_form.isRowVisible(tab.category_1_row))
         self.assertEqual(tab.exam_required_banner.text(), EXAM_REQUIRED_BANNER_YES)
@@ -343,7 +343,7 @@ class PuDpn7TestCase(unittest.TestCase):
         accident = self._create(dpn_do=date(2026, 4, 20))
         dialog = AccidentDialog(accident=accident)
         tab = dialog.tab_po_ukonceni_dpn_widget
-        self.assertEqual(dialog.tab_zamestnanec_widget.dpn_do.get_date(), date(2026, 4, 20))
+        self.assertEqual(dialog.tab_uraz_widget.dpn_do.get_date(), date(2026, 4, 20))
         self.assertIsNone(tab.return_date.get_date())
         tab.severe_consequences_ano.setChecked(True)
         tab.return_mode.setCurrentIndex(tab.return_mode.findData(RETURN_MODE_SAME))

@@ -1,5 +1,6 @@
 from datetime import date
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
@@ -62,6 +63,15 @@ from moduly.kniha_urazu.ui.tabs.tab_svedci import TabSvedci
 from moduly.kniha_urazu.ui.tabs.tab_uraz import TabUraz
 from moduly.kniha_urazu.ui.tabs.tab_zamestnanec import TabZamestnanec
 from moduly.kniha_urazu.ui.tabs.tab_zapisovatel_zamestnavatel import TabZapisovatelZamestnavatel
+
+
+ACCIDENT_DATE_CHANGE_TITLE = "Změnit datum úrazu?"
+ACCIDENT_DATE_CHANGE_MESSAGE = (
+    "Změna data úrazu může ovlivnit zákonné lhůty, oznámení a navazující evidenci. "
+    "Opravdu chcete uložit nové datum úrazu?"
+)
+ACCIDENT_DATE_CHANGE_CONFIRM_LABEL = "Změnit datum úrazu"
+ACCIDENT_DATE_CHANGE_CANCEL_LABEL = "Zrušit"
 
 
 class AccidentDialog(QDialog):
@@ -159,6 +169,10 @@ class AccidentDialog(QDialog):
         if not self._confirm_extreme_breath_alcohol():
             return
 
+        if not self._confirm_injury_date_change():
+            return
+
+        self.tab_uraz_widget.commit_injury_date_baseline()
         super().accept()
 
     def _confirm_extreme_breath_alcohol(self) -> bool:
@@ -184,6 +198,30 @@ class AccidentDialog(QDialog):
         if no_button is not None:
             no_button.setText("Ne")
         return box.exec() == QMessageBox.StandardButton.Yes
+
+    def _confirm_injury_date_change(self) -> bool:
+        if self.accident is None or getattr(self.accident, "id", None) is None:
+            return True
+        if not self.tab_uraz_widget.injury_date_changed_from_baseline():
+            return True
+
+        box = QMessageBox(self)
+        box.setWindowModality(Qt.WindowModality.WindowModal)
+        box.setIcon(QMessageBox.Icon.Warning)
+        box.setWindowTitle(ACCIDENT_DATE_CHANGE_TITLE)
+        box.setText(ACCIDENT_DATE_CHANGE_MESSAGE)
+        confirm_btn = box.addButton(
+            ACCIDENT_DATE_CHANGE_CONFIRM_LABEL,
+            QMessageBox.ButtonRole.ActionRole,
+        )
+        cancel_btn = box.addButton(
+            ACCIDENT_DATE_CHANGE_CANCEL_LABEL,
+            QMessageBox.ButtonRole.ActionRole,
+        )
+        box.setDefaultButton(cancel_btn)
+        box.setEscapeButton(cancel_btn)
+        box.exec()
+        return box.clickedButton() is confirm_btn
 
     def _validate_date_rules(self) -> bool:
         accident_date = self.tab_uraz_widget.get_accident_date()
@@ -214,12 +252,12 @@ class AccidentDialog(QDialog):
         return True
 
     def _validate_dpn_rules(self, accident_date: date | None) -> bool:
-        dpn_od = self.tab_zamestnanec_widget.dpn_od.get_date()
-        dpn_do = self.tab_zamestnanec_widget.dpn_do.get_date()
+        dpn_od = self.tab_uraz_widget.dpn_od.get_date()
+        dpn_do = self.tab_uraz_widget.dpn_do.get_date()
 
         if is_dpn_start_before_accident(dpn_od, accident_date):
-            self._focus_tab_containing(self.tab_zamestnanec_widget)
-            self.tab_zamestnanec_widget.dpn_od.setFocus()
+            self._focus_tab_containing(self.tab_uraz_widget)
+            self.tab_uraz_widget.dpn_od.setFocus()
             QMessageBox.warning(
                 self,
                 "Nelze uložit pracovní úraz",
@@ -228,8 +266,8 @@ class AccidentDialog(QDialog):
             return False
 
         if is_dpn_end_before_start(dpn_od, dpn_do):
-            self._focus_tab_containing(self.tab_zamestnanec_widget)
-            self.tab_zamestnanec_widget.dpn_do.setFocus()
+            self._focus_tab_containing(self.tab_uraz_widget)
+            self.tab_uraz_widget.dpn_do.setFocus()
             QMessageBox.warning(
                 self,
                 "Nelze uložit pracovní úraz",
@@ -238,8 +276,8 @@ class AccidentDialog(QDialog):
             return False
 
         if is_dpn_end_in_future(dpn_do):
-            self._focus_tab_containing(self.tab_zamestnanec_widget)
-            self.tab_zamestnanec_widget.dpn_do.setFocus()
+            self._focus_tab_containing(self.tab_uraz_widget)
+            self.tab_uraz_widget.dpn_do.setFocus()
             QMessageBox.warning(
                 self,
                 "Nelze uložit pracovní úraz",
@@ -250,7 +288,7 @@ class AccidentDialog(QDialog):
         days = dpn_calendar_days(dpn_od, dpn_do)
         druh_urazu = self.tab_uraz_widget.druh_urazu.value()
         if is_dpn_kind_mismatch(druh_urazu, days):
-            self._focus_tab_containing(self.tab_zamestnanec_widget)
+            self._focus_tab_containing(self.tab_uraz_widget)
             QMessageBox.warning(
                 self,
                 "Nelze uložit pracovní úraz",
@@ -416,10 +454,10 @@ class AccidentDialog(QDialog):
 
     def _connect_logic(self):
         self.tab_uraz_widget.druh_urazu.currentTextChanged.connect(self._refresh_dpn_kind_warning)
-        self.tab_zamestnanec_widget.dpn_od.dateChanged.connect(self._refresh_dpn_kind_warning)
-        self.tab_zamestnanec_widget.dpn_do.dateChanged.connect(self._refresh_dpn_kind_warning)
-        self.tab_zamestnanec_widget.dpn_od.dateChanged.connect(self._refresh_po_ukonceni_dpn)
-        self.tab_zamestnanec_widget.dpn_do.dateChanged.connect(self._refresh_po_ukonceni_dpn)
+        self.tab_uraz_widget.dpn_od.dateChanged.connect(self._refresh_dpn_kind_warning)
+        self.tab_uraz_widget.dpn_do.dateChanged.connect(self._refresh_dpn_kind_warning)
+        self.tab_uraz_widget.dpn_od.dateChanged.connect(self._refresh_po_ukonceni_dpn)
+        self.tab_uraz_widget.dpn_do.dateChanged.connect(self._refresh_po_ukonceni_dpn)
 
     def _workplace_changed(self):
         pass
@@ -430,14 +468,14 @@ class AccidentDialog(QDialog):
         self.tab_uraz_widget.refresh_date_and_kind_hints()
 
     def _refresh_dpn_kind_warning(self, *_args) -> None:
-        self.tab_zamestnanec_widget.refresh_dpn_kind_warning(
+        self.tab_uraz_widget.refresh_dpn_kind_warning(
             self.tab_uraz_widget.druh_urazu.value()
         )
 
     def _refresh_po_ukonceni_dpn(self, *_args) -> None:
         self.tab_po_ukonceni_dpn_widget.set_from_dpn_range(
-            self.tab_zamestnanec_widget.dpn_od.get_date(),
-            self.tab_zamestnanec_widget.dpn_do.get_date(),
+            self.tab_uraz_widget.dpn_od.get_date(),
+            self.tab_uraz_widget.dpn_do.get_date(),
         )
 
     def _load(self, accident):

@@ -104,7 +104,7 @@ class KuUx12TestCase(unittest.TestCase):
         dialog = AccidentDialog()
         self._bypass_required_validation(dialog)
         dialog.tab_uraz_widget.accident_date.set_date_iso(date(2026, 4, 10).isoformat())
-        dialog.tab_zamestnanec_widget.dpn_od.set_date_value(date(2026, 4, 8))
+        dialog.tab_uraz_widget.dpn_od.set_date_value(date(2026, 4, 8))
 
         with patch.object(QMessageBox, "warning") as mock_warning:
             with patch.object(QDialog, "accept") as mock_accept:
@@ -117,8 +117,8 @@ class KuUx12TestCase(unittest.TestCase):
         dialog = AccidentDialog()
         self._bypass_required_validation(dialog)
         dialog.tab_uraz_widget.accident_date.set_date_iso(date(2026, 4, 1).isoformat())
-        dialog.tab_zamestnanec_widget.dpn_od.set_date_value(date(2026, 4, 5))
-        dialog.tab_zamestnanec_widget.dpn_do.set_date_value(date(2026, 4, 3))
+        dialog.tab_uraz_widget.dpn_od.set_date_value(date(2026, 4, 5))
+        dialog.tab_uraz_widget.dpn_do.set_date_value(date(2026, 4, 3))
 
         with patch.object(QMessageBox, "warning") as mock_warning:
             with patch.object(QDialog, "accept") as mock_accept:
@@ -131,8 +131,8 @@ class KuUx12TestCase(unittest.TestCase):
         dialog = AccidentDialog()
         self._bypass_required_validation(dialog)
         dialog.tab_uraz_widget.accident_date.set_date_iso(date.today().isoformat())
-        dialog.tab_zamestnanec_widget.dpn_od.set_date_value(date.today())
-        dialog.tab_zamestnanec_widget.dpn_do.set_date_value(date.today() + timedelta(days=2))
+        dialog.tab_uraz_widget.dpn_od.set_date_value(date.today())
+        dialog.tab_uraz_widget.dpn_do.set_date_value(date.today() + timedelta(days=2))
 
         with patch.object(QMessageBox, "warning") as mock_warning:
             with patch.object(QDialog, "accept") as mock_accept:
@@ -147,7 +147,7 @@ class KuUx12TestCase(unittest.TestCase):
         dialog.tab_uraz_widget.accident_date.set_date_iso(date.today().isoformat())
         dialog.tab_podatel_widget.datum_zapisu.set_date_value(date.today())
         dialog.tab_uraz_widget.druh_urazu.set_value(KIND_UP_TO_3)
-        dialog.tab_zamestnanec_widget.dpn_od.set_date_value(date.today())
+        dialog.tab_uraz_widget.dpn_od.set_date_value(date.today())
         # dpn_do zůstává prázdné
 
         with patch.object(QDialog, "accept") as mock_accept:
@@ -161,8 +161,8 @@ class KuUx12TestCase(unittest.TestCase):
         dialog.tab_uraz_widget.accident_date.set_date_iso(date(2026, 5, 1).isoformat())
         dialog.tab_podatel_widget.datum_zapisu.set_date_value(date(2026, 5, 1))
         dialog.tab_uraz_widget.druh_urazu.set_value(KIND_UP_TO_3)
-        dialog.tab_zamestnanec_widget.dpn_od.set_date_value(date(2026, 5, 1))
-        dialog.tab_zamestnanec_widget.dpn_do.set_date_value(date(2026, 5, 10))
+        dialog.tab_uraz_widget.dpn_od.set_date_value(date(2026, 5, 1))
+        dialog.tab_uraz_widget.dpn_do.set_date_value(date(2026, 5, 10))
 
         with patch.object(QMessageBox, "warning") as mock_warning:
             with patch.object(QDialog, "accept") as mock_accept:

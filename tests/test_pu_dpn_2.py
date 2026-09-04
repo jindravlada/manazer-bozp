@@ -191,7 +191,7 @@ class PuDpn2TestCase(unittest.TestCase):
         self.assertNotIn(OBLIGATION_AKTUALIZACE_POLICIE, first_keys)
 
         dialog = AccidentDialog(accident=reloaded)
-        dialog.tab_zamestnanec_widget.dpn_do.set_date_value(date(2026, 4, 19))
+        dialog.tab_uraz_widget.dpn_do.set_date_value(date(2026, 4, 19))
         accident_service.update_accident(reloaded.id, **dialog.get_data())
         dialog.close()
         dialog = AccidentDialog(accident=accident_service.get_by_id(reloaded.id))
@@ -308,7 +308,7 @@ class PuDpn2TestCase(unittest.TestCase):
     def test_dialog_starts_unfulfilled_when_dpn_do_is_set(self) -> None:
         accident = self._create()
         dialog = AccidentDialog(accident=accident)
-        dialog.tab_zamestnanec_widget.dpn_do.set_date_value(date(2026, 4, 15))
+        dialog.tab_uraz_widget.dpn_do.set_date_value(date(2026, 4, 15))
         tab = dialog.tab_po_ukonceni_dpn_widget
         self.assertTrue(tab.is_content_active())
         self.assertFalse(tab.portal_suip_done.isChecked())

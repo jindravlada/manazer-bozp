@@ -1,4 +1,4 @@
-"""Fáze 96h – informace o druhu úrazu pod PN na kartě Zaměstnanec."""
+"""Fáze 96h – informace o druhu úrazu pod PN na kartě Údaje o úrazu."""
 
 from __future__ import annotations
 
@@ -48,58 +48,65 @@ class AccidentKindInfoMovePhase96hTestCase(unittest.TestCase):
         cls._app = QApplication.instance() or QApplication([])
 
     def test_ordinary_accident_hides_kind_info(self) -> None:
-        employee = TabZamestnanec()
-        employee.refresh_dpn_kind_warning(KIND_PN)
-        self.assertTrue(employee.druh_urazu_info_label.isHidden())
-
         uraz = TabUraz()
-        self.assertFalse(hasattr(uraz, "druh_urazu_info_label"))
+        uraz.refresh_dpn_kind_warning(KIND_PN)
+        self.assertTrue(uraz.druh_urazu_info_label.isHidden())
+
+        employee = TabZamestnanec()
+        self.assertFalse(hasattr(employee, "druh_urazu_info_label"))
+        self.assertFalse(hasattr(employee, "dpn_od"))
 
     def test_serious_info_under_dpn_duration(self) -> None:
-        employee = TabZamestnanec()
-        employee.refresh_dpn_kind_warning(KIND_SERIOUS)
+        uraz = TabUraz()
+        uraz.refresh_dpn_kind_warning(KIND_SERIOUS)
 
-        self.assertFalse(employee.druh_urazu_info_label.isHidden())
-        self.assertEqual(employee.druh_urazu_info_label.text(), SERIOUS_KIND_INFO)
-        self.assertNotIn("ℹ", employee.druh_urazu_info_label.text())
+        self.assertFalse(uraz.druh_urazu_info_label.isHidden())
+        self.assertEqual(uraz.druh_urazu_info_label.text(), SERIOUS_KIND_INFO)
+        self.assertNotIn("ℹ", uraz.druh_urazu_info_label.text())
 
-        form = employee.findChild(QFormLayout)
+        form = uraz.layout().itemAt(0).layout()
+        self.assertIsInstance(form, QFormLayout)
         duration_row = -1
         info_row = -1
         for row in range(form.rowCount()):
-            field = form.itemAt(row, QFormLayout.ItemRole.FieldRole)
-            if field is None or field.widget() is None:
-                continue
-            if field.widget() is employee.dpn_duration_label:
+            widget = None
+            for role in (
+                QFormLayout.ItemRole.FieldRole,
+                QFormLayout.ItemRole.SpanningRole,
+            ):
+                field = form.itemAt(row, role)
+                if field is not None and field.widget() is not None:
+                    widget = field.widget()
+                    break
+            if widget is uraz.dpn_duration_label:
                 duration_row = row
-            if field.widget() is employee.druh_urazu_info_label:
+            if widget is uraz.druh_urazu_info_label:
                 info_row = row
         self.assertGreaterEqual(duration_row, 0)
         self.assertEqual(info_row, duration_row + 1)
 
     def test_fatal_info_under_dpn(self) -> None:
-        employee = TabZamestnanec()
-        employee.refresh_dpn_kind_warning(KIND_FATAL)
-        self.assertFalse(employee.druh_urazu_info_label.isHidden())
-        self.assertEqual(employee.druh_urazu_info_label.text(), FATAL_KIND_INFO)
+        uraz = TabUraz()
+        uraz.refresh_dpn_kind_warning(KIND_FATAL)
+        self.assertFalse(uraz.druh_urazu_info_label.isHidden())
+        self.assertEqual(uraz.druh_urazu_info_label.text(), FATAL_KIND_INFO)
 
     def test_kind_change_updates_or_hides_info(self) -> None:
         dialog = AccidentDialog()
-        employee = dialog.tab_zamestnanec_widget
         uraz = dialog.tab_uraz_widget
 
         uraz.druh_urazu.set_value(KIND_SERIOUS)
         dialog._refresh_dpn_kind_warning()
-        self.assertEqual(employee.druh_urazu_info_label.text(), SERIOUS_KIND_INFO)
-        self.assertFalse(employee.druh_urazu_info_label.isHidden())
+        self.assertEqual(uraz.druh_urazu_info_label.text(), SERIOUS_KIND_INFO)
+        self.assertFalse(uraz.druh_urazu_info_label.isHidden())
 
         uraz.druh_urazu.set_value(KIND_FATAL)
         dialog._refresh_dpn_kind_warning()
-        self.assertEqual(employee.druh_urazu_info_label.text(), FATAL_KIND_INFO)
+        self.assertEqual(uraz.druh_urazu_info_label.text(), FATAL_KIND_INFO)
 
         uraz.druh_urazu.set_value(KIND_PN)
         dialog._refresh_dpn_kind_warning()
-        self.assertTrue(employee.druh_urazu_info_label.isHidden())
+        self.assertTrue(uraz.druh_urazu_info_label.isHidden())
 
 
 if __name__ == "__main__":

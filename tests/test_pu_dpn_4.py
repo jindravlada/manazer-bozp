@@ -189,7 +189,7 @@ class PuDpn4TestCase(unittest.TestCase):
         accident = self._create()
         dialog = AccidentDialog(accident=accident)
         tab = dialog.tab_po_ukonceni_dpn_widget
-        dialog.tab_zamestnanec_widget.dpn_do.set_date_value(date(2026, 4, 20))
+        dialog.tab_uraz_widget.dpn_do.set_date_value(date(2026, 4, 20))
         self.assertTrue(tab.is_content_active())
         self.assertTrue(tab.sections_widget.isEnabled())
         self.assertTrue(tab.severe_consequences_ano.isEnabled())
@@ -269,7 +269,7 @@ class PuDpn4TestCase(unittest.TestCase):
         accident = self._create(dpn_do=date(2026, 4, 20))
         dialog = AccidentDialog(accident=accident)
         tab = dialog.tab_po_ukonceni_dpn_widget
-        self.assertEqual(dialog.tab_zamestnanec_widget.dpn_do.get_date(), date(2026, 4, 20))
+        self.assertEqual(dialog.tab_uraz_widget.dpn_do.get_date(), date(2026, 4, 20))
         self.assertIsNone(tab.return_date.get_date())
 
         tab.return_mode.setCurrentIndex(tab.return_mode.findData(RETURN_MODE_SAME))

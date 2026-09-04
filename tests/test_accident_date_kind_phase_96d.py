@@ -210,7 +210,7 @@ class AccidentDateKindPhase96dTestCase(unittest.TestCase):
 
         tab = TabUraz()
         tab.load_data(accident)
-        self.assertFalse(tab.accident_date_delay_warning.isHidden())
+        self.assertTrue(tab.accident_date_delay_warning.isHidden())
         self.assertFalse(is_accident_date_in_future(old_day))
         self.assertFalse(is_record_date_before_accident(old_day, old_day))
 
