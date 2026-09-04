@@ -326,15 +326,10 @@ class AuditProgramOdtExportTestCase(unittest.TestCase):
         exports = storage_service.exports_dir
         before = sorted(path.name for path in exports.glob("*.odt")) if exports.exists() else []
         with patch(
-            "moduly.audity.ui.audit_program_manager_dialog.QFileDialog.getSaveFileName",
-            return_value=("", ""),
+            "moduly.audity.ui.audit_program_manager_dialog.open_local_file",
+            return_value=True,
         ):
-            with patch.object(
-                audit_program_plan_export_service,
-                "generate_for_program",
-                side_effect=AssertionError("zrušený dialog nesmí exportovat"),
-            ):
-                dialog._export_plan()
+            dialog._export_plan()
         after = sorted(path.name for path in exports.glob("*.odt")) if exports.exists() else []
         self.assertEqual(before, after)
 

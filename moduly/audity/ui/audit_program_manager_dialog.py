@@ -2,12 +2,10 @@
 
 import traceback
 from datetime import date
-from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog,
-    QFileDialog,
     QFrame,
     QGridLayout,
     QHBoxLayout,
@@ -524,24 +522,9 @@ class AuditProgramManagerDialog(QDialog):
         if overview is None or not overview.visits:
             return
 
-        from core.services.storage_service import storage_service
-
-        storage_service.ensure_structure()
-        default_name = audit_program_plan_export_service.default_filename(program_id)
-        default_dir = storage_service.exports_dir
-        path_str, _ = QFileDialog.getSaveFileName(
-            self,
-            AUDIT_PROGRAM_EXPORT_PLAN_DIALOG_TITLE,
-            str(default_dir / default_name),
-            "Dokument ODT (*.odt)",
-        )
-        if not path_str:
-            return
-
         try:
-            path = audit_program_plan_export_service.generate_for_program(
-                program_id,
-                Path(path_str),
+            path = audit_program_plan_export_service.generate_preview_for_program(
+                program_id
             )
         except Exception as exc:
             traceback.print_exc()

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import os
 import re
+import tempfile
 import unicodedata
 from datetime import datetime
 from pathlib import Path
@@ -41,6 +43,22 @@ class AuditProgramPlanExportService:
         if years:
             parts.append(years)
         return "_".join(parts) + f"_{stamp}.odt"
+
+    def generate_preview_for_program(self, program_id: int) -> Path:
+        """Zapíše plán do dočasného ODT; soubor se nesmaže po otevření."""
+        stem = Path(self.default_filename(program_id)).stem
+        handle, raw = tempfile.mkstemp(
+            prefix=f"{stem}_",
+            suffix=".odt",
+            dir=tempfile.gettempdir(),
+        )
+        os.close(handle)
+        target = Path(raw)
+        try:
+            return self.generate_for_program(program_id, target)
+        except Exception:
+            target.unlink(missing_ok=True)
+            raise
 
     def generate_for_program(self, program_id: int, output_path: str | Path) -> Path:
         if program_id <= 0:

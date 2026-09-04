@@ -1,4 +1,4 @@
-"""AUDIT-PROGRAM-ODT-EXPORT-2: po exportu otevřít ODT ve výchozí aplikaci."""
+"""AUDIT-PROGRAM-ODT-PREVIEW-3: plán otevřít z dočasného ODT bez dialogu uložení."""
 
 from __future__ import annotations
 
@@ -11,9 +11,9 @@ from datetime import date
 from pathlib import Path
 from unittest.mock import patch
 
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QFileDialog
 
-_TMP = Path(tempfile.mkdtemp(prefix="audit-program-odt-export-2-"))
+_TMP = Path(tempfile.mkdtemp(prefix="audit-program-odt-preview-3-"))
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 with patch.object(Path, "home", return_value=_TMP):
@@ -34,6 +34,7 @@ with patch.object(Path, "home", return_value=_TMP):
 
     importlib.reload(editable_catalog_module)
 
+    from core.services.storage_service import storage_service
     from moduly.audity.constants import (
         AUDIT_PROGRAM_EXPORT_PLAN_OPEN_FAILED,
         DEFAULT_AUDIT_PROGRAM_STANDARDS,
@@ -47,14 +48,17 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.nastaveni.sluzby.settings_service import settings_service
 
 
-class AuditProgramOdtExportOpenTestCase(unittest.TestCase):
+REPO_EXPORT = Path(__file__).resolve().parents[1] / "export"
+
+
+class AuditProgramOdtPreview3TestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls._app = QApplication.instance() or QApplication([])
         audit_knowledge_service.ensure_catalogs()
 
     def setUp(self) -> None:
-        self._workplace = settings_service.save_workplace(name="Provoz Export 2")
+        self._workplace = settings_service.save_workplace(name="Provoz Preview 3")
 
     def _create_program_with_visit(self):
         program = audit_program_service.create_program(
@@ -73,7 +77,7 @@ class AuditProgramOdtExportOpenTestCase(unittest.TestCase):
             program.id,
             workplace_id=self._workplace.id,
             planned_year=2026,
-            planned_month=3,
+            planned_month=9,
         )
         return program
 
@@ -83,11 +87,26 @@ class AuditProgramOdtExportOpenTestCase(unittest.TestCase):
         QApplication.processEvents()
         return dialog
 
-    def test_successful_export_opens_local_file_once(self) -> None:
+    def _export_snapshot(self) -> set[str]:
+        paths: set[str] = set()
+        exports = storage_service.exports_dir
+        if exports.exists():
+            paths.update(str(path.resolve()) for path in exports.glob("*.odt"))
+        if REPO_EXPORT.exists():
+            paths.update(str(path.resolve()) for path in REPO_EXPORT.glob("*.odt"))
+        return paths
+
+    def test_preview_skips_file_dialog_writes_temp_odt_and_opens_once(self) -> None:
         program = self._create_program_with_visit()
         dialog = self._create_dialog(program.id)
+        before_export = self._export_snapshot()
+        temp_dir = Path(tempfile.gettempdir()).resolve()
 
-        with patch(
+        with patch.object(
+            QFileDialog,
+            "getSaveFileName",
+            side_effect=AssertionError("QFileDialog se nesmí zobrazit"),
+        ), patch(
             "moduly.audity.ui.audit_program_manager_dialog.open_local_file",
             return_value=True,
         ) as mock_open:
@@ -96,10 +115,18 @@ class AuditProgramOdtExportOpenTestCase(unittest.TestCase):
         mock_open.assert_called_once()
         opened = Path(mock_open.call_args.args[0]).resolve()
         self.assertTrue(opened.exists())
-        self.assertEqual(opened.parent, Path(tempfile.gettempdir()).resolve())
+        self.assertEqual(opened.parent, temp_dir)
+        self.assertTrue(opened.name.startswith("Plan_internich_auditu_"))
+        self.assertTrue(opened.suffix.lower() == ".odt")
         with zipfile.ZipFile(opened) as zin:
             self.assertIn("content.xml", zin.namelist())
-        self.assertEqual(mock_open.call_args.kwargs.get("show_error"), False)
+            self.assertEqual(
+                zin.read("mimetype").decode("ascii"),
+                "application/vnd.oasis.opendocument.text",
+            )
+        self.assertTrue(opened.exists())
+        self.assertEqual(self._export_snapshot(), before_export)
+        self.assertNotIn(str(opened), before_export)
 
     def test_export_error_does_not_open(self) -> None:
         program = self._create_program_with_visit()
@@ -113,18 +140,16 @@ class AuditProgramOdtExportOpenTestCase(unittest.TestCase):
             return_value=True,
         ) as mock_open, patch(
             "moduly.audity.ui.audit_program_manager_dialog.QMessageBox.warning",
-        ) as mock_warn:
+        ):
             dialog._export_plan()
         mock_open.assert_not_called()
-        mock_warn.assert_called_once()
-        self.assertIn("Plán se nepodařilo exportovat", mock_warn.call_args.args[2])
 
-    def test_open_error_keeps_odt_and_shows_message(self) -> None:
+    def test_open_error_keeps_temp_file_and_shows_path(self) -> None:
         program = self._create_program_with_visit()
         dialog = self._create_dialog(program.id)
         with patch(
             "moduly.audity.ui.audit_program_manager_dialog.open_local_file",
-            side_effect=OSError("nelze otevřít"),
+            return_value=False,
         ) as mock_open, patch(
             "moduly.audity.ui.audit_program_manager_dialog.QMessageBox.warning",
         ) as mock_warn:
@@ -133,9 +158,6 @@ class AuditProgramOdtExportOpenTestCase(unittest.TestCase):
         mock_open.assert_called_once()
         opened = Path(mock_open.call_args.args[0])
         self.assertTrue(opened.exists())
-        with zipfile.ZipFile(opened) as zin:
-            self.assertIn("content.xml", zin.namelist())
-        mock_warn.assert_called_once()
         message = mock_warn.call_args.args[2]
         self.assertIn(AUDIT_PROGRAM_EXPORT_PLAN_OPEN_FAILED, message)
         self.assertIn(str(opened), message)

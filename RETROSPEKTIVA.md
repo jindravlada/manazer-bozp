@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-04 – AUDIT-PROGRAM-ODT-PREVIEW-3
+
+**Co se povedlo:** Tlačítko Exportovat plán rovnou otevře dočasný ODT. Uživatel si v LibreOffice uloží nebo vyexportuje PDF sám.
+
+**Co už bychom dnes udělali jinak:** Náhled z dočasného souboru místo dialogu Uložit jako.
+
+**Co bylo zbytečně složité:** Nic.
+
+**Jaké nové pravidlo z toho vzniklo:** Dočasný ODT se po spuštění LibreOffice nesmaže. Chyba otevření musí ukázat cestu k souboru.
+
+---
+
 ### 2026-09-04 – AUDIT-PROGRAM-ODT-EXPORT-2
 
 **Co se povedlo:** Po úspěšném exportu plánu se ODT otevře ve výchozí aplikaci. Chyba otevření soubor nenechá zmizet.
