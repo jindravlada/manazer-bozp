@@ -94,6 +94,21 @@ BANNER_STYLE_NOT_REQUIRED = (
     "font-weight: bold; color: #0b5d1e; background: #d9f0dd; "
     "border: 1px solid #91c79c; border-radius: 3px; padding: 8px;"
 )
+BANNER_STYLE_DEADLINE = (
+    "font-weight: bold; color: #7a4b00; background: #fff3cd; "
+    "border: 1px solid #d6b656; border-radius: 3px; padding: 8px;"
+)
+BANNER_STYLE_DEADLINE_WAIT = (
+    "font-weight: bold; color: #5c5c5c; background: #f4f4f4; "
+    "border: 1px solid #d0d0d0; border-radius: 3px; padding: 8px;"
+)
+
+EXAM_DEADLINE_UNTIL_LABEL = (
+    "Mimořádnou pracovnělékařskou prohlídku proveďte nejpozději do:"
+)
+EXAM_DEADLINE_NEED_RETURN = (
+    "Pro stanovení termínu zadejte datum skutečného návratu do práce."
+)
 
 RESPONSIBILITY_HINT = (
     "Navržená míra je stanovisko zaměstnavatele před řešením pojistné události. "
@@ -272,22 +287,8 @@ class TabPoUkonceniDpn(QWidget):
         self.exam_required_banner.setMinimumHeight(36)
         self._exam_form.addRow(self.exam_required_banner)
 
-        self.exam_deadline = NullableDateEdit()
-        self.exam_deadline.setEnabled(False)
-        self._exam_form.addRow("Termín pro provedení prohlídky:", self.exam_deadline)
-
-        self.exam_date = NullableDateEdit()
-        self._exam_form.addRow("Prohlídka provedena dne:", self.exam_date)
-
-        self.exam_result = QComboBox()
-        self.exam_result.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
-        self.exam_result.addItem("", "")
-        for label in EXAM_RESULTS:
-            self.exam_result.addItem(label, label)
-        self._exam_form.addRow("Výsledek prohlídky:", self.exam_result)
-
-        return_group = QGroupBox("Návrat do práce")
-        self._return_form = QFormLayout(return_group)
+        self._return_group = QGroupBox("Návrat do práce")
+        self._return_form = QFormLayout(self._return_group)
 
         self.return_date = NullableDateEdit()
         self._return_form.addRow("Datum skutečného návratu do práce:", self.return_date)
@@ -299,8 +300,38 @@ class TabPoUkonceniDpn(QWidget):
             self.return_mode.addItem(label, label)
         self._return_form.addRow("Způsob návratu:", self.return_mode)
 
+        self._exam_followup_widget = QWidget()
+        self._exam_followup_form = QFormLayout(self._exam_followup_widget)
+        self._exam_followup_form.setContentsMargins(0, 0, 0, 0)
+
+        self.exam_deadline_panel = QFrame()
+        self.exam_deadline_panel.setObjectName("ExamDeadlinePanel")
+        self.exam_deadline_label = QLabel()
+        self.exam_deadline_label.setObjectName("ExamDeadlineLabel")
+        self.exam_deadline_label.setWordWrap(True)
+        self.exam_deadline_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.exam_deadline_label.setMinimumHeight(36)
+        self.exam_deadline_label.setTextInteractionFlags(
+            Qt.TextInteractionFlag.NoTextInteraction
+        )
+        deadline_layout = QVBoxLayout(self.exam_deadline_panel)
+        deadline_layout.setContentsMargins(0, 0, 0, 0)
+        deadline_layout.addWidget(self.exam_deadline_label)
+        self._exam_followup_form.addRow(self.exam_deadline_panel)
+
+        self.exam_date = NullableDateEdit()
+        self._exam_followup_form.addRow("Prohlídka provedena dne:", self.exam_date)
+
+        self.exam_result = QComboBox()
+        self.exam_result.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
+        self.exam_result.addItem("", "")
+        for label in EXAM_RESULTS:
+            self.exam_result.addItem(label, label)
+        self._exam_followup_form.addRow("Výsledek prohlídky:", self.exam_result)
+
         layout.addWidget(exam_group)
-        layout.addWidget(return_group)
+        layout.addWidget(self._return_group)
+        layout.addWidget(self._exam_followup_widget)
 
         self.return_mode.currentIndexChanged.connect(self._refresh_care_relevance)
         self.return_date.dateChanged.connect(self._refresh_care_relevance)
@@ -443,9 +474,9 @@ class TabPoUkonceniDpn(QWidget):
             BANNER_STYLE_REQUIRED if exam_needed else BANNER_STYLE_NOT_REQUIRED
         )
 
-        self.exam_deadline.blockSignals(True)
-        self.exam_deadline.set_date_value(parse_saved_date(state.get(CARE_EXAM_DEADLINE)))
-        self.exam_deadline.blockSignals(False)
+        self._update_exam_deadline_notice(state)
+        self._exam_followup_widget.setVisible(exam_needed)
+        self._exam_followup_widget.setEnabled(active and exam_needed)
 
         self.exam_date.setEnabled(active and exam_needed)
         self.exam_result.setEnabled(active and exam_needed)
@@ -454,10 +485,18 @@ class TabPoUkonceniDpn(QWidget):
         self.category_1_no_risk_ne.setEnabled(active and over_8_weeks)
 
         self._exam_form.setRowVisible(self.category_1_row, over_8_weeks)
-        self._exam_form.setRowVisible(self.exam_deadline, exam_needed)
-        self._exam_form.setRowVisible(self.exam_date, exam_needed)
-        self._exam_form.setRowVisible(self.exam_result, exam_needed)
         self._return_form.setRowVisible(self.return_date, show_return_date)
+
+    def _update_exam_deadline_notice(self, state: dict) -> None:
+        deadline = parse_saved_date(state.get(CARE_EXAM_DEADLINE))
+        if deadline is None:
+            self.exam_deadline_label.setText(EXAM_DEADLINE_NEED_RETURN)
+            self.exam_deadline_label.setStyleSheet(BANNER_STYLE_DEADLINE_WAIT)
+            return
+        self.exam_deadline_label.setText(
+            f"{EXAM_DEADLINE_UNTIL_LABEL}\n{deadline.strftime('%d.%m.%Y')}"
+        )
+        self.exam_deadline_label.setStyleSheet(BANNER_STYLE_DEADLINE)
 
     def get_dpn_record_update(self) -> dict:
         return normalize_dpn_record_update(

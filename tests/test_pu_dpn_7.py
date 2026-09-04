@@ -71,7 +71,11 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.kniha_urazu.sluzby.accident_service import accident_service
     from moduly.kniha_urazu.sluzby.investigation_service import investigation_service
     from moduly.kniha_urazu.ui.accident_dialog import AccidentDialog
-    from moduly.kniha_urazu.ui.tabs.tab_po_ukonceni_dpn import SECTION_EXAM_EVALUATION
+    from moduly.kniha_urazu.ui.tabs.tab_po_ukonceni_dpn import (
+        EXAM_DEADLINE_NEED_RETURN,
+        EXAM_DEADLINE_UNTIL_LABEL,
+        SECTION_EXAM_EVALUATION,
+    )
     from moduly.ukoly.modely.task import Task
 
 
@@ -317,22 +321,22 @@ class PuDpn7TestCase(unittest.TestCase):
         dialog = AccidentDialog(accident=accident)
         tab = dialog.tab_po_ukonceni_dpn_widget
         self.assertEqual(tab.get_dpn_care_return()[CARE_DPN_OVER_8_WEEKS], EXAM_REQUIRED_NO)
-        self.assertFalse(tab._exam_form.isRowVisible(tab.exam_deadline))
+        self.assertTrue(tab._exam_followup_widget.isHidden())
         tab.unconsciousness_ano.setChecked(True)
         self.assertEqual(tab.exam_required_banner.text(), EXAM_REQUIRED_BANNER_YES)
-        self.assertTrue(tab._exam_form.isRowVisible(tab.exam_deadline))
-        self.assertIsNone(tab.exam_deadline.get_date())
-        self.assertFalse(tab.exam_deadline.isEnabled())
+        self.assertFalse(tab._exam_followup_widget.isHidden())
+        self.assertEqual(tab.exam_deadline_label.text(), EXAM_DEADLINE_NEED_RETURN)
         tab.return_mode.setCurrentIndex(tab.return_mode.findData(RETURN_MODE_SAME))
         tab.return_date.set_date_value(RETURN_MONDAY)
-        self.assertEqual(tab.exam_deadline.get_date(), date(2026, 4, 27))
+        self.assertIn("27.04.2026", tab.exam_deadline_label.text())
+        self.assertIn(EXAM_DEADLINE_UNTIL_LABEL, tab.exam_deadline_label.text())
         self.assertEqual(
             tab.get_dpn_care_return()[CARE_EXAM_DEADLINE], "2026-04-27"
         )
         tab.fitness_change_ne.setChecked(True)
         tab.unconsciousness_ne.setChecked(True)
         self.assertEqual(tab.exam_required_banner.text(), EXAM_REQUIRED_BANNER_NO)
-        self.assertFalse(tab._exam_form.isRowVisible(tab.exam_deadline))
+        self.assertTrue(tab._exam_followup_widget.isHidden())
         dialog.close()
 
     def test_return_date_independent_of_dpn_do(self) -> None:
@@ -381,7 +385,7 @@ class PuDpn7TestCase(unittest.TestCase):
         self.assertEqual(tab.get_dpn_care_return(), saved)
         self.assertEqual(tab.exam_required_banner.text(), EXAM_REQUIRED_BANNER_YES)
         self.assertTrue(tab.category_1_no_risk_ne.isChecked())
-        self.assertEqual(tab.exam_deadline.get_date(), date(2026, 4, 27))
+        self.assertIn("27.04.2026", tab.exam_deadline_label.text())
         reopened.close()
 
     def test_pu_dpn_4_json_still_loads_and_roundtrips(self) -> None:

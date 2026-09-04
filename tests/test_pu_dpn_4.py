@@ -204,16 +204,12 @@ class PuDpn4TestCase(unittest.TestCase):
         dialog = AccidentDialog(accident=accident)
         tab = dialog.tab_po_ukonceni_dpn_widget
 
-        self.assertFalse(tab._exam_form.isRowVisible(tab.exam_date))
-        self.assertFalse(tab._exam_form.isRowVisible(tab.exam_result))
-        self.assertFalse(tab._exam_form.isRowVisible(tab.exam_deadline))
+        self.assertTrue(tab._exam_followup_widget.isHidden())
         self.assertFalse(tab.exam_date.isEnabled())
         self.assertFalse(tab.exam_result.isEnabled())
 
         tab.severe_consequences_ano.setChecked(True)
-        self.assertTrue(tab._exam_form.isRowVisible(tab.exam_date))
-        self.assertTrue(tab._exam_form.isRowVisible(tab.exam_result))
-        self.assertTrue(tab._exam_form.isRowVisible(tab.exam_deadline))
+        self.assertFalse(tab._exam_followup_widget.isHidden())
         self.assertTrue(tab.exam_date.isEnabled())
         self.assertTrue(tab.exam_result.isEnabled())
         dialog.close()
