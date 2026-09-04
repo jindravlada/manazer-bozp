@@ -32,6 +32,7 @@ with patch.object(Path, "home", return_value=_TMP):
         OBLIGATION_POLICIE_ZASLANI,
         OBLIGATION_RODINA_PREDANI,
         OBLIGATION_VYHOTOVENI_ZAZNAMU,
+        OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN,
         OBLIGATION_ZAMESTNANEC_PREDANI,
         OBLIGATION_ZP_OHLASENI,
         OBLIGATION_ZP_ZASLANI,
@@ -103,6 +104,7 @@ class KnihaUrazuReportingObligationsTestCase(unittest.TestCase):
                 OBLIGATION_EZOP,
                 OBLIGATION_ZAMESTNANEC_PREDANI,
                 OBLIGATION_OO_PREDANI,
+                OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN,
             },
         )
         self.assertNotIn(OBLIGATION_OIP_OBU_OHLASENI, keys)
@@ -126,6 +128,7 @@ class KnihaUrazuReportingObligationsTestCase(unittest.TestCase):
                 OBLIGATION_EZOP,
                 OBLIGATION_ZAMESTNANEC_PREDANI,
                 OBLIGATION_OO_PREDANI,
+                OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN,
             },
         )
 

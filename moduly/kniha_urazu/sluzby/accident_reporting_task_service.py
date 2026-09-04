@@ -8,6 +8,7 @@ from typing import Any
 
 from core.shared.constants import ENTITY_ACCIDENT
 from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
+    OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN,
     SECTION_ODESLANI,
     SECTION_OHLASENI,
     SECTION_PREDANI,
@@ -74,7 +75,12 @@ class AccidentReportingTaskService:
         number = (getattr(accident, "number", "") or "").strip() or str(accident.id)
 
         ohlaseni = [item for item in obligations if item.section == SECTION_OHLASENI]
-        record = [item for item in obligations if item.section in _RECORD_SECTIONS]
+        record = [
+            item
+            for item in obligations
+            if item.section in _RECORD_SECTIONS
+            and item.key != OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN
+        ]
 
         self._sync_group(
             accident=accident,

@@ -27,6 +27,7 @@ OBLIGATION_ZAMESTNANEC_PREDANI = "zamestnanec_predani"
 OBLIGATION_OO_PREDANI = "oo_predani"
 OBLIGATION_RODINA_PREDANI = "rodina_predani"
 OBLIGATION_CSSZ_USSZ_NEMOCENSKE = "cssz_ussz_nemocenske"
+OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN = "aktualizace_zaznamu_po_dpn"
 
 SECTION_OHLASENI = "ohlaseni"
 SECTION_ZAZNAM = "zaznam"
@@ -55,6 +56,7 @@ OBLIGATION_LABELS: dict[str, str] = {
     OBLIGATION_OO_PREDANI: "Odborová organizace – předání podepsaného záznamu o pracovním úrazu",
     OBLIGATION_RODINA_PREDANI: "Rodinní příslušníci – předání záznamu o pracovním úrazu",
     OBLIGATION_CSSZ_USSZ_NEMOCENSKE: "ČSSZ / ÚSSZ – podklady k nemocenskému",
+    OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN: "Aktualizace záznamu po ukončení DPN",
 }
 
 LEGACY_LABEL_ALIASES: dict[str, str] = {
@@ -81,6 +83,12 @@ LEGACY_RECORD_DUTY_KEYS = frozenset({
 
 METHOD_PORTAL_SUIP = "Portál SÚIP"
 PORTAL_SUIP_OIP_NOTICE_FROM = date(2026, 1, 1)
+
+DPN_RECORD_UPDATE_KEY = "dpn_record_update"
+DPN_RECORD_UPDATE_PORTAL_DONE = "portal_suip_done"
+DPN_RECORD_UPDATE_PORTAL_DATE = "portal_suip_date"
+DPN_RECORD_UPDATE_SIGNED_DONE = "signed_record_done"
+DPN_RECORD_UPDATE_SIGNED_DATE = "signed_record_date"
 
 
 @dataclass(frozen=True)
@@ -316,6 +324,110 @@ def is_dpn_ended(dpn_do: date | None) -> bool:
     return dpn_do is not None
 
 
+def is_dpn_record_update_relevant(accident: AccidentLike | None) -> bool:
+    """Aktualizace ZoÚ po DPN jen u úrazů se záznamem a vyplněným ``dpn_do``."""
+    if accident is None:
+        return False
+    if not is_dpn_ended(getattr(accident, "dpn_do", None)):
+        return False
+    return requires_accident_record(accident)
+
+
+def empty_dpn_record_update() -> dict[str, Any]:
+    return {
+        DPN_RECORD_UPDATE_PORTAL_DONE: False,
+        DPN_RECORD_UPDATE_PORTAL_DATE: None,
+        DPN_RECORD_UPDATE_SIGNED_DONE: False,
+        DPN_RECORD_UPDATE_SIGNED_DATE: None,
+    }
+
+
+def _dpn_record_update_date_json(value: Any) -> str | None:
+    parsed = parse_saved_date(value)
+    return parsed.isoformat() if parsed is not None else None
+
+
+def normalize_dpn_record_update(state: dict[str, Any] | None) -> dict[str, Any]:
+    raw = state or {}
+    return {
+        DPN_RECORD_UPDATE_PORTAL_DONE: bool(raw.get(DPN_RECORD_UPDATE_PORTAL_DONE)),
+        DPN_RECORD_UPDATE_PORTAL_DATE: _dpn_record_update_date_json(
+            raw.get(DPN_RECORD_UPDATE_PORTAL_DATE)
+        ),
+        DPN_RECORD_UPDATE_SIGNED_DONE: bool(raw.get(DPN_RECORD_UPDATE_SIGNED_DONE)),
+        DPN_RECORD_UPDATE_SIGNED_DATE: _dpn_record_update_date_json(
+            raw.get(DPN_RECORD_UPDATE_SIGNED_DATE)
+        ),
+    }
+
+
+def dpn_record_update_from_saved_data(saved_data: dict[str, Any] | None) -> dict[str, Any]:
+    if not saved_data:
+        return empty_dpn_record_update()
+    raw = saved_data.get(DPN_RECORD_UPDATE_KEY)
+    if not isinstance(raw, dict):
+        return empty_dpn_record_update()
+    return normalize_dpn_record_update(raw)
+
+
+def dpn_record_update_has_progress(state: dict[str, Any] | None) -> bool:
+    data = normalize_dpn_record_update(state)
+    return bool(
+        data[DPN_RECORD_UPDATE_PORTAL_DONE]
+        or data[DPN_RECORD_UPDATE_PORTAL_DATE]
+        or data[DPN_RECORD_UPDATE_SIGNED_DONE]
+        or data[DPN_RECORD_UPDATE_SIGNED_DATE]
+    )
+
+
+def dpn_record_update_is_done(state: dict[str, Any] | None) -> bool:
+    data = normalize_dpn_record_update(state)
+    return bool(
+        data[DPN_RECORD_UPDATE_PORTAL_DONE]
+        and data[DPN_RECORD_UPDATE_PORTAL_DATE]
+        and data[DPN_RECORD_UPDATE_SIGNED_DONE]
+        and data[DPN_RECORD_UPDATE_SIGNED_DATE]
+    )
+
+
+def dpn_record_update_completion_date(state: dict[str, Any] | None) -> date | None:
+    data = normalize_dpn_record_update(state)
+    dates = [
+        parse_saved_date(data[DPN_RECORD_UPDATE_PORTAL_DATE]),
+        parse_saved_date(data[DPN_RECORD_UPDATE_SIGNED_DATE]),
+    ]
+    present = [item for item in dates if item is not None]
+    if not present:
+        return None
+    return max(present)
+
+
+def apply_dpn_record_update_to_saved_data(
+    saved_data: dict[str, Any] | None,
+    *,
+    accident: AccidentLike | None,
+    ui_state: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Idempotentní zápis stavu aktualizace ZoÚ. Nevyřízenou položku při odebrání ``dpn_do`` odstraní."""
+    data = dict(saved_data or {})
+    existing = dpn_record_update_from_saved_data(data)
+    if not is_dpn_ended(getattr(accident, "dpn_do", None) if accident is not None else None):
+        if dpn_record_update_is_done(existing):
+            return data
+        data.pop(DPN_RECORD_UPDATE_KEY, None)
+        return data
+    if ui_state is None:
+        return data
+    normalized = normalize_dpn_record_update(ui_state)
+    if not dpn_record_update_has_progress(normalized):
+        if dpn_record_update_is_done(existing):
+            return data
+        data.pop(DPN_RECORD_UPDATE_KEY, None)
+        return data
+    data[DPN_RECORD_UPDATE_KEY] = normalized
+    return data
+
+
 ACCIDENT_DATE_FUTURE_MESSAGE = "Datum pracovního úrazu nemůže být v budoucnosti."
 RECORD_DATE_BEFORE_ACCIDENT_MESSAGE = (
     "Datum zápisu nemůže být dřívější než datum pracovního úrazu."
@@ -526,6 +638,9 @@ def is_obligation_relevant(
         # ČSSZ/ÚSSZ není adresát NV 322/2025 Sb. – nesmí vstoupit do ZoÚ, úkolů ani matice záznamu.
         return False
 
+    if obligation_key == OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN:
+        return is_dpn_record_update_relevant(accident)
+
     return False
 
 
@@ -668,7 +783,7 @@ def cssz_row_ui_state(
 def _section_for_key(key: str) -> str:
     if key == OBLIGATION_CSSZ_USSZ_NEMOCENSKE:
         return SECTION_NEMOCENSKE
-    if key in {OBLIGATION_VYHOTOVENI_ZAZNAMU, OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU}:
+    if key in {OBLIGATION_VYHOTOVENI_ZAZNAMU, OBLIGATION_VYHOTOVENI_ZASLANI_ZAZNAMU, OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN}:
         return SECTION_ZAZNAM
     if key in {
         OBLIGATION_OIP_OBU_ZASLANI,
@@ -732,7 +847,9 @@ def obligation_definitions_for_accident(
         saved_data,
         record_duty_generation=record_duty_generation,
     )
-    skip = record_duty_keys_hidden_for_generation(generation)
+    skip = record_duty_keys_hidden_for_generation(generation) | {
+        OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN,
+    }
     return [
         item
         for item in all_obligation_definitions()
@@ -821,6 +938,8 @@ def obligation_default_deadline(
 ) -> date | None:
     if obligation_key == OBLIGATION_CSSZ_USSZ_NEMOCENSKE or section == SECTION_NEMOCENSKE:
         return None
+    if obligation_key == OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN:
+        return None
     if "ČSSZ" in label or "ÚSSZ" in label:
         return None
 
@@ -898,6 +1017,14 @@ def obligation_rows_for_summary(
         else:
             row.setdefault("nazev", obligation.label)
         row.setdefault("section", obligation.section)
+
+        if obligation.key == OBLIGATION_AKTUALIZACE_ZAZNAMU_PO_DPN:
+            update_state = dpn_record_update_from_saved_data(saved_data)
+            if dpn_record_update_is_done(update_state):
+                completion = dpn_record_update_completion_date(update_state)
+                if completion is not None:
+                    row["datum"] = completion.isoformat()
+                row["predano"] = True
 
         if row_is_done(row):
             result.append(row)

@@ -1,10 +1,12 @@
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
+import json
 
 from core.shared.constants import ENTITY_ACCIDENT
 from moduly.kniha_urazu.modely.accident import Accident
 from moduly.kniha_urazu.repository.accident_repository import AccidentRepository
 from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
+    apply_dpn_record_update_to_saved_data,
     has_pn,
     is_dpn_over_3_kind,
     is_dpn_up_to_3_kind,
@@ -79,6 +81,7 @@ class AccidentService:
         )
 
     def create_accident(self, **data):
+        dpn_record_update = data.pop("dpn_record_update", None)
         self._enrich_workplace(data)
         self._sync_legacy_fields(data)
 
@@ -95,6 +98,7 @@ class AccidentService:
         saved = self.repository.update(saved)
         self._create_verify_kind_task(saved)
         self._stamp_combined_record_duty_generation(saved)
+        self._sync_dpn_record_update(saved, dpn_record_update)
         self._sync_reporting_tasks(saved)
         return saved
 
@@ -103,6 +107,7 @@ class AccidentService:
         if accident is None:
             return None
 
+        dpn_record_update = data.pop("dpn_record_update", None)
         self._enrich_workplace(data)
         self._sync_legacy_fields(data)
 
@@ -112,6 +117,7 @@ class AccidentService:
 
         saved = self.repository.update(accident)
         self._resolve_verify_kind_task_if_needed(saved)
+        self._sync_dpn_record_update(saved, dpn_record_update)
         self._sync_reporting_tasks(saved)
         return saved
 
@@ -121,6 +127,37 @@ class AccidentService:
         )
 
         accident_reporting_task_service.sync_for_accident(accident)
+
+    def _load_investigation_saved_data(self, accident_id: int) -> dict:
+        from moduly.kniha_urazu.sluzby.investigation_service import investigation_service
+
+        investigation = investigation_service.get_or_create(accident_id)
+        raw = getattr(investigation, "zajisteni_dukazu_json", "") or ""
+        if not str(raw).strip():
+            return {}
+        try:
+            data = json.loads(raw)
+        except Exception:
+            return {}
+        return data if isinstance(data, dict) else {}
+
+    def _sync_dpn_record_update(self, accident: Accident, ui_state) -> None:
+        from moduly.kniha_urazu.sluzby.investigation_service import investigation_service
+
+        if accident is None or getattr(accident, "id", None) is None:
+            return
+        current = self._load_investigation_saved_data(accident.id)
+        updated = apply_dpn_record_update_to_saved_data(
+            current,
+            accident=accident,
+            ui_state=ui_state,
+        )
+        if updated == current:
+            return
+        investigation_service.save_zajisteni_dukazu(
+            accident.id,
+            json.dumps(updated, ensure_ascii=False),
+        )
 
     def _stamp_combined_record_duty_generation(self, accident: Accident) -> None:
         """Označí nový úraz společnou povinností záznamu. Existující JSON nemění."""
