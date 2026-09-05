@@ -4,10 +4,12 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QDialog,
-    QDialogButtonBox,
     QFormLayout,
+    QHBoxLayout,
     QLabel,
     QMessageBox,
+    QPushButton,
+    QSizePolicy,
     QSpinBox,
     QTabWidget,
     QTextEdit,
@@ -20,9 +22,9 @@ from core.ai_oponentni.ui.ai_peer_review_widget import (
     AiPeerReviewWidget,
     catalog_peer_review_export_dialog_config,
 )
-from core.widgets.dialog_utils import create_save_cancel_box
 from core.widgets.editor_dialog_controller import (
     configure_editor_close_button,
+    configure_editor_save_button,
     confirm_unsaved_editor_close,
 )
 from moduly.rizeni_rizik.constants_library import (
@@ -38,7 +40,7 @@ from moduly.rizeni_rizik.constants_library import (
     HAZARD_LIBRARY_PLACEHOLDER_TEXT,
     HAZARD_LIBRARY_REVISION_FORM_LABEL,
     HAZARD_LIBRARY_REVISION_READ_ONLY_TOOLTIP,
-    HAZARD_LIBRARY_SAVE_SUCCESS,
+    HAZARD_LIBRARY_SAVE_AND_CLOSE,
     HAZARD_LIBRARY_TAB_AI_PEER_REVIEW,
     HAZARD_LIBRARY_TAB_BASICS,
     HAZARD_LIBRARY_TAB_CONTENT,
@@ -153,14 +155,30 @@ class HazardLibraryTemplateDialog(QDialog):
 
         layout.addWidget(self.tabs)
 
-        self.buttons = create_save_cancel_box(self, is_new=template is None)
-        self.save_button = self.buttons.button(QDialogButtonBox.StandardButton.Save)
-        self.cancel_button = self.buttons.button(QDialogButtonBox.StandardButton.Cancel)
-        if self.save_button is not None:
-            self.save_button.clicked.connect(self._save_all)
-        if self.cancel_button is not None:
-            self.cancel_button.clicked.connect(self._on_cancel_clicked)
-        layout.addWidget(self.buttons)
+        self.save_button = QPushButton()
+        configure_editor_save_button(self.save_button)
+        self.save_close_button = QPushButton()
+        configure_editor_save_button(self.save_close_button)
+        self.save_close_button.setText(HAZARD_LIBRARY_SAVE_AND_CLOSE)
+        self.cancel_button = QPushButton()
+        configure_editor_close_button(self.cancel_button, is_new=template is None)
+        for button in (self.cancel_button, self.save_button, self.save_close_button):
+            button.setAutoDefault(False)
+            button.setDefault(False)
+            button.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.save_button.setDefault(True)
+        self.save_button.clicked.connect(self._save_all)
+        self.save_close_button.clicked.connect(self._save_and_close)
+        self.cancel_button.clicked.connect(self._on_cancel_clicked)
+
+        footer = QHBoxLayout()
+        footer.setContentsMargins(0, 0, 0, 0)
+        footer.setSpacing(8)
+        footer.addStretch(1)
+        footer.addWidget(self.cancel_button)
+        footer.addWidget(self.save_button)
+        footer.addWidget(self.save_close_button)
+        layout.addLayout(footer)
 
         self.content_widget.content_changed.connect(self._on_content_changed)
         self.tabs.currentChanged.connect(self._on_tab_changed)
@@ -239,8 +257,9 @@ class HazardLibraryTemplateDialog(QDialog):
         return self._basics_dirty or session_dirty
 
     def _update_save_enabled(self) -> None:
-        if self.save_button is not None:
-            self.save_button.setEnabled(self.is_dirty() or self.template is None)
+        enabled = self.is_dirty() or self.template is None
+        self.save_button.setEnabled(enabled)
+        self.save_close_button.setEnabled(enabled)
 
     def _on_basics_edited(self, *_args) -> None:
         self._basics_dirty = True
@@ -328,10 +347,15 @@ class HazardLibraryTemplateDialog(QDialog):
         self.ai_peer_review_widget.refresh()
         configure_editor_close_button(self.cancel_button, is_new=False)
         self._update_save_enabled()
-        QMessageBox.information(self, HAZARD_LIBRARY_DIALOG_TITLE, HAZARD_LIBRARY_SAVE_SUCCESS)
         if self._on_template_persisted is not None and self.template is not None:
             self._on_template_persisted(self.template)
         return True
+
+    def _save_and_close(self) -> None:
+        if not self._save_all():
+            return
+        self._closing = True
+        super().accept()
 
     def _prompt_duplicate_name(self, existing) -> str:
         message = QMessageBox(self)
@@ -494,7 +518,4 @@ class HazardLibraryTemplateDialog(QDialog):
         super().reject()
 
     def accept(self) -> None:
-        if not self._save_all():
-            return
-        self._closing = True
-        super().accept()
+        self._save_and_close()

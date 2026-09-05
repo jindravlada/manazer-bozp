@@ -627,3 +627,13 @@ Hromadné převzetí zdrojů rizika z katalogu:
 - **Převzít** jednou akcí převezme všechny označené zdroje (opakovaně stávající převzetí jednoho zdroje)
 - změna filtru **Kategorie** zachová již provedené zaškrtnutí
 - již převzaté zdroje se v nabídce nezobrazují; tlačítko **Převzít** je bez výběru neaktivní
+
+## UX-RISK-5
+
+Ukládání v editoru zdroje rizika:
+
+- pravá spodní lišta: **Zrušit** / **Zavřít**, **Uložit**, **Uložit a zavřít**
+- **Uložit** uloží a editor nechá otevřený, bez blokujícího informačního dialogu
+- **Uložit a zavřít** použije stejné uložení; po úspěchu editor ihned zavře
+- při chybě validace se editor nezavře
+- Zrušit / zavření okna a datová logika zdroje se nemění

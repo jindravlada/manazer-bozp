@@ -45,6 +45,16 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-05 – UX-RISK-5
+
+**Co se povedlo:** Hromadné zadávání zdrojů má Uložit i Uložit a zavřít bez klikání na OK po každém uložení.
+
+**Co už bychom dnes udělali jinak:** Informační dialog po Uložit v stay-open editoru nezavádět.
+
+**Co bylo zbytečně složité:** Nic – stačilo jedno společné `_save_all`.
+
+**Jaké nové pravidlo z toho vzniklo:** Po úspěšném Uložit v editoru zdroje rizika se nezobrazuje blokující informační dialog.
+
 ### 2026-09-05 – UX-RISK-4
 
 **Co se povedlo:** Převzetí více zdrojů z katalogu je jedna akce, bez změny datového modelu a bez „Vybrat vše“.

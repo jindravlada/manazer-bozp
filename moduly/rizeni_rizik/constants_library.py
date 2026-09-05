@@ -32,6 +32,7 @@ HAZARD_LIBRARY_UNSAVED_DISCARD = "Neukládat"
 HAZARD_LIBRARY_UNSAVED_STAY = "Zrušit"
 HAZARD_LIBRARY_CANCEL_CONFIRM = "Zahodit všechny neuložené změny a zavřít editor?"
 HAZARD_LIBRARY_SAVE_SUCCESS = "Změny byly uloženy."
+HAZARD_LIBRARY_SAVE_AND_CLOSE = "Uložit a zavřít"
 HAZARD_LIBRARY_DUPLICATE_NAME_TITLE = "Zdroj rizika již existuje"
 HAZARD_LIBRARY_DUPLICATE_NAME_TEXT = (
     "Aktivní zdroj rizika se stejným názvem již v katalogu existuje.\n\n"
