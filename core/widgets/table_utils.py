@@ -22,15 +22,25 @@ def apply_cell_tooltip(item: QTableWidgetItem | None, text: str | None) -> None:
         item.setToolTip("")
 
 
-def _table_cell_content_width(table: QTableWidget, column: int) -> int:
-    """Šířka dostupná pro text buňky (sloupec minus okraje stylu)."""
+def _table_cell_padding(table: QTableWidget) -> int:
     style = table.style()
-    padding = (
+    return max(
+        12,
         2 * style.pixelMetric(QStyle.PixelMetric.PM_FocusFrameHMargin, None, table)
         + 2 * style.pixelMetric(QStyle.PixelMetric.PM_LayoutHorizontalSpacing, None, table)
-        + 8
+        + 8,
     )
-    return max(0, table.columnWidth(column) - max(padding, 12))
+
+
+def _table_cell_content_width(table: QTableWidget, column: int) -> int:
+    """Šířka dostupná pro text buňky (sloupec minus okraje stylu)."""
+    return max(0, table.columnWidth(column) - _table_cell_padding(table))
+
+
+def _column_width_to_fit_text(table: QTableWidget, text: str) -> int:
+    """Minimální šířka sloupce, aby se ``text`` vešel bez elipsy."""
+    text_width = table.fontMetrics().horizontalAdvance(text)
+    return text_width + _table_cell_padding(table) + 16
 
 
 def table_cell_text_is_elided(table: QTableWidget, row: int, column: int) -> bool:
@@ -978,15 +988,20 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
 
     elif profile == "hazard_library_templates":
         from moduly.rizeni_rizik.constants_library import (
+            HAZARD_LIBRARY_CATEGORY_COLUMN_FIT_TEXT,
             HAZARD_LIBRARY_COL_ACTIVE,
             HAZARD_LIBRARY_COL_CATEGORY,
             HAZARD_LIBRARY_COL_NAME,
             HAZARD_LIBRARY_COL_VERSION,
         )
 
+        # UX-RISK-6: Kategorie dost široká na běžný nejdelší název; Název Stretch.
         widths = {
             HAZARD_LIBRARY_COL_NAME: 220,
-            HAZARD_LIBRARY_COL_CATEGORY: 160,
+            HAZARD_LIBRARY_COL_CATEGORY: _column_width_to_fit_text(
+                table,
+                HAZARD_LIBRARY_CATEGORY_COLUMN_FIT_TEXT,
+            ),
             HAZARD_LIBRARY_COL_VERSION: 70,
             HAZARD_LIBRARY_COL_ACTIVE: 70,
         }

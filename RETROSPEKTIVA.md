@@ -45,6 +45,16 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-05 – UX-RISK-6
+
+**Co se povedlo:** Kategorie, Aktivní i hledání jdou použít najednou, bez změny významu počítadla.
+
+**Co už bychom dnes udělali jinak:** Sloupec Kategorie hned nastavit na běžný nejdelší název, ne na odhad 160 px.
+
+**Co bylo zbytečně složité:** Nic – stačilo rozšířit stávající FilterBar o kód kategorie.
+
+**Jaké nové pravidlo z toho vzniklo:** Nový filtr v přehledu zužuje X; Y zůstává základní rozsah (zde Aktivní).
+
 ### 2026-09-05 – UX-RISK-5
 
 **Co se povedlo:** Hromadné zadávání zdrojů má Uložit i Uložit a zavřít bez klikání na OK po každém uložení.

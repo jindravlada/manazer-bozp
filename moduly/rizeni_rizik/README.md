@@ -637,3 +637,12 @@ Ukládání v editoru zdroje rizika:
 - **Uložit a zavřít** použije stejné uložení; po úspěchu editor ihned zavře
 - při chybě validace se editor nezavře
 - Zrušit / zavření okna a datová logika zdroje se nemění
+
+## UX-RISK-6
+
+Filtr kategorií v přehledu **Katalog zdrojů rizik**:
+
+- combo **Kategorie** v řádku s textovým hledáním, výchozí **Všechny kategorie**
+- výsledný seznam = filtr Aktivní AND kategorie AND textové hledání
+- počítadlo **Zobrazeno: X / Y** – Y zůstává rozsah podle filtru Aktivní
+- sloupec Kategorie je širší, aby se vešel název „Prostory, komunikace a pracovní prostředí“; Název Stretch

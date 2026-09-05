@@ -29,6 +29,8 @@ from moduly.rizeni_rizik.constants import (
     RISK_LIST_FILTER_INACTIVE,
 )
 from moduly.rizeni_rizik.constants_library import (
+    HAZARD_LIBRARY_APPLY_ALL_CATEGORIES,
+    HAZARD_LIBRARY_APPLY_CATEGORY_FILTER_LABEL,
     HAZARD_LIBRARY_COL_ACTIVE,
     HAZARD_LIBRARY_COL_CATEGORY,
     HAZARD_LIBRARY_COL_ID,
@@ -97,10 +99,27 @@ class HazardLibraryPage(QWidget):
         self.table.setAlternatingRowColors(True)
         configure_table_columns(self.table, "hazard_library_templates")
         enable_typed_sorting(self.table)
-        self.text_filter = FilterBar(self.table, placeholder="🔍 Hledat zdroj rizika...")
+        self.category_filter = QComboBox()
+        self.category_filter.setSizeAdjustPolicy(
+            QComboBox.SizeAdjustPolicy.AdjustToContents
+        )
+        self._populate_category_filter()
+        self.text_filter = FilterBar(
+            self.table,
+            placeholder="🔍 Hledat zdroj rizika...",
+            apply_fn=self._apply_list_filters,
+        )
+        self.category_filter.currentIndexChanged.connect(self.text_filter.apply_filter)
+
+        filter_row = QHBoxLayout()
+        filter_row.setContentsMargins(0, 0, 0, 0)
+        filter_row.setSpacing(8)
+        filter_row.addWidget(QLabel(HAZARD_LIBRARY_APPLY_CATEGORY_FILTER_LABEL))
+        filter_row.addWidget(self.category_filter)
+        filter_row.addWidget(self.text_filter, 1)
 
         layout.addLayout(toolbar)
-        layout.addWidget(self.text_filter)
+        layout.addLayout(filter_row)
         layout.addWidget(self.table)
 
         self.new_btn.clicked.connect(self.new_template)
@@ -114,6 +133,48 @@ class HazardLibraryPage(QWidget):
         self.table.selectionModel().selectionChanged.connect(self._refresh_action_buttons)
 
         self.refresh()
+
+    def _populate_category_filter(self, selected_code: str | None = None) -> None:
+        self.category_filter.blockSignals(True)
+        self.category_filter.clear()
+        self.category_filter.addItem(HAZARD_LIBRARY_APPLY_ALL_CATEGORIES, None)
+        for category in hazard_source_category_service.get_active_all():
+            self.category_filter.addItem(category.name, category.code)
+        if selected_code:
+            index = self.category_filter.findData(selected_code)
+            self.category_filter.setCurrentIndex(index if index >= 0 else 0)
+        else:
+            self.category_filter.setCurrentIndex(0)
+        self.category_filter.blockSignals(False)
+
+    def _row_matches_category(self, row: int, category_code: str | None) -> bool:
+        if not category_code:
+            return True
+        item = self.table.item(row, HAZARD_LIBRARY_COL_CATEGORY)
+        if item is None:
+            return False
+        return item.data(Qt.ItemDataRole.UserRole) == category_code
+
+    def _apply_list_filters(self, text: str) -> tuple[int, int]:
+        category_code = self.category_filter.currentData()
+        total = self.table.rowCount()
+        visible = 0
+        for row in range(total):
+            match_text = True
+            if text:
+                row_text_parts = []
+                for column in range(self.table.columnCount()):
+                    if self.table.isColumnHidden(column):
+                        continue
+                    item = self.table.item(row, column)
+                    if item is not None:
+                        row_text_parts.append(item.text())
+                match_text = text in " ".join(row_text_parts).lower()
+            match = match_text and self._row_matches_category(row, category_code)
+            self.table.setRowHidden(row, not match)
+            if match:
+                visible += 1
+        return visible, total
 
     def _selected_row_count(self) -> int:
         return len(self.table.selectionModel().selectedRows())
@@ -174,14 +235,16 @@ class HazardLibraryPage(QWidget):
                 )
                 self.table.setItem(row_index, HAZARD_LIBRARY_COL_NAME, name_item)
                 category_label = hazard_source_category_service.label_for(template.category)
+                category_item = create_typed_item(
+                    category_label,
+                    typed_text(category_label),
+                    stable_id=record_id,
+                )
+                category_item.setData(Qt.ItemDataRole.UserRole, template.category)
                 self.table.setItem(
                     row_index,
                     HAZARD_LIBRARY_COL_CATEGORY,
-                    create_typed_item(
-                        category_label,
-                        typed_text(category_label),
-                        stable_id=record_id,
-                    ),
+                    category_item,
                 )
                 self.table.setItem(
                     row_index,
@@ -245,8 +308,10 @@ class HazardLibraryPage(QWidget):
         self.refresh()
 
     def manage_categories(self) -> None:
+        selected_code = self.category_filter.currentData()
         dialog = HazardSourceCategoriesManagementDialog(self)
         dialog.exec()
+        self._populate_category_filter(selected_code=selected_code)
         self.refresh()
 
     def open_template(self, template_id: int) -> None:
