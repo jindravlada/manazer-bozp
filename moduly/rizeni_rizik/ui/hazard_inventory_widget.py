@@ -338,30 +338,51 @@ class HazardInventoryWidget(QWidget):
                 else None
             ),
         )
-        if not dialog.exec() or dialog.result is None:
+        if not dialog.exec():
+            return
+        results = list(dialog.results or [])
+        if not results:
             return
 
-        result = dialog.result
-        self._current_category = result.item.category
+        last = results[-1]
+        self._current_category = last.item.category
         row = self._category_row_index(self._current_category)
         if row is not None:
             self.category_list.setCurrentRow(row)
-        self._selected_item_id = result.item.id
+        self._selected_item_id = last.item.id
         self._selected_event_id = None
 
-        summary = (
-            f"Název zdroje: {result.item.name}\n"
-            f"Nežádoucí události: {result.event_count}\n"
-            f"Posouzení: {result.assessment_count}\n"
-            f"Zásady bezpečné práce: {result.existing_measure_count}\n"
-            f"Kontrolní otázky: {result.required_measure_count}"
-        )
+        if len(results) == 1:
+            result = results[0]
+            text = (
+                "Zdroj rizika byl převzat z katalogu a evidován na tomto pracovišti."
+            )
+            summary = (
+                f"Název zdroje: {result.item.name}\n"
+                f"Nežádoucí události: {result.event_count}\n"
+                f"Posouzení: {result.assessment_count}\n"
+                f"Zásady bezpečné práce: {result.existing_measure_count}\n"
+                f"Kontrolní otázky: {result.required_measure_count}"
+            )
+        else:
+            names = "\n".join(f"• {result.item.name}" for result in results)
+            text = (
+                "Zdroje rizika byly převzaty z katalogu a evidovány na tomto pracovišti."
+            )
+            summary = (
+                f"Počet převzatých zdrojů: {len(results)}\n"
+                f"{names}\n"
+                f"Nežádoucí události: {sum(result.event_count for result in results)}\n"
+                f"Posouzení: {sum(result.assessment_count for result in results)}\n"
+                f"Zásady bezpečné práce: "
+                f"{sum(result.existing_measure_count for result in results)}\n"
+                f"Kontrolní otázky: "
+                f"{sum(result.required_measure_count for result in results)}"
+            )
         message = QMessageBox(self)
         message.setIcon(QMessageBox.Icon.Information)
         message.setWindowTitle(HAZARD_LIBRARY_APPLY_TO_INVENTORY_SUCCESS_TITLE)
-        message.setText(
-            "Zdroj rizika byl převzat z katalogu a evidován na tomto pracovišti."
-        )
+        message.setText(text)
         message.setInformativeText(summary)
         message.exec()
         self._notify_event_saved()

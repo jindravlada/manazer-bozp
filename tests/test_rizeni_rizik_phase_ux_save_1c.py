@@ -267,6 +267,8 @@ class HazardIdentificationUxSave1cTestCase(unittest.TestCase):
         dialog.close()
 
     def test_apply_dialog_uses_working_copy(self) -> None:
+        from PySide6.QtCore import Qt
+
         dialog = HazardIdentificationDialog(identification=self.identification)
         assert dialog._identification_store is not None
         apply_dialog = HazardLibraryApplyToInventoryDialog(
@@ -274,7 +276,7 @@ class HazardIdentificationUxSave1cTestCase(unittest.TestCase):
             hazard_identification_id=self.identification.id,
         )
         self.assertGreater(apply_dialog.sources_list.count(), 0)
-        apply_dialog.sources_list.setCurrentRow(0)
+        apply_dialog.sources_list.item(0).setCheckState(Qt.CheckState.Checked)
         with self._patch_info():
             apply_dialog.accept()
         self.assertIsNotNone(apply_dialog.result)

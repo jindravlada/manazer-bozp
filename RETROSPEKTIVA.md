@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-05 – UX-RISK-4
+
+**Co se povedlo:** Převzetí více zdrojů z katalogu je jedna akce, bez změny datového modelu a bez „Vybrat vše“.
+
+**Co už bychom dnes udělali jinak:** Dialog převzetí hned stavět na zaškrtávání místo jednoduchého výběru řádku.
+
+**Co bylo zbytečně složité:** Nic – stačilo opakovat existující převzetí jednoho zdroje.
+
+**Jaké nové pravidlo z toho vzniklo:** Změna filtru v dialogu nesmí zahodit již provedené označení položek.
+
+---
+
 ### 2026-09-04 – RISK-REVIEW-TERMINOLOGY-2
 
 **Co se povedlo:** Uživatel vidí Revizi posouzení rizik místo Přezkoumání opatření, bez zásahu do dat.

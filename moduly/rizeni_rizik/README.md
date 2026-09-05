@@ -618,3 +618,12 @@ Evidence zjištění:
 - automatické vytvoření zjištění při zadání nového čísla
 - záložka Zjištění v editoru přezkoumání
 - upozornění při neúplném názvu (uložení se nezakazuje)
+
+## UX-RISK-4
+
+Hromadné převzetí zdrojů rizika z katalogu:
+
+- dialog **Převzít z Katalogu** má u každého zdroje checkbox; bez „Vybrat vše“
+- **Převzít** jednou akcí převezme všechny označené zdroje (opakovaně stávající převzetí jednoho zdroje)
+- změna filtru **Kategorie** zachová již provedené zaškrtnutí
+- již převzaté zdroje se v nabídce nezobrazují; tlačítko **Převzít** je bez výběru neaktivní
