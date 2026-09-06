@@ -23,6 +23,9 @@ MEASURE_FORMULATION_STYLE_HEADING = "=== Styl formulace opatření a otázek ===
 # Kapitola RISK-AI-12 – pořadí posouzení stávajících položek.
 MEASURE_REVIEW_ORDER_HEADING = "=== Posouzení stávajících opatření ==="
 
+CATALOG_CONTROL_QUESTIONS_LABEL = "Kontrolní otázky pro revizi posouzení rizik"
+CATALOG_METHODOLOGY_HEADING = "=== Metodika Registru rizik ==="
+
 
 def measure_review_order_section() -> list[str]:
     """Pokyny pro revizi Zásad a kontrolních otázek."""
@@ -41,6 +44,25 @@ def measure_review_order_section() -> list[str]:
         "",
         "Pokud jsou stávající zásady a kontrolní otázky dostatečné, "
         "nenavrhuj jejich změnu.",
+    ]
+
+
+def catalog_methodology_section() -> list[str]:
+    """Současná metodika katalogového zdroje rizika pro pokyn AI."""
+    return [
+        CATALOG_METHODOLOGY_HEADING,
+        "",
+        "Zdroj rizika = něco reálně existujícího na pracovišti.",
+        "Nežádoucí událost = mechanismus úrazu / poškození zdraví.",
+        "Událost není příčina, opatření ani následek.",
+        "Zásady bezpečné práce jsou přímé pokyny zaměstnanci.",
+        f"{CATALOG_CONTROL_QUESTIONS_LABEL} ověřují jednu konkrétní věc "
+        "a umožňují odpověď ANO / NE / NETÝKÁ SE.",
+        "",
+        "Zvažuj zaměstnance, dodavatele, návštěvy, osoby bez místní znalosti, "
+        "údržbu a také poruchy, havárie, poškození a mimořádné provozní stavy.",
+        "Navrhuj všechny rozumně odborně obhajitelné události; "
+        "konečný výběr provádí uživatel.",
     ]
 
 
@@ -344,7 +366,7 @@ def catalog_universal_processing_rules() -> list[str]:
         "chybějící nebo potřebné doplnění.",
         "Prázdný katalog je legitimní vstup a nesmí být důvodem k odmítnutí.",
         "Navrhuj nežádoucí události, ohrožené skupiny, zásady bezpečné práce, "
-        "kontrolní otázky pro revizi rizik a právní vazby.",
+        "kontrolní otázky pro revizi posouzení rizik a právní vazby.",
         "Pokud katalog neobsahuje žádné nežádoucí události, navrhni spolu s nimi "
         "i první kontrolní otázky.",
         "Pokud katalog již obsahuje data, hledej chybějící nebo nevhodně "
@@ -391,6 +413,7 @@ def build_catalog_ai_instruction(
             "Nevydávej návrhy za úplné ani definitivní.",
         ]
     )
+    rules.extend(catalog_methodology_section())
     rules.append("\n".join(measure_review_order_section()).strip())
     rules.append("\n".join(measure_formulation_style_section()).strip())
     return {
@@ -461,13 +484,16 @@ def build_catalog_source_ai_peer_review_prompt(
     lines.append(
         "Podklady jsou hierarchické:\n"
         "\n"
-        "Zdroj rizika → Nežádoucí události → Posouzení\n"
-        "→ Zásady bezpečné práce → Kontrolní otázky pro revizi rizik\n"
+        "Kategorie → Zdroj rizika → Nežádoucí událost → "
+        "Ohrožené skupiny / posouzení\n"
+        "→ Zásady bezpečné práce → Kontrolní otázky pro revizi posouzení rizik\n"
         "\n"
         "Každý objekt má stabilní exportní ID "
         "(SOURCE-…, EVENT-…, ASSESSMENT-…, EXISTING-MEASURE-…, REQUIRED-MEASURE-…).\n"
         "Při návrhu doplnění uveď rodiče pomocí tohoto ID."
     )
+    lines.append("")
+    lines.extend(catalog_methodology_section())
     lines.append("")
 
     lines.append("PRAVIDLA")
@@ -489,8 +515,9 @@ def build_catalog_source_ai_peer_review_prompt(
         "Respektuj skutečný charakter katalogového zdroje rizika.",
         "Ke každému balíku i doporučení k opatřením napiš stručné odborné zdůvodnění.",
         "Nevydávej návrhy za úplné ani definitivní.",
-        "Odpověď strukturoj podle response_schema "
-        "(nebo použij textový formát níže).",
+        "Odpověď strukturoj podle schema_odpovedi.json "
+        "(schema 2.0 s proposal_packages a/nebo measure_recommendations; "
+        "nebo použij textový formát níže).",
     ]
     for rule in rules:
         lines.append(f"- {rule}")
@@ -507,7 +534,7 @@ def build_catalog_source_ai_peer_review_prompt(
         "Jsou v katalogovém zdroji popsány všechny významné nežádoucí události?",
         "Chybí některé běžné nežádoucí události?",
         "Chybí některé skupiny ohrožených osob?",
-        "Jsou stávající kontrolní otázky pro revizi rizik dostatečné?",
+        "Jsou stávající kontrolní otázky pro revizi posouzení rizik dostatečné?",
         "Jsou Zásady bezpečné práce dostatečné, nebo vyžadují úpravu?",
         "Chybí skutečně nová kontrolní otázka, kterou nelze nahradit úpravou?",
         "Chybí některé důležité právní požadavky?",
@@ -521,12 +548,15 @@ def build_catalog_source_ai_peer_review_prompt(
     lines.append("-" * 40)
     lines.append(
         "Vrať schema 2.0 s proposal_packages (nové/doplněné události) a/nebo "
-        "measure_recommendations (revize opatření).\n"
+        "measure_recommendations (revize Zásad bezpečné práce a kontrolních otázek "
+        "pro revizi posouzení rizik).\n"
         "\n"
         "Každý prvek measure_recommendations musí obsahovat:\n"
         "- recommendation_id\n"
         "- typ: beze_zmen | upravit_navazujici_opatreni | "
         "upravit_zasady_bezpecne_prace | nove_navazujici_opatreni\n"
+        "  (upravit_navazujici_opatreni = úprava kontrolní otázky, "
+        "nove_navazujici_opatreni = nová kontrolní otázka)\n"
         "- reasoning (stručné odborné zdůvodnění)\n"
         "- proposed_text (navrhované znění; u beze_zmen může být prázdné)\n"
         "- target_export_id: REQUIRED-MEASURE-… / EXISTING-MEASURE-… "
@@ -535,7 +565,8 @@ def build_catalog_source_ai_peer_review_prompt(
         "Ucelené návrhové balíky (proposal_packages) používej pro nové události. "
         "Každý balík musí obsahovat událost nebo vazbu na existující EVENT-…, "
         "alespoň jedno kompletní posouzení (ohrožené skupiny a závažnost), "
-        "volitelně opatření uvnitř posouzení a volitelně právní vazby.\n"
+        "volitelně zásady a kontrolní otázky uvnitř posouzení a volitelně "
+        "právní vazby.\n"
         "\n"
         "Textový fallback pro balíky událostí:\n"
         "\n"
@@ -553,7 +584,7 @@ def build_catalog_source_ai_peer_review_prompt(
         "ZÁSADY BEZPEČNÉ PRÁCE:\n"
         "- ...\n"
         "\n"
-        "NAVAZUJÍCÍ OPATŘENÍ:\n"
+        "KONTROLNÍ OTÁZKY PRO REVIZI POSOUZENÍ RIZIK:\n"
         "- ...\n"
         "\n"
         "PRÁVNÍ VAZBY:\n"

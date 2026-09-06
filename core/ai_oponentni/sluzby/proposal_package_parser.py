@@ -41,7 +41,7 @@ _EXISTING_MEASURES_RE = re.compile(
 )
 _REQUIRED_MEASURES_RE = re.compile(
     r"^(potřebná\s+opatření|navazující\s+opatření|"
-    r"kontrolní\s+otázky(?:\s+pro\s+revizi\s+rizik)?)\s*:\s*$",
+    r"kontrolní\s+otázky(?:\s+pro\s+revizi(?:\s+posouzení)?\s+rizik)?)\s*:\s*$",
     re.IGNORECASE,
 )
 _LEGAL_LINKS_RE = re.compile(r"^právní\s+vazby\s*:\s*$", re.IGNORECASE)

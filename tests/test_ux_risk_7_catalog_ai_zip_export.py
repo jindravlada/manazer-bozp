@@ -1,4 +1,4 @@
-"""RISK-AI-SINGLE-FILE-EXPORT-1: katalogový export jediného JSON bez režimů."""
+"""UX-RISK-7: vícesouborový ZIP export podkladů AI pro katalog zdrojů rizik."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
 
-_TMP = Path(tempfile.mkdtemp(prefix="risk-ai-single-file-"))
+_TMP = Path(tempfile.mkdtemp(prefix="ux-risk-7-"))
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 with patch.object(Path, "home", return_value=_TMP):
@@ -32,13 +32,10 @@ with patch.object(Path, "home", return_value=_TMP):
     from PySide6.QtWidgets import QApplication, QRadioButton
 
     from core.ai_oponentni.constants import (
-        AI_PEER_REVIEW_JSON_FILE_FILTER,
         AI_PEER_REVIEW_NOT_AI_RESPONSE,
         AI_PEER_REVIEW_SCHEMA_VERSION_2_0,
         AI_PEER_REVIEW_ZIP_FILE_FILTER,
-        AI_REVIEW_REQUEST_FILENAME_PREFIX,
-        AI_REVIEW_REQUEST_USER_INSTRUCTION,
-        AI_REVIEW_RESPONSE_FILENAME,
+        AI_PEER_REVIEW_ZIP_FILES,
     )
     from core.ai_oponentni.modely.ai_peer_review import AiPeerReview, AiPeerReviewBatch
     from core.ai_oponentni.sluzby.ai_peer_review_service import ai_peer_review_service
@@ -107,38 +104,19 @@ with patch.object(Path, "home", return_value=_TMP):
     from sqlalchemy import delete
     from tests.rizeni_rizik_test_helpers import ensure_exposed_group
 
-_FORBIDDEN_KEYS = {
-    "request_mode",
-    "legal_document_id",
-    "legal_requirement_id",
-    "application_version",
-    "template_id",
-    "export_id_map",
-}
-
-_REQUIRED_ROOT_KEYS = (
-    "schema_version",
-    "user_instruction",
-    "ai_instruction",
-    "processing",
-    "response_schema",
-    "source_data",
-)
+_FORBIDDEN_USER_PHRASE = "Navazující opatření"
+_CONTROL_QUESTIONS = "Kontrolní otázky pro revizi posouzení rizik"
 
 
-def _collect_keys(value) -> set[str]:
-    keys: set[str] = set()
-    if isinstance(value, dict):
-        keys.update(value)
-        for item in value.values():
-            keys.update(_collect_keys(item))
-    elif isinstance(value, list):
-        for item in value:
-            keys.update(_collect_keys(item))
-    return keys
+def _read_zip_texts(path: Path) -> dict[str, str]:
+    with zipfile.ZipFile(path, "r") as zf:
+        return {
+            name: zf.read(name).decode("utf-8")
+            for name in zf.namelist()
+        }
 
 
-class RiskAiSingleFileExport1TestCase(unittest.TestCase):
+class UxRisk7CatalogAiZipExportTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls._app = QApplication.instance() or QApplication([])
@@ -158,8 +136,9 @@ class RiskAiSingleFileExport1TestCase(unittest.TestCase):
             session.commit()
 
         self.provider = hazard_catalog_source_peer_review_provider
-        self.group = ensure_exposed_group("Zaměstnanci SINGLE-FILE")
-        self.export_dir = Path(tempfile.mkdtemp(prefix="risk-ai-sf-export-"))
+        self.group = ensure_exposed_group("Zaměstnanci UX-RISK-7")
+        self.group_visitors = ensure_exposed_group("Návštěvy UX-RISK-7")
+        self.export_dir = Path(tempfile.mkdtemp(prefix="ux-risk-7-export-"))
         self.document = legal_document_service.create(
             document_type=DOCUMENT_TYPE_ZAKON,
             number="262",
@@ -193,12 +172,24 @@ class RiskAiSingleFileExport1TestCase(unittest.TestCase):
             name="Pád břemene",
             description="Popis události",
         )
+        event2 = hazard_library_template_event_service.create_event(
+            template_id=template.id,
+            name="Pád z výšky",
+            description="Druhá událost",
+        )
         assessment = hazard_library_template_assessment_service.create_assessment(
             template_id=template.id,
             template_event_id=event.id,
             exposed_group_id=self.group.id,
             severity=RISK_SEVERITY_MODERATE,
             conclusion="Nutná opatření",
+        )
+        hazard_library_template_assessment_service.create_assessment(
+            template_id=template.id,
+            template_event_id=event2.id,
+            exposed_group_id=self.group_visitors.id,
+            severity=RISK_SEVERITY_MODERATE,
+            conclusion="Ohrožené návštěvy",
         )
         hazard_library_template_existing_measure_service.create_measure(
             template_id=template.id,
@@ -208,11 +199,11 @@ class RiskAiSingleFileExport1TestCase(unittest.TestCase):
         hazard_library_template_required_measure_service.create_measure(
             template_id=template.id,
             template_assessment_id=assessment.id,
-            description="Doplnit zábradlí",
+            description="Je břemeno před zdvihem řádně uchyceno?",
         )
         return template
 
-    def _export(self, template, filename: str) -> tuple[Path, dict]:
+    def _export(self, template, filename: str) -> tuple[Path, dict[str, str]]:
         target = self.export_dir / filename
         result = ai_peer_review_service.export_package(
             self.provider,
@@ -221,92 +212,81 @@ class RiskAiSingleFileExport1TestCase(unittest.TestCase):
             options=AiPeerReviewExportOptions(),
         )
         self.assertTrue(target.is_file())
-        self.assertFalse(zipfile.is_zipfile(target))
-        payload = json.loads(target.read_text(encoding="utf-8"))
+        self.assertTrue(zipfile.is_zipfile(target))
         self.assertIsNotNone(result.review.id)
         self.assertTrue(result.review.export_id_map_json)
-        return target, payload
+        files = _read_zip_texts(target)
+        self.assertEqual(set(files), set(AI_PEER_REVIEW_ZIP_FILES))
+        for name, text in files.items():
+            self.assertTrue(text.strip(), f"{name} je prázdný")
+        return target, files
 
-    def _assert_common_request(self, payload: dict) -> None:
-        for key in _REQUIRED_ROOT_KEYS:
-            self.assertIn(key, payload)
-        self.assertEqual(payload["schema_version"], AI_PEER_REVIEW_SCHEMA_VERSION_2_0)
-        self.assertEqual(payload["user_instruction"], AI_REVIEW_REQUEST_USER_INSTRUCTION)
-        self.assertEqual(
-            payload["processing"],
-            {"output_filename": AI_REVIEW_RESPONSE_FILENAME, "language": "cs"},
-        )
-        self.assertNotIn("request_mode", payload)
-        self.assertNotIn("request_mode", payload["processing"])
-        instruction = payload["ai_instruction"]
-        self.assertEqual(instruction["role"], "experienced_safety_technician")
-        self.assertEqual(instruction["role_label"], "Zkušený bezpečnostní technik")
-        self.assertIsInstance(instruction["goal"], list)
-        self.assertIsInstance(instruction["rules"], list)
-        rules_text = "\n".join(instruction["rules"])
-        self.assertIn("žádné nežádoucí události", rules_text)
-        self.assertIn("první odborný návrh", rules_text)
-        self.assertIn("oponenturu", rules_text)
-        self.assertIn("Prázdný katalog je legitimní", rules_text)
-        self.assertIn("new_event", rules_text)
-        self.assertIn("bez Markdownu", rules_text)
-        dumped = json.dumps(payload, ensure_ascii=False)
-        self.assertNotIn("request_mode", dumped)
-        keys = _collect_keys(payload)
-        self.assertTrue(_FORBIDDEN_KEYS.isdisjoint(keys), keys & _FORBIDDEN_KEYS)
-        source_data = payload["source_data"]
-        self.assertEqual(set(source_data), {"catalog_source", "risk_source", "counts"})
-        self.assertNotIn("export_id_map", payload)
-        schema = payload["response_schema"]
+    def _assert_current_methodology(self, files: dict[str, str]) -> None:
+        joined = "\n".join(files[name] for name in ("pokyn_pro_AI.txt", "data.txt", "prehled.txt"))
+        self.assertIn(_CONTROL_QUESTIONS, files["pokyn_pro_AI.txt"])
+        self.assertIn(_CONTROL_QUESTIONS, files["data.txt"])
+        self.assertIn(_CONTROL_QUESTIONS, files["prehled.txt"])
+        self.assertIn("reálně existujícího na pracovišti", files["pokyn_pro_AI.txt"])
+        self.assertIn("mechanismus úrazu", files["pokyn_pro_AI.txt"])
+        self.assertIn("ANO / NE / NETÝKÁ SE", files["pokyn_pro_AI.txt"])
+        self.assertIn("schema 2.0", files["pokyn_pro_AI.txt"].casefold())
+        self.assertIn("proposal_packages", files["pokyn_pro_AI.txt"])
+        self.assertNotIn(_FORBIDDEN_USER_PHRASE, joined)
+        zadani = json.loads(files["zadani.json"])
+        self.assertNotIn(_FORBIDDEN_USER_PHRASE, json.dumps(zadani, ensure_ascii=False))
+        schema = json.loads(files["schema_odpovedi.json"])
         self.assertEqual(schema["schema_version"], AI_PEER_REVIEW_SCHEMA_VERSION_2_0)
-        self.assertIn("proposal_packages", schema["properties"])
         self.assertIn("proposal_package", schema["$defs"])
 
-    def test_empty_and_filled_catalog_use_the_same_export_path(self) -> None:
+    def test_empty_and_filled_catalog_export_multifile_zip(self) -> None:
         empty = self._create_empty_template()
         filled = self._create_filled_template()
-        empty_path, empty_payload = self._export(
-            empty,
-            f"{AI_REVIEW_REQUEST_FILENAME_PREFIX}_empty.json",
-        )
-        filled_path, filled_payload = self._export(
-            filled,
-            f"{AI_REVIEW_REQUEST_FILENAME_PREFIX}_filled.json",
-        )
-        self._assert_common_request(empty_payload)
-        self._assert_common_request(filled_payload)
-        self.assertEqual(empty_payload["source_data"]["counts"]["events"], 0)
-        self.assertEqual(empty_payload["source_data"]["risk_source"]["events"], [])
-        self.assertGreater(filled_payload["source_data"]["counts"]["events"], 0)
+        empty_path, empty_files = self._export(empty, "empty.zip")
+        filled_path, filled_files = self._export(filled, "filled.zip")
+        self._assert_current_methodology(empty_files)
+        self._assert_current_methodology(filled_files)
+
+        empty_zadani = json.loads(empty_files["zadani.json"])
+        filled_zadani = json.loads(filled_files["zadani.json"])
+        self.assertEqual(empty_zadani["risk_source"]["events"], [])
+        self.assertEqual(empty_zadani["object_count"], 1)
+        self.assertIn("Prázdný zdroj", empty_files["data.txt"])
+        self.assertIn("(žádná)", empty_files["data.txt"])
+
+        self.assertGreaterEqual(len(filled_zadani["risk_source"]["events"]), 2)
         self.assertEqual(
-            filled_payload["source_data"]["risk_source"]["events"][0]["export_id"],
+            filled_zadani["risk_source"]["events"][0]["export_id"],
             "EVENT-001",
         )
-        legal_ref = filled_payload["source_data"]["risk_source"]["legal_links"][0][
-            "reference"
-        ]
+        self.assertIn("Pád břemene", filled_files["data.txt"])
+        self.assertIn("Pád z výšky", filled_files["data.txt"])
+        self.assertIn("Zaměstnanci UX-RISK-7", filled_files["data.txt"])
+        self.assertIn("Návštěvy UX-RISK-7", filled_files["data.txt"])
+        self.assertIn("Portálový jeřáb", filled_files["data.txt"])
+        legal_ref = filled_zadani["risk_source"]["legal_links"][0]["reference"]
         self.assertTrue(
             "262" in legal_ref or "Zákoník" in legal_ref or "ZP" in legal_ref,
             legal_ref,
         )
+        self.assertNotIn("legal_document_id", json.dumps(filled_zadani, ensure_ascii=False))
+        self.assertNotIn("export_id_map", filled_zadani)
+        self.assertNotIn("source_data", filled_zadani)
+        self.assertNotIn("user_instruction", filled_zadani)
         siblings = {path.name for path in self.export_dir.iterdir()}
         self.assertEqual(siblings, {empty_path.name, filled_path.name})
 
-    def test_default_filename_and_filter_are_json(self) -> None:
+    def test_default_filename_and_filter_are_zip(self) -> None:
         template = self._create_empty_template()
         label = catalog_source_reference(template.id)
         filename = ai_peer_review_service.default_export_filename(
             label,
-            datetime.now(),
+            datetime(2026, 9, 6, 13, 12),
             provider=self.provider,
         )
-        self.assertEqual(
-            filename,
-            f"{AI_REVIEW_REQUEST_FILENAME_PREFIX}_{label}.json",
-        )
+        self.assertEqual(filename, f"AI_oponentura_{label}_2026-09-06_1312.zip")
         self.assertEqual(
             ai_peer_review_service.export_file_filter(self.provider),
-            AI_PEER_REVIEW_JSON_FILE_FILTER,
+            AI_PEER_REVIEW_ZIP_FILE_FILTER,
         )
         self.assertEqual(
             ai_peer_review_service.export_file_filter(
@@ -314,13 +294,8 @@ class RiskAiSingleFileExport1TestCase(unittest.TestCase):
             ),
             AI_PEER_REVIEW_ZIP_FILE_FILTER,
         )
-        self.assertTrue(self.provider.exports_single_request_json)
         self.assertFalse(
-            getattr(
-                hazard_identification_peer_review_provider,
-                "exports_single_request_json",
-                False,
-            )
+            getattr(self.provider, "exports_single_request_json", False)
         )
 
     def test_export_dialog_has_no_mode_choice(self) -> None:
@@ -333,15 +308,12 @@ class RiskAiSingleFileExport1TestCase(unittest.TestCase):
         self.assertNotIn("request_mode", joined)
         self.assertNotIn("starter", joined)
 
-    def test_request_json_is_not_imported_as_response(self) -> None:
+    def test_export_zip_is_not_imported_as_response(self) -> None:
         template = self._create_empty_template()
-        _path, payload = self._export(
-            template,
-            f"{AI_REVIEW_REQUEST_FILENAME_PREFIX}_not_response.json",
-        )
+        _path, files = self._export(template, "not_response.zip")
         with self.assertRaises(AiPeerReviewParseError) as ctx:
             parse_ai_peer_review_response(
-                json.dumps(payload, ensure_ascii=False),
+                files["zadani.json"],
                 expected_source_identification_number=catalog_source_reference(
                     template.id,
                 ),
@@ -349,19 +321,19 @@ class RiskAiSingleFileExport1TestCase(unittest.TestCase):
             )
         self.assertEqual(str(ctx.exception), AI_PEER_REVIEW_NOT_AI_RESPONSE)
 
-    def test_schema_2_0_response_still_parses_after_single_file_export(self) -> None:
+    def test_schema_2_0_response_still_parses_after_zip_export(self) -> None:
         template = self._create_filled_template()
-        self._export(template, f"{AI_REVIEW_REQUEST_FILENAME_PREFIX}_compat.json")
+        self._export(template, "compat.zip")
         response = {
             "schema_version": "2.0",
             "source_reference": catalog_source_reference(template.id),
-            "generated_at": "2026-09-04T18:00:00",
+            "generated_at": "2026-09-06T13:12:00",
             "proposal_packages": [
                 {
                     "package_id": "PKG-001",
                     "package_type": "new_event",
                     "target_event_export_id": None,
-                    "event": {"name": "Pád z výšky", "description": "", "note": ""},
+                    "event": {"name": "Zachycení oděvu", "description": "", "note": ""},
                     "assessments": [
                         {
                             "exposed_group": "Obsluha",

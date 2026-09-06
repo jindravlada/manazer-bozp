@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-06 – UX-RISK-7
+
+**Co se povedlo:** Katalogový zdroj rizika znovu exportuje vícesouborový ZIP, aniž by se vrátila stará metodika Navazujících opatření.
+
+**Co už bychom dnes udělali jinak:** Jednosouborový JSON pro Copilot nezavádět jako náhradu ZIP, pokud má zůstat stejný workflow jako u identifikace.
+
+**Co bylo zbytečně složité:** Nic – stačilo obnovit `_write_export_archive` a aktualizovat obsah pokynu.
+
+**Jaké nové pravidlo z toho vzniklo:** ZIP je transportní formát podkladů pro AI; metodika v souborech musí odpovídat aktuálnímu Registru rizik, ne historickým názvům.
+
+---
+
 ### 2026-09-05 – UX-RISK-6
 
 **Co se povedlo:** Kategorie, Aktivní i hledání jdou použít najednou, bez změny významu počítadla.

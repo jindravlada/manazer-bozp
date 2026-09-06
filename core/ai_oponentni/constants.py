@@ -4,8 +4,8 @@ AI_PEER_REVIEW_TAB_TITLE = "Oponentní posouzení AI"
 
 AI_PEER_REVIEW_INTRO_TEXT = (
     "Exportujte podklady pro nezávislé odborné oponentní posouzení externí AI. "
-    "Katalog zdrojů rizik uloží jeden soubor JSON; v Copilotu stačí zadat: "
-    "Zpracuj dle instrukcí. "
+    "Katalog zdrojů rizik uloží jeden ZIP s pokynem, daty, přehledem, zadáním "
+    "a schématem odpovědi. "
     "AI navrhne možné opomenuté skutečnosti; konečné rozhodnutí vždy provádí uživatel. "
     "AI sama nic do evidence nezapisuje."
 )

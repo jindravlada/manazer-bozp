@@ -7,6 +7,7 @@ import json
 import os
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 from unittest.mock import patch
 
@@ -337,11 +338,12 @@ Chybí kompletní scénář.
             options=AiPeerReviewExportOptions(),
         )
         self.assertTrue(target.is_file())
-        payload = json.loads(target.read_text(encoding="utf-8"))
-        schema = payload["response_schema"]
+        with zipfile.ZipFile(target, "r") as zf:
+            zadani = json.loads(zf.read("zadani.json").decode("utf-8"))
+            schema = json.loads(zf.read("schema_odpovedi.json").decode("utf-8"))
         self.assertEqual(schema["schema_version"], AI_PEER_REVIEW_SCHEMA_VERSION_2_0)
-        self.assertEqual(payload["schema_version"], AI_PEER_REVIEW_SCHEMA_VERSION_2_0)
-        self.assertNotIn("request_mode", payload)
+        self.assertEqual(zadani["schema_version"], AI_PEER_REVIEW_SCHEMA_VERSION_2_0)
+        self.assertNotIn("request_mode", zadani)
         self.assertIn("proposal_package", schema["$defs"])
         self.assertIsNotNone(export_result.review.id)
 

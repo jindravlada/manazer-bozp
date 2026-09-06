@@ -581,7 +581,9 @@ class RiskControlQuestions1DataTestCase(unittest.TestCase):
             options=AiPeerReviewExportOptions(),
         )
         dumped = json.dumps(content.zadani_json or {}, ensure_ascii=False)
-        self.assertIn("první kontrolní otázky", dumped)
+        self.assertIn("prvních kontrolních otázek", dumped)
+        self.assertIn("první kontrolní otázky", content.prompt_text)
+        self.assertIn("Kontrolní otázky pro revizi posouzení rizik", content.prompt_text)
 
     def test_11_manual_incorporate_and_reject_still_work(self) -> None:
         template, assessment, existing, required, review, export_id_map = (

@@ -424,7 +424,7 @@ Oponentura AI v Katalogu zdrojů rizik:
 - záložka **Oponentní posouzení AI** v editoru zdroje rizika (po prvním uložení)
 - provider `hazard_catalog_source` s exportem MASTER hierarchie (`SOURCE` → `EVENT` → `ASSESSMENT` → opatření)
 - exportní dialog bez cíle „Hledat chybějící zdroje analýzy“, pole **Obecný kontext zdroje rizika**
-- katalog ukládá jeden soubor `AI_REVIEW_REQUEST_{reference}.json` (bez ZIP)
+- katalog ukládá vícesouborový ZIP (`pokyn_pro_AI.txt`, `data.txt`, `prehled.txt`, `zadani.json`, `schema_odpovedi.json`)
 - import JSON/TXT/ZIP odpovědi pouze do evidence konzultace (návrhy se nezapisují do MASTER obsahu)
 - v identifikaci pracoviště je nový export/import AI vypnutý; historická konzultace zůstává zobrazena
 
@@ -511,7 +511,7 @@ Dokončení workflow po ručním rozhodnutí:
 
 AI oponentura katalogu jako ucelené návrhové balíky (schema 2.0):
 
-- export katalogu používá `schema_odpovedi` verze 2.0 s `proposal_packages` (vnořené v `AI_REVIEW_REQUEST.json`)
+- export katalogu používá `schema_odpovedi.json` verze 2.0 s `proposal_packages`
 - každý balík obsahuje událost (nebo vazbu na EVENT-…), posouzení, opatření a právní vazby
 - validace odmítne neúplné balíky; neplatný balík se neimportuje částečně
 - atomizovaný import schema 1.1 nelze načíst do nových katalogových konzultací
@@ -544,11 +544,21 @@ Zapracování návrhů AI do MASTER obsahu katalogu:
 - historie změn s důvodem „Převzaty návrhy AI“
 - detekce duplicit s volbami Přeskočit / Sloučit / Upravit / Zrušit
 
+## UX-RISK-7
+
+Obnovení vícesouborového ZIP exportu podkladů pro AI u katalogového zdroje rizika:
+
+- akce **Exportovat podklady pro AI** znovu ukládá `AI_oponentura_{reference}_{datum}.zip`
+- uvnitř: `pokyn_pro_AI.txt`, `data.txt`, `prehled.txt`, `zadani.json`, `schema_odpovedi.json`
+- transportní formát z poslední funkční ZIP verze (`1ee6b50`); obsah podle současné metodiky Registru rizik
+- bez jednosouborového `AI_REVIEW_REQUEST.json`; identifikace rizik ponechává ZIP schema 1.1
+- import odpovědi AI beze změny (schema 2.0)
+
 ## RISK-AI-SINGLE-FILE-EXPORT-1
 
-Jediný soubor podkladů pro Copilot u katalogu zdrojů rizik:
+Jediný soubor podkladů pro Copilot u katalogu zdrojů rizik (později nahrazeno UX-RISK-7):
 
-- export vytvoří `AI_REVIEW_REQUEST_{reference}.json` (instrukce, `source_data`, `response_schema`)
+- export vytvořil `AI_REVIEW_REQUEST_{reference}.json` (instrukce, `source_data`, `response_schema`)
 - bez ZIP a bez doprovodných souborů; bez volby režimu v UI
 - prázdný i naplněný katalog jdou stejnou cestou; prázdný katalog se neodmítá
 - mapa exportních ID zůstává jen v DB; zápis do katalogu až po Zapracovat / Zamítnout

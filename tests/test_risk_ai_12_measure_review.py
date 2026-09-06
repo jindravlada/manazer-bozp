@@ -205,7 +205,7 @@ class RiskAi12ParseAndImportTestCase(unittest.TestCase):
 
     def test_export_contains_zasady_and_navazujici(self) -> None:
         self.assertIn("Zásady bezpečné práce", self.export.data_text)
-        self.assertIn("Kontrolní otázky pro revizi rizik", self.export.data_text)
+        self.assertIn("Kontrolní otázky pro revizi posouzení rizik", self.export.data_text)
         self.assertIn("Používejte OOPP při manipulaci.", self.export.data_text)
         self.assertIn("Kontrolujte uchycení břemene.", self.export.data_text)
         dumped = json.dumps(self.export.zadani_json, ensure_ascii=False)

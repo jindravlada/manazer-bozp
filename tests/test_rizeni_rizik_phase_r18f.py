@@ -254,27 +254,29 @@ class HazardCatalogAiPeerReviewR18fTestCase(unittest.TestCase):
         zadani = content.zadani_json
         assert zadani is not None
         self.assertNotIn("request_mode", zadani)
-        self.assertNotIn("export_type", zadani)
-        source_data = zadani["source_data"]
         self.assertEqual(
-            source_data["catalog_source"]["reference"],
+            zadani["export_type"],
+            "hazard_catalog_source_ai_peer_review",
+        )
+        self.assertEqual(
+            zadani["catalog_source"]["reference"],
             catalog_source_reference(self.template.id),
         )
-        self.assertEqual(source_data["catalog_source"]["name"], "Portálový jeřáb")
-        self.assertEqual(source_data["risk_source"]["export_id"], "SOURCE-001")
-        self.assertEqual(source_data["risk_source"]["events"][0]["export_id"], "EVENT-001")
+        self.assertEqual(zadani["catalog_source"]["name"], "Portálový jeřáb")
+        self.assertEqual(zadani["risk_source"]["export_id"], "SOURCE-001")
+        self.assertEqual(zadani["risk_source"]["events"][0]["export_id"], "EVENT-001")
         self.assertEqual(
-            source_data["risk_source"]["events"][0]["assessments"][0]["export_id"],
+            zadani["risk_source"]["events"][0]["assessments"][0]["export_id"],
             "ASSESSMENT-001",
         )
         self.assertEqual(
-            source_data["risk_source"]["events"][0]["assessments"][0]["existing_measures"][0][
+            zadani["risk_source"]["events"][0]["assessments"][0]["existing_measures"][0][
                 "export_id"
             ],
             "EXISTING-MEASURE-001",
         )
         self.assertEqual(
-            source_data["risk_source"]["events"][0]["assessments"][0]["required_measures"][0][
+            zadani["risk_source"]["events"][0]["assessments"][0]["required_measures"][0][
                 "export_id"
             ],
             "REQUIRED-MEASURE-001",
@@ -318,7 +320,7 @@ class HazardCatalogAiPeerReviewR18fTestCase(unittest.TestCase):
         self.assertNotIn("Charakteristika pracoviště", content.prompt_text)
 
     def test_json_txt_zip_import_formats(self) -> None:
-        target = self.export_dir / "AI_REVIEW_REQUEST_KZR.json"
+        target = self.export_dir / "AI_oponentura_KZR.zip"
         export_result = ai_peer_review_service.export_package(
             self.provider,
             self.template.id,
@@ -326,11 +328,13 @@ class HazardCatalogAiPeerReviewR18fTestCase(unittest.TestCase):
             options=AiPeerReviewExportOptions(),
         )
         self.assertTrue(target.is_file())
-        self.assertFalse(zipfile.is_zipfile(target))
-        payload = json.loads(target.read_text(encoding="utf-8"))
+        self.assertTrue(zipfile.is_zipfile(target))
+        with zipfile.ZipFile(target, "r") as zf:
+            payload = json.loads(zf.read("zadani.json").decode("utf-8"))
         self.assertEqual(payload["schema_version"], "2.0")
         self.assertNotIn("request_mode", payload)
-        self.assertIn("source_data", payload)
+        self.assertIn("catalog_source", payload)
+        self.assertIn("risk_source", payload)
 
         txt_path = self.export_dir / "odpoved.txt"
         txt_path.write_text(CATALOG_SAMPLE_RESPONSE, encoding="utf-8")
