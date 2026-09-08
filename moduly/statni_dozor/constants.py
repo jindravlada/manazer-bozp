@@ -466,6 +466,9 @@ PARTICIPANT_NAME_REQUIRED_MESSAGE = "Není vyplněno jméno účastníka."
 PARTICIPANT_IDENTITY_CONFLICT_MESSAGE = (
     "Nelze současně použít osobu z evidence a jiné ručně zadané jméno."
 )
+PARTICIPANT_CATALOG_DUPLICATE_MESSAGE = (
+    "Tato osoba je již mezi účastníky kontroly."
+)
 
 LABEL_PARTICIPANT_ROLE = "Role při kontrole"
 LABEL_PARTICIPANT_CATALOG = "Osoba z evidence"

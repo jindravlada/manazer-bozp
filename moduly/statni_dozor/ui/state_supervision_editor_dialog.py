@@ -2597,6 +2597,20 @@ class StateSupervisionEditorDialog(QDialog):
             has_one and 0 <= index < len(active) - 1
         )
 
+    def _occupied_catalog_identities(
+        self,
+        *,
+        exclude_client_key: str | None = None,
+    ) -> set[tuple[str, int]]:
+        from moduly.statni_dozor.sluzby.state_supervision_participant_catalog import (
+            occupied_catalog_identities,
+        )
+
+        return occupied_catalog_identities(
+            self._active_participants(),
+            exclude_client_key=exclude_client_key,
+        )
+
     def _add_participant(self) -> None:
         from moduly.statni_dozor.ui.state_supervision_participant_dialog import (
             exec_participant_dialog,
@@ -2609,7 +2623,12 @@ class StateSupervisionEditorDialog(QDialog):
             display_order=next_order,
             client_key=new_participant_client_key(),
         )
-        saved = exec_participant_dialog(self, draft=draft, is_new=True)
+        saved = exec_participant_dialog(
+            self,
+            draft=draft,
+            is_new=True,
+            occupied_catalog_identities=self._occupied_catalog_identities(),
+        )
         if saved is None:
             return
         self._participant_drafts.append(saved)
@@ -2624,7 +2643,14 @@ class StateSupervisionEditorDialog(QDialog):
         current = self._participant_draft_by_key(self._selected_participant_key())
         if current is None:
             return
-        saved = exec_participant_dialog(self, draft=replace(current), is_new=False)
+        saved = exec_participant_dialog(
+            self,
+            draft=replace(current),
+            is_new=False,
+            occupied_catalog_identities=self._occupied_catalog_identities(
+                exclude_client_key=current.client_key
+            ),
+        )
         if saved is None:
             return
         for index, item in enumerate(self._participant_drafts):

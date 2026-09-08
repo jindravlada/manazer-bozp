@@ -12,6 +12,7 @@ from moduly.nastaveni.sluzby.person_service import person_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.statni_dozor.constants import (
     PARTICIPANT_ATTENDANCE_STATUSES,
+    PARTICIPANT_CATALOG_DUPLICATE_MESSAGE,
     PARTICIPANT_ROLES,
     PARTICIPANT_SOURCE_PERSON,
     PARTICIPANT_SOURCE_THP_WORKER,
@@ -28,6 +29,9 @@ from moduly.statni_dozor.repository.state_supervision_participant_repository imp
 )
 from moduly.statni_dozor.repository.state_supervision_repository import (
     StateSupervisionRepository,
+)
+from moduly.statni_dozor.sluzby.state_supervision_participant_catalog import (
+    has_new_catalog_duplicate,
 )
 from moduly.statni_dozor.sluzby.state_supervision_service import StateSupervisionError
 
@@ -319,6 +323,12 @@ class StateSupervisionParticipantService:
                     for draft in drafts
                 ]
             )
+            if has_new_catalog_duplicate(
+                drafts=[draft for _order, draft in ordered],
+                existing_rows=existing_rows,
+                hide_omitted=hide_omitted,
+            ):
+                raise StateSupervisionError(PARTICIPANT_CATALOG_DUPLICATE_MESSAGE)
             prepared: list[StateSupervisionParticipant] = []
             for order, draft in ordered:
                 record = self._record_from_draft(

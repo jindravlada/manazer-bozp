@@ -42,6 +42,7 @@ from moduly.statni_dozor.constants import (
     LABEL_PARTICIPANT_PLANNED,
     LABEL_PARTICIPANT_ROLE,
     PARTICIPANT_ATTENDANCE_LABELS,
+    PARTICIPANT_CATALOG_DUPLICATE_MESSAGE,
     PARTICIPANT_IDENTITY_CONFLICT_MESSAGE,
     PARTICIPANT_NAME_REQUIRED_MESSAGE,
     PARTICIPANT_ROLE_INSPECTOR,
@@ -53,6 +54,10 @@ from moduly.statni_dozor.constants import (
 from moduly.statni_dozor.modely.state_supervision_participant_draft import (
     StateSupervisionParticipantDraft,
     new_participant_client_key,
+)
+from moduly.statni_dozor.sluzby.state_supervision_participant_catalog import (
+    catalog_identity_is_occupied,
+    catalog_participant_autofill,
 )
 
 _OVERLAY_ALPHA = 110
@@ -128,12 +133,14 @@ class StateSupervisionParticipantDialog(QDialog):
         *,
         draft: StateSupervisionParticipantDraft | None = None,
         is_new: bool = False,
+        occupied_catalog_identities: set[tuple[str, int]] | None = None,
     ):
         super().__init__(parent)
         self._original = draft or StateSupervisionParticipantDraft(
             role=PARTICIPANT_ROLE_INSPECTOR,
             client_key=new_participant_client_key(),
         )
+        self._occupied_catalog_identities = set(occupied_catalog_identities or ())
         self._result: StateSupervisionParticipantDraft | None = None
         self.setWindowTitle(DIALOG_PARTICIPANT_NEW if is_new else DIALOG_PARTICIPANT_EDIT)
         self.setWindowModality(Qt.WindowModality.WindowModal)
@@ -222,8 +229,20 @@ class StateSupervisionParticipantDialog(QDialog):
             self.external_name_edit.clear()
             self.external_name_edit.blockSignals(False)
             self.external_name_edit.setEnabled(False)
+            self._fill_from_catalog()
         else:
             self.external_name_edit.setEnabled(True)
+
+    def _fill_from_catalog(self) -> None:
+        ref = self.person_selector.current_ref()
+        if ref is None:
+            return
+        organization, contact = catalog_participant_autofill(
+            ref.get("source_type"),
+            ref.get("source_id"),
+        )
+        self.organization_edit.setText(organization or "")
+        self.contact_edit.setText(contact or "")
 
     def get_draft(self) -> StateSupervisionParticipantDraft:
         original = self._original
@@ -275,6 +294,15 @@ class StateSupervisionParticipantDialog(QDialog):
                 self, self.windowTitle(), PARTICIPANT_NAME_REQUIRED_MESSAGE
             )
             return
+        if ref is not None and catalog_identity_is_occupied(
+            self._occupied_catalog_identities,
+            ref.get("source_type"),
+            ref.get("source_id"),
+        ):
+            QMessageBox.warning(
+                self, self.windowTitle(), PARTICIPANT_CATALOG_DUPLICATE_MESSAGE
+            )
+            return
         self._result = self.get_draft()
         self.accept()
 
@@ -284,10 +312,14 @@ def exec_participant_dialog(
     *,
     draft: StateSupervisionParticipantDraft | None = None,
     is_new: bool = False,
+    occupied_catalog_identities: set[tuple[str, int]] | None = None,
 ) -> StateSupervisionParticipantDraft | None:
     overlay = _ParentDimOverlay(parent) if parent is not None else None
     dialog = StateSupervisionParticipantDialog(
-        parent, draft=draft, is_new=is_new
+        parent,
+        draft=draft,
+        is_new=is_new,
+        occupied_catalog_identities=occupied_catalog_identities,
     )
     try:
         if dialog.exec() == QDialog.DialogCode.Accepted:
