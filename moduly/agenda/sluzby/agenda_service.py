@@ -37,9 +37,11 @@ from moduly.schuzky.sluzby.meeting_service import meeting_service
 from moduly.ukoly.constants import (
     TASK_STATUS_CANCELED,
     TASK_STATUS_CLOSED,
-    TASK_STATUS_WAITING_CHECK,
 )
-from moduly.ukoly.sluzby.task_deadline import task_urgency_due_date
+from moduly.ukoly.sluzby.task_deadline import (
+    is_waiting_effectiveness_check,
+    task_urgency_due_date,
+)
 from moduly.ukoly.sluzby.task_service import task_service
 
 
@@ -97,7 +99,7 @@ def _task_row_state(task, *, today: date) -> str:
     decisive = task_urgency_due_date(task)
     if decisive is not None and decisive < today:
         return ROW_STATE_OVERDUE
-    if status == TASK_STATUS_WAITING_CHECK:
+    if is_waiting_effectiveness_check(task):
         return ROW_STATE_WAITING
     return ROW_STATE_ACTIVE
 
@@ -127,7 +129,7 @@ def _from_tasks(*, today: date) -> list[AgendaItem]:
         title = (task.title or "").strip() or "Bez názvu"
         source = (source_labels.get(int(task.id)) or "").strip() or "—"
         person = (task.responsible_person or "").strip()
-        waiting_check = status == TASK_STATUS_WAITING_CHECK
+        waiting_check = is_waiting_effectiveness_check(task)
         decisive = task_urgency_due_date(task)
         items.append(
             AgendaItem(

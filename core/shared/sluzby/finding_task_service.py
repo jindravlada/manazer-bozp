@@ -1,6 +1,8 @@
 from datetime import date
 
 from core.shared.constants import (
+    ENTITY_AUDIT,
+    ENTITY_AUDITY,
     ENTITY_FINDING,
     FINDING_STATUS_V_PROCESU,
     FINDING_STATUS_VYPORADANO,
@@ -32,6 +34,13 @@ class FindingTaskService:
                 return finding
 
         return finding_service.get_by_task_id(task.id)
+
+    def is_audit_finding_corrective_task(self, task: Task | None) -> bool:
+        """Úkol je nápravné opatření auditního zjištění (finding → task)."""
+        finding = self.get_finding_for_task(task)
+        if finding is None:
+            return False
+        return finding.entity_type in (ENTITY_AUDITY, ENTITY_AUDIT)
 
     def get_task_action(self, finding_id: int | None) -> str:
         if finding_id is None:

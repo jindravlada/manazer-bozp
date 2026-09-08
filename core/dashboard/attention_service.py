@@ -66,8 +66,11 @@ from moduly.smlouvy_ozo.sluzby.ozo_person_service import ozo_person_service
 from moduly.smlouvy_ozo.sluzby.qualification_certificate_service import (
     qualification_certificate_service,
 )
-from moduly.ukoly.constants import TASK_STATUS_CANCELED, TASK_STATUS_CLOSED, TASK_STATUS_WAITING_CHECK
-from moduly.ukoly.sluzby.task_deadline import task_urgency_due_date
+from moduly.ukoly.constants import TASK_STATUS_CANCELED, TASK_STATUS_CLOSED
+from moduly.ukoly.sluzby.task_deadline import (
+    is_waiting_effectiveness_check,
+    task_urgency_due_date,
+)
 from moduly.ukoly.sluzby.task_service import task_service
 from moduly.externi_audity.constants import (
     EXTERNAL_AUDIT_FINDING_STATUS_LABELS,
@@ -131,7 +134,7 @@ def _from_tasks(_today: date) -> list[AttentionItem]:
         title = (task.title or "").strip() or f"Úkol #{task.id}"
         priority = task.priority or ""
         decisive = task_urgency_due_date(task)
-        waiting_check = task.computed_status == TASK_STATUS_WAITING_CHECK
+        waiting_check = is_waiting_effectiveness_check(task)
         items.append(
             AttentionItem(
                 item_type=ITEM_TYPE_TASK,
