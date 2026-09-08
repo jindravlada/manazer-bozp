@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from datetime import date, datetime, time
 from typing import Any
 
 from core.dashboard.attention_item import (
+    ITEM_TYPE_ACCIDENT_DPN_RECORD_UPDATE,
     ITEM_TYPE_AUDIT,
     ITEM_TYPE_EXTERNAL_AUDIT,
     ITEM_TYPE_EXTERNAL_AUDIT_NC,
@@ -23,6 +25,7 @@ from core.dashboard.attention_item import (
     SOURCE_LABEL_AUDIT,
     SOURCE_LABEL_EXTERNAL_AUDIT,
     SOURCE_LABEL_INSPECTION,
+    SOURCE_LABEL_KNIHA_URAZU,
     SOURCE_LABEL_OZO_CONTRACT,
     SOURCE_LABEL_OZO_PERSON,
     SOURCE_LABEL_PERIODIC,
@@ -735,6 +738,70 @@ def _load_state_supervision_deadline_items(today: date) -> list[Any]:
     return list(list_state_supervision_deadline_items(today=today))
 
 
+def _accident_dpn_record_update_title(accident) -> str:
+    number = (getattr(accident, "number", None) or "").strip() or str(accident.id)
+    return f"Aktualizace záznamu o pracovním úrazu č. {number}"
+
+
+def _load_accident_investigation_saved_data(accident_id: int) -> dict[str, Any]:
+    from moduly.kniha_urazu.sluzby.investigation_service import investigation_service
+
+    investigation = investigation_service.repository.get_by_accident_id(accident_id)
+    if investigation is None:
+        return {}
+    raw = getattr(investigation, "zajisteni_dukazu_json", "") or ""
+    if not str(raw).strip():
+        return {}
+    try:
+        data = json.loads(raw)
+    except Exception:
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _from_accident_dpn_record_updates(_today: date) -> list[AttentionItem]:
+    """Aktualizace záznamu po DPN – čte existující data Knihy úrazů, bez nové evidence."""
+    from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
+        dpn_record_update_belongs_in_upcoming,
+    )
+    from moduly.kniha_urazu.sluzby.accident_service import accident_service
+
+    items: list[AttentionItem] = []
+    for accident in accident_service.get_all():
+        saved = _load_accident_investigation_saved_data(accident.id)
+        if not dpn_record_update_belongs_in_upcoming(accident, saved):
+            continue
+        due_date = accident.dpn_do
+        title = _accident_dpn_record_update_title(accident)
+        identity = f"accident-dpn-record-update:{int(accident.id)}"
+        items.append(
+            AttentionItem(
+                item_type=ITEM_TYPE_ACCIDENT_DPN_RECORD_UPDATE,
+                source_type=ITEM_TYPE_ACCIDENT_DPN_RECORD_UPDATE,
+                source_id=accident.id,
+                title=title,
+                date=due_date,
+                subtitle=SOURCE_LABEL_KNIHA_URAZU,
+                status="",
+                priority="",
+                open_metadata={
+                    "source_type": ITEM_TYPE_ACCIDENT_DPN_RECORD_UPDATE,
+                    "source_id": accident.id,
+                    "focus_tab": "Po ukončení DPN",
+                    "identity": identity,
+                },
+                sort_key=build_sort_key(
+                    due_date,
+                    item_type=ITEM_TYPE_ACCIDENT_DPN_RECORD_UPDATE,
+                    title=title,
+                    source_id=accident.id,
+                ),
+                identity_key=identity,
+            )
+        )
+    return items
+
+
 def _from_state_supervision_upcoming(today: date) -> list[AttentionItem]:
     """Upcoming položky plus prošlé doklady/Findings pro kartu Po termínu."""
     try:
@@ -794,6 +861,7 @@ def get_attention_items(*, today: date | None = None) -> list[AttentionItem]:
         + _from_ozo_person_certificates(today)
         + _from_qualification_certificates(today)
         + _from_state_supervision_upcoming(today)
+        + _from_accident_dpn_record_updates(today)
     )
     items.sort(key=lambda item: item.sort_key)
     return items

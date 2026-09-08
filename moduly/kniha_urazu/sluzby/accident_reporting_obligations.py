@@ -387,6 +387,25 @@ def is_dpn_record_update_relevant(accident: AccidentLike | None) -> bool:
     return requires_accident_record(accident)
 
 
+def dpn_record_update_belongs_in_upcoming(
+    accident: AccidentLike | None,
+    saved_data: dict[str, Any] | None = None,
+    *,
+    union_organization_active: bool | None = None,
+) -> bool:
+    """Povinná Aktualizace záznamu s termínem ``dpn_do``, dosud nesplněná podle přehledu."""
+    if not is_dpn_record_update_relevant(accident):
+        return False
+    if getattr(accident, "dpn_do", None) is None:
+        return False
+    overview = dpn_record_update_overview_from_saved_data(
+        accident,
+        saved_data,
+        union_organization_active=union_organization_active,
+    )
+    return not dpn_record_update_is_done(overview)
+
+
 def is_post_dpn_obligation_key(obligation_key: str) -> bool:
     return obligation_key in POST_DPN_OBLIGATION_KEYS
 

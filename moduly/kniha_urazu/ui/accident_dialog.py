@@ -75,7 +75,7 @@ ACCIDENT_DATE_CHANGE_CANCEL_LABEL = "Zrušit"
 
 
 class AccidentDialog(QDialog):
-    def __init__(self, parent=None, accident=None):
+    def __init__(self, parent=None, accident=None, focus_tab=None):
         super().__init__(parent)
 
         self.accident = accident
@@ -120,6 +120,16 @@ class AccidentDialog(QDialog):
 
         self._refresh_logic()
         configure_form_tab_navigation(self)
+        self._apply_focus_tab(focus_tab)
+
+    def _apply_focus_tab(self, focus_tab: str | None) -> None:
+        title = (focus_tab or "").strip()
+        if not title:
+            return
+        for index in range(self.tabs.count()):
+            if self.tabs.tabText(index) == title:
+                self.tabs.setCurrentIndex(index)
+                return
 
     def accept(self):
         validations = [

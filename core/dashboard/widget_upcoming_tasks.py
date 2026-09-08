@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.dashboard.attention_item import (
+    ITEM_TYPE_ACCIDENT_DPN_RECORD_UPDATE,
     ITEM_TYPE_AUDIT,
     ITEM_TYPE_EXTERNAL_AUDIT,
     ITEM_TYPE_EXTERNAL_AUDIT_NC,
@@ -60,6 +61,7 @@ _TYPE_STABLE_PREFIX = {
     ITEM_TYPE_EXTERNAL_AUDIT_NC: 11,
     ITEM_TYPE_EXTERNAL_AUDIT_PKZ: 12,
     ITEM_TYPE_STATE_SUPERVISION: 13,
+    ITEM_TYPE_ACCIDENT_DPN_RECORD_UPDATE: 14,
 }
 
 _EMPTY_TEXT = "Nejsou evidovány žádné nadcházející události ani úkoly."

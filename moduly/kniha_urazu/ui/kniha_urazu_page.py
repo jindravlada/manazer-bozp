@@ -180,7 +180,7 @@ class KnihaUrazuPage(QWidget):
                 continue
         return False
 
-    def open_accident(self, accident_id: int):
+    def open_accident(self, accident_id: int, focus_tab: str | None = None):
         self._select_accident(accident_id)
 
         accident = accident_service.get_by_id(accident_id)
@@ -189,7 +189,7 @@ class KnihaUrazuPage(QWidget):
             self.refresh()
             return
 
-        dialog = AccidentDialog(self, accident=accident)
+        dialog = AccidentDialog(self, accident=accident, focus_tab=focus_tab)
         if exec_maximized(dialog):
             data = dialog.get_data()
             accident_service.update_accident(accident_id, **data)
