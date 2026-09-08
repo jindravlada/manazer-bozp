@@ -504,6 +504,18 @@ CHANGE_SECTION_TYPE_LABELS: dict[str, str] = {
     CHANGE_SECTION_MODIFIED: "Změněno",
 }
 
+
+def legal_change_section_impact_label(section_label: str, change_type: str) -> str:
+    normalized_label = (section_label or "").strip()
+    type_label = CHANGE_SECTION_TYPE_LABELS.get(change_type, change_type)
+    normalized_type = (type_label or "").strip()
+    if not normalized_label:
+        return normalized_type.lower() if normalized_type else ""
+    if not normalized_type:
+        return normalized_label
+    return f"{normalized_label} – {normalized_type.lower()}"
+
+
 VALID_CHANGE_TYPES = frozenset(
     {
         CHANGE_NEW,

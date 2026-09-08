@@ -2,6 +2,7 @@ import re
 from dataclasses import dataclass
 
 from moduly.pravni_pozadavky.constants import (
+    legal_change_section_impact_label,
     legal_requirement_process_label,
     legal_section_provision_label,
     process_code_sort_key,
@@ -32,7 +33,12 @@ _PROVISION_LABEL_RE = re.compile(r"\s+")
 class ImpactedProcessLegalSource:
     section_id: int
     label: str
-    is_changed: bool
+    change_type: str
+    is_changed: bool = True
+
+    @property
+    def display_label(self) -> str:
+        return legal_change_section_impact_label(self.label, self.change_type)
 
 
 @dataclass(frozen=True)
@@ -70,14 +76,14 @@ class LegalChangeImpactedProcessService:
             return []
 
         sections, sections_by_id = self._load_sections_for_change(change)
-        changed_section_ids = set(self._resolve_section_ids(change, change_sections, sections))
-        if not changed_section_ids:
+        change_types = self._resolve_section_change_types(change_sections, sections)
+        if not change_types:
             return []
 
-        requirements = self._find_requirements_for_sections(sorted(changed_section_ids))
+        requirements = self._find_requirements_for_sections(sorted(change_types))
         return self._build_process_list(
             requirements,
-            changed_section_ids=changed_section_ids,
+            change_types=change_types,
             sections_by_id=sections_by_id,
         )
 
@@ -109,39 +115,53 @@ class LegalChangeImpactedProcessService:
         return sections, sections_by_id
 
     def _resolve_section_ids(self, change, change_sections, sections: list) -> list[int]:
+        return sorted(self._resolve_section_change_types(change_sections, sections))
+
+    def _resolve_section_change_types(self, change_sections, sections: list) -> dict[int, str]:
         if not sections:
-            return []
+            return {}
 
         by_version: dict[int | None, list] = {}
         for section in sections:
             by_version.setdefault(section.legal_document_version_id, []).append(section)
 
-        resolved: set[int] = set()
+        change_types: dict[int, str] = {}
         for group in by_version.values():
-            resolved.update(self._resolve_section_ids_in_group(change_sections, group))
-        return sorted(resolved)
+            for section_id, change_type in self._resolve_section_change_types_in_group(
+                change_sections,
+                group,
+            ).items():
+                change_types[section_id] = change_type
+        return change_types
 
     def _resolve_section_ids_in_group(self, change_sections, sections: list) -> set[int]:
+        return set(self._resolve_section_change_types_in_group(change_sections, sections))
+
+    def _resolve_section_change_types_in_group(
+        self,
+        change_sections,
+        sections: list,
+    ) -> dict[int, str]:
         by_id = {section.id: section for section in sections}
         key_index = legal_section_structure_compare_service.build_section_key_index(sections)
-        resolved: set[int] = set()
+        resolved: dict[int, str] = {}
 
         for change_section in change_sections:
             section_id = key_index.get(change_section.section_key)
             if section_id is not None:
-                resolved.add(section_id)
+                resolved[section_id] = change_section.change_type
                 continue
             for section in sections:
                 provision_label = legal_section_provision_label(section, sections_by_id=by_id)
                 if self._labels_match(change_section.section_label, provision_label):
-                    resolved.add(section.id)
+                    resolved[section.id] = change_section.change_type
                     continue
                 log_label = legal_section_structure_compare_service.build_section_log_label(
                     section,
                     sections_by_id=by_id,
                 )
                 if self._labels_match(change_section.section_label, log_label):
-                    resolved.add(section.id)
+                    resolved[section.id] = change_section.change_type
 
         return resolved
 
@@ -170,7 +190,7 @@ class LegalChangeImpactedProcessService:
         self,
         requirements: list[LegalRequirement],
         *,
-        changed_section_ids: set[int],
+        change_types: dict[int, str],
         sections_by_id: dict,
     ) -> list[ImpactedControlProcess]:
         processes: list[ImpactedControlProcess] = []
@@ -183,10 +203,12 @@ class LegalChangeImpactedProcessService:
             legal_sources = tuple(
                 self._build_legal_sources(
                     requirement.id,
-                    changed_section_ids=changed_section_ids,
+                    change_types=change_types,
                     sections_by_id=sections_by_id,
                 ),
             )
+            if not legal_sources:
+                continue
             processes.append(
                 ImpactedControlProcess(
                     requirement_id=requirement.id,
@@ -201,11 +223,17 @@ class LegalChangeImpactedProcessService:
         self,
         requirement_id: int,
         *,
-        changed_section_ids: set[int],
+        change_types: dict[int, str],
         sections_by_id: dict,
     ) -> list[ImpactedProcessLegalSource]:
         sources: list[ImpactedProcessLegalSource] = []
+        seen_ids: set[int] = set()
         for link in self.source_repository.list_by_requirement(requirement_id):
+            if link.legal_section_id not in change_types:
+                continue
+            if link.legal_section_id in seen_ids:
+                continue
+            seen_ids.add(link.legal_section_id)
             section = sections_by_id.get(link.legal_section_id)
             if section is None:
                 section = legal_section_service.get_by_id(link.legal_section_id)
@@ -222,9 +250,11 @@ class LegalChangeImpactedProcessService:
                 ImpactedProcessLegalSource(
                     section_id=section.id,
                     label=label,
-                    is_changed=section.id in changed_section_ids,
+                    change_type=change_types[link.legal_section_id],
+                    is_changed=True,
                 ),
             )
+        sources.sort(key=lambda item: (item.label.casefold(), item.section_id))
         return sources
 
     def _labels_match(self, left: str, right: str) -> bool:

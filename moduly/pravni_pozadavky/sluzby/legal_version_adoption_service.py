@@ -1,11 +1,15 @@
 from dataclasses import dataclass, field
 
+from moduly.pravni_pozadavky.constants import CHANGE_SECTION_REMOVED
 from moduly.pravni_pozadavky.modely.legal_document_version import LegalDocumentVersion
 from moduly.pravni_pozadavky.repository.legal_requirement_repository import (
     LegalRequirementRepository,
 )
 from moduly.pravni_pozadavky.repository.legal_requirement_source_repository import (
     LegalRequirementSourceRepository,
+)
+from moduly.pravni_pozadavky.sluzby.legal_change_section_service import (
+    legal_change_section_service,
 )
 from moduly.pravni_pozadavky.sluzby.legal_change_service import legal_change_service
 from moduly.pravni_pozadavky.sluzby.legal_document_version_service import (
@@ -48,7 +52,10 @@ class LegalVersionAdoptionService:
         if old_id is None or new_id is None:
             return []
         mapping, unresolved_ids = self._section_mapping(old_id, new_id)
-        return self._collect_unresolved_links(unresolved_ids)
+        return self._filter_removed_change_links(
+            change,
+            self._collect_unresolved_links(unresolved_ids),
+        )
 
     def adopt_detected_version(self, change_id: int) -> VersionAdoptionResult:
         change = legal_change_service.get_by_id(change_id)
@@ -225,6 +232,18 @@ class LegalVersionAdoptionService:
                     ),
                 )
         return links
+
+    def _filter_removed_change_links(self, change, links: list[UnresolvedSectionLink]):
+        if not links:
+            return []
+        removed_keys = {
+            item.section_key
+            for item in legal_change_section_service.list_sections_for_change(change.id)
+            if item.change_type == CHANGE_SECTION_REMOVED
+        }
+        if not removed_keys:
+            return []
+        return [link for link in links if link.section_key in removed_keys]
 
 
 legal_version_adoption_service = LegalVersionAdoptionService()

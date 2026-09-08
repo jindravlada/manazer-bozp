@@ -41,7 +41,7 @@ class LegalChangeImpactedProcessesWidget(QWidget):
 
             if process.legal_sources:
                 for source in process.legal_sources:
-                    label = QLabel(source.label)
+                    label = QLabel(source.display_label)
                     if source.is_changed:
                         font = QFont(label.font())
                         font.setBold(True)

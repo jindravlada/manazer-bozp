@@ -310,6 +310,58 @@ class LegalVersionAdoptionTestCase(unittest.TestCase):
         self.assertIn("§2", dialog.unresolved_label.text())
         dialog.close()
 
+    def test_unresolved_list_includes_only_removed_sections_of_this_change(self) -> None:
+        from sqlalchemy import delete
+
+        from core.database.session import get_session
+        from moduly.pravni_pozadavky.modely.legal_change_section import LegalChangeSection
+        from moduly.pravni_pozadavky.sluzby.legal_section_structure_compare_service import (
+            SectionStructureCompareResult,
+            SectionStructureEntry,
+        )
+
+        document, old_version, _new_version, _old_kept, old_removed, _new_kept, change = (
+            self._create_document_and_versions()
+        )
+        extra_removed = legal_section_service.create(
+            legal_document_id=document.id,
+            legal_document_version_id=old_version.id,
+            section_type=SECTION_PARAGRAPH,
+            paragraph="3",
+            title="§ 3",
+            text="Původní text § 3",
+            sort_order=3,
+        )
+        legal_requirement_service.create_requirement(
+            title="Zrušená vazba",
+            regulation_name="Zrušená vazba",
+            legal_document_id=document.id,
+            legal_section_id=old_removed.id,
+            source_section_id=old_removed.id,
+        )
+        legal_requirement_service.create_requirement(
+            title="Jiná zrušená vazba",
+            regulation_name="Jiná zrušená vazba",
+            legal_document_id=document.id,
+            legal_section_id=extra_removed.id,
+            source_section_id=extra_removed.id,
+        )
+        with get_session() as session:
+            session.execute(
+                delete(LegalChangeSection).where(LegalChangeSection.legal_change_id == change.id),
+            )
+            session.commit()
+        legal_change_section_service.add_sections_to_change(
+            change.id,
+            SectionStructureCompareResult(
+                removed=[SectionStructureEntry("§:2", "§2", "fp2")],
+            ),
+        )
+
+        unresolved = legal_version_adoption_service.list_unresolved_section_links(change)
+        self.assertEqual({item.section_id for item in unresolved}, {old_removed.id})
+        self.assertNotIn(extra_removed.id, {item.section_id for item in unresolved})
+
     def test_repeated_check_after_adoption_does_not_duplicate(self) -> None:
         document, _old, new_version, _kept, _removed, _new_kept, change = (
             self._create_document_and_versions()

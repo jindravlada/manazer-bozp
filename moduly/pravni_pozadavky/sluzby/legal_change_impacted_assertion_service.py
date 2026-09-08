@@ -2,10 +2,14 @@ from dataclasses import dataclass
 
 from moduly.audity.sluzby.audit_knowledge_editor_service import audit_knowledge_editor_service
 from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
-from moduly.pravni_pozadavky.constants import process_code_sort_key
+from moduly.pravni_pozadavky.constants import (
+    CHANGE_SECTION_TYPE_LABELS,
+    process_code_sort_key,
+)
 from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement
 from moduly.pravni_pozadavky.sluzby.legal_change_impacted_process_service import (
     ImpactedControlProcess,
+    ImpactedProcessLegalSource,
     legal_change_impacted_process_service,
 )
 
@@ -17,6 +21,9 @@ class ImpactedAuditAssertion:
     text: str
     process_code: str
     process_name: str
+    section_id: int
+    section_label: str
+    change_type: str
 
     @property
     def process_display(self) -> str:
@@ -39,6 +46,10 @@ class ImpactedAuditAssertion:
             return str(self.assertion_order)
         return "—"
 
+    @property
+    def change_type_label(self) -> str:
+        return CHANGE_SECTION_TYPE_LABELS.get(self.change_type, self.change_type)
+
 
 class LegalChangeImpactedAssertionService:
     def list_assertions_for_change(self, legal_change_id: int) -> list[ImpactedAuditAssertion]:
@@ -47,11 +58,11 @@ class LegalChangeImpactedAssertionService:
             return []
 
         assertions: list[ImpactedAuditAssertion] = []
-        seen_keys: set[tuple[str, str]] = set()
+        seen_keys: set[tuple[str, str, int]] = set()
 
         for process in sorted(processes, key=self._process_sort_key):
             for assertion in self._list_assertions_for_process(process):
-                key = (process.process_code, assertion.assertion_id)
+                key = (process.process_code, assertion.assertion_id, assertion.section_id)
                 if key in seen_keys:
                     continue
                 seen_keys.add(key)
@@ -62,6 +73,7 @@ class LegalChangeImpactedAssertionService:
                 self._process_sort_key_from_fields(item.process_code, item.process_name),
                 item.assertion_order if item.assertion_order is not None else 0,
                 item.assertion_id.lower(),
+                item.section_label.lower(),
                 item.text.lower(),
             ),
         )
@@ -83,16 +95,37 @@ class LegalChangeImpactedAssertionService:
                 assertion_order = int(poradi) if poradi is not None else None
             except (TypeError, ValueError):
                 assertion_order = None
-            assertions.append(
-                ImpactedAuditAssertion(
-                    assertion_id=assertion_id,
-                    assertion_order=assertion_order,
-                    text=text,
-                    process_code=process.process_code,
-                    process_name=process.process_name,
-                ),
-            )
+            for source in process.legal_sources:
+                assertions.append(
+                    self._build_assertion(
+                        assertion_id=assertion_id,
+                        assertion_order=assertion_order,
+                        text=text,
+                        process=process,
+                        source=source,
+                    ),
+                )
         return assertions
+
+    def _build_assertion(
+        self,
+        *,
+        assertion_id: str,
+        assertion_order: int | None,
+        text: str,
+        process: ImpactedControlProcess,
+        source: ImpactedProcessLegalSource,
+    ) -> ImpactedAuditAssertion:
+        return ImpactedAuditAssertion(
+            assertion_id=assertion_id,
+            assertion_order=assertion_order,
+            text=text,
+            process_code=process.process_code,
+            process_name=process.process_name,
+            section_id=source.section_id,
+            section_label=source.label,
+            change_type=source.change_type,
+        )
 
     def _collect_assertions_for_requirement(self, requirement_id: int) -> list[dict]:
         collected: list[dict] = []

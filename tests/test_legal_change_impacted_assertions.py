@@ -28,6 +28,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
     from moduly.pravni_pozadavky.constants import (
         CHANGE_NOVELIZATION,
+        CHANGE_SECTION_MODIFIED,
         DOCUMENT_TYPE_ZAKON,
         SECTION_PARAGRAPH,
         SECTION_SUBSECTION,
@@ -188,6 +189,9 @@ class LegalChangeImpactedAssertionServiceTestCase(unittest.TestCase):
         self.assertGreater(len(assertions), 0)
         self.assertTrue(all(item.process_code == "P-005" for item in assertions))
         self.assertTrue(all(item.process_name == "Řízení rizik" for item in assertions))
+        self.assertTrue(all(item.section_label == "§104" for item in assertions))
+        self.assertTrue(all(item.change_type == CHANGE_SECTION_MODIFIED for item in assertions))
+        self.assertTrue(all(item.change_type_label == "Změněno" for item in assertions))
         self.assertIn("id_proces_identifikace", {item.assertion_id for item in assertions})
 
     def test_ignores_sections_without_legal_requirement_id(self) -> None:
@@ -237,6 +241,59 @@ class LegalChangeImpactedAssertionServiceTestCase(unittest.TestCase):
     def test_returns_empty_when_change_has_no_impacted_processes(self) -> None:
         document, version, _, _ = self._create_document_with_subsection()
         change = self._create_change(document, version)
+
+        assertions = legal_change_impacted_assertion_service.list_assertions_for_change(change.id)
+
+        self.assertEqual(assertions, [])
+
+    def test_ignores_assertions_linked_only_to_unchanged_section_of_same_document(self) -> None:
+        document, version, paragraph, _subsection = self._create_document_with_subsection()
+        paragraph_101 = legal_section_service.create(
+            legal_document_id=document.id,
+            legal_document_version_id=version.id,
+            section_type=SECTION_PARAGRAPH,
+            paragraph="101",
+            title="§ 101",
+            sort_order=0,
+        )
+        unchanged_requirement = legal_requirement_service.create_requirement(
+            title="Řízení rizik",
+            process_code="P-005",
+            source_section_ids=[paragraph_101.id],
+        )
+        self._link_section_to_requirement(_LINKED_SECTION_ID, unchanged_requirement.id)
+        legal_requirement_service.create_requirement(
+            title="Jiný proces",
+            process_code="P-099",
+            source_section_ids=[paragraph.id],
+        )
+        change = self._create_change(document, version)
+        legal_change_section_service.add_sections_to_change(
+            change.id,
+            SectionStructureCompareResult(
+                changed=[SectionStructureEntry("§:104", "§104", "fp1")],
+            ),
+        )
+
+        assertions = legal_change_impacted_assertion_service.list_assertions_for_change(change.id)
+
+        self.assertEqual(assertions, [])
+
+    def test_added_section_without_link_does_not_list_assertions(self) -> None:
+        requirement = legal_requirement_service.create_requirement(
+            title="Řízení rizik",
+            process_code="P-005",
+        )
+        self._link_section_to_requirement(_LINKED_SECTION_ID, requirement.id)
+        document, version, paragraph, _subsection = self._create_document_with_subsection()
+        legal_requirement_service.attach_source_section(requirement.id, paragraph.id)
+        change = self._create_change(document, version)
+        legal_change_section_service.add_sections_to_change(
+            change.id,
+            SectionStructureCompareResult(
+                new=[SectionStructureEntry("§:12b", "§12b", "fp-new")],
+            ),
+        )
 
         assertions = legal_change_impacted_assertion_service.list_assertions_for_change(change.id)
 

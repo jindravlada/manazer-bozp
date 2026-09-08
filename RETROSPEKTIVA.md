@@ -45,6 +45,16 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-08 – RPP-CHANGE-5
+
+**Co se povedlo:** Detail zjištěné změny ukazuje jen vazby na ustanovení této novely, ne všechny podklady procesu.
+
+**Co už bychom dnes udělali jinak:** U dopadu novely hned filtrovat podle `legal_change_sections`, ne podle předpisu nebo celého procesu.
+
+**Co bylo zbytečně složité:** Nic – stačilo omezit výpis na průnik vazby procesu/tvrzení s ustanoveními konkrétní LegalChange.
+
+**Jaké nové pravidlo z toho vzniklo:** Dotčený je jen ten proces nebo to auditní tvrzení, které má vazbu na ustanovení evidované u konkrétní změny. Přidané ustanovení bez historické vazby samo o sobě dopad nevytváří.
+
 ### 2026-09-08 – RPP-CHANGE-4
 
 **Co se povedlo:** Záložka Zjištěné změny začíná pracovním seznamem nevyhodnocených změn. Vyhodnocené zůstávají v historii filtru.
