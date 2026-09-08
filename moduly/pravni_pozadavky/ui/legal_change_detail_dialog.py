@@ -20,9 +20,11 @@ from core.widgets.dialog_utils import (
     wrap_in_scroll_area,
 )
 from moduly.pravni_pozadavky.constants import (
+    CHANGE_EVALUATE_ACTION_LABEL,
     CHANGE_TYPE_LABELS,
     NOVELIZATION_REMOTE_CHECKSUM_NOTE_PREFIX,
     legal_change_can_adopt_wording,
+    legal_change_evaluated_yes_no,
     legal_change_wording_status_label,
     legal_document_catalog_link_label,
 )
@@ -68,7 +70,7 @@ def _display_note(note: str) -> str:
 
 
 def _evaluation_status_label(change) -> str:
-    return "Vyhodnoceno" if change.evaluated else "Nevyhodnoceno"
+    return legal_change_evaluated_yes_no(change)
 
 
 class LegalChangeDetailDialog(QDialog):
@@ -87,16 +89,17 @@ class LegalChangeDetailDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.addWidget(wrap_in_scroll_area(self._build_content()))
 
-        self.save_evaluation_btn = QPushButton("Uložit vyhodnocení")
+        self.evaluate_btn = QPushButton(CHANGE_EVALUATE_ACTION_LABEL)
+        self.save_evaluation_btn = self.evaluate_btn
         self.adopt_btn = QPushButton("Převzít nové znění")
-        self.save_evaluation_btn.clicked.connect(self._save_evaluation)
+        self.evaluate_btn.clicked.connect(self._save_evaluation)
         self.adopt_btn.clicked.connect(self._adopt_new_wording)
         buttons = create_close_box(self)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         add_work_dialog_footer(
             layout,
-            work_widgets=[self.save_evaluation_btn, self.adopt_btn],
+            work_widgets=[self.evaluate_btn, self.adopt_btn],
             buttons=buttons,
         )
         self._refresh_status_widgets()
@@ -144,7 +147,7 @@ class LegalChangeDetailDialog(QDialog):
         self._add_readonly_row(form, "Datum zveřejnění:", _format_date(self.change.published_at))
         self.evaluation_status_label = QLabel(_evaluation_status_label(self.change))
         self.evaluation_status_label.setWordWrap(True)
-        form.addRow("Stav vyhodnocení:", self.evaluation_status_label)
+        form.addRow("Vyhodnoceno:", self.evaluation_status_label)
         self.wording_status_label = QLabel(
             legal_change_wording_status_label(
                 self.change,
@@ -321,6 +324,10 @@ class LegalChangeDetailDialog(QDialog):
             return
         self.change = updated
         self._refresh_status_widgets()
+        parent = self.parent()
+        refresh = getattr(parent, "refresh", None)
+        if callable(refresh):
+            refresh()
 
     def _adopt_new_wording(self) -> None:
         if not legal_change_can_adopt_wording(

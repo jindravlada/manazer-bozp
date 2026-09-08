@@ -1,6 +1,8 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QComboBox,
     QHBoxLayout,
+    QLabel,
     QMenu,
     QMessageBox,
     QPushButton,
@@ -10,6 +12,13 @@ from PySide6.QtWidgets import (
 
 from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
+from moduly.pravni_pozadavky.constants import (
+    CHANGE_EVALUATE_ACTION_LABEL,
+    DEFAULT_EVALUATION_FILTER,
+    FILTER_EVALUATION_ALL,
+    FILTER_EVALUATION_EVALUATED,
+    FILTER_EVALUATION_UNEVALUATED,
+)
 from moduly.pravni_pozadavky.sluzby.legal_change_service import legal_change_service
 from moduly.pravni_pozadavky.ui.legal_change_detail_dialog import LegalChangeDetailDialog
 from moduly.pravni_pozadavky.ui.legal_change_table import LegalChangeTable
@@ -26,7 +35,7 @@ class ZmenyLegislativyTab(QWidget):
 
         self.open_btn = QPushButton("Otevřít")
         self.toggle_btn = QPushButton("Deaktivovat")
-        self.evaluate_btn = QPushButton("Označit jako vyhodnocené")
+        self.evaluate_btn = QPushButton(CHANGE_EVALUATE_ACTION_LABEL)
         self.open_btn.setEnabled(False)
         self.toggle_btn.setEnabled(False)
         self.evaluate_btn.setEnabled(False)
@@ -35,16 +44,28 @@ class ZmenyLegislativyTab(QWidget):
         toolbar.addWidget(self.evaluate_btn)
         toolbar.addStretch()
 
+        filters_toolbar = QHBoxLayout()
+        self.evaluation_filter = QComboBox()
+        self.evaluation_filter.addItem(FILTER_EVALUATION_UNEVALUATED, False)
+        self.evaluation_filter.addItem(FILTER_EVALUATION_EVALUATED, True)
+        self.evaluation_filter.addItem(FILTER_EVALUATION_ALL, None)
+        self.evaluation_filter.setCurrentText(DEFAULT_EVALUATION_FILTER)
+        filters_toolbar.addWidget(QLabel("Vyhodnocení:"))
+        filters_toolbar.addWidget(self.evaluation_filter)
+        filters_toolbar.addStretch()
+
         self.table = LegalChangeTable()
         self.text_filter = FilterBar(self.table, placeholder="🔍 Hledat změnu...")
 
         layout.addLayout(toolbar)
+        layout.addLayout(filters_toolbar)
         layout.addWidget(self.text_filter)
         layout.addWidget(self.table)
 
         self.open_btn.clicked.connect(self.open_selected_change)
         self.toggle_btn.clicked.connect(self.toggle_selected_change)
         self.evaluate_btn.clicked.connect(self.mark_selected_evaluated)
+        self.evaluation_filter.currentIndexChanged.connect(self.refresh)
         self.table.doubleClicked.connect(self.open_selected_change)
         self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.table.customContextMenuRequested.connect(self._show_table_context_menu)
@@ -54,6 +75,11 @@ class ZmenyLegislativyTab(QWidget):
 
     def refresh(self) -> None:
         changes = legal_change_service.list_all(include_inactive=True)
+        evaluated_mode = self.evaluation_filter.currentData()
+        if evaluated_mode is True:
+            changes = [item for item in changes if item.evaluated]
+        elif evaluated_mode is False:
+            changes = [item for item in changes if not item.evaluated]
         self.table.load_changes(changes)
         self.table.clearSelection()
         self.table.setCurrentCell(-1, -1)
@@ -99,7 +125,7 @@ class ZmenyLegislativyTab(QWidget):
         toggle_action = menu.addAction(self.toggle_btn.text(), self.toggle_selected_change)
         toggle_action.setEnabled(single)
         evaluate_action = menu.addAction(
-            "Označit jako vyhodnocené",
+            CHANGE_EVALUATE_ACTION_LABEL,
             self.mark_selected_evaluated,
         )
         evaluate_action.setEnabled(single and change is not None and not change.evaluated)
@@ -144,11 +170,6 @@ class ZmenyLegislativyTab(QWidget):
         if change is None:
             return
         if change.evaluated:
-            QMessageBox.information(
-                self,
-                "Zjištěné změny",
-                "Změna je již označena jako vyhodnocená.",
-            )
             return
 
         legal_change_service.mark_evaluated(change.id)

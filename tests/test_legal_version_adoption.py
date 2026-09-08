@@ -171,7 +171,7 @@ class LegalVersionAdoptionTestCase(unittest.TestCase):
         dialog = LegalChangeDetailDialog(change=change)
         self.assertFalse(dialog.adopt_btn.isHidden())
         self.assertTrue(dialog.adopt_btn.isEnabled())
-        self.assertEqual(dialog.evaluation_status_label.text(), "Nevyhodnoceno")
+        self.assertEqual(dialog.evaluation_status_label.text(), "Ne")
         self.assertEqual(dialog.wording_status_label.text(), WORDING_STATUS_PENDING)
         dialog.close()
 

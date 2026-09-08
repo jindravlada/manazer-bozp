@@ -45,6 +45,16 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-08 – RPP-CHANGE-4
+
+**Co se povedlo:** Záložka Zjištěné změny začíná pracovním seznamem nevyhodnocených změn. Vyhodnocené zůstávají v historii filtru.
+
+**Co už bychom dnes udělali jinak:** Hned od první evidence změn mít výchozí pohled na nevyhodnocené.
+
+**Co bylo zbytečně složité:** Nic – stačil filtr podle existujícího `evaluated`.
+
+**Jaké nové pravidlo z toho vzniklo:** Akce odborného posouzení se jmenuje **Vyhodnoceno**. Nepřebírá znění a převzetí znění samo nevyhodnocuje.
+
 ### 2026-09-08 – RPP-CHANGE-3
 
 **Co se povedlo:** Vyhodnocení dopadu novely a převzetí nového znění jsou dva nezávislé kroky. Používaná verze se mění jen vědomým převzetím.

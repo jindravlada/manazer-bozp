@@ -102,6 +102,16 @@ Preferovat krátká slovesa.
 Popisek **„Zobrazit:“** u filtru tabulky (Aktivní / Vše) **ponechat**.  
 Nejde o náhled, ale o rozsah zobrazení seznamu.
 
+### Zjištěné změny legislativy
+
+Filtr **„Vyhodnocení:“** – Nevyhodnocené / Vyhodnocené / Vše.  
+Výchozí pohled je **Nevyhodnocené**.
+
+Akce odborného posouzení dopadu: **Vyhodnoceno**.  
+Nepoužívat „Označit jako vyhodnocené“ ani „Uložit vyhodnocení“.
+
+**Vyhodnoceno** a **Převzít nové znění** jsou dvě různé akce.
+
 ### Generování v Prověrkách
 
 Použít **Generovat prověrky**, nikoli „Generovat kontroly“.

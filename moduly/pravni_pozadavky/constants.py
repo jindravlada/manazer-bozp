@@ -92,6 +92,12 @@ FILTER_DOCUMENT_USAGE_ASSIGNED = "Pouze přiřazená"
 FILTER_DOCUMENT_USAGE_UNASSIGNED = "Pouze nepřiřazená"
 DEFAULT_DOCUMENT_USAGE_FILTER = FILTER_DOCUMENT_USAGE_ALL
 
+FILTER_EVALUATION_UNEVALUATED = "Nevyhodnocené"
+FILTER_EVALUATION_EVALUATED = "Vyhodnocené"
+FILTER_EVALUATION_ALL = "Vše"
+DEFAULT_EVALUATION_FILTER = FILTER_EVALUATION_UNEVALUATED
+CHANGE_EVALUATE_ACTION_LABEL = "Vyhodnoceno"
+
 DOCUMENT_TYPE_ZAKON = "zakon"
 DOCUMENT_TYPE_USTAVNI_ZAKON = "ustavni_zakon"
 DOCUMENT_TYPE_NARIZENI_VLADY = "narizeni_vlady"
@@ -467,6 +473,10 @@ def legal_change_wording_status_label(change, *, detected_version=None) -> str:
     if pending:
         return WORDING_STATUS_PENDING
     return WORDING_STATUS_ADOPTED
+
+
+def legal_change_evaluated_yes_no(change) -> str:
+    return "Ano" if bool(getattr(change, "evaluated", False)) else "Ne"
 
 
 def legal_change_can_adopt_wording(change, *, detected_version=None) -> bool:

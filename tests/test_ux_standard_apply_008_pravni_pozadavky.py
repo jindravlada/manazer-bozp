@@ -415,7 +415,7 @@ class UxStandardApply008PravniPozadavkyTestCase(unittest.TestCase):
 
         self.assertEqual(labels[0], "Otevřít")
         self.assertIn("Deaktivovat", labels)
-        self.assertIn("Označit jako vyhodnocené", labels)
+        self.assertIn("Vyhodnoceno", labels)
 
     def test_changes_no_select_dialogs(self) -> None:
         source = inspect.getsource(changes_module)
