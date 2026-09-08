@@ -177,6 +177,62 @@ class LegalSectionService:
         section.active = active
         return self.repository.update(section)
 
+    def create_tree_from_parsed(
+        self,
+        *,
+        legal_document_id: int,
+        legal_document_version_id: int,
+        parsed_sections: list,
+    ) -> list[LegalSection]:
+        created_sections: list[tuple[LegalSection, object]] = []
+        sort_order_to_id: dict[int, int] = {}
+
+        for parsed in parsed_sections:
+            sort_order = int(getattr(parsed, "sort_order", 0) or 0)
+            section = self.create(
+                legal_document_id=legal_document_id,
+                legal_document_version_id=legal_document_version_id,
+                section_type=getattr(parsed, "section_type", "") or "",
+                parent_section_id=None,
+                section_number=getattr(parsed, "section_number", "") or "",
+                paragraph=getattr(parsed, "paragraph", "") or "",
+                item_letter=getattr(parsed, "item_letter", "") or "",
+                title=getattr(parsed, "title", "") or "",
+                text=getattr(parsed, "text", "") or "",
+                sort_order=sort_order,
+                note=getattr(parsed, "note", "") or "",
+            )
+            created_sections.append((section, parsed))
+            sort_order_to_id[sort_order] = section.id
+
+        stored: list[LegalSection] = []
+        for section, parsed in created_sections:
+            parent_sort_order = getattr(parsed, "parent_sort_order", None)
+            if parent_sort_order is None:
+                stored.append(section)
+                continue
+            parent_section_id = sort_order_to_id.get(int(parent_sort_order))
+            if parent_section_id is None:
+                stored.append(section)
+                continue
+            updated = self.update(
+                section.id,
+                legal_document_id=legal_document_id,
+                legal_document_version_id=legal_document_version_id,
+                section_type=section.section_type,
+                parent_section_id=parent_section_id,
+                section_number=section.section_number,
+                paragraph=section.paragraph,
+                item_letter=section.item_letter,
+                title=section.title,
+                text=section.text,
+                sort_order=section.sort_order,
+                note=section.note,
+                active=section.active,
+            )
+            stored.append(updated or section)
+        return stored
+
     def deactivate(self, section_id: int) -> LegalSection | None:
         return self.repository.deactivate(section_id)
 

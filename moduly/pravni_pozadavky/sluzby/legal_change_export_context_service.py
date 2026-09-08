@@ -79,6 +79,8 @@ class LegalChangeExportRow:
     legal_document_year: str
     legal_document_version_id: int | None
     legal_document_version_name: str
+    new_legal_document_version_id: int | None
+    new_legal_document_version_name: str
     legal_section_id: int | None
     legal_section_type: str
     legal_section_number: str
@@ -143,6 +145,11 @@ class LegalChangeExportContextService:
         version = None
         if change.legal_document_version_id is not None:
             version = legal_document_version_service.get_by_id(change.legal_document_version_id)
+        detected_version = None
+        if change.new_legal_document_version_id is not None:
+            detected_version = legal_document_version_service.get_by_id(
+                change.new_legal_document_version_id,
+            )
         section = None
         if change.legal_section_id is not None:
             section = legal_section_service.get_by_id(change.legal_section_id)
@@ -177,6 +184,10 @@ class LegalChangeExportContextService:
             legal_document_year=str(document.year) if document and document.year is not None else "",
             legal_document_version_id=change.legal_document_version_id,
             legal_document_version_name=_text(version.version_name if version else ""),
+            new_legal_document_version_id=change.new_legal_document_version_id,
+            new_legal_document_version_name=_text(
+                detected_version.version_name if detected_version else "",
+            ),
             legal_section_id=change.legal_section_id,
             legal_section_type=(
                 SECTION_TYPE_LABELS.get(section.section_type, section.section_type)

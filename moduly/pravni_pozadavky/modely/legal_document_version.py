@@ -27,6 +27,7 @@ class LegalDocumentVersion(Base):
     checksum: Mapped[str] = mapped_column(String(128), default="")
     note: Mapped[str] = mapped_column(Text, default="")
 
+    pending_adoption: Mapped[bool] = mapped_column(Boolean, default=False)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)

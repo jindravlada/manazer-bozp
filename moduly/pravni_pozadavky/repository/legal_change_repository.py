@@ -82,14 +82,31 @@ class LegalChangeRepository:
         remote_checksum: str,
         note_prefix: str,
     ) -> LegalChange | None:
+        return self.find_novelization_by_remote_checksum(
+            document_id,
+            remote_checksum=remote_checksum,
+            note_prefix=note_prefix,
+            evaluated=False,
+        )
+
+    def find_novelization_by_remote_checksum(
+        self,
+        document_id: int,
+        *,
+        remote_checksum: str,
+        note_prefix: str,
+        evaluated: bool | None = None,
+    ) -> LegalChange | None:
         with get_session() as session:
             stmt = select(LegalChange).where(
                 LegalChange.legal_document_id == document_id,
                 LegalChange.change_type == CHANGE_NOVELIZATION,
-                LegalChange.evaluated.is_(False),
                 LegalChange.active.is_(True),
                 LegalChange.note == f"{note_prefix}{remote_checksum}",
             )
+            if evaluated is not None:
+                stmt = stmt.where(LegalChange.evaluated.is_(evaluated))
+            stmt = stmt.order_by(LegalChange.id.asc())
             return session.scalar(stmt)
 
     def get_by_id(self, change_id: int) -> LegalChange | None:

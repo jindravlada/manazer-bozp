@@ -12,6 +12,7 @@ from core.widgets.typed_table_sort import (
     typed_int,
     typed_text,
 )
+from moduly.pravni_pozadavky.constants import legal_document_version_status_label
 
 
 def _format_date(value) -> str:
@@ -26,10 +27,11 @@ class LegalDocumentVersionTable(QTableWidget):
     def __init__(self):
         super().__init__()
 
-        self.setColumnCount(6)
+        self.setColumnCount(7)
         self.setHorizontalHeaderLabels([
             "ID",
             "Verze",
+            "Stav",
             "Účinnost od",
             "Účinnost do",
             "Publikováno",
@@ -49,21 +51,26 @@ class LegalDocumentVersionTable(QTableWidget):
         header = self.horizontalHeader()
         header.setStretchLastSection(False)
         header.setSectionResizeMode(1, QHeaderView.Stretch)
-        for column in (2, 3, 4, 5):
+        for column in (2, 3, 4, 5, 6):
             header.setSectionResizeMode(column, QHeaderView.Fixed)
-        self.setColumnWidth(2, 110)
+        self.setColumnWidth(2, 130)
         self.setColumnWidth(3, 110)
         self.setColumnWidth(4, 110)
-        self.setColumnWidth(5, 80)
+        self.setColumnWidth(5, 110)
+        self.setColumnWidth(6, 80)
 
         enable_typed_sorting(self)
 
-    def load_versions(self, versions) -> None:
+    def load_versions(self, versions, *, current_version_id: int | None = None) -> None:
         with sorting_paused(self):
             self.setRowCount(len(versions))
 
             for row, version in enumerate(versions):
                 record_id = int(version.id)
+                status_label = legal_document_version_status_label(
+                    version,
+                    current_version_id=current_version_id,
+                )
                 self.setItem(
                     row,
                     0,
@@ -81,6 +88,11 @@ class LegalDocumentVersionTable(QTableWidget):
                 self.setItem(
                     row,
                     2,
+                    create_typed_item(status_label, typed_text(status_label), stable_id=record_id),
+                )
+                self.setItem(
+                    row,
+                    3,
                     create_typed_item(
                         _format_date(version.effective_from),
                         typed_date(version.effective_from),
@@ -89,7 +101,7 @@ class LegalDocumentVersionTable(QTableWidget):
                 )
                 self.setItem(
                     row,
-                    3,
+                    4,
                     create_typed_item(
                         _format_date(version.effective_to),
                         typed_date(version.effective_to),
@@ -98,7 +110,7 @@ class LegalDocumentVersionTable(QTableWidget):
                 )
                 self.setItem(
                     row,
-                    4,
+                    5,
                     create_typed_item(
                         _format_date(version.publication_date),
                         typed_date(version.publication_date),
@@ -107,7 +119,7 @@ class LegalDocumentVersionTable(QTableWidget):
                 )
                 self.setItem(
                     row,
-                    5,
+                    6,
                     create_typed_item(
                         "Ano" if version.active else "Ne",
                         typed_bool(version.active),
@@ -117,6 +129,11 @@ class LegalDocumentVersionTable(QTableWidget):
 
                 if not version.active:
                     brush = QBrush(QColor("#f0f0f0"))
+                elif version.pending_adoption:
+                    brush = QBrush(QColor("#fff6d5"))
+                else:
+                    brush = None
+                if brush is not None:
                     for column in range(self.columnCount()):
                         item = self.item(row, column)
                         if item is not None:

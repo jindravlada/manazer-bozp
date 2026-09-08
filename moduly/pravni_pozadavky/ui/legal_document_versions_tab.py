@@ -59,7 +59,11 @@ class LegalDocumentVersionsTab(QWidget):
             self.document_id,
             include_inactive=True,
         )
-        self.table.load_versions(versions)
+        current = legal_document_version_service.get_current_version(self.document_id)
+        self.table.load_versions(
+            versions,
+            current_version_id=current.id if current is not None else None,
+        )
         self._update_action_buttons()
 
     def _selected_version(self):

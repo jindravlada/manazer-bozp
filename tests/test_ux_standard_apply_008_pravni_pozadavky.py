@@ -345,6 +345,38 @@ class UxStandardApply008PravniPozadavkyTestCase(unittest.TestCase):
         self.assertFalse(tab.toggle_btn.isEnabled())
         self.assertFalse(tab.evaluate_btn.isEnabled())
 
+    def test_changes_table_shows_catalog_label_not_internal_ids(self) -> None:
+        from moduly.pravni_pozadavky.constants import (
+            DOCUMENT_TYPE_NARIZENI_VLADY,
+            legal_document_catalog_link_label,
+        )
+
+        document = legal_document_service.create(
+            document_type=DOCUMENT_TYPE_NARIZENI_VLADY,
+            title="Nařízení vlády, kterým se stanoví podmínky ochrany zdraví při práci",
+            number="361",
+            year=2007,
+        )
+        legal_change_service.create(
+            legal_document_id=document.id,
+            change_type=CHANGE_UPDATED,
+            title="Předpis byl novelizován.",
+        )
+        tab = ZmenyLegislativyTab()
+        headers = [
+            tab.table.horizontalHeaderItem(index).text()
+            for index in range(tab.table.columnCount())
+        ]
+        self.assertEqual(
+            headers,
+            ["ID", "Datum zveřejnění", "Typ změny", "Předpis", "Název", "Vyhodnoceno", "Aktivní"],
+        )
+        self.assertNotIn("Předpis ID", headers)
+        self.assertNotIn("Verze ID", headers)
+        expected = legal_document_catalog_link_label(document)
+        self.assertEqual(tab.table.item(0, 3).text(), expected)
+        self.assertIn("361/2007 Sb.", expected)
+
     def test_changes_double_click_and_context_menu(self) -> None:
         init_source = inspect.getsource(ZmenyLegislativyTab.__init__)
         self.assertIn(

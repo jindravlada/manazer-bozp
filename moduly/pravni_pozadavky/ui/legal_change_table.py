@@ -15,7 +15,11 @@ from core.widgets.typed_table_sort import (
     typed_status,
     typed_text,
 )
-from moduly.pravni_pozadavky.constants import CHANGE_TYPE_LABELS
+from moduly.pravni_pozadavky.constants import (
+    CHANGE_TYPE_LABELS,
+    legal_document_catalog_link_label,
+)
+from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
 
 CHANGE_TYPE_ORDER = tuple(CHANGE_TYPE_LABELS.keys())
 
@@ -43,18 +47,23 @@ def _date_sort_value(value):
     return typed_date(value)
 
 
+def _document_label(change) -> str:
+    document = legal_document_service.get_by_id(change.legal_document_id)
+    if document is None:
+        return f"Předpis #{change.legal_document_id}"
+    return legal_document_catalog_link_label(document)
+
+
 class LegalChangeTable(QTableWidget):
     def __init__(self):
         super().__init__()
 
-        self.setColumnCount(9)
+        self.setColumnCount(7)
         self.setHorizontalHeaderLabels([
             "ID",
             "Datum zveřejnění",
             "Typ změny",
-            "Předpis ID",
-            "Verze ID",
-            "Ustanovení ID",
+            "Předpis",
             "Název",
             "Vyhodnoceno",
             "Aktivní",
@@ -72,16 +81,14 @@ class LegalChangeTable(QTableWidget):
 
         header = self.horizontalHeader()
         header.setStretchLastSection(False)
-        header.setSectionResizeMode(6, QHeaderView.Stretch)
-        for column in (1, 2, 3, 4, 5, 7, 8):
+        header.setSectionResizeMode(3, QHeaderView.Stretch)
+        header.setSectionResizeMode(4, QHeaderView.Stretch)
+        for column in (1, 2, 5, 6):
             header.setSectionResizeMode(column, QHeaderView.Fixed)
         self.setColumnWidth(1, 120)
         self.setColumnWidth(2, 150)
-        self.setColumnWidth(3, 80)
-        self.setColumnWidth(4, 70)
-        self.setColumnWidth(5, 100)
-        self.setColumnWidth(7, 90)
-        self.setColumnWidth(8, 80)
+        self.setColumnWidth(5, 90)
+        self.setColumnWidth(6, 80)
 
         enable_typed_sorting(self)
 
@@ -92,6 +99,7 @@ class LegalChangeTable(QTableWidget):
             for row, change in enumerate(changes):
                 record_id = int(change.id)
                 change_type_label = CHANGE_TYPE_LABELS.get(change.change_type, change.change_type)
+                document_label = _document_label(change)
                 self.setItem(
                     row,
                     0,
@@ -118,40 +126,16 @@ class LegalChangeTable(QTableWidget):
                 self.setItem(
                     row,
                     3,
-                    create_typed_item(
-                        str(change.legal_document_id),
-                        typed_int(change.legal_document_id),
-                        stable_id=record_id,
-                    ),
+                    create_typed_item(document_label, typed_text(document_label), stable_id=record_id),
                 )
                 self.setItem(
                     row,
                     4,
-                    create_typed_item(
-                        str(change.legal_document_version_id)
-                        if change.legal_document_version_id is not None
-                        else "",
-                        typed_int(change.legal_document_version_id),
-                        stable_id=record_id,
-                    ),
-                )
-                self.setItem(
-                    row,
-                    5,
-                    create_typed_item(
-                        str(change.legal_section_id) if change.legal_section_id is not None else "",
-                        typed_int(change.legal_section_id),
-                        stable_id=record_id,
-                    ),
-                )
-                self.setItem(
-                    row,
-                    6,
                     create_typed_item(change.title, typed_text(change.title), stable_id=record_id),
                 )
                 self.setItem(
                     row,
-                    7,
+                    5,
                     create_typed_item(
                         "Ano" if change.evaluated else "Ne",
                         typed_bool(change.evaluated),
@@ -160,7 +144,7 @@ class LegalChangeTable(QTableWidget):
                 )
                 self.setItem(
                     row,
-                    8,
+                    6,
                     create_typed_item(
                         "Ano" if change.active else "Ne",
                         typed_bool(change.active),

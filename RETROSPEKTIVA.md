@@ -45,7 +45,15 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
-### 2026-09-08 – AGENDA-SORT-FIX-1
+### 2026-09-08 – RPP-CHANGE-1
+
+**Co se povedlo:** Detekce novely začala ukládat nové úplné znění jako samostatnou verzi a přestala falšovat checksum používaného znění.
+
+**Co už bychom dnes udělali jinak:** Checksum verze od začátku vázat jen na skutečně uložený obsah, ne na poslední viděnou e-Sbírku.
+
+**Co bylo zbytečně složité:** Nic – stačilo oddělit používanou verzi od nově zjištěné (`pending_adoption`) a u Zjištěné změny držet obě vazby.
+
+**Jaké nové pravidlo z toho vzniklo:** Kontrola změn smí založit nové znění, ale nesmí přepsat identifikaci ani obsah znění, které Manažer právě používá.
 
 **Co se povedlo:** Výchozí řazení Agendy i Nadcházejících je zase Termín, priorita jen při stejném dni.
 

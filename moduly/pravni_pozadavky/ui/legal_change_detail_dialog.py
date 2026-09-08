@@ -18,7 +18,7 @@ from core.widgets.dialog_utils import (
 from moduly.pravni_pozadavky.constants import (
     CHANGE_TYPE_LABELS,
     NOVELIZATION_REMOTE_CHECKSUM_NOTE_PREFIX,
-    legal_document_display_label,
+    legal_document_catalog_link_label,
 )
 from moduly.pravni_pozadavky.sluzby.legal_change_impacted_assertion_service import (
     legal_change_impacted_assertion_service,
@@ -30,6 +30,9 @@ from moduly.pravni_pozadavky.sluzby.legal_change_section_service import (
     legal_change_section_service,
 )
 from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
+from moduly.pravni_pozadavky.sluzby.legal_document_version_service import (
+    legal_document_version_service,
+)
 from moduly.pravni_pozadavky.ui.legal_change_impacted_assertions_table import (
     LegalChangeImpactedAssertionsTable,
 )
@@ -80,9 +83,30 @@ class LegalChangeDetailDialog(QDialog):
         document = legal_document_service.get_by_id(self.change.legal_document_id)
         document_label = ""
         if document is not None:
-            document_label = legal_document_display_label(document) or document.title
+            document_label = legal_document_catalog_link_label(document) or document.title
+
+        original_version = None
+        if self.change.legal_document_version_id is not None:
+            original_version = legal_document_version_service.get_by_id(
+                self.change.legal_document_version_id,
+            )
+        detected_version = None
+        if self.change.new_legal_document_version_id is not None:
+            detected_version = legal_document_version_service.get_by_id(
+                self.change.new_legal_document_version_id,
+            )
 
         self._add_readonly_row(form, "Právní předpis:", document_label)
+        self._add_readonly_row(
+            form,
+            "Používané znění:",
+            original_version.version_name if original_version is not None else "—",
+        )
+        self._add_readonly_row(
+            form,
+            "Nově zjištěné znění:",
+            detected_version.version_name if detected_version is not None else "—",
+        )
         self._add_readonly_row(
             form,
             "Typ změny:",

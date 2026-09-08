@@ -27,7 +27,17 @@ class LegalDocumentVersionService:
 
     def get_current_version(self, document_id: int) -> LegalDocumentVersion | None:
         versions = self.list_by_document(document_id, include_inactive=False)
-        return versions[0] if versions else None
+        for version in versions:
+            if not version.pending_adoption:
+                return version
+        return None
+
+    def find_pending_by_checksum(
+        self,
+        document_id: int,
+        checksum: str,
+    ) -> LegalDocumentVersion | None:
+        return self.repository.find_pending_by_checksum(document_id, checksum)
 
     def create(
         self,
@@ -43,6 +53,7 @@ class LegalDocumentVersionService:
         local_file_path: str = "",
         checksum: str = "",
         note: str = "",
+        pending_adoption: bool = False,
         active: bool = True,
     ) -> LegalDocumentVersion:
         self._validate_document_id(legal_document_id)
@@ -62,6 +73,7 @@ class LegalDocumentVersionService:
             local_file_path=local_file_path.strip(),
             checksum=checksum.strip(),
             note=note.strip(),
+            pending_adoption=pending_adoption,
             active=active,
         )
         return self.repository.create(version)
@@ -81,6 +93,7 @@ class LegalDocumentVersionService:
         local_file_path: str = "",
         checksum: str = "",
         note: str = "",
+        pending_adoption: bool | None = None,
         active: bool = True,
     ) -> LegalDocumentVersion | None:
         version = self.repository.get_by_id(version_id)
@@ -103,6 +116,8 @@ class LegalDocumentVersionService:
         version.local_file_path = local_file_path.strip()
         version.checksum = checksum.strip()
         version.note = note.strip()
+        if pending_adoption is not None:
+            version.pending_adoption = pending_adoption
         version.active = active
         return self.repository.update(version)
 

@@ -10,6 +10,8 @@ from moduly.pravni_pozadavky.sluzby.legal_document_version_service import (
 from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
 from moduly.pravni_pozadavky.sluzby.legal_check_run_service import legal_check_run_service
 
+_KEEP = object()
+
 
 class LegalChangeService:
     def __init__(self):
@@ -75,6 +77,21 @@ class LegalChangeService:
             note_prefix=note_prefix,
         )
 
+    def find_novelization_by_remote_checksum(
+        self,
+        document_id: int,
+        *,
+        remote_checksum: str,
+        note_prefix: str,
+        evaluated: bool | None = None,
+    ) -> LegalChange | None:
+        return self.repository.find_novelization_by_remote_checksum(
+            document_id,
+            remote_checksum=remote_checksum,
+            note_prefix=note_prefix,
+            evaluated=evaluated,
+        )
+
     def get_by_id(self, change_id: int) -> LegalChange | None:
         return self.repository.get_by_id(change_id)
 
@@ -85,6 +102,7 @@ class LegalChangeService:
         change_type: str,
         title: str,
         legal_document_version_id: int | None = None,
+        new_legal_document_version_id: int | None = None,
         legal_section_id: int | None = None,
         legal_check_run_id: int | None = None,
         description: str = "",
@@ -98,6 +116,7 @@ class LegalChangeService:
     ) -> LegalChange:
         self._validate_document_id(legal_document_id)
         self._validate_version_id(legal_document_version_id)
+        self._validate_version_id(new_legal_document_version_id)
         self._validate_section_id(legal_section_id)
         self._validate_check_run_id(legal_check_run_id)
         normalized_type = change_type.strip()
@@ -112,6 +131,7 @@ class LegalChangeService:
         change = LegalChange(
             legal_document_id=legal_document_id,
             legal_document_version_id=legal_document_version_id,
+            new_legal_document_version_id=new_legal_document_version_id,
             legal_section_id=legal_section_id,
             legal_check_run_id=legal_check_run_id,
             change_type=normalized_type,
@@ -135,6 +155,7 @@ class LegalChangeService:
         change_type: str,
         title: str,
         legal_document_version_id: int | None = None,
+        new_legal_document_version_id: int | None | object = _KEEP,
         legal_section_id: int | None = None,
         legal_check_run_id: int | None = None,
         description: str = "",
@@ -150,8 +171,14 @@ class LegalChangeService:
         if change is None:
             return None
 
+        resolved_new_version_id = (
+            change.new_legal_document_version_id
+            if new_legal_document_version_id is _KEEP
+            else new_legal_document_version_id
+        )
         self._validate_document_id(legal_document_id)
         self._validate_version_id(legal_document_version_id)
+        self._validate_version_id(resolved_new_version_id)
         self._validate_section_id(legal_section_id)
         self._validate_check_run_id(legal_check_run_id)
         normalized_type = change_type.strip()
@@ -169,6 +196,7 @@ class LegalChangeService:
 
         change.legal_document_id = legal_document_id
         change.legal_document_version_id = legal_document_version_id
+        change.new_legal_document_version_id = resolved_new_version_id
         change.legal_section_id = legal_section_id
         change.legal_check_run_id = legal_check_run_id
         change.change_type = normalized_type
@@ -181,6 +209,22 @@ class LegalChangeService:
         change.evaluated_by = evaluated_by.strip() if evaluated else ""
         change.note = note.strip()
         change.active = active
+        return self.repository.update(change)
+
+    def attach_detected_version(
+        self,
+        change_id: int,
+        new_legal_document_version_id: int,
+        *,
+        description: str | None = None,
+    ) -> LegalChange | None:
+        change = self.repository.get_by_id(change_id)
+        if change is None:
+            return None
+        self._validate_version_id(new_legal_document_version_id)
+        change.new_legal_document_version_id = new_legal_document_version_id
+        if description is not None:
+            change.description = description.strip()
         return self.repository.update(change)
 
     def deactivate(self, change_id: int) -> LegalChange | None:

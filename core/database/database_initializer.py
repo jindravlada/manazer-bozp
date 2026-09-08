@@ -248,6 +248,7 @@ def initialize_database() -> None:
     _ensure_legal_change_columns()
     _ensure_legal_change_sections_table()
     _ensure_legal_document_columns()
+    _ensure_legal_document_version_columns()
     _ensure_legal_check_run_columns()
     _ensure_hazard_identifications_table()
     _ensure_hazard_inventory_items_table()
@@ -3382,6 +3383,16 @@ def _ensure_legal_change_columns() -> None:
         return
     if "legal_check_run_id" not in columns:
         _add_column("legal_changes", "legal_check_run_id INTEGER")
+    if "new_legal_document_version_id" not in columns:
+        _add_column("legal_changes", "new_legal_document_version_id INTEGER")
+
+
+def _ensure_legal_document_version_columns() -> None:
+    columns = _table_columns("legal_document_versions")
+    if not columns:
+        return
+    if "pending_adoption" not in columns:
+        _add_column("legal_document_versions", "pending_adoption BOOLEAN DEFAULT 0")
 
 
 def _ensure_legal_change_sections_table() -> None:

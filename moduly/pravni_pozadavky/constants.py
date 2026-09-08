@@ -431,6 +431,25 @@ CHANGE_REPEALED = "repealed"
 CHANGE_OTHER = "other"
 CHANGE_NOVELIZATION = "novelization"
 NOVELIZATION_REMOTE_CHECKSUM_NOTE_PREFIX = "esbirka-ref:"
+DETECTED_VERSION_NAME_PREFIX = "Nově zjištěné znění"
+VERSION_STATUS_IN_USE = "Používané"
+VERSION_STATUS_PENDING_ADOPTION = "Nově zjištěné"
+
+
+def detected_version_name(version_label: str) -> str:
+    label = (version_label or "").strip()
+    if not label:
+        return DETECTED_VERSION_NAME_PREFIX
+    return f"{DETECTED_VERSION_NAME_PREFIX} – {label}"
+
+
+def legal_document_version_status_label(version, *, current_version_id: int | None) -> str:
+    if bool(getattr(version, "pending_adoption", False)):
+        return VERSION_STATUS_PENDING_ADOPTION
+    version_id = getattr(version, "id", None)
+    if current_version_id is not None and version_id == current_version_id:
+        return VERSION_STATUS_IN_USE
+    return ""
 
 CHANGE_SECTION_ADDED = "added"
 CHANGE_SECTION_REMOVED = "removed"
