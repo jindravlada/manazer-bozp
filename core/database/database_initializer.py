@@ -3401,6 +3401,13 @@ def _ensure_legal_change_sections_table() -> None:
         from moduly.pravni_pozadavky.modely.legal_change_section import LegalChangeSection
 
         LegalChangeSection.__table__.create(bind=_db_engine(), checkfirst=True)
+        columns = _table_columns("legal_change_sections")
+    if not columns:
+        return
+    if "old_text" not in columns:
+        _add_column("legal_change_sections", "old_text TEXT")
+    if "new_text" not in columns:
+        _add_column("legal_change_sections", "new_text TEXT")
 
 
 def _ensure_legal_check_run_columns() -> None:

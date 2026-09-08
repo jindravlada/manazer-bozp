@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (
     QDialog,
     QFormLayout,
     QGroupBox,
+    QHBoxLayout,
     QLabel,
     QTextEdit,
     QVBoxLayout,
@@ -65,7 +66,7 @@ class LegalChangeDetailDialog(QDialog):
         self.change = change
 
         self.setWindowTitle("Detail zjištěné změny")
-        configure_resizable_form_dialog(self, width=760, height=680, min_width=560, min_height=480)
+        configure_resizable_form_dialog(self, width=860, height=760, min_width=640, min_height=520)
 
         layout = QVBoxLayout(self)
         layout.addWidget(wrap_in_scroll_area(self._build_content()))
@@ -124,13 +125,33 @@ class LegalChangeDetailDialog(QDialog):
 
         sections_group = QGroupBox("Změněná ustanovení")
         sections_layout = QVBoxLayout(sections_group)
+        legal_change_section_service.sync_version_content_changes(self.change)
         sections = legal_change_section_service.list_sections_for_change(self.change.id)
         if sections:
-            table = LegalChangeSectionsTable()
-            table.load_sections(sections)
-            sections_layout.addWidget(table)
+            self.sections_table = LegalChangeSectionsTable()
+            self.sections_table.load_sections(sections)
+            self.sections_table.setMinimumHeight(140)
+            self.sections_table.itemSelectionChanged.connect(self._update_section_texts)
+            sections_layout.addWidget(self.sections_table)
+
+            texts_row = QHBoxLayout()
+            self.old_text_edit = self._build_section_text_panel()
+            self.new_text_edit = self._build_section_text_panel()
+            old_box = QGroupBox("Původní znění")
+            old_box_layout = QVBoxLayout(old_box)
+            old_box_layout.addWidget(self.old_text_edit)
+            new_box = QGroupBox("Nové znění")
+            new_box_layout = QVBoxLayout(new_box)
+            new_box_layout.addWidget(self.new_text_edit)
+            texts_row.addWidget(old_box)
+            texts_row.addWidget(new_box)
+            sections_layout.addLayout(texts_row)
+            self.sections_table.selectRow(0)
+            self._update_section_texts()
         else:
-            empty_label = QLabel("U této změny nebyla zjištěna změna struktury ustanovení.")
+            empty_label = QLabel(
+                "U této změny nebyla zjištěna změna struktury ani textu ustanovení.",
+            )
             empty_label.setWordWrap(True)
             sections_layout.addWidget(empty_label)
         root.addWidget(sections_group)
@@ -168,6 +189,24 @@ class LegalChangeDetailDialog(QDialog):
         root.addWidget(assertions_group)
 
         return content
+
+    def _build_section_text_panel(self) -> QTextEdit:
+        field = QTextEdit()
+        field.setReadOnly(True)
+        field.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
+        field.setMinimumHeight(160)
+        return field
+
+    def _update_section_texts(self) -> None:
+        if not hasattr(self, "old_text_edit"):
+            return
+        section = self.sections_table.selected_section()
+        self.old_text_edit.setPlainText(self._display_version_text(section.old_text if section else None))
+        self.new_text_edit.setPlainText(self._display_version_text(section.new_text if section else None))
+
+    def _display_version_text(self, value: str | None) -> str:
+        text = (value or "").strip()
+        return text if text else "—"
 
     def _add_readonly_row(self, form: QFormLayout, label: str, value: str) -> None:
         field = QLabel((value or "").strip() or "—")

@@ -203,7 +203,7 @@ class LegalSectionStructureCompareServiceTestCase(unittest.TestCase):
         self.assertIn("262/2006 Sb.", log_text)
         self.assertIn("Změněná ustanovení:", log_text)
         self.assertIn("§102", log_text)
-        self.assertNotIn("Novelizace bez změny struktury ustanovení.", log_text)
+        self.assertNotIn("Novelizace bez změny ustanovení.", log_text)
 
     def test_format_check_run_summary(self) -> None:
         document = type(
@@ -231,7 +231,7 @@ class LegalSectionStructureCompareServiceTestCase(unittest.TestCase):
 
         self.assertEqual(
             summary,
-            "262/2006 Sb. – novelizace bez změny struktury ustanovení.",
+            "262/2006 Sb. – novelizace bez změny ustanovení.",
         )
 
     def test_format_check_run_log_without_structural_changes(self) -> None:
@@ -260,8 +260,168 @@ class LegalSectionStructureCompareServiceTestCase(unittest.TestCase):
 
         self.assertEqual(
             log_text,
-            "262/2006 Sb.\n\nNovelizace bez změny struktury ustanovení.",
+            "262/2006 Sb.\n\nNovelizace bez změny ustanovení.",
         )
+
+    def test_version_compare_detects_text_only_change(self) -> None:
+        old_sections = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="5",
+                title="§ 5",
+                text="Původní text ustanovení",
+            ),
+        ]
+        new_sections = [
+            _SectionStub(
+                section_id=11,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="5",
+                title="§ 5",
+                text="Nový text téhož ustanovení",
+            ),
+        ]
+
+        result = legal_section_structure_compare_service.compare_version_sections(
+            old_sections=old_sections,
+            new_sections=new_sections,
+        )
+
+        self.assertEqual(result.new, [])
+        self.assertEqual(result.removed, [])
+        self.assertEqual(len(result.changed), 1)
+        changed = result.changed[0]
+        self.assertEqual(changed.identity_key, "§:5")
+        self.assertEqual(changed.old_text, "Původní text ustanovení")
+        self.assertEqual(changed.new_text, "Nový text téhož ustanovení")
+
+    def test_version_compare_ignores_whitespace_only_difference(self) -> None:
+        old_sections = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="5",
+                text="Stejný  obsah\nustanovení",
+            ),
+        ]
+        new_sections = [
+            _SectionStub(
+                section_id=11,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="5",
+                text="Stejný obsah ustanovení",
+            ),
+        ]
+
+        result = legal_section_structure_compare_service.compare_version_sections(
+            old_sections=old_sections,
+            new_sections=new_sections,
+        )
+
+        self.assertEqual(result.changed, [])
+        self.assertEqual(result.new, [])
+        self.assertEqual(result.removed, [])
+        self.assertEqual(len(result.unchanged), 1)
+
+    def test_version_compare_added_and_removed_keep_own_text(self) -> None:
+        old_sections = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="12a",
+                title="Mladiství žáci smějí pouze v rámci přípravy",
+                text="",
+            ),
+            _SectionStub(
+                section_id=2,
+                section_type=SECTION_LETTER,
+                parent_section_id=1,
+                item_letter="a",
+                text="původní písmeno a",
+            ),
+        ]
+        new_sections = [
+            _SectionStub(
+                section_id=11,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="7a",
+                title="§ 7a",
+                text="nově přidané ustanovení",
+            ),
+        ]
+
+        result = legal_section_structure_compare_service.compare_version_sections(
+            old_sections=old_sections,
+            new_sections=new_sections,
+        )
+
+        self.assertEqual([entry.log_label for entry in result.new], ["§7a"])
+        self.assertEqual(result.new[0].old_text, None)
+        self.assertEqual(result.new[0].new_text, "nově přidané ustanovení")
+        removed_by_key = {entry.identity_key: entry for entry in result.removed}
+        self.assertEqual(removed_by_key["§:12a"].old_text, "Mladiství žáci smějí pouze v rámci přípravy")
+        self.assertIsNone(removed_by_key["§:12a"].new_text)
+        self.assertEqual(removed_by_key["§:12a/pism:a"].old_text, "původní písmeno a")
+        self.assertIsNone(removed_by_key["§:12a/pism:a"].new_text)
+
+    def test_version_compare_does_not_mark_parent_when_only_letter_text_changes(self) -> None:
+        old_sections = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="5",
+                title="Nadpis paragrafu",
+                text="",
+            ),
+            _SectionStub(
+                section_id=2,
+                section_type=SECTION_SUBSECTION,
+                parent_section_id=1,
+                section_number="2",
+                text="odstavec beze změny",
+            ),
+            _SectionStub(
+                section_id=3,
+                section_type=SECTION_LETTER,
+                parent_section_id=2,
+                item_letter="a",
+                text="původní písmeno",
+            ),
+        ]
+        new_sections = [
+            _SectionStub(
+                section_id=11,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="5",
+                title="Nadpis paragrafu",
+                text="",
+            ),
+            _SectionStub(
+                section_id=12,
+                section_type=SECTION_SUBSECTION,
+                parent_section_id=11,
+                section_number="2",
+                text="odstavec beze změny",
+            ),
+            _SectionStub(
+                section_id=13,
+                section_type=SECTION_LETTER,
+                parent_section_id=12,
+                item_letter="a",
+                text="nové písmeno",
+            ),
+        ]
+
+        result = legal_section_structure_compare_service.compare_version_sections(
+            old_sections=old_sections,
+            new_sections=new_sections,
+        )
+
+        self.assertEqual([entry.identity_key for entry in result.changed], ["§:5/odst:2/pism:a"])
+        self.assertEqual(result.new, [])
+        self.assertEqual(result.removed, [])
+        self.assertEqual(len(result.unchanged), 2)
 
 
 if __name__ == "__main__":

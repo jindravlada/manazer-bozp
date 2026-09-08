@@ -256,7 +256,7 @@ class LegalCheckNovelizationServiceTestCase(unittest.TestCase):
         self.assertIn("390/2021 Sb.", updated_run.note)
         self.assertNotIn("Změněná ustanovení:", updated_run.note)
 
-    def test_novelization_without_structural_diff_creates_change_without_sections(self) -> None:
+    def test_novelization_without_content_diff_creates_change_without_sections(self) -> None:
         document, version = self._create_document_with_version(
             checksum=self._old_checksum(),
         )
@@ -287,7 +287,7 @@ class LegalCheckNovelizationServiceTestCase(unittest.TestCase):
         self.assertEqual(legal_change_section_service.list_sections_for_change(change.id), [])
         updated_run = legal_check_run_service.get_by_id(run.id)
         assert updated_run is not None
-        self.assertIn("novelizace bez změny struktury ustanovení", updated_run.note)
+        self.assertIn("novelizace bez změny ustanovení", updated_run.note)
 
     def test_run_automatic_check_counts_created_changes(self) -> None:
         document, _version = self._create_document_with_version(
@@ -707,12 +707,19 @@ class LegalCheckNovelizationServiceTestCase(unittest.TestCase):
             legal_document_version_status_label(detected, current_version_id=current.id),
             VERSION_STATUS_PENDING_ADOPTION,
         )
-        removed = {
-            item.section_label
+        removed_rows = [
+            item
             for item in legal_change_section_service.list_sections_for_change(change.id)
             if item.change_type == CHANGE_SECTION_REMOVED
-        }
-        self.assertTrue(any("12a" in label for label in removed))
+        ]
+        removed_labels = {item.section_label for item in removed_rows}
+        self.assertTrue(any("12a" in label for label in removed_labels))
+        paragraph_12a = next(item for item in removed_rows if item.section_key == "§:12a")
+        self.assertEqual(paragraph_12a.old_text, "Původní text § 12a")
+        self.assertIsNone(paragraph_12a.new_text)
+        letter_a = next(item for item in removed_rows if "pism:a" in item.section_key)
+        self.assertEqual(letter_a.old_text, "písmeno a původní")
+        self.assertIsNone(letter_a.new_text)
 
     def test_text_only_novelization_stores_comparable_section_texts(self) -> None:
         document, version = self._create_document_with_version(checksum=self._old_checksum())
@@ -750,7 +757,11 @@ class LegalCheckNovelizationServiceTestCase(unittest.TestCase):
             old_by_key[(SECTION_PARAGRAPH, "1")],
             new_by_key[(SECTION_PARAGRAPH, "1")],
         )
-        self.assertEqual(legal_change_section_service.list_sections_for_change(change.id), [])
+        change_sections = legal_change_section_service.list_sections_for_change(change.id)
+        self.assertEqual(len(change_sections), 1)
+        self.assertEqual(change_sections[0].change_type, CHANGE_SECTION_MODIFIED)
+        self.assertEqual(change_sections[0].old_text, "Původní znění")
+        self.assertEqual(change_sections[0].new_text, "Nové znění téhož ustanovení")
         current = legal_document_version_service.get_current_version(document.id)
         assert current is not None
         self.assertEqual(current.id, version.id)
@@ -791,6 +802,7 @@ class LegalCheckNovelizationServiceTestCase(unittest.TestCase):
         self.assertEqual(len(legal_change_service.list_by_document(document.id)), 1)
         versions = legal_document_version_service.list_by_document(document.id, include_inactive=True)
         self.assertEqual(len(versions), 2)
+        self.assertEqual(len(legal_change_section_service.list_sections_for_change(first.id)), 1)
 
     def test_repeated_check_after_evaluation_is_idempotent(self) -> None:
         document, version = self._create_document_with_version(checksum=self._old_checksum())
@@ -878,6 +890,91 @@ class LegalCheckNovelizationServiceTestCase(unittest.TestCase):
         detected = legal_document_version_service.get_by_id(updated_change.new_legal_document_version_id)
         assert detected is not None
         self.assertEqual(legal_section_service.list_by_version(detected.id)[0].text, "Text z e-Sbírky")
+        self.assertEqual(len(legal_change_service.list_by_document(document.id)), 1)
+        change_sections = legal_change_section_service.list_sections_for_change(updated_change.id)
+        self.assertEqual(len(change_sections), 1)
+        self.assertEqual(change_sections[0].change_type, CHANGE_SECTION_MODIFIED)
+        self.assertEqual(change_sections[0].old_text, old_text)
+        self.assertEqual(change_sections[0].new_text, "Text z e-Sbírky")
+
+    def test_text_novelization_without_structure_change_is_shown_as_modified(self) -> None:
+        document = legal_document_service.create(
+            document_type=DOCUMENT_TYPE_NARIZENI_VLADY,
+            title="Nařízení vlády, kterým se stanoví okruh a rozsah jiných důležitých osobních překážek v práci",
+            number="590",
+            year=2006,
+        )
+        old_version = legal_document_version_service.create(
+            legal_document_id=document.id,
+            version_name="Aktuální znění",
+            checksum=self._old_checksum(),
+        )
+        new_version = legal_document_version_service.create(
+            legal_document_id=document.id,
+            version_name="Nově zjištěné znění – e-Sbírka 355597",
+            checksum=self._remote_checksum(),
+            pending_adoption=True,
+        )
+        legal_section_service.create(
+            legal_document_id=document.id,
+            legal_document_version_id=old_version.id,
+            section_type=SECTION_PARAGRAPH,
+            paragraph="1",
+            title="Okruh a rozsah",
+            text="Původní text § 1",
+            sort_order=1,
+        )
+        legal_section_service.create(
+            legal_document_id=document.id,
+            legal_document_version_id=old_version.id,
+            section_type=SECTION_PARAGRAPH,
+            paragraph="2",
+            title="Účinnost",
+            text="Toto nařízení nabývá účinnosti dnem 1. ledna 2007.",
+            sort_order=2,
+        )
+        legal_section_service.create(
+            legal_document_id=document.id,
+            legal_document_version_id=new_version.id,
+            section_type=SECTION_PARAGRAPH,
+            paragraph="1",
+            title="Okruh a rozsah",
+            text="Nové znění § 1 po novele",
+            sort_order=1,
+        )
+        legal_section_service.create(
+            legal_document_id=document.id,
+            legal_document_version_id=new_version.id,
+            section_type=SECTION_PARAGRAPH,
+            paragraph="2",
+            title="Účinnost",
+            text="Toto nařízení nabývá účinnosti dnem 1. ledna 2007.",
+            sort_order=2,
+        )
+        change = legal_change_service.create(
+            legal_document_id=document.id,
+            legal_document_version_id=old_version.id,
+            new_legal_document_version_id=new_version.id,
+            change_type=CHANGE_NOVELIZATION,
+            title="Předpis byl novelizován.",
+        )
+        version_count = len(
+            legal_document_version_service.list_by_document(document.id, include_inactive=True),
+        )
+
+        saved, _result = legal_change_section_service.sync_version_content_changes(change)
+        again, _again_result = legal_change_section_service.sync_version_content_changes(change)
+
+        self.assertEqual(len(saved), 1)
+        self.assertEqual(saved[0].change_type, CHANGE_SECTION_MODIFIED)
+        self.assertEqual(saved[0].section_key, "§:1")
+        self.assertEqual(saved[0].old_text, "Původní text § 1")
+        self.assertEqual(saved[0].new_text, "Nové znění § 1 po novele")
+        self.assertEqual([item.id for item in again], [item.id for item in saved])
+        self.assertEqual(
+            len(legal_document_version_service.list_by_document(document.id, include_inactive=True)),
+            version_count,
+        )
         self.assertEqual(len(legal_change_service.list_by_document(document.id)), 1)
 
     def test_catalog_label_identifies_government_regulation(self) -> None:

@@ -306,6 +306,8 @@ class LegalRegistryExportService:
             "section_key": self._text(section.section_key),
             "section_label": self._text(section.section_label),
             "change_type": self._text(section.change_type),
+            "old_text": section.old_text,
+            "new_text": section.new_text,
             "note": section.note,
             "created_at": self._serialize_datetime(section.created_at),
         }

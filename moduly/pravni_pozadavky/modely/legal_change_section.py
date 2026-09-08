@@ -20,6 +20,8 @@ class LegalChangeSection(Base):
     section_key: Mapped[str] = mapped_column(Text, nullable=False)
     section_label: Mapped[str] = mapped_column(Text, nullable=False)
     change_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    old_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    new_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)

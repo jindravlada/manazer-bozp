@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from core.database.session import get_session
 from moduly.pravni_pozadavky.modely.legal_change_section import LegalChangeSection
@@ -38,6 +38,24 @@ class LegalChangeSectionRepository:
             return []
         with get_session() as session:
             session.add_all(sections)
+            session.commit()
+            for section in sections:
+                session.refresh(section)
+            return sections
+
+    def replace_for_change(
+        self,
+        legal_change_id: int,
+        sections: list[LegalChangeSection],
+    ) -> list[LegalChangeSection]:
+        with get_session() as session:
+            session.execute(
+                delete(LegalChangeSection).where(
+                    LegalChangeSection.legal_change_id == legal_change_id,
+                ),
+            )
+            if sections:
+                session.add_all(sections)
             session.commit()
             for section in sections:
                 session.refresh(section)

@@ -82,6 +82,9 @@ class LegalCheckNovelizationService:
                         new_version.id,
                         description=self._build_description(stored_version, new_version),
                     )
+                    existing_change = legal_change_service.get_by_id(existing_change.id)
+            if existing_change is not None:
+                self._sync_content_changes(existing_change)
             return None
 
         new_version = existing_pending or self._persist_pending_version(
@@ -97,6 +100,9 @@ class LegalCheckNovelizationService:
                     new_version.id,
                     description=self._build_description(stored_version, new_version),
                 )
+                existing_change = legal_change_service.get_by_id(existing_change.id)
+            if existing_change is not None:
+                self._sync_content_changes(existing_change)
             return None
 
         new_version_label = (
@@ -117,14 +123,7 @@ class LegalCheckNovelizationService:
             evaluated=False,
             note=f"{NOVELIZATION_REMOTE_CHECKSUM_NOTE_PREFIX}{remote_checksum}",
         )
-        if parsed.sections:
-            self._record_structure_changes(
-                document=document,
-                stored_version=stored_version,
-                parsed=parsed,
-                change=change,
-                check_run_id=check_run_id,
-            )
+        self._sync_content_changes(change, document=document, check_run_id=check_run_id)
         return change
 
     def _persist_pending_version(
@@ -154,15 +153,15 @@ class LegalCheckNovelizationService:
         )
         return legal_document_version_service.get_by_id(version.id) or version
 
-    def _record_structure_changes(
+    def _sync_content_changes(
         self,
+        change: LegalChange | None,
         *,
-        document: LegalDocument,
-        stored_version: LegalDocumentVersion,
-        parsed: LegalDocumentParseResult,
-        change: LegalChange,
-        check_run_id: int,
+        document: LegalDocument | None = None,
+        check_run_id: int | None = None,
     ) -> None:
+        if change is None:
+            return
         from moduly.pravni_pozadavky.sluzby.legal_change_section_service import (
             legal_change_section_service,
         )
@@ -170,15 +169,9 @@ class LegalCheckNovelizationService:
             legal_section_structure_compare_service,
         )
 
-        stored_sections = legal_section_service.list_by_version(
-            stored_version.id,
-            include_inactive=False,
-        )
-        compare_result = legal_section_structure_compare_service.compare(
-            stored_sections=stored_sections,
-            parsed_sections=parsed.sections,
-        )
-        legal_change_section_service.add_sections_to_change(change.id, compare_result)
+        _saved, compare_result = legal_change_section_service.sync_version_content_changes(change)
+        if document is None or check_run_id is None:
+            return
         summary = legal_section_structure_compare_service.format_check_run_summary(
             document=document,
             result=compare_result,

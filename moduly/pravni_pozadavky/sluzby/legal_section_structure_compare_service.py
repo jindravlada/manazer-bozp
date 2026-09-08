@@ -1,4 +1,5 @@
-from dataclasses import dataclass, field
+import re
+from dataclasses import dataclass, field, replace
 
 from moduly.pravni_pozadavky.constants import (
     SECTION_ATTACHMENT,
@@ -13,12 +14,30 @@ from moduly.pravni_pozadavky.constants import (
 )
 from moduly.pravni_pozadavky.parser.legal_document_parser_models import ParsedLegalSection
 
+_WHITESPACE_RE = re.compile(r"\s+", re.UNICODE)
+
+
+def normalize_section_compare_text(value: str | None) -> str:
+    text = (value or "").replace("\u00a0", " ").replace("\u202f", " ")
+    text = _WHITESPACE_RE.sub(" ", text)
+    return text.strip()
+
+
+def section_own_compare_text(section) -> str:
+    text = getattr(section, "text", "") or ""
+    if text.strip():
+        return text
+    return getattr(section, "title", "") or ""
+
 
 @dataclass(frozen=True)
 class SectionStructureEntry:
     identity_key: str
     log_label: str
     fingerprint: str
+    text: str = ""
+    old_text: str | None = None
+    new_text: str | None = None
 
 
 @dataclass
@@ -31,6 +50,10 @@ class SectionStructureCompareResult:
     @property
     def has_structural_changes(self) -> bool:
         return bool(self.new or self.removed or self.changed)
+
+    @property
+    def has_changes(self) -> bool:
+        return self.has_structural_changes
 
 
 class LegalSectionStructureCompareService:
@@ -62,6 +85,53 @@ class LegalSectionStructureCompareService:
 
         return result
 
+    def compare_version_sections(
+        self,
+        *,
+        old_sections: list,
+        new_sections: list,
+    ) -> SectionStructureCompareResult:
+        old_entries = self._build_stored_entries(old_sections)
+        new_entries = self._build_stored_entries(new_sections)
+        old_by_key = {entry.identity_key: entry for entry in old_entries}
+        new_by_key = {entry.identity_key: entry for entry in new_entries}
+
+        result = SectionStructureCompareResult()
+        for key, new_entry in sorted(new_by_key.items()):
+            old_entry = old_by_key.get(key)
+            if old_entry is None:
+                result.new.append(
+                    replace(
+                        new_entry,
+                        old_text=None,
+                        new_text=self._nullable_text(new_entry.text),
+                    ),
+                )
+            elif (
+                old_entry.fingerprint != new_entry.fingerprint
+                or self._texts_differ(old_entry.text, new_entry.text)
+            ):
+                result.changed.append(
+                    replace(
+                        new_entry,
+                        old_text=self._nullable_text(old_entry.text),
+                        new_text=self._nullable_text(new_entry.text),
+                    ),
+                )
+            else:
+                result.unchanged.append(new_entry)
+
+        for key, old_entry in sorted(old_by_key.items()):
+            if key not in new_by_key:
+                result.removed.append(
+                    replace(
+                        old_entry,
+                        old_text=self._nullable_text(old_entry.text),
+                        new_text=None,
+                    ),
+                )
+        return result
+
     def build_section_key_index(self, sections: list) -> dict[str, int]:
         by_id = {section.id: section for section in sections}
         index: dict[str, int] = {}
@@ -78,8 +148,8 @@ class LegalSectionStructureCompareService:
 
     def format_check_run_summary(self, *, document, result: SectionStructureCompareResult) -> str:
         doc_number = legal_document_regulation_number(document)
-        if not result.has_structural_changes:
-            return f"{doc_number} – novelizace bez změny struktury ustanovení."
+        if not result.has_changes:
+            return f"{doc_number} – novelizace bez změny ustanovení."
 
         parts: list[str] = []
         if result.changed:
@@ -92,8 +162,8 @@ class LegalSectionStructureCompareService:
 
     def format_check_run_log(self, *, document, result: SectionStructureCompareResult) -> str:
         lines = [legal_document_regulation_number(document), ""]
-        if not result.has_structural_changes:
-            lines.append("Novelizace bez změny struktury ustanovení.")
+        if not result.has_changes:
+            lines.append("Novelizace bez změny ustanovení.")
             return "\n".join(lines)
 
         if result.changed:
@@ -160,11 +230,19 @@ class LegalSectionStructureCompareService:
 
     def _build_entry(self, chain: list) -> SectionStructureEntry:
         identity_key = "/".join(self._identity_segment(section) for section in chain)
+        leaf = chain[-1]
         return SectionStructureEntry(
             identity_key=identity_key,
             log_label=self._log_label(chain),
-            fingerprint=self._fingerprint(chain[-1]),
+            fingerprint=self._fingerprint(leaf),
+            text=section_own_compare_text(leaf),
         )
+
+    def _texts_differ(self, left: str, right: str) -> bool:
+        return normalize_section_compare_text(left) != normalize_section_compare_text(right)
+
+    def _nullable_text(self, value: str) -> str | None:
+        return value if (value or "").strip() else None
 
     def _identity_segment(self, section) -> str:
         section_type = (getattr(section, "section_type", "") or "").strip()

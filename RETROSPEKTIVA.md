@@ -45,6 +45,16 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-08 – RPP-CHANGE-2
+
+**Co se povedlo:** Zjištěná novela ukáže i textovou změnu téhož ustanovení, nejen přeskládanou strukturu.
+
+**Co už bychom dnes udělali jinak:** Porovnávat vlastní text uloženého uzlu hned při první detekci novely, ne až dalším sprintem.
+
+**Co bylo zbytečně složité:** Nic – stačilo párovat ustanovení stejnou identitou a uložit old_text/new_text.
+
+**Jaké nové pravidlo z toho vzniklo:** Rodičovské ustanovení se neoznačuje jako změněné jen proto, že se změnilo písmeno nebo odstavec pod ním. Porovnává se vlastní uložený text uzlu.
+
 ### 2026-09-08 – RPP-CHANGE-1
 
 **Co se povedlo:** Detekce novely začala ukládat nové úplné znění jako samostatnou verzi a přestala falšovat checksum používaného znění.
@@ -54,6 +64,8 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 **Co bylo zbytečně složité:** Nic – stačilo oddělit používanou verzi od nově zjištěné (`pending_adoption`) a u Zjištěné změny držet obě vazby.
 
 **Jaké nové pravidlo z toho vzniklo:** Kontrola změn smí založit nové znění, ale nesmí přepsat identifikaci ani obsah znění, které Manažer právě používá.
+
+### 2026-09-08 – AGENDA-SORT-FIX-1
 
 **Co se povedlo:** Výchozí řazení Agendy i Nadcházejících je zase Termín, priorita jen při stejném dni.
 

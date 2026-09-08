@@ -349,6 +349,8 @@ class LegalRegistryImportService:
                 section_key=self._text(record.get("section_key")),
                 section_label=self._text(record.get("section_label")),
                 change_type=self._text(record.get("change_type")),
+                old_text=record.get("old_text"),
+                new_text=record.get("new_text"),
                 note=record.get("note"),
                 created_at=self._parse_datetime(record.get("created_at")) or datetime.now(),
             )
