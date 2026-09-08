@@ -213,6 +213,20 @@ class LegalChangeService:
         change.active = active
         return self.repository.update(change)
 
+    def attach_to_check_run(
+        self,
+        change_id: int,
+        legal_check_run_id: int,
+    ) -> LegalChange | None:
+        change = self.repository.get_by_id(change_id)
+        if change is None:
+            return None
+        self._validate_check_run_id(legal_check_run_id)
+        if change.legal_check_run_id == legal_check_run_id:
+            return change
+        change.legal_check_run_id = legal_check_run_id
+        return self.repository.update(change)
+
     def attach_detected_version(
         self,
         change_id: int,

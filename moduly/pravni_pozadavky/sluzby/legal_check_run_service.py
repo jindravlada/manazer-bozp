@@ -100,6 +100,7 @@ class LegalCheckRunService:
 
         run = self._begin_automatic_check(period_from, normalized_period_to)
         is_first_check = self.is_first_automatic_check()
+        deferred_reference_checksums: list[tuple[int, str]] = []
         try:
             self._notify_status(on_status, "Připravuji kontrolu…")
             if self._check_cancelled(is_cancelled):
@@ -111,6 +112,9 @@ class LegalCheckRunService:
             from moduly.pravni_pozadavky.sluzby.legal_check_novelization_service import (
                 legal_check_novelization_service,
             )
+            from moduly.pravni_pozadavky.sluzby.legal_document_version_service import (
+                legal_document_version_service,
+            )
 
             for index, document in enumerate(documents, start=1):
                 if self._check_cancelled(is_cancelled):
@@ -119,7 +123,11 @@ class LegalCheckRunService:
                 label = legal_document_display_label(document)
                 self._notify_progress(on_progress, index, total, label)
                 if is_first_check:
-                    legal_check_novelization_service.initialize_reference_state(document)
+                    pending_checksum = legal_check_novelization_service.initialize_reference_state(
+                        document,
+                    )
+                    if pending_checksum is not None:
+                        deferred_reference_checksums.append(pending_checksum)
                 else:
                     legal_check_novelization_service.check_document(
                         document,
@@ -132,6 +140,8 @@ class LegalCheckRunService:
 
             if is_first_check:
                 changes_count = 0
+                for version_id, checksum in deferred_reference_checksums:
+                    legal_document_version_service.update_checksum(version_id, checksum)
             else:
                 from moduly.pravni_pozadavky.sluzby.legal_change_service import legal_change_service
 

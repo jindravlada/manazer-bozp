@@ -328,12 +328,18 @@ class LegalCheckNovelizationServiceTestCase(unittest.TestCase):
                 document,
                 check_run_id=run1.id,
             )
+        assert change1 is not None
+        legal_check_run_service._mark_completed(
+            run1.id,
+            documents_checked_count=1,
+            changes_found_count=1,
+        )
+        with self._patched_esbirka():
             change2 = legal_check_novelization_service.check_document(
                 document,
                 check_run_id=run2.id,
             )
 
-        assert change1 is not None
         self.assertIsNone(change2)
         self.assertEqual(len(legal_change_service.list_by_document(document.id)), 1)
         versions = legal_document_version_service.list_by_document(document.id, include_inactive=True)
@@ -383,6 +389,11 @@ class LegalCheckNovelizationServiceTestCase(unittest.TestCase):
             title="Předpis byl novelizován.",
             description="Existující nevyhodnocená změna",
             note=f"{NOVELIZATION_REMOTE_CHECKSUM_NOTE_PREFIX}{remote_checksum}",
+        )
+        legal_check_run_service._mark_completed(
+            run.id,
+            documents_checked_count=1,
+            changes_found_count=1,
         )
 
         duplicate_run = legal_check_run_service._begin_automatic_check(
@@ -459,11 +470,35 @@ class LegalCheckNovelizationServiceTestCase(unittest.TestCase):
         self.assertEqual(updated_version.checksum, original_after_init)
         self.assertIsNotNone(changes[0].new_legal_document_version_id)
 
-    def test_document_without_reference_state_initializes_baseline_without_change(self) -> None:
+    def test_document_without_reference_state_detects_content_difference(self) -> None:
         document, version = self._create_document_with_version(checksum="")
+        original_checksum = version.checksum
         run = legal_check_run_service._begin_automatic_check(date(2024, 1, 1), date(2024, 1, 31))
 
         with self._patched_esbirka():
+            change = legal_check_novelization_service.check_document(
+                document,
+                check_run_id=run.id,
+            )
+
+        assert change is not None
+        self.assertEqual(change.legal_document_id, document.id)
+        updated_version = legal_document_version_service.get_by_id(version.id)
+        assert updated_version is not None
+        self.assertEqual(updated_version.checksum, original_checksum)
+        detected = legal_document_version_service.get_by_id(change.new_legal_document_version_id)
+        assert detected is not None
+        self.assertTrue(detected.pending_adoption)
+
+    def test_document_without_reference_state_stamps_checksum_when_content_matches(self) -> None:
+        document, version = self._create_document_with_version(checksum="")
+        run = legal_check_run_service._begin_automatic_check(date(2024, 1, 1), date(2024, 1, 31))
+
+        with self._patched_esbirka(), patch.object(
+            legal_check_novelization_service,
+            "_compute_stored_text_checksum",
+            return_value=self.remote_version.text_checksum,
+        ):
             change = legal_check_novelization_service.check_document(
                 document,
                 check_run_id=run.id,
@@ -545,18 +580,16 @@ class LegalCheckNovelizationServiceTestCase(unittest.TestCase):
         self.assertTrue(first_result.is_first_check)
         self.assertEqual(first_result.changes_count, 0)
         self.assertFalse(second_result.is_first_check)
-        self.assertEqual(second_result.changes_count, 0)
+        self.assertEqual(second_result.changes_count, 1)
         self.assertEqual(legal_change_service.list_by_document(existing_document.id), [])
-        self.assertEqual(legal_change_service.list_by_document(new_document.id), [])
+        new_changes = legal_change_service.list_by_document(new_document.id)
+        self.assertEqual(len(new_changes), 1)
         updated_new_version = legal_document_version_service.get_by_id(new_version.id)
         assert updated_new_version is not None
-        self.assertEqual(
-            updated_new_version.checksum,
-            legal_document_esbirka_client.build_version_checksum(
-                slice_id=newer_remote.slice_id,
-                text_checksum=newer_remote.text_checksum,
-            ),
-        )
+        self.assertEqual(updated_new_version.checksum, "")
+        detected = legal_document_version_service.get_by_id(new_changes[0].new_legal_document_version_id)
+        assert detected is not None
+        self.assertTrue(detected.pending_adoption)
         updated_existing_version = legal_document_version_service.get_current_version(
             existing_document.id,
         )
@@ -590,7 +623,11 @@ class LegalCheckNovelizationServiceTestCase(unittest.TestCase):
             changes_found_count=0,
         )
 
-        with self._patched_esbirka(baseline_remote):
+        with self._patched_esbirka(baseline_remote), patch.object(
+            legal_check_novelization_service,
+            "_compute_stored_text_checksum",
+            return_value=baseline_remote.text_checksum,
+        ):
             second_result = legal_check_run_service.run_automatic_check(
                 period_from=date(2024, 2, 1),
                 period_to=date(2024, 2, 28),
@@ -792,12 +829,22 @@ class LegalCheckNovelizationServiceTestCase(unittest.TestCase):
                 document,
                 check_run_id=run1.id,
             )
+        assert first is not None
+        legal_check_run_service._mark_completed(
+            run1.id,
+            documents_checked_count=1,
+            changes_found_count=1,
+        )
+        with patch.object(
+            legal_check_novelization_service,
+            "_load_remote_document",
+            return_value=(self.remote_version, parsed),
+        ):
             second = legal_check_novelization_service.check_document(
                 document,
                 check_run_id=run2.id,
             )
 
-        assert first is not None
         self.assertIsNone(second)
         self.assertEqual(len(legal_change_service.list_by_document(document.id)), 1)
         versions = legal_document_version_service.list_by_document(document.id, include_inactive=True)
@@ -831,6 +878,16 @@ class LegalCheckNovelizationServiceTestCase(unittest.TestCase):
             )
             assert first is not None
             legal_change_service.mark_evaluated(first.id)
+        legal_check_run_service._mark_completed(
+            run1.id,
+            documents_checked_count=1,
+            changes_found_count=1,
+        )
+        with patch.object(
+            legal_check_novelization_service,
+            "_load_remote_document",
+            return_value=(self.remote_version, parsed),
+        ):
             second = legal_check_novelization_service.check_document(
                 document,
                 check_run_id=run2.id,

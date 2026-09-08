@@ -3,6 +3,7 @@ import re
 
 from moduly.pravni_pozadavky.constants import (
     CHANGE_NOVELIZATION,
+    CHECK_RUN_COMPLETED,
     NOVELIZATION_REMOTE_CHECKSUM_NOTE_PREFIX,
     detected_version_name,
 )
@@ -23,17 +24,16 @@ _NUMBER_YEAR_RE = re.compile(r"^(\d+)/(\d{4})$")
 
 
 class LegalCheckNovelizationService:
-    def initialize_reference_state(self, document: LegalDocument) -> bool:
+    def initialize_reference_state(self, document: LegalDocument) -> tuple[int, str] | None:
         stored_version = legal_document_version_service.get_current_version(document.id)
         if stored_version is None:
-            return False
+            return None
 
         remote_version = self._fetch_remote_version(document)
         if remote_version is None:
-            return False
+            return None
 
-        self._update_reference_checksum(stored_version, remote_version)
-        return True
+        return stored_version.id, self._build_remote_checksum(remote_version)
 
     def check_document(
         self,
@@ -51,10 +51,6 @@ class LegalCheckNovelizationService:
         remote_version, parsed = loaded
         remote_checksum = self._build_remote_checksum(remote_version)
 
-        if not self._has_reference_state(stored_version):
-            self._update_reference_checksum(stored_version, remote_version)
-            return None
-
         from moduly.pravni_pozadavky.sluzby.legal_change_service import legal_change_service
 
         existing_version = self._existing_detected_version(
@@ -68,23 +64,21 @@ class LegalCheckNovelizationService:
             note_prefix=NOVELIZATION_REMOTE_CHECKSUM_NOTE_PREFIX,
         )
         newer = self._has_newer_version(stored_version, remote_version)
+        pending_unadopted = self._is_unadopted_pending(stored_version, existing_version)
 
-        if not newer:
-            if existing_change is not None and existing_change.new_legal_document_version_id is None:
-                new_version = existing_version or self._persist_pending_version(
+        if not newer and not pending_unadopted:
+            if not self._has_reference_state(stored_version):
+                self._update_reference_checksum(stored_version, remote_version)
+            if existing_change is not None:
+                existing_change = self._ensure_detected_version(
+                    existing_change,
+                    existing_version=existing_version,
+                    stored_version=stored_version,
                     document=document,
                     remote_version=remote_version,
                     parsed=parsed,
                     remote_checksum=remote_checksum,
                 )
-                if new_version is not None:
-                    legal_change_service.attach_detected_version(
-                        existing_change.id,
-                        new_version.id,
-                        description=self._build_description(stored_version, new_version),
-                    )
-                    existing_change = legal_change_service.get_by_id(existing_change.id)
-            if existing_change is not None:
                 self._sync_content_changes(existing_change)
             return None
 
@@ -95,16 +89,19 @@ class LegalCheckNovelizationService:
             remote_checksum=remote_checksum,
         )
         if existing_change is not None:
-            if existing_change.new_legal_document_version_id is None and new_version is not None:
-                legal_change_service.attach_detected_version(
-                    existing_change.id,
-                    new_version.id,
-                    description=self._build_description(stored_version, new_version),
-                )
-                existing_change = legal_change_service.get_by_id(existing_change.id)
-            if existing_change is not None:
-                self._sync_content_changes(existing_change)
-            return None
+            existing_change = self._ensure_detected_version(
+                existing_change,
+                existing_version=new_version,
+                stored_version=stored_version,
+                document=document,
+                remote_version=remote_version,
+                parsed=parsed,
+                remote_checksum=remote_checksum,
+            )
+            self._sync_content_changes(existing_change)
+            if self._is_confirmed_by_completed_check(existing_change):
+                return None
+            return self._capture_change_for_run(existing_change, check_run_id)
 
         new_version_label = (
             new_version.version_name if new_version is not None else remote_version.version_label
@@ -204,6 +201,67 @@ class LegalCheckNovelizationService:
         if same_checksum is None or same_checksum.id == stored_version_id:
             return None
         return same_checksum
+
+    def _ensure_detected_version(
+        self,
+        change: LegalChange,
+        *,
+        existing_version: LegalDocumentVersion | None,
+        stored_version: LegalDocumentVersion,
+        document: LegalDocument,
+        remote_version: ESbirkaVersionInfo,
+        parsed: LegalDocumentParseResult,
+        remote_checksum: str,
+    ) -> LegalChange:
+        from moduly.pravni_pozadavky.sluzby.legal_change_service import legal_change_service
+
+        if change.new_legal_document_version_id is not None:
+            return change
+        new_version = existing_version or self._persist_pending_version(
+            document=document,
+            remote_version=remote_version,
+            parsed=parsed,
+            remote_checksum=remote_checksum,
+        )
+        if new_version is None:
+            return change
+        updated = legal_change_service.attach_detected_version(
+            change.id,
+            new_version.id,
+            description=self._build_description(stored_version, new_version),
+        )
+        return updated or change
+
+    def _capture_change_for_run(self, change: LegalChange, check_run_id: int) -> LegalChange:
+        from moduly.pravni_pozadavky.sluzby.legal_change_service import legal_change_service
+
+        if change.legal_check_run_id == check_run_id:
+            return change
+        updated = legal_change_service.attach_to_check_run(change.id, check_run_id)
+        return updated or change
+
+    def _is_confirmed_by_completed_check(self, change: LegalChange) -> bool:
+        if change.legal_check_run_id is None:
+            return True
+        from moduly.pravni_pozadavky.sluzby.legal_check_run_service import (
+            legal_check_run_service,
+        )
+
+        run = legal_check_run_service.get_by_id(change.legal_check_run_id)
+        if run is None:
+            return False
+        return run.status == CHECK_RUN_COMPLETED
+
+    def _is_unadopted_pending(
+        self,
+        stored_version: LegalDocumentVersion,
+        existing_version: LegalDocumentVersion | None,
+    ) -> bool:
+        if existing_version is None:
+            return False
+        if existing_version.id == stored_version.id:
+            return False
+        return bool(existing_version.pending_adoption)
 
     def _load_remote_document(
         self,

@@ -45,6 +45,16 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-08 – RPP-CHANGE-FIX-1
+
+**Co se povedlo:** Nedokončená kontrola už nepotvrdí referenční checksum používané verze. Další kompletní kontrola znovu vykáže nepřevzaté změny z přerušeného běhu.
+
+**Co už bychom dnes udělali jinak:** Baseline z e-Sbírky zapisovat až v okamžiku úspěšného dokončení kontroly, ne u každého předpisu v průběhu běhu.
+
+**Co bylo zbytečně složité:** Nic – stačilo oddělit pracovní pending data od potvrzení výsledku dokončenou kontrolou.
+
+**Jaké nové pravidlo z toho vzniklo:** Průběžný zápis během kontroly smí vytvořit pending verzi a LegalChange, ale nesmí prohlásit nový stav e-Sbírky za vypořádaný. Počet nalezených změn patří jen dokončenému běhu.
+
 ### 2026-09-08 – RPP-CHANGE-5
 
 **Co se povedlo:** Detail zjištěné změny ukazuje jen vazby na ustanovení této novely, ne všechny podklady procesu.
