@@ -78,6 +78,34 @@ PRIORITY_RANK = {
     "Normální": 2,
     "Nízká": 3,
 }
+# Položky bez priority až za Nízkou (výchozí řazení Priorita → Termín).
+PRIORITY_RANK_UNSET = 4
+_DUE_SLOT = 10**12
+
+
+def priority_sort_rank(priority: str | None) -> int:
+    """Pořadí priority: Kritická → Vysoká → Normální → Nízká → bez priority."""
+    text = (priority or "").strip()
+    if not text:
+        return PRIORITY_RANK_UNSET
+    return PRIORITY_RANK.get(text, PRIORITY_RANK_UNSET)
+
+
+def due_datetime_sort_number(due: datetime | None) -> int:
+    """Termín jako číslo; chybějící termín až za evidovanými daty."""
+    if due is None:
+        return _DUE_SLOT - 1
+    return due.toordinal() * 86400 + due.hour * 3600 + due.minute * 60 + due.second
+
+
+def priority_then_due_sort_int(priority: str | None, due: datetime | None) -> int:
+    """Složený klíč výchozího řazení: priorita, uvnitř ní nejstarší termín první."""
+    return priority_sort_rank(priority) * _DUE_SLOT + due_datetime_sort_number(due)
+
+
+def default_attention_sort_key(item: AttentionItem) -> tuple:
+    """Výchozí pořadí Nadcházejících i Agendy: priorita, potom existující termínový klíč."""
+    return (priority_sort_rank(item.priority), item.sort_key)
 
 
 def meeting_dashboard_source_label(meeting) -> str:

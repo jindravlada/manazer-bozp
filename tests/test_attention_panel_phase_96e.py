@@ -35,6 +35,7 @@ with patch.object(Path, "home", return_value=_TMP):
         ITEM_TYPE_MEETING,
         ITEM_TYPE_PERIODIC,
         ITEM_TYPE_TASK,
+        ITEM_TYPE_YEARLY_PLAN_MONTH,
         SOURCE_LABEL_AUDIT,
         SOURCE_LABEL_INSPECTION,
     )
@@ -52,6 +53,17 @@ class AttentionPanelPhase96eTestCase(unittest.TestCase):
         cls._app = QApplication.instance() or QApplication([])
 
     def setUp(self) -> None:
+        from sqlalchemy import delete
+
+        from core.database.session import get_session
+        from moduly.kniha_urazu.modely.accident import Accident
+        from moduly.kniha_urazu.modely.investigation import AccidentInvestigation
+        from moduly.rocni_plan.sluzby.yearly_plan_service import yearly_plan_service
+
+        with get_session() as session:
+            session.execute(delete(AccidentInvestigation))
+            session.execute(delete(Accident))
+            session.commit()
         for task in list(task_service.get_all_tasks()):
             if task.computed_status not in ("Ukončeno", "Zrušeno"):
                 task_service.cancel_task(task.id)
@@ -76,6 +88,9 @@ class AttentionPanelPhase96eTestCase(unittest.TestCase):
                 agenda=meeting.agenda or "",
                 status=STATUS_CANCELLED,
             )
+        today = date.today()
+        if not yearly_plan_service.is_month_processed(today.year, today.month):
+            yearly_plan_service.mark_month_processed(today.year, today.month)
 
     def test_panel_title_requires_attention(self) -> None:
         widget = UpcomingTasksWidget()
@@ -128,7 +143,11 @@ class AttentionPanelPhase96eTestCase(unittest.TestCase):
         )
 
         items = get_attention_items()
-        match = next(item for item in items if item.entity_id == audit.id)
+        match = next(
+            item
+            for item in items
+            if item.item_type == ITEM_TYPE_AUDIT and item.entity_id == audit.id
+        )
         self.assertEqual(match.item_type, ITEM_TYPE_AUDIT)
         self.assertEqual(match.title, "Audit – Testovací pracoviště")
         self.assertEqual(match.due_date, audit_date)
@@ -144,13 +163,23 @@ class AttentionPanelPhase96eTestCase(unittest.TestCase):
         )
 
         items = get_attention_items()
-        self.assertFalse(any(item.entity_id == audit.id for item in items))
+        self.assertFalse(
+            any(
+                item.item_type == ITEM_TYPE_AUDIT and item.entity_id == audit.id
+                for item in items
+            )
+        )
 
     def test_audit_without_date_is_hidden(self) -> None:
         audit = audit_service.create_audit(workplace_name="Bez data")
 
         items = get_attention_items()
-        self.assertFalse(any(item.entity_id == audit.id for item in items))
+        self.assertFalse(
+            any(
+                item.item_type == ITEM_TYPE_AUDIT and item.entity_id == audit.id
+                for item in items
+            )
+        )
 
     def test_inspection_with_date_is_shown(self) -> None:
         inspection_date = date.today() + timedelta(days=20)
@@ -160,7 +189,12 @@ class AttentionPanelPhase96eTestCase(unittest.TestCase):
         )
 
         items = get_attention_items()
-        match = next(item for item in items if item.entity_id == inspection.id)
+        match = next(
+            item
+            for item in items
+            if item.item_type == ITEM_TYPE_BOZP_INSPECTION
+            and item.entity_id == inspection.id
+        )
         self.assertEqual(match.item_type, ITEM_TYPE_BOZP_INSPECTION)
         self.assertEqual(match.title, "Prověrka BOZP – Provoz A")
         self.assertEqual(match.due_date, inspection_date)
@@ -176,9 +210,15 @@ class AttentionPanelPhase96eTestCase(unittest.TestCase):
         )
 
         items = get_attention_items()
-        self.assertFalse(any(item.entity_id == inspection.id for item in items))
+        self.assertFalse(
+            any(
+                item.item_type == ITEM_TYPE_BOZP_INSPECTION
+                and item.entity_id == inspection.id
+                for item in items
+            )
+        )
 
-    def test_items_sorted_by_due_date(self) -> None:
+    def test_items_sorted_by_priority_then_due_date(self) -> None:
         today = date.today()
         future = task_service.create_task(
             title="Budoucí úkol",
@@ -201,14 +241,20 @@ class AttentionPanelPhase96eTestCase(unittest.TestCase):
         )
         no_date = task_service.create_task(title="Bez termínu", priority="Kritická")
 
-        items = get_attention_items(today=today)
-        ids = [item.entity_id for item in items]
+        wanted = {no_date.id, overdue.id, due_today.id, future.id, audit.id}
+        ids = [
+            item.entity_id
+            for item in get_attention_items(today=today)
+            if item.entity_id in wanted
+            and item.item_type in {ITEM_TYPE_TASK, ITEM_TYPE_AUDIT}
+        ]
+        self.assertEqual(
+            ids,
+            [no_date.id, overdue.id, due_today.id, future.id, audit.id],
+        )
 
-        self.assertEqual(ids[:4], [overdue.id, due_today.id, audit.id, future.id])
-        self.assertEqual(ids[-1], no_date.id)
-
-    def test_same_date_title_order_when_priorities_differ(self) -> None:
-        """Při stejném termínu řadí služba podle typu/názvu/id – ne podle priority."""
+    def test_same_date_priority_outranks_title(self) -> None:
+        """Při stejném termínu je Kritická před Nízkou i s abecedně pozdějším názvem."""
         today = date.today()
         due = today + timedelta(days=4)
         low = task_service.create_task(
@@ -225,9 +271,9 @@ class AttentionPanelPhase96eTestCase(unittest.TestCase):
         items = [
             item
             for item in get_attention_items(today=today)
-            if item.entity_id in (low.id, high.id)
+            if item.item_type == ITEM_TYPE_TASK and item.entity_id in (low.id, high.id)
         ]
-        self.assertEqual([item.entity_id for item in items], [low.id, high.id])
+        self.assertEqual([item.entity_id for item in items], [high.id, low.id])
 
     def test_sort_key_helpers(self) -> None:
         today = date.today()
@@ -252,11 +298,12 @@ class AttentionPanelPhase96eTestCase(unittest.TestCase):
         widget = UpcomingTasksWidget(open_attention_callback=on_open)
         self.assertGreater(widget.table.rowCount(), 0)
 
-        widget.table.selectRow(0)
-        item = widget.table.item(0, 0)
-        self.assertIsNotNone(item)
-        widget._open_selected()
-
+        for row in range(widget.table.rowCount()):
+            payload = widget.table.item(row, 0).data(Qt.ItemDataRole.UserRole)
+            if payload is not None and payload.item_type == ITEM_TYPE_TASK and payload.entity_id == task.id:
+                widget.table.selectRow(row)
+                widget._open_selected()
+                break
         self.assertEqual(opened, [(ITEM_TYPE_TASK, task.id)])
 
         opened.clear()
@@ -304,6 +351,7 @@ class AttentionPanelPhase96eTestCase(unittest.TestCase):
                     ITEM_TYPE_BOZP_INSPECTION,
                     ITEM_TYPE_MEETING,
                     ITEM_TYPE_PERIODIC,
+                    ITEM_TYPE_YEARLY_PLAN_MONTH,
                 }
             )
         )
@@ -318,48 +366,58 @@ class AttentionPanelPhase96eTestCase(unittest.TestCase):
             for i in range(table.columnCount())
         ]
         self.assertIn("Typ", headers)
-        self.assertEqual(table.item(0, 0).text(), "Úkol")
+        types = [table.item(row, 0).text() for row in range(table.rowCount())]
+        self.assertIn("Úkol", types)
 
-    def test_widget_defaults_to_due_date_sort(self) -> None:
+    def test_widget_defaults_to_priority_then_due_sort(self) -> None:
         today = date.today()
         future_task = task_service.create_task(
             title="Pozdější úkol",
             due_date=today + timedelta(days=10),
         )
-        audit_service.create_audit(
+        audit = audit_service.create_audit(
             workplace_name="Brzký audit",
             started_at=today + timedelta(days=1),
         )
-        task_service.create_task(
+        today_task = task_service.create_task(
             title="Dnešní úkol",
             due_date=today,
         )
 
         widget = UpcomingTasksWidget()
         header = widget.table.horizontalHeader()
-        self.assertEqual(header.sortIndicatorSection(), 1)  # Termín
+        self.assertEqual(header.sortIndicatorSection(), 3)  # Priorita
         self.assertEqual(header.sortIndicatorOrder(), Qt.SortOrder.AscendingOrder)
 
-        due_texts = [
-            widget.table.item(row, 1).text()
-            for row in range(widget.table.rowCount())
-        ]
+        wanted = {today_task.id, future_task.id, audit.id}
+        ordered = []
+        for row in range(widget.table.rowCount()):
+            payload = widget.table.item(row, 0).data(Qt.ItemDataRole.UserRole)
+            if (
+                payload is not None
+                and payload.entity_id in wanted
+                and payload.item_type in {ITEM_TYPE_TASK, ITEM_TYPE_AUDIT}
+            ):
+                ordered.append(
+                    (
+                        payload.entity_id,
+                        widget.table.item(row, 0).text(),
+                        widget.table.item(row, 1).text(),
+                    )
+                )
         self.assertEqual(
-            due_texts[:3],
+            [row[0] for row in ordered],
+            [today_task.id, future_task.id, audit.id],
+        )
+        self.assertEqual([row[1] for row in ordered], ["Úkol", "Úkol", "Audit"])
+        later = today + timedelta(days=10)
+        self.assertEqual(
+            [row[2] for row in ordered],
             [
                 f"{today.day}. {today.month}. {today.year}",
+                f"{later.day}. {later.month}. {later.year}",
                 f"{(today + timedelta(days=1)).day}. {(today + timedelta(days=1)).month}. {(today + timedelta(days=1)).year}",
-                f"{(today + timedelta(days=10)).day}. {(today + timedelta(days=10)).month}. {(today + timedelta(days=10)).year}",
             ],
-        )
-        # Pořadí není seskupené podle typu (Úkol by jinak byl nahoře před Auditem).
-        types = [widget.table.item(row, 0).text() for row in range(3)]
-        self.assertEqual(types[0], "Úkol")
-        self.assertEqual(types[1], "Audit")
-        self.assertEqual(types[2], "Úkol")
-        self.assertEqual(
-            widget.table.item(2, 0).data(Qt.ItemDataRole.UserRole).entity_id,
-            future_task.id,
         )
 
 

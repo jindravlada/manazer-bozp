@@ -6,6 +6,7 @@ LIST_WINDOW_TITLE = "Agenda"
 
 ITEM_TYPE_TASK = "task"
 ITEM_TYPE_MEETING = "meeting"
+NATIVE_ITEM_TYPES = frozenset({ITEM_TYPE_TASK, ITEM_TYPE_MEETING})
 
 TYPE_LABEL_TASK = "Úkol"
 TYPE_LABEL_TASK_CONTROL = "Kontrola úkolu"
@@ -70,6 +71,8 @@ COL_PERSON = 2
 COL_STATUS = 3
 COL_SOURCE = 4
 COL_TYPE = 5
+# Skrytý sloupec výchozího řazení Priorita → Termín (není v COLUMN_HEADERS).
+COL_DEFAULT_SORT = 6
 
 COLUMN_HEADERS = [
     "Název",

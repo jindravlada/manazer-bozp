@@ -45,6 +45,16 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-08 – AGENDA-ATTENTION-1
+
+**Co se povedlo:** Centrální Agenda bere existující AttentionItem vedle úkolů a událostí, bez nového Tasku a bez druhého výpočtu lhůt.
+
+**Co už bychom dnes udělali jinak:** Výchozí řazení Priorita → Termín zavést společně pro Agendu i Nadcházející hned při prvním AttentionItem Knihy úrazů.
+
+**Co bylo zbytečně složité:** Nic – stačilo vynechat typy, které Agenda už má jako úkol/událost, a otevřít položku stejným `_open_attention_item`.
+
+**Jaké nové pravidlo z toho vzniklo:** Nesplněná termínovaná AttentionItem patří do Agendy. Výchozí pořadí je priorita, teprve uvnitř ní termín.
+
 ### 2026-09-08 – PU-UPCOMING-5
 
 **Co se povedlo:** Po evidovaných podpisech vznikají samostatné Kritické připomínky distribuce aktualizovaného záznamu, každá nad existujícím řádkem `aktualizace_*`.

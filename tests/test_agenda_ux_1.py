@@ -308,6 +308,7 @@ class AgendaUx1TestCase(unittest.TestCase):
         headers = [
             page.table.horizontalHeaderItem(i).text()
             for i in range(page.table.columnCount())
+            if not page.table.isColumnHidden(i)
         ]
         self.assertEqual(headers, list(COLUMN_HEADERS))
 

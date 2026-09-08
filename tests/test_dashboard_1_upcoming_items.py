@@ -76,6 +76,16 @@ class Dashboard1UpcomingItemsTestCase(unittest.TestCase):
         today = date.today()
         if not yearly_plan_service.is_month_processed(today.year, today.month):
             yearly_plan_service.mark_month_processed(today.year, today.month)
+        from sqlalchemy import delete
+
+        from core.database.session import get_session
+        from moduly.kniha_urazu.modely.accident import Accident
+        from moduly.kniha_urazu.modely.investigation import AccidentInvestigation
+
+        with get_session() as session:
+            session.execute(delete(AccidentInvestigation))
+            session.execute(delete(Accident))
+            session.commit()
 
     def test_common_list_contains_audit_inspection_task(self) -> None:
         started = date.today() + timedelta(days=3)
@@ -121,9 +131,18 @@ class Dashboard1UpcomingItemsTestCase(unittest.TestCase):
         bozp_inspection_service.create_inspection(workplace_name="I1", started_at=today + timedelta(days=3))
         task_service.create_task(title="T1", due_date=today - timedelta(days=1))
         audit_service.create_audit(workplace_name="A1", started_at=today + timedelta(days=1))
+        from collections import defaultdict
+
+        from core.dashboard.attention_item import priority_sort_rank
+
         items = get_attention_items()
-        dates = [item.date for item in items if item.date is not None]
-        self.assertEqual(dates, sorted(dates))
+        by_rank: dict[int, list] = defaultdict(list)
+        for item in items:
+            if item.date is None:
+                continue
+            by_rank[priority_sort_rank(item.priority)].append(item.date)
+        for dates in by_rank.values():
+            self.assertEqual(dates, sorted(dates))
 
         widget = UpcomingTasksWidget()
         overdue_row = next(

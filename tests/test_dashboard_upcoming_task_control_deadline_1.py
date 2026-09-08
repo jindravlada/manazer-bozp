@@ -97,6 +97,16 @@ class DashboardUpcomingTaskControlDeadline1TestCase(unittest.TestCase):
         cls._app = QApplication.instance() or QApplication([])
 
     def setUp(self) -> None:
+        from sqlalchemy import delete
+
+        from core.database.session import get_session
+        from moduly.kniha_urazu.modely.accident import Accident
+        from moduly.kniha_urazu.modely.investigation import AccidentInvestigation
+
+        with get_session() as session:
+            session.execute(delete(AccidentInvestigation))
+            session.execute(delete(Accident))
+            session.commit()
         for task in list(task_service.get_all_tasks()):
             if task.computed_status not in ("Ukončeno", "Zrušeno"):
                 task_service.cancel_task(task.id)
@@ -309,7 +319,7 @@ class DashboardUpcomingTaskControlDeadline1TestCase(unittest.TestCase):
         widget.close()
 
     def test_sorting_uses_check_due_date(self) -> None:
-        waiting = self._waiting_check_task(title="Kontrola později")
+        waiting = self._waiting_check_task(title="Kontrola později", priority="Normální")
         earlier = task_service.create_task(
             title="Aktivní dříve",
             due_date=date(2026, 9, 5),

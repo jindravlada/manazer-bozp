@@ -192,7 +192,7 @@ class MainWindow(QMainWindow):
         if module.key == "agenda":
             from moduly.agenda.ui.agenda_page import AgendaPage
 
-            page = AgendaPage()
+            page = AgendaPage(open_attention_callback=self._open_attention_item)
             page.set_dashboard_refresh_callback(self._refresh_dashboard_and_agenda)
             return page
 

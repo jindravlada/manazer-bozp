@@ -1,15 +1,17 @@
-"""Agregace úkolů a událostí pro společný pohled Agendy."""
+"""Agregace úkolů, událostí a termínovaných AttentionItem pro společný pohled Agendy."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime, time
+from typing import Any
 
 from core.shared.task_source_display import task_source_short_labels
 from moduly.agenda.constants import (
     DEFAULT_PRIORITY,
     ITEM_TYPE_MEETING,
     ITEM_TYPE_TASK,
+    NATIVE_ITEM_TYPES,
     ROW_STATE_ACTIVE,
     ROW_STATE_CANCELED,
     ROW_STATE_DONE,
@@ -35,6 +37,7 @@ from moduly.schuzky.constants import (
 )
 from moduly.schuzky.sluzby.meeting_service import meeting_service
 from moduly.ukoly.constants import (
+    TASK_STATUS_ACTIVE,
     TASK_STATUS_CANCELED,
     TASK_STATUS_CLOSED,
 )
@@ -68,6 +71,9 @@ class AgendaItem:
     ends_at: datetime | None = None
     base_title: str = ""
     sort_key: tuple = ()
+    identity_key: str = ""
+    open_metadata: dict[str, Any] = field(default_factory=dict)
+    attention: Any = None
 
     @property
     def due_sort_datetime(self) -> datetime | None:
@@ -80,6 +86,10 @@ class AgendaItem:
     @property
     def tooltip_title(self) -> str:
         return (self.base_title or self.title or "").strip() or "Bez názvu"
+
+    @property
+    def is_attention_row(self) -> bool:
+        return self.attention is not None or self.item_type not in NATIVE_ITEM_TYPES
 
 
 def _normalize_priority(value: str | None) -> str:
@@ -195,16 +205,75 @@ def _from_meetings(*, now: datetime) -> list[AgendaItem]:
     return items
 
 
+def _attention_dedup_key(title: str, due_date: date | None, source: str) -> tuple:
+    return (
+        (title or "").strip().casefold(),
+        due_date,
+        (source or "").strip().casefold(),
+    )
+
+
+def _from_attention_items(*, today: date, existing: list[AgendaItem]) -> list[AgendaItem]:
+    """Termínované AttentionItems, které Agenda ještě nemá jako úkol/událost."""
+    from core.dashboard.attention_item import attention_item_is_overdue
+    from core.dashboard.attention_service import get_attention_items
+
+    seen_native = {(item.item_type, int(item.source_id)) for item in existing}
+    seen_substance = {
+        _attention_dedup_key(item.title, item.due_date, item.source)
+        for item in existing
+    }
+    items: list[AgendaItem] = []
+    for attention in get_attention_items(today=today):
+        if attention.item_type in NATIVE_ITEM_TYPES:
+            continue
+        if (attention.item_type, int(attention.source_id)) in seen_native:
+            continue
+        title = (attention.title or "").strip() or "Bez názvu"
+        source = (attention.source_label or "").strip() or "—"
+        substance = _attention_dedup_key(title, attention.due_date, source)
+        if substance in seen_substance:
+            continue
+        seen_substance.add(substance)
+        overdue = attention_item_is_overdue(attention, today=today)
+        status = (attention.status or "").strip() or TASK_STATUS_ACTIVE
+        items.append(
+            AgendaItem(
+                item_type=attention.item_type,
+                source_id=int(attention.source_id),
+                type_label=attention.type_label,
+                title=title,
+                person="",
+                status=status,
+                source=source,
+                row_state=ROW_STATE_OVERDUE if overdue else ROW_STATE_ACTIVE,
+                priority=(attention.priority or "").strip(),
+                due_date=attention.due_date,
+                event_at=attention.event_at,
+                ends_at=attention.ends_at,
+                base_title=title,
+                sort_key=attention.sort_key,
+                identity_key=attention.identity_key or "",
+                open_metadata=dict(attention.open_metadata or {}),
+                attention=attention,
+            )
+        )
+    return items
+
+
 def get_agenda_items(
     *,
     today: date | None = None,
     now: datetime | None = None,
 ) -> list[AgendaItem]:
-    """Vrátí chronologicky seřazený společný seznam úkolů a událostí."""
+    """Vrátí společný seznam úkolů, událostí a termínovaných AttentionItem."""
+    from core.dashboard.attention_item import priority_sort_rank
+
     now = now or datetime.now()
     today = today or now.date()
     items = _from_tasks(today=today) + _from_meetings(now=now)
-    items.sort(key=lambda item: item.sort_key)
+    items = items + _from_attention_items(today=today, existing=items)
+    items.sort(key=lambda item: (priority_sort_rank(item.priority), item.sort_key))
     return items
 
 
@@ -240,6 +309,13 @@ def _meeting_matches_status_mode(item: AgendaItem, mode: str) -> bool:
     return False
 
 
+def _attention_matches_status_mode(item: AgendaItem, mode: str) -> bool:
+    """Nesplněné AttentionItem patří do Aktivní / Vše; po splnění ve zdroji zmizí."""
+    if mode in {STATUS_MODE_ACTIVE, STATUS_MODE_ALL}:
+        return True
+    return False
+
+
 def filter_agenda_items(
     items: list[AgendaItem],
     *,
@@ -252,6 +328,11 @@ def filter_agenda_items(
 
     result: list[AgendaItem] = []
     for item in items:
+        if item.is_attention_row:
+            if not _attention_matches_status_mode(item, status_mode):
+                continue
+            result.append(item)
+            continue
         if item.item_type not in type_filters:
             continue
         if item.item_type == ITEM_TYPE_TASK:

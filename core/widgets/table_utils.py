@@ -220,6 +220,7 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
 
     elif profile == "agenda":
         from moduly.agenda.constants import (
+            COL_DEFAULT_SORT,
             COL_DUE,
             COL_PERSON,
             COL_SOURCE,
@@ -239,6 +240,7 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         for column, width in widths.items():
             table.setColumnWidth(column, width)
         header.setSectionResizeMode(COL_TITLE, QHeaderView.Stretch)
+        table.setColumnHidden(COL_DEFAULT_SORT, True)
         for column in (COL_DUE, COL_PERSON, COL_STATUS, COL_SOURCE, COL_TYPE):
             header.setSectionResizeMode(column, QHeaderView.Fixed)
 

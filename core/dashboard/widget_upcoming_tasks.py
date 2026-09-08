@@ -34,9 +34,9 @@ from core.dashboard.attention_item import (
     ITEM_TYPE_STATE_SUPERVISION,
     ITEM_TYPE_TASK,
     ITEM_TYPE_YEARLY_PLAN_MONTH,
-    PRIORITY_RANK,
     AttentionItem,
     attention_item_is_overdue,
+    priority_then_due_sort_int,
 )
 from core.dashboard.attention_service import get_attention_items
 from core.dashboard.widget_base import DashboardPanel
@@ -46,7 +46,7 @@ from core.widgets.typed_table_sort import (
     sorting_paused,
     typed_datetime,
     typed_empty,
-    typed_status,
+    typed_int,
     typed_text,
 )
 
@@ -127,9 +127,9 @@ class UpcomingTasksWidget(DashboardPanel):
         self.table.doubleClicked.connect(self._open_selected)
         self.table.itemSelectionChanged.connect(self._update_open_button)
         enable_typed_sorting(self.table)
-        # Výchozí řazení podle termínu (nejbližší / po termínu nahoře), ne podle Typu.
+        # Výchozí řazení Priorita → Termín (nejstarší / po termínu uvnitř priority).
         self.table.horizontalHeader().setSortIndicator(
-            COL_DUE,
+            COL_PRIORITY,
             Qt.SortOrder.AscendingOrder,
         )
 
@@ -276,11 +276,11 @@ class UpcomingTasksWidget(DashboardPanel):
                     title_item.setToolTip(tooltip)
                     due_item.setToolTip(tooltip)
 
-                priority_rank = PRIORITY_RANK.get(attention.priority) if attention.priority else None
-                priority_sort = (
-                    typed_status(priority_rank, label=attention.priority)
-                    if priority_rank is not None
-                    else typed_empty()
+                due_for_sort = attention.event_at
+                if due_for_sort is None and attention.due_date is not None:
+                    due_for_sort = datetime.combine(attention.due_date, time.min)
+                priority_sort = typed_int(
+                    priority_then_due_sort_int(attention.priority, due_for_sort)
                 )
                 priority_item = create_typed_item(
                     attention.priority or "—",
@@ -300,6 +300,8 @@ class UpcomingTasksWidget(DashboardPanel):
                 self.table.setItem(row, COL_PRIORITY, priority_item)
                 self.table.setItem(row, COL_SOURCE, source_item)
 
+        if items:
+            self.table.sortItems(COL_PRIORITY, Qt.SortOrder.AscendingOrder)
         self.table.resizeRowsToContents()
         self._update_open_button()
 

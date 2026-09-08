@@ -123,15 +123,21 @@ class Agenda1TestCase(unittest.TestCase):
             type_filters={ITEM_TYPE_TASK},
             status_mode=STATUS_MODE_ACTIVE,
         )
-        self.assertEqual({i.source_id for i in only_tasks}, {task.id})
-        self.assertTrue(all(i.item_type == ITEM_TYPE_TASK for i in only_tasks))
+        native_tasks = [i for i in only_tasks if i.item_type in {ITEM_TYPE_TASK, ITEM_TYPE_MEETING}]
+        self.assertEqual({i.source_id for i in native_tasks}, {task.id})
+        self.assertTrue(all(i.item_type == ITEM_TYPE_TASK for i in native_tasks))
+        self.assertFalse(any(i.item_type == ITEM_TYPE_MEETING for i in only_tasks))
 
         only_meetings = filter_agenda_items(
             all_items,
             type_filters={ITEM_TYPE_MEETING},
             status_mode=STATUS_MODE_ACTIVE,
         )
-        self.assertEqual({i.source_id for i in only_meetings}, {meeting.id})
+        native_meetings = [
+            i for i in only_meetings if i.item_type in {ITEM_TYPE_TASK, ITEM_TYPE_MEETING}
+        ]
+        self.assertEqual({i.source_id for i in native_meetings}, {meeting.id})
+        self.assertFalse(any(i.item_type == ITEM_TYPE_TASK for i in only_meetings))
 
         page = AgendaPage()
         page.type_checks[ITEM_TYPE_MEETING].setChecked(False)
@@ -140,7 +146,8 @@ class Agenda1TestCase(unittest.TestCase):
             page.table.item(row, 0).data(Qt.ItemDataRole.UserRole).item_type
             for row in range(page.table.rowCount())
         }
-        self.assertEqual(types, {ITEM_TYPE_TASK})
+        self.assertNotIn(ITEM_TYPE_MEETING, types)
+        self.assertIn(ITEM_TYPE_TASK, types)
         self.assertEqual(page.type_checks[ITEM_TYPE_TASK].text(), TYPE_FILTER_TASKS)
         self.assertEqual(page.type_checks[ITEM_TYPE_MEETING].text(), TYPE_FILTER_MEETINGS)
 

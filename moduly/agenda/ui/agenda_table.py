@@ -6,15 +6,18 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QTableWidget
 
+from core.dashboard.attention_item import priority_then_due_sort_int
 from core.widgets.typed_table_sort import (
     create_typed_item,
     enable_typed_sorting,
     sorting_paused,
     typed_datetime,
     typed_empty,
+    typed_int,
     typed_text,
 )
 from moduly.agenda.constants import (
+    COL_DEFAULT_SORT,
     COL_DUE,
     COL_PERSON,
     COL_SOURCE,
@@ -37,8 +40,8 @@ _TYPE_STABLE_PREFIX = {
 class AgendaTable(QTableWidget):
     def __init__(self):
         super().__init__()
-        self.setColumnCount(len(COLUMN_HEADERS))
-        self.setHorizontalHeaderLabels(COLUMN_HEADERS)
+        self.setColumnCount(len(COLUMN_HEADERS) + 1)
+        self.setHorizontalHeaderLabels([*COLUMN_HEADERS, ""])
         self.verticalHeader().setVisible(False)
         self.setAlternatingRowColors(True)
         self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
@@ -46,7 +49,12 @@ class AgendaTable(QTableWidget):
         self.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.horizontalHeader().setStretchLastSection(False)
         self.horizontalHeader().setSectionResizeMode(COL_TITLE, QHeaderView.ResizeMode.Stretch)
+        self.setColumnHidden(COL_DEFAULT_SORT, True)
         enable_typed_sorting(self)
+        self.horizontalHeader().setSortIndicator(
+            COL_DEFAULT_SORT,
+            Qt.SortOrder.AscendingOrder,
+        )
 
     def clear_selection(self) -> None:
         self.clearSelection()
@@ -67,9 +75,14 @@ class AgendaTable(QTableWidget):
             self.setRowCount(0)
             self.setRowCount(len(items))
             for row, agenda in enumerate(items):
+                identity_extra = 0
+                identity_key = (agenda.identity_key or "").strip()
+                if identity_key:
+                    identity_extra = abs(hash(identity_key)) % 100_000
                 stable_id = (
                     _TYPE_STABLE_PREFIX.get(agenda.item_type, 9) * 1_000_000_000
-                    + int(agenda.source_id)
+                    + int(agenda.source_id) * 100_000
+                    + identity_extra
                 )
                 brush = QBrush(self._row_color(agenda.priority))
 
@@ -116,8 +129,15 @@ class AgendaTable(QTableWidget):
                 type_item.setBackground(brush)
                 self.setItem(row, COL_TYPE, type_item)
 
+                default_sort = typed_int(
+                    priority_then_due_sort_int(agenda.priority, agenda.due_sort_datetime)
+                )
+                default_item = create_typed_item("", default_sort, stable_id=stable_id)
+                default_item.setBackground(brush)
+                self.setItem(row, COL_DEFAULT_SORT, default_item)
+
         if items:
-            self.sortItems(COL_DUE, Qt.SortOrder.AscendingOrder)
+            self.sortItems(COL_DEFAULT_SORT, Qt.SortOrder.AscendingOrder)
 
     @staticmethod
     def _row_color(priority: str) -> QColor:

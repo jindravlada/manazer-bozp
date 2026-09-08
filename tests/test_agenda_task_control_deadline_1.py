@@ -316,7 +316,7 @@ class AgendaTaskControlDeadline1TestCase(unittest.TestCase):
         self.assertEqual(item.row_state, ROW_STATE_OVERDUE)
 
     def test_sorting_uses_check_due_date(self) -> None:
-        waiting = self._waiting_check_task(title="Kontrola později")
+        waiting = self._waiting_check_task(title="Kontrola později", priority="Normální")
         earlier = task_service.create_task(
             title="Aktivní dříve",
             due_date=date(2026, 9, 5),

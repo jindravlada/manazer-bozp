@@ -62,9 +62,10 @@ from moduly.ukoly.ui.task_dialog import TaskDialog
 
 
 class AgendaPage(QWidget):
-    def __init__(self):
+    def __init__(self, open_attention_callback=None):
         super().__init__()
         self._dashboard_refresh_callback = None
+        self._open_attention_callback = open_attention_callback
         self._updating_status_filter = False
 
         layout = QVBoxLayout(self)
@@ -373,10 +374,20 @@ class AgendaPage(QWidget):
         item = self.table.selected_item()
         if item is None:
             return
+        if item.attention is not None:
+            self._open_attention(item)
+            return
         if item.item_type == ITEM_TYPE_TASK:
             self._open_task(item.source_id)
         elif item.item_type == ITEM_TYPE_MEETING:
             self._open_meeting(item.source_id)
+
+    def _open_attention(self, item) -> None:
+        if not callable(self._open_attention_callback):
+            return
+        self._open_attention_callback(item.attention)
+        self.refresh()
+        self._refresh_dashboard()
 
     def _open_task(self, task_id: int) -> None:
         task = task_service.get_task_by_id(task_id)

@@ -38,6 +38,7 @@ from core.dashboard.attention_item import (
     AttentionItem,
     attention_item_identity,
     attention_item_is_overdue,
+    default_attention_sort_key,
     meeting_dashboard_source_label,
 )
 from core.dashboard.state_supervision_attention import (
@@ -60,7 +61,7 @@ from moduly.rocni_plan.constants import (
     month_planning_source_id,
 )
 from moduly.rocni_plan.sluzby.yearly_plan_service import yearly_plan_service
-from moduly.schuzky.constants import STATUS_PLANNED
+from moduly.schuzky.constants import DEFAULT_MEETING_PRIORITY, STATUS_PLANNED
 from moduly.schuzky.sluzby.meeting_service import meeting_service
 from moduly.smlouvy_ozo.constants import STATUS_EXPIRED, UNIT_DAYS, status_label
 from moduly.smlouvy_ozo.sluzby.certificate_attention import (
@@ -274,6 +275,9 @@ def _from_meetings(_today: date) -> list[AttentionItem]:
         if event_type:
             title = f"{event_type} – {title}"
         ends_at = meeting.ends_at
+        meeting_priority = (
+            (getattr(meeting, "priority", None) or "").strip() or DEFAULT_MEETING_PRIORITY
+        )
         items.append(
             AttentionItem(
                 item_type=ITEM_TYPE_MEETING,
@@ -283,7 +287,7 @@ def _from_meetings(_today: date) -> list[AttentionItem]:
                 date=starts_at.date(),
                 subtitle=_meeting_subtitle(meeting),
                 status=meeting.status or "",
-                priority="",
+                priority=meeting_priority,
                 event_at=starts_at,
                 ends_at=ends_at,
                 open_metadata={
@@ -1027,7 +1031,7 @@ def get_attention_items(*, today: date | None = None) -> list[AttentionItem]:
         + _from_accident_signed_records(today)
         + _from_accident_updated_record_distribution(today)
     )
-    items.sort(key=lambda item: item.sort_key)
+    items.sort(key=default_attention_sort_key)
     return items
 
 
