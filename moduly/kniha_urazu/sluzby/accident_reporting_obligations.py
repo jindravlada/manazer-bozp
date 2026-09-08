@@ -143,6 +143,8 @@ DPN_RECORD_UPDATE_PORTAL_DONE = "portal_suip_done"
 DPN_RECORD_UPDATE_PORTAL_DATE = "portal_suip_date"
 DPN_RECORD_UPDATE_SIGNED_DONE = "signed_record_done"
 DPN_RECORD_UPDATE_SIGNED_DATE = "signed_record_date"
+# Interní organizační termín Manažera BOZP, ne zákonná lhůta.
+DPN_SIGNED_RECORD_REMINDER_CALENDAR_DAYS = 2
 
 
 @dataclass(frozen=True)
@@ -407,6 +409,49 @@ def dpn_record_update_belongs_in_upcoming(
         union_organization_active=union_organization_active,
     )
     return not dpn_record_update_is_submitted(overview)
+
+
+def dpn_signed_record_is_ensured(state: dict[str, Any] | None) -> bool:
+    """Zajištění podpisů aktualizovaného záznamu – samostatný stav, ne odvozený z odeslání."""
+    data = normalize_dpn_record_update(state)
+    return bool(data[DPN_RECORD_UPDATE_SIGNED_DONE])
+
+
+def dpn_signed_record_reminder_due(
+    accident: AccidentLike | None,
+    saved_data: dict[str, Any] | None = None,
+    *,
+    union_organization_active: bool | None = None,
+) -> date | None:
+    """Interní termín: datum skutečného provedení aktualizace + 2 kalendářní dny."""
+    if not is_dpn_record_update_relevant(accident):
+        return None
+    overview = dpn_record_update_overview_from_saved_data(
+        accident,
+        saved_data,
+        union_organization_active=union_organization_active,
+    )
+    if not dpn_record_update_is_submitted(overview):
+        return None
+    if dpn_signed_record_is_ensured(overview):
+        return None
+    submitted = parse_saved_date(overview.get(DPN_RECORD_UPDATE_PORTAL_DATE))
+    if submitted is None:
+        return None
+    return submitted + timedelta(days=DPN_SIGNED_RECORD_REMINDER_CALENDAR_DAYS)
+
+
+def dpn_signed_record_belongs_in_upcoming(
+    accident: AccidentLike | None,
+    saved_data: dict[str, Any] | None = None,
+    *,
+    union_organization_active: bool | None = None,
+) -> bool:
+    return dpn_signed_record_reminder_due(
+        accident,
+        saved_data,
+        union_organization_active=union_organization_active,
+    ) is not None
 
 
 def is_post_dpn_obligation_key(obligation_key: str) -> bool:
@@ -1272,7 +1317,11 @@ def dpn_record_update_overview_from_saved_data(
     *,
     union_organization_active: bool | None = None,
 ) -> dict[str, Any]:
-    """Souhrn záložky Po ukončení DPN – čte stav z Ohlašovací povinnosti."""
+    """Souhrn záložky Po ukončení DPN.
+
+    Provedení aktualizace čte z Ohlašovací povinnosti (Portál SÚIP).
+    Podepsaný aktualizovaný záznam čte z evidovaného pole ``dpn_record_update``.
+    """
     rows_by_key: dict[str, dict[str, Any]] = {}
     for row in obligation_rows_for_summary(
         accident,
@@ -1286,29 +1335,14 @@ def dpn_record_update_overview_from_saved_data(
     portal_row = rows_by_key.get(OBLIGATION_AKTUALIZACE_OIP_OBU_PORTAL, {})
     portal_done = row_is_done(portal_row)
     portal_date = parse_saved_date(portal_row.get("datum")) if portal_row else None
-
-    signed_keys = [
-        key
-        for key in POST_DPN_SIGNED_RECORD_KEYS
-        if is_obligation_relevant(
-            accident,
-            key,
-            union_organization_active=union_organization_active,
-            saved_data=saved_data,
-        )
-    ]
-    signed_rows = [rows_by_key.get(key, {}) for key in signed_keys]
-    signed_done = bool(signed_keys) and all(row_is_done(row) for row in signed_rows)
-    signed_dates = [parse_saved_date(row.get("datum")) for row in signed_rows]
-    present = [item for item in signed_dates if item is not None]
-    signed_date = max(present) if signed_done and present else None
+    stored = dpn_record_update_from_saved_data(saved_data)
 
     return normalize_dpn_record_update(
         {
             DPN_RECORD_UPDATE_PORTAL_DONE: portal_done,
             DPN_RECORD_UPDATE_PORTAL_DATE: portal_date,
-            DPN_RECORD_UPDATE_SIGNED_DONE: signed_done,
-            DPN_RECORD_UPDATE_SIGNED_DATE: signed_date,
+            DPN_RECORD_UPDATE_SIGNED_DONE: stored[DPN_RECORD_UPDATE_SIGNED_DONE],
+            DPN_RECORD_UPDATE_SIGNED_DATE: stored[DPN_RECORD_UPDATE_SIGNED_DATE],
         }
     )
 

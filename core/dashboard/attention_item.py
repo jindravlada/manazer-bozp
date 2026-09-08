@@ -22,6 +22,7 @@ ITEM_TYPE_QUALIFICATION_CERTIFICATE = "qualification_certificate"
 ITEM_TYPE_STATE_SUPERVISION = "state_supervision"
 ITEM_TYPE_ACCIDENT_DPN_RECORD_UPDATE = "accident_dpn_record_update"
 ITEM_TYPE_ACCIDENT_EXTRAORDINARY_EXAM = "accident_extraordinary_exam"
+ITEM_TYPE_ACCIDENT_SIGNED_RECORD = "accident_signed_record"
 # Zpětná kompatibilita staršího interního názvu.
 ITEM_TYPE_BOZP_INSPECTION = ITEM_TYPE_INSPECTION
 
@@ -43,6 +44,7 @@ TYPE_LABELS = {
     ITEM_TYPE_STATE_SUPERVISION: "Státní dozor",
     ITEM_TYPE_ACCIDENT_DPN_RECORD_UPDATE: "Aktualizace záznamu",
     ITEM_TYPE_ACCIDENT_EXTRAORDINARY_EXAM: "Mimořádná prohlídka",
+    ITEM_TYPE_ACCIDENT_SIGNED_RECORD: "Podpisy aktualizovaného záznamu",
 }
 
 SOURCE_LABEL_AUDIT = "Audit systému řízení"

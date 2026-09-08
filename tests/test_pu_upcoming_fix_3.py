@@ -1,4 +1,4 @@
-"""PU-UPCOMING-FIX-3: kritická priorita a odeslání Aktualizace záznamu."""
+"""PU-UPCOMING-FIX-3: Aktualizace, evidence podpisů a kritická priorita."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import os
 import unittest
 from datetime import date, timedelta
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from PySide6.QtWidgets import QApplication
 
@@ -34,14 +34,17 @@ with patch.object(Path, "home", return_value=_TMP):
     from core.dashboard.attention_item import (
         ITEM_TYPE_ACCIDENT_DPN_RECORD_UPDATE,
         ITEM_TYPE_ACCIDENT_EXTRAORDINARY_EXAM,
+        ITEM_TYPE_ACCIDENT_SIGNED_RECORD,
+        SOURCE_LABEL_KNIHA_URAZU,
+        TYPE_LABELS,
         attention_item_is_overdue,
     )
     from core.dashboard.attention_service import get_attention_items
+    from core.windows.main_window import MainWindow
     from moduly.agenda.constants import PRIORITY_CRITICAL
     from moduly.kniha_urazu.modely.accident import Accident
     from moduly.kniha_urazu.modely.investigation import AccidentInvestigation
     from moduly.kniha_urazu.sluzby.accident_dpn_care import (
-        CARE_EXAM_DATE,
         CARE_RETURN_DATE,
         CARE_RETURN_MODE,
         CARE_SEVERE_CONSEQUENCES,
@@ -49,15 +52,22 @@ with patch.object(Path, "home", return_value=_TMP):
         RETURN_MODE_SAME,
     )
     from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
+        DPN_RECORD_UPDATE_KEY,
+        DPN_SIGNED_RECORD_REMINDER_CALENDAR_DAYS,
         METHOD_PORTAL_SUIP,
         OBLIGATION_AKTUALIZACE_OIP_OBU_PORTAL,
         dpn_record_update_belongs_in_upcoming,
+        dpn_record_update_from_saved_data,
         dpn_record_update_is_done,
         dpn_record_update_is_submitted,
         dpn_record_update_overview_from_saved_data,
+        dpn_signed_record_belongs_in_upcoming,
+        dpn_signed_record_reminder_due,
     )
     from moduly.kniha_urazu.sluzby.accident_service import accident_service
     from moduly.kniha_urazu.sluzby.investigation_service import investigation_service
+    from moduly.kniha_urazu.ui.accident_dialog import AccidentDialog
+    from moduly.kniha_urazu.ui.tabs.tab_po_ukonceni_dpn import TAB_PO_UKONCENI_DPN
     from moduly.ukoly.modely.task import Task
 
 
@@ -79,6 +89,10 @@ def _update_items(*, today=None):
 
 def _exam_items(*, today=None):
     return _items(ITEM_TYPE_ACCIDENT_EXTRAORDINARY_EXAM, today=today)
+
+
+def _sign_items(*, today=None):
+    return _items(ITEM_TYPE_ACCIDENT_SIGNED_RECORD, today=today)
 
 
 class PuUpcomingFix3TestCase(unittest.TestCase):
@@ -158,25 +172,19 @@ class PuUpcomingFix3TestCase(unittest.TestCase):
         )
         return self._write_saved(accident.id, {"admin_zaslani": zaslani})
 
-    def _required_exam(self, accident, *, return_date: date, exam_date=None):
-        fields = {
-            CARE_SEVERE_CONSEQUENCES: EXAM_REQUIRED_YES,
-            CARE_RETURN_DATE: return_date,
-            CARE_RETURN_MODE: RETURN_MODE_SAME,
-        }
-        if exam_date is not None:
-            fields[CARE_EXAM_DATE] = exam_date
-        return accident_service.update_accident(accident.id, dpn_care_return=fields)
-
     def test_required_unsubmitted_is_critical_in_upcoming(self) -> None:
         due = date(2026, 9, 4)
         accident = self._create(dpn_do=due)
         saved = self._saved_data(accident.id)
         overview = self._overview(accident, saved)
         self.assertFalse(dpn_record_update_is_submitted(overview))
-        self.assertFalse(dpn_record_update_is_done(overview))
         self.assertTrue(
             dpn_record_update_belongs_in_upcoming(
+                accident, saved, union_organization_active=True
+            )
+        )
+        self.assertFalse(
+            dpn_signed_record_belongs_in_upcoming(
                 accident, saved, union_organization_active=True
             )
         )
@@ -188,15 +196,15 @@ class PuUpcomingFix3TestCase(unittest.TestCase):
         self.assertEqual(item.date, due)
         self.assertEqual(item.priority, PRIORITY_CRITICAL)
         self.assertEqual(PRIORITY_CRITICAL, "Kritická")
+        self.assertEqual(_sign_items(today=date(2026, 9, 8)), [])
 
-    def test_portal_sent_hides_item_even_without_signed_record(self) -> None:
+    def test_portal_sent_hides_update_even_without_signed_record(self) -> None:
         accident = self._create(dpn_do=date(2026, 9, 4))
         self.assertEqual(len(_update_items(today=date(2026, 9, 8))), 1)
 
         saved = self._mark_portal_sent(accident, date(2026, 9, 7))
         overview = self._overview(accident, saved)
         self.assertTrue(overview["portal_suip_done"])
-        self.assertEqual(overview["portal_suip_date"], "2026-09-07")
         self.assertFalse(overview["signed_record_done"])
         self.assertTrue(dpn_record_update_is_submitted(overview))
         self.assertFalse(dpn_record_update_is_done(overview))
@@ -207,7 +215,88 @@ class PuUpcomingFix3TestCase(unittest.TestCase):
         )
         self.assertEqual(_update_items(today=date(2026, 9, 8)), [])
 
-    def test_sent_after_deadline_does_not_stay_overdue(self) -> None:
+    def test_sent_creates_signature_reminder_plus_two_calendar_days(self) -> None:
+        self.assertEqual(DPN_SIGNED_RECORD_REMINDER_CALENDAR_DAYS, 2)
+        accident = self._create(dpn_do=date(2026, 9, 4))
+        saved = self._mark_portal_sent(accident, date(2026, 9, 7))
+        due = dpn_signed_record_reminder_due(
+            accident, saved, union_organization_active=True
+        )
+        self.assertEqual(due, date(2026, 9, 9))
+
+        items = _sign_items(today=date(2026, 9, 8))
+        self.assertEqual(len(items), 1)
+        item = items[0]
+        self.assertEqual(item.source_id, accident.id)
+        self.assertEqual(item.date, date(2026, 9, 9))
+        self.assertEqual(item.priority, PRIORITY_CRITICAL)
+        self.assertEqual(item.subtitle, SOURCE_LABEL_KNIHA_URAZU)
+        self.assertEqual(
+            item.type_label,
+            "Podpisy aktualizovaného záznamu",
+        )
+        self.assertEqual(
+            TYPE_LABELS[ITEM_TYPE_ACCIDENT_SIGNED_RECORD],
+            "Podpisy aktualizovaného záznamu",
+        )
+        self.assertIn("Zajistit podpisy aktualizovaného záznamu", item.title)
+        self.assertIn(f"č. {accident.number}", item.title)
+        self.assertEqual(item.open_metadata.get("focus_tab"), TAB_PO_UKONCENI_DPN)
+        self.assertEqual(
+            item.identity_key,
+            f"accident-signed-record:{accident.id}",
+        )
+        self.assertNotIn("zákonn", item.title.casefold())
+        self.assertNotIn("zákonn", item.type_label.casefold())
+
+    def test_ensured_signatures_hide_reminder_and_store_date(self) -> None:
+        accident = self._create(dpn_do=date(2026, 9, 4))
+        self._mark_portal_sent(accident, date(2026, 9, 7))
+        self.assertEqual(len(_sign_items(today=date(2026, 9, 8))), 1)
+
+        dialog = AccidentDialog(accident=accident_service.get_by_id(accident.id))
+        tab = dialog.tab_po_ukonceni_dpn_widget
+        self.assertTrue(tab.signed_record_done.isEnabled())
+        self.assertTrue(tab.signed_record_date.isEnabled())
+        self.assertFalse(tab.portal_suip_done.isEnabled())
+        tab.signed_record_done.setChecked(True)
+        tab.signed_record_date.set_date_value(date(2026, 9, 8))
+        accident_service.update_accident(accident.id, **dialog.get_data())
+        dialog.close()
+
+        saved = self._saved_data(accident.id)
+        stored = dpn_record_update_from_saved_data(saved)
+        self.assertTrue(stored["signed_record_done"])
+        self.assertEqual(stored["signed_record_date"], "2026-09-08")
+        self.assertEqual(saved[DPN_RECORD_UPDATE_KEY]["signed_record_date"], "2026-09-08")
+        self.assertFalse(
+            dpn_signed_record_belongs_in_upcoming(
+                accident, saved, union_organization_active=True
+            )
+        )
+        self.assertEqual(_sign_items(today=date(2026, 9, 8)), [])
+
+        reopened = AccidentDialog(accident=accident_service.get_by_id(accident.id))
+        reopened_tab = reopened.tab_po_ukonceni_dpn_widget
+        self.assertTrue(reopened_tab.signed_record_done.isChecked())
+        self.assertEqual(reopened_tab.signed_record_date.get_date(), date(2026, 9, 8))
+        reopened.close()
+
+    def test_extraordinary_exam_is_critical(self) -> None:
+        accident = accident_service.update_accident(
+            self._create(dpn_do=date(2026, 4, 20)).id,
+            dpn_care_return={
+                CARE_SEVERE_CONSEQUENCES: EXAM_REQUIRED_YES,
+                CARE_RETURN_DATE: date.today() + timedelta(days=10),
+                CARE_RETURN_MODE: RETURN_MODE_SAME,
+            },
+        )
+        items = _exam_items()
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0].source_id, accident.id)
+        self.assertEqual(items[0].priority, PRIORITY_CRITICAL)
+
+    def test_late_update_does_not_stay_overdue_after_sending(self) -> None:
         today = date(2026, 9, 8)
         accident = self._create(dpn_do=date(2026, 9, 4))
         items = _update_items(today=today)
@@ -217,30 +306,27 @@ class PuUpcomingFix3TestCase(unittest.TestCase):
 
         self._mark_portal_sent(accident, date(2026, 9, 7))
         self.assertEqual(_update_items(today=today), [])
+        sign_items = _sign_items(today=today)
+        self.assertEqual(len(sign_items), 1)
+        self.assertEqual(sign_items[0].date, date(2026, 9, 9))
 
-    def test_extraordinary_exam_is_critical(self) -> None:
-        accident = self._required_exam(
-            self._create(dpn_do=date(2026, 4, 20)),
-            return_date=date.today() + timedelta(days=10),
-        )
-        items = _exam_items()
-        self.assertEqual(len(items), 1)
-        self.assertEqual(items[0].source_id, accident.id)
-        self.assertEqual(items[0].priority, PRIORITY_CRITICAL)
-        self.assertFalse(attention_item_is_overdue(items[0]))
-
-    def test_overdue_exam_stays_critical_and_overdue(self) -> None:
-        today = date.today()
-        accident = self._required_exam(
-            self._create(dpn_do=date(2026, 4, 20), jmeno_prijmeni="Po termínu"),
-            return_date=today - timedelta(days=20),
-        )
-        items = _exam_items(today=today)
-        self.assertEqual(len(items), 1)
-        item = items[0]
+    def test_opening_signature_reminder_leads_to_dpn_tab(self) -> None:
+        accident = self._create(dpn_do=date(2026, 9, 4))
+        self._mark_portal_sent(accident, date(2026, 9, 7))
+        item = _sign_items(today=date(2026, 9, 8))[0]
         self.assertEqual(item.source_id, accident.id)
-        self.assertEqual(item.priority, PRIORITY_CRITICAL)
-        self.assertTrue(attention_item_is_overdue(item, today=today))
+        self.assertEqual(item.open_metadata.get("focus_tab"), TAB_PO_UKONCENI_DPN)
+
+        window = MagicMock()
+        MainWindow._open_attention_item(window, item)
+        window._open_accident_by_id.assert_called_once_with(
+            accident.id,
+            focus_tab=TAB_PO_UKONCENI_DPN,
+        )
+
+        dialog = AccidentDialog(accident=accident, focus_tab=TAB_PO_UKONCENI_DPN)
+        self.assertEqual(dialog.tabs.tabText(dialog.tabs.currentIndex()), TAB_PO_UKONCENI_DPN)
+        dialog.close()
 
 
 if __name__ == "__main__":

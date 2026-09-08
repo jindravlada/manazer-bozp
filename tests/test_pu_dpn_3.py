@@ -389,6 +389,7 @@ class PuDpn3TestCase(unittest.TestCase):
         self.assertTrue(tab.portal_suip_done.isChecked())
         self.assertFalse(tab.signed_record_done.isChecked())
         self.assertFalse(tab.portal_suip_done.isEnabled())
+        self.assertTrue(tab.signed_record_done.isEnabled())
         dialog.close()
 
         remaining = [
@@ -420,12 +421,13 @@ class PuDpn3TestCase(unittest.TestCase):
         all_rows = obligation_rows_for_summary(accident, saved)
         self.assertEqual(self._summary(accident, all_rows, saved), "done")
         overview = dpn_record_update_overview_from_saved_data(accident, saved)
-        self.assertTrue(overview["signed_record_done"])
-        self.assertEqual(overview["signed_record_date"], "2026-04-17")
+        self.assertTrue(overview["portal_suip_done"])
+        self.assertFalse(overview["signed_record_done"])
+        self.assertIsNone(overview["signed_record_date"])
 
         dialog = AccidentDialog(accident=accident_service.get_by_id(accident.id))
         tab = dialog.tab_po_ukonceni_dpn_widget
-        self.assertTrue(tab.signed_record_done.isChecked())
+        self.assertFalse(tab.signed_record_done.isChecked())
         dialog.close()
 
     def test_clearing_dpn_do_keeps_completed_history(self) -> None:

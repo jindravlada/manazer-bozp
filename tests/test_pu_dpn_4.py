@@ -333,7 +333,7 @@ class PuDpn4TestCase(unittest.TestCase):
         )
 
         dialog = AccidentDialog(accident=accident_service.get_by_id(accident.id))
-        self.assertNotIn("dpn_record_update", dialog.get_data())
+        self.assertFalse(dialog.get_data()["dpn_record_update"]["signed_record_done"])
         self._fill_care(dialog.tab_po_ukonceni_dpn_widget)
         accident_service.update_accident(accident.id, **dialog.get_data())
         dialog.close()

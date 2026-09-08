@@ -46,7 +46,6 @@ with patch.object(Path, "home", return_value=_TMP):
         POST_DPN_OBLIGATION_KEYS,
         applicable_obligations,
         dpn_record_update_belongs_in_upcoming,
-        dpn_record_update_is_done,
         dpn_record_update_overview_from_saved_data,
         is_dpn_record_update_relevant,
     )
@@ -188,7 +187,7 @@ class PuUpcomingFix1TestCase(unittest.TestCase):
             saved,
             union_organization_active=True,
         )
-        self.assertTrue(dpn_record_update_is_done(overview))
+        self.assertTrue(overview["portal_suip_done"])
         self.assertFalse(
             dpn_record_update_belongs_in_upcoming(
                 accident,

@@ -578,6 +578,7 @@ class AccidentDialog(QDialog):
         data.update(self.tab_svedci_widget.get_data())
         data.update({name: self._get_widget_value(getattr(self, name)) for name in self._field_names() if hasattr(self, name)})
         data["dpn_care_return"] = self.tab_po_ukonceni_dpn_widget.get_dpn_care_return()
+        data["dpn_record_update"] = self.tab_po_ukonceni_dpn_widget.get_dpn_record_update()
         data["dpn_employer_responsibility"] = (
             self.tab_po_ukonceni_dpn_widget.get_dpn_employer_responsibility()
         )

@@ -418,6 +418,7 @@ class MainWindow(QMainWindow):
         from core.dashboard.attention_item import (
             ITEM_TYPE_ACCIDENT_DPN_RECORD_UPDATE,
             ITEM_TYPE_ACCIDENT_EXTRAORDINARY_EXAM,
+            ITEM_TYPE_ACCIDENT_SIGNED_RECORD,
             ITEM_TYPE_AUDIT,
             ITEM_TYPE_EXTERNAL_AUDIT,
             ITEM_TYPE_EXTERNAL_AUDIT_NC,
@@ -513,6 +514,7 @@ class MainWindow(QMainWindow):
         if item_type in {
             ITEM_TYPE_ACCIDENT_DPN_RECORD_UPDATE,
             ITEM_TYPE_ACCIDENT_EXTRAORDINARY_EXAM,
+            ITEM_TYPE_ACCIDENT_SIGNED_RECORD,
         } and entity_id is not None:
             metadata = getattr(item, "open_metadata", None) or {}
             self._open_accident_by_id(

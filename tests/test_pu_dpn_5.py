@@ -331,7 +331,7 @@ class PuDpn5TestCase(unittest.TestCase):
         )
 
         dialog = AccidentDialog(accident=accident_service.get_by_id(accident.id))
-        self.assertNotIn("dpn_record_update", dialog.get_data())
+        self.assertFalse(dialog.get_data()["dpn_record_update"]["signed_record_done"])
         tab = dialog.tab_po_ukonceni_dpn_widget
         tab.proposed_percent.setValue(70)
         tab.recognized_percent.setValue(100)

@@ -79,8 +79,8 @@ SECTION_TITLES = (
 )
 
 OVERVIEW_SOURCE_HINT = (
-    "Stav vychází z Ohlašovací povinnosti. Splnění evidujte tam – "
-    "tato sekce je jen přehled a stejný úkon se zadává jen jednou."
+    "Aktualizaci na Portálu SÚIP evidujte v Ohlašovací povinnosti. "
+    "Podepsaný aktualizovaný záznam evidujte zde."
 )
 
 EXAM_NO_HEALTH_HINT = (
@@ -210,12 +210,7 @@ class TabPoUkonceniDpn(QWidget):
         form.addRow("Aktualizace na Portálu SÚIP:", portal_row)
         form.addRow("Podepsaný aktualizovaný záznam:", signed_row)
 
-        for widget in (
-            self.portal_suip_done,
-            self.portal_suip_date,
-            self.signed_record_done,
-            self.signed_record_date,
-        ):
+        for widget in (self.portal_suip_done, self.portal_suip_date):
             widget.setEnabled(False)
         return group
 
@@ -446,13 +441,10 @@ class TabPoUkonceniDpn(QWidget):
         self.info_panel.setVisible(not self._dpn_ended)
         self.sections_widget.setVisible(self._dpn_ended)
         self.sections_widget.setEnabled(self._dpn_ended)
-        for widget in (
-            self.portal_suip_done,
-            self.portal_suip_date,
-            self.signed_record_done,
-            self.signed_record_date,
-        ):
-            widget.setEnabled(False)
+        self.portal_suip_done.setEnabled(False)
+        self.portal_suip_date.setEnabled(False)
+        self.signed_record_done.setEnabled(self._dpn_ended)
+        self.signed_record_date.setEnabled(self._dpn_ended)
         self._refresh_care_relevance()
 
     def set_from_dpn_do(self, dpn_do) -> None:
