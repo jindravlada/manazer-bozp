@@ -27,6 +27,7 @@ from core.dashboard.attention_service import (
     get_periodic_reminder_items,
     get_state_supervision_reminder_items,
     get_yearly_plan_month_reminder_items,
+    kniha_urazu_reminder_items,
 )
 from core.dashboard.task_links import configure_task_label, task_id_from_link, task_link
 from core.dashboard.widget_base import DashboardPanel
@@ -456,6 +457,10 @@ class TodayWidget(DashboardPanel):
             get_state_supervision_reminder_items(today=today),
             today,
         )
+        ku_burning, ku_due = classify_reminder_attention_items(
+            kniha_urazu_reminder_items(attention_items, today=today),
+            today,
+        )
         self._linked_attention = (
             list(month_burning)
             + list(month_due)
@@ -471,6 +476,8 @@ class TodayWidget(DashboardPanel):
             + list(ea_finding_due)
             + list(ss_burning)
             + list(ss_due)
+            + list(ku_burning)
+            + list(ku_due)
         )
 
         ordered: list[str] = []
@@ -484,6 +491,7 @@ class TodayWidget(DashboardPanel):
         ordered.extend(self._attention_line(item, "🔴") for item in ea_audit_burning)
         ordered.extend(self._attention_line(item, "🔴") for item in ea_finding_burning)
         ordered.extend(self._attention_line(item, "🔴") for item in ss_burning)
+        ordered.extend(self._attention_line(item, "🔴") for item in ku_burning)
         ordered.extend(self._task_line(task, "🔴") for task in burning)
         ordered.extend(self._attention_line(item, "🔵") for item in month_due)
         ordered.extend(self._attention_line(item, "🔵") for item in periodic_due)
@@ -491,6 +499,7 @@ class TodayWidget(DashboardPanel):
         ordered.extend(self._attention_line(item, "🔵") for item in ea_audit_due)
         ordered.extend(self._attention_line(item, "🔵") for item in ea_finding_due)
         ordered.extend(self._attention_line(item, "🔵") for item in ss_due)
+        ordered.extend(self._attention_line(item, "🔵") for item in ku_due)
         ordered.extend(self._task_line(task, "🔵") for task in due_today)
         ordered.extend(self._task_line(task, "🟡") for task in waiting)
 

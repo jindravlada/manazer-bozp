@@ -45,6 +45,16 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-08 – PU-UPCOMING-FIX-3a
+
+**Co se povedlo:** Připomínka podpisů po Aktualizaci záznamu bere datum provedení i z legacy řádku (`datum` bez `predano`) a ukazuje se v Připomínkách od dne odeslání.
+
+**Co už bychom dnes udělali jinak:** Testovat sběrač na tvaru reálného `admin_zaslani`, ne jen na syntetickém `predano=True`.
+
+**Co bylo zbytečně složité:** Nic – Agenda úkoly z post-DPN nedorovnává a lhůty dalších adresátů se v tomto kroku neměnily.
+
+**Jaké nové pravidlo z toho vzniklo:** Položky Knihy úrazů v Připomínkách používají stejný sběrač jako Nadcházející; Agenda zůstává přehledem úkolů a událostí.
+
 ### 2026-09-06 – UX-RISK-7
 
 **Co se povedlo:** Katalogový zdroj rizika znovu exportuje vícesouborový ZIP, aniž by se vrátila stará metodika Navazujících opatření.

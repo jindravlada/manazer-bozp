@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
 from typing import Any
 
 from core.dashboard.attention_item import (
     ITEM_TYPE_ACCIDENT_DPN_RECORD_UPDATE,
     ITEM_TYPE_ACCIDENT_EXTRAORDINARY_EXAM,
     ITEM_TYPE_ACCIDENT_SIGNED_RECORD,
+    ACCIDENT_ATTENTION_ITEM_TYPES,
     ITEM_TYPE_AUDIT,
     ITEM_TYPE_EXTERNAL_AUDIT,
     ITEM_TYPE_EXTERNAL_AUDIT_NC,
@@ -969,6 +970,41 @@ def get_attention_items(*, today: date | None = None) -> list[AttentionItem]:
     )
     items.sort(key=lambda item: item.sort_key)
     return items
+
+
+def kniha_urazu_reminder_items(
+    items: list[AttentionItem] | None = None,
+    *,
+    today: date | None = None,
+) -> list[AttentionItem]:
+    """Položky Knihy úrazů pro Připomínky.
+
+    Nadcházející berou celou kolekci bez časového okna. Připomínky:
+    - Aktualizace / mimořádná prohlídka od termínu včetně dneška;
+    - podpisy od data provedení aktualizace (termín minus 2 kalendářní dny).
+    """
+    from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
+        DPN_SIGNED_RECORD_REMINDER_CALENDAR_DAYS,
+    )
+
+    today = today or date.today()
+    if items is None:
+        items = get_attention_items(today=today)
+    result: list[AttentionItem] = []
+    for item in items:
+        if item.item_type not in ACCIDENT_ATTENTION_ITEM_TYPES:
+            continue
+        due = item.due_date
+        if due is None:
+            continue
+        if item.item_type == ITEM_TYPE_ACCIDENT_SIGNED_RECORD:
+            remind_from = due - timedelta(days=DPN_SIGNED_RECORD_REMINDER_CALENDAR_DAYS)
+            if today >= remind_from:
+                result.append(item)
+            continue
+        if due <= today:
+            result.append(item)
+    return result
 
 
 def overdue_attention_items(

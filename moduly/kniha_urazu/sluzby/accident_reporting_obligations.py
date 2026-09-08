@@ -437,6 +437,9 @@ def dpn_signed_record_reminder_due(
         return None
     submitted = parse_saved_date(overview.get(DPN_RECORD_UPDATE_PORTAL_DATE))
     if submitted is None:
+        stored = dpn_record_update_from_saved_data(saved_data)
+        submitted = parse_saved_date(stored.get(DPN_RECORD_UPDATE_PORTAL_DATE))
+    if submitted is None:
         return None
     return submitted + timedelta(days=DPN_SIGNED_RECORD_REMINDER_CALENDAR_DAYS)
 
@@ -1291,14 +1294,25 @@ def obligation_rows_for_summary(
 
 
 def parse_saved_date(value: Any) -> date | None:
+    if isinstance(value, datetime):
+        return value.date()
     if isinstance(value, date):
         return value
     if not value:
         return None
+    text = str(value).strip()
     try:
-        return date.fromisoformat(str(value)[:10])
+        return date.fromisoformat(text[:10])
     except Exception:
-        return None
+        pass
+    first_token = text.split()[0] if text else text
+    for candidate in (first_token, text):
+        for fmt in ("%d.%m.%Y", "%d. %m. %Y"):
+            try:
+                return datetime.strptime(candidate, fmt).date()
+            except Exception:
+                continue
+    return None
 
 
 def row_is_done(row: dict[str, Any]) -> bool:
@@ -1334,8 +1348,10 @@ def dpn_record_update_overview_from_saved_data(
 
     portal_row = rows_by_key.get(OBLIGATION_AKTUALIZACE_OIP_OBU_PORTAL, {})
     portal_done = row_is_done(portal_row)
-    portal_date = parse_saved_date(portal_row.get("datum")) if portal_row else None
     stored = dpn_record_update_from_saved_data(saved_data)
+    portal_date = parse_saved_date(portal_row.get("datum")) if portal_row else None
+    if portal_date is None:
+        portal_date = parse_saved_date(stored.get(DPN_RECORD_UPDATE_PORTAL_DATE))
 
     return normalize_dpn_record_update(
         {
