@@ -136,10 +136,30 @@ class LegalSectionStructureCompareService:
         by_id = {section.id: section for section in sections}
         index: dict[str, int] = {}
         for section in sections:
-            chain = self._stored_chain(section, by_id)
-            identity_key = "/".join(self._identity_segment(item) for item in chain)
+            identity_key = self.section_identity_key(section, sections_by_id=by_id)
             index[identity_key] = section.id
         return index
+
+    def build_unique_section_key_index(self, sections: list) -> dict[str, int]:
+        by_id = {section.id: section for section in sections}
+        first: dict[str, int] = {}
+        duplicates: set[str] = set()
+        for section in sections:
+            identity_key = self.section_identity_key(section, sections_by_id=by_id)
+            if identity_key in first:
+                duplicates.add(identity_key)
+            else:
+                first[identity_key] = section.id
+        return {
+            identity_key: section_id
+            for identity_key, section_id in first.items()
+            if identity_key not in duplicates
+        }
+
+    def section_identity_key(self, section, *, sections_by_id: dict | None = None) -> str:
+        by_id = sections_by_id or {section.id: section}
+        chain = self._stored_chain(section, by_id)
+        return "/".join(self._identity_segment(item) for item in chain)
 
     def build_section_log_label(self, section, *, sections_by_id: dict | None = None) -> str:
         by_id = sections_by_id or {section.id: section}

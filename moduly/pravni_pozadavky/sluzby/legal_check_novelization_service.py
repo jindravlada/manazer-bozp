@@ -57,9 +57,10 @@ class LegalCheckNovelizationService:
 
         from moduly.pravni_pozadavky.sluzby.legal_change_service import legal_change_service
 
-        existing_pending = legal_document_version_service.find_pending_by_checksum(
+        existing_version = self._existing_detected_version(
             document.id,
             remote_checksum,
+            stored_version.id,
         )
         existing_change = legal_change_service.find_novelization_by_remote_checksum(
             document.id,
@@ -70,7 +71,7 @@ class LegalCheckNovelizationService:
 
         if not newer:
             if existing_change is not None and existing_change.new_legal_document_version_id is None:
-                new_version = existing_pending or self._persist_pending_version(
+                new_version = existing_version or self._persist_pending_version(
                     document=document,
                     remote_version=remote_version,
                     parsed=parsed,
@@ -87,7 +88,7 @@ class LegalCheckNovelizationService:
                 self._sync_content_changes(existing_change)
             return None
 
-        new_version = existing_pending or self._persist_pending_version(
+        new_version = existing_version or self._persist_pending_version(
             document=document,
             remote_version=remote_version,
             parsed=parsed,
@@ -183,6 +184,26 @@ class LegalCheckNovelizationService:
         )
 
         legal_check_run_service.append_note(check_run_id, summary)
+
+    def _existing_detected_version(
+        self,
+        document_id: int,
+        remote_checksum: str,
+        stored_version_id: int,
+    ) -> LegalDocumentVersion | None:
+        pending = legal_document_version_service.find_pending_by_checksum(
+            document_id,
+            remote_checksum,
+        )
+        if pending is not None:
+            return pending
+        same_checksum = legal_document_version_service.find_by_checksum(
+            document_id,
+            remote_checksum,
+        )
+        if same_checksum is None or same_checksum.id == stored_version_id:
+            return None
+        return same_checksum
 
     def _load_remote_document(
         self,

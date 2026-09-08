@@ -227,6 +227,9 @@ class LegalChangeSectionServiceTestCase(unittest.TestCase):
         )
 
         dialog = LegalChangeDetailDialog(change=change)
+        self.assertFalse(dialog.adopt_btn.isHidden())
+        self.assertEqual(dialog.evaluation_status_label.text(), "Nevyhodnoceno")
+        self.assertEqual(dialog.wording_status_label.text(), "Nové znění čeká na převzetí")
         self.assertEqual(dialog.sections_table.columnCount(), 2)
         self.assertEqual(
             [

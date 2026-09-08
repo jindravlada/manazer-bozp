@@ -112,6 +112,7 @@ class LegalChangeService:
         evaluated_at: datetime | None = None,
         evaluated_by: str = "",
         note: str = "",
+        evaluation_note: str = "",
         active: bool = True,
     ) -> LegalChange:
         self._validate_document_id(legal_document_id)
@@ -143,6 +144,7 @@ class LegalChangeService:
             evaluated_at=evaluated_at,
             evaluated_by=evaluated_by.strip(),
             note=note.strip(),
+            evaluation_note=evaluation_note.strip(),
             active=active,
         )
         return self.repository.create(change)
@@ -227,6 +229,18 @@ class LegalChangeService:
             change.description = description.strip()
         return self.repository.update(change)
 
+    def remap_legal_section_id(
+        self,
+        change_id: int,
+        legal_section_id: int,
+    ) -> LegalChange | None:
+        change = self.repository.get_by_id(change_id)
+        if change is None:
+            return None
+        self._validate_section_id(legal_section_id)
+        change.legal_section_id = legal_section_id
+        return self.repository.update(change)
+
     def deactivate(self, change_id: int) -> LegalChange | None:
         return self.repository.deactivate(change_id)
 
@@ -239,16 +253,20 @@ class LegalChangeService:
         *,
         evaluated_by: str | None = None,
         note: str | None = None,
+        evaluation_note: str | None = None,
     ) -> LegalChange | None:
         change = self.repository.get_by_id(change_id)
         if change is None:
             return None
         change.evaluated = True
-        change.evaluated_at = datetime.now()
+        if change.evaluated_at is None:
+            change.evaluated_at = datetime.now()
         if evaluated_by is not None:
             change.evaluated_by = evaluated_by.strip()
         if note is not None:
             change.note = note.strip()
+        if evaluation_note is not None:
+            change.evaluation_note = evaluation_note.strip()
         return self.repository.update(change)
 
     def mark_unevaluated(self, change_id: int) -> LegalChange | None:

@@ -17,9 +17,13 @@ from core.widgets.typed_table_sort import (
 )
 from moduly.pravni_pozadavky.constants import (
     CHANGE_TYPE_LABELS,
+    legal_change_wording_status_label,
     legal_document_catalog_link_label,
 )
 from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
+from moduly.pravni_pozadavky.sluzby.legal_document_version_service import (
+    legal_document_version_service,
+)
 
 CHANGE_TYPE_ORDER = tuple(CHANGE_TYPE_LABELS.keys())
 
@@ -58,7 +62,7 @@ class LegalChangeTable(QTableWidget):
     def __init__(self):
         super().__init__()
 
-        self.setColumnCount(7)
+        self.setColumnCount(8)
         self.setHorizontalHeaderLabels([
             "ID",
             "Datum zveřejnění",
@@ -66,6 +70,7 @@ class LegalChangeTable(QTableWidget):
             "Předpis",
             "Název",
             "Vyhodnoceno",
+            "Znění",
             "Aktivní",
         ])
 
@@ -83,12 +88,13 @@ class LegalChangeTable(QTableWidget):
         header.setStretchLastSection(False)
         header.setSectionResizeMode(3, QHeaderView.Stretch)
         header.setSectionResizeMode(4, QHeaderView.Stretch)
-        for column in (1, 2, 5, 6):
+        for column in (1, 2, 5, 6, 7):
             header.setSectionResizeMode(column, QHeaderView.Fixed)
         self.setColumnWidth(1, 120)
         self.setColumnWidth(2, 150)
         self.setColumnWidth(5, 90)
-        self.setColumnWidth(6, 80)
+        self.setColumnWidth(6, 170)
+        self.setColumnWidth(7, 80)
 
         enable_typed_sorting(self)
 
@@ -142,9 +148,23 @@ class LegalChangeTable(QTableWidget):
                         stable_id=record_id,
                     ),
                 )
+                detected_version = None
+                if change.new_legal_document_version_id is not None:
+                    detected_version = legal_document_version_service.get_by_id(
+                        change.new_legal_document_version_id,
+                    )
+                wording_label = legal_change_wording_status_label(
+                    change,
+                    detected_version=detected_version,
+                ) or "—"
                 self.setItem(
                     row,
                     6,
+                    create_typed_item(wording_label, typed_text(wording_label), stable_id=record_id),
+                )
+                self.setItem(
+                    row,
+                    7,
                     create_typed_item(
                         "Ano" if change.active else "Ne",
                         typed_bool(change.active),

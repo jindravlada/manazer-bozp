@@ -434,6 +434,9 @@ NOVELIZATION_REMOTE_CHECKSUM_NOTE_PREFIX = "esbirka-ref:"
 DETECTED_VERSION_NAME_PREFIX = "Nově zjištěné znění"
 VERSION_STATUS_IN_USE = "Používané"
 VERSION_STATUS_PENDING_ADOPTION = "Nově zjištěné"
+VERSION_STATUS_HISTORICAL = "Historické"
+WORDING_STATUS_PENDING = "Nové znění čeká na převzetí"
+WORDING_STATUS_ADOPTED = "Převzato"
 
 
 def detected_version_name(version_label: str) -> str:
@@ -449,7 +452,29 @@ def legal_document_version_status_label(version, *, current_version_id: int | No
     version_id = getattr(version, "id", None)
     if current_version_id is not None and version_id == current_version_id:
         return VERSION_STATUS_IN_USE
-    return ""
+    return VERSION_STATUS_HISTORICAL
+
+
+def legal_change_wording_status_label(change, *, detected_version=None) -> str:
+    new_version_id = getattr(change, "new_legal_document_version_id", None)
+    if new_version_id is None:
+        return ""
+    pending = False
+    if detected_version is not None:
+        pending = bool(getattr(detected_version, "pending_adoption", False))
+    else:
+        pending = bool(getattr(change, "detected_pending_adoption", False))
+    if pending:
+        return WORDING_STATUS_PENDING
+    return WORDING_STATUS_ADOPTED
+
+
+def legal_change_can_adopt_wording(change, *, detected_version=None) -> bool:
+    if getattr(change, "new_legal_document_version_id", None) is None:
+        return False
+    if detected_version is None:
+        return False
+    return bool(getattr(detected_version, "pending_adoption", False))
 
 CHANGE_SECTION_ADDED = "added"
 CHANGE_SECTION_REMOVED = "removed"

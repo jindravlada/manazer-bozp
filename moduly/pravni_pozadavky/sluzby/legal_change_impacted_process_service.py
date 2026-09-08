@@ -82,14 +82,24 @@ class LegalChangeImpactedProcessService:
         )
 
     def _load_sections_for_change(self, change) -> tuple[list, dict]:
-        version_id = change.legal_document_version_id
-        if version_id is None:
+        version_ids: list[int] = []
+        if change.legal_document_version_id is not None:
+            version_ids.append(change.legal_document_version_id)
+        if (
+            change.new_legal_document_version_id is not None
+            and change.new_legal_document_version_id not in version_ids
+        ):
+            version_ids.append(change.new_legal_document_version_id)
+        if not version_ids:
             version = legal_document_version_service.get_current_version(change.legal_document_id)
-            version_id = version.id if version is not None else None
+            if version is not None:
+                version_ids.append(version.id)
 
         sections: list = []
-        if version_id is not None:
-            sections = legal_section_service.list_by_version(version_id, include_inactive=False)
+        for version_id in version_ids:
+            sections.extend(
+                legal_section_service.list_by_version(version_id, include_inactive=False),
+            )
         if not sections:
             sections = legal_section_service.list_by_document(
                 change.legal_document_id,
@@ -102,6 +112,16 @@ class LegalChangeImpactedProcessService:
         if not sections:
             return []
 
+        by_version: dict[int | None, list] = {}
+        for section in sections:
+            by_version.setdefault(section.legal_document_version_id, []).append(section)
+
+        resolved: set[int] = set()
+        for group in by_version.values():
+            resolved.update(self._resolve_section_ids_in_group(change_sections, group))
+        return sorted(resolved)
+
+    def _resolve_section_ids_in_group(self, change_sections, sections: list) -> set[int]:
         by_id = {section.id: section for section in sections}
         key_index = legal_section_structure_compare_service.build_section_key_index(sections)
         resolved: set[int] = set()
@@ -123,7 +143,7 @@ class LegalChangeImpactedProcessService:
                 if self._labels_match(change_section.section_label, log_label):
                     resolved.add(section.id)
 
-        return sorted(resolved)
+        return resolved
 
     def _find_requirements_for_sections(self, section_ids: list[int]) -> list[LegalRequirement]:
         requirements: list[LegalRequirement] = []

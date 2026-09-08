@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import or_, select
 
 from core.database.session import get_session
 from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement
@@ -67,6 +67,20 @@ class LegalRequirementRepository:
                     LegalRequirement.active.desc(),
                     LegalRequirement.id.desc(),
                 )
+            )
+            return list(session.scalars(stmt))
+
+    def list_by_section_reference(self, section_id: int) -> list[LegalRequirement]:
+        with get_session() as session:
+            stmt = (
+                select(LegalRequirement)
+                .where(
+                    or_(
+                        LegalRequirement.legal_section_id == section_id,
+                        LegalRequirement.source_section_id == section_id,
+                    ),
+                )
+                .order_by(LegalRequirement.id)
             )
             return list(session.scalars(stmt))
 

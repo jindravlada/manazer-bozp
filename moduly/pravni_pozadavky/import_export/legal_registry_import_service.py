@@ -332,6 +332,7 @@ class LegalRegistryImportService:
                 evaluated_at=self._parse_datetime(record.get("evaluated_at")),
                 evaluated_by=self._text(record.get("evaluated_by")),
                 note=self._text(record.get("note")),
+                evaluation_note=self._text(record.get("evaluation_note")),
                 active=bool(record.get("active", True)),
                 created_at=self._parse_datetime(record.get("created_at")) or datetime.now(),
                 updated_at=self._parse_datetime(record.get("updated_at")) or datetime.now(),

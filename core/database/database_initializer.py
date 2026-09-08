@@ -3385,6 +3385,8 @@ def _ensure_legal_change_columns() -> None:
         _add_column("legal_changes", "legal_check_run_id INTEGER")
     if "new_legal_document_version_id" not in columns:
         _add_column("legal_changes", "new_legal_document_version_id INTEGER")
+    if "evaluation_note" not in columns:
+        _add_column("legal_changes", 'evaluation_note TEXT DEFAULT ""')
 
 
 def _ensure_legal_document_version_columns() -> None:

@@ -116,6 +116,7 @@ class ZmenyLegislativyTab(QWidget):
 
         dialog = LegalChangeDetailDialog(self, change=change)
         exec_maximized(dialog)
+        self.refresh()
 
     def toggle_selected_change(self) -> None:
         change = self._selected_change()

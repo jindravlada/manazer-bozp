@@ -45,6 +45,16 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-08 – RPP-CHANGE-3
+
+**Co se povedlo:** Vyhodnocení dopadu novely a převzetí nového znění jsou dva nezávislé kroky. Používaná verze se mění jen vědomým převzetím.
+
+**Co už bychom dnes udělali jinak:** Hned při detekci novely oddělit posouzení dopadu od přepnutí používaného znění.
+
+**Co bylo zbytečně složité:** Nic – stačilo zachovat existující `evaluated` a přidat ruční převzetí pending verze.
+
+**Jaké nové pravidlo z toho vzniklo:** Vyhodnocení změny samo o sobě nemění používané znění. Převzetí samo o sobě nemění stav vyhodnocení. Vazbu na ustanovení lze při převzetí přenést jen při jednoznačné hierarchické identitě.
+
 ### 2026-09-08 – RPP-CHANGE-2
 
 **Co se povedlo:** Zjištěná novela ukáže i textovou změnu téhož ustanovení, nejen přeskládanou strukturu.

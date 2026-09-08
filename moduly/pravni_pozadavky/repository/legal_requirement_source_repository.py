@@ -103,6 +103,13 @@ class LegalRequirementSourceRepository:
             session.refresh(source)
             return source
 
+    def update(self, source: LegalRequirementSource) -> LegalRequirementSource:
+        with get_session() as session:
+            source = session.merge(source)
+            session.commit()
+            session.refresh(source)
+            return source
+
     def delete(self, source_id: int) -> None:
         with get_session() as session:
             source = session.get(LegalRequirementSource, source_id)

@@ -57,6 +57,28 @@ class LegalDocumentVersionRepository:
             )
             return session.scalar(stmt)
 
+    def find_by_checksum(
+        self,
+        document_id: int,
+        checksum: str,
+    ) -> LegalDocumentVersion | None:
+        normalized = (checksum or "").strip()
+        if not normalized:
+            return None
+        with get_session() as session:
+            stmt = (
+                select(LegalDocumentVersion)
+                .where(
+                    LegalDocumentVersion.legal_document_id == document_id,
+                    LegalDocumentVersion.checksum == normalized,
+                )
+                .order_by(
+                    LegalDocumentVersion.pending_adoption.desc(),
+                    LegalDocumentVersion.id.asc(),
+                )
+            )
+            return session.scalar(stmt)
+
     def get_by_id(self, version_id: int) -> LegalDocumentVersion | None:
         with get_session() as session:
             return session.get(LegalDocumentVersion, version_id)

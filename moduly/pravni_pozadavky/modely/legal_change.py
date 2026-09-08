@@ -29,6 +29,7 @@ class LegalChange(Base):
     evaluated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     evaluated_by: Mapped[str] = mapped_column(String(150), default="")
     note: Mapped[str] = mapped_column(Text, default="")
+    evaluation_note: Mapped[str] = mapped_column(Text, default="")
 
     active: Mapped[bool] = mapped_column(Boolean, default=True)
 

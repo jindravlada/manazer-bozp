@@ -294,6 +294,7 @@ class LegalRegistryExportService:
             "evaluated_at": self._serialize_datetime(change.evaluated_at),
             "evaluated_by": self._text(change.evaluated_by),
             "note": self._text(change.note),
+            "evaluation_note": self._text(getattr(change, "evaluation_note", "")),
             "active": change.active,
             "created_at": self._serialize_datetime(change.created_at),
             "updated_at": self._serialize_datetime(change.updated_at),
