@@ -78,9 +78,10 @@ PRIORITY_RANK = {
     "Normální": 2,
     "Nízká": 3,
 }
-# Položky bez priority až za Nízkou (výchozí řazení Priorita → Termín).
+# Položky bez priority až za Nízkou (při stejném termínu).
 PRIORITY_RANK_UNSET = 4
 _DUE_SLOT = 10**12
+_PRIORITY_SLOT = 10
 
 
 def priority_sort_rank(priority: str | None) -> int:
@@ -98,14 +99,20 @@ def due_datetime_sort_number(due: datetime | None) -> int:
     return due.toordinal() * 86400 + due.hour * 3600 + due.minute * 60 + due.second
 
 
-def priority_then_due_sort_int(priority: str | None, due: datetime | None) -> int:
-    """Složený klíč výchozího řazení: priorita, uvnitř ní nejstarší termín první."""
-    return priority_sort_rank(priority) * _DUE_SLOT + due_datetime_sort_number(due)
+def due_then_priority_sort_int(priority: str | None, due: datetime | None) -> int:
+    """Složený klíč výchozího řazení: termín, při stejném termínu priorita."""
+    return due_datetime_sort_number(due) * _PRIORITY_SLOT + priority_sort_rank(priority)
+
+
+def default_due_priority_sort_key(*, priority: str | None, sort_key: tuple) -> tuple:
+    """Termín ze sort_key, potom priorita, potom původní klíč pro stabilitu."""
+    due_key = sort_key[0] if sort_key else datetime.max
+    return (due_key, priority_sort_rank(priority), sort_key)
 
 
 def default_attention_sort_key(item: AttentionItem) -> tuple:
-    """Výchozí pořadí Nadcházejících i Agendy: priorita, potom existující termínový klíč."""
-    return (priority_sort_rank(item.priority), item.sort_key)
+    """Výchozí pořadí Nadcházejících i Agendy: termín, při stejném termínu priorita."""
+    return default_due_priority_sort_key(priority=item.priority, sort_key=item.sort_key)
 
 
 def meeting_dashboard_source_label(meeting) -> str:

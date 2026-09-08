@@ -71,7 +71,7 @@ COL_PERSON = 2
 COL_STATUS = 3
 COL_SOURCE = 4
 COL_TYPE = 5
-# Skrytý sloupec výchozího řazení Priorita → Termín (není v COLUMN_HEADERS).
+# Skrytý sloupec výchozího řazení Termín → Priorita (není v COLUMN_HEADERS).
 COL_DEFAULT_SORT = 6
 
 COLUMN_HEADERS = [

@@ -1,4 +1,4 @@
-"""AGENDA-ATTENTION-1: AttentionItem v centrální Agendě a řazení Priorita → Termín."""
+"""AGENDA-ATTENTION-1: AttentionItem v centrální Agendě a řazení Termín → Priorita."""
 
 from __future__ import annotations
 
@@ -41,13 +41,11 @@ with patch.object(Path, "home", return_value=_TMP):
         SOURCE_LABEL_KNIHA_URAZU,
     )
     from core.dashboard.widget_upcoming_tasks import (
-        COL_PRIORITY,
         COL_TYPE as UPCOMING_COL_TYPE,
         UpcomingTasksWidget,
     )
     from core.windows.main_window import MainWindow
     from moduly.agenda.constants import (
-        COL_DUE,
         COL_TITLE,
         ITEM_TYPE_TASK,
         PRIORITY_COLORS,
@@ -430,7 +428,7 @@ class AgendaAttention1TestCase(unittest.TestCase):
         page.edit_selected()
         self.assertEqual(opened[-1].open_metadata.get("focus_tab"), TAB_PO_UKONCENI_DPN)
 
-    def test_priority_then_due_in_agenda_and_upcoming(self) -> None:
+    def test_due_then_priority_in_agenda_and_upcoming(self) -> None:
         critical_late = task_service.create_task(
             title="Kritická později",
             due_date=date(2026, 9, 15),
@@ -463,11 +461,11 @@ class AgendaAttention1TestCase(unittest.TestCase):
             audit.id,
         }
         expected = [
-            critical_overdue.id,
-            critical_late.id,
-            high_overdue.id,
-            normal.id,
             audit.id,
+            high_overdue.id,
+            critical_overdue.id,
+            normal.id,
+            critical_late.id,
         ]
 
         agenda_ids = [
@@ -496,19 +494,10 @@ class AgendaAttention1TestCase(unittest.TestCase):
         self.assertEqual(upcoming_ids, expected)
         self.assertEqual(
             widget.table.horizontalHeader().sortIndicatorSection(),
-            COL_PRIORITY,
+            1,
         )
 
-        page.table.sortItems(COL_DUE, Qt.SortOrder.AscendingOrder)
-        due_ids = []
-        for row in range(page.table.rowCount()):
-            payload = page.table.item(row, COL_TITLE).data(Qt.ItemDataRole.UserRole)
-            if payload is not None and payload.source_id in wanted_ids:
-                due_ids.append(payload.source_id)
-        self.assertEqual(
-            due_ids,
-            [audit.id, high_overdue.id, critical_overdue.id, normal.id, critical_late.id],
-        )
+        page.table.sortItems(COL_TITLE, Qt.SortOrder.AscendingOrder)
         page.refresh()
         restored = []
         for row in range(page.table.rowCount()):

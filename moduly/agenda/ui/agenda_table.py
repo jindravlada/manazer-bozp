@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QTableWidget
 
-from core.dashboard.attention_item import priority_then_due_sort_int
+from core.dashboard.attention_item import due_then_priority_sort_int
 from core.widgets.typed_table_sort import (
     create_typed_item,
     enable_typed_sorting,
@@ -130,7 +130,7 @@ class AgendaTable(QTableWidget):
                 self.setItem(row, COL_TYPE, type_item)
 
                 default_sort = typed_int(
-                    priority_then_due_sort_int(agenda.priority, agenda.due_sort_datetime)
+                    due_then_priority_sort_int(agenda.priority, agenda.due_sort_datetime)
                 )
                 default_item = create_typed_item("", default_sort, stable_id=stable_id)
                 default_item.setBackground(brush)

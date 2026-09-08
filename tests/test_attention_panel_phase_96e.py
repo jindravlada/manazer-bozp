@@ -218,7 +218,7 @@ class AttentionPanelPhase96eTestCase(unittest.TestCase):
             )
         )
 
-    def test_items_sorted_by_priority_then_due_date(self) -> None:
+    def test_items_sorted_by_due_then_priority(self) -> None:
         today = date.today()
         future = task_service.create_task(
             title="Budoucí úkol",
@@ -250,7 +250,7 @@ class AttentionPanelPhase96eTestCase(unittest.TestCase):
         ]
         self.assertEqual(
             ids,
-            [no_date.id, overdue.id, due_today.id, future.id, audit.id],
+            [overdue.id, due_today.id, audit.id, future.id, no_date.id],
         )
 
     def test_same_date_priority_outranks_title(self) -> None:
@@ -369,7 +369,7 @@ class AttentionPanelPhase96eTestCase(unittest.TestCase):
         types = [table.item(row, 0).text() for row in range(table.rowCount())]
         self.assertIn("Úkol", types)
 
-    def test_widget_defaults_to_priority_then_due_sort(self) -> None:
+    def test_widget_defaults_to_due_then_priority_sort(self) -> None:
         today = date.today()
         future_task = task_service.create_task(
             title="Pozdější úkol",
@@ -386,7 +386,7 @@ class AttentionPanelPhase96eTestCase(unittest.TestCase):
 
         widget = UpcomingTasksWidget()
         header = widget.table.horizontalHeader()
-        self.assertEqual(header.sortIndicatorSection(), 3)  # Priorita
+        self.assertEqual(header.sortIndicatorSection(), 1)  # Termín
         self.assertEqual(header.sortIndicatorOrder(), Qt.SortOrder.AscendingOrder)
 
         wanted = {today_task.id, future_task.id, audit.id}
@@ -407,16 +407,17 @@ class AttentionPanelPhase96eTestCase(unittest.TestCase):
                 )
         self.assertEqual(
             [row[0] for row in ordered],
-            [today_task.id, future_task.id, audit.id],
+            [today_task.id, audit.id, future_task.id],
         )
-        self.assertEqual([row[1] for row in ordered], ["Úkol", "Úkol", "Audit"])
+        self.assertEqual([row[1] for row in ordered], ["Úkol", "Audit", "Úkol"])
         later = today + timedelta(days=10)
+        soon = today + timedelta(days=1)
         self.assertEqual(
             [row[2] for row in ordered],
             [
                 f"{today.day}. {today.month}. {today.year}",
+                f"{soon.day}. {soon.month}. {soon.year}",
                 f"{later.day}. {later.month}. {later.year}",
-                f"{(today + timedelta(days=1)).day}. {(today + timedelta(days=1)).month}. {(today + timedelta(days=1)).year}",
             ],
         )
 

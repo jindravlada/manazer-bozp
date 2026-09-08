@@ -267,13 +267,18 @@ def get_agenda_items(
     now: datetime | None = None,
 ) -> list[AgendaItem]:
     """Vrátí společný seznam úkolů, událostí a termínovaných AttentionItem."""
-    from core.dashboard.attention_item import priority_sort_rank
+    from core.dashboard.attention_item import default_due_priority_sort_key
 
     now = now or datetime.now()
     today = today or now.date()
     items = _from_tasks(today=today) + _from_meetings(now=now)
     items = items + _from_attention_items(today=today, existing=items)
-    items.sort(key=lambda item: (priority_sort_rank(item.priority), item.sort_key))
+    items.sort(
+        key=lambda item: default_due_priority_sort_key(
+            priority=item.priority,
+            sort_key=item.sort_key,
+        )
+    )
     return items
 
 

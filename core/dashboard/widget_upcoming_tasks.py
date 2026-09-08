@@ -36,7 +36,8 @@ from core.dashboard.attention_item import (
     ITEM_TYPE_YEARLY_PLAN_MONTH,
     AttentionItem,
     attention_item_is_overdue,
-    priority_then_due_sort_int,
+    due_then_priority_sort_int,
+    priority_sort_rank,
 )
 from core.dashboard.attention_service import get_attention_items
 from core.dashboard.widget_base import DashboardPanel
@@ -44,9 +45,8 @@ from core.widgets.typed_table_sort import (
     create_typed_item,
     enable_typed_sorting,
     sorting_paused,
-    typed_datetime,
-    typed_empty,
     typed_int,
+    typed_status,
     typed_text,
 )
 
@@ -127,9 +127,9 @@ class UpcomingTasksWidget(DashboardPanel):
         self.table.doubleClicked.connect(self._open_selected)
         self.table.itemSelectionChanged.connect(self._update_open_button)
         enable_typed_sorting(self.table)
-        # Výchozí řazení Priorita → Termín (nejstarší / po termínu uvnitř priority).
+        # Výchozí řazení Termín → Priorita (nejstarší / po termínu nahoře).
         self.table.horizontalHeader().setSortIndicator(
-            COL_PRIORITY,
+            COL_DUE,
             Qt.SortOrder.AscendingOrder,
         )
 
@@ -248,18 +248,12 @@ class UpcomingTasksWidget(DashboardPanel):
                 type_item.setToolTip(attention.type_label)
 
                 due_text = self._format_due_text(attention, now)
-                if attention.event_at is not None:
-                    due_sort = typed_datetime(attention.event_at)
-                elif attention.due_date is not None:
-                    # Stejná osa jako u událostí s časem (půlnoc daného dne).
-                    due_sort = typed_datetime(
-                        datetime.combine(attention.due_date, time.min)
-                    )
-                else:
-                    due_sort = typed_empty()
+                due_for_sort = attention.event_at
+                if due_for_sort is None and attention.due_date is not None:
+                    due_for_sort = datetime.combine(attention.due_date, time.min)
                 due_item = create_typed_item(
                     due_text,
-                    due_sort,
+                    typed_int(due_then_priority_sort_int(attention.priority, due_for_sort)),
                     stable_id=stable_id,
                 )
                 due_color = self._due_color(attention, now)
@@ -276,15 +270,10 @@ class UpcomingTasksWidget(DashboardPanel):
                     title_item.setToolTip(tooltip)
                     due_item.setToolTip(tooltip)
 
-                due_for_sort = attention.event_at
-                if due_for_sort is None and attention.due_date is not None:
-                    due_for_sort = datetime.combine(attention.due_date, time.min)
-                priority_sort = typed_int(
-                    priority_then_due_sort_int(attention.priority, due_for_sort)
-                )
+                priority_rank = priority_sort_rank(attention.priority)
                 priority_item = create_typed_item(
                     attention.priority or "—",
-                    priority_sort,
+                    typed_status(priority_rank, label=attention.priority or ""),
                     stable_id=stable_id,
                 )
 
@@ -301,7 +290,7 @@ class UpcomingTasksWidget(DashboardPanel):
                 self.table.setItem(row, COL_SOURCE, source_item)
 
         if items:
-            self.table.sortItems(COL_PRIORITY, Qt.SortOrder.AscendingOrder)
+            self.table.sortItems(COL_DUE, Qt.SortOrder.AscendingOrder)
         self.table.resizeRowsToContents()
         self._update_open_button()
 
