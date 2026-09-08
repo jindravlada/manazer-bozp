@@ -106,11 +106,12 @@ from core.widgets.search_combo_box import SearchComboBox
 class SetreniDialog(QDialog):
     """Administrativní karta pracovního úrazu (ohlášení, záznam o úrazu, ukončení)."""
 
-    def __init__(self, parent=None, accident=None):
+    def __init__(self, parent=None, accident=None, *, focus_obligation_key=None):
         super().__init__(parent)
 
         self.accident = accident
         self.open_mu_after_close = False
+        self._focus_obligation_key = (focus_obligation_key or "").strip() or None
         self.investigation = investigation_service.get_or_create(accident.id) if accident is not None else None
         self._zajisteni_saved_data = {}
         if self.investigation is not None and getattr(self.investigation, "zajisteni_dukazu_json", ""):
@@ -144,6 +145,7 @@ class SetreniDialog(QDialog):
         layout.addWidget(buttons)
 
         configure_form_tab_navigation(self)
+        self._focus_obligation_row(self._focus_obligation_key)
 
     def accept(self):
         self._save_administrativa()
@@ -3224,6 +3226,22 @@ class SetreniDialog(QDialog):
         refresh()
         return label
 
+    def _focus_obligation_row(self, obligation_key: str | None) -> None:
+        key = (obligation_key or "").strip()
+        if not key:
+            return
+        for row in getattr(self, "admin_dpn_rows", []):
+            if row.get("key") != key:
+                continue
+            widget = row.get("datum")
+            if widget is not None:
+                widget.setFocus()
+            group = row.get("_group")
+            scroll = getattr(self, "_ohlaseni_scroll", None)
+            if group is not None and scroll is not None:
+                scroll.ensureWidgetVisible(group)
+            return
+
     def _admin_row_group(self, row, mode="odeslání"):
         group = QGroupBox(row["nazev"])
         form = QFormLayout(group)
@@ -3423,6 +3441,7 @@ class SetreniDialog(QDialog):
         heading = QLabel("Ohlašovací povinnosti")
         heading.setObjectName("SectionHeading")
         layout.addWidget(heading)
+        self._ohlaseni_scroll = scroll
 
         form = QFormLayout()
         form.addRow("Šetření provedl – jméno:", self.admin_setreni_jmeno)
@@ -3501,7 +3520,9 @@ class SetreniDialog(QDialog):
                     mode = "předání"
                 else:
                     mode = "odeslání"
-                dpn_layout.addWidget(self._admin_row_group(row, mode))
+                group = self._admin_row_group(row, mode)
+                row["_group"] = group
+                dpn_layout.addWidget(group)
             layout.addWidget(dpn)
 
         visible_zakonna_rows = [

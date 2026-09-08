@@ -262,7 +262,11 @@ class KnihaUrazuPage(QWidget):
                 f"Závěrečnou zprávu se nepodařilo vygenerovat.\n\n{exc}",
             )
 
-    def open_investigation(self, accident_id: int | None = None):
+    def open_investigation(
+        self,
+        accident_id: int | None = None,
+        focus_obligation_key: str | None = None,
+    ):
         if accident_id is None:
             accident_id = self._selected_accident_id()
         if accident_id is None:
@@ -275,7 +279,11 @@ class KnihaUrazuPage(QWidget):
             return
 
         accident_id = accident.id
-        dialog = SetreniDialog(self, accident=accident)
+        dialog = SetreniDialog(
+            self,
+            accident=accident,
+            focus_obligation_key=focus_obligation_key,
+        )
         exec_maximized(dialog)
         self.refresh()
         if dialog.open_mu_after_close:

@@ -419,6 +419,7 @@ class MainWindow(QMainWindow):
             ITEM_TYPE_ACCIDENT_DPN_RECORD_UPDATE,
             ITEM_TYPE_ACCIDENT_EXTRAORDINARY_EXAM,
             ITEM_TYPE_ACCIDENT_SIGNED_RECORD,
+            ITEM_TYPE_ACCIDENT_UPDATED_RECORD_DISTRIBUTION,
             ITEM_TYPE_AUDIT,
             ITEM_TYPE_EXTERNAL_AUDIT,
             ITEM_TYPE_EXTERNAL_AUDIT_NC,
@@ -509,6 +510,13 @@ class MainWindow(QMainWindow):
                 target_tab=metadata.get("target_tab"),
                 focus_kind=metadata.get("kind"),
                 focus_child_id=metadata.get("child_id"),
+            )
+            return
+        if item_type == ITEM_TYPE_ACCIDENT_UPDATED_RECORD_DISTRIBUTION and entity_id is not None:
+            metadata = getattr(item, "open_metadata", None) or {}
+            self._open_accident_reporting_by_id(
+                int(entity_id),
+                focus_obligation_key=metadata.get("obligation_key"),
             )
             return
         if item_type in {
@@ -609,6 +617,34 @@ class MainWindow(QMainWindow):
         page = self._page_widgets.get("kniha_urazu")
         if page is not None:
             page.new_accident()
+
+    def _open_accident_reporting_by_id(
+        self,
+        accident_id: int,
+        *,
+        focus_obligation_key: str | None = None,
+    ) -> None:
+        from moduly.kniha_urazu.sluzby.accident_service import accident_service
+
+        accident = accident_service.get_by_id(accident_id)
+        if accident is None:
+            QMessageBox.warning(self, "Kniha úrazů", "Úraz nebyl nalezen.")
+            dashboard = self._page_widgets.get("dashboard")
+            if dashboard is not None and hasattr(dashboard, "refresh"):
+                dashboard.refresh()
+            return
+
+        self._show("kniha_urazu")
+        page = self._page_widgets.get("kniha_urazu")
+        if page is not None and hasattr(page, "open_investigation"):
+            page.open_investigation(
+                accident_id,
+                focus_obligation_key=focus_obligation_key,
+            )
+
+        dashboard = self._page_widgets.get("dashboard")
+        if dashboard is not None and hasattr(dashboard, "refresh"):
+            dashboard.refresh()
 
     def _open_accident_by_id(self, accident_id: int, *, focus_tab: str | None = None) -> None:
         from moduly.kniha_urazu.sluzby.accident_service import accident_service

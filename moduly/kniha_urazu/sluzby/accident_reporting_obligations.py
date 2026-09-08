@@ -145,6 +145,23 @@ DPN_RECORD_UPDATE_SIGNED_DONE = "signed_record_done"
 DPN_RECORD_UPDATE_SIGNED_DATE = "signed_record_date"
 # Interní organizační termín Manažera BOZP, ne zákonná lhůta.
 DPN_SIGNED_RECORD_REMINDER_CALENDAR_DAYS = 2
+# Interní organizační termín distribuce po evidovaných podpisech, ne zákonná lhůta.
+DPN_DISTRIBUTION_REMINDER_CALENDAR_DAYS = 2
+DPN_DISTRIBUTION_OBLIGATION_KEYS = POST_DPN_SIGNED_RECORD_KEYS
+DPN_DISTRIBUTION_TITLES: dict[str, str] = {
+    OBLIGATION_AKTUALIZACE_ZP: (
+        "Odeslat aktualizovaný záznam zdravotní pojišťovně"
+    ),
+    OBLIGATION_AKTUALIZACE_ZAMESTNANEC: (
+        "Předat aktualizovaný záznam zaměstnanci"
+    ),
+    OBLIGATION_AKTUALIZACE_OO: (
+        "Předat aktualizovaný záznam odborové organizaci"
+    ),
+    OBLIGATION_AKTUALIZACE_POLICIE: (
+        "Odeslat aktualizovaný záznam Policii ČR"
+    ),
+}
 
 
 @dataclass(frozen=True)
@@ -455,6 +472,54 @@ def dpn_signed_record_belongs_in_upcoming(
         saved_data,
         union_organization_active=union_organization_active,
     ) is not None
+
+
+def dpn_distribution_reminder_due(
+    accident: AccidentLike | None,
+    saved_data: dict[str, Any] | None = None,
+    *,
+    union_organization_active: bool | None = None,
+) -> date | None:
+    """Interní termín distribuce: datum zajištění podpisů + 2 kalendářní dny."""
+    overview = dpn_record_update_overview_from_saved_data(
+        accident,
+        saved_data,
+        union_organization_active=union_organization_active,
+    )
+    if not dpn_signed_record_is_ensured(overview):
+        return None
+    signed = parse_saved_date(overview.get(DPN_RECORD_UPDATE_SIGNED_DATE))
+    if signed is None:
+        return None
+    return signed + timedelta(days=DPN_DISTRIBUTION_REMINDER_CALENDAR_DAYS)
+
+
+def dpn_distribution_pending_keys(
+    accident: AccidentLike | None,
+    saved_data: dict[str, Any] | None = None,
+    *,
+    union_organization_active: bool | None = None,
+) -> list[str]:
+    """Relevantní nesplněné `aktualizace_*` adresáty po evidovaných podpisech."""
+    if dpn_distribution_reminder_due(
+        accident,
+        saved_data,
+        union_organization_active=union_organization_active,
+    ) is None:
+        return []
+    pending: list[str] = []
+    for item in applicable_obligations(
+        accident,
+        saved_data=saved_data,
+        union_organization_active=union_organization_active,
+    ):
+        if item.key not in DPN_DISTRIBUTION_OBLIGATION_KEYS:
+            continue
+        row = obligation_row_from_saved_data(saved_data, item.key)
+        if row_is_done(row):
+            continue
+        pending.append(item.key)
+    return pending
 
 
 def is_post_dpn_obligation_key(obligation_key: str) -> bool:

@@ -11,6 +11,7 @@ from core.dashboard.attention_item import (
     ITEM_TYPE_ACCIDENT_DPN_RECORD_UPDATE,
     ITEM_TYPE_ACCIDENT_EXTRAORDINARY_EXAM,
     ITEM_TYPE_ACCIDENT_SIGNED_RECORD,
+    ITEM_TYPE_ACCIDENT_UPDATED_RECORD_DISTRIBUTION,
     ACCIDENT_ATTENTION_ITEM_TYPES,
     ITEM_TYPE_AUDIT,
     ITEM_TYPE_EXTERNAL_AUDIT,
@@ -905,6 +906,63 @@ def _from_accident_signed_records(_today: date) -> list[AttentionItem]:
     return items
 
 
+def _accident_distribution_title(obligation_key: str) -> str:
+    from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
+        DPN_DISTRIBUTION_TITLES,
+    )
+
+    return DPN_DISTRIBUTION_TITLES.get(obligation_key, obligation_key)
+
+
+def _from_accident_updated_record_distribution(_today: date) -> list[AttentionItem]:
+    """Interní připomínky odeslání/předání aktualizovaného záznamu adresátům."""
+    from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
+        dpn_distribution_pending_keys,
+        dpn_distribution_reminder_due,
+    )
+    from moduly.kniha_urazu.sluzby.accident_service import accident_service
+
+    items: list[AttentionItem] = []
+    for accident in accident_service.get_all():
+        saved = _load_accident_investigation_saved_data(accident.id)
+        due_date = dpn_distribution_reminder_due(accident, saved)
+        if due_date is None:
+            continue
+        for obligation_key in dpn_distribution_pending_keys(accident, saved):
+            title = _accident_distribution_title(obligation_key)
+            identity = (
+                f"accident-updated-record-distribution:{obligation_key}:"
+                f"{int(accident.id)}"
+            )
+            items.append(
+                AttentionItem(
+                    item_type=ITEM_TYPE_ACCIDENT_UPDATED_RECORD_DISTRIBUTION,
+                    source_type=ITEM_TYPE_ACCIDENT_UPDATED_RECORD_DISTRIBUTION,
+                    source_id=accident.id,
+                    title=title,
+                    date=due_date,
+                    subtitle=SOURCE_LABEL_KNIHA_URAZU,
+                    status="",
+                    priority=PRIORITY_CRITICAL,
+                    open_metadata={
+                        "source_type": ITEM_TYPE_ACCIDENT_UPDATED_RECORD_DISTRIBUTION,
+                        "source_id": accident.id,
+                        "obligation_key": obligation_key,
+                        "open_reporting": True,
+                        "identity": identity,
+                    },
+                    sort_key=build_sort_key(
+                        due_date,
+                        item_type=ITEM_TYPE_ACCIDENT_UPDATED_RECORD_DISTRIBUTION,
+                        title=title,
+                        source_id=accident.id,
+                    ),
+                    identity_key=identity,
+                )
+            )
+    return items
+
+
 def _from_state_supervision_upcoming(today: date) -> list[AttentionItem]:
     """Upcoming položky plus prošlé doklady/Findings pro kartu Po termínu."""
     try:
@@ -967,6 +1025,7 @@ def get_attention_items(*, today: date | None = None) -> list[AttentionItem]:
         + _from_accident_dpn_record_updates(today)
         + _from_accident_extraordinary_exams(today)
         + _from_accident_signed_records(today)
+        + _from_accident_updated_record_distribution(today)
     )
     items.sort(key=lambda item: item.sort_key)
     return items
@@ -981,9 +1040,11 @@ def kniha_urazu_reminder_items(
 
     Nadcházející berou celou kolekci bez časového okna. Připomínky:
     - Aktualizace / mimořádná prohlídka od termínu včetně dneška;
-    - podpisy od data provedení aktualizace (termín minus 2 kalendářní dny).
+    - podpisy a distribuce od data vzniku interního termínu
+      (termín minus 2 kalendářní dny).
     """
     from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
+        DPN_DISTRIBUTION_REMINDER_CALENDAR_DAYS,
         DPN_SIGNED_RECORD_REMINDER_CALENDAR_DAYS,
     )
 
@@ -999,6 +1060,13 @@ def kniha_urazu_reminder_items(
             continue
         if item.item_type == ITEM_TYPE_ACCIDENT_SIGNED_RECORD:
             remind_from = due - timedelta(days=DPN_SIGNED_RECORD_REMINDER_CALENDAR_DAYS)
+            if today >= remind_from:
+                result.append(item)
+            continue
+        if item.item_type == ITEM_TYPE_ACCIDENT_UPDATED_RECORD_DISTRIBUTION:
+            remind_from = due - timedelta(
+                days=DPN_DISTRIBUTION_REMINDER_CALENDAR_DAYS
+            )
             if today >= remind_from:
                 result.append(item)
             continue

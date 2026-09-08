@@ -23,11 +23,15 @@ ITEM_TYPE_STATE_SUPERVISION = "state_supervision"
 ITEM_TYPE_ACCIDENT_DPN_RECORD_UPDATE = "accident_dpn_record_update"
 ITEM_TYPE_ACCIDENT_EXTRAORDINARY_EXAM = "accident_extraordinary_exam"
 ITEM_TYPE_ACCIDENT_SIGNED_RECORD = "accident_signed_record"
+ITEM_TYPE_ACCIDENT_UPDATED_RECORD_DISTRIBUTION = (
+    "accident_updated_record_distribution"
+)
 ACCIDENT_ATTENTION_ITEM_TYPES = frozenset(
     {
         ITEM_TYPE_ACCIDENT_DPN_RECORD_UPDATE,
         ITEM_TYPE_ACCIDENT_EXTRAORDINARY_EXAM,
         ITEM_TYPE_ACCIDENT_SIGNED_RECORD,
+        ITEM_TYPE_ACCIDENT_UPDATED_RECORD_DISTRIBUTION,
     }
 )
 # Zpětná kompatibilita staršího interního názvu.
@@ -52,6 +56,9 @@ TYPE_LABELS = {
     ITEM_TYPE_ACCIDENT_DPN_RECORD_UPDATE: "Aktualizace záznamu",
     ITEM_TYPE_ACCIDENT_EXTRAORDINARY_EXAM: "Mimořádná prohlídka",
     ITEM_TYPE_ACCIDENT_SIGNED_RECORD: "Podpisy aktualizovaného záznamu",
+    ITEM_TYPE_ACCIDENT_UPDATED_RECORD_DISTRIBUTION: (
+        "Distribuce aktualizovaného záznamu"
+    ),
 }
 
 SOURCE_LABEL_AUDIT = "Audit systému řízení"

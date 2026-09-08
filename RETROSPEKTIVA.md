@@ -45,6 +45,16 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-08 – PU-UPCOMING-5
+
+**Co se povedlo:** Po evidovaných podpisech vznikají samostatné Kritické připomínky distribuce aktualizovaného záznamu, každá nad existujícím řádkem `aktualizace_*`.
+
+**Co už bychom dnes udělali jinak:** Termín distribuce hned navázat na `signed_record_date`, ne na datum Portálu.
+
+**Co bylo zbytečně složité:** Nic – relevance i splnění zůstaly v Ohlašovací povinnosti.
+
+**Jaké nové pravidlo z toho vzniklo:** Interní +2 kalendářní dny po podpisech je organizační termín Manažera, ne zákonná lhůta.
+
 ### 2026-09-08 – PU-UPCOMING-FIX-3a
 
 **Co se povedlo:** Připomínka podpisů po Aktualizaci záznamu bere datum provedení i z legacy řádku (`datum` bez `predano`) a ukazuje se v Připomínkách od dne odeslání.
