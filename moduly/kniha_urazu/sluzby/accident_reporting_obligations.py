@@ -393,7 +393,10 @@ def dpn_record_update_belongs_in_upcoming(
     *,
     union_organization_active: bool | None = None,
 ) -> bool:
-    """Povinná Aktualizace záznamu s termínem ``dpn_do``, dosud nesplněná podle přehledu."""
+    """Povinná Aktualizace záznamu s termínem ``dpn_do``, dosud neodeslaná na Portál SÚIP.
+
+    Podepsaný aktualizovaný záznam se pro Nadcházející nevyžaduje.
+    """
     if not is_dpn_record_update_relevant(accident):
         return False
     if getattr(accident, "dpn_do", None) is None:
@@ -403,7 +406,7 @@ def dpn_record_update_belongs_in_upcoming(
         saved_data,
         union_organization_active=union_organization_active,
     )
-    return not dpn_record_update_is_done(overview)
+    return not dpn_record_update_is_submitted(overview)
 
 
 def is_post_dpn_obligation_key(obligation_key: str) -> bool:
@@ -482,7 +485,14 @@ def dpn_record_update_has_progress(state: dict[str, Any] | None) -> bool:
     )
 
 
+def dpn_record_update_is_submitted(state: dict[str, Any] | None) -> bool:
+    """Provedení / odeslání aktualizace (Portál SÚIP) – termínovaná povinnost Nadcházejících."""
+    data = normalize_dpn_record_update(state)
+    return bool(data[DPN_RECORD_UPDATE_PORTAL_DONE])
+
+
 def dpn_record_update_is_done(state: dict[str, Any] | None) -> bool:
+    """Kompletní evidence aktualizace včetně podepsaného záznamu (nepoužívat pro Nadcházející)."""
     data = normalize_dpn_record_update(state)
     return bool(
         data[DPN_RECORD_UPDATE_PORTAL_DONE]

@@ -44,6 +44,7 @@ from core.dashboard.state_supervision_attention import (
 )
 from core.shared.task_source_display import task_source_short_labels
 from core.shared.working_days import first_working_day
+from moduly.agenda.constants import PRIORITY_CRITICAL
 from moduly.audity.sluzby.audit_service import audit_service
 from moduly.periodicke_cinnosti.constants import PLACE_KIND_NONE, format_place
 from moduly.periodicke_cinnosti.sluzby.periodic_activity_service import (
@@ -784,7 +785,7 @@ def _from_accident_dpn_record_updates(_today: date) -> list[AttentionItem]:
                 date=due_date,
                 subtitle=SOURCE_LABEL_KNIHA_URAZU,
                 status="",
-                priority="",
+                priority=PRIORITY_CRITICAL,
                 open_metadata={
                     "source_type": ITEM_TYPE_ACCIDENT_DPN_RECORD_UPDATE,
                     "source_id": accident.id,
@@ -832,7 +833,7 @@ def _from_accident_extraordinary_exams(_today: date) -> list[AttentionItem]:
                 date=due_date,
                 subtitle=SOURCE_LABEL_KNIHA_URAZU,
                 status="",
-                priority="",
+                priority=PRIORITY_CRITICAL,
                 open_metadata={
                     "source_type": ITEM_TYPE_ACCIDENT_EXTRAORDINARY_EXAM,
                     "source_id": accident.id,
