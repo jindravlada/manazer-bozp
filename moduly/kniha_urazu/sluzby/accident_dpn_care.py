@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any
+from datetime import date
 
 from core.shared.working_days import add_czech_workdays
 from moduly.kniha_urazu.sluzby.accident_reporting_obligations import (
@@ -242,6 +243,36 @@ def exam_details_relevant(
 
 def return_date_relevant(state: dict[str, Any] | None) -> bool:
     return normalize_dpn_care_return(state)[CARE_RETURN_MODE] != RETURN_MODE_NOT_STARTED
+
+
+def extraordinary_exam_upcoming_deadline(
+    accident: AccidentLike | None,
+    saved_data: dict[str, Any] | None = None,
+) -> date | None:
+    """Termín mimořádné prohlídky pro Nadcházející, nebo None pokud se nemá zobrazit.
+
+    Čte existující ``evaluate_dpn_care_return``: nutnost, ``exam_deadline``
+    a datum provedení. Výpočet lhůty ani pravidla vzniku se nemění.
+    """
+    if accident is None:
+        return None
+    evaluated = evaluate_dpn_care_return(
+        dpn_care_return_from_saved_data(saved_data),
+        dpn_od=getattr(accident, "dpn_od", None),
+        dpn_do=getattr(accident, "dpn_do", None),
+    )
+    if evaluated[CARE_EXAM_REQUIRED] != EXAM_REQUIRED_YES:
+        return None
+    if parse_saved_date(evaluated[CARE_EXAM_DATE]) is not None:
+        return None
+    return parse_saved_date(evaluated[CARE_EXAM_DEADLINE])
+
+
+def extraordinary_exam_belongs_in_upcoming(
+    accident: AccidentLike | None,
+    saved_data: dict[str, Any] | None = None,
+) -> bool:
+    return extraordinary_exam_upcoming_deadline(accident, saved_data) is not None
 
 
 def apply_dpn_care_return_to_saved_data(

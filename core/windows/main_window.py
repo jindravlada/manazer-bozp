@@ -417,6 +417,7 @@ class MainWindow(QMainWindow):
     def _open_attention_item(self, item) -> None:
         from core.dashboard.attention_item import (
             ITEM_TYPE_ACCIDENT_DPN_RECORD_UPDATE,
+            ITEM_TYPE_ACCIDENT_EXTRAORDINARY_EXAM,
             ITEM_TYPE_AUDIT,
             ITEM_TYPE_EXTERNAL_AUDIT,
             ITEM_TYPE_EXTERNAL_AUDIT_NC,
@@ -509,7 +510,10 @@ class MainWindow(QMainWindow):
                 focus_child_id=metadata.get("child_id"),
             )
             return
-        if item_type == ITEM_TYPE_ACCIDENT_DPN_RECORD_UPDATE and entity_id is not None:
+        if item_type in {
+            ITEM_TYPE_ACCIDENT_DPN_RECORD_UPDATE,
+            ITEM_TYPE_ACCIDENT_EXTRAORDINARY_EXAM,
+        } and entity_id is not None:
             metadata = getattr(item, "open_metadata", None) or {}
             self._open_accident_by_id(
                 int(entity_id),

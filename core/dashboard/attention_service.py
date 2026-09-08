@@ -9,6 +9,7 @@ from typing import Any
 
 from core.dashboard.attention_item import (
     ITEM_TYPE_ACCIDENT_DPN_RECORD_UPDATE,
+    ITEM_TYPE_ACCIDENT_EXTRAORDINARY_EXAM,
     ITEM_TYPE_AUDIT,
     ITEM_TYPE_EXTERNAL_AUDIT,
     ITEM_TYPE_EXTERNAL_AUDIT_NC,
@@ -802,6 +803,54 @@ def _from_accident_dpn_record_updates(_today: date) -> list[AttentionItem]:
     return items
 
 
+def _accident_extraordinary_exam_title(accident) -> str:
+    number = (getattr(accident, "number", None) or "").strip() or str(accident.id)
+    return f"Mimořádná pracovnělékařská prohlídka – pracovní úraz č. {number}"
+
+
+def _from_accident_extraordinary_exams(_today: date) -> list[AttentionItem]:
+    """Mimořádná prohlídka po úrazu – čte existující exam_deadline Knihy úrazů."""
+    from moduly.kniha_urazu.sluzby.accident_dpn_care import (
+        extraordinary_exam_upcoming_deadline,
+    )
+    from moduly.kniha_urazu.sluzby.accident_service import accident_service
+
+    items: list[AttentionItem] = []
+    for accident in accident_service.get_all():
+        saved = _load_accident_investigation_saved_data(accident.id)
+        due_date = extraordinary_exam_upcoming_deadline(accident, saved)
+        if due_date is None:
+            continue
+        title = _accident_extraordinary_exam_title(accident)
+        identity = f"accident-extraordinary-exam:{int(accident.id)}"
+        items.append(
+            AttentionItem(
+                item_type=ITEM_TYPE_ACCIDENT_EXTRAORDINARY_EXAM,
+                source_type=ITEM_TYPE_ACCIDENT_EXTRAORDINARY_EXAM,
+                source_id=accident.id,
+                title=title,
+                date=due_date,
+                subtitle=SOURCE_LABEL_KNIHA_URAZU,
+                status="",
+                priority="",
+                open_metadata={
+                    "source_type": ITEM_TYPE_ACCIDENT_EXTRAORDINARY_EXAM,
+                    "source_id": accident.id,
+                    "focus_tab": "Po ukončení DPN",
+                    "identity": identity,
+                },
+                sort_key=build_sort_key(
+                    due_date,
+                    item_type=ITEM_TYPE_ACCIDENT_EXTRAORDINARY_EXAM,
+                    title=title,
+                    source_id=accident.id,
+                ),
+                identity_key=identity,
+            )
+        )
+    return items
+
+
 def _from_state_supervision_upcoming(today: date) -> list[AttentionItem]:
     """Upcoming položky plus prošlé doklady/Findings pro kartu Po termínu."""
     try:
@@ -862,6 +911,7 @@ def get_attention_items(*, today: date | None = None) -> list[AttentionItem]:
         + _from_qualification_certificates(today)
         + _from_state_supervision_upcoming(today)
         + _from_accident_dpn_record_updates(today)
+        + _from_accident_extraordinary_exams(today)
     )
     items.sort(key=lambda item: item.sort_key)
     return items
