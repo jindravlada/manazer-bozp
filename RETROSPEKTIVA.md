@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-09 – BACKUP-UX-1
+
+**Co se povedlo:** Ruční vytvoření zálohy běží v `LongOperationRunner`, GUI zůstane responzivní a uživatel vidí busy dialog bez falešných procent.
+
+**Co už bychom dnes udělali jinak:** Už u BACKUP-2c nespouštět `create_instance_backup` v GUI vlákně s `processEvents()`.
+
+**Co bylo zbytečně složité:** Nic – stačil stávající runner a dialog s `allow_cancel=False`.
+
+**Jaké nové pravidlo z toho vzniklo:** Dlouhé vytvoření zálohy patří do workeru. Modální průběh je jen u ruční zálohy; automatická záloha dialog neotevírá. Bez bezpečného přerušení žádné tlačítko Zrušit.
+
+---
+
 ### 2026-09-09 – EXT-AUDIT-UX-FIX-1
 
 **Co se povedlo:** Připomínky řadí podle skutečného termínu, ne podle typu položky. Tabulka Programu po druhé návštěvě už nemíchá buňky mezi řádky.

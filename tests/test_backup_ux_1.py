@@ -29,6 +29,7 @@ with patch.object(Path, "home", return_value=_TMP):
 
     initialize_database()
 
+    from moduly.sprava_dat.sluzby import instance_backup_create_operation as create_op_mod
     from moduly.sprava_dat.sluzby import instance_backup_workflow_service as wf_mod
     from moduly.sprava_dat.sluzby.data_management_settings_service import (
         BACKUP_TYPE_INSTANCE,
@@ -77,7 +78,7 @@ class BackupUx1TestCase(unittest.TestCase):
         ):
             with patch.object(wf_mod.MessageWithDetailsDialog, "exec", return_value=1):
                 with patch.object(
-                    wf_mod,
+                    create_op_mod,
                     "create_instance_backup",
                     return_value=MagicMock(
                         path=target,

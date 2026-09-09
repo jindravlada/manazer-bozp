@@ -5,7 +5,9 @@ from __future__ import annotations
 import logging
 from datetime import datetime
 from pathlib import Path
+from typing import cast
 
+from PySide6.QtCore import QEventLoop
 from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox, QWidget
 
 from core.backup import (
@@ -18,7 +20,6 @@ from core.backup import (
     RESTORE_ERR_ROLLBACK_FAILED,
     VERDICT_INCOMPLETE,
     CreateInstanceBackupResult,
-    InstanceBackupError,
     InstanceRestoreError,
     auto_before_restore_backup_filename,
     create_instance_backup,
@@ -28,11 +29,19 @@ from core.backup import (
     read_recovery_marker,
     restore_instance_backup,
 )
+from core.backup.package_create import resolve_settings_file
 from core.services.storage_service import storage_service
+from core.widgets.long_operation_dialog import LongOperationDialog
+from core.widgets.long_operation_runner import LongOperationRunner
 from moduly.sprava_dat.sluzby.data_management_settings_service import (
     BACKUP_TYPE_INSTANCE,
     BackupRecord,
     data_management_settings_service,
+)
+from moduly.sprava_dat.sluzby.instance_backup_create_operation import (
+    BACKUP_CREATE_PROGRESS_TITLE,
+    InstanceBackupCreateSnapshot,
+    create_instance_backup_work,
 )
 from moduly.sprava_dat.ui.instance_backup_dialogs import (
     BackupProgressDialog,
@@ -72,6 +81,8 @@ class InstanceBackupWorkflowService:
         self._restore_blocked = False
         self._active_markers: list[Path] = []
         self._operation_running = False
+        self._create_runner: LongOperationRunner | None = None
+        self._create_progress_dialog: LongOperationDialog | None = None
 
     @property
     def restore_blocked(self) -> bool:
@@ -184,47 +195,88 @@ class InstanceBackupWorkflowService:
         if not file_path.lower().endswith(BACKUP_EXTENSION):
             file_path += BACKUP_EXTENSION
 
-        progress = BackupProgressDialog(parent, title="Vytváření zálohy")
-        progress.show()
-        QApplication.processEvents()
+        settings_file = resolve_settings_file()
+        snapshot = InstanceBackupCreateSnapshot(
+            target_path=str(file_path),
+            workspace_root=str(Path(storage_service.base).resolve()),
+            database_path=str(Path(storage_service.database_path).resolve()),
+            settings_path=str(settings_file.resolve()) if settings_file else None,
+        )
+
+        runner = LongOperationRunner(parent)
+        dialog = LongOperationDialog(
+            parent,
+            title=BACKUP_CREATE_PROGRESS_TITLE,
+            runner=runner,
+            delay_ms=0,
+            allow_cancel=False,
+        )
+        self._create_runner = runner
+        self._create_progress_dialog = dialog
+
+        outcome: dict[str, object] = {"result": None, "error": None}
+
+        def on_succeeded(result: object) -> None:
+            outcome["result"] = result
+
+        def on_failed(message: str) -> None:
+            outcome["error"] = message
+
+        loop = QEventLoop(parent)
+        runner.succeeded.connect(on_succeeded)
+        runner.failed.connect(on_failed)
+        runner.finished.connect(loop.quit)
+
+        blocked: list[QWidget] = []
+        for attr in (
+            "create_mbbackup_button",
+            "verify_mbbackup_button",
+            "restore_mbbackup_button",
+        ):
+            widget = getattr(parent, attr, None)
+            if isinstance(widget, QWidget):
+                blocked.append(widget)
+
         self._operation_running = True
         try:
-            def on_progress(message: str) -> None:
-                progress.set_status(message)
-                QApplication.processEvents()
+            if not runner.start(
+                create_instance_backup_work,
+                snapshot,
+                blocked_widgets=blocked or None,
+            ):
+                QMessageBox.warning(parent, "Záloha", "Jiná operace právě probíhá.")
+                return False
+            loop.exec()
+        finally:
+            self._operation_running = False
+            self._create_runner = None
+            self._create_progress_dialog = None
+            dialog.complete()
+            dialog.deleteLater()
 
-            result = create_instance_backup(
-                file_path,
-                progress_callback=on_progress,
-            )
-        except InstanceBackupError as exc:
-            progress.allow_close()
-            progress.close()
+        error = outcome["error"]
+        if error is not None:
             MessageWithDetailsDialog(
                 parent,
                 title="Vytvoření zálohy",
                 message="Zálohu se nepodařilo vytvořit.",
-                details=str(exc),
+                details=str(error),
                 level="critical",
             ).exec()
             return False
-        except Exception as exc:  # noqa: BLE001
-            progress.allow_close()
-            progress.close()
+
+        result = outcome["result"]
+        if result is None or not hasattr(result, "path") or not hasattr(result, "metadata"):
             MessageWithDetailsDialog(
                 parent,
                 title="Vytvoření zálohy",
                 message="Zálohu se nepodařilo vytvořit kvůli neočekávané chybě.",
-                details=str(exc),
+                details="Worker nevrátil výsledek zálohy.",
                 level="critical",
             ).exec()
             return False
-        finally:
-            self._operation_running = False
-            progress.allow_close()
-            progress.close()
 
-        self.persist_last_instance_backup(result)
+        self.persist_last_instance_backup(cast(CreateInstanceBackupResult, result))
 
         meta = result.metadata
         coverage_note = ""

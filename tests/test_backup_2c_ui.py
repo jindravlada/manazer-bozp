@@ -36,6 +36,7 @@ with patch.object(Path, "home", return_value=_HOME):
     importlib.reload(storage_module)
     storage_module.storage_service.ensure_structure()
 
+    from moduly.sprava_dat.sluzby import instance_backup_create_operation as create_op_mod
     from moduly.sprava_dat.sluzby import instance_backup_workflow_service as wf_mod
     from moduly.sprava_dat.sluzby.instance_backup_workflow_service import (
         InstanceBackupWorkflowService,
@@ -115,7 +116,7 @@ class InstanceBackupUiTestCase(unittest.TestCase):
             wf_mod.QFileDialog, "getSaveFileName", return_value=(str(target), "")
         ):
             with patch.object(wf_mod.MessageWithDetailsDialog, "exec", return_value=1):
-                with patch.object(wf_mod, "create_instance_backup") as mock_create:
+                with patch.object(create_op_mod, "create_instance_backup") as mock_create:
                     meta = MagicMock()
                     meta.created_at = "2026-01-01T00:00:00+00:00"
                     meta.app_version = "3.1.1"
