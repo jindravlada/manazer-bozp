@@ -76,7 +76,12 @@ class ExternalAuditVisitDialog(QDialog):
         self.result_visit: VisitDraft | None = None
 
         layout = QVBoxLayout(self)
-        form = QFormLayout()
+        form_host = QWidget()
+        form_host.setSizePolicy(
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum
+        )
+        form = QFormLayout(form_host)
+        form.setContentsMargins(0, 0, 0, 0)
         form.setVerticalSpacing(12)
         form.setHorizontalSpacing(10)
         form.setLabelAlignment(
@@ -85,8 +90,12 @@ class ExternalAuditVisitDialog(QDialog):
         form.setFieldGrowthPolicy(
             QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow
         )
+        form.setFormAlignment(
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
+        )
 
         self.visit_date = NullableDateEdit()
+        self._constrain_single_line(self.visit_date)
         if visit is not None:
             self.visit_date.set_date_value(visit.visit_date)
         else:
@@ -105,10 +114,10 @@ class ExternalAuditVisitDialog(QDialog):
         _apply_stored_time(self.time_from, visit.time_from if visit else None)
         _apply_stored_time(self.time_to, visit.time_to if visit else None)
         self.time_from.setSizePolicy(
-            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
         )
         self.time_to.setSizePolicy(
-            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
         )
         separator = QLabel("–")
         separator.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -122,9 +131,12 @@ class ExternalAuditVisitDialog(QDialog):
             34,
         )
         time_wrap.setMinimumHeight(min_h + 8)
+        time_wrap.setMaximumHeight(min_h + 8)
+        self._constrain_single_line(time_wrap)
         form.addRow("Čas od / do:", time_wrap)
 
         self.workplace = QComboBox()
+        self._constrain_single_line(self.workplace)
         self.workplace.addItem("— vyberte provoz —", None)
         selected_wp = visit.workplace_id if visit else None
         for workplace in list_auditable_workplaces():
@@ -141,7 +153,7 @@ class ExternalAuditVisitDialog(QDialog):
             self.workplace.setCurrentIndex(max(index, 0))
         form.addRow("Provoz *:", self.workplace)
 
-        layout.addLayout(form)
+        layout.addWidget(form_host, 0)
 
         self.auditor_list = self._role_list(
             EXTERNAL_AUDIT_PARTICIPANT_ROLE_EXTERNAL_AUDITOR,
@@ -163,7 +175,7 @@ class ExternalAuditVisitDialog(QDialog):
                 + ":"
             )
         )
-        layout.addWidget(self.auditor_list)
+        layout.addWidget(self.auditor_list, 1)
         layout.addWidget(
             QLabel(
                 EXTERNAL_AUDIT_PARTICIPANT_ROLE_LABELS[
@@ -172,7 +184,7 @@ class ExternalAuditVisitDialog(QDialog):
                 + ":"
             )
         )
-        layout.addWidget(self.rep_list)
+        layout.addWidget(self.rep_list, 1)
         layout.addWidget(
             QLabel(
                 EXTERNAL_AUDIT_PARTICIPANT_ROLE_LABELS[
@@ -181,15 +193,18 @@ class ExternalAuditVisitDialog(QDialog):
                 + ":"
             )
         )
-        layout.addWidget(self.invited_list)
+        layout.addWidget(self.invited_list, 1)
 
         self.note = QTextEdit()
         self.note.setAcceptRichText(False)
-        self.note.setMaximumHeight(80)
+        self.note.setMinimumHeight(80)
+        self.note.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
         if visit and visit.note:
             self.note.setPlainText(visit.note)
         layout.addWidget(QLabel("Poznámka:"))
-        layout.addWidget(self.note)
+        layout.addWidget(self.note, 1)
 
         buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
@@ -201,11 +216,20 @@ class ExternalAuditVisitDialog(QDialog):
             button.setDefault(False)
         layout.addWidget(buttons)
 
+    @staticmethod
+    def _constrain_single_line(widget: QWidget) -> None:
+        """Datum / čas / provoz zůstávají jednořádkové i v maximalizovaném dialogu."""
+        widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+
     def _role_list(
         self, role: str, visit: VisitDraft | None
     ) -> QListWidget:
         widget = QListWidget()
         widget.setSelectionMode(QListWidget.SelectionMode.NoSelection)
+        widget.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
+        widget.setMinimumHeight(90)
         selected = set(visit.participant_keys if visit else [])
         for participant in self._participants:
             if participant.role != role:
@@ -294,7 +318,7 @@ class ExternalAuditVisitDialog(QDialog):
             time_to=time_to,
             note=self.note.toPlainText().strip() or None,
             display_order=base.display_order if base else 0,
-            participant_keys=keys,
+            participant_keys=list(keys),
             db_id=base.db_id if base else None,
         )
         self.accept()

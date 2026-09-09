@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-09 – EXT-AUDIT-UX-FIX-1
+
+**Co se povedlo:** Připomínky řadí podle skutečného termínu, ne podle typu položky. Tabulka Programu po druhé návštěvě už nemíchá buňky mezi řádky.
+
+**Co už bychom dnes udělali jinak:** Tabulku s `enable_typed_sorting` hned plnit v `sorting_paused`. Dialog s dlouhými seznamy osob otevírat maximalizovaný.
+
+**Co bylo zbytečně složité:** Nic.
+
+**Jaké nové pravidlo z toho vzniklo:** Řádek Programu sestavit jen z jedné návštěvy. Datum/čas v maximalizovaném formuláři nesmí tahat výšku — volný prostor patří seznamům a poznámce.
+
+---
+
 ### 2026-09-08 – RPP-CHANGE-FIX-1
 
 **Co se povedlo:** Nedokončená kontrola už nepotvrdí referenční checksum používané verze. Další kompletní kontrola znovu vykáže nepřevzaté změny z přerušeného běhu.

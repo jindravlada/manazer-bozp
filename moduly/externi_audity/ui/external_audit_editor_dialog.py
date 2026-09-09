@@ -28,6 +28,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.services.ares_service import ares_service
+from core.widgets.dialog_utils import exec_maximized
 from core.widgets.editor_dialog_controller import (
     EDITOR_CLOSE_LABEL,
     EDITOR_SAVE_LABEL,
@@ -460,49 +461,58 @@ class ExternalAuditEditorDialog(QDialog):
 
     def _refresh_visits_table(self) -> None:
         from core.widgets.table_utils import apply_cell_tooltip
-        from core.widgets.typed_table_sort import create_typed_item, typed_date, typed_text
+        from core.widgets.typed_table_sort import (
+            create_typed_item,
+            sorting_paused,
+            typed_date,
+            typed_text,
+        )
 
         visits = list(self._draft.visits)
-        self.visits_table.setRowCount(len(visits))
-        for row, visit in enumerate(visits):
-            values = [
-                (format_display_date(visit.visit_date), typed_date(visit.visit_date)),
-                (visit.time_from or "", typed_text(visit.time_from or "")),
-                (visit.time_to or "", typed_text(visit.time_to or "")),
-                (
-                    visit.workplace_name_snapshot,
-                    typed_text(visit.workplace_name_snapshot),
-                ),
-                (
-                    self._participant_names_for_visit(
-                        visit, EXTERNAL_AUDIT_PARTICIPANT_ROLE_EXTERNAL_AUDITOR
+        with sorting_paused(self.visits_table):
+            self.visits_table.setRowCount(0)
+            self.visits_table.setRowCount(len(visits))
+            for row, visit in enumerate(visits):
+                values = [
+                    (format_display_date(visit.visit_date), typed_date(visit.visit_date)),
+                    (visit.time_from or "", typed_text(visit.time_from or "")),
+                    (visit.time_to or "", typed_text(visit.time_to or "")),
+                    (
+                        visit.workplace_name_snapshot,
+                        typed_text(visit.workplace_name_snapshot),
                     ),
-                    None,
-                ),
-                (
-                    self._participant_names_for_visit(
-                        visit, EXTERNAL_AUDIT_PARTICIPANT_ROLE_COMPANY_REPRESENTATIVE
+                    (
+                        self._participant_names_for_visit(
+                            visit, EXTERNAL_AUDIT_PARTICIPANT_ROLE_EXTERNAL_AUDITOR
+                        ),
+                        None,
                     ),
-                    None,
-                ),
-                (
-                    self._participant_names_for_visit(
-                        visit, EXTERNAL_AUDIT_PARTICIPANT_ROLE_INVITED_PERSON
+                    (
+                        self._participant_names_for_visit(
+                            visit,
+                            EXTERNAL_AUDIT_PARTICIPANT_ROLE_COMPANY_REPRESENTATIVE,
+                        ),
+                        None,
                     ),
-                    None,
-                ),
-                (visit.note or "", typed_text(visit.note or "")),
-            ]
-            for col, (text, sort_value) in enumerate(values):
-                if sort_value is None:
-                    item = create_typed_item(text, typed_text(text))
-                else:
-                    item = create_typed_item(text, sort_value)
-                if col == 0:
+                    (
+                        self._participant_names_for_visit(
+                            visit, EXTERNAL_AUDIT_PARTICIPANT_ROLE_INVITED_PERSON
+                        ),
+                        None,
+                    ),
+                    (visit.note or "", typed_text(visit.note or "")),
+                ]
+                for col, (text, sort_value) in enumerate(values):
+                    if sort_value is None:
+                        item = create_typed_item(
+                            text, typed_text(text), stable_id=row
+                        )
+                    else:
+                        item = create_typed_item(text, sort_value, stable_id=row)
                     item.setData(Qt.ItemDataRole.UserRole, visit.client_key)
-                if col >= 3:
-                    apply_cell_tooltip(item, text)
-                self.visits_table.setItem(row, col, item)
+                    if col >= 3:
+                        apply_cell_tooltip(item, text)
+                    self.visits_table.setItem(row, col, item)
         self._refresh_visit_actions()
         self._refresh_dates()
 
@@ -538,10 +548,11 @@ class ExternalAuditEditorDialog(QDialog):
         dialog = ExternalAuditVisitDialog(
             self, participants=self._draft.participants
         )
-        if dialog.exec() != QDialog.DialogCode.Accepted or dialog.result_visit is None:
+        if exec_maximized(dialog) != QDialog.DialogCode.Accepted or dialog.result_visit is None:
             return
         visit = dialog.result_visit
         visit.display_order = (len(self._draft.visits) + 1) * 10
+        visit.participant_keys = list(visit.participant_keys)
         self._draft.visits.append(visit)
         self._refresh_visits_table()
 
@@ -557,10 +568,12 @@ class ExternalAuditEditorDialog(QDialog):
         dialog = ExternalAuditVisitDialog(
             self, visit=visit, participants=self._draft.participants
         )
-        if dialog.exec() != QDialog.DialogCode.Accepted or dialog.result_visit is None:
+        if exec_maximized(dialog) != QDialog.DialogCode.Accepted or dialog.result_visit is None:
             return
         index = self._draft.visits.index(visit)
-        self._draft.visits[index] = dialog.result_visit
+        result = dialog.result_visit
+        result.participant_keys = list(result.participant_keys)
+        self._draft.visits[index] = result
         self._refresh_visits_table()
 
     def _remove_visit(self) -> None:

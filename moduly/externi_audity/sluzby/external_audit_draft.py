@@ -37,6 +37,10 @@ class VisitDraft:
     participant_keys: list[str] = field(default_factory=list)
     db_id: int | None = None
 
+    def __post_init__(self) -> None:
+        # Vlastní kopie — sdílený seznam by při další návštěvě přepsal jména v tabulce.
+        self.participant_keys = list(self.participant_keys)
+
 
 @dataclass
 class FindingDraft:

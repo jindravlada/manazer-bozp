@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime, time
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QWheelEvent
@@ -15,8 +15,10 @@ from core.dashboard.attention_item import (
     ITEM_TYPE_OZO_PERSON_CERTIFICATE,
     ITEM_TYPE_QUALIFICATION_CERTIFICATE,
     ITEM_TYPE_STATE_SUPERVISION,
+    ITEM_TYPE_TASK,
     ITEM_TYPE_YEARLY_PLAN_MONTH,
     AttentionItem,
+    default_due_priority_sort_key,
     meeting_dashboard_source_label,
 )
 from core.dashboard.attention_service import (
@@ -225,6 +227,69 @@ def classify_reminder_attention_items(items: list[AttentionItem], today: date):
     burning.sort(key=lambda item: (item.due_date or date.max, item.source_id))
     due_today.sort(key=lambda item: (item.due_date or date.max, item.source_id))
     return burning, due_today
+
+
+def reminder_due_datetime(
+    *,
+    due_date: date | None = None,
+    due_datetime: datetime | None = None,
+) -> datetime:
+    """Skutečný termín pro řazení Připomínek — nikoli formátovaný text DD.MM.RRRR."""
+    if due_datetime is not None:
+        return due_datetime
+    if due_date is None:
+        return datetime.max
+    return datetime.combine(due_date, time.min)
+
+
+def reminder_display_sort_key(
+    *,
+    due_date: date | None = None,
+    due_datetime: datetime | None = None,
+    priority: str | None = None,
+    item_type: str = "",
+    title: str = "",
+    source_id: int = 0,
+    sort_key: tuple = (),
+) -> tuple:
+    """Výchozí řazení Připomínek: termín vzestupně, při stejném dni priorita."""
+    if sort_key:
+        return default_due_priority_sort_key(priority=priority, sort_key=sort_key)
+    dt_key = reminder_due_datetime(due_date=due_date, due_datetime=due_datetime)
+    return default_due_priority_sort_key(
+        priority=priority,
+        sort_key=(
+            dt_key,
+            (item_type or "").casefold(),
+            (title or "").casefold(),
+            int(source_id),
+        ),
+    )
+
+
+def attention_reminder_sort_key(item: AttentionItem) -> tuple:
+    return reminder_display_sort_key(
+        due_date=item.due_date,
+        due_datetime=item.event_at,
+        priority=item.priority,
+        item_type=item.item_type,
+        title=item.title,
+        source_id=item.source_id,
+        sort_key=item.sort_key,
+    )
+
+
+def task_reminder_sort_key(task) -> tuple:
+    decisive = task_urgency_due_date(task)
+    if decisive is None and getattr(task, "remind_from", None) is not None:
+        decisive = task.remind_from
+    return reminder_display_sort_key(
+        due_date=decisive,
+        priority=getattr(task, "priority", None) or "",
+        item_type=ITEM_TYPE_TASK,
+        title=getattr(task, "title", None) or "",
+        source_id=int(getattr(task, "id", 0) or 0),
+    )
 
 
 def overdue_yearly_plan_month_items(
@@ -480,29 +545,59 @@ class TodayWidget(DashboardPanel):
             + list(ku_due)
         )
 
-        ordered: list[str] = []
-        ordered.extend(self._attention_line(item, "🔴") for item in month_burning)
-        for item in overdue_contracts:
-            ordered.append(self._attention_line(item, "🔴"))
-        for item in overdue_certs:
-            ordered.append(self._attention_line(item, "🔴"))
-        ordered.extend(self._attention_line(item, "🔴") for item in periodic_burning)
-        ordered.extend(self._attention_line(item, "🔴") for item in meeting_burning_items)
-        ordered.extend(self._attention_line(item, "🔴") for item in ea_audit_burning)
-        ordered.extend(self._attention_line(item, "🔴") for item in ea_finding_burning)
-        ordered.extend(self._attention_line(item, "🔴") for item in ss_burning)
-        ordered.extend(self._attention_line(item, "🔴") for item in ku_burning)
-        ordered.extend(self._task_line(task, "🔴") for task in burning)
-        ordered.extend(self._attention_line(item, "🔵") for item in month_due)
-        ordered.extend(self._attention_line(item, "🔵") for item in periodic_due)
-        ordered.extend(self._attention_line(item, "🔵") for item in meeting_due_items)
-        ordered.extend(self._attention_line(item, "🔵") for item in ea_audit_due)
-        ordered.extend(self._attention_line(item, "🔵") for item in ea_finding_due)
-        ordered.extend(self._attention_line(item, "🔵") for item in ss_due)
-        ordered.extend(self._attention_line(item, "🔵") for item in ku_due)
-        ordered.extend(self._task_line(task, "🔵") for task in due_today)
-        ordered.extend(self._task_line(task, "🟡") for task in waiting)
+        entries: list[tuple[tuple, str]] = []
 
+        def _add_attention(item: AttentionItem, prefix: str) -> None:
+            entries.append(
+                (attention_reminder_sort_key(item), self._attention_line(item, prefix))
+            )
+
+        def _add_task(task, prefix: str) -> None:
+            entries.append(
+                (task_reminder_sort_key(task), self._task_line(task, prefix))
+            )
+
+        for item in month_burning:
+            _add_attention(item, "🔴")
+        for item in overdue_contracts:
+            _add_attention(item, "🔴")
+        for item in overdue_certs:
+            _add_attention(item, "🔴")
+        for item in periodic_burning:
+            _add_attention(item, "🔴")
+        for item in meeting_burning_items:
+            _add_attention(item, "🔴")
+        for item in ea_audit_burning:
+            _add_attention(item, "🔴")
+        for item in ea_finding_burning:
+            _add_attention(item, "🔴")
+        for item in ss_burning:
+            _add_attention(item, "🔴")
+        for item in ku_burning:
+            _add_attention(item, "🔴")
+        for task in burning:
+            _add_task(task, "🔴")
+        for item in month_due:
+            _add_attention(item, "🔵")
+        for item in periodic_due:
+            _add_attention(item, "🔵")
+        for item in meeting_due_items:
+            _add_attention(item, "🔵")
+        for item in ea_audit_due:
+            _add_attention(item, "🔵")
+        for item in ea_finding_due:
+            _add_attention(item, "🔵")
+        for item in ss_due:
+            _add_attention(item, "🔵")
+        for item in ku_due:
+            _add_attention(item, "🔵")
+        for task in due_today:
+            _add_task(task, "🔵")
+        for task in waiting:
+            _add_task(task, "🟡")
+
+        entries.sort(key=lambda pair: pair[0])
+        ordered = [html for _, html in entries]
         if not ordered:
             ordered.append("Nic k připomenutí.")
 
