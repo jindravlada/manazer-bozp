@@ -23,6 +23,18 @@ from core.services.attachment_service import attachment_service
 from core.shared.constants import ENTITY_MU_INVESTIGATION
 from core.widgets.thp_worker_selector import ThpWorkerSelector
 from core.widgets.workplace_selector import WorkplaceSelector
+from moduly.vysetrovani_mu.constants import (
+    OHLEDANI_MISTA_PRINT_BUTTON,
+    OHLEDANI_MISTA_PRINT_DIALOG_TITLE,
+    OHLEDANI_MISTA_PRINT_FAILED,
+    OHLEDANI_MISTA_PRINT_NOT_FOUND,
+    OHLEDANI_MISTA_PRINT_REQUIRES_SAVED,
+    OHLEDANI_MISTA_PRINT_SAVE_FIRST_TOOLTIP,
+    OHLEDANI_MISTA_PRINT_TOOLTIP,
+)
+from moduly.vysetrovani_mu.sluzby.mu_ohledani_mista_template_service import (
+    mu_ohledani_mista_template_service,
+)
 
 
 class MuOhledaniMistaWidget(QWidget):
@@ -48,6 +60,7 @@ class MuOhledaniMistaWidget(QWidget):
         number = event_number.strip() or accident_number.strip() or investigation_number.strip()
         self.accident_number_label.setText(number)
         self._number_slug = str(number).replace("/", "-").replace("\\", "-").strip() or "bez-cisla"
+        self._refresh_print_button()
 
     def load_json(self, raw_json: str) -> None:
         try:
@@ -106,6 +119,21 @@ class MuOhledaniMistaWidget(QWidget):
     def _build_ui(self) -> None:
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
+
+        actions = QHBoxLayout()
+        actions.setContentsMargins(10, 10, 10, 0)
+        info = QLabel(
+            "Prázdný pracovní formulář pro fyzické ohledání místa. "
+            "Předvyplní se jen identifikace události."
+        )
+        info.setWordWrap(True)
+        self.print_template_btn = QPushButton(OHLEDANI_MISTA_PRINT_BUTTON)
+        self.print_template_btn.setToolTip(OHLEDANI_MISTA_PRINT_SAVE_FIRST_TOOLTIP)
+        self.print_template_btn.setEnabled(False)
+        self.print_template_btn.clicked.connect(self._print_template)
+        actions.addWidget(info, 1)
+        actions.addWidget(self.print_template_btn, 0)
+        outer.addLayout(actions)
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -204,3 +232,36 @@ class MuOhledaniMistaWidget(QWidget):
             return
 
         open_export_file(path, parent=self, title="Příloha")
+
+    def _refresh_print_button(self) -> None:
+        if self._investigation_id is None:
+            self.print_template_btn.setEnabled(False)
+            self.print_template_btn.setToolTip(OHLEDANI_MISTA_PRINT_SAVE_FIRST_TOOLTIP)
+            return
+        self.print_template_btn.setEnabled(True)
+        self.print_template_btn.setToolTip(OHLEDANI_MISTA_PRINT_TOOLTIP)
+
+    def _print_template(self) -> None:
+        if self._investigation_id is None:
+            QMessageBox.information(
+                self,
+                OHLEDANI_MISTA_PRINT_DIALOG_TITLE,
+                OHLEDANI_MISTA_PRINT_REQUIRES_SAVED,
+            )
+            return
+        try:
+            mu_ohledani_mista_template_service.open_for_investigation_id(
+                self._investigation_id
+            )
+        except ValueError:
+            QMessageBox.warning(
+                self,
+                OHLEDANI_MISTA_PRINT_DIALOG_TITLE,
+                OHLEDANI_MISTA_PRINT_NOT_FOUND,
+            )
+        except Exception as exc:
+            QMessageBox.warning(
+                self,
+                OHLEDANI_MISTA_PRINT_DIALOG_TITLE,
+                f"{OHLEDANI_MISTA_PRINT_FAILED}\n\n{exc}",
+            )

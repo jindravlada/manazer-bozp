@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-10 – MU-SCENE-TEMPLATE-1
+
+**Co se povedlo:** Prázdná šablona Ohledání místa jde tisknout ze záložky stejným ODT enginem jako terénní checklisty. Hlavička bere známou identifikaci MU, pracovní část zůstává k ručnímu zápisu a evidence se nemění.
+
+**Co už bychom dnes udělali jinak:** U pracovních formulářů hned oddělit tisk do exportu od ukládání kopie jako přílohy (jako u svědků).
+
+**Co bylo zbytečně složité:** Nic. Stačil stávající `OdtExportEngine` a samostatná šablona modulu.
+
+**Jaké nové pravidlo z toho vzniklo:** Papírová šablona pro terén odpovídá polím elektronické záložky. Souborové přílohy se na papír nepřevádějí; místo nich je prostor pro poznámku.
+
+---
+
 ### 2026-09-09 – BACKUP-UX-1
 
 **Co se povedlo:** Ruční vytvoření zálohy běží v `LongOperationRunner`, GUI zůstane responzivní a uživatel vidí busy dialog bez falešných procent.
