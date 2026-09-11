@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-11 – AUDIT-EXPORT-FIX-1
+
+**Co se povedlo:** Zápatí exportu Plánu interních auditů už nepoužívá text závěrečné zprávy. Název plánu se bere z `${program_nazev}`.
+
+**Co už bychom dnes udělali jinak:** Při kopírování ODT šablony hned zkontrolovat `styles.xml` (záhlaví/zápatí), ne jen `content.xml`.
+
+**Co bylo zbytečně složité:** Nic – stačila úprava jedné věty v šabloně.
+
+**Jaké nové pravidlo z toho vzniklo:** Zápatí ODT musí odpovídat dokumentu. Společný placeholder nestačí, pokud kolem něj zůstane cizí nadpis.
+
+---
+
 ### 2026-09-11 – BACKUP-UX-2
 
 **Co se povedlo:** Obnova ze zálohy používá stejný `LongOperationRunner` / `LongOperationDialog` jako ruční záloha. Bezpečnostní záloha i výměna dat běží ve workeru; GUI zůstane responzivní a zmizí hláška „aplikace neodpovídá“.
