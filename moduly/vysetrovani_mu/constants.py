@@ -195,15 +195,3 @@ def ishikawa_question_for_category(category: str) -> str:
     return ishikawa_factors_service.get_question(category)
 
 YEAR_FILTER_VSE = "Vše"
-
-OHLEDANI_MISTA_PRINT_BUTTON = "Vytisknout šablonu"
-OHLEDANI_MISTA_PRINT_DIALOG_TITLE = "Šablona ohledání místa"
-OHLEDANI_MISTA_PRINT_TOOLTIP = (
-    "Vytiskne prázdný pracovní formulář pro fyzické ohledání místa události."
-)
-OHLEDANI_MISTA_PRINT_SAVE_FIRST_TOOLTIP = "Nejdříve uložte vyšetřování."
-OHLEDANI_MISTA_PRINT_REQUIRES_SAVED = (
-    "Šablonu lze vytisknout až po uložení vyšetřování."
-)
-OHLEDANI_MISTA_PRINT_FAILED = "Šablonu ohledání místa se nepodařilo vytvořit."
-OHLEDANI_MISTA_PRINT_NOT_FOUND = "Vyšetřování nebylo nalezeno."

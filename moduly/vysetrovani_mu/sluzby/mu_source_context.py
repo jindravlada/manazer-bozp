@@ -16,7 +16,6 @@ class MuSourceContext:
     source_record_html: str = ""
     event_datum: date | None = None
     event_cas: str = ""
-    event_misto: str = ""
     default_oznameni_kdo: str = ""
     default_oznameni_komu: str = ""
     default_oznameni_datum: date | None = None
@@ -59,7 +58,6 @@ def resolve_mu_source_context(
         return MuSourceContext(
             event_number=investigation_number.strip(),
             source_record_html=(source_label or "").strip(),
-            event_misto=(source_label or "").strip(),
         )
     return MuSourceContext(event_number=investigation_number.strip())
 
@@ -77,7 +75,6 @@ def _context_from_accident(source_id: int | None) -> MuSourceContext:
     datum_urazu = accident.accident_date.strftime("%d.%m.%Y") if accident.accident_date else ""
     event_cas = _normalize_time_text(accident.accident_time)
     workplace = (accident.workplace_name or accident.pracoviste or "").strip()
-    event_misto = (accident.misto_urazu or "").strip() or workplace
     affected_person_html = (
         f"<b>Dotčená osoba:</b> {accident.employee_name or ''}<br>"
         f"<b>Pracovní pozice:</b> {accident.druh_vykonavane_prace or ''}<br>"
@@ -96,7 +93,6 @@ def _context_from_accident(source_id: int | None) -> MuSourceContext:
         source_record_html=source_record_html,
         event_datum=accident.accident_date,
         event_cas=event_cas,
-        event_misto=event_misto,
         default_oznameni_kdo=(accident.employee_name or "").strip(),
         default_oznameni_komu=(accident.zapsal_jmeno or "").strip(),
         default_oznameni_datum=accident.accident_date,
@@ -127,8 +123,6 @@ def _context_from_audit(source_id: int | None) -> MuSourceContext:
     return MuSourceContext(
         event_number=audit.number or "",
         source_record_html=source_record_html,
-        event_datum=audit.audit_date,
-        event_misto=(audit.workplace_name or "").strip(),
         default_oznameni_popis=(audit.title or "").strip(),
     )
 
@@ -157,7 +151,5 @@ def _context_from_control(source_id: int | None) -> MuSourceContext:
     return MuSourceContext(
         event_number=str(control.id),
         source_record_html=source_record_html,
-        event_datum=control.inspection_date,
-        event_misto=(control.workplace_name or "").strip(),
         default_oznameni_popis=(control.note or "").strip(),
     )

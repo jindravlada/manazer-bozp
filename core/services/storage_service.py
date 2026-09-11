@@ -123,7 +123,6 @@ class StorageService:
             root / "moduly" / "proverky" / "templates",
             root / "moduly" / "audity" / "templates",
             root / "moduly" / "rizeni_rizik" / "templates",
-            root / "moduly" / "vysetrovani_mu" / "templates",
         ]
 
     def ensure_default_templates(self) -> None:
