@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-11 – BACKUP-UX-2
+
+**Co se povedlo:** Obnova ze zálohy používá stejný `LongOperationRunner` / `LongOperationDialog` jako ruční záloha. Bezpečnostní záloha i výměna dat běží ve workeru; GUI zůstane responzivní a zmizí hláška „aplikace neodpovídá“.
+
+**Co už bychom dnes udělali jinak:** Už u BACKUP-2c nespouštět `restore_instance_backup` v GUI vlákně s `processEvents()`.
+
+**Co bylo zbytečně složité:** Nic – stačilo rozdělit GUI dispose engine a dvě worker fáze, aby bezpečnostní záloha doběhla dřív, než se uzavře DB.
+
+**Jaké nové pravidlo z toho vzniklo:** Dlouhá obnova patří do workeru. `dispose_database_engine()` zůstává v GUI vlákně. Bezpečnostní záloha před obnovou nesmí otevřít druhý busy dialog; při její chybě se obnova nespustí, dokud uživatel vědomě nepokračuje.
+
+---
+
 ### 2026-09-09 – BACKUP-UX-1
 
 **Co se povedlo:** Ruční vytvoření zálohy běží v `LongOperationRunner`, GUI zůstane responzivní a uživatel vidí busy dialog bez falešných procent.

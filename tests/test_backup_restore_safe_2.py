@@ -24,6 +24,7 @@ with patch.object(Path, "home", return_value=_HOME):
     importlib.reload(storage_module)
     storage_module.storage_service.ensure_structure()
 
+    from moduly.sprava_dat.sluzby import instance_backup_restore_operation as restore_op_mod
     from moduly.sprava_dat.sluzby import instance_backup_workflow_service as wf_mod
     from moduly.sprava_dat.sluzby.instance_backup_workflow_service import (
         InstanceBackupWorkflowService,
@@ -91,10 +92,10 @@ class BackupRestoreSafe2TestCase(unittest.TestCase):
                     "exec",
                     return_value=QDialog.DialogCode.Accepted,
                 ):
-                    with patch.object(wf_mod, "create_instance_backup", return_value=safety):
+                    with patch.object(restore_op_mod, "create_instance_backup", return_value=safety):
                         with patch("core.database.session.dispose_database_engine"):
                             with patch.object(
-                                wf_mod, "restore_instance_backup", return_value=restore_result
+                                restore_op_mod, "restore_instance_backup", return_value=restore_result
                             ):
                                 with patch.object(
                                     wf_mod.ContinueWithoutSafetyBackupDialog, "exec"
@@ -121,7 +122,7 @@ class BackupRestoreSafe2TestCase(unittest.TestCase):
                     return_value=QDialog.DialogCode.Accepted,
                 ):
                     with patch.object(
-                        wf_mod,
+                        restore_op_mod,
                         "create_instance_backup",
                         side_effect=InstanceBackupError("disk full"),
                     ):
@@ -130,7 +131,7 @@ class BackupRestoreSafe2TestCase(unittest.TestCase):
                             "exec",
                             return_value=QDialog.DialogCode.Rejected,
                         ) as crisis_exec:
-                            with patch.object(wf_mod, "restore_instance_backup") as mock_restore:
+                            with patch.object(restore_op_mod, "restore_instance_backup") as mock_restore:
                                 ok = self.service.restore_instance_backup_ui(self.parent)
         self.assertFalse(ok)
         crisis_exec.assert_called_once()
@@ -147,7 +148,7 @@ class BackupRestoreSafe2TestCase(unittest.TestCase):
                     return_value=QDialog.DialogCode.Accepted,
                 ):
                     with patch.object(
-                        wf_mod,
+                        restore_op_mod,
                         "create_instance_backup",
                         side_effect=InstanceBackupError("selhání"),
                     ):
@@ -156,7 +157,7 @@ class BackupRestoreSafe2TestCase(unittest.TestCase):
                             "exec",
                             return_value=QDialog.DialogCode.Rejected,
                         ):
-                            with patch.object(wf_mod, "restore_instance_backup") as mock_restore:
+                            with patch.object(restore_op_mod, "restore_instance_backup") as mock_restore:
                                 ok = self.service.restore_instance_backup_ui(self.parent)
         self.assertFalse(ok)
         mock_restore.assert_not_called()
@@ -178,7 +179,7 @@ class BackupRestoreSafe2TestCase(unittest.TestCase):
                     return_value=QDialog.DialogCode.Accepted,
                 ):
                     with patch.object(
-                        wf_mod,
+                        restore_op_mod,
                         "create_instance_backup",
                         side_effect=InstanceBackupError("disk full"),
                     ):
@@ -189,7 +190,7 @@ class BackupRestoreSafe2TestCase(unittest.TestCase):
                         ):
                             with patch("core.database.session.dispose_database_engine"):
                                 with patch.object(
-                                    wf_mod,
+                                    restore_op_mod,
                                     "restore_instance_backup",
                                     return_value=restore_result,
                                 ) as mock_restore:

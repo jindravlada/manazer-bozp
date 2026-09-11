@@ -27,7 +27,6 @@ from core.backup import (
     find_recovery_markers,
     inspect_backup_integrity,
     read_recovery_marker,
-    restore_instance_backup,
 )
 from core.backup.package_create import resolve_settings_file
 from core.services.storage_service import storage_service
@@ -43,8 +42,14 @@ from moduly.sprava_dat.sluzby.instance_backup_create_operation import (
     InstanceBackupCreateSnapshot,
     create_instance_backup_work,
 )
+from moduly.sprava_dat.sluzby.instance_backup_restore_operation import (
+    BACKUP_RESTORE_PROGRESS_TITLE,
+    InstanceBackupRestoreOutcome,
+    InstanceBackupRestoreSnapshot,
+    create_safety_backup_work,
+    restore_instance_backup_work,
+)
 from moduly.sprava_dat.ui.instance_backup_dialogs import (
-    BackupProgressDialog,
     ContinueWithoutSafetyBackupDialog,
     MessageWithDetailsDialog,
     RestoreConfirmDialog,
@@ -83,6 +88,8 @@ class InstanceBackupWorkflowService:
         self._operation_running = False
         self._create_runner: LongOperationRunner | None = None
         self._create_progress_dialog: LongOperationDialog | None = None
+        self._restore_runner: LongOperationRunner | None = None
+        self._restore_progress_dialog: LongOperationDialog | None = None
 
     @property
     def restore_blocked(self) -> bool:
@@ -227,15 +234,7 @@ class InstanceBackupWorkflowService:
         runner.failed.connect(on_failed)
         runner.finished.connect(loop.quit)
 
-        blocked: list[QWidget] = []
-        for attr in (
-            "create_mbbackup_button",
-            "verify_mbbackup_button",
-            "restore_mbbackup_button",
-        ):
-            widget = getattr(parent, attr, None)
-            if isinstance(widget, QWidget):
-                blocked.append(widget)
+        blocked = self._backup_action_widgets(parent)
 
         self._operation_running = True
         try:
@@ -392,6 +391,55 @@ class InstanceBackupWorkflowService:
         ).exec()
         return report.ok
 
+    def _backup_action_widgets(self, parent: QWidget) -> list[QWidget]:
+        blocked: list[QWidget] = []
+        for attr in (
+            "create_mbbackup_button",
+            "verify_mbbackup_button",
+            "restore_mbbackup_button",
+        ):
+            widget = getattr(parent, attr, None)
+            if isinstance(widget, QWidget):
+                blocked.append(widget)
+        return blocked
+
+    def _run_restore_worker(
+        self,
+        parent: QWidget,
+        runner: LongOperationRunner,
+        work,
+        snapshot: InstanceBackupRestoreSnapshot,
+        blocked: list[QWidget],
+    ) -> dict[str, object]:
+        outcome: dict[str, object] = {"result": None, "error": None}
+
+        def on_succeeded(result: object) -> None:
+            outcome["result"] = result
+
+        def on_failed(message: str) -> None:
+            outcome["error"] = message
+
+        loop = QEventLoop(parent)
+        runner.succeeded.connect(on_succeeded)
+        runner.failed.connect(on_failed)
+        runner.finished.connect(loop.quit)
+        try:
+            if not runner.start(work, snapshot, blocked_widgets=blocked or None):
+                outcome["error"] = "Jiná operace právě probíhá."
+                return outcome
+            loop.exec()
+        finally:
+            runner.succeeded.disconnect(on_succeeded)
+            runner.failed.disconnect(on_failed)
+            runner.finished.disconnect(loop.quit)
+        return outcome
+
+    def _finish_restore_progress(self, dialog: LongOperationDialog | None) -> None:
+        if dialog is None:
+            return
+        dialog.complete()
+        dialog.deleteLater()
+
     def restore_instance_backup_ui(self, parent: QWidget) -> bool:
         if self._operation_running:
             QMessageBox.warning(parent, "Obnova", "Jiná operace právě probíhá.")
@@ -464,80 +512,131 @@ class InstanceBackupWorkflowService:
         if confirm.exec() != RestoreConfirmDialog.DialogCode.Accepted:
             return False
 
-        progress = BackupProgressDialog(parent, title="Probíhá obnova")
-        progress.set_status("Vytvářím automatickou bezpečnostní zálohu…")
-        progress.show()
-        QApplication.processEvents()
-        self._operation_running = True
-
+        storage_service.ensure_structure()
+        settings_file = resolve_settings_file()
+        snapshot = InstanceBackupRestoreSnapshot(
+            package_path=file_path,
+            workspace_root=str(Path(storage_service.base).resolve()),
+            database_path=str(Path(storage_service.database_path).resolve()),
+            settings_path=str(settings_file.resolve()) if settings_file else None,
+            safety_target_path=str(
+                (storage_service.backups_dir / auto_before_restore_backup_filename()).resolve()
+            ),
+        )
+        blocked = self._backup_action_widgets(parent)
+        create_safety = True
         safety_path: Path | None = None
-        try:
+        result = None
 
-            def on_safety_progress(message: str) -> None:
-                progress.set_status(message)
-                QApplication.processEvents()
-
-            safety_path = self._create_auto_before_restore_backup(
-                progress_callback=on_safety_progress
+        while True:
+            runner = LongOperationRunner(parent)
+            dialog = LongOperationDialog(
+                parent,
+                title=BACKUP_RESTORE_PROGRESS_TITLE,
+                runner=runner,
+                delay_ms=0,
+                allow_cancel=False,
+                close_on_success=False,
             )
-        except Exception as exc:  # noqa: BLE001
-            progress.allow_close()
-            progress.close()
-            self._operation_running = False
-            logger.warning(
-                "Automatická bezpečnostní záloha před obnovou selhala: %s",
-                exc,
-            )
-            crisis = ContinueWithoutSafetyBackupDialog(parent)
-            if crisis.exec() != ContinueWithoutSafetyBackupDialog.DialogCode.Accepted:
-                return False
-            logger.warning(
-                "Uživatel vědomě pokračoval v obnově bez vytvoření "
-                "automatické bezpečnostní zálohy."
-            )
-            progress = BackupProgressDialog(parent, title="Probíhá obnova")
-            progress.set_status("Pokračuji obnovou bez bezpečnostní zálohy…")
-            progress.show()
-            QApplication.processEvents()
+            self._restore_runner = runner
+            self._restore_progress_dialog = dialog
             self._operation_running = True
+            safety_failed_message: str | None = None
+            restore_error: InstanceRestoreError | None = None
+            unexpected_details: str | None = None
+            try:
+                if create_safety:
+                    safety_outcome = self._run_restore_worker(
+                        parent,
+                        runner,
+                        create_safety_backup_work,
+                        snapshot,
+                        blocked,
+                    )
+                    safety_obj = safety_outcome["result"]
+                    if safety_outcome["error"] is not None:
+                        safety_failed_message = str(safety_outcome["error"])
+                    elif (
+                        not isinstance(safety_obj, InstanceBackupRestoreOutcome)
+                        or not safety_obj.safety_path
+                    ):
+                        safety_failed_message = "worker nevrátil cestu k záloze."
+                    else:
+                        safety_path = Path(safety_obj.safety_path)
 
-        try:
-            from core.database.session import dispose_database_engine
+                if safety_failed_message is None:
+                    from core.database.session import dispose_database_engine
 
-            progress.set_status("Uzavírám databázová připojení…")
-            QApplication.processEvents()
-            dispose_database_engine()
+                    dialog.set_status("Uzavírám databázová připojení…")
+                    dispose_database_engine()
 
-            def on_progress(message: str) -> None:
-                progress.set_status(message)
-                QApplication.processEvents()
+                    restore_outcome = self._run_restore_worker(
+                        parent,
+                        runner,
+                        restore_instance_backup_work,
+                        snapshot,
+                        blocked,
+                    )
+                    restore_obj = restore_outcome["result"]
+                    if restore_outcome["error"] is not None:
+                        unexpected_details = str(restore_outcome["error"])
+                    elif not isinstance(restore_obj, InstanceBackupRestoreOutcome):
+                        unexpected_details = "Worker nevrátil výsledek obnovy."
+                    elif restore_obj.restore_error is not None:
+                        restore_error = restore_obj.restore_error
+                    elif restore_obj.unexpected_error:
+                        unexpected_details = str(restore_obj.unexpected_error)
+                    elif restore_obj.restore_result is None:
+                        unexpected_details = "Worker nevrátil výsledek obnovy."
+                    else:
+                        result = restore_obj.restore_result
+            finally:
+                self._operation_running = False
+                self._restore_runner = None
+                self._restore_progress_dialog = None
+                self._finish_restore_progress(dialog)
 
-            result = restore_instance_backup(
-                file_path,
-                progress_callback=on_progress,
-            )
-        except InstanceRestoreError as exc:
-            progress.allow_close()
-            progress.close()
-            self._show_restore_error(parent, exc)
-            self.refresh_recovery_markers()
-            return False
-        except Exception as exc:  # noqa: BLE001
-            progress.allow_close()
-            progress.close()
+            if safety_failed_message is not None:
+                logger.warning(
+                    "Automatická bezpečnostní záloha před obnovou selhala: %s",
+                    safety_failed_message,
+                )
+                crisis = ContinueWithoutSafetyBackupDialog(parent)
+                if crisis.exec() != ContinueWithoutSafetyBackupDialog.DialogCode.Accepted:
+                    return False
+                logger.warning(
+                    "Uživatel vědomě pokračoval v obnově bez vytvoření "
+                    "automatické bezpečnostní zálohy."
+                )
+                create_safety = False
+                continue
+
+            if restore_error is not None:
+                self._show_restore_error(parent, restore_error)
+                self.refresh_recovery_markers()
+                return False
+            if unexpected_details is not None:
+                MessageWithDetailsDialog(
+                    parent,
+                    title="Obnova ze zálohy",
+                    message="Obnova selhala kvůli neočekávané chybě.",
+                    details=unexpected_details,
+                    level="critical",
+                ).exec()
+                self.refresh_recovery_markers()
+                return False
+            break
+
+        if result is None:
             MessageWithDetailsDialog(
                 parent,
                 title="Obnova ze zálohy",
                 message="Obnova selhala kvůli neočekávané chybě.",
-                details=str(exc),
+                details="Worker nevrátil výsledek obnovy.",
                 level="critical",
             ).exec()
             self.refresh_recovery_markers()
             return False
-        finally:
-            self._operation_running = False
-            progress.allow_close()
-            progress.close()
 
         warnings_text = ""
         if result.warnings:

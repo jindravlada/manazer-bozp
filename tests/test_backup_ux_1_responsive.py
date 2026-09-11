@@ -395,8 +395,10 @@ class BackupUx1ResponsiveTestCase(unittest.TestCase):
         auto_fn = inspect.getsource(
             wf_mod.InstanceBackupWorkflowService._create_auto_before_restore_backup
         )
-        self.assertIn("BackupProgressDialog", restore_fn)
-        self.assertNotIn("LongOperationDialog", restore_fn)
+        self.assertIn("LongOperationDialog", restore_fn)
+        self.assertIn("allow_cancel=False", restore_fn)
+        self.assertNotIn("BackupProgressDialog", restore_fn)
+        self.assertNotIn("QApplication.processEvents", restore_fn)
         self.assertNotIn("LongOperationDialog", auto_fn)
         self.assertIn("create_instance_backup", auto_fn)
         self.assertNotIn("LongOperationDialog", inspect.getsource(create_verified_pre_migration_backup))
