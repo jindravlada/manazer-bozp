@@ -281,39 +281,29 @@ class PhotoPickerDialogTestCase(unittest.TestCase):
 
     def test_rotate_left(self) -> None:
         photo = self._make_marker_png("left.png", size=(40, 20))
-        before = photo.read_bytes()
-        dest = self.photos_dir / "left-rotated.png"
-        rotate_photo_file(photo, -90, destination=dest)
-        self.assertEqual(photo.read_bytes(), before)
-        with Image.open(dest) as img:
+        rotate_photo_file(photo, -90)
+        with Image.open(photo) as img:
             self.assertEqual(img.size, (20, 40))
             # Červený pixel z TL → po CCW dole vlevo.
             self.assertEqual(img.getpixel((0, 39)), (255, 0, 0))
 
     def test_rotate_right(self) -> None:
         photo = self._make_marker_png("right.png", size=(40, 20))
-        before = photo.read_bytes()
-        dest = self.photos_dir / "right-rotated.png"
-        rotate_photo_file(photo, 90, destination=dest)
-        self.assertEqual(photo.read_bytes(), before)
-        with Image.open(dest) as img:
+        rotate_photo_file(photo, 90)
+        with Image.open(photo) as img:
             self.assertEqual(img.size, (20, 40))
             # Červený pixel z TL → po CW vpravo nahoře.
             self.assertEqual(img.getpixel((19, 0)), (255, 0, 0))
 
-    def test_rotate_keeps_original_filename_and_location(self) -> None:
+    def test_rotate_keeps_filename_and_location(self) -> None:
         photo = self._make_jpg("keep_name.jpg", size=(30, 20))
         original_name = photo.name
         original_parent = photo.parent.resolve()
-        before = photo.read_bytes()
-        dest = self.photos_dir / "keep_name-working.jpg"
-        result = rotate_photo_file(photo, 90, destination=dest)
-        self.assertEqual(photo.name, original_name)
-        self.assertEqual(photo.parent.resolve(), original_parent)
+        result = rotate_photo_file(photo, 90)
+        self.assertEqual(result.name, original_name)
+        self.assertEqual(result.parent, original_parent)
         self.assertTrue(photo.exists())
-        self.assertEqual(photo.read_bytes(), before)
-        self.assertEqual(result, dest.resolve())
-        self.assertNotEqual(photo.resolve(), result)
+        self.assertEqual(photo.resolve(), result)
 
     def test_rotate_fixes_exif_orientation(self) -> None:
         photo = self.photos_dir / "orient.jpg"
@@ -321,19 +311,14 @@ class PhotoPickerDialogTestCase(unittest.TestCase):
         exif = img.getexif()
         exif[274] = 6  # rotate 90 CW via tag
         img.save(photo, format="JPEG", quality=95, exif=exif)
-        original_exif = Image.open(photo).getexif().get(274)
-        dest = self.photos_dir / "orient-working.jpg"
 
-        rotate_photo_file(photo, -90, destination=dest)
-        with Image.open(photo) as original:
-            self.assertEqual(original.getexif().get(274), original_exif)
-        with Image.open(dest) as out:
+        rotate_photo_file(photo, -90)
+        with Image.open(photo) as out:
             orientation = out.getexif().get(274)
             self.assertIn(orientation, (None, 1))
 
     def test_rotate_refreshes_thumbnail_and_preview_keeps_selection(self) -> None:
         photo = self._make_jpg("refresh.jpg", size=(80, 40))
-        before = photo.read_bytes()
         dialog = PhotoPickerDialog(initial_directory=self.photos_dir)
         self.addCleanup(dialog.close)
         dialog._list.setCurrentRow(0)
@@ -344,16 +329,15 @@ class PhotoPickerDialogTestCase(unittest.TestCase):
         dialog._rotate_selected(-90)
 
         self.assertEqual(dialog._list.currentRow(), 0)
-        self.assertEqual(photo.read_bytes(), before)
-        self.assertNotEqual(dialog.selected_path(), photo.resolve())
-        self.assertTrue(dialog.selected_path().is_file())
+        self.assertEqual(dialog.selected_path(), photo.resolve())
         item_after = dialog._list.currentItem()
         assert item_after is not None
         self.assertFalse(item_after.icon().isNull())
         self.assertFalse(dialog._preview.pixmap() is None or dialog._preview.pixmap().isNull())
-        # Rozměry po otočení: 40×80
         self.assertIn("40", dialog._info_dims.text())
         self.assertIn("80", dialog._info_dims.text())
+        with Image.open(photo) as img:
+            self.assertEqual(img.size, (40, 80))
 
     def test_rotate_write_error_keeps_file_and_continues(self) -> None:
         photo = self._make_jpg("readonly.jpg", size=(20, 10))
@@ -375,7 +359,7 @@ class PhotoPickerDialogTestCase(unittest.TestCase):
         self.assertEqual(dialog.selected_path(), photo.resolve())
         self.assertEqual(dialog.result(), 0)  # dialog stále otevřený
 
-    def test_rotate_does_not_ask_to_overwrite_original(self) -> None:
+    def test_rotate_applies_without_extra_prompt(self) -> None:
         photo = self._make_jpg("ask.jpg", size=(24, 16))
         before = photo.read_bytes()
         dialog = PhotoPickerDialog(initial_directory=self.photos_dir)
@@ -384,8 +368,8 @@ class PhotoPickerDialogTestCase(unittest.TestCase):
         with patch("core.ui.photo_picker_dialog.QMessageBox") as box_cls:
             dialog._rotate_selected(-90)
             box_cls.assert_not_called()
-        self.assertEqual(photo.read_bytes(), before)
-        self.assertNotEqual(dialog.selected_path(), photo.resolve())
+        self.assertNotEqual(photo.read_bytes(), before)
+        self.assertEqual(dialog.selected_path(), photo.resolve())
 
     def test_rotate_buttons_disabled_for_heic(self) -> None:
         heic = self.photos_dir / "phone.heic"

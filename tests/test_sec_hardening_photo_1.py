@@ -1,4 +1,4 @@
-"""SEC-HARDENING-PHOTO-1: PhotoPicker nemění originální fotografii."""
+"""SEC-HARDENING-PHOTO-1a: vědomé Otočit fyzicky otočí originál."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from PySide6.QtWidgets import QApplication, QDialog
 
 from core.services.photo_optimization import HAZARD_IDENTIFICATION_PHOTO_MAX_BYTES
 
-_TEST_ROOT = Path(__file__).resolve().parents[1] / ".test-tmp" / "sec-hardening-photo-1"
+_TEST_ROOT = Path(__file__).resolve().parents[1] / ".test-tmp" / "sec-hardening-photo-1a"
 _HOME = _TEST_ROOT / "home"
 
 if _TEST_ROOT.exists():
@@ -50,7 +50,7 @@ def _make_marker_png(directory: Path, name: str, size=(40, 20)) -> Path:
     return path
 
 
-class SecHardeningPhoto1TestCase(unittest.TestCase):
+class SecHardeningPhoto1aTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls._app = _app()
@@ -66,57 +66,48 @@ class SecHardeningPhoto1TestCase(unittest.TestCase):
         dialog = PhotoPickerDialog(initial_directory=self.photos_dir)
         self.addCleanup(dialog.close)
         dialog._list.setCurrentRow(0)
-        self.assertIsNotNone(dialog._selected_path)
         self.assertEqual(dialog._selected_path, photo.resolve())
         return dialog
 
-    def test_a_rotate_then_cancel_leaves_original_untouched(self) -> None:
-        photo = _make_marker_png(self.photos_dir, "cancel.png")
-        before = photo.read_bytes()
-        dialog = self._open_dialog(photo)
-        dialog._rotate_selected(90)
-        dialog.reject()
-        self.assertEqual(dialog.result(), QDialog.DialogCode.Rejected)
-        self.assertEqual(photo.read_bytes(), before)
-        self.assertTrue(photo.exists())
-        self.assertEqual(photo.name, "cancel.png")
-
-    def test_b_rotate_then_escape_or_close_leaves_original_untouched(self) -> None:
-        photo = _make_marker_png(self.photos_dir, "escape.png")
+    def test_1_rotate_physically_changes_original(self) -> None:
+        photo = _make_marker_png(self.photos_dir, "rotate.png")
         before = photo.read_bytes()
         dialog = self._open_dialog(photo)
         dialog._rotate_selected(-90)
-        dialog.reject()  # Escape je napojené na reject()
-        self.assertEqual(photo.read_bytes(), before)
+        self.assertNotEqual(photo.read_bytes(), before)
+        self.assertEqual(dialog.selected_path(), photo.resolve())
+        with Image.open(photo) as img:
+            self.assertEqual(img.size, (20, 40))
+            self.assertEqual(img.getpixel((0, 39)), (255, 0, 0))
+        self.assertIn("20", dialog._info_dims.text())
+        self.assertIn("40", dialog._info_dims.text())
 
-        for child in self.photos_dir.iterdir():
-            if child.is_file():
-                child.unlink()
-        photo2 = _make_marker_png(self.photos_dir, "close.png")
-        before2 = photo2.read_bytes()
-        dialog2 = self._open_dialog(photo2)
-        dialog2._rotate_selected(90)
-        dialog2.close()
-        self.assertEqual(photo2.read_bytes(), before2)
+    def test_2_rotate_then_cancel_keeps_original_rotated(self) -> None:
+        photo = _make_marker_png(self.photos_dir, "cancel.png")
+        dialog = self._open_dialog(photo)
+        dialog._rotate_selected(90)
+        with Image.open(photo) as img:
+            rotated_size = img.size
+            rotated_pixel = img.getpixel((19, 0))
+        dialog.reject()
+        self.assertEqual(dialog.result(), QDialog.DialogCode.Rejected)
+        with Image.open(photo) as img:
+            self.assertEqual(img.size, rotated_size)
+            self.assertEqual(img.getpixel((19, 0)), rotated_pixel)
 
-    def test_c_rotate_then_confirm_returns_rotated_copy_original_untouched(self) -> None:
-        photo = _make_marker_png(self.photos_dir, "confirm.png", size=(40, 20))
-        before = photo.read_bytes()
+    def test_3_rotate_then_confirm_returns_rotated_original(self) -> None:
+        photo = _make_marker_png(self.photos_dir, "confirm.png")
         dialog = self._open_dialog(photo)
         dialog._rotate_selected(-90)
         dialog._accept_selection()
         self.assertEqual(dialog.result(), QDialog.DialogCode.Accepted)
-        self.assertEqual(photo.read_bytes(), before)
         result = dialog.selected_path()
-        self.assertIsNotNone(result)
-        assert result is not None
-        self.assertNotEqual(result.resolve(), photo.resolve())
-        self.assertTrue(result.is_file())
+        self.assertEqual(result, photo.resolve())
         with Image.open(result) as img:
             self.assertEqual(img.size, (20, 40))
             self.assertEqual(img.getpixel((0, 39)), (255, 0, 0))
 
-    def test_d_select_without_rotate_returns_original(self) -> None:
+    def test_4_select_without_rotate_leaves_original_untouched(self) -> None:
         photo = _make_marker_png(self.photos_dir, "plain.png")
         before = photo.read_bytes()
         dialog = self._open_dialog(photo)
@@ -124,17 +115,32 @@ class SecHardeningPhoto1TestCase(unittest.TestCase):
         self.assertEqual(dialog.selected_path(), photo.resolve())
         self.assertEqual(photo.read_bytes(), before)
 
-    def test_e_saved_photo_stays_under_1mb(self) -> None:
+    def test_5_repeated_rotate_updates_original_and_preview(self) -> None:
+        photo = _make_marker_png(self.photos_dir, "repeat.png")
+        dialog = self._open_dialog(photo)
+        dialog._rotate_selected(-90)
+        with Image.open(photo) as img:
+            self.assertEqual(img.size, (20, 40))
+        self.assertIn("20", dialog._info_dims.text())
+        self.assertIn("40", dialog._info_dims.text())
+
+        dialog._rotate_selected(-90)
+        with Image.open(photo) as img:
+            self.assertEqual(img.size, (40, 20))
+            self.assertEqual(img.getpixel((39, 19)), (255, 0, 0))
+        self.assertIn("40", dialog._info_dims.text())
+        self.assertIn("20", dialog._info_dims.text())
+        self.assertEqual(dialog.selected_path(), photo.resolve())
+
+    def test_saved_photo_stays_under_1mb_after_rotate(self) -> None:
         photo = self.photos_dir / "large.jpg"
         image = Image.new("RGB", (1800, 1400), color=(30, 80, 140))
         image.save(photo, format="JPEG", quality=95)
-        before = photo.read_bytes()
         dialog = self._open_dialog(photo)
         dialog._rotate_selected(90)
         dialog._accept_selection()
         result = dialog.selected_path()
-        self.assertIsNotNone(result)
-        assert result is not None
+        self.assertEqual(result, photo.resolve())
         relative = audit_reference_photo_service.save_optimized(
             result,
             process_id="proc",
@@ -145,7 +151,6 @@ class SecHardeningPhoto1TestCase(unittest.TestCase):
         self.assertTrue(stored.is_file())
         self.assertLessEqual(stored.stat().st_size, HAZARD_IDENTIFICATION_PHOTO_MAX_BYTES)
         self.assertLessEqual(stored.stat().st_size, 1 * 1024 * 1024)
-        self.assertEqual(photo.read_bytes(), before)
 
 
 if __name__ == "__main__":
