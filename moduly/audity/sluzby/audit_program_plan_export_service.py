@@ -1,13 +1,15 @@
 from __future__ import annotations
 
-import os
 import re
-import tempfile
 import unicodedata
 from datetime import datetime
 from pathlib import Path
 
 from core.export import OdtExportEngine
+from core.export.open_export import (
+    create_managed_temp_file,
+    unlink_managed_temp_file,
+)
 from core.services.storage_service import storage_service
 from moduly.audity.sluzby.audit_program_plan_export_context_service import (
     audit_program_plan_export_context_service,
@@ -45,19 +47,14 @@ class AuditProgramPlanExportService:
         return "_".join(parts) + f"_{stamp}.odt"
 
     def generate_preview_for_program(self, program_id: int) -> Path:
-        """Zapíše plán do dočasného ODT; soubor se nesmaže po otevření."""
-        stem = Path(self.default_filename(program_id)).stem
-        handle, raw = tempfile.mkstemp(
-            prefix=f"{stem}_",
-            suffix=".odt",
-            dir=tempfile.gettempdir(),
+        """Zapíše plán do dočasného ODT; úklid až při ukončení Manažera."""
+        target = create_managed_temp_file(
+            name_hint=self.default_filename(program_id)
         )
-        os.close(handle)
-        target = Path(raw)
         try:
             return self.generate_for_program(program_id, target)
         except Exception:
-            target.unlink(missing_ok=True)
+            unlink_managed_temp_file(target)
             raise
 
     def generate_for_program(self, program_id: int, output_path: str | Path) -> Path:

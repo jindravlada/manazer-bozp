@@ -187,6 +187,43 @@ def create_open_export_temp_copy(source: Path) -> Path | None:
     return tmp_path
 
 
+def unlink_managed_temp_file(path: Path) -> None:
+    """Odstraní evidovaný temp soubor (symlinky se nenasledují)."""
+    _unlink_temp_copy(Path(path))
+
+
+def create_managed_temp_file(*, name_hint: str = "soubor") -> Path:
+    """Prázdný temp soubor 0600 evidovaný k úklidu při ukončení i startu."""
+    _ensure_atexit_cleanup()
+    tmp_dir = _open_export_temp_dir()
+    tmp_path = tmp_dir / _temp_copy_filename(Path(name_hint))
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    try:
+        fd = os.open(tmp_path, flags, _TEMP_FILE_MODE)
+    except OSError as exc:
+        raise OSError("Dočasný soubor se nepodařilo vytvořit.") from exc
+    try:
+        try:
+            os.fchmod(fd, _TEMP_FILE_MODE)
+        except OSError:
+            pass
+        os.close(fd)
+    except OSError as exc:
+        try:
+            os.close(fd)
+        except OSError:
+            pass
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        raise OSError("Dočasný soubor se nepodařilo připravit.") from exc
+    _created_temp_copies.add(str(tmp_path))
+    return tmp_path
+
+
 def _open_via_private_temp_copy(
     path: Path,
     env: dict[str, str],

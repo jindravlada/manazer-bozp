@@ -116,7 +116,8 @@ class AuditProgramOdtPreview3TestCase(unittest.TestCase):
         opened = Path(mock_open.call_args.args[0]).resolve()
         self.assertTrue(opened.exists())
         self.assertEqual(opened.parent, temp_dir)
-        self.assertTrue(opened.name.startswith("Plan_internich_auditu_"))
+        self.assertIn("Plan_internich_auditu_", opened.name)
+        self.assertTrue(opened.name.startswith("manazer-bozp-"))
         self.assertTrue(opened.suffix.lower() == ".odt")
         with zipfile.ZipFile(opened) as zin:
             self.assertIn("content.xml", zin.namelist())
