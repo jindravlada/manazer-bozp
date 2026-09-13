@@ -12,8 +12,8 @@ class OdtExportError(Exception):
     """Chyba exportního enginu."""
 
 
-# Vložení obrázku do textové hodnoty (před escapováním).
-# Příklad: "text\\n[[[ODT_IMAGE|/abs/cesta.jpg]]]\\ndalší text"
+# Textová reprezentace OdtParagraph.image_path pro testy a plain_text().
+# Engine tuto značku v běžném stringu NEinterpretuje jako cestu k souboru.
 ODT_IMAGE_MARKER_RE = re.compile(r"\[\[\[ODT_IMAGE\|(.+?)\]\]\]")
 
 # Placeholdér uvnitř běžného (ne self-closing) odstavce.
@@ -158,7 +158,8 @@ class OdtExportEngine:
     převedené na <text:line-break/>.
 
     ``OdtRichContent`` nahradí celý odstavec s placeholdérem sadou samostatných
-    ``text:p`` (včetně fotografií se stylovaným ``draw:frame``).
+    ``text:p`` (včetně fotografií z ``OdtParagraph.image_path``).
+    Běžný string se nikdy neinterpretuje jako cesta k souboru.
     """
 
     PLACEHOLDER_RE = re.compile(r"\$\{([A-Za-z0-9_]+)\}")
@@ -201,10 +202,7 @@ class OdtExportEngine:
             elif isinstance(value, OdtXmlFragment):
                 normalized_values[key_text] = _ODT_FRAGMENT_PREFIX + str(value.xml or "")
             else:
-                escaped = self._escape_odt_text(value, image_registry)
-                normalized_values[key_text] = escaped
-                if ODT_IMAGE_MARKER_RE.search("" if value is None else str(value)):
-                    needs_export_styles = True
+                normalized_values[key_text] = self._escape_odt_text(value)
 
         if image_registry:
             needs_export_styles = True
@@ -370,19 +368,10 @@ class OdtExportEngine:
             return _KEEP_WITH_NEXT_STYLE
         return base
 
-    def _escape_odt_text(self, value: Any, image_registry: list[tuple[str, Path]]) -> str:
+    def _escape_odt_text(self, value: Any) -> str:
+        """Escapuje běžný string. Značka ODT_IMAGE zůstane obyčejným textem."""
         text = "" if value is None else str(value)
-        parts: list[str] = []
-        last = 0
-        for match in ODT_IMAGE_MARKER_RE.finditer(text):
-            parts.append(self._escape_plain_text(text[last:match.start()]))
-            image_xml = self._image_frame_xml(match.group(1).strip(), image_registry)
-            if image_xml:
-                # Inline fallback (protokol / starší hodnoty): stylovaný frame.
-                parts.append(image_xml)
-            last = match.end()
-        parts.append(self._escape_plain_text(text[last:]))
-        return "".join(parts)
+        return self._escape_plain_text(text)
 
     @staticmethod
     def _escape_plain_text(text: str) -> str:
@@ -404,6 +393,7 @@ class OdtExportEngine:
     def _image_frame_xml(
         self, path_text: str, image_registry: list[tuple[str, Path]]
     ) -> str:
+        """Vloží obrázek z explicitní cesty (OdtParagraph.image_path), ne z textu."""
         path = Path(path_text)
         if not path.is_file():
             return ""
@@ -590,7 +580,11 @@ def export_odt_template(
 
 
 def odt_image_marker(path: str | Path) -> str:
-    """Vrátí značku pro vložení obrázku do textové hodnoty ODT exportu."""
+    """Textová značka image_path pro testy a OdtRichContent.plain_text().
+
+    Není instrukcí enginu: běžný string s touto syntaxí se do ODT vloží
+    jako text, soubor se nenačte.
+    """
     return f"[[[ODT_IMAGE|{Path(path)}]]]"
 
 
