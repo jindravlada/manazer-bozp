@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import shutil
+import tempfile
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -19,7 +21,6 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QIcon, QImage, QKeySequence, QPainter, QPixmap, QShortcut
 from PySide6.QtWidgets import (
     QApplication,
-    QCheckBox,
     QComboBox,
     QDialog,
     QDialogButtonBox,
@@ -54,11 +55,6 @@ PHOTO_PICKER_REFRESH_LABEL = "Obnovit"
 PHOTO_PICKER_ROTATE_LEFT_LABEL = "⟲ Otočit vlevo"
 PHOTO_PICKER_ROTATE_RIGHT_LABEL = "⟳ Otočit vpravo"
 PHOTO_PICKER_ROTATE_UNSUPPORTED = "Otočení tohoto formátu není podporováno."
-PHOTO_PICKER_ROTATE_CONFIRM_TITLE = "Otočení fotografie"
-PHOTO_PICKER_ROTATE_CONFIRM_TEXT = (
-    "Fotografie bude otočena přímo v původním souboru.\n\nPokračovat?"
-)
-PHOTO_PICKER_ROTATE_DONT_ASK = "Příště se již neptat."
 PHOTO_PICKER_ROTATE_ERROR_TITLE = "Otočení fotografie"
 
 # Veřejné konstanty velikosti miniatur (testy / případné ladění UI).
@@ -90,7 +86,7 @@ _ROLE_PREVIEW_OK = Qt.ItemDataRole.UserRole + 3
 
 
 class PhotoRotateError(Exception):
-    """Chyba při otočení / přepisu fotografie na disku."""
+    """Chyba při otočení fotografie do pracovní kopie."""
 
 
 def is_supported_photo(path: str | Path) -> bool:
@@ -176,7 +172,7 @@ def resolve_initial_directory(initial_directory: str | Path | None = None) -> Pa
 
 
 def is_rotation_supported(path: str | Path) -> bool:
-    """True, pokud formát umíme bezpečně přepsat při otočení."""
+    """True, pokud formát umíme otočit do pracovní kopie."""
     return Path(path).suffix.lower() in ROTATABLE_EXTENSIONS
 
 
@@ -243,19 +239,26 @@ def _save_rotated_image(image, path: Path, *, suffix: str, exif=None) -> None:
         ) from exc
 
 
-def rotate_photo_file(path: str | Path, degrees: int) -> Path:
-    """Otočí fotografii přímo v původním souboru o ±90°.
+def rotate_photo_file(
+    source: str | Path,
+    degrees: int,
+    *,
+    destination: str | Path,
+) -> Path:
+    """Otočí fotografii o ±90° a uloží výsledek do ``destination``.
 
+    Soubor ``source`` nemění, pokud ``destination`` ukazuje jinam.
     degrees: -90 (vlevo / CCW) nebo +90 (vpravo / CW).
-    Vrátí Path ke stejnému souboru. EXIF Orientation nastaví na normální.
+    EXIF Orientation nastaví na normální (stejně jako dříve).
     """
     if degrees not in (-90, 90):
         raise PhotoRotateError("Podporováno je pouze otočení o ±90°.")
 
-    target = Path(path)
-    if not target.is_file():
-        raise PhotoRotateError(f"Soubor neexistuje:\n{target}")
-    if not is_rotation_supported(target):
+    origin = Path(source)
+    target = Path(destination)
+    if not origin.is_file():
+        raise PhotoRotateError(f"Soubor neexistuje:\n{origin}")
+    if not is_rotation_supported(origin):
         raise PhotoRotateError(PHOTO_PICKER_ROTATE_UNSUPPORTED)
 
     try:
@@ -265,10 +268,10 @@ def rotate_photo_file(path: str | Path, degrees: int) -> Path:
             "Pro otočení fotografie je potřeba knihovna Pillow."
         ) from exc
 
-    suffix = target.suffix.lower()
+    suffix = origin.suffix.lower()
     preserved_exif = None
     try:
-        with Image.open(target) as opened:
+        with Image.open(origin) as opened:
             try:
                 preserved_exif = opened.getexif()
             except Exception:
@@ -279,7 +282,7 @@ def rotate_photo_file(path: str | Path, degrees: int) -> Path:
             image = image.copy()
     except Exception as exc:
         raise PhotoRotateError(
-            f"Fotografii se nepodařilo načíst:\n{target}\n\n{exc}"
+            f"Fotografii se nepodařilo načíst:\n{origin}\n\n{exc}"
         ) from exc
 
     try:
@@ -289,9 +292,10 @@ def rotate_photo_file(path: str | Path, degrees: int) -> Path:
             rotated = image.transpose(Image.Transpose.ROTATE_270)
     except Exception as exc:
         raise PhotoRotateError(
-            f"Otočení fotografie se nezdařilo:\n{target}\n\n{exc}"
+            f"Otočení fotografie se nezdařilo:\n{origin}\n\n{exc}"
         ) from exc
 
+    target.parent.mkdir(parents=True, exist_ok=True)
     _save_rotated_image(rotated, target, suffix=suffix, exif=preserved_exif)
     return target.resolve()
 
@@ -437,6 +441,8 @@ class PhotoPickerDialog(QDialog):
         self._placeholder_icon = self._build_placeholder_icon()
         self._selected_path: Path | None = None
         self._selected_paths: list[Path] = []
+        self._working_dir: Path | None = None
+        self._working_copies: dict[str, Path] = {}
         self._pool = QThreadPool.globalInstance()
 
         self._build_ui()
@@ -488,17 +494,36 @@ class PhotoPickerDialog(QDialog):
             self._list.setFocus(Qt.FocusReason.OtherFocusReason)
 
     def selected_path(self) -> Path | None:
-        return self._selected_path
+        if self._selected_path is None:
+            return None
+        return self._display_path(self._selected_path)
 
     def selected_paths(self) -> list[Path]:
-        if self._selected_paths:
-            return list(self._selected_paths)
-        if self._selected_path is not None:
-            return [self._selected_path]
-        return []
+        originals = list(self._selected_paths)
+        if not originals and self._selected_path is not None:
+            originals = [self._selected_path]
+        return [self._display_path(path) for path in originals]
 
     def current_directory(self) -> Path:
         return self._directory
+
+    def _display_path(self, original: Path) -> Path:
+        mapped = self._working_copies.get(str(original.resolve()))
+        if mapped is not None and mapped.is_file():
+            return mapped.resolve()
+        return original.resolve()
+
+    def _ensure_working_dir(self) -> Path:
+        if self._working_dir is None:
+            self._working_dir = Path(tempfile.mkdtemp(prefix="mb-photopicker-"))
+        return self._working_dir
+
+    def _cleanup_working_copies(self) -> None:
+        directory = self._working_dir
+        self._working_dir = None
+        self._working_copies.clear()
+        if directory is not None and directory.exists():
+            shutil.rmtree(directory, ignore_errors=True)
 
     def _build_ui(self) -> None:
         root = QVBoxLayout(self)
@@ -669,6 +694,7 @@ class PhotoPickerDialog(QDialog):
     def _load_directory(self, directory: Path) -> None:
         self._generation += 1
         generation = self._generation
+        self._cleanup_working_copies()
         self._directory = directory.resolve() if directory.is_dir() else default_pictures_directory()
         self._path_label.setText(str(self._directory))
         self._up_btn.setEnabled(self._directory.parent != self._directory)
@@ -871,12 +897,13 @@ class PhotoPickerDialog(QDialog):
             self._clear_preview()
             return
 
-        path = Path(str(item.data(_ROLE_PATH) or ""))
+        original = Path(str(item.data(_ROLE_PATH) or ""))
+        path = self._display_path(original)
         preview_ok = bool(item.data(_ROLE_PREVIEW_OK))
-        suffix = path.suffix.lower()
+        suffix = original.suffix.lower()
         heic = suffix in _HEIC_EXTENSIONS
 
-        self._info_name.setText(path.name)
+        self._info_name.setText(original.name)
         try:
             size = int(item.data(_ROLE_SIZE) or path.stat().st_size)
         except OSError:
@@ -908,7 +935,7 @@ class PhotoPickerDialog(QDialog):
             self._preview.setText("")
             self._sync_selected_paths()
             self._select_btn.setEnabled(bool(self._selected_paths))
-            self._update_rotate_controls(path)
+            self._update_rotate_controls(original)
             return
 
         self._info_dims.setText("Rozměry: —")
@@ -920,7 +947,7 @@ class PhotoPickerDialog(QDialog):
         self._sync_selected_paths()
         self._select_btn.setEnabled(bool(self._selected_paths))
         self._update_rotate_controls(
-            path if path.is_file() and (heic or preview_ok or self._item_is_selectable(item)) else None
+            original if original.is_file() and (heic or preview_ok or self._item_is_selectable(item)) else None
         )
 
     def _update_rotate_controls(self, path: Path | None) -> None:
@@ -944,43 +971,30 @@ class PhotoPickerDialog(QDialog):
         self._info_taken.setText("Pořízeno: —")
         self._update_rotate_controls(None)
 
-    def _confirm_rotate(self) -> bool:
-        if get_skip_rotate_confirm():
-            return True
-        box = QMessageBox(self)
-        box.setIcon(QMessageBox.Icon.Question)
-        box.setWindowTitle(PHOTO_PICKER_ROTATE_CONFIRM_TITLE)
-        box.setText(PHOTO_PICKER_ROTATE_CONFIRM_TEXT)
-        checkbox = QCheckBox(PHOTO_PICKER_ROTATE_DONT_ASK)
-        box.setCheckBox(checkbox)
-        box.setStandardButtons(
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
-        box.setDefaultButton(QMessageBox.StandardButton.No)
-        answer = box.exec()
-        if answer != QMessageBox.StandardButton.Yes:
-            return False
-        if checkbox.isChecked():
-            set_skip_rotate_confirm(True)
-        return True
-
     def _rotate_selected(self, degrees: int) -> None:
-        path = self._selected_path
-        if path is None or not path.is_file():
+        original = self._selected_path
+        if original is None or not original.is_file():
             return
-        if not is_rotation_supported(path):
+        if not is_rotation_supported(original):
             QMessageBox.information(
                 self,
                 PHOTO_PICKER_ROTATE_ERROR_TITLE,
                 PHOTO_PICKER_ROTATE_UNSUPPORTED,
             )
             return
-        if not self._confirm_rotate():
-            return
+
+        key = str(original.resolve())
+        source = self._display_path(original)
+        working = self._working_copies.get(key)
+        if working is None:
+            working = self._ensure_working_dir() / original.name
+            self._working_copies[key] = working
 
         try:
-            rotate_photo_file(path, degrees)
+            rotate_photo_file(source, degrees, destination=working)
         except PhotoRotateError as exc:
+            if not working.exists():
+                self._working_copies.pop(key, None)
             QMessageBox.warning(
                 self,
                 PHOTO_PICKER_ROTATE_ERROR_TITLE,
@@ -988,16 +1002,17 @@ class PhotoPickerDialog(QDialog):
             )
             return
 
-        self._refresh_item_after_rotate(path)
+        self._refresh_item_after_rotate(original)
 
     def _invalidate_thumb_cache_for_path(self, path_text: str) -> None:
         stale = [key for key in self._thumb_cache if key.path == path_text]
         for key in stale:
             del self._thumb_cache[key]
 
-    def _refresh_item_after_rotate(self, path: Path) -> None:
+    def _refresh_item_after_rotate(self, original: Path) -> None:
         """Obnoví miniaturu a náhled bez změny výběru / pozice ve výpisu."""
-        path_text = str(path.resolve())
+        path_text = str(original.resolve())
+        display = self._display_path(original)
         self._invalidate_thumb_cache_for_path(path_text)
 
         item: QListWidgetItem | None = None
@@ -1010,7 +1025,7 @@ class PhotoPickerDialog(QDialog):
             return
 
         try:
-            stat = path.stat()
+            stat = display.stat()
         except OSError:
             self._update_preview_for_item(item)
             return
@@ -1021,11 +1036,11 @@ class PhotoPickerDialog(QDialog):
         # Okamžitá obnova miniatury (bez workeru – jen vybraná fotografie).
         pixmap: QPixmap | None = None
         preview_ok = False
-        suffix = path.suffix.lower()
+        suffix = original.suffix.lower()
         if suffix in _HEIC_EXTENSIONS:
             preview_ok = True
         else:
-            loaded = QImage(str(path))
+            loaded = QImage(str(display))
             if not loaded.isNull():
                 pixmap = QPixmap.fromImage(fit_image_on_canvas(loaded, _THUMB_SIZE))
                 preview_ok = True
@@ -1041,7 +1056,7 @@ class PhotoPickerDialog(QDialog):
         # Zachovat výběr a scroll – jen obnovit náhled.
         if self._list.currentItem() is not item:
             self._list.setCurrentItem(item)
-        self._selected_path = path.resolve()
+        self._selected_path = original.resolve()
         self._update_preview_for_item(item)
         self._list.scrollToItem(item)
 
@@ -1056,11 +1071,8 @@ class PhotoPickerDialog(QDialog):
 
     def _accept_selection(self) -> None:
         self._sync_selected_paths()
-        paths = self.selected_paths()
-        if not paths:
+        if not self._selected_paths:
             return
-        self._selected_paths = paths
-        self._selected_path = paths[0]
         set_last_photo_directory(self._directory)
         self.accept()
 
@@ -1068,10 +1080,13 @@ class PhotoPickerDialog(QDialog):
         self._generation += 1
         self._selected_path = None
         self._selected_paths = []
+        self._cleanup_working_copies()
         super().reject()
 
     def closeEvent(self, event) -> None:
         self._generation += 1
+        if self.result() != QDialog.DialogCode.Accepted:
+            self._cleanup_working_copies()
         super().closeEvent(event)
 
     def resizeEvent(self, event) -> None:
