@@ -14,6 +14,10 @@ from typing import Any
 
 from sqlalchemy import delete, select
 
+from core.services.photo_optimization import (
+    PhotoOptimizationError,
+    write_internal_photo_bytes,
+)
 from core.services.storage_service import storage_service
 from core.utils.czech_sort import czech_sorted
 from core.database.session import get_session
@@ -2451,8 +2455,10 @@ class HazardIdentificationWorkingCopy:
             raise HazardIdentificationPhotoError(
                 "Cesta fotografie je mimo úložiště příloh."
             ) from exc
-        absolute.parent.mkdir(parents=True, exist_ok=True)
-        absolute.write_bytes(optimized.data)
+        try:
+            write_internal_photo_bytes(absolute, optimized.data)
+        except PhotoOptimizationError as exc:
+            raise HazardIdentificationPhotoError(str(exc)) from exc
         photo.filename = photo.filename or source.name
         photo.stored_filename = stored_filename
         photo.relative_path = str(relative_path).replace("\\", "/")

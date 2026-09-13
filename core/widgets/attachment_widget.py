@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
 
 from core.export.open_export import open_local_file
 from core.services.attachment_service import attachment_service
+from core.services.photo_optimization import PhotoOptimizationError
 
 
 class AttachmentWidget(QWidget):
@@ -92,7 +93,10 @@ class AttachmentWidget(QWidget):
         )
 
         for file in files:
-            attachment_service.add_file(self.entity_type, self.entity_id, file)
+            try:
+                attachment_service.add_file(self.entity_type, self.entity_id, file)
+            except PhotoOptimizationError as exc:
+                QMessageBox.warning(self, "Přílohy", str(exc))
 
         self.reload()
 

@@ -7,6 +7,11 @@ from datetime import datetime
 from pathlib import Path
 
 from core.export.open_export import open_local_file
+from core.services.photo_optimization import (
+    PhotoOptimizationError,
+    optimize_image_bytes,
+    write_internal_photo_bytes,
+)
 from core.services.storage_service import storage_service
 from moduly.koordinace_bozp.constants import (
     ATTACHMENT_TYPE_CONTRACTOR_RISKS,
@@ -24,6 +29,9 @@ from moduly.koordinace_bozp.repository.coordination_employer_repository import (
 
 class CoordinationAttachmentError(ValueError):
     pass
+
+
+_PHOTO_SUFFIXES = {".jpg", ".jpeg", ".png"}
 
 
 class CoordinationAttachmentService:
@@ -105,7 +113,19 @@ class CoordinationAttachmentService:
             raise CoordinationAttachmentError(
                 "Cílová cesta přílohy musí zůstat v adresáři prilohy."
             ) from exc
-        shutil.copy2(source, target)
+        if suffix in _PHOTO_SUFFIXES:
+            try:
+                optimized = optimize_image_bytes(source)
+            except PhotoOptimizationError as exc:
+                raise CoordinationAttachmentError(str(exc)) from exc
+            except Exception as exc:
+                raise CoordinationAttachmentError(
+                    f"Fotografii se nepodařilo zpracovat pro uložení.\n\n{exc}"
+                ) from exc
+            target = self._unique_target(target.with_suffix(".jpg"))
+            write_internal_photo_bytes(target, optimized)
+        else:
+            shutil.copy2(source, target)
 
         relative_path = target.resolve().relative_to(
             storage_service.attachments_dir.resolve()

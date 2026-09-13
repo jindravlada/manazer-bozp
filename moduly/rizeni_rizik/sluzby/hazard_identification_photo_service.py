@@ -12,7 +12,9 @@ from PIL import Image
 from core.services.photo_optimization import (
     HAZARD_IDENTIFICATION_PHOTO_MAX_BYTES,
     OptimizedPhotoResult,
+    PhotoOptimizationError,
     optimize_photo_for_storage,
+    write_internal_photo_bytes,
 )
 from core.services.storage_service import storage_service
 from core.utils.confined_path import resolve_confined_path
@@ -117,8 +119,10 @@ class HazardIdentificationPhotoService:
             raise HazardIdentificationPhotoError(
                 "Cesta fotografie je mimo úložiště příloh."
             ) from exc
-        absolute.parent.mkdir(parents=True, exist_ok=True)
-        absolute.write_bytes(optimized.data)
+        try:
+            write_internal_photo_bytes(absolute, optimized.data)
+        except PhotoOptimizationError as exc:
+            raise HazardIdentificationPhotoError(str(exc)) from exc
 
         resolved_taken_at = self._normalize_taken_at(taken_at)
         if resolved_taken_at is None and optimized.taken_at is not None:
@@ -188,6 +192,8 @@ class HazardIdentificationPhotoService:
                 source,
                 max_bytes=HAZARD_IDENTIFICATION_PHOTO_MAX_BYTES,
             )
+        except PhotoOptimizationError as error:
+            raise HazardIdentificationPhotoError(str(error)) from error
         except OSError as error:
             raise HazardIdentificationPhotoError(
                 f"Soubor se nepodařilo načíst jako obrázek: {error}"

@@ -17,7 +17,11 @@ from core.models.attachment_staging import (
     PreparedAttachmentChanges,
 )
 from core.repositories.attachment_repository import AttachmentRepository
-from core.services.photo_optimization import optimize_image_bytes
+from core.services.photo_optimization import (
+    PhotoOptimizationError,
+    optimize_image_bytes,
+    write_internal_photo_bytes,
+)
 from core.services.storage_service import storage_service
 from core.utils.confined_path import resolve_confined_path
 
@@ -234,8 +238,11 @@ class AttachmentService:
                         raise AttachmentStagingError(
                             f"Cílový soubor přílohy už existuje: {target.name}"
                         )
-                    shutil.copy2(source, target)
-                    copied_paths.append(target)
+                    try:
+                        stored, _stored_name = self._store_source_file(source, target)
+                    except PhotoOptimizationError as exc:
+                        raise AttachmentStagingError(str(exc)) from exc
+                    copied_paths.append(stored)
 
             for source, target in zip(sources, copied_paths, strict=True):
                 relative = target.resolve().relative_to(_attachments_root()).as_posix()
@@ -369,12 +376,15 @@ class AttachmentService:
         if source.suffix.lower() in _IMAGE_SUFFIXES:
             try:
                 optimized = optimize_image_bytes(source)
-                target = self._unique_target(target.with_suffix(".jpg"))
-                target.parent.mkdir(parents=True, exist_ok=True)
-                target.write_bytes(optimized)
-                return target, target.name
-            except Exception:
-                pass
+            except PhotoOptimizationError:
+                raise
+            except Exception as exc:
+                raise PhotoOptimizationError(
+                    f"Fotografii se nepodařilo zpracovat pro uložení.\n\n{exc}"
+                ) from exc
+            target = self._unique_target(target.with_suffix(".jpg"))
+            write_internal_photo_bytes(target, optimized)
+            return target, target.name
 
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, target)

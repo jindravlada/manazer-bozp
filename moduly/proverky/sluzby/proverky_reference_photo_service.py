@@ -1,7 +1,10 @@
 import re
 from pathlib import Path
 
-from core.services.photo_optimization import optimize_image_bytes
+from core.services.photo_optimization import (
+    optimize_image_bytes,
+    write_internal_photo_bytes,
+)
 from core.utils.confined_path import resolve_confined_path
 from moduly.proverky.sluzby.proverky_knowledge_service import proverky_knowledge_service
 
@@ -36,8 +39,7 @@ class ProverkyReferencePhotoService:
         target = self._resolve_photo_path(relative_path)
         if target is None:
             raise ValueError("Cesta fotografie je mimo adresář metodiky prověrek.")
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(optimize_image_bytes(source_path))
+        write_internal_photo_bytes(target, optimize_image_bytes(source_path))
         return relative_path
 
     def delete_photo(self, relative_path: str) -> None:
