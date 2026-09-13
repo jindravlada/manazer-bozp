@@ -1,8 +1,10 @@
 from datetime import datetime
 from pathlib import Path
 
-from core.services.backup_service import BACKUP_TYPE_FULL, backup_service
-from core.services.storage_service import storage_service
+from core.backup.safety_backup import (
+    SAFETY_PREFIX_REGISTRY_IMPORT,
+    create_verified_application_safety_backup,
+)
 from moduly.pravni_pozadavky.import_export.legal_registry_import_service import (
     legal_registry_import_service,
 )
@@ -15,23 +17,10 @@ class LegalRegistryTransferService:
     """Orchestrace importu registru s ověřenou bezpečnostní zálohou."""
 
     def create_verified_safety_backup(self) -> tuple[Path, dict]:
-        timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
-        safety_path = backup_service.create_backup(
-            storage_service.backups_dir / f"pred-importem-registru-{timestamp}.zip",
-            backup_type=BACKUP_TYPE_FULL,
+        return create_verified_application_safety_backup(
+            filename_prefix=SAFETY_PREFIX_REGISTRY_IMPORT,
+            blocked_operation="Import nebyl spuštěn.",
         )
-        manifest = backup_service.verify_backup_integrity(safety_path, backup_type=BACKUP_TYPE_FULL)
-        if not manifest.get("verified"):
-            errors = manifest.get("verification_errors") or ["Neznámá chyba ověření."]
-            try:
-                safety_path.unlink(missing_ok=True)
-            except OSError:
-                pass
-            raise ValueError(
-                "Bezpečnostní záloha se nepodařila ověřit. Import nebyl spuštěn.\n\n"
-                + "\n".join(errors)
-            )
-        return safety_path, manifest
 
     def import_with_verified_safety(self, source_path: str | Path) -> dict:
         safety_path, safety_manifest = self.create_verified_safety_backup()

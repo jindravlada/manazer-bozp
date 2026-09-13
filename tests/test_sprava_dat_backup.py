@@ -204,7 +204,13 @@ class LegacyZipWorkflowServiceTestCase(unittest.TestCase):
         safety = data_management_settings_service.get_last_pre_restore_backup()
         self.assertIsNotNone(safety)
         assert safety is not None
-        self.assertTrue(Path(safety.path).is_file())
+        safety_path = Path(safety.path)
+        self.assertTrue(safety_path.is_file())
+        self.assertEqual(safety_path.suffix, ".mbbackup")
+        self.assertTrue(safety_path.name.startswith("pred-obnovou-"))
+        self.assertFalse(
+            list(storage_module.storage_service.backups_dir.glob("pred-obnovou-*.zip"))
+        )
         self.assertTrue(safety.manifest.get("verified"))
 
         restore_result = data_management_settings_service.get_last_restore_result()

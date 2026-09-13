@@ -147,7 +147,13 @@ class CodebookGroupTransferTestCase(unittest.TestCase):
         target = storage_module.storage_service.exports_dir / "group-import.zip"
         codebook_export_service.export_group_codebooks(MODULE_PROVERKY, target)
         result = codebook_transfer_service.import_group_with_verified_safety(MODULE_PROVERKY, target)
-        self.assertTrue(Path(result["safety_backup_path"]).is_file())
+        safety = Path(result["safety_backup_path"])
+        self.assertTrue(safety.is_file())
+        self.assertEqual(safety.suffix, ".mbbackup")
+        self.assertTrue(safety.name.startswith("pred-importem-ciselniku-"))
+        self.assertFalse(
+            list(storage_module.storage_service.backups_dir.glob("pred-importem-ciselniku-*.zip"))
+        )
         self.assertTrue(result["safety_backup_manifest"].get("verified"))
 
     def test_group_import_skips_non_importable_entries(self) -> None:

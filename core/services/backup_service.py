@@ -203,9 +203,16 @@ class BackupService:
             except Exception:
                 return {}
 
-    def _create_safety_backup(self, backup_type: str) -> Path:
-        name = f"pred-obnovou-{backup_type}-{self._timestamp()}.zip"
-        return self.create_backup(storage_service.backups_dir / name, backup_type=backup_type)
+    def _create_safety_backup(self, backup_type: str) -> tuple[Path, dict]:
+        from core.backup.safety_backup import (
+            SAFETY_PREFIX_BEFORE_RESTORE,
+            create_verified_application_safety_backup,
+        )
+
+        return create_verified_application_safety_backup(
+            filename_prefix=f"{SAFETY_PREFIX_BEFORE_RESTORE}-{backup_type}",
+            blocked_operation="Obnova nebyla spuštěna.",
+        )
 
     def verify_backup_integrity(
         self,
@@ -253,7 +260,7 @@ class BackupService:
         source_path: str | Path,
         restore_type: str = BACKUP_TYPE_FULL,
     ) -> dict:
-        """Vytvoří ověřenou bezpečnostní zálohu a teprve potom spustí obnovu."""
+        """Vytvoří ověřenou bezpečnostní zálohu ``*.mbbackup`` a teprve potom spustí obnovu."""
         if restore_type not in BACKUP_TYPE_RESTORE_LABELS:
             raise ValueError(f"Neznámý typ obnovy: {restore_type}")
 
@@ -264,13 +271,16 @@ class BackupService:
         info = self.read_backup_info(source)
         self._validate_restore_type(info, restore_type)
 
-        safety_path = self._create_safety_backup(restore_type)
-        safety_manifest = self.verify_backup_integrity(safety_path, backup_type=restore_type)
+        safety_path, safety_manifest = self._create_safety_backup(restore_type)
         if not safety_manifest.get("verified"):
             errors = safety_manifest.get("verification_errors") or ["Neznámá chyba ověření."]
+            try:
+                safety_path.unlink(missing_ok=True)
+            except OSError:
+                pass
             raise ValueError(
                 "Bezpečnostní záloha se nepodařila ověřit. Obnova nebyla spuštěna.\n\n"
-                + "\n".join(errors)
+                + "\n".join(str(item) for item in errors)
             )
 
         self._execute_restore(source, restore_type)
@@ -303,7 +313,7 @@ class BackupService:
     ) -> None:
         """Obnoví obsah zálohy do ~/.local/share/manazer-bozp.
 
-        Před obnovou vytvoří bezpečnostní zálohu odpovídajícího typu.
+        Před obnovou vytvoří ověřenou bezpečnostní zálohu ``*.mbbackup``.
         """
         if restore_type not in BACKUP_TYPE_RESTORE_LABELS:
             raise ValueError(f"Neznámý typ obnovy: {restore_type}")

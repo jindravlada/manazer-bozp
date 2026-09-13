@@ -136,9 +136,29 @@ class CodebookExportImportServiceTestCase(unittest.TestCase):
 
         result = codebook_transfer_service.import_with_verified_safety(target)
 
-        self.assertTrue(Path(result["safety_backup_path"]).is_file())
+        safety = Path(result["safety_backup_path"])
+        self.assertTrue(safety.is_file())
+        self.assertEqual(safety.suffix, ".mbbackup")
+        self.assertTrue(safety.name.startswith("pred-importem-ciselniku-"))
+        self.assertFalse(
+            list(storage_module.storage_service.backups_dir.glob("pred-importem-ciselniku-*.zip"))
+        )
         self.assertTrue(result["safety_backup_manifest"].get("verified"))
         self.assertIn("import_result", result)
+
+    def test_failed_safety_backup_blocks_bulk_import(self) -> None:
+        target = storage_module.storage_service.exports_dir / "ciselniky-import-fail.zip"
+        codebook_export_service.export_all_codebooks(target)
+
+        with patch.object(
+            codebook_transfer_service,
+            "create_verified_safety_backup",
+            side_effect=ValueError("Bezpečnostní záloha se nepodařila ověřit."),
+        ):
+            with patch.object(codebook_import_service, "import_all_codebooks") as mock_import:
+                with self.assertRaises(ValueError):
+                    codebook_transfer_service.import_with_verified_safety(target)
+                mock_import.assert_not_called()
 
     def test_single_export_manifest_fields(self) -> None:
         entry = codebook_catalog_service.get_by_id("json:audity/procesy.json")

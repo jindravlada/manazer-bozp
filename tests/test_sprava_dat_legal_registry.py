@@ -83,7 +83,13 @@ class LegalRegistryTransferServiceTestCase(unittest.TestCase):
 
         result = legal_registry_transfer_service.import_with_verified_safety(export_path)
 
-        self.assertTrue(Path(result["safety_backup_path"]).is_file())
+        safety = Path(result["safety_backup_path"])
+        self.assertTrue(safety.is_file())
+        self.assertEqual(safety.suffix, ".mbbackup")
+        self.assertTrue(safety.name.startswith("pred-importem-registru-"))
+        self.assertFalse(
+            list(storage_module.storage_service.backups_dir.glob("pred-importem-registru-*.zip"))
+        )
         self.assertTrue(result["safety_backup_manifest"].get("verified"))
         self.assertIn("record_counts", result)
 
