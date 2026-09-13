@@ -163,9 +163,9 @@ class BackupRestoreSafe1TestCase(unittest.TestCase):
                         side_effect=InstanceBackupError("disk full"),
                     ):
                         with patch.object(
-                            wf_mod.ContinueWithoutSafetyBackupDialog,
+                            wf_mod.MessageWithDetailsDialog,
                             "exec",
-                            return_value=QDialog.DialogCode.Rejected,
+                            return_value=1,
                         ):
                             with patch.object(restore_op_mod, "restore_instance_backup") as mock_restore:
                                 ok = self.service.restore_instance_backup_ui(self.parent)

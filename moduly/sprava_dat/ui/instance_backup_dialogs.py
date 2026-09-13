@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QCheckBox,
     QDialog,
     QDialogButtonBox,
     QHBoxLayout,
@@ -57,61 +56,6 @@ class RestoreConfirmDialog(QDialog):
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
-
-
-class ContinueWithoutSafetyBackupDialog(QDialog):
-    """Krizový scénář: pokračování obnovy bez automatické bezpečnostní zálohy."""
-
-    def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-        self.setWindowTitle("Nepodařilo se vytvořit bezpečnostní zálohu")
-        self.setModal(True)
-        self.setMinimumWidth(560)
-
-        layout = QVBoxLayout(self)
-
-        body = QLabel(
-            "Program se před obnovou pokusil vytvořit automatickou bezpečnostní "
-            "zálohu aktuálních dat.\n\n"
-            "Tento krok se nepodařilo dokončit.\n\n"
-            "Pokud budete pokračovat, budou současná data přepsána a nebude možné "
-            "je obnovit.\n\n"
-            "Doporučujeme nejprve odstranit příčinu problému a obnovu zopakovat."
-        )
-        body.setWordWrap(True)
-        layout.addWidget(body)
-
-        self.confirm_checkbox = QCheckBox(
-            "Rozumím, že pokračováním bez vytvoření bezpečnostní zálohy "
-            "mohu nenávratně ztratit současná data."
-        )
-        self.confirm_checkbox.toggled.connect(self._on_confirm_toggled)
-        layout.addWidget(self.confirm_checkbox)
-
-        buttons = QDialogButtonBox()
-        self.cancel_button = buttons.addButton(
-            "Zrušit obnovu", QDialogButtonBox.ButtonRole.RejectRole
-        )
-        self.continue_button = buttons.addButton(
-            "Pokračovat bez bezpečnostní zálohy",
-            QDialogButtonBox.ButtonRole.AcceptRole,
-        )
-        self.continue_button.setEnabled(False)
-        self.cancel_button.setDefault(True)
-        self.cancel_button.setAutoDefault(True)
-        self.continue_button.setAutoDefault(False)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
-
-    def _on_confirm_toggled(self, checked: bool) -> None:
-        self.continue_button.setEnabled(checked)
-        if checked:
-            self.continue_button.setDefault(True)
-            self.cancel_button.setDefault(False)
-        else:
-            self.cancel_button.setDefault(True)
-            self.continue_button.setDefault(False)
 
 
 class BackupProgressDialog(QDialog):

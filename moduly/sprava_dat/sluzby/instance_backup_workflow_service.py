@@ -50,7 +50,6 @@ from moduly.sprava_dat.sluzby.instance_backup_restore_operation import (
     restore_instance_backup_work,
 )
 from moduly.sprava_dat.ui.instance_backup_dialogs import (
-    ContinueWithoutSafetyBackupDialog,
     MessageWithDetailsDialog,
     RestoreConfirmDialog,
 )
@@ -62,6 +61,11 @@ _STATUS_LABELS = {
     INTEGRITY_VALID_WITH_WARNINGS: "Platná s upozorněními",
     INTEGRITY_INVALID: "Neplatná",
 }
+
+_SAFETY_BACKUP_FAILED_USER_MESSAGE = (
+    "Nepodařilo se vytvořit bezpečnostní zálohu před obnovou. "
+    "Obnova nebyla spuštěna. Současná pracovní data zůstala beze změny."
+)
 
 _RESTORE_USER_MESSAGES = {
     RESTORE_ERR_FAILED_BEFORE_SWAP: (
@@ -524,108 +528,103 @@ class InstanceBackupWorkflowService:
             ),
         )
         blocked = self._backup_action_widgets(parent)
-        create_safety = True
         safety_path: Path | None = None
         result = None
 
-        while True:
-            runner = LongOperationRunner(parent)
-            dialog = LongOperationDialog(
+        runner = LongOperationRunner(parent)
+        dialog = LongOperationDialog(
+            parent,
+            title=BACKUP_RESTORE_PROGRESS_TITLE,
+            runner=runner,
+            delay_ms=0,
+            allow_cancel=False,
+            close_on_success=False,
+        )
+        self._restore_runner = runner
+        self._restore_progress_dialog = dialog
+        self._operation_running = True
+        safety_failed_message: str | None = None
+        restore_error: InstanceRestoreError | None = None
+        unexpected_details: str | None = None
+        try:
+            safety_outcome = self._run_restore_worker(
                 parent,
-                title=BACKUP_RESTORE_PROGRESS_TITLE,
-                runner=runner,
-                delay_ms=0,
-                allow_cancel=False,
-                close_on_success=False,
+                runner,
+                create_safety_backup_work,
+                snapshot,
+                blocked,
             )
-            self._restore_runner = runner
-            self._restore_progress_dialog = dialog
-            self._operation_running = True
-            safety_failed_message: str | None = None
-            restore_error: InstanceRestoreError | None = None
-            unexpected_details: str | None = None
-            try:
-                if create_safety:
-                    safety_outcome = self._run_restore_worker(
-                        parent,
-                        runner,
-                        create_safety_backup_work,
-                        snapshot,
-                        blocked,
-                    )
-                    safety_obj = safety_outcome["result"]
-                    if safety_outcome["error"] is not None:
-                        safety_failed_message = str(safety_outcome["error"])
-                    elif (
-                        not isinstance(safety_obj, InstanceBackupRestoreOutcome)
-                        or not safety_obj.safety_path
-                    ):
-                        safety_failed_message = "worker nevrátil cestu k záloze."
-                    else:
-                        safety_path = Path(safety_obj.safety_path)
+            safety_obj = safety_outcome["result"]
+            if safety_outcome["error"] is not None:
+                safety_failed_message = str(safety_outcome["error"])
+            elif (
+                not isinstance(safety_obj, InstanceBackupRestoreOutcome)
+                or not safety_obj.safety_path
+            ):
+                safety_failed_message = "worker nevrátil cestu k záloze."
+            else:
+                safety_path = Path(safety_obj.safety_path)
 
-                if safety_failed_message is None:
-                    from core.database.session import dispose_database_engine
+            if safety_failed_message is None:
+                from core.database.session import dispose_database_engine
 
-                    dialog.set_status("Uzavírám databázová připojení…")
-                    dispose_database_engine()
+                dialog.set_status("Uzavírám databázová připojení…")
+                dispose_database_engine()
 
-                    restore_outcome = self._run_restore_worker(
-                        parent,
-                        runner,
-                        restore_instance_backup_work,
-                        snapshot,
-                        blocked,
-                    )
-                    restore_obj = restore_outcome["result"]
-                    if restore_outcome["error"] is not None:
-                        unexpected_details = str(restore_outcome["error"])
-                    elif not isinstance(restore_obj, InstanceBackupRestoreOutcome):
-                        unexpected_details = "Worker nevrátil výsledek obnovy."
-                    elif restore_obj.restore_error is not None:
-                        restore_error = restore_obj.restore_error
-                    elif restore_obj.unexpected_error:
-                        unexpected_details = str(restore_obj.unexpected_error)
-                    elif restore_obj.restore_result is None:
-                        unexpected_details = "Worker nevrátil výsledek obnovy."
-                    else:
-                        result = restore_obj.restore_result
-            finally:
-                self._operation_running = False
-                self._restore_runner = None
-                self._restore_progress_dialog = None
-                self._finish_restore_progress(dialog)
-
-            if safety_failed_message is not None:
-                logger.warning(
-                    "Automatická bezpečnostní záloha před obnovou selhala: %s",
-                    safety_failed_message,
-                )
-                crisis = ContinueWithoutSafetyBackupDialog(parent)
-                if crisis.exec() != ContinueWithoutSafetyBackupDialog.DialogCode.Accepted:
-                    return False
-                logger.warning(
-                    "Uživatel vědomě pokračoval v obnově bez vytvoření "
-                    "automatické bezpečnostní zálohy."
-                )
-                create_safety = False
-                continue
-
-            if restore_error is not None:
-                self._show_restore_error(parent, restore_error)
-                self.refresh_recovery_markers()
-                return False
-            if unexpected_details is not None:
-                MessageWithDetailsDialog(
+                restore_outcome = self._run_restore_worker(
                     parent,
-                    title="Obnova ze zálohy",
-                    message="Obnova selhala kvůli neočekávané chybě.",
-                    details=unexpected_details,
-                    level="critical",
-                ).exec()
-                self.refresh_recovery_markers()
-                return False
-            break
+                    runner,
+                    restore_instance_backup_work,
+                    snapshot,
+                    blocked,
+                )
+                restore_obj = restore_outcome["result"]
+                if restore_outcome["error"] is not None:
+                    unexpected_details = str(restore_outcome["error"])
+                elif not isinstance(restore_obj, InstanceBackupRestoreOutcome):
+                    unexpected_details = "Worker nevrátil výsledek obnovy."
+                elif restore_obj.restore_error is not None:
+                    restore_error = restore_obj.restore_error
+                elif restore_obj.unexpected_error:
+                    unexpected_details = str(restore_obj.unexpected_error)
+                elif restore_obj.restore_result is None:
+                    unexpected_details = "Worker nevrátil výsledek obnovy."
+                else:
+                    result = restore_obj.restore_result
+        finally:
+            self._operation_running = False
+            self._restore_runner = None
+            self._restore_progress_dialog = None
+            self._finish_restore_progress(dialog)
+
+        if safety_failed_message is not None:
+            logger.warning(
+                "Automatická bezpečnostní záloha před obnovou selhala: %s",
+                safety_failed_message,
+            )
+            MessageWithDetailsDialog(
+                parent,
+                title="Obnova ze zálohy",
+                message=_SAFETY_BACKUP_FAILED_USER_MESSAGE,
+                details=safety_failed_message,
+                level="critical",
+            ).exec()
+            return False
+
+        if restore_error is not None:
+            self._show_restore_error(parent, restore_error)
+            self.refresh_recovery_markers()
+            return False
+        if unexpected_details is not None:
+            MessageWithDetailsDialog(
+                parent,
+                title="Obnova ze zálohy",
+                message="Obnova selhala kvůli neočekávané chybě.",
+                details=unexpected_details,
+                level="critical",
+            ).exec()
+            self.refresh_recovery_markers()
+            return False
 
         if result is None:
             MessageWithDetailsDialog(

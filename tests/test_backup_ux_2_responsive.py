@@ -149,7 +149,6 @@ class BackupUx2ResponsiveTestCase(unittest.TestCase):
         *,
         create_side_effect,
         restore_side_effect,
-        crisis_result: int | None = None,
     ) -> bool:
         safety_target = storage_module.storage_service.backups_dir / f"AUTO{BACKUP_EXTENSION}"
         patches = [
@@ -174,14 +173,6 @@ class BackupUx2ResponsiveTestCase(unittest.TestCase):
             patch.object(wf_mod.QMessageBox, "warning"),
             patch.object(QApplication, "quit"),
         ]
-        if crisis_result is not None:
-            patches.append(
-                patch.object(
-                    wf_mod.ContinueWithoutSafetyBackupDialog,
-                    "exec",
-                    return_value=crisis_result,
-                )
-            )
         for p in patches:
             p.start()
         try:
@@ -426,7 +417,6 @@ class BackupUx2ResponsiveTestCase(unittest.TestCase):
         ok = self._run_restore(
             create_side_effect=fake_create,
             restore_side_effect=fake_restore,
-            crisis_result=wf_mod.ContinueWithoutSafetyBackupDialog.DialogCode.Rejected,
         )
         self.assertFalse(ok)
         self.assertEqual(restore_calls, [])
