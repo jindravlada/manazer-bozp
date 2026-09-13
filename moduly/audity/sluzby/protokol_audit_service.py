@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import traceback
 from datetime import datetime
 from pathlib import Path
@@ -19,14 +20,23 @@ PROTOCOL_INCOMPLETE_WARNING = (
     "Audit ještě není dokončený. Protokol bude vygenerován v aktuálním stavu."
 )
 
-# AUDIT-BUG-2: dočasná diagnostika – po identifikaci root cause odstranit.
-_DIAG_ENABLED = True
+# AUDIT-BUG-2: dočasná diagnostika exportu protokolu. Výchozí vypnuto.
+# Zapnutí: MANAZER_BOZP_PROTOKOL_AUDIT_DIAG=1
+_DIAG_ENABLED = False
+_DIAG_ENV = "MANAZER_BOZP_PROTOKOL_AUDIT_DIAG"
 _DIAG_LOG_NAME = "protokol_audit_debug.log"
+
+
+def _diag_is_enabled() -> bool:
+    if _DIAG_ENABLED:
+        return True
+    raw = os.environ.get(_DIAG_ENV, "").strip().lower()
+    return raw in {"1", "true", "yes", "on"}
 
 
 def _diag(message: str) -> None:
     """Dočasné diagnostické logování exportu protokolu (stderr + soubor)."""
-    if not _DIAG_ENABLED:
+    if not _diag_is_enabled():
         return
     stamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
     line = f"[protokol-audit {stamp}] {message}"
