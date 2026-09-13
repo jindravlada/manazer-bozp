@@ -5,6 +5,7 @@ import shutil
 from pathlib import Path
 
 from core.paths import project_root
+from core.utils.confined_path import require_confined_path
 
 
 class StorageService:
@@ -205,7 +206,12 @@ class StorageService:
         return path
 
     def attachment_absolute(self, relative_path: str) -> Path:
-        return self.attachments_dir / relative_path
+        """Vrátí cestu uvnitř ``prilohy/``. Absolutní cesta, ``..`` i symlink ven jsou chyba."""
+        return require_confined_path(
+            self.attachments_dir,
+            relative_path,
+            message="Cesta přílohy je mimo adresář prilohy.",
+        )
 
 
 storage_service = StorageService()

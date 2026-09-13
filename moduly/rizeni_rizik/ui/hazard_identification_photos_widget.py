@@ -14,7 +14,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.services.storage_service import storage_service
 from core.ui.photo_picker_dialog import PhotoPickerDialog
 from core.widgets.image_viewer_dialog import ImageViewerDialog
 from core.widgets.table_utils import configure_table_columns
@@ -131,9 +130,6 @@ class HazardIdentificationPhotosWidget(QWidget):
         staged = getattr(photo, "staged_source_path", None)
         if staged:
             return Path(staged)
-        relative = getattr(photo, "relative_path", None)
-        if relative:
-            return storage_service.attachment_absolute(relative)
         return hazard_identification_photo_service.absolute_path(photo)
 
     def set_identification(

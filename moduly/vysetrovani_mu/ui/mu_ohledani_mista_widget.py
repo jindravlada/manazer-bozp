@@ -198,7 +198,11 @@ class MuOhledaniMistaWidget(QWidget):
             QMessageBox.warning(self, "Příloha", "Soubor protokolu nebyl nalezen.")
             return
 
-        path = attachment_service.resolve_path(attachment)
+        try:
+            path = attachment_service.resolve_path(attachment)
+        except ValueError:
+            QMessageBox.warning(self, "Příloha", "Soubor protokolu nebyl nalezen.")
+            return
         if not path.exists():
             QMessageBox.warning(self, "Příloha", "Soubor protokolu nebyl nalezen.")
             return

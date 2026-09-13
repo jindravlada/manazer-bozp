@@ -141,7 +141,13 @@ class ExternalAuditAttachmentStagingWidget(QWidget):
             attachment_id = int(payload)
             for attachment in self._existing:
                 if int(attachment.id) == attachment_id:
-                    path = attachment_service.resolve_path(attachment)
+                    try:
+                        path = attachment_service.resolve_path(attachment)
+                    except ValueError:
+                        QMessageBox.warning(
+                            self, "Přílohy", "Soubor přílohy nebyl v úložišti nalezen."
+                        )
+                        return
                     open_local_file(str(path))
                     return
 

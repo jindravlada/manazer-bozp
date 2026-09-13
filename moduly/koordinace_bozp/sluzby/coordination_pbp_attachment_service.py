@@ -157,9 +157,21 @@ class CoordinationPbpAttachmentService:
         target_dir = storage_service.attachment_dir(self.ENTITY_TYPE, coordination_id)
         target_dir.mkdir(parents=True, exist_ok=True)
         output_path = target_dir / filename
+        try:
+            storage_service.attachment_absolute(
+                str(output_path.resolve().relative_to(
+                    storage_service.attachments_dir.resolve()
+                ))
+            )
+        except ValueError as exc:
+            raise CoordinationPbpAttachmentError(
+                "Cílová cesta přílohy musí zůstat v adresáři prilohy."
+            ) from exc
         self._write_odt(output_path, rules=rules)
 
-        relative_path = str(output_path.relative_to(storage_service.attachments_dir))
+        relative_path = output_path.resolve().relative_to(
+            storage_service.attachments_dir.resolve()
+        ).as_posix()
         self.repository.clear_current(coordination_id)
         revision = CoordinationPbpRevision(
             coordination_id=coordination_id,
@@ -193,10 +205,12 @@ class CoordinationPbpAttachmentService:
         )
 
     def resolve_path(self, revision: CoordinationPbpRevision) -> Path:
-        stored = Path(revision.file_path)
-        if stored.is_absolute():
-            return stored
-        return storage_service.attachment_absolute(revision.file_path)
+        try:
+            return storage_service.attachment_absolute(revision.file_path)
+        except ValueError as exc:
+            raise CoordinationPbpAttachmentError(
+                "Cesta přílohy je mimo úložiště."
+            ) from exc
 
     def open_revision(self, revision_id: int, parent=None) -> bool:
         revision = self.repository.get_by_id(revision_id)

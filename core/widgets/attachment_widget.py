@@ -107,7 +107,11 @@ class AttachmentWidget(QWidget):
         if attachment is None:
             return
 
-        path = attachment_service.resolve_path(attachment)
+        try:
+            path = attachment_service.resolve_path(attachment)
+        except ValueError:
+            QMessageBox.warning(self, "Přílohy", "Soubor nebyl nalezen.")
+            return
 
         if not path.exists():
             QMessageBox.warning(self, "Přílohy", "Soubor nebyl nalezen.")

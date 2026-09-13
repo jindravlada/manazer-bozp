@@ -19,6 +19,7 @@ from core.models.attachment_staging import (
 from core.repositories.attachment_repository import AttachmentRepository
 from core.services.photo_optimization import optimize_image_bytes
 from core.services.storage_service import storage_service
+from core.utils.confined_path import resolve_confined_path
 
 logger = logging.getLogger(__name__)
 
@@ -68,28 +69,43 @@ class AttachmentService:
         if not source.exists() or not entity_id:
             return None
 
-        target_dir = storage_service.attachment_dir(entity_type, entity_id)
-        target = self._unique_target(target_dir / target_filename)
-        target, stored_name = self._store_source_file(source, target)
+        try:
+            type_value = _require_entity_type(entity_type)
+            ident = _require_entity_id(entity_id)
+        except AttachmentStagingError:
+            return None
 
-        relative_path = target.relative_to(storage_service.attachments_dir)
+        safe_name = _safe_filename(target_filename)
+        target_dir = storage_service.attachment_dir(type_value, ident)
+        try:
+            _assert_under_attachments_root(target_dir)
+        except AttachmentStagingError:
+            return None
+
+        target = self._unique_target(target_dir / safe_name)
+        try:
+            _assert_under_attachments_root(target)
+        except AttachmentStagingError:
+            return None
+
+        target, stored_name = self._store_source_file(source, target)
+        try:
+            _assert_under_attachments_root(target)
+            relative_path = target.resolve().relative_to(_attachments_root()).as_posix()
+        except (AttachmentStagingError, ValueError):
+            return None
 
         attachment = Attachment(
-            entity_type=entity_type,
-            entity_id=entity_id,
+            entity_type=type_value,
+            entity_id=ident,
             original_path=str(source),
-            stored_path=str(relative_path),
+            stored_path=relative_path,
             filename=stored_name,
         )
 
         return self.repository.add(attachment)
 
     def resolve_path(self, attachment) -> Path:
-        stored = Path(attachment.stored_path)
-
-        if stored.is_absolute():
-            return stored
-
         return storage_service.attachment_absolute(attachment.stored_path)
 
     def delete(self, attachment_id: int):
@@ -112,23 +128,49 @@ class AttachmentService:
         ):
             return 0
 
+        try:
+            new_type = _require_entity_type(new_entity_type)
+            new_ident = _require_entity_id(new_entity_id)
+        except AttachmentStagingError:
+            return 0
+
         moved = 0
         for attachment in list(
             self.repository.get_for_entity(old_entity_type, old_entity_id)
         ):
-            old_path = self.resolve_path(attachment)
-            target_dir = storage_service.attachment_dir(new_entity_type, new_entity_id)
-            filename = attachment.filename or (
-                old_path.name if old_path else f"attachment-{attachment.id}"
+            old_path = resolve_confined_path(
+                _attachments_root(), attachment.stored_path
+            )
+            if old_path is None:
+                logger.warning(
+                    "Příloha %s má cestu mimo prilohy, přesun se přeskočil: %s",
+                    attachment.id,
+                    attachment.stored_path,
+                )
+                continue
+            target_dir = storage_service.attachment_dir(new_type, new_ident)
+            try:
+                _assert_under_attachments_root(target_dir)
+            except AttachmentStagingError:
+                continue
+            filename = _safe_filename(
+                attachment.filename or old_path.name or f"attachment-{attachment.id}"
             )
             target = self._unique_target(target_dir / filename)
+            try:
+                _assert_under_attachments_root(target)
+            except AttachmentStagingError:
+                continue
             if old_path.exists():
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.move(str(old_path), str(target))
-            relative_path = target.relative_to(storage_service.attachments_dir)
-            attachment.entity_type = new_entity_type
-            attachment.entity_id = int(new_entity_id)
-            attachment.stored_path = str(relative_path)
+            try:
+                relative_path = target.resolve().relative_to(_attachments_root()).as_posix()
+            except ValueError:
+                continue
+            attachment.entity_type = new_type
+            attachment.entity_id = new_ident
+            attachment.stored_path = relative_path
             attachment.filename = target.name
             self.repository.update(attachment)
             moved += 1
@@ -166,7 +208,15 @@ class AttachmentService:
                 raise AttachmentStagingError(
                     "Příloha nepatří k ukládanému záznamu."
                 )
-            pending_unlink.append(self.resolve_path(record))
+            confined = resolve_confined_path(_attachments_root(), record.stored_path)
+            if confined is None:
+                logger.warning(
+                    "Příloha %s má cestu mimo prilohy, soubor se nesmaže: %s",
+                    record.id,
+                    record.stored_path,
+                )
+            else:
+                pending_unlink.append(confined)
 
         sources = [_validate_source_file(path) for path in staging.pending_add_paths]
 
@@ -188,7 +238,7 @@ class AttachmentService:
                     copied_paths.append(target)
 
             for source, target in zip(sources, copied_paths, strict=True):
-                relative = str(target.resolve().relative_to(_attachments_root()))
+                relative = target.resolve().relative_to(_attachments_root()).as_posix()
                 if len(relative) > _STORED_PATH_LIMIT:
                     relative = relative[:_STORED_PATH_LIMIT]
                 original = str(source)
@@ -241,6 +291,11 @@ class AttachmentService:
 
         warnings: list[str] = []
         for path in list(prepared.pending_unlink_paths):
+            if not _is_under_attachments_root(path):
+                message = f"Cesta k odebrání přílohy je mimo adresář prilohy: {path}"
+                logger.warning(message)
+                warnings.append(message)
+                continue
             try:
                 if path.is_symlink() or path.is_file():
                     path.unlink()
@@ -380,14 +435,20 @@ def _require_entity_id(value: int) -> int:
 
 
 def _assert_under_attachments_root(path: Path) -> None:
-    root = _attachments_root()
-    resolved = path.resolve()
-    try:
-        resolved.relative_to(root)
-    except ValueError as exc:
+    if not _is_under_attachments_root(path):
         raise AttachmentStagingError(
             "Cílová cesta přílohy musí zůstat v adresáři prilohy."
-        ) from exc
+        )
+
+
+def _is_under_attachments_root(path: Path) -> bool:
+    root = _attachments_root()
+    try:
+        resolved = path.resolve()
+        resolved.relative_to(root)
+    except (OSError, ValueError):
+        return False
+    return resolved != root
 
 
 def _utf8_prefix(text: str, max_bytes: int) -> str:
@@ -446,6 +507,11 @@ def _validate_source_file(path: str | Path) -> Path:
 
 def _unlink_copied_quietly(paths: list[Path]) -> None:
     for path in paths:
+        if not _is_under_attachments_root(path):
+            logger.warning(
+                "Úklid přílohy mimo prilohy se přeskočil: %s", path
+            )
+            continue
         try:
             if path.is_symlink() or path.is_file():
                 path.unlink()

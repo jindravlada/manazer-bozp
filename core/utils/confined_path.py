@@ -33,3 +33,16 @@ def resolve_confined_path(root: Path, relative: str | None) -> Path | None:
     if resolved == root_resolved:
         return None
     return resolved
+
+
+def require_confined_path(
+    root: Path,
+    relative: str | None,
+    *,
+    message: str,
+) -> Path:
+    """Jako ``resolve_confined_path``, ale při odmítnutí vyhodí ``ValueError``."""
+    resolved = resolve_confined_path(root, relative)
+    if resolved is None:
+        raise ValueError(message)
+    return resolved

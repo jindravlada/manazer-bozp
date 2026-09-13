@@ -83,16 +83,33 @@ class CoordinationAttachmentService:
                 f"Nepodporovaný formát souboru. Povolené: {allowed}."
             )
 
-        original_filename = source.name
+        original_filename = Path(source.name).name
         target_dir = storage_service.attachment_dir(
             self.ENTITY_TYPE,
             coordination_id,
         ) / f"employer_{coordination_employer_id}"
+        try:
+            target_dir_resolved = target_dir.resolve()
+            target_dir_resolved.relative_to(storage_service.attachments_dir.resolve())
+        except ValueError as exc:
+            raise CoordinationAttachmentError(
+                "Cílová cesta přílohy musí zůstat v adresáři prilohy."
+            ) from exc
         target_dir.mkdir(parents=True, exist_ok=True)
         target = self._unique_target(target_dir / original_filename)
+        try:
+            storage_service.attachment_absolute(
+                str(target.resolve().relative_to(storage_service.attachments_dir.resolve()))
+            )
+        except ValueError as exc:
+            raise CoordinationAttachmentError(
+                "Cílová cesta přílohy musí zůstat v adresáři prilohy."
+            ) from exc
         shutil.copy2(source, target)
 
-        relative_path = target.relative_to(storage_service.attachments_dir)
+        relative_path = target.resolve().relative_to(
+            storage_service.attachments_dir.resolve()
+        ).as_posix()
         attachment = CoordinationAttachment(
             coordination_id=coordination_id,
             coordination_employer_id=coordination_employer_id,
@@ -106,10 +123,12 @@ class CoordinationAttachmentService:
         return self.repository.add(attachment)
 
     def resolve_path(self, attachment: CoordinationAttachment) -> Path:
-        stored = Path(attachment.file_path)
-        if stored.is_absolute():
-            return stored
-        return storage_service.attachment_absolute(attachment.file_path)
+        try:
+            return storage_service.attachment_absolute(attachment.file_path)
+        except ValueError as exc:
+            raise CoordinationAttachmentError(
+                "Cesta přílohy je mimo úložiště."
+            ) from exc
 
     def open_attachment(self, attachment_id: int, parent=None) -> bool:
         attachment = self.repository.get_by_id(attachment_id)

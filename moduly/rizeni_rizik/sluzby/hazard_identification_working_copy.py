@@ -2445,7 +2445,12 @@ class HazardIdentificationWorkingCopy:
             f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}.jpg"
         )
         relative_path = relative_dir / stored_filename
-        absolute = storage_service.attachment_absolute(str(relative_path))
+        try:
+            absolute = storage_service.attachment_absolute(str(relative_path))
+        except ValueError as exc:
+            raise HazardIdentificationPhotoError(
+                "Cesta fotografie je mimo úložiště příloh."
+            ) from exc
         absolute.parent.mkdir(parents=True, exist_ok=True)
         absolute.write_bytes(optimized.data)
         photo.filename = photo.filename or source.name

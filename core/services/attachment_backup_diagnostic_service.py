@@ -101,7 +101,15 @@ class AttachmentBackupDiagnosticService:
 
             normalized = stored.replace("\\", "/")
             referenced_paths.add(normalized)
-            absolute = attachment_service.resolve_path(attachment)
+            try:
+                absolute = attachment_service.resolve_path(attachment)
+            except ValueError:
+                result.attachment_files_missing += 1
+                if len(result.missing_attachment_samples) < 10:
+                    result.missing_attachment_samples.append(
+                        f"attachments#{attachment.id}: {normalized}"
+                    )
+                continue
             if absolute.is_file():
                 result.attachment_files_found += 1
             else:

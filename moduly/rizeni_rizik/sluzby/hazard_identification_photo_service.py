@@ -15,6 +15,7 @@ from core.services.photo_optimization import (
     optimize_photo_for_storage,
 )
 from core.services.storage_service import storage_service
+from core.utils.confined_path import resolve_confined_path
 from moduly.rizeni_rizik.modely.hazard_identification_photo import HazardIdentificationPhoto
 from moduly.rizeni_rizik.repository.hazard_identification_photo_repository import (
     HazardIdentificationPhotoRepository,
@@ -51,7 +52,10 @@ class HazardIdentificationPhotoService:
         return self.repository.get_by_id(photo_id)
 
     def absolute_path(self, photo: HazardIdentificationPhoto) -> Path:
-        return storage_service.attachment_absolute(photo.relative_path)
+        confined = resolve_confined_path(
+            storage_service.attachments_dir, photo.relative_path
+        )
+        return confined if confined is not None else Path()
 
     def file_exists(self, photo: HazardIdentificationPhoto) -> bool:
         return self.absolute_path(photo).is_file()
@@ -107,7 +111,12 @@ class HazardIdentificationPhotoService:
             f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}.jpg"
         )
         relative_path = relative_dir / stored_filename
-        absolute = storage_service.attachment_absolute(str(relative_path))
+        try:
+            absolute = storage_service.attachment_absolute(str(relative_path))
+        except ValueError as exc:
+            raise HazardIdentificationPhotoError(
+                "Cesta fotografie je mimo úložiště příloh."
+            ) from exc
         absolute.parent.mkdir(parents=True, exist_ok=True)
         absolute.write_bytes(optimized.data)
 
