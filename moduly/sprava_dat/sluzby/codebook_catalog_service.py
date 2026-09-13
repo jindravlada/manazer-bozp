@@ -8,7 +8,6 @@ from pathlib import Path
 from sqlalchemy import func, select
 
 from core.database.session import get_session
-from core.services.backup_manifest_service import backup_manifest_service
 from core.services.cz_nace_service import cz_nace_service
 from core.services.editable_catalog_service import editable_catalog_service
 from core.services.storage_service import storage_service
@@ -435,6 +434,24 @@ class CodebookCatalogService:
             return len(payload)
         return 0
 
+    def _is_audit_methodology(self, relative_path: str) -> bool:
+        parts = Path(relative_path).parts
+        if len(parts) != 2 or parts[0] != "audity":
+            return False
+        name = parts[1]
+        return name.endswith(".json") and name != "procesy.json" and not name.startswith("_")
+
+    def _is_proverky_methodology(self, relative_path: str) -> bool:
+        parts = Path(relative_path).parts
+        if len(parts) != 2 or parts[0] != "proverky":
+            return False
+        name = parts[1]
+        return (
+            name.endswith(".json")
+            and name not in {"oblasti.json", "prvni_pomoc.json"}
+            and not name.startswith("_")
+        )
+
     def _count_json_file(self, path: Path, relative_path: str) -> int:
         if not path.is_file():
             return 0
@@ -449,9 +466,9 @@ class CodebookCatalogService:
             return len(payload.get("oblasti") or [])
         if relative_path == "modulove/vysetrovani_mu/ishikawa_faktory.json":
             return self._count_ishikawa_factors(payload)
-        if backup_manifest_service._is_audit_methodology(relative_path):
+        if self._is_audit_methodology(relative_path):
             return self._count_knowledge_sections(payload)
-        if backup_manifest_service._is_proverky_methodology(relative_path):
+        if self._is_proverky_methodology(relative_path):
             return self._count_knowledge_sections(payload)
         if isinstance(payload, list):
             return len(payload)

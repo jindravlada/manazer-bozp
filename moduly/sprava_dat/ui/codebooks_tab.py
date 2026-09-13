@@ -23,7 +23,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.services.backup_service import BACKUP_TYPE_FULL
 from core.services.file_location_service import open_path_in_file_manager
 from core.services.storage_service import storage_service
 from moduly.sprava_dat.sluzby.codebook_capabilities import capabilities_for
@@ -37,6 +36,7 @@ from moduly.sprava_dat.sluzby.codebook_import_service import codebook_import_ser
 from moduly.sprava_dat.sluzby.codebook_manifest_service import codebook_manifest_service
 from moduly.sprava_dat.sluzby.codebook_transfer_service import codebook_transfer_service
 from moduly.sprava_dat.sluzby.data_management_settings_service import (
+    BACKUP_TYPE_INSTANCE,
     BackupRecord,
     CodebooksExportRecord,
     CodebooksImportRecord,
@@ -696,7 +696,7 @@ class CodebooksTab(QWidget):
                 created_at=datetime.now().isoformat(timespec="seconds"),
                 path=result["safety_backup_path"],
                 manifest=result["safety_backup_manifest"],
-                backup_type=BACKUP_TYPE_FULL,
+                backup_type=BACKUP_TYPE_INSTANCE,
             )
         )
         data_management_settings_service.save_last_codebooks_import(

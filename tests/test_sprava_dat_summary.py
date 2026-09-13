@@ -23,7 +23,6 @@ with patch.object(Path, "home", return_value=_TMP):
 
     initialize_database()
 
-    from core.services.backup_service import BACKUP_TYPE_FULL
     from moduly.sprava_dat.sluzby.data_management_settings_service import (
         BackupRecord,
         data_management_settings_service,
@@ -32,7 +31,6 @@ with patch.object(Path, "home", return_value=_TMP):
         data_management_status_service,
     )
     from moduly.sprava_dat.ui.backup_tab import BackupTab
-    from moduly.sprava_dat.ui.manifest_presenter import rows_from_backup_manifest
     from moduly.sprava_dat.ui.manifest_table_widget import ManifestTableWidget
     from moduly.sprava_dat.ui.summary_tab import SummaryTab
     from moduly.sprava_dat.ui.sprava_dat_page import SpravaDatPage
@@ -79,7 +77,7 @@ class DataManagementStatusServiceTestCase(unittest.TestCase):
                 created_at="2026-07-10T10:00:00",
                 path=str(storage_module.storage_service.backups_dir / "legacy.zip"),
                 manifest={"verified": True},
-                backup_type=BACKUP_TYPE_FULL,
+                backup_type="celkova",
             )
         )
         _status, warnings = data_management_status_service.compute_status()

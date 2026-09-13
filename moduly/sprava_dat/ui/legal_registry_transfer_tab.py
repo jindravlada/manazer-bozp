@@ -18,13 +18,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.services.backup_service import BACKUP_TYPE_FULL
 from core.services.file_location_service import open_path_in_file_manager
 from core.services.storage_service import storage_service
 from moduly.pravni_pozadavky.import_export.legal_registry_export_service import (
     legal_registry_export_service,
 )
 from moduly.sprava_dat.sluzby.data_management_settings_service import (
+    BACKUP_TYPE_INSTANCE,
     BackupRecord,
     RegistryExportRecord,
     RegistryImportRecord,
@@ -352,7 +352,7 @@ class LegalRegistryTransferTab(QWidget):
                 created_at=datetime.now().isoformat(timespec="seconds"),
                 path=str(result.get("safety_backup_path") or ""),
                 manifest=safety_manifest,
-                backup_type=BACKUP_TYPE_FULL,
+                backup_type=BACKUP_TYPE_INSTANCE,
             )
         )
         record = RegistryImportRecord(

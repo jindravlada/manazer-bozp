@@ -25,7 +25,6 @@ with patch.object(Path, "home", return_value=_TMP):
 
     initialize_database()
 
-    from core.services.backup_service import BACKUP_TYPE_FULL, backup_service
     from moduly.sprava_dat.sluzby.codebook_catalog_service import (
         MODULE_AUDITY,
         MODULE_GLOBAL,

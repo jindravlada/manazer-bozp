@@ -23,7 +23,6 @@ with patch.object(Path, "home", return_value=_TMP):
 
     initialize_database()
 
-    from core.services.backup_service import BACKUP_TYPE_FULL, backup_service
     from moduly.pravni_pozadavky.import_export.legal_registry_export_service import (
         legal_registry_export_service,
     )

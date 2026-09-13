@@ -1,15 +1,13 @@
 from __future__ import annotations
 
-import zipfile
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
-from sqlalchemy import func, select
+from sqlalchemy import select
 
 from core.database.session import get_session
 from core.models.attachment import Attachment
 from core.services.attachment_service import attachment_service
-from core.services.backup_service import BACKUP_TYPE_FULL, backup_service
 from core.services.control_result_photo_service import control_result_photo_service
 from core.services.storage_service import storage_service
 from core.shared.modely.control_result import ControlResult
@@ -45,33 +43,8 @@ class AttachmentBackupDiagnostic:
         return asdict(self)
 
 
-@dataclass
-class BackupAttachmentCoverageDiagnostic:
-    backup_path: str = ""
-    zip_readable: bool = False
-    zip_crc_ok: bool = False
-    integrity_verified: bool = False
-    attachment_files_in_zip: int = 0
-    control_result_files_in_zip: int = 0
-    reference_photo_files_in_zip: int = 0
-    export_files_in_zip: int = 0
-    version_obsah: list[str] = field(default_factory=list)
-    version_root_absolute: str = ""
-    attachment_zip_samples: list[str] = field(default_factory=list)
-    uses_relative_zip_paths: bool = True
-    manifest_reports_attachment_count: bool = False
-
-    def to_dict(self) -> dict:
-        return asdict(self)
-
-
 class AttachmentBackupDiagnosticService:
-    """Diagnostika příloh a jejich zahrnutí do kompletní zálohy."""
-
-    _REFERENCE_PHOTO_MARKERS = (
-        "ciselniky/audity/fotografie/",
-        "ciselniky/proverky/fotografie/",
-    )
+    """Diagnostika příloh ve workspace (read-only)."""
 
     def diagnose_workspace(self) -> AttachmentBackupDiagnostic:
         storage_service.ensure_structure()
@@ -130,128 +103,6 @@ class AttachmentBackupDiagnosticService:
 
         result.directories = self._directory_overview()
         return result
-
-    def diagnose_backup_zip(self, zip_path: Path | str) -> BackupAttachmentCoverageDiagnostic:
-        source = Path(zip_path)
-        result = BackupAttachmentCoverageDiagnostic(backup_path=str(source.resolve()))
-
-        if not source.is_file():
-            return result
-
-        try:
-            with zipfile.ZipFile(source, "r") as zf:
-                result.zip_readable = True
-                result.zip_crc_ok = zf.testzip() is None
-                names = [name for name in zf.namelist() if not name.endswith("/")]
-
-                attachment_names = [name for name in names if name.startswith("prilohy/")]
-                control_names = [name for name in names if name.startswith("control_results/")]
-                reference_names = [
-                    name
-                    for name in names
-                    if any(marker in name for marker in self._REFERENCE_PHOTO_MARKERS)
-                ]
-                export_names = [name for name in names if name.startswith("export/")]
-
-                result.attachment_files_in_zip = len(attachment_names)
-                result.control_result_files_in_zip = len(control_names)
-                result.reference_photo_files_in_zip = len(reference_names)
-                result.export_files_in_zip = len(export_names)
-                result.attachment_zip_samples = attachment_names[:10]
-                result.uses_relative_zip_paths = all(not name.startswith("/") for name in names)
-
-                if backup_service.VERSION_FILE in names:
-                    import json
-
-                    version_info = json.loads(zf.read(backup_service.VERSION_FILE).decode("utf-8"))
-                    result.version_obsah = list(version_info.get("obsah") or [])
-                    result.version_root_absolute = str(version_info.get("root") or "")
-
-                manifest = backup_service.verify_backup_integrity(source, backup_type=BACKUP_TYPE_FULL)
-                result.integrity_verified = bool(manifest.get("verified"))
-                result.manifest_reports_attachment_count = "attachments_db_count" in manifest
-        except (OSError, zipfile.BadZipFile):
-            return result
-
-        return result
-
-    def summarize_phase_92a(self, *, backup_path: Path | str | None = None) -> dict:
-        workspace = self.diagnose_workspace()
-        backup = (
-            self.diagnose_backup_zip(backup_path)
-            if backup_path is not None
-            else BackupAttachmentCoverageDiagnostic()
-        )
-
-        attachments_fully_backed_up = (
-            workspace.attachments_db_count == 0
-            or (
-                workspace.attachment_files_missing == 0
-                and backup.attachment_files_in_zip >= workspace.attachment_files_found
-            )
-        )
-        attachments_fully_restorable = workspace.attachment_files_missing == 0
-
-        return {
-            "workspace": workspace.to_dict(),
-            "backup": backup.to_dict(),
-            "conclusions": {
-                "attachments_fully_backed_up": attachments_fully_backed_up,
-                "attachments_fully_restorable": attachments_fully_restorable,
-                "covered_attachment_types": [
-                    "attachments.prilohy (accident, mu_investigation, task, ...)",
-                    "control_results (audit/inspection control-point photos)",
-                    "ciselniky/*/fotografie (reference methodology photos)",
-                    "export/ (generated protocols and reports, path-only)",
-                ],
-                "gaps": self._known_gaps(workspace, backup),
-                "absolute_path_transfer_risk": (
-                    workspace.attachment_absolute_stored_paths > 0
-                    or bool(backup.version_root_absolute)
-                    or workspace.attachment_absolute_original_paths > 0
-                ),
-                "smallest_safe_fix_suggestion": self._smallest_safe_fix(workspace, backup),
-            },
-        }
-
-    def _known_gaps(
-        self,
-        workspace: AttachmentBackupDiagnostic,
-        backup: BackupAttachmentCoverageDiagnostic,
-    ) -> list[str]:
-        gaps: list[str] = []
-        if workspace.attachment_files_missing:
-            gaps.append("Některé záznamy v tabulce attachments nemají soubor na disku.")
-        if workspace.attachment_orphan_files:
-            gaps.append("Ve složce prilohy/ jsou soubory bez odpovídajícího DB záznamu.")
-        if not backup.manifest_reports_attachment_count:
-            gaps.append("Manifest integrity neobsahuje počty příloh a fotografií.")
-        if "control_results" not in backup.version_obsah:
-            gaps.append("VERSION.json obsah neuvádí explicitně adresář control_results/.")
-        if workspace.attachment_absolute_stored_paths:
-            gaps.append("Některé attachments.stored_path jsou absolutní cesty.")
-        if backup.version_root_absolute:
-            gaps.append("VERSION.json ukládá absolutní root původního počítače.")
-        if workspace.attachments_db_count and backup.attachment_files_in_zip == 0:
-            gaps.append("ZIP neobsahuje žádné soubory pod prilohy/.")
-        return gaps
-
-    def _smallest_safe_fix(
-        self,
-        workspace: AttachmentBackupDiagnostic,
-        backup: BackupAttachmentCoverageDiagnostic,
-    ) -> str:
-        if workspace.attachment_files_missing or workspace.attachment_orphan_files:
-            return (
-                "Nejdřív sjednotit DB a filesystem příloh; teprve potom rozšířit manifest "
-                "o počet a kontrolu příloh při záloze."
-            )
-        if not backup.manifest_reports_attachment_count:
-            return (
-                "Rozšířit backup_manifest_service o read-only počty souborů v prilohy/ "
-                "a control_results/ a porovnat je s tabulkou attachments."
-            )
-        return "Bez nutné opravy; pouze doplnit reporting do manifestu."
 
     def _load_attachments(self) -> list[Attachment]:
         with get_session() as session:

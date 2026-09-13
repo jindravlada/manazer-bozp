@@ -109,7 +109,7 @@ class VersionPhase89TestCase(unittest.TestCase):
         project_root = Path(__file__).resolve().parents[1]
         checked_files = [
             project_root / "core" / "windows" / "main_window.py",
-            project_root / "core" / "services" / "backup_service.py",
+            project_root / "core" / "backup" / "package_create.py",
             project_root / "moduly" / "pravni_pozadavky" / "import_export" / "legal_registry_export_service.py",
             project_root / "main.py",
             project_root / "core" / "version.py",

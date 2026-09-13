@@ -23,14 +23,10 @@ import core.database.session as session_module
 importlib.reload(session_module)
 
 import core.services.attachment_service as attachment_module
-import core.services.backup_manifest_service as backup_manifest_module
-import core.services.backup_service as backup_module
 import core.services.control_result_photo_service as control_result_photo_module
 
 for module in (
     attachment_module,
-    backup_module,
-    backup_manifest_module,
     control_result_photo_module,
 ):
     importlib.reload(module)
@@ -47,18 +43,13 @@ from core.services.attachment_backup_diagnostic_service import (  # noqa: E402
     attachment_backup_diagnostic_service,
 )
 from core.services.attachment_service import attachment_service  # noqa: E402
-from core.services.backup_manifest_service import backup_manifest_service  # noqa: E402
-from core.services.backup_service import BACKUP_TYPE_FULL, backup_service  # noqa: E402
 from core.services.control_result_photo_service import control_result_photo_service  # noqa: E402
 from core.services.storage_service import storage_service  # noqa: E402
 
 __all__ = [
-    "BACKUP_TYPE_FULL",
     "TMP",
     "attachment_backup_diagnostic_service",
     "attachment_service",
-    "backup_manifest_service",
-    "backup_service",
     "control_result_photo_service",
     "session_module",
     "storage_service",

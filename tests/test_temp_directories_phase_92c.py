@@ -39,9 +39,12 @@ class TempDirectoryPolicyPhase92cTestCase(unittest.TestCase):
         self.assertTrue(str(path).startswith(tempfile.gettempdir()))
         self.assertFalse(path.is_relative_to(PROJECT_ROOT))
 
-    def test_backup_restore_uses_temporary_directory_context_manager(self) -> None:
-        content = (PROJECT_ROOT / "core/services/backup_service.py").read_text(encoding="utf-8")
-        self.assertIn("with tempfile.TemporaryDirectory() as tmp_dir:", content)
+    def test_backup_restore_uses_system_temp_for_extract(self) -> None:
+        content = (PROJECT_ROOT / "core/backup/package_restore.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("tempfile.mkdtemp", content)
+        self.assertIn("mbrestore-extract-", content)
 
     def test_open_export_uses_system_tempdir(self) -> None:
         content = (PROJECT_ROOT / "core/export/open_export.py").read_text(encoding="utf-8")

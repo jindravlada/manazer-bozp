@@ -28,9 +28,6 @@ with patch.object(Path, "home", return_value=_TMP):
 
     initialize_database()
 
-    from moduly.sprava_dat.sluzby.full_backup_workflow_service import (
-        full_backup_workflow_service,
-    )
     from moduly.sprava_dat.ui.backup_tab import BackupTab
     from moduly.sprava_dat.ui.sprava_dat_page import SpravaDatPage
     from moduly.sprava_dat.ui.tab_constants import TAB_BACKUP
@@ -80,10 +77,6 @@ class Backup2eUiTestCase(unittest.TestCase):
         tab.refresh()
         self.assertIsNotNone(tab.create_mbbackup_button)
         self.assertEqual(tab.create_mbbackup_button.text(), "Vytvořit zálohu")
-
-    def test_legacy_zip_service_still_importable(self) -> None:
-        self.assertTrue(callable(full_backup_workflow_service.create_full_backup))
-        self.assertTrue(callable(full_backup_workflow_service.restore_full_backup))
 
     def test_sprava_dat_page_backup_tab_label(self) -> None:
         page = SpravaDatPage()

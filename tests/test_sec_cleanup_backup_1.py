@@ -42,7 +42,6 @@ with patch.object(Path, "home", return_value=_HOME):
         SAFETY_PREFIX_REGISTRY_IMPORT,
         create_verified_application_safety_backup,
     )
-    from core.services.backup_service import BACKUP_TYPE_FULL, backup_service
     from moduly.pravni_pozadavky.import_export.legal_registry_export_service import (
         legal_registry_export_service,
     )
@@ -125,45 +124,6 @@ class SecCleanupBackup1TestCase(unittest.TestCase):
 
         self.assertEqual(list(_backups_dir().glob("pred-importem-registru-*")), [])
 
-    def test_failed_safety_backup_blocks_zip_restore(self) -> None:
-        source = backup_service.create_backup(backup_type=BACKUP_TYPE_FULL)
-        self.assertTrue(source.is_file())
-        self.assertEqual(source.suffix, ".zip")
-
-        with patch(
-            "core.backup.safety_backup.create_instance_backup",
-            side_effect=InstanceBackupError("disk full"),
-        ):
-            with patch.object(backup_service, "_execute_restore") as mock_restore:
-                with self.assertRaises(ValueError) as ctx:
-                    backup_service.restore_backup_with_verified_safety(
-                        source,
-                        restore_type=BACKUP_TYPE_FULL,
-                    )
-                self.assertIn("Obnova nebyla spuštěna", str(ctx.exception))
-                mock_restore.assert_not_called()
-
-        self.assertEqual(list(_backups_dir().glob("pred-obnovou-*.mbbackup")), [])
-        self.assertEqual(list(_backups_dir().glob("pred-obnovou-*.zip")), [])
-
-    def test_legacy_zip_restore_creates_mbbackup_safety(self) -> None:
-        source = backup_service.create_backup(backup_type=BACKUP_TYPE_FULL)
-        with patch.object(backup_service, "_execute_restore") as mock_restore:
-            result = backup_service.restore_backup_with_verified_safety(
-                source,
-                restore_type=BACKUP_TYPE_FULL,
-            )
-            mock_restore.assert_called_once()
-
-        safety = Path(result["safety_backup_path"])
-        _assert_mbbackup_safety(safety, "pred-obnovou-celkova")
-        self.assertTrue(result["safety_backup_manifest"].get("verified"))
-        self.assertEqual(list(_backups_dir().glob("pred-obnovou-*.zip")), [])
-        self.assertTrue(source.is_file())
-        self.assertEqual(source.suffix, ".zip")
-        with zipfile.ZipFile(source, "r") as zf:
-            self.assertIn("VERSION.json", zf.namelist())
-
     def test_codebook_export_package_remains_zip(self) -> None:
         target = storage_module.storage_service.exports_dir / "ciselniky-package.zip"
         codebook_export_service.export_all_codebooks(target)
@@ -176,14 +136,6 @@ class SecCleanupBackup1TestCase(unittest.TestCase):
         self.assertTrue(verified.get("verified"))
         self.assertEqual(list(_backups_dir().glob("*.mbbackup")), [])
         self.assertEqual(list(_backups_dir().glob("pred-importem-*.zip")), [])
-
-    def test_manual_legacy_zip_backup_still_creates_zip(self) -> None:
-        path = backup_service.create_backup(backup_type=BACKUP_TYPE_FULL)
-        self.assertEqual(path.suffix, ".zip")
-        with zipfile.ZipFile(path, "r") as zf:
-            self.assertIn(backup_service.VERSION_FILE, zf.namelist())
-        self.assertEqual(list(_backups_dir().glob("pred-importem-*.zip")), [])
-        self.assertEqual(list(_backups_dir().glob("pred-obnovou-*.zip")), [])
 
     def test_helper_writes_only_mbbackup(self) -> None:
         path, manifest = create_verified_application_safety_backup(
