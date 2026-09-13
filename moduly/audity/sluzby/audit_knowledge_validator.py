@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 from core.services.editable_catalog_service import editable_catalog_service
+from core.utils.confined_path import resolve_confined_path
 
 TEMPLATE_BASENAME = "_sablona_rizeni_procesu.json"
 PROCESY_BASENAME = "procesy.json"
@@ -380,7 +381,13 @@ def validate_all_catalogs(audity_dir: Path | None = None) -> list[str]:
             errors.append(f"procesy.json: proces '{process_id}' nemá soubor_znalosti")
             continue
 
-        knowledge_path = catalog_dir / soubor
+        knowledge_path = resolve_confined_path(catalog_dir, soubor)
+        if knowledge_path is None:
+            errors.append(
+                f"procesy.json: soubor '{soubor}' pro proces '{process_id}' "
+                "je mimo adresář metodiky auditů"
+            )
+            continue
         registered_files.add(soubor)
         if not knowledge_path.is_file():
             errors.append(

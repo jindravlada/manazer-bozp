@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from core.paths import project_root as resolve_project_root
+from core.utils.confined_path import resolve_confined_path
 
 
 @dataclass(frozen=True)
@@ -107,7 +108,10 @@ class EditableCatalogService:
             shutil.copy2(source, target)
 
     def ensure_catalog(self, user_dir: Path, relative_path: str) -> Path:
-        target = self.user_path(user_dir, relative_path)
+        target = resolve_confined_path(user_dir, relative_path)
+        if target is None:
+            raise ValueError(f"Cesta číselníku mimo pracovní prostor: {relative_path}")
+
         if target.exists():
             return target
 

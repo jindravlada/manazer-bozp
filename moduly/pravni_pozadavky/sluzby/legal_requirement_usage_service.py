@@ -232,8 +232,8 @@ class LegalRequirementUsageService:
             if not soubor:
                 continue
 
-            knowledge_path = proverky_knowledge_service.proverky_dir / soubor
-            if not knowledge_path.is_file():
+            knowledge_path = proverky_knowledge_service.resolve_knowledge_path(soubor)
+            if knowledge_path is None or not knowledge_path.is_file():
                 continue
 
             try:

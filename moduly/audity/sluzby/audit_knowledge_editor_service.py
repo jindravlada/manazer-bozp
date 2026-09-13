@@ -12,6 +12,7 @@ from pathlib import Path
 
 from core.services.editable_catalog_service import editable_catalog_service
 from core.services.storage_service import storage_service
+from core.utils.confined_path import resolve_confined_path
 from moduly.audity.constants import KNOWLEDGE_EDITOR_SECTION_EDITABLE_LIST_FIELDS
 from moduly.pravni_pozadavky.sluzby.legal_requirement_service import legal_requirement_service
 from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
@@ -95,7 +96,12 @@ class AuditKnowledgeEditorService:
         normalized = relative_path.strip().replace("\\", "/")
         if normalized.startswith(f"{_CATALOG_DIR}/"):
             normalized = normalized[len(f"{_CATALOG_DIR}/") :]
-        return self.user_audity_dir() / normalized
+        confined = resolve_confined_path(self.user_audity_dir(), normalized)
+        if confined is None:
+            raise PermissionError(
+                f"Cesta souboru znalosti mimo adresář metodiky auditů: {relative_path}"
+            )
+        return confined
 
     def assert_user_writable_path(self, path: Path) -> None:
         resolved = path.resolve()
@@ -159,7 +165,12 @@ class AuditKnowledgeEditorService:
             seen.add(soubor)
 
             relative_path = f"{_CATALOG_DIR}/{soubor}"
-            path = self.user_audity_dir() / soubor
+            path = resolve_confined_path(self.user_audity_dir(), soubor)
+            if path is None:
+                errors.append(
+                    f"procesy.json: soubor '{soubor}' je mimo adresář metodiky auditů"
+                )
+                continue
             data, load_error = self.load_json_safe(path)
             if load_error:
                 errors.append(load_error)

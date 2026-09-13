@@ -7,6 +7,7 @@ from pathlib import Path
 
 from core.services.editable_catalog_service import editable_catalog_service
 from core.services.storage_service import storage_service
+from core.utils.confined_path import resolve_confined_path
 from core.shared.verification_type import (
     VERIFICATION_TYPE_DEFAULT,
     methodology_verification_type as shared_methodology_verification_type,
@@ -266,8 +267,17 @@ class AuditKnowledgeService:
             soubor = raw.get("soubor_znalosti")
             if not soubor:
                 continue
-            relative_path = f"{_CATALOG_DIR}/{str(soubor).strip()}"
-            user_path = editable_catalog_service.ensure_catalog(self.ciselniky_dir, relative_path)
+            confined = self.resolve_knowledge_path(str(soubor).strip())
+            if confined is None:
+                continue
+            relative_path = f"{_CATALOG_DIR}/{confined.relative_to(self.audity_dir.resolve()).as_posix()}"
+            try:
+                user_path = editable_catalog_service.ensure_catalog(
+                    self.ciselniky_dir,
+                    relative_path,
+                )
+            except ValueError:
+                continue
             self._upgrade_knowledge_file_from_seed(user_path, relative_path)
 
     @property
@@ -277,6 +287,9 @@ class AuditKnowledgeService:
     @property
     def audity_dir(self) -> Path:
         return self.ciselniky_dir / _CATALOG_DIR
+
+    def resolve_knowledge_path(self, soubor_znalosti: str | None) -> Path | None:
+        return resolve_confined_path(self.audity_dir, soubor_znalosti)
 
     def get_processes(
         self,
@@ -464,8 +477,8 @@ class AuditKnowledgeService:
 
         if ensure:
             self.ensure_catalogs()
-        path = self.audity_dir / process.soubor_znalosti
-        if not path.is_file():
+        path = self.resolve_knowledge_path(process.soubor_znalosti)
+        if path is None or not path.is_file():
             return None
 
         return self._load_json(path)
@@ -1241,7 +1254,9 @@ class AuditKnowledgeService:
         if not process.soubor_znalosti:
             return False
 
-        path = self.audity_dir / process.soubor_znalosti
+        path = self.resolve_knowledge_path(process.soubor_znalosti)
+        if path is None:
+            return False
         try:
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(
