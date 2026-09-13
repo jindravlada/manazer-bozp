@@ -15,6 +15,9 @@ from PySide6.QtWidgets import (
 from moduly.audity.constants import KNOWLEDGE_EDITOR_SECTION_REFERENCE_PHOTO_TAB
 from moduly.audity.sluzby.audit_knowledge_editor_service import audit_knowledge_editor_service
 from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
+from moduly.audity.sluzby.audit_reference_photo_service import (
+    audit_reference_photo_service,
+)
 from moduly.audity.ui.audity_knowledge_reference_photo_dialog import (
     AudityKnowledgeReferencePhotoDialog,
 )
@@ -186,11 +189,23 @@ class AudityKnowledgeReferencePhotoEditorWidget(QWidget):
             nazev = path.stem.strip() or "Fotografie"
             photo_id = audit_knowledge_service.generate_item_id(nazev, existing_ids)
             existing_ids.add(photo_id)
+            try:
+                relative_path = audit_reference_photo_service.save_optimized(
+                    path,
+                    process_id=self._process_id,
+                    criterion_id=self._section_id,
+                    photo_id=photo_id,
+                )
+            except Exception as exc:
+                self._show_errors(
+                    [f"Fotografii se nepodařilo uložit.\n\n{exc}"]
+                )
+                break
             payload = {
                 "id": photo_id,
                 "nazev": nazev,
                 "popis": "",
-                "soubor": str(path.resolve()),
+                "soubor": relative_path,
                 "poradi": next_poradi,
                 "aktivni": True,
                 "control_point_id": None,
@@ -216,6 +231,8 @@ class AudityKnowledgeReferencePhotoEditorWidget(QWidget):
         dialog = AudityKnowledgeReferencePhotoDialog(
             existing_ids=self._existing_ids(),
             item=selected,
+            process_id=self._process_id,
+            section_id=self._section_id,
             parent=self,
         )
         if dialog.exec() != AudityKnowledgeReferencePhotoDialog.DialogCode.Accepted:

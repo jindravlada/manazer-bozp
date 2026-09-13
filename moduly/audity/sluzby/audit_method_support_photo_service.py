@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from core.services.storage_service import storage_service
+from core.utils.confined_path import resolve_confined_path
 from moduly.audity.sluzby.audit_reference_photo_service import (
     audit_reference_photo_service,
 )
@@ -30,11 +31,19 @@ def support_photos_root() -> Path:
 
 
 def absolute_support_photo_path(relative_path: str) -> Path:
-    rel = str(relative_path or "").strip()
+    rel = str(relative_path or "").strip().replace("\\", "/")
     if not rel:
         return Path()
-    if rel.startswith(f"{SNAPSHOT_SUPPORT_PHOTOS_DIR}/"):
-        return storage_service.base / rel
+    prefix = f"{SNAPSHOT_SUPPORT_PHOTOS_DIR}/"
+    if rel.startswith(prefix):
+        remainder = rel[len(prefix) :]
+        confined = resolve_confined_path(
+            storage_service.base / SNAPSHOT_SUPPORT_PHOTOS_DIR,
+            remainder,
+        )
+        return confined if confined is not None else Path()
+    if rel == SNAPSHOT_SUPPORT_PHOTOS_DIR:
+        return Path()
     return audit_reference_photo_service.absolute_photo_path(rel)
 
 
@@ -88,7 +97,7 @@ def freeze_reference_photos_in_payload(
                 continue
 
             source_abs = audit_reference_photo_service.absolute_photo_path(source_rel)
-            if not source_abs.is_file():
+            if source_abs == Path() or not source_abs.is_file():
                 item["missing"] = True
                 item["source_soubor"] = source_rel
                 item["soubor"] = ""

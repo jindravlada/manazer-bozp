@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QHBoxLayout,
     QLineEdit,
+    QMessageBox,
     QPushButton,
     QSpinBox,
     QTextEdit,
@@ -15,6 +16,9 @@ from PySide6.QtWidgets import (
 from core.ui.photo_picker_dialog import PhotoPickerDialog
 from core.widgets.dialog_utils import create_save_cancel_box
 from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
+from moduly.audity.sluzby.audit_reference_photo_service import (
+    audit_reference_photo_service,
+)
 
 
 class AudityKnowledgeReferencePhotoDialog(QDialog):
@@ -25,6 +29,8 @@ class AudityKnowledgeReferencePhotoDialog(QDialog):
         *,
         existing_ids: set[str] | None = None,
         item: dict | None = None,
+        process_id: str = "",
+        section_id: str = "",
         parent=None,
     ):
         super().__init__(parent)
@@ -32,6 +38,8 @@ class AudityKnowledgeReferencePhotoDialog(QDialog):
         self._existing_ids = set(existing_ids or [])
         self._editing_id = str(item.get("id") or "").strip() if item else ""
         self._control_point_id = item.get("control_point_id") if item else None
+        self._process_id = str(process_id or "").strip()
+        self._section_id = str(section_id or "").strip()
 
         self.setWindowTitle(
             "Upravit referenční fotografii"
@@ -96,8 +104,27 @@ class AudityKnowledgeReferencePhotoDialog(QDialog):
 
     def _browse_file(self) -> None:
         selected = PhotoPickerDialog.get_photo(parent=self)
-        if selected is not None:
-            self._soubor_edit.setText(str(selected))
+        if selected is None:
+            return
+        if self._process_id and self._section_id:
+            photo_id = self._editing_id or self._id_edit.text().strip() or "photo"
+            try:
+                relative_path = audit_reference_photo_service.save_optimized(
+                    selected,
+                    process_id=self._process_id,
+                    criterion_id=self._section_id,
+                    photo_id=photo_id,
+                )
+            except Exception as exc:
+                QMessageBox.warning(
+                    self,
+                    self.windowTitle(),
+                    f"Fotografii se nepodařilo uložit.\n\n{exc}",
+                )
+                return
+            self._soubor_edit.setText(relative_path)
+            return
+        self._soubor_edit.setText(str(selected))
 
     def _update_generated_id_preview(self) -> None:
         if self._editing_id:
