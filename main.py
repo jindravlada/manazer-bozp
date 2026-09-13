@@ -47,6 +47,12 @@ def main():
         sys.exit(1)
 
     mark_application_started()
+    from core.export.open_export import (
+        cleanup_orphan_open_export_temps,
+        install_open_export_temp_cleanup,
+    )
+
+    cleanup_orphan_open_export_temps()
     settings.load()
     theme.load(settings.get("theme", "default"))
 
@@ -58,6 +64,7 @@ def main():
     configure_application_for_dialogs(app)
     install_unified_message_boxes(app)
     install_qt_translators(app)
+    install_open_export_temp_cleanup(app)
     # UX-FORMS-1: kolečko myši nemění hodnoty combo/spin při rolování formuláře.
     install_form_wheel_guards(app)
     # UX-TASK-TOOLTIP-1: tooltip zůstane, dokud kurzor zůstává nad prvkem.

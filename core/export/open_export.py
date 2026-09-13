@@ -1,5 +1,9 @@
+import atexit
+import logging
 import os
+import re
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -9,7 +13,16 @@ from pathlib import Path
 
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import QMessageBox, QWidget
+from PySide6.QtWidgets import QApplication, QMessageBox, QWidget
+
+logger = logging.getLogger(__name__)
+
+OPEN_EXPORT_TEMP_PREFIX = "manazer-bozp-"
+_OPEN_EXPORT_TEMP_NAME = re.compile(r"^manazer-bozp-[0-9a-f]{32}-.+$")
+_TEMP_FILE_MODE = 0o600
+_created_temp_copies: set[str] = set()
+_atexit_registered = False
+_about_to_quit_connected = False
 
 _READY_ATTEMPTS = 20
 _READY_SLEEP_SECONDS = 0.05
@@ -38,6 +51,159 @@ _APPIMAGE_PATH_ENV_KEYS = (
 )
 
 _SYSTEM_BIN_DIRS = ("/usr/local/bin", "/usr/bin", "/bin", "/snap/bin")
+
+
+def _open_export_temp_dir() -> Path:
+    return Path(tempfile.gettempdir())
+
+
+def is_open_export_temp_name(name: str) -> bool:
+    """True, pokud název patří tomuto AppImage fallback mechanismu."""
+    return bool(_OPEN_EXPORT_TEMP_NAME.fullmatch(name))
+
+
+def _ensure_atexit_cleanup() -> None:
+    global _atexit_registered
+    if _atexit_registered:
+        return
+    atexit.register(cleanup_tracked_open_export_temps)
+    _atexit_registered = True
+
+
+def install_open_export_temp_cleanup(app: QApplication | None = None) -> None:
+    """Zaregistruje úklid temp kopií při ukončení procesu i Qt aplikace."""
+    global _about_to_quit_connected
+    _ensure_atexit_cleanup()
+    if app is None:
+        app = QApplication.instance()
+    if app is None or _about_to_quit_connected:
+        return
+    try:
+        app.aboutToQuit.connect(cleanup_tracked_open_export_temps)
+        _about_to_quit_connected = True
+    except Exception:
+        logger.warning("Nepodařilo se napojit úklid temp souborů na aboutToQuit.", exc_info=True)
+
+
+def _unlink_temp_copy(path: Path) -> None:
+    _created_temp_copies.discard(str(path))
+    try:
+        info = os.lstat(path)
+    except FileNotFoundError:
+        return
+    except OSError:
+        logger.warning("Nelze ověřit temp soubor %s.", path, exc_info=True)
+        return
+    if stat.S_ISLNK(info.st_mode) or not stat.S_ISREG(info.st_mode):
+        return
+    try:
+        os.unlink(path)
+    except FileNotFoundError:
+        return
+    except OSError:
+        logger.warning("Nepodařilo se odstranit temp soubor %s.", path, exc_info=True)
+
+
+def cleanup_tracked_open_export_temps() -> None:
+    """Odstraní temp kopie evidované v aktuálním běhu. Chyba nesmí padat ven."""
+    try:
+        remaining = list(_created_temp_copies)
+        for raw in remaining:
+            _unlink_temp_copy(Path(raw))
+    except Exception:
+        logger.warning("Úklid evidovaných temp souborů selhal.", exc_info=True)
+
+
+def cleanup_orphan_open_export_temps() -> None:
+    """Při startu smaže osiřelé vlastní `manazer-bozp-*` kopie. Nesmí shodit aplikaci."""
+    try:
+        root = _open_export_temp_dir()
+        try:
+            entries = os.scandir(root)
+        except OSError:
+            logger.warning("Nelze číst temp adresář %s.", root, exc_info=True)
+            return
+        with entries:
+            for entry in entries:
+                if not is_open_export_temp_name(entry.name):
+                    continue
+                try:
+                    info = entry.stat(follow_symlinks=False)
+                except OSError:
+                    continue
+                if stat.S_ISLNK(info.st_mode) or not stat.S_ISREG(info.st_mode):
+                    continue
+                try:
+                    os.unlink(entry.path)
+                except FileNotFoundError:
+                    continue
+                except OSError:
+                    logger.warning(
+                        "Nepodařilo se odstranit osiřelý temp soubor %s.",
+                        entry.path,
+                        exc_info=True,
+                    )
+    except Exception:
+        logger.warning("Úklid osiřelých temp souborů selhal.", exc_info=True)
+
+
+def _temp_copy_filename(source: Path) -> str:
+    raw = Path(str(source.name or "soubor")).name.replace("\x00", "") or "soubor"
+    prefix = f"{OPEN_EXPORT_TEMP_PREFIX}{uuid.uuid4().hex}-"
+    encoded = raw.encode("utf-8")
+    max_bytes = max(1, 255 - len(prefix.encode("utf-8")))
+    while len(encoded) > max_bytes and raw:
+        raw = raw[:-1]
+        encoded = raw.encode("utf-8")
+    return prefix + raw
+
+
+def create_open_export_temp_copy(source: Path) -> Path | None:
+    """Vytvoří soukromou temp kopii (mode 0600) a zaeviduje ji k úklidu."""
+    _ensure_atexit_cleanup()
+    tmp_dir = _open_export_temp_dir()
+    tmp_path = tmp_dir / _temp_copy_filename(source)
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    try:
+        fd = os.open(tmp_path, flags, _TEMP_FILE_MODE)
+    except OSError:
+        return None
+    try:
+        try:
+            os.fchmod(fd, _TEMP_FILE_MODE)
+        except OSError:
+            pass
+        with os.fdopen(fd, "wb") as dest, source.open("rb") as src:
+            shutil.copyfileobj(src, dest)
+    except OSError:
+        try:
+            os.unlink(tmp_path)
+        except OSError:
+            pass
+        return None
+    _created_temp_copies.add(str(tmp_path))
+    return tmp_path
+
+
+def _open_via_private_temp_copy(
+    path: Path,
+    env: dict[str, str],
+    *,
+    include_office: bool,
+) -> bool:
+    tmp_path = create_open_export_temp_copy(path)
+    if tmp_path is None:
+        return False
+    opened = _open_with_gio(tmp_path, env) or _open_with_system_xdg_open(tmp_path, env)
+    if include_office and not opened:
+        opened = _open_with_snap_libreoffice(tmp_path, env) or _open_with_libreoffice(
+            tmp_path, env
+        )
+    if not opened:
+        _unlink_temp_copy(tmp_path)
+    return opened
 
 
 def _is_appimage() -> bool:
@@ -161,7 +327,7 @@ def _open_appimage_odt(path: Path) -> bool:
         lambda: _open_with_system_xdg_open(path, env),
         lambda: _open_with_snap_libreoffice(path, env),
         lambda: _open_with_libreoffice(path, env),
-        lambda: _open_appimage_odt_via_tmp_copy(path, env),
+        lambda: _open_via_private_temp_copy(path, env, include_office=True),
     )
     for opener in openers:
         if opener():
@@ -169,39 +335,12 @@ def _open_appimage_odt(path: Path) -> bool:
     return False
 
 
-def _open_appimage_odt_via_tmp_copy(path: Path, env: dict[str, str]) -> bool:
-    tmp_path = Path(tempfile.gettempdir()) / f"manazer-bozp-{uuid.uuid4().hex}-{path.name}"
-    try:
-        shutil.copy2(path, tmp_path)
-        os.chmod(tmp_path, 0o644)
-    except OSError:
-        return False
-
-    return (
-        _open_with_gio(tmp_path, env)
-        or _open_with_system_xdg_open(tmp_path, env)
-        or _open_with_snap_libreoffice(tmp_path, env)
-        or _open_with_libreoffice(tmp_path, env)
-    )
-
-
-def _open_appimage_via_tmp_copy(path: Path, env: dict[str, str]) -> bool:
-    tmp_path = Path(tempfile.gettempdir()) / f"manazer-bozp-{uuid.uuid4().hex}-{path.name}"
-    try:
-        shutil.copy2(path, tmp_path)
-        os.chmod(tmp_path, 0o644)
-    except OSError:
-        return False
-
-    return _open_with_gio(tmp_path, env) or _open_with_system_xdg_open(tmp_path, env)
-
-
 def _open_appimage_attachment(path: Path) -> bool:
     env = _cleaned_system_env()
     openers = (
         lambda: _open_with_gio(path, env),
         lambda: _open_with_system_xdg_open(path, env),
-        lambda: _open_appimage_via_tmp_copy(path, env),
+        lambda: _open_via_private_temp_copy(path, env, include_office=False),
         lambda: _open_with_qt_desktop(path),
     )
     for opener in openers:
