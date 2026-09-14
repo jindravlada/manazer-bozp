@@ -31,6 +31,8 @@ with patch.object(Path, "home", return_value=_TMP):
         CHANGE_SECTION_MODIFIED,
         DOCUMENT_TYPE_ZAKON,
         SECTION_PARAGRAPH,
+        SECTION_PART,
+        SECTION_SUBSECTION,
         VERSION_STATUS_IN_USE,
         VERSION_STATUS_PENDING_ADOPTION,
         legal_document_version_status_label,
@@ -44,6 +46,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.pravni_pozadavky.import_export.legal_document_esbirka_opendata_tree import (
         legal_document_esbirka_opendata_tree_builder,
     )
+    from moduly.pravni_pozadavky.parser.legal_document_parser_models import ParsedLegalSection
     from moduly.pravni_pozadavky.sluzby.legal_change_impacted_process_service import (
         legal_change_impacted_process_service,
     )
@@ -320,6 +323,130 @@ class LegalCheckOpenDataWorkflowTestCase(unittest.TestCase):
         self.assertNotEqual(current.source_eli, _FUTURE)
         self.assertEqual(current.effective_from, date(2026, 1, 1))
         self.assertLessEqual(current.effective_from, date.today())
+
+    def test_legacy_html_equivalent_opendata_tree_is_unchanged(self) -> None:
+        document, version, _section = self._legacy_document()
+        legal_section_service.create(
+            legal_document_id=document.id,
+            legal_document_version_id=version.id,
+            section_type=SECTION_PART,
+            section_number="I",
+            text="ÚVODNÍ USTANOVENÍ",
+            sort_order=2,
+        )
+        opendata = [
+            ParsedLegalSection(
+                section_type=SECTION_PART,
+                section_number="PRVNÍ",
+                text="ÚVODNÍ USTANOVENÍ",
+                sort_order=1,
+            ),
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="1",
+                title="§ 1",
+                sort_order=2,
+                parent_sort_order=1,
+            ),
+            ParsedLegalSection(
+                section_type=SECTION_SUBSECTION,
+                section_number="1",
+                text="Původní znění",
+                sort_order=3,
+                parent_sort_order=2,
+            ),
+        ]
+        run = self._begin_run()
+        with patch.object(
+            legal_document_esbirka_opendata_tree_builder,
+            "fetch_in_force_tree",
+            return_value=fake_in_force_tree(_IN_FORCE, opendata),
+        ):
+            result = legal_check_novelization_service.check_document(
+                document,
+                check_run_id=run.id,
+            )
+        self.assertEqual(result.status, NOVELIZATION_UNCHANGED)
+        self.assertIsNone(result.change)
+        self.assertEqual(legal_change_service.list_by_document(document.id), [])
+        self.assertEqual(
+            legal_document_version_service.get_current_version(document.id).id,
+            version.id,
+        )
+
+    def test_whitespace_only_difference_is_unchanged(self) -> None:
+        document, version, _section = self._legacy_document()
+        run = self._begin_run()
+        with self._patch_tree(version.id, _IN_FORCE, text="Původní   znění\n"):
+            result = legal_check_novelization_service.check_document(
+                document,
+                check_run_id=run.id,
+            )
+        self.assertEqual(result.status, NOVELIZATION_UNCHANGED)
+        self.assertIsNone(result.change)
+
+    def test_real_361_style_removed_paragraph_stays_changed(self) -> None:
+        document = legal_document_service.create(
+            document_type=DOCUMENT_TYPE_ZAKON,
+            title="Nařízení vlády o ochraně zdraví při práci",
+            number="361",
+            year=2007,
+            short_title="NV 361/2007",
+        )
+        version = legal_document_version_service.create(
+            legal_document_id=document.id,
+            version_name="Aktuální znění",
+            checksum=legal_document_esbirka_client.build_version_checksum(
+                slice_id="3612007",
+                text_checksum="old-361",
+            ),
+        )
+        legal_section_service.create(
+            legal_document_id=document.id,
+            legal_document_version_id=version.id,
+            section_type=SECTION_PARAGRAPH,
+            paragraph="12",
+            text="Hodnocení rizik se provádí podle přílohy.",
+            sort_order=1,
+        )
+        legal_section_service.create(
+            legal_document_id=document.id,
+            legal_document_version_id=version.id,
+            section_type=SECTION_PARAGRAPH,
+            paragraph="12a",
+            title="Mladiství žáci smějí pouze v rámci přípravy",
+            text="nakládat s nebezpečnými chemickými látkami.",
+            sort_order=2,
+        )
+        opendata = [
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="12",
+                text="Hodnocení rizik se provádí podle přílohy.",
+                sort_order=1,
+            ),
+        ]
+        run = self._begin_run()
+        with patch.object(
+            legal_document_esbirka_opendata_tree_builder,
+            "fetch_in_force_tree",
+            return_value=fake_in_force_tree(
+                "eli/cz/sb/2007/361/2026-09-01",
+                opendata,
+                effective_from=date(2026, 9, 1),
+            ),
+        ):
+            result = legal_check_novelization_service.check_document(
+                document,
+                check_run_id=run.id,
+            )
+        self.assertEqual(result.status, NOVELIZATION_CHANGED)
+        assert result.change is not None
+        self.assertIsNotNone(result.change.new_legal_document_version_id)
+        current = legal_document_version_service.get_current_version(document.id)
+        assert current is not None
+        self.assertEqual(current.id, version.id)
+        self.assertFalse(current.pending_adoption)
 
 
 if __name__ == "__main__":

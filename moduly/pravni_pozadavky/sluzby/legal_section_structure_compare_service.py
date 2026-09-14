@@ -40,6 +40,14 @@ def section_own_compare_text(section) -> str:
     return getattr(section, "title", "") or ""
 
 
+def section_canonical_unit_text(section) -> str:
+    title = (getattr(section, "title", "") or "").strip()
+    text = (getattr(section, "text", "") or "").strip()
+    if title and text and title != text:
+        return f"{title} {text}"
+    return text or title
+
+
 @dataclass(frozen=True)
 class SectionStructureEntry:
     identity_key: str
@@ -48,6 +56,7 @@ class SectionStructureEntry:
     text: str = ""
     old_text: str | None = None
     new_text: str | None = None
+    canonical_text: str = ""
 
 
 @dataclass
@@ -73,28 +82,14 @@ class LegalSectionStructureCompareService:
         stored_sections: list,
         parsed_sections: list[ParsedLegalSection],
     ) -> bool:
-        stored_entries = self._build_stored_entries(stored_sections)
-        parsed_entries = self._build_parsed_entries(parsed_sections)
-        stored_by_key = {entry.identity_key: entry for entry in stored_entries}
-        parsed_by_key = {entry.identity_key: entry for entry in parsed_entries}
-        stored_core = {key for key in stored_by_key if not key.startswith("priloha:")}
-        parsed_core = {key for key in parsed_by_key if not key.startswith("priloha:")}
-        if stored_core != parsed_core:
-            return False
-        for key in stored_core:
-            if self._texts_differ(stored_by_key[key].text, parsed_by_key[key].text):
-                return False
-        stored_attachments = sorted(
-            normalize_section_compare_text(stored_by_key[key].text)
-            for key in stored_by_key
-            if key.startswith("priloha:")
+        from moduly.pravni_pozadavky.sluzby.legal_section_canonical_compare import (
+            canonical_trees_content_equal,
         )
-        parsed_attachments = sorted(
-            normalize_section_compare_text(parsed_by_key[key].text)
-            for key in parsed_by_key
-            if key.startswith("priloha:")
+
+        return canonical_trees_content_equal(
+            stored_entries=self._build_stored_entries(stored_sections),
+            parsed_entries=self._build_parsed_entries(parsed_sections),
         )
-        return stored_attachments == parsed_attachments
 
     def compare(
         self,
@@ -290,11 +285,13 @@ class LegalSectionStructureCompareService:
     def _build_entry(self, chain: list) -> SectionStructureEntry:
         identity_key = "/".join(self._identity_segment(section) for section in chain)
         leaf = chain[-1]
+        own_text = section_own_compare_text(leaf)
         return SectionStructureEntry(
             identity_key=identity_key,
             log_label=self._log_label(chain),
             fingerprint=self._fingerprint(leaf),
-            text=section_own_compare_text(leaf),
+            text=own_text,
+            canonical_text=section_canonical_unit_text(leaf),
         )
 
     def _texts_differ(self, left: str, right: str) -> bool:

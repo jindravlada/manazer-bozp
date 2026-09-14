@@ -7,7 +7,12 @@ from datetime import date
 from pathlib import Path
 from unittest.mock import patch
 
-_LIVE_DB = Path("/home/test/.local/share/manazer-bozp/databaze/manager_bozp.db")
+_LIVE_DB = Path(
+    os.environ.get(
+        "LEGAL_OPENDATA_LIVE_DB",
+        "/home/test/.local/share/manazer-bozp/databaze/manager_bozp.db",
+    )
+)
 _RUN_LIVE = os.environ.get("RUN_LEGAL_OPENDATA_LIVE_COPY") == "1"
 _TMP = Path(tempfile.mkdtemp(prefix="legal-opendata-live-copy-"))
 

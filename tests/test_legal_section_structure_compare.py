@@ -24,6 +24,7 @@ with patch.object(Path, "home", return_value=_TMP):
         SECTION_ATTACHMENT,
         SECTION_LETTER,
         SECTION_PARAGRAPH,
+        SECTION_PART,
         SECTION_SUBSECTION,
     )
     from moduly.pravni_pozadavky.parser.legal_document_parser_models import ParsedLegalSection
@@ -422,6 +423,170 @@ class LegalSectionStructureCompareServiceTestCase(unittest.TestCase):
         self.assertEqual(result.new, [])
         self.assertEqual(result.removed, [])
         self.assertEqual(len(result.unchanged), 2)
+
+    def test_canonical_equal_ignores_hierarchy_split_and_part_labels(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PART,
+                section_number="I",
+                text="ÚVODNÍ USTANOVENÍ",
+            ),
+            _SectionStub(
+                section_id=2,
+                section_type=SECTION_PARAGRAPH,
+                parent_section_id=1,
+                paragraph="1",
+                title="Předmět úpravy",
+                text="Tento zákon upravuje silniční dopravu.",
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PART,
+                section_number="PRVNÍ",
+                text="ÚVODNÍ USTANOVENÍ",
+                sort_order=1,
+            ),
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="1",
+                title="Předmět úpravy",
+                sort_order=2,
+                parent_sort_order=1,
+            ),
+            ParsedLegalSection(
+                section_type=SECTION_SUBSECTION,
+                section_number="1",
+                text="Tento zákon upravuje silniční dopravu.",
+                sort_order=3,
+                parent_sort_order=2,
+            ),
+        ]
+        self.assertTrue(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
+
+    def test_canonical_equal_ignores_whitespace_and_formatting(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="1",
+                text="Pokuta 10 000 Kč. 1. stavební úřad 2. žádost.",
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="1",
+                text="Pokuta 10000 Kč. 2. žádost. 1. stavební úřad",
+                sort_order=1,
+            ),
+        ]
+        self.assertTrue(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
+
+    def test_canonical_detects_real_wording_change(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="1",
+                text="Zaměstnanec musí používat ochranné pomůcky.",
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="1",
+                text="Zaměstnanec může používat ochranné pomůcky.",
+                sort_order=1,
+            ),
+        ]
+        self.assertFalse(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
+
+    def test_canonical_equal_ignores_leaked_oddil_heading(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="96",
+                text="Práce na zařízení vysokého napětí. Oddíl čtvrtý Zvláštní ustanovení",
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="96",
+                text="Práce na zařízení vysokého napětí.",
+                sort_order=1,
+            ),
+        ]
+        self.assertTrue(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
+
+    def test_canonical_detects_removed_361_style_paragraph(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PART,
+                section_number="DRUHÁ",
+                text="RIZIKOVÉ FAKTORY",
+            ),
+            _SectionStub(
+                section_id=2,
+                section_type=SECTION_PARAGRAPH,
+                parent_section_id=1,
+                paragraph="12",
+                text="Hodnocení rizik se provádí podle přílohy.",
+            ),
+            _SectionStub(
+                section_id=3,
+                section_type=SECTION_PARAGRAPH,
+                parent_section_id=1,
+                paragraph="12a",
+                title="Mladiství žáci smějí pouze v rámci přípravy",
+                text="nakládat s nebezpečnými chemickými látkami.",
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PART,
+                section_number="DRUHÁ",
+                text="RIZIKOVÉ FAKTORY",
+                sort_order=1,
+            ),
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="12",
+                text="Hodnocení rizik se provádí podle přílohy.",
+                sort_order=2,
+                parent_sort_order=1,
+            ),
+        ]
+        self.assertFalse(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
 
 
 if __name__ == "__main__":
