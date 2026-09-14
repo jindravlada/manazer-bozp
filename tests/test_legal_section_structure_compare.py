@@ -542,6 +542,333 @@ class LegalSectionStructureCompareServiceTestCase(unittest.TestCase):
             ),
         )
 
+    def test_canonical_does_not_strip_casti_inflection(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="64",
+                text=(
+                    "Způsob upevnění plováků, kotvení plovoucí části čerpací stanice. "
+                    "Provozní řád musí být vyvěšen v čerpací stanici."
+                ),
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="64",
+                text=(
+                    "Způsob upevnění plováků, kotvení plovoucí části čerpací stanice.\n"
+                    "Provozní řád musí být vyvěšen v čerpací stanici."
+                ),
+                sort_order=1,
+            ),
+        ]
+        self.assertTrue(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
+
+    def test_canonical_equal_ignores_html_missing_ch_letter(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="2",
+                text="Pro účely této vyhlášky se považuje za",
+            ),
+            _SectionStub(
+                section_id=2,
+                section_type=SECTION_LETTER,
+                parent_section_id=1,
+                item_letter="c",
+                text="dlouhé břemeno předmět přesahující ložnou plochu vozidla,",
+            ),
+            _SectionStub(
+                section_id=3,
+                section_type=SECTION_LETTER,
+                parent_section_id=1,
+                item_letter="d",
+                text="návěští zákaz, výstraha nebo příkaz.",
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="2",
+                text="Pro účely této vyhlášky se považuje za",
+                sort_order=1,
+            ),
+            ParsedLegalSection(
+                section_type=SECTION_LETTER,
+                item_letter="c",
+                text="dlouhé břemeno předmět přesahující ložnou plochu vozidla,",
+                sort_order=2,
+                parent_sort_order=1,
+            ),
+            ParsedLegalSection(
+                section_type=SECTION_LETTER,
+                item_letter="ch",
+                text="pracoviště prostor určený pracovníku k výkonu pracovní činnosti.",
+                sort_order=3,
+                parent_sort_order=1,
+            ),
+            ParsedLegalSection(
+                section_type=SECTION_LETTER,
+                item_letter="d",
+                text="návěští zákaz, výstraha nebo příkaz.",
+                sort_order=4,
+                parent_sort_order=1,
+            ),
+        ]
+        self.assertTrue(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
+
+    def test_canonical_equal_ignores_numbered_item_order_after_castech(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="46i",
+                text=(
+                    "prokázala zvláštní odbornou způsobilost pro "
+                    "1. řízení konkrétního druhu drážního vozidla, "
+                    "2. řízení na vymezených drahách nebo jejich částech a "
+                    "3. užívání českého jazyka v rozsahu nezbytném pro řízení."
+                ),
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="46i",
+                text=(
+                    "prokázala zvláštní odbornou způsobilost pro "
+                    "3. užívání českého jazyka v rozsahu nezbytném pro řízení. "
+                    "1. řízení konkrétního druhu drážního vozidla, "
+                    "2. řízení na vymezených drahách nebo jejich částech a"
+                ),
+                sort_order=1,
+            ),
+        ]
+        self.assertTrue(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
+
+    def test_canonical_equal_ignores_trailing_next_heading(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="21",
+                text=(
+                    "Jedná-li se o dráhu tramvajovou, trolejbusovou, speciální nebo lanovou.\n"
+                    "Práva a povinnosti provozovatele dráhy a povinnosti osob nacházejících se na dráze a v obvodu dráhy"
+                ),
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="21",
+                text="Jedná-li se o dráhu tramvajovou, trolejbusovou, speciální nebo lanovou.",
+                sort_order=1,
+            ),
+        ]
+        self.assertTrue(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
+
+    def test_canonical_equal_ignores_inlined_table_after_tabulky(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="35",
+                text=(
+                    "Vodotěsnost podzemních staveb musí splňovat požadavky tříd měrného "
+                    "průsaku vody podle následující tabulky. Způsob provedení konstrukce "
+                    "obsahuje doporučená technická norma."
+                ),
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="35",
+                text=(
+                    "Vodotěsnost podzemních staveb musí splňovat požadavky tříd měrného "
+                    "průsaku vody podle následující tabulky měrný průsak za 24 h "
+                    "(l. m-2) 0,01 0,02 0,05 0,10. Způsob provedení konstrukce "
+                    "obsahuje doporučená technická norma."
+                ),
+                sort_order=1,
+            ),
+        ]
+        self.assertTrue(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
+
+    def test_canonical_equal_ignores_feminine_cast_heading(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="193",
+                text="Kotelny musí mít zajištěno větrání. Dvanáctá část",
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="193",
+                text="Kotelny musí mít zajištěno větrání.",
+                sort_order=1,
+            ),
+        ]
+        self.assertTrue(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
+
+    def test_canonical_equal_ignores_glued_word_and_number(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="22a",
+                text='sdělí tuto skutečnost úřadu do10 pracovních dnů ode dne, kdy nastala.',
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="22a",
+                text='sdělí tuto skutečnost úřadu do 10 pracovních dnů ode dne, kdy nastala.',
+                sort_order=1,
+            ),
+        ]
+        self.assertTrue(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
+
+    def test_canonical_detects_changed_number_after_unglue(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="22a",
+                text="sdělí tuto skutečnost úřadu do10 pracovních dnů.",
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="22a",
+                text="sdělí tuto skutečnost úřadu do 11 pracovních dnů.",
+                sort_order=1,
+            ),
+        ]
+        self.assertFalse(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
+
+    def test_canonical_equal_ignores_footnote_digit_after_acronym(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="71",
+                text="drážní vozidlo vybavené kompatibilní mobilní částí systému GSM-R.",
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="71",
+                text="drážní vozidlo vybavené kompatibilní mobilní částí systému GSM-R1.",
+                sort_order=1,
+            ),
+        ]
+        self.assertTrue(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
+
+    def test_canonical_equal_ignores_duplicate_letter_opendata_typo(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="29",
+                text="Nejvyšší sklon tratě je 40 promile.",
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="29",
+                text="Nejvyššší sklon tratě je 40 promile.",
+                sort_order=1,
+            ),
+        ]
+        self.assertTrue(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
+
+    def test_canonical_detects_real_word_change_not_duplicate_letter(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="29",
+                text="Nejvyšší sklon tratě je 40 promile.",
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="29",
+                text="Nejnižší sklon tratě je 40 promile.",
+                sort_order=1,
+            ),
+        ]
+        self.assertFalse(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
+
     def test_canonical_detects_removed_361_style_paragraph(self) -> None:
         stored = [
             _SectionStub(

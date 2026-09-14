@@ -199,6 +199,17 @@ class LegalDocumentESbirkaOpenDataTreeBuilder:
     def _document_path(self, fragment: ESbirkaOpenDataFragmentRef) -> str:
         return "/".join(fragment.path_segments)
 
+    def _should_skip_nested_child(self, remainder: str) -> bool:
+        """Přeskočit vnoučata přes strukturální uzel; vnořené body ponechat."""
+        if "/" not in remainder:
+            return False
+        first = remainder.split("/", 1)[0]
+        match = _PATH_SEGMENT_RE.fullmatch(first)
+        kind = (match.group(1) if match else "").casefold()
+        if kind in _STRUCTURAL_KINDS:
+            return True
+        return kind not in {"frag", "bod"}
+
     def _parent_sort_order(self, path: str, path_to_sort: dict[str, int]) -> int | None:
         parent = path.rsplit("/", 1)[0] if "/" in path else ""
         while parent:
@@ -261,7 +272,7 @@ class LegalDocumentESbirkaOpenDataTreeBuilder:
                 continue
             if fragment.section_kind != "priloha":
                 remainder = child_path[len(prefix) :]
-                if "/" in remainder and remainder.split("/", 1)[0] != child.path_segments[-1]:
+                if self._should_skip_nested_child(remainder):
                     continue
                 if child_path in structural_paths:
                     continue

@@ -210,6 +210,61 @@ class LegalESbirkaOpenDataTreeTestCase(unittest.TestCase):
         )
         self.assertFalse(compared.has_changes)
 
+    def test_nested_bod_fragments_are_inlined_into_letter(self) -> None:
+        iris = [
+            f"{_BASE}/norma/par_23",
+            f"{_BASE}/norma/par_23/odst_1",
+            f"{_BASE}/norma/par_23/odst_1/pism_b",
+            f"{_BASE}/norma/par_23/odst_1/pism_b/bod_2",
+            f"{_BASE}/norma/par_23/odst_1/pism_b/bod_2/bod_1",
+            f"{_BASE}/norma/par_23/odst_1/pism_a",
+            f"{_BASE}/norma/par_23/odst_1/pism_a/frag_9",
+        ]
+        wording = _wording(iris)
+        contents = [
+            _content("dokument/norma/par_23", "<var>§ 23</var>", "Paragraf"),
+            _content(
+                "dokument/norma/par_23/odst_1",
+                "(1) Zabezpečovací zařízení musí být navrženo tak, aby",
+                "Odstavec_Dc",
+            ),
+            _content(
+                "dokument/norma/par_23/odst_1/pism_b",
+                "<var>b)</var> rozsah odpovídal traťové rychlosti, přičemž",
+                "Pismeno_Lb",
+            ),
+            _content(
+                "dokument/norma/par_23/odst_1/pism_b/bod_2",
+                "2. do rychlosti 100 km.h-1 nesmí dovolit jízdu bez:",
+                "Bod_Dd",
+            ),
+            _content(
+                "dokument/norma/par_23/odst_1/pism_b/bod_2/bod_1",
+                "2.1. uskutečnění jízdy vlaku,",
+                "Bod_Dd",
+            ),
+            _content(
+                "dokument/norma/par_23/odst_1/pism_a",
+                "<var>a)</var> zajišťovalo bezpečné provozování dráhy",
+                "Pismeno_Lb",
+            ),
+            _content(
+                "dokument/norma/par_23/odst_1/pism_a/frag_9",
+                "doplňující věta písmene a",
+                "Odstavec_Dc",
+            ),
+        ]
+        parsed = legal_document_esbirka_opendata_tree_builder.build_parsed_sections(
+            wording,
+            contents,
+        )
+        letter_b = next(item for item in parsed if item.item_letter == "b")
+        self.assertIn("do rychlosti 100", letter_b.text)
+        self.assertIn("uskutečnění jízdy vlaku", letter_b.text)
+        odst = next(item for item in parsed if item.section_type == SECTION_SUBSECTION)
+        self.assertNotIn("uskutečnění jízdy vlaku", odst.text)
+        self.assertNotIn("zajišťovalo bezpečné provozování", odst.text)
+
     def test_b_empty_or_unrelated_contents_are_not_a_valid_tree(self) -> None:
         wording = _wording([f"{_BASE}/norma/cast_1", f"{_BASE}/norma/cast_1/par_1"])
         with self.assertRaisesRegex(ValueError, "Neočekávaný formát"):
