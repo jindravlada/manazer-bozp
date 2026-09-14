@@ -1104,6 +1104,154 @@ class LegalSectionStructureCompareServiceTestCase(unittest.TestCase):
             ),
         )
 
+    def test_canonical_equal_ignores_361_2000_leaked_heading(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="123a",
+                text=(
+                    "Bodovým hodnocením se zajišťuje sledování opakovaného páchání "
+                    "přestupků. Počet bodů je stanoven v příloze k tomuto zákonu. "
+                    "Započítávání bodů"
+                ),
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="123a",
+                text=(
+                    "Bodovým hodnocením se zajišťuje sledování opakovaného páchání "
+                    "přestupků. Počet bodů je stanoven v příloze k tomuto zákonu."
+                ),
+                sort_order=1,
+            ),
+        ]
+        self.assertTrue(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
+
+    def test_canonical_equal_ignores_251_2005_leaked_heading(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="45",
+                text=(
+                    "Pracovištěm kontrolované osoby se rozumí místa určená nebo obvyklá "
+                    "pro výkon činnosti kontrolované osoby, včetně jiného místa než je "
+                    "pracoviště zaměstnavatele. Přechodná ustanovení"
+                ),
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="45",
+                text=(
+                    "Pracovištěm kontrolované osoby se rozumí místa určená nebo obvyklá "
+                    "pro výkon činnosti kontrolované osoby, včetně jiného místa než je "
+                    "pracoviště zaměstnavatele."
+                ),
+                sort_order=1,
+            ),
+        ]
+        self.assertTrue(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
+
+    def test_canonical_equal_ignores_277_2004_leaked_heading(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="1",
+                text=(
+                    "Tato vyhláška upravuje podrobnosti o zdravotní způsobilosti "
+                    "k řízení motorových vozidel a náležitosti lékařského potvrzení "
+                    "osvědčujícího zdravotní důvody, pro něž se za jízdy nelze na "
+                    "sedadle motorového vozidla připoutat. Zdravotní způsobilost a posudek"
+                ),
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="1",
+                text=(
+                    "Tato vyhláška upravuje podrobnosti o zdravotní způsobilosti "
+                    "k řízení motorových vozidel a náležitosti lékařského potvrzení "
+                    "osvědčujícího zdravotní důvody, pro něž se za jízdy nelze na "
+                    "sedadle motorového vozidla připoutat."
+                ),
+                sort_order=1,
+            ),
+        ]
+        self.assertTrue(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
+
+    def test_canonical_keeps_real_word_change_unlike_leaked_heading(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="30",
+                text="Organizace může, přispěje-li to k racionálnějšímu a bezpečnějšímu vydobytí.",
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="30",
+                text="Organizace může, přispěje-li to k hospodárnějšímu a bezpečnějšímu vydobytí.",
+                sort_order=1,
+            ),
+        ]
+        self.assertFalse(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
+
+    def test_canonical_keeps_real_inserted_sentence_unlike_leaked_heading(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="34",
+                text="Kontrolu vykonávají pověření zaměstnanci ministerstva zdravotnictví.",
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="34",
+                text=(
+                    "Kontrolu vykonávají (dále jen \"inspektoři\"). "
+                    "Pověření zaměstnanci ministerstva zdravotnictví."
+                ),
+                sort_order=1,
+            ),
+        ]
+        self.assertFalse(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
+
     def test_canonical_detects_removed_361_style_paragraph(self) -> None:
         stored = [
             _SectionStub(
@@ -1141,6 +1289,141 @@ class LegalSectionStructureCompareServiceTestCase(unittest.TestCase):
                 text="Hodnocení rizik se provádí podle přílohy.",
                 sort_order=2,
                 parent_sort_order=1,
+            ),
+        ]
+        self.assertFalse(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
+
+    def test_canonical_detects_262_style_added_paragraph(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="271c",
+                text="Jednorázové odškodnění pozůstalých se poskytne podle tohoto zákona.",
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="271c",
+                text="Jednorázové odškodnění pozůstalých se poskytne podle tohoto zákona.",
+                sort_order=1,
+            ),
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="271ca",
+                text=(
+                    "Jednorázová náhrada při skončení pracovního poměru zaměstnanci, "
+                    "u něhož dochází k rozvázání pracovního poměru výpovědí."
+                ),
+                sort_order=2,
+            ),
+        ]
+        self.assertFalse(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
+
+    def test_canonical_detects_173_style_section_rewrite(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="37",
+                text="Vlak, jehož stanovená rychlost je vyšší než 40 km/h, musí být brzděn průběžnou brzdou samočinnou.",
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="37",
+                text="Vlak, jehož stanovená rychlost je vyšší než 40 km/h, musí být brzděn průběžnou brzdou a systémem ETCS.",
+                sort_order=1,
+            ),
+        ]
+        self.assertFalse(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
+
+    def test_canonical_detects_22_style_section_rewrite(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="3",
+                text=(
+                    "Ministerstvo v oblasti technické normalizace, metrologie a státního "
+                    "zkušebnictví vypracovává návrh koncepce rozvoje tohoto odvětví."
+                ),
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="3",
+                text=(
+                    "Technickým předpisem pro účely tohoto zákona je právní předpis "
+                    "obsahující technické požadavky na výrobky."
+                ),
+                sort_order=1,
+            ),
+        ]
+        self.assertFalse(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
+
+    def test_canonical_detects_258_style_word_change(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="77",
+                text="Žadatel o vydání rozhodnutí o záměru stavby bytového domu předloží posudek.",
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="77",
+                text="Žadatel o vydání povolení záměru stavby bytového domu předloží posudek.",
+                sort_order=1,
+            ),
+        ]
+        self.assertFalse(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
+
+    def test_canonical_detects_133_style_word_change(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="8",
+                text="Zařízení sociálních služeb, která poskytují služby sociální péče, musí být vybavena signalizací.",
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="8",
+                text="Zařízení sociálních služeb, které poskytují služby sociální péče, musí být vybavena signalizací.",
+                sort_order=1,
             ),
         ]
         self.assertFalse(

@@ -208,7 +208,25 @@ def _texts_compatible(left: str, right: str) -> bool:
         return True
     if _is_parser_dump(left_norm, right_norm):
         return True
+    if _only_leaked_inline_heading(left_norm, right_norm):
+        return True
     return False
+
+
+def _only_leaked_inline_heading(left: str, right: str) -> bool:
+    """HTML parser sometimes appends the next heading after a finished sentence."""
+    shorter, longer = (left, right) if len(left) <= len(right) else (right, left)
+    if not shorter or not longer.startswith(shorter):
+        return False
+    if not shorter.endswith("."):
+        return False
+    remainder = longer[len(shorter) :].strip()
+    if not remainder or len(remainder) > 80:
+        return False
+    if any(char.isdigit() or char in ".,;:!?()[]\"'«»" for char in remainder):
+        return False
+    words = remainder.split()
+    return 2 <= len(words) <= 5
 
 
 def _word_sets_compatible(left: str, right: str) -> bool:
