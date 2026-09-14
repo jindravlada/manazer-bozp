@@ -19,7 +19,7 @@ fi
 source .venv/bin/activate
 
 if ! command -v pyinstaller >/dev/null 2>&1; then
-  echo "Chybí PyInstaller. Instaluj: pip install pyinstaller"
+  echo "Chybí PyInstaller. Instaluj: pip install -r requirements-build.txt"
   exit 1
 fi
 
@@ -28,6 +28,8 @@ if [ ! -f "$LINUXDEPLOY_APPIMAGE" ]; then
   echo "Chybí linuxdeploy-x86_64.AppImage"
   exit 1
 fi
+
+python3 "$PROJECT_DIR/packaging/verify_linuxdeploy.py" "$LINUXDEPLOY_APPIMAGE"
 
 LINUXDEPLOY_WORKDIR="$(mktemp -d)"
 cleanup_linuxdeploy_workdir() {

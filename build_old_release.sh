@@ -61,14 +61,14 @@ docker run --rm \
     fi
 
     echo "== PyInstaller build =="
-    pip install pyinstaller
+    pip install -r requirements-build.txt
 
     if [ ! -f /src/zdroje/preklady/qtbase_cs.qm ]; then
       echo "Chybí zdroje/preklady/qtbase_cs.qm (český Qt překlad)."
       exit 1
     fi
 
-    mapfile -t QT_THEME_BINARIES < <(python3 -c 'from core.packaging.qt_platform_plugins import pyinstaller_binary_specs; print("\n".join(pyinstaller_binary_specs()))')
+    mapfile -t QT_THEME_BINARIES < <(python3 -c "from core.packaging.qt_platform_plugins import pyinstaller_binary_specs; print(chr(10).join(pyinstaller_binary_specs()))")
     ADD_THEME_BINARIES=()
     for spec in "${QT_THEME_BINARIES[@]}"; do
       ADD_THEME_BINARIES+=(--add-binary "$spec")
@@ -143,16 +143,16 @@ exec "\${HERE}/usr/bin/ManazerBOZP" "\$@"
 EOF
     chmod +x AppDir/AppRun
 
-    echo "== Stahuji linuxdeploy =="
-    wget -q -O linuxdeploy-x86_64.AppImage \
-      https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
-    chmod +x linuxdeploy-x86_64.AppImage
+    echo "== Ověřuji linuxdeploy =="
+    LINUXDEPLOY_APPIMAGE="/src/linuxdeploy-x86_64.AppImage"
+    python3 /src/packaging/verify_linuxdeploy.py "$LINUXDEPLOY_APPIMAGE"
+    chmod +x "$LINUXDEPLOY_APPIMAGE"
 
     echo "== Rozbaluji linuxdeploy bez FUSE =="
     LINUXDEPLOY_WORKDIR="$(mktemp -d)"
     (
       cd "$LINUXDEPLOY_WORKDIR"
-      /src/linuxdeploy-x86_64.AppImage --appimage-extract >/dev/null
+      "$LINUXDEPLOY_APPIMAGE" --appimage-extract >/dev/null
     )
     LINUXDEPLOY="$LINUXDEPLOY_WORKDIR/squashfs-root/AppRun"
 

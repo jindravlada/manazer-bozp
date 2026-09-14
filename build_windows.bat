@@ -23,6 +23,10 @@ pyinstaller --clean --onedir --windowed ^
   --icon manager_bozp.ico ^
   --version-file version_info.txt ^
   --name ManazerBOZP ^
+  --add-data "moduly;moduly" ^
+  --add-data "core;core" ^
+  --add-data "ciselniky;ciselniky" ^
+  --add-data "zdroje;zdroje" ^
   main.py
 
 if errorlevel 1 (

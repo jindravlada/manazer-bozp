@@ -1,0 +1,2 @@
+# Nástroje pro release build (ne runtime aplikace).
+pyinstaller==6.22.3

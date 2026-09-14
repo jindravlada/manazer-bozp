@@ -1,0 +1,9 @@
+# SHA-256 of the tracked linuxdeploy-x86_64.AppImage used by Linux AppImage builds.
+# GitHub "continuous" is rewritten; do not download it as a floating source.
+# Snapshot identity (2026-09-01):
+#   linuxdeploy git commit 07333c6e942c7d71782b66be924c5d867f9dfdfc
+#   GitHub asset id 538917371
+LINUXDEPLOY_SHA256=36a2d7e274d12e1050d0e9ecfe11d339ed54720b2bec464c286d53f8b07f5c62
+LINUXDEPLOY_FILENAME=linuxdeploy-x86_64.AppImage
+LINUXDEPLOY_GIT_COMMIT=07333c6e942c7d71782b66be924c5d867f9dfdfc
+LINUXDEPLOY_GITHUB_ASSET_ID=538917371
