@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 from datetime import date
 from html import unescape
 from typing import Sequence
@@ -82,14 +83,23 @@ _ROMAN = (
 )
 
 
+@dataclass(frozen=True)
+class ESbirkaOpenDataParsedTree:
+    source_eli: str
+    source_url: str
+    effective_from: date | None
+    version_label: str
+    sections: tuple[ParsedLegalSection, ...]
+
+
 class LegalDocumentESbirkaOpenDataTreeBuilder:
-    def fetch_in_force_parsed_sections(
+    def fetch_in_force_tree(
         self,
         *,
         year: int | str,
         number: str,
         on_date: date,
-    ) -> list[ParsedLegalSection]:
+    ) -> ESbirkaOpenDataParsedTree:
         wording = legal_document_esbirka_opendata_client.fetch_in_force_wording_fragments(
             year=year,
             number=number,
@@ -98,7 +108,23 @@ class LegalDocumentESbirkaOpenDataTreeBuilder:
         contents = legal_document_esbirka_opendata_client.fetch_wording_fragment_contents(
             wording.source_eli,
         )
-        return self.build_parsed_sections(wording, contents)
+        sections = self.build_parsed_sections(wording, contents)
+        return ESbirkaOpenDataParsedTree(
+            source_eli=wording.source_eli,
+            source_url=wording.source_url,
+            effective_from=wording.effective_from,
+            version_label=f"e-Sbírka {wording.source_eli}",
+            sections=tuple(sections),
+        )
+
+    def fetch_in_force_parsed_sections(
+        self,
+        *,
+        year: int | str,
+        number: str,
+        on_date: date,
+    ) -> list[ParsedLegalSection]:
+        return list(self.fetch_in_force_tree(year=year, number=number, on_date=on_date).sections)
 
     def build_parsed_sections(
         self,

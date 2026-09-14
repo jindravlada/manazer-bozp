@@ -39,6 +39,12 @@ with patch.object(Path, "home", return_value=_TMP):
         ESbirkaOpenDataWording,
         legal_document_esbirka_opendata_client,
     )
+    from moduly.pravni_pozadavky.import_export.legal_document_esbirka_opendata_tree import (
+        legal_document_esbirka_opendata_tree_builder,
+    )
+    from moduly.pravni_pozadavky.import_export.legal_document_number import (
+        normalize_legal_act_number_and_year,
+    )
     from moduly.pravni_pozadavky.sluzby.legal_change_service import legal_change_service
     from moduly.pravni_pozadavky.sluzby.legal_check_novelization_service import (
         NOVELIZATION_CHANGED,
@@ -50,6 +56,7 @@ with patch.object(Path, "home", return_value=_TMP):
         legal_document_version_service,
     )
     from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
+    from tests.legal_opendata_check_fakes import fake_in_force_tree, parsed_sections_from_version
 
 
 class LegalCheckInterruptedRunTestCase(unittest.TestCase):
@@ -138,11 +145,35 @@ class LegalCheckInterruptedRunTestCase(unittest.TestCase):
         )
 
     @contextmanager
-    def _patched_esbirka(self):
+    def _patched_esbirka(self, *, change_text: str | None = "Nové znění Open Data"):
+        def _fetch(*, year, number, on_date):
+            want_number, want_year = normalize_legal_act_number_and_year(number, year)
+            document = None
+            for item in legal_document_service.list_all(include_inactive=False):
+                got_number, got_year = normalize_legal_act_number_and_year(
+                    item.number or "",
+                    item.year if item.year is not None else want_year,
+                )
+                if got_number == want_number and got_year == want_year:
+                    document = item
+                    break
+            if document is None:
+                raise ValueError("Předpis nenalezen.")
+            version = legal_document_version_service.get_current_version(document.id)
+            sections = parsed_sections_from_version(version.id) if version is not None else []
+            if change_text is not None and sections:
+                sections[0].text = change_text
+            return fake_in_force_tree(
+                self.remote_eli,
+                sections,
+                effective_from=self.remote_version.effective_from,
+                source_url=self.remote_version.source_url,
+            )
+
         with patch.object(
-            legal_document_esbirka_opendata_client,
-            "fetch_latest_wording",
-            return_value=self.remote_version,
+            legal_document_esbirka_opendata_tree_builder,
+            "fetch_in_force_tree",
+            side_effect=_fetch,
         ):
             yield
 
@@ -179,7 +210,7 @@ class LegalCheckInterruptedRunTestCase(unittest.TestCase):
         self.assertEqual(len(legal_change_service.list_by_document(zp.id)), 1)
         self.assertEqual(
             len(legal_document_version_service.list_by_document(zp.id, include_inactive=True)),
-            1,
+            2,
         )
         used = legal_document_version_service.get_by_id(zp_version.id)
         assert used is not None
@@ -228,13 +259,13 @@ class LegalCheckInterruptedRunTestCase(unittest.TestCase):
         self.assertEqual(len(nv_changes), 1)
         self.assertEqual(
             len(legal_document_version_service.list_by_document(zp.id, include_inactive=True)),
-            1,
+            2,
         )
         self.assertEqual(
             len(legal_document_version_service.list_by_document(nv.id, include_inactive=True)),
-            1,
+            2,
         )
-        self.assertIsNone(zp_changes[0].new_legal_document_version_id)
+        self.assertIsNotNone(zp_changes[0].new_legal_document_version_id)
 
     def test_exception_after_processed_document_does_not_lose_change(self) -> None:
         zp, _zp_version, nv, _nv_version = self._create_restored_pair()
@@ -357,7 +388,7 @@ class LegalCheckInterruptedRunTestCase(unittest.TestCase):
         current = legal_document_version_service.get_current_version(zp.id)
         assert current is not None
         self.assertEqual(current.id, zp_version.id)
-        self.assertIsNone(updated.new_legal_document_version_id)
+        self.assertIsNotNone(updated.new_legal_document_version_id)
 
     def test_cancelled_first_check_does_not_confirm_reference_checksum(self) -> None:
         zp, zp_version, nv, nv_version = self._create_restored_pair()
@@ -365,7 +396,7 @@ class LegalCheckInterruptedRunTestCase(unittest.TestCase):
             legal_check_novelization_service.initialize_reference_state,
         )
 
-        with self._patched_esbirka(), patch.object(
+        with self._patched_esbirka(change_text=None), patch.object(
             legal_check_novelization_service,
             "initialize_reference_state",
             side_effect=wrapped,
@@ -381,7 +412,7 @@ class LegalCheckInterruptedRunTestCase(unittest.TestCase):
         self.assertEqual(legal_document_version_service.get_by_id(zp_version.id).checksum, self._old_checksum())
         self.assertEqual(legal_document_version_service.get_by_id(nv_version.id).checksum, self._old_checksum())
 
-        with self._patched_esbirka():
+        with self._patched_esbirka(change_text=None):
             completed = legal_check_run_service.run_automatic_check(
                 period_from=date(2024, 3, 1),
                 period_to=date(2024, 3, 31),

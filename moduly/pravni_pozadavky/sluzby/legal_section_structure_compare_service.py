@@ -15,10 +15,20 @@ from moduly.pravni_pozadavky.constants import (
 from moduly.pravni_pozadavky.parser.legal_document_parser_models import ParsedLegalSection
 
 _WHITESPACE_RE = re.compile(r"\s+", re.UNICODE)
+_FOOTNOTE_MARKER_RE = re.compile(
+    r"(?<=[A-Za-zÁČĎÉĚÍŇÓŘŠŤÚŮÝŽáčďéěíňóřšťúůýž])\s*\d+\)",
+    re.UNICODE,
+)
+_DASH_RE = re.compile(r"[–—−]")
+_QUOTE_RE = re.compile(r"[„“”«»]")
 
 
 def normalize_section_compare_text(value: str | None) -> str:
     text = (value or "").replace("\u00a0", " ").replace("\u202f", " ")
+    text = text.translate(str.maketrans("⁰¹²³⁴⁵⁶⁷⁸⁹", "0123456789"))
+    text = _FOOTNOTE_MARKER_RE.sub("", text)
+    text = _DASH_RE.sub("-", text)
+    text = _QUOTE_RE.sub('"', text)
     text = _WHITESPACE_RE.sub(" ", text)
     return text.strip()
 
@@ -57,6 +67,35 @@ class SectionStructureCompareResult:
 
 
 class LegalSectionStructureCompareService:
+    def trees_content_equal(
+        self,
+        *,
+        stored_sections: list,
+        parsed_sections: list[ParsedLegalSection],
+    ) -> bool:
+        stored_entries = self._build_stored_entries(stored_sections)
+        parsed_entries = self._build_parsed_entries(parsed_sections)
+        stored_by_key = {entry.identity_key: entry for entry in stored_entries}
+        parsed_by_key = {entry.identity_key: entry for entry in parsed_entries}
+        stored_core = {key for key in stored_by_key if not key.startswith("priloha:")}
+        parsed_core = {key for key in parsed_by_key if not key.startswith("priloha:")}
+        if stored_core != parsed_core:
+            return False
+        for key in stored_core:
+            if self._texts_differ(stored_by_key[key].text, parsed_by_key[key].text):
+                return False
+        stored_attachments = sorted(
+            normalize_section_compare_text(stored_by_key[key].text)
+            for key in stored_by_key
+            if key.startswith("priloha:")
+        )
+        parsed_attachments = sorted(
+            normalize_section_compare_text(parsed_by_key[key].text)
+            for key in parsed_by_key
+            if key.startswith("priloha:")
+        )
+        return stored_attachments == parsed_attachments
+
     def compare(
         self,
         *,

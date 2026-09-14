@@ -126,7 +126,7 @@ class LegalCheckRunService:
 
         run = self._begin_automatic_check(period_from, normalized_period_to)
         is_first_check = self.is_first_automatic_check()
-        deferred_reference_checksums: list[tuple[int, str]] = []
+        deferred_references: list[tuple[int, str, str, date | None, str]] = []
         failed_items: list[str] = []
         checked_ok = 0
         try:
@@ -171,8 +171,14 @@ class LegalCheckRunService:
                     and outcome.stored_version_id is not None
                     and outcome.reference_checksum
                 ):
-                    deferred_reference_checksums.append(
-                        (outcome.stored_version_id, outcome.reference_checksum),
+                    deferred_references.append(
+                        (
+                            outcome.stored_version_id,
+                            outcome.reference_checksum,
+                            outcome.source_eli or "",
+                            outcome.effective_from,
+                            outcome.source_url or "",
+                        ),
                     )
 
             if self._check_cancelled(is_cancelled):
@@ -181,8 +187,14 @@ class LegalCheckRunService:
 
             if is_first_check:
                 changes_count = 0
-                for version_id, checksum in deferred_reference_checksums:
-                    legal_document_version_service.update_checksum(version_id, checksum)
+                for version_id, checksum, source_eli, effective_from, source_url in deferred_references:
+                    legal_document_version_service.apply_official_wording_identifiers(
+                        version_id,
+                        source_eli=source_eli,
+                        checksum=checksum,
+                        effective_from=effective_from,
+                        source_url=source_url,
+                    )
             else:
                 from moduly.pravni_pozadavky.sluzby.legal_change_service import legal_change_service
 

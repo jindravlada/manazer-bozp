@@ -174,6 +174,33 @@ class LegalDocumentVersionService:
         version.checksum = checksum.strip()
         return self.repository.update(version)
 
+    def apply_official_wording_identifiers(
+        self,
+        version_id: int,
+        *,
+        source_eli: str,
+        checksum: str,
+        effective_from: date | None = None,
+        source_url: str = "",
+    ) -> LegalDocumentVersion | None:
+        version = self.repository.get_by_id(version_id)
+        if version is None:
+            return None
+        normalized_eli = normalize_stored_source_eli(source_eli)
+        if normalized_eli:
+            existing = self.repository.find_by_source_eli(
+                version.legal_document_id,
+                normalized_eli,
+            )
+            if existing is None or existing.id == version.id:
+                version.source_eli = normalized_eli
+                if effective_from is not None:
+                    version.effective_from = effective_from
+        version.checksum = checksum.strip()
+        if source_url.strip():
+            version.source_url = source_url.strip()
+        return self._persist_update(version)
+
     def set_pending_adoption(
         self,
         version_id: int,

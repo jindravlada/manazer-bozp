@@ -43,6 +43,9 @@ with patch.object(Path, "home", return_value=_TMP):
         ESbirkaOpenDataWording,
         legal_document_esbirka_opendata_client,
     )
+    from moduly.pravni_pozadavky.import_export.legal_document_esbirka_opendata_tree import (
+        legal_document_esbirka_opendata_tree_builder,
+    )
     from moduly.pravni_pozadavky.import_export.legal_document_number import (
         normalize_legal_act_number_and_year,
     )
@@ -62,6 +65,7 @@ with patch.object(Path, "home", return_value=_TMP):
         legal_document_version_service,
     )
     from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
+    from tests.legal_opendata_check_fakes import fake_in_force_tree, parsed_sections_from_version
 
 class _FakeRawResponse:
     def __init__(self, *, status: int = 200, headers: dict | None = None):
@@ -110,12 +114,14 @@ class LegalCheckESbirkaOpenDataTestCase(unittest.TestCase):
 
         from core.database.session import get_session
         from moduly.pravni_pozadavky.modely.legal_change import LegalChange
+        from moduly.pravni_pozadavky.modely.legal_change_section import LegalChangeSection
         from moduly.pravni_pozadavky.modely.legal_check_run import LegalCheckRun
         from moduly.pravni_pozadavky.modely.legal_document import LegalDocument
         from moduly.pravni_pozadavky.modely.legal_document_version import LegalDocumentVersion
         from moduly.pravni_pozadavky.modely.legal_section import LegalSection
 
         with get_session() as session:
+            session.execute(delete(LegalChangeSection))
             session.execute(delete(LegalChange))
             session.execute(delete(LegalCheckRun))
             session.execute(delete(LegalSection))
@@ -153,6 +159,37 @@ class LegalCheckESbirkaOpenDataTestCase(unittest.TestCase):
             sort_order=1,
         )
         return document, version
+
+    def _patch_in_force(self, eli: str, *, change_text: str | None = None):
+        def _fetch(*, year, number, on_date):
+            version = legal_document_version_service.get_current_version(
+                self._document_id_for(year, number),
+            )
+            sections = parsed_sections_from_version(version.id) if version is not None else []
+            if change_text is not None and sections:
+                sections[0].text = change_text
+            return fake_in_force_tree(eli, sections)
+
+        return patch.object(
+            legal_document_esbirka_opendata_tree_builder,
+            "fetch_in_force_tree",
+            side_effect=_fetch,
+        )
+
+    def _document_id_for(self, year, number) -> int:
+        from moduly.pravni_pozadavky.import_export.legal_document_number import (
+            normalize_legal_act_number_and_year,
+        )
+
+        want_number, want_year = normalize_legal_act_number_and_year(number, year)
+        for item in legal_document_service.list_all(include_inactive=False):
+            got_number, got_year = normalize_legal_act_number_and_year(
+                item.number or "",
+                item.year if item.year is not None else want_year,
+            )
+            if got_number == want_number and got_year == want_year:
+                return item.id
+        raise AssertionError(f"Předpis {number}/{year} nebyl nalezen.")
 
     def _seed_completed_run(self) -> None:
         legal_check_run_service.create(
@@ -213,11 +250,7 @@ class LegalCheckESbirkaOpenDataTestCase(unittest.TestCase):
     def test_e_same_eli_is_unchanged(self) -> None:
         document, version = self._create_document(checksum=_eli_checksum(_ELI_B))
         run = legal_check_run_service._begin_automatic_check(date(2024, 2, 1), date(2024, 2, 28))
-        with patch.object(
-            legal_document_esbirka_opendata_client,
-            "fetch_latest_wording",
-            return_value=_wording(_ELI_B),
-        ):
+        with self._patch_in_force(_ELI_B):
             result = legal_check_novelization_service.check_document(
                 document,
                 check_run_id=run.id,
@@ -233,11 +266,7 @@ class LegalCheckESbirkaOpenDataTestCase(unittest.TestCase):
     def test_f_different_eli_creates_novelization(self) -> None:
         document, version = self._create_document(checksum=_eli_checksum(_ELI_A))
         run = legal_check_run_service._begin_automatic_check(date(2024, 2, 1), date(2024, 2, 28))
-        with patch.object(
-            legal_document_esbirka_opendata_client,
-            "fetch_latest_wording",
-            return_value=_wording(_ELI_B),
-        ):
+        with self._patch_in_force(_ELI_B, change_text="Nové znění Open Data"):
             result = legal_check_novelization_service.check_document(
                 document,
                 check_run_id=run.id,
@@ -247,6 +276,7 @@ class LegalCheckESbirkaOpenDataTestCase(unittest.TestCase):
         self.assertEqual(result.change.change_type, CHANGE_NOVELIZATION)
         self.assertEqual(result.change.title, "Předpis byl novelizován.")
         self.assertEqual(result.change.legal_document_version_id, version.id)
+        self.assertIsNotNone(result.change.new_legal_document_version_id)
         updated = legal_document_version_service.get_by_id(version.id)
         assert updated is not None
         self.assertEqual(updated.checksum, _eli_checksum(_ELI_A))
@@ -256,11 +286,7 @@ class LegalCheckESbirkaOpenDataTestCase(unittest.TestCase):
             checksum="esbirka:356121:old-text-hash",
         )
         self._seed_completed_run()
-        with patch.object(
-            legal_document_esbirka_opendata_client,
-            "fetch_latest_wording",
-            return_value=_wording(_ELI_B),
-        ):
+        with self._patch_in_force(_ELI_B):
             result = legal_check_run_service.run_automatic_check(
                 period_from=date(2024, 2, 1),
                 period_to=date(2024, 2, 28),
@@ -272,17 +298,14 @@ class LegalCheckESbirkaOpenDataTestCase(unittest.TestCase):
         updated = legal_document_version_service.get_by_id(version.id)
         assert updated is not None
         self.assertEqual(updated.checksum, _eli_checksum(_ELI_B))
+        self.assertEqual(updated.source_eli, _ELI_B)
 
     def test_h_second_eli_check_with_same_value_is_unchanged(self) -> None:
         document, version = self._create_document(
             checksum="esbirka:111111:old-hash",
         )
         self._seed_completed_run()
-        with patch.object(
-            legal_document_esbirka_opendata_client,
-            "fetch_latest_wording",
-            return_value=_wording(_ELI_B),
-        ):
+        with self._patch_in_force(_ELI_B):
             first = legal_check_run_service.run_automatic_check(
                 period_from=date(2024, 2, 1),
                 period_to=date(2024, 2, 28),
@@ -302,20 +325,12 @@ class LegalCheckESbirkaOpenDataTestCase(unittest.TestCase):
     def test_i_eli_change_after_baseline_is_detected(self) -> None:
         document, version = self._create_document(checksum=_eli_checksum(_ELI_A))
         self._seed_completed_run()
-        with patch.object(
-            legal_document_esbirka_opendata_client,
-            "fetch_latest_wording",
-            return_value=_wording(_ELI_A),
-        ):
+        with self._patch_in_force(_ELI_A):
             first = legal_check_run_service.run_automatic_check(
                 period_from=date(2024, 2, 1),
                 period_to=date(2024, 2, 28),
             )
-        with patch.object(
-            legal_document_esbirka_opendata_client,
-            "fetch_latest_wording",
-            return_value=_wording(_ELI_B),
-        ):
+        with self._patch_in_force(_ELI_B, change_text="Nové znění Open Data"):
             second = legal_check_run_service.run_automatic_check(
                 period_from=date(2024, 3, 1),
                 period_to=date(2024, 3, 31),
@@ -325,6 +340,7 @@ class LegalCheckESbirkaOpenDataTestCase(unittest.TestCase):
         changes = legal_change_service.list_by_document(document.id)
         self.assertEqual(len(changes), 1)
         self.assertEqual(changes[0].title, "Předpis byl novelizován.")
+        self.assertIsNotNone(changes[0].new_legal_document_version_id)
         self.assertEqual(
             legal_document_version_service.get_by_id(version.id).checksum,
             _eli_checksum(_ELI_A),
@@ -334,8 +350,8 @@ class LegalCheckESbirkaOpenDataTestCase(unittest.TestCase):
         document, _version = self._create_document(checksum=_eli_checksum(_ELI_A))
         run = legal_check_run_service._begin_automatic_check(date(2024, 2, 1), date(2024, 2, 28))
         with patch.object(
-            legal_document_esbirka_opendata_client,
-            "fetch_latest_wording",
+            legal_document_esbirka_opendata_tree_builder,
+            "fetch_in_force_tree",
             side_effect=SafeHttpsError("Neplatná adresa služby.", kind="invalid_url"),
         ):
             result = legal_check_novelization_service.check_document(
@@ -357,8 +373,8 @@ class LegalCheckESbirkaOpenDataTestCase(unittest.TestCase):
         for error in cases:
             with self.subTest(error=str(error)):
                 with patch.object(
-                    legal_document_esbirka_opendata_client,
-                    "fetch_latest_wording",
+                    legal_document_esbirka_opendata_tree_builder,
+                    "fetch_in_force_tree",
                     side_effect=error,
                 ):
                     result = legal_check_novelization_service.check_document(
@@ -395,14 +411,16 @@ class LegalCheckESbirkaOpenDataTestCase(unittest.TestCase):
         )
         self._seed_completed_run()
 
-        def _fetch(*, year, number):
+        def _fetch(*, year, number, on_date):
             if str(number) == "262" and int(year) == 2006:
-                return _wording(_ELI_A)
+                version = legal_document_version_service.get_current_version(ok_document.id)
+                sections = parsed_sections_from_version(version.id) if version is not None else []
+                return fake_in_force_tree(_ELI_A, sections)
             raise ValueError("Internet není dostupný.")
 
         with patch.object(
-            legal_document_esbirka_opendata_client,
-            "fetch_latest_wording",
+            legal_document_esbirka_opendata_tree_builder,
+            "fetch_in_force_tree",
             side_effect=_fetch,
         ):
             result = legal_check_run_service.run_automatic_check(
@@ -423,8 +441,8 @@ class LegalCheckESbirkaOpenDataTestCase(unittest.TestCase):
         self._create_document(checksum=_eli_checksum(_ELI_A))
         self._seed_completed_run()
         with patch.object(
-            legal_document_esbirka_opendata_client,
-            "fetch_latest_wording",
+            legal_document_esbirka_opendata_tree_builder,
+            "fetch_in_force_tree",
             side_effect=ValueError("Internet není dostupný."),
         ):
             result = legal_check_run_service.run_automatic_check(
@@ -472,17 +490,15 @@ class LegalCheckESbirkaOpenDataTestCase(unittest.TestCase):
             checksum=_eli_checksum(_ELI_B),
         )
         run = legal_check_run_service._begin_automatic_check(date(2024, 2, 1), date(2024, 2, 28))
-        with patch.object(
-            legal_document_esbirka_opendata_client,
-            "fetch_latest_wording",
-            return_value=_wording(_ELI_B),
-        ) as fetch_mock:
+        with self._patch_in_force(_ELI_B) as fetch_mock:
             result = legal_check_novelization_service.check_document(
                 document,
                 check_run_id=run.id,
             )
         self.assertEqual(result.status, NOVELIZATION_UNCHANGED)
-        fetch_mock.assert_called_once_with(year=2006, number="262/2006 Sb.")
+        fetch_mock.assert_called_once()
+        self.assertEqual(fetch_mock.call_args.kwargs["year"], 2006)
+        self.assertEqual(fetch_mock.call_args.kwargs["number"], "262/2006 Sb.")
 
 
 if __name__ == "__main__":
