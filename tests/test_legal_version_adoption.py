@@ -42,18 +42,17 @@ with patch.object(Path, "home", return_value=_TMP):
         legal_change_wording_status_label,
         legal_document_version_status_label,
     )
-    from moduly.pravni_pozadavky.import_export.legal_document_esbirka_client import (
-        ESbirkaVersionInfo,
-    )
-    from moduly.pravni_pozadavky.parser.legal_document_parser_models import (
-        LegalDocumentParseResult,
-        ParsedLegalSection,
+    from moduly.pravni_pozadavky.import_export.legal_document_esbirka_opendata_client import (
+        ESbirkaOpenDataWording,
+        legal_document_esbirka_opendata_client,
     )
     from moduly.pravni_pozadavky.sluzby.legal_change_section_service import (
         legal_change_section_service,
     )
     from moduly.pravni_pozadavky.sluzby.legal_change_service import legal_change_service
     from moduly.pravni_pozadavky.sluzby.legal_check_novelization_service import (
+        NOVELIZATION_CHANGED,
+        NOVELIZATION_UNCHANGED,
         legal_check_novelization_service,
     )
     from moduly.pravni_pozadavky.sluzby.legal_check_run_service import legal_check_run_service
@@ -367,96 +366,98 @@ class LegalVersionAdoptionTestCase(unittest.TestCase):
             self._create_document_and_versions()
         )
         legal_version_adoption_service.adopt_detected_version(change.id)
-        parsed = LegalDocumentParseResult(
-            sections=[
-                ParsedLegalSection(
-                    section_type=SECTION_PARAGRAPH,
-                    paragraph="1",
-                    title="§ 1",
-                    text="Nový text § 1",
-                    sort_order=1,
-                ),
-            ],
-        )
-        remote = ESbirkaVersionInfo(
-            doc_id="262",
-            slice_id="222222",
-            source_url="https://www.e-sbirka.cz/cs/262-2006",
-            publication_date=date(2024, 1, 1),
-            text_checksum="new-checksum",
-            version_label="e-Sbírka 222222",
+        remote = ESbirkaOpenDataWording(
+            last_wording_eli="eli/cz/sb/2006/262/2024-01-01",
+            source_url="https://opendata.eselpoint.gov.cz/esel-esb/eli/cz/sb/2006/262",
+            effective_from=date(2024, 1, 1),
+            version_label="e-Sbírka eli/cz/sb/2006/262/2024-01-01",
         )
         run = legal_check_run_service._begin_automatic_check(date(2024, 3, 1), date(2024, 3, 31))
         with patch.object(
-            legal_check_novelization_service,
-            "_load_remote_document",
-            return_value=(remote, parsed),
+            legal_document_esbirka_opendata_client,
+            "fetch_latest_wording",
+            return_value=remote,
         ):
             result = legal_check_novelization_service.check_document(
                 document,
                 check_run_id=run.id,
             )
-        self.assertIsNone(result)
+        self.assertEqual(result.status, NOVELIZATION_UNCHANGED)
+        self.assertIsNone(result.change)
         self.assertEqual(len(legal_change_service.list_by_document(document.id)), 1)
         versions = legal_document_version_service.list_by_document(document.id, include_inactive=True)
         self.assertEqual(len(versions), 2)
         current = legal_document_version_service.get_current_version(document.id)
         assert current is not None
         self.assertEqual(current.id, new_version.id)
+        self.assertEqual(
+            current.checksum,
+            legal_document_esbirka_opendata_client.build_version_checksum(
+                remote.last_wording_eli,
+            ),
+        )
 
     def test_later_novelization_uses_adopted_version_as_original(self) -> None:
         document, old_version, new_version, _kept, _removed, _new_kept, change = (
             self._create_document_and_versions()
         )
         legal_version_adoption_service.adopt_detected_version(change.id)
-        parsed = LegalDocumentParseResult(
-            sections=[
-                ParsedLegalSection(
-                    section_type=SECTION_PARAGRAPH,
-                    paragraph="1",
-                    title="§ 1",
-                    text="Ještě novější text § 1",
-                    sort_order=1,
-                ),
-            ],
+        first_eli = "eli/cz/sb/2006/262/2024-01-01"
+        later_eli = "eli/cz/sb/2006/262/2025-01-01"
+        first_remote = ESbirkaOpenDataWording(
+            last_wording_eli=first_eli,
+            source_url="https://opendata.eselpoint.gov.cz/esel-esb/eli/cz/sb/2006/262",
+            effective_from=date(2024, 1, 1),
+            version_label=f"e-Sbírka {first_eli}",
         )
-        later_remote = ESbirkaVersionInfo(
-            doc_id="262",
-            slice_id="333333",
-            source_url="https://www.e-sbirka.cz/cs/262-2006",
-            publication_date=date(2025, 1, 1),
-            text_checksum="later-checksum",
-            version_label="e-Sbírka 333333",
+        later_remote = ESbirkaOpenDataWording(
+            last_wording_eli=later_eli,
+            source_url="https://opendata.eselpoint.gov.cz/esel-esb/eli/cz/sb/2006/262",
+            effective_from=date(2025, 1, 1),
+            version_label=f"e-Sbírka {later_eli}",
+        )
+        baseline_run = legal_check_run_service._begin_automatic_check(
+            date(2024, 3, 1),
+            date(2024, 3, 31),
+        )
+        with patch.object(
+            legal_document_esbirka_opendata_client,
+            "fetch_latest_wording",
+            return_value=first_remote,
+        ):
+            baseline = legal_check_novelization_service.check_document(
+                document,
+                check_run_id=baseline_run.id,
+            )
+        self.assertEqual(baseline.status, NOVELIZATION_UNCHANGED)
+        legal_check_run_service._mark_completed(
+            baseline_run.id,
+            documents_checked_count=1,
+            changes_found_count=0,
         )
         run = legal_check_run_service._begin_automatic_check(date(2025, 1, 1), date(2025, 1, 31))
         with patch.object(
-            legal_check_novelization_service,
-            "_load_remote_document",
-            return_value=(later_remote, parsed),
+            legal_document_esbirka_opendata_client,
+            "fetch_latest_wording",
+            return_value=later_remote,
         ):
-            later_change = legal_check_novelization_service.check_document(
+            later_outcome = legal_check_novelization_service.check_document(
                 document,
                 check_run_id=run.id,
             )
+        self.assertEqual(later_outcome.status, NOVELIZATION_CHANGED)
+        later_change = later_outcome.change
         assert later_change is not None
         self.assertNotEqual(later_change.id, change.id)
         self.assertEqual(later_change.legal_document_version_id, new_version.id)
-        self.assertIsNotNone(later_change.new_legal_document_version_id)
-        self.assertNotEqual(later_change.new_legal_document_version_id, new_version.id)
-        pending = legal_document_version_service.get_by_id(later_change.new_legal_document_version_id)
-        assert pending is not None
-        self.assertTrue(pending.pending_adoption)
+        self.assertIsNone(later_change.new_legal_document_version_id)
         current = legal_document_version_service.get_current_version(document.id)
         assert current is not None
         self.assertEqual(current.id, new_version.id)
-        self.assertEqual(
-            legal_document_version_status_label(pending, current_version_id=current.id),
-            VERSION_STATUS_PENDING_ADOPTION,
-        )
         self.assertEqual(len(legal_change_service.list_by_document(document.id)), 2)
         self.assertEqual(
             len(legal_document_version_service.list_by_document(document.id, include_inactive=True)),
-            3,
+            2,
         )
         preserved_first = legal_document_version_service.get_by_id(old_version.id)
         assert preserved_first is not None

@@ -2,7 +2,11 @@ from datetime import date
 
 from PySide6.QtCore import QObject, QThread, Signal
 
-from moduly.pravni_pozadavky.constants import CHECK_RUN_CANCELLED, CHECK_RUN_COMPLETED
+from moduly.pravni_pozadavky.constants import (
+    CHECK_RUN_CANCELLED,
+    CHECK_RUN_COMPLETED,
+    CHECK_RUN_ERROR,
+)
 from moduly.pravni_pozadavky.sluzby.legal_check_run_service import legal_check_run_service
 
 
@@ -44,6 +48,9 @@ class LegalCheckRunWorker(QObject):
             self.cancelled.emit()
             return
         if result.run.status == CHECK_RUN_COMPLETED:
+            self.finished.emit(result)
+            return
+        if result.run.status == CHECK_RUN_ERROR:
             self.finished.emit(result)
             return
 

@@ -13,8 +13,11 @@ from PySide6.QtWidgets import (
 
 from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
-from moduly.pravni_pozadavky.constants import CHECK_RUN_COMPLETED
-from moduly.pravni_pozadavky.sluzby.legal_check_run_service import legal_check_run_service
+from moduly.pravni_pozadavky.constants import CHECK_RUN_COMPLETED, CHECK_RUN_ERROR
+from moduly.pravni_pozadavky.sluzby.legal_check_run_service import (
+    format_automatic_check_user_message,
+    legal_check_run_service,
+)
 from moduly.pravni_pozadavky.ui.legal_check_first_run_dialog import LegalCheckFirstRunDialog
 from moduly.pravni_pozadavky.ui.legal_check_progress_dialog import LegalCheckProgressDialog
 from moduly.pravni_pozadavky.ui.legal_check_run_dialog import LegalCheckRunDialog
@@ -147,7 +150,16 @@ class KontrolyLegislativyTab(QWidget):
         progress_dialog.exec()
         result = progress_dialog.result_data()
         self.refresh()
-        if result is None or result.run.status != CHECK_RUN_COMPLETED:
+        if result is None:
+            return
+        if result.run.status == CHECK_RUN_ERROR:
+            QMessageBox.warning(
+                self,
+                "Kontroly změn",
+                format_automatic_check_user_message(result),
+            )
+            return
+        if result.run.status != CHECK_RUN_COMPLETED:
             return
 
         if result.changes_count > 0:
@@ -156,33 +168,13 @@ class KontrolyLegislativyTab(QWidget):
                 page.changes_tab.refresh()
                 page.tabs.setCurrentWidget(page.changes_tab)
 
-        if result.is_first_check:
-            QMessageBox.information(
-                self,
-                "Kontroly změn",
-                (
-                    "První kontrola legislativy byla dokončena.\n\n"
-                    f"Kontrolováno předpisů: {result.documents_checked_count}\n\n"
-                    "Byl vytvořen výchozí referenční stav pro sledování budoucích změn.\n\n"
-                    "Budoucí kontroly již budou vyhledávat pouze skutečné změny legislativy."
-                ),
-            )
+        message = format_automatic_check_user_message(result)
+        if result.failed_count > 0:
+            QMessageBox.warning(self, "Kontroly změn", message)
             return
-
-        QMessageBox.information(
-            self,
-            "Kontroly změn",
-            (
-                "Kontrola změn dokončena.\n"
-                f"Kontrolováno předpisů: {result.documents_checked_count}\n"
-                f"Nalezené změny: {result.changes_count}"
-                + (
-                    "\n\nPřejděte na záložku Zjištěné změny."
-                    if result.changes_count > 0
-                    else ""
-                )
-            ),
-        )
+        if result.changes_count > 0:
+            message = f"{message}\n\nPřejděte na záložku Zjištěné změny."
+        QMessageBox.information(self, "Kontroly změn", message)
 
     def open_selected_run(self) -> None:
         run = self._selected_run()

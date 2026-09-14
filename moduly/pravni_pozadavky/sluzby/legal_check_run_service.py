@@ -31,6 +31,32 @@ class AutomaticCheckRunResult:
     documents_checked_count: int
     changes_count: int
     is_first_check: bool = False
+    failed_count: int = 0
+    documents_total_count: int = 0
+
+
+def format_automatic_check_user_message(result: AutomaticCheckRunResult) -> str:
+    if result.failed_count > 0 and result.documents_checked_count == 0:
+        return "Kontrolu právních předpisů se nepodařilo provést."
+    if result.failed_count > 0:
+        return (
+            "Kontrolu se nepodařilo dokončit úplně.\n"
+            f"Zkontrolováno: {result.documents_checked_count} z {result.documents_total_count}.\n"
+            f"Nepodařilo se ověřit: {result.failed_count}.\n"
+            f"Nalezené změny: {result.changes_count}."
+        )
+    if result.is_first_check:
+        return (
+            "První kontrola legislativy byla dokončena.\n\n"
+            f"Kontrolováno předpisů: {result.documents_checked_count}\n\n"
+            "Byl vytvořen výchozí referenční stav pro sledování budoucích změn.\n\n"
+            "Budoucí kontroly již budou vyhledávat pouze skutečné změny legislativy."
+        )
+    return (
+        "Kontrola změn dokončena.\n"
+        f"Kontrolováno předpisů: {result.documents_checked_count}.\n"
+        f"Nalezené změny: {result.changes_count}."
+    )
 
 
 class LegalCheckRunService:
@@ -101,6 +127,8 @@ class LegalCheckRunService:
         run = self._begin_automatic_check(period_from, normalized_period_to)
         is_first_check = self.is_first_automatic_check()
         deferred_reference_checksums: list[tuple[int, str]] = []
+        failed_items: list[str] = []
+        checked_ok = 0
         try:
             self._notify_status(on_status, "Připravuji kontrolu…")
             if self._check_cancelled(is_cancelled):
@@ -110,6 +138,7 @@ class LegalCheckRunService:
             documents = legal_document_service.list_all(include_inactive=False)
             total = len(documents)
             from moduly.pravni_pozadavky.sluzby.legal_check_novelization_service import (
+                NOVELIZATION_FAILED,
                 legal_check_novelization_service,
             )
             from moduly.pravni_pozadavky.sluzby.legal_document_version_service import (
@@ -123,15 +152,27 @@ class LegalCheckRunService:
                 label = legal_document_display_label(document)
                 self._notify_progress(on_progress, index, total, label)
                 if is_first_check:
-                    pending_checksum = legal_check_novelization_service.initialize_reference_state(
+                    outcome = legal_check_novelization_service.initialize_reference_state(
                         document,
                     )
-                    if pending_checksum is not None:
-                        deferred_reference_checksums.append(pending_checksum)
                 else:
-                    legal_check_novelization_service.check_document(
+                    outcome = legal_check_novelization_service.check_document(
                         document,
                         check_run_id=run.id,
+                    )
+                if outcome.status == NOVELIZATION_FAILED:
+                    failed_items.append(
+                        f"- {outcome.document_label or label} — {outcome.error or 'ověření se nezdařilo.'}"
+                    )
+                    continue
+                checked_ok += 1
+                if (
+                    is_first_check
+                    and outcome.stored_version_id is not None
+                    and outcome.reference_checksum
+                ):
+                    deferred_reference_checksums.append(
+                        (outcome.stored_version_id, outcome.reference_checksum),
                     )
 
             if self._check_cancelled(is_cancelled):
@@ -148,12 +189,38 @@ class LegalCheckRunService:
                 changes_count = len(
                     legal_change_service.list_by_check_run(run.id, include_inactive=False),
                 )
+
+            if failed_items:
+                failure_note = "Nepodařilo se ověřit:\n" + "\n".join(failed_items)
+                self.append_note(run.id, failure_note)
+
+            if failed_items and checked_ok == 0:
+                run = self._mark_error(
+                    run.id,
+                    "Kontrolu právních předpisů se nepodařilo provést.",
+                )
+                assert run is not None
+                run.documents_checked_count = 0
+                run.changes_found_count = 0
+                run = self.repository.update(run)
+                return self._build_result(
+                    run,
+                    is_first_check=is_first_check,
+                    failed_count=len(failed_items),
+                    documents_total_count=total,
+                )
+
             run = self._mark_completed(
                 run.id,
-                documents_checked_count=total,
+                documents_checked_count=checked_ok,
                 changes_found_count=changes_count,
             )
-            return self._build_result(run, is_first_check=is_first_check)
+            return self._build_result(
+                run,
+                is_first_check=is_first_check,
+                failed_count=len(failed_items),
+                documents_total_count=total,
+            )
         except ValueError:
             raise
         except Exception as exc:
@@ -210,12 +277,19 @@ class LegalCheckRunService:
         run: LegalCheckRun,
         *,
         is_first_check: bool = False,
+        failed_count: int = 0,
+        documents_total_count: int | None = None,
     ) -> AutomaticCheckRunResult:
+        checked = run.documents_checked_count or 0
         return AutomaticCheckRunResult(
             run=run,
-            documents_checked_count=run.documents_checked_count or 0,
+            documents_checked_count=checked,
             changes_count=run.changes_found_count or 0,
             is_first_check=is_first_check,
+            failed_count=failed_count,
+            documents_total_count=(
+                checked if documents_total_count is None else documents_total_count
+            ),
         )
 
     def _check_cancelled(self, is_cancelled: CancelCheckCallback | None) -> bool:

@@ -1,236 +1,216 @@
-import hashlib
-import re
+from dataclasses import dataclass
+import logging
 
+from core.http_safe import SafeHttpsError
 from moduly.pravni_pozadavky.constants import (
     CHANGE_NOVELIZATION,
     CHECK_RUN_COMPLETED,
     NOVELIZATION_REMOTE_CHECKSUM_NOTE_PREFIX,
     detected_version_name,
+    legal_document_display_label,
 )
-from moduly.pravni_pozadavky.import_export.legal_document_esbirka_client import (
-    ESbirkaVersionInfo,
-    legal_document_esbirka_client,
+from moduly.pravni_pozadavky.import_export.legal_document_esbirka_opendata_client import (
+    ESbirkaOpenDataWording,
+    legal_document_esbirka_opendata_client,
 )
 from moduly.pravni_pozadavky.modely.legal_change import LegalChange
 from moduly.pravni_pozadavky.modely.legal_document import LegalDocument
 from moduly.pravni_pozadavky.modely.legal_document_version import LegalDocumentVersion
-from moduly.pravni_pozadavky.parser.legal_document_parser_models import LegalDocumentParseResult
 from moduly.pravni_pozadavky.sluzby.legal_document_version_service import (
     legal_document_version_service,
 )
-from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
 
-_NUMBER_YEAR_RE = re.compile(r"^(\d+)/(\d{4})$")
+logger = logging.getLogger(__name__)
+
+NOVELIZATION_UNCHANGED = "unchanged"
+NOVELIZATION_CHANGED = "changed"
+NOVELIZATION_FAILED = "failed"
+
+
+@dataclass(frozen=True)
+class NovelizationCheckResult:
+    status: str
+    change: LegalChange | None = None
+    error: str | None = None
+    reference_checksum: str | None = None
+    stored_version_id: int | None = None
+    document_label: str = ""
+    remote: ESbirkaOpenDataWording | None = None
 
 
 class LegalCheckNovelizationService:
-    def initialize_reference_state(self, document: LegalDocument) -> tuple[int, str] | None:
+    def initialize_reference_state(self, document: LegalDocument) -> NovelizationCheckResult:
+        label = legal_document_display_label(document)
         stored_version = legal_document_version_service.get_current_version(document.id)
         if stored_version is None:
-            return None
+            return NovelizationCheckResult(
+                status=NOVELIZATION_UNCHANGED,
+                document_label=label,
+            )
 
-        remote_version = self._fetch_remote_version(document)
-        if remote_version is None:
-            return None
+        fetched = self._fetch_remote_wording(document, label=label)
+        if fetched.status != NOVELIZATION_UNCHANGED:
+            return fetched
 
-        return stored_version.id, self._build_remote_checksum(remote_version)
+        return NovelizationCheckResult(
+            status=NOVELIZATION_UNCHANGED,
+            reference_checksum=fetched.reference_checksum,
+            stored_version_id=stored_version.id,
+            document_label=label,
+            remote=fetched.remote,
+        )
 
     def check_document(
         self,
         document: LegalDocument,
         *,
         check_run_id: int,
-    ) -> LegalChange | None:
+    ) -> NovelizationCheckResult:
+        label = legal_document_display_label(document)
         stored_version = legal_document_version_service.get_current_version(document.id)
         if stored_version is None:
-            return None
+            return NovelizationCheckResult(
+                status=NOVELIZATION_UNCHANGED,
+                document_label=label,
+            )
 
-        loaded = self._load_remote_document(document)
-        if loaded is None:
-            return None
-        remote_version, parsed = loaded
-        remote_checksum = self._build_remote_checksum(remote_version)
+        fetched = self._fetch_remote_wording(document, label=label)
+        if fetched.status == NOVELIZATION_FAILED:
+            return fetched
+        remote = fetched.remote
+        remote_checksum = fetched.reference_checksum
+        if remote is None or not remote_checksum:
+            return NovelizationCheckResult(
+                status=NOVELIZATION_FAILED,
+                error="Neočekávaný formát odpovědi.",
+                document_label=label,
+            )
 
         from moduly.pravni_pozadavky.sluzby.legal_change_service import legal_change_service
 
-        existing_version = self._existing_detected_version(
-            document.id,
-            remote_checksum,
-            stored_version.id,
-        )
         existing_change = legal_change_service.find_novelization_by_remote_checksum(
             document.id,
             remote_checksum=remote_checksum,
             note_prefix=NOVELIZATION_REMOTE_CHECKSUM_NOTE_PREFIX,
         )
-        newer = self._has_newer_version(stored_version, remote_version)
-        pending_unadopted = self._is_unadopted_pending(stored_version, existing_version)
-
-        if not newer and not pending_unadopted:
-            if not self._has_reference_state(stored_version):
-                self._update_reference_checksum(stored_version, remote_version)
-            if existing_change is not None:
-                existing_change = self._ensure_detected_version(
-                    existing_change,
-                    existing_version=existing_version,
-                    stored_version=stored_version,
-                    document=document,
-                    remote_version=remote_version,
-                    parsed=parsed,
-                    remote_checksum=remote_checksum,
-                )
-                self._sync_content_changes(existing_change)
-            return None
-
-        new_version = existing_version or self._persist_pending_version(
-            document=document,
-            remote_version=remote_version,
-            parsed=parsed,
-            remote_checksum=remote_checksum,
+        comparable_eli = legal_document_esbirka_opendata_client.parse_version_checksum(
+            stored_version.checksum,
         )
-        if existing_change is not None:
-            existing_change = self._ensure_detected_version(
-                existing_change,
-                existing_version=new_version,
-                stored_version=stored_version,
-                document=document,
-                remote_version=remote_version,
-                parsed=parsed,
-                remote_checksum=remote_checksum,
+        if comparable_eli is None:
+            self._update_reference_checksum(stored_version, remote_checksum)
+            return NovelizationCheckResult(
+                status=NOVELIZATION_UNCHANGED,
+                reference_checksum=remote_checksum,
+                stored_version_id=stored_version.id,
+                document_label=label,
+                remote=remote,
             )
-            self._sync_content_changes(existing_change)
-            if self._is_confirmed_by_completed_check(existing_change):
-                return None
-            return self._capture_change_for_run(existing_change, check_run_id)
 
-        new_version_label = (
-            new_version.version_name if new_version is not None else remote_version.version_label
-        )
+        if comparable_eli == remote.last_wording_eli:
+            if existing_change is not None and not self._is_confirmed_by_completed_check(
+                existing_change,
+            ):
+                captured = self._capture_change_for_run(existing_change, check_run_id)
+                return NovelizationCheckResult(
+                    status=NOVELIZATION_CHANGED,
+                    change=captured,
+                    reference_checksum=remote_checksum,
+                    stored_version_id=stored_version.id,
+                    document_label=label,
+                    remote=remote,
+                )
+            return NovelizationCheckResult(
+                status=NOVELIZATION_UNCHANGED,
+                reference_checksum=remote_checksum,
+                stored_version_id=stored_version.id,
+                document_label=label,
+                remote=remote,
+            )
+
+        if existing_change is not None:
+            if self._is_confirmed_by_completed_check(existing_change):
+                return NovelizationCheckResult(
+                    status=NOVELIZATION_UNCHANGED,
+                    reference_checksum=remote_checksum,
+                    stored_version_id=stored_version.id,
+                    document_label=label,
+                    remote=remote,
+                )
+            captured = self._capture_change_for_run(existing_change, check_run_id)
+            return NovelizationCheckResult(
+                status=NOVELIZATION_CHANGED,
+                change=captured,
+                reference_checksum=remote_checksum,
+                stored_version_id=stored_version.id,
+                document_label=label,
+                remote=remote,
+            )
+
         change = legal_change_service.create(
             legal_document_id=document.id,
             legal_document_version_id=stored_version.id,
-            new_legal_document_version_id=new_version.id if new_version is not None else None,
+            new_legal_document_version_id=None,
             legal_check_run_id=check_run_id,
             change_type=CHANGE_NOVELIZATION,
             title="Předpis byl novelizován.",
             description=self._build_description_labels(
                 stored_version.version_name,
-                new_version_label,
+                detected_version_name(remote.version_label),
             ),
-            published_at=remote_version.publication_date,
+            published_at=remote.effective_from,
             evaluated=False,
             note=f"{NOVELIZATION_REMOTE_CHECKSUM_NOTE_PREFIX}{remote_checksum}",
         )
-        self._sync_content_changes(change, document=document, check_run_id=check_run_id)
-        return change
+        return NovelizationCheckResult(
+            status=NOVELIZATION_CHANGED,
+            change=change,
+            reference_checksum=remote_checksum,
+            stored_version_id=stored_version.id,
+            document_label=label,
+            remote=remote,
+        )
 
-    def _persist_pending_version(
+    def _fetch_remote_wording(
         self,
-        *,
         document: LegalDocument,
-        remote_version: ESbirkaVersionInfo,
-        parsed: LegalDocumentParseResult,
-        remote_checksum: str,
-    ) -> LegalDocumentVersion | None:
-        if not parsed.sections:
-            return None
-
-        version = legal_document_version_service.create(
-            legal_document_id=document.id,
-            version_name=detected_version_name(remote_version.version_label),
-            publication_date=remote_version.publication_date,
-            source_url=remote_version.source_url,
-            checksum=remote_checksum,
-            pending_adoption=True,
-            active=True,
-        )
-        legal_section_service.create_tree_from_parsed(
-            legal_document_id=document.id,
-            legal_document_version_id=version.id,
-            parsed_sections=parsed.sections,
-        )
-        return legal_document_version_service.get_by_id(version.id) or version
-
-    def _sync_content_changes(
-        self,
-        change: LegalChange | None,
         *,
-        document: LegalDocument | None = None,
-        check_run_id: int | None = None,
-    ) -> None:
-        if change is None:
-            return
-        from moduly.pravni_pozadavky.sluzby.legal_change_section_service import (
-            legal_change_section_service,
-        )
-        from moduly.pravni_pozadavky.sluzby.legal_section_structure_compare_service import (
-            legal_section_structure_compare_service,
-        )
+        label: str,
+    ) -> NovelizationCheckResult:
+        try:
+            wording = legal_document_esbirka_opendata_client.fetch_latest_wording(
+                year=document.year if document.year is not None else "",
+                number=document.number or "",
+            )
+        except SafeHttpsError as exc:
+            logger.info("Kontrola předpisu %s selhala: %s", label, exc)
+            return NovelizationCheckResult(
+                status=NOVELIZATION_FAILED,
+                error=str(exc) or "Předpis se nepodařilo ověřit.",
+                document_label=label,
+            )
+        except ValueError as exc:
+            logger.info("Kontrola předpisu %s selhala: %s", label, exc)
+            return NovelizationCheckResult(
+                status=NOVELIZATION_FAILED,
+                error=str(exc) or "Předpis se nepodařilo ověřit.",
+                document_label=label,
+            )
+        except OSError as exc:
+            logger.warning("Síťová chyba při kontrole předpisu %s: %s", label, exc)
+            return NovelizationCheckResult(
+                status=NOVELIZATION_FAILED,
+                error="Internet není dostupný.",
+                document_label=label,
+            )
 
-        _saved, compare_result = legal_change_section_service.sync_version_content_changes(change)
-        if document is None or check_run_id is None:
-            return
-        summary = legal_section_structure_compare_service.format_check_run_summary(
-            document=document,
-            result=compare_result,
+        return NovelizationCheckResult(
+            status=NOVELIZATION_UNCHANGED,
+            reference_checksum=legal_document_esbirka_opendata_client.build_version_checksum(
+                wording.last_wording_eli,
+            ),
+            document_label=label,
+            remote=wording,
         )
-        if not summary:
-            return
-        from moduly.pravni_pozadavky.sluzby.legal_check_run_service import (
-            legal_check_run_service,
-        )
-
-        legal_check_run_service.append_note(check_run_id, summary)
-
-    def _existing_detected_version(
-        self,
-        document_id: int,
-        remote_checksum: str,
-        stored_version_id: int,
-    ) -> LegalDocumentVersion | None:
-        pending = legal_document_version_service.find_pending_by_checksum(
-            document_id,
-            remote_checksum,
-        )
-        if pending is not None:
-            return pending
-        same_checksum = legal_document_version_service.find_by_checksum(
-            document_id,
-            remote_checksum,
-        )
-        if same_checksum is None or same_checksum.id == stored_version_id:
-            return None
-        return same_checksum
-
-    def _ensure_detected_version(
-        self,
-        change: LegalChange,
-        *,
-        existing_version: LegalDocumentVersion | None,
-        stored_version: LegalDocumentVersion,
-        document: LegalDocument,
-        remote_version: ESbirkaVersionInfo,
-        parsed: LegalDocumentParseResult,
-        remote_checksum: str,
-    ) -> LegalChange:
-        from moduly.pravni_pozadavky.sluzby.legal_change_service import legal_change_service
-
-        if change.new_legal_document_version_id is not None:
-            return change
-        new_version = existing_version or self._persist_pending_version(
-            document=document,
-            remote_version=remote_version,
-            parsed=parsed,
-            remote_checksum=remote_checksum,
-        )
-        if new_version is None:
-            return change
-        updated = legal_change_service.attach_detected_version(
-            change.id,
-            new_version.id,
-            description=self._build_description(stored_version, new_version),
-        )
-        return updated or change
 
     def _capture_change_for_run(self, change: LegalChange, check_run_id: int) -> LegalChange:
         from moduly.pravni_pozadavky.sluzby.legal_change_service import legal_change_service
@@ -252,138 +232,15 @@ class LegalCheckNovelizationService:
             return False
         return run.status == CHECK_RUN_COMPLETED
 
-    def _is_unadopted_pending(
-        self,
-        stored_version: LegalDocumentVersion,
-        existing_version: LegalDocumentVersion | None,
-    ) -> bool:
-        if existing_version is None:
-            return False
-        if existing_version.id == stored_version.id:
-            return False
-        return bool(existing_version.pending_adoption)
-
-    def _load_remote_document(
-        self,
-        document: LegalDocument,
-    ) -> tuple[ESbirkaVersionInfo, LegalDocumentParseResult] | None:
-        number, year = self._resolve_number_and_year(document)
-        if number is None or year is None:
-            return None
-        try:
-            html = legal_document_esbirka_client.fetch_full_text_html(
-                year=year,
-                number=number,
-            )
-            remote_version = legal_document_esbirka_client.extract_version_info(
-                html,
-                year=year,
-                number=number,
-            )
-            title = legal_document_esbirka_client.extract_title(html)
-            raw_text = legal_document_esbirka_client.html_to_text(html)
-            from moduly.pravni_pozadavky.parser.legal_document_parser import legal_document_parser
-
-            parsed = legal_document_parser.parse_text(
-                raw_text,
-                document_type=document.document_type,
-                number=number,
-                year=year,
-                title=title,
-                short_title=document.short_title or "",
-            )
-        except (ValueError, OSError):
-            return None
-        return remote_version, parsed
-
-    def _fetch_remote_version(self, document: LegalDocument):
-        number, year = self._resolve_number_and_year(document)
-        if number is None or year is None:
-            return None
-        try:
-            return legal_document_esbirka_client.fetch_version_info(
-                year=year,
-                number=number,
-            )
-        except ValueError:
-            return None
-
-    def _resolve_number_and_year(self, document: LegalDocument) -> tuple[str | None, int | None]:
-        number = (document.number or "").strip()
-        year = document.year
-        if number and year is not None:
-            normalized_number = number.replace(" Sb.", "").strip()
-            return normalized_number, year
-
-        match = _NUMBER_YEAR_RE.match(number)
-        if match is not None:
-            return match.group(1), int(match.group(2))
-
-        return None, year
-
-    def _has_reference_state(self, stored_version: LegalDocumentVersion) -> bool:
-        stored_slice_id, stored_checksum = legal_document_esbirka_client.parse_version_checksum(
-            stored_version.checksum,
-        )
-        return stored_slice_id is not None and stored_checksum is not None
-
-    def _has_newer_version(
-        self,
-        stored_version: LegalDocumentVersion,
-        remote_version: ESbirkaVersionInfo,
-    ) -> bool:
-        stored_slice_id, stored_checksum = legal_document_esbirka_client.parse_version_checksum(
-            stored_version.checksum,
-        )
-        if stored_checksum is None:
-            stored_checksum = self._compute_stored_text_checksum(stored_version.id)
-
-        if stored_slice_id is not None and stored_slice_id != remote_version.slice_id:
-            return True
-
-        return stored_checksum != remote_version.text_checksum
-
-    def _build_remote_checksum(self, remote_version: ESbirkaVersionInfo) -> str:
-        return legal_document_esbirka_client.build_version_checksum(
-            slice_id=remote_version.slice_id,
-            text_checksum=remote_version.text_checksum,
-        )
-
     def _update_reference_checksum(
         self,
         stored_version: LegalDocumentVersion,
-        remote_version: ESbirkaVersionInfo,
+        remote_checksum: str,
     ) -> None:
         legal_document_version_service.update_checksum(
             stored_version.id,
-            self._build_remote_checksum(remote_version),
+            remote_checksum,
         )
-
-    def _compute_stored_text_checksum(self, version_id: int) -> str:
-        sections = legal_section_service.list_by_version(version_id, include_inactive=False)
-        parts: list[str] = []
-        for section in sorted(sections, key=lambda item: (item.sort_order, item.id)):
-            parts.append(
-                "|".join(
-                    [
-                        section.section_type,
-                        section.section_number,
-                        section.paragraph,
-                        section.item_letter,
-                        section.title,
-                        section.text,
-                    ],
-                ),
-            )
-        payload = "\n".join(parts)
-        return hashlib.sha256(payload.encode("utf-8")).hexdigest()
-
-    def _build_description(
-        self,
-        stored_version: LegalDocumentVersion,
-        new_version: LegalDocumentVersion,
-    ) -> str:
-        return self._build_description_labels(stored_version.version_name, new_version.version_name)
 
     def _build_description_labels(self, original_name: str, new_name: str) -> str:
         return (

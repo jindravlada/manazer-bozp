@@ -54,10 +54,14 @@ class LegalCheckRunServiceTestCase(unittest.TestCase):
         from moduly.pravni_pozadavky.modely.legal_change import LegalChange
         from moduly.pravni_pozadavky.modely.legal_check_run import LegalCheckRun
         from moduly.pravni_pozadavky.modely.legal_document import LegalDocument
+        from moduly.pravni_pozadavky.modely.legal_document_version import LegalDocumentVersion
+        from moduly.pravni_pozadavky.modely.legal_section import LegalSection
 
         with get_session() as session:
             session.execute(delete(LegalChange))
             session.execute(delete(LegalCheckRun))
+            session.execute(delete(LegalSection))
+            session.execute(delete(LegalDocumentVersion))
             session.execute(delete(LegalDocument))
             session.commit()
 

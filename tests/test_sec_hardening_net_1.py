@@ -17,6 +17,9 @@ from moduly.pravni_pozadavky.import_export.legal_document_esbirka_client import 
     ESBIRKA_ALLOWED_HOSTS,
     legal_document_esbirka_client,
 )
+from moduly.pravni_pozadavky.import_export.legal_document_esbirka_opendata_client import (
+    ESBIRKA_OPENDATA_ALLOWED_HOSTS,
+)
 
 _ARES_URL = f"{ares_service.BASE_URL}/12345678"
 _ESBIRKA_URL = "https://www.esbirka.cz/cs/390-2021"
@@ -331,6 +334,11 @@ class SecHardeningNet1TestCase(unittest.TestCase):
     def test_esbirka_hosts_and_ares_hosts(self) -> None:
         self.assertEqual(ARES_ALLOWED_HOSTS, frozenset({"ares.gov.cz"}))
         self.assertEqual(ESBIRKA_ALLOWED_HOSTS, frozenset({"www.esbirka.cz"}))
+        self.assertEqual(
+            ESBIRKA_OPENDATA_ALLOWED_HOSTS,
+            frozenset({"opendata.eselpoint.gov.cz"}),
+        )
+        self.assertNotIn("www.zakonyprolidi.cz", ESBIRKA_OPENDATA_ALLOWED_HOSTS)
         self.assertEqual(ARES_MAX_RESPONSE_BYTES, 1_048_576)
 
 
