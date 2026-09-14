@@ -6,7 +6,7 @@ import re
 from dataclasses import dataclass
 from datetime import date
 from typing import Any, Sequence
-from urllib.parse import urlparse
+from urllib.parse import urlencode, urlparse
 
 from core.http_safe import SafeHttpsError, safe_https_get
 from moduly.pravni_pozadavky.import_export.legal_document_number import (
@@ -24,7 +24,23 @@ ESBIRKA_LEGACY_CHECKSUM_PREFIX = "esbirka:"
 ESBIRKA_OPENDATA_MAX_RESPONSE_BYTES = 262_144
 # Zákoník práce 262/2006 má ~272 KiB metadata znění (~3000 IRI fragmentů).
 ESBIRKA_OPENDATA_WORDING_MAX_RESPONSE_BYTES = 1_048_576
+# SPARQL vrátí texty všech fragmentů znění v jedné odpovědi (~2 MiB u 262/2006).
+ESBIRKA_OPENDATA_SPARQL_URL = f"https://{ESBIRKA_OPENDATA_HOST}/sparql"
+ESBIRKA_OPENDATA_SPARQL_MAX_RESPONSE_BYTES = 8_388_608
+_SPARQL_TIMEOUT = 60
 _REQUEST_TIMEOUT = 30
+_PRED_HAS_FRAGMENT = (
+    "https://slovník.gov.cz/datový/sbírka/pojem/má-fragment-znění"
+)
+_PRED_CONTAINS_FRAGMENT = (
+    "https://slovník.gov.cz/datový/sbírka/pojem/obsahuje-fragment"
+)
+_PRED_FRAGMENT_TEXT = (
+    "https://slovník.gov.cz/datový/sbírka/pojem/text-fragmentu"
+)
+_PRED_FRAGMENT_TYPE = (
+    "https://slovník.gov.cz/datový/sbírka/pojem/má-typ-fragmentu"
+)
 _LAST_WORDING_LOCAL_NAME = "má-poslední-znění"
 _WORDINGS_LOCAL_NAME = "má-znění"
 _FRAGMENTS_LOCAL_NAME = "má-fragment-znění"
@@ -76,6 +92,14 @@ class ESbirkaOpenDataWordingDocument:
     effective_to: date | None
     wording_type: str
     fragments: tuple[ESbirkaOpenDataFragmentRef, ...]
+
+
+@dataclass(frozen=True)
+class ESbirkaOpenDataFragmentContent:
+    fragment_eli: str
+    fragment_type: str
+    html: str
+    text: str
 
 
 class LegalDocumentESbirkaOpenDataClient:
@@ -137,6 +161,52 @@ class LegalDocumentESbirkaOpenDataClient:
         if in_force is None:
             raise ValueError("Předpis nenalezen.")
         return self.fetch_wording_fragments(in_force.source_eli)
+
+    def fetch_wording_fragment_contents(
+        self,
+        source_eli: str,
+    ) -> tuple[ESbirkaOpenDataFragmentContent, ...]:
+        normalized = self.normalize_source_eli(source_eli)
+        if not normalized:
+            raise ValueError("Neočekávaný formát odpovědi.")
+        wording_iri = self.build_wording_url(normalized)
+        query = (
+            "SELECT ?frag ?text ?typ WHERE { "
+            f"<{wording_iri}> <{_PRED_HAS_FRAGMENT}> ?frag . "
+            f"?frag <{_PRED_CONTAINS_FRAGMENT}> ?c . "
+            f"?c <{_PRED_FRAGMENT_TEXT}> ?text . "
+            f"?c <{_PRED_FRAGMENT_TYPE}> ?typ . "
+            "}"
+        )
+        payload = self._fetch_sparql(query)
+        rows = self._sparql_bindings(payload)
+        if not rows:
+            raise ValueError("Neočekávaný formát odpovědi.")
+        items: list[ESbirkaOpenDataFragmentContent] = []
+        seen: set[str] = set()
+        for row in rows:
+            fragment_eli = self.normalize_fragment_eli(
+                self._sparql_binding_value(row, "frag"),
+                wording_eli=normalized,
+            )
+            html = self._sparql_binding_value(row, "text")
+            fragment_type = self._fragment_type_code(
+                self._sparql_binding_value(row, "typ"),
+            )
+            if not fragment_eli or fragment_eli in seen or not html.strip():
+                continue
+            seen.add(fragment_eli)
+            items.append(
+                ESbirkaOpenDataFragmentContent(
+                    fragment_eli=fragment_eli,
+                    fragment_type=fragment_type,
+                    html=html,
+                    text=html,
+                )
+            )
+        if not items:
+            raise ValueError("Neočekávaný formát odpovědi.")
+        return tuple(items)
 
     def extract_latest_wording(
         self,
@@ -343,14 +413,20 @@ class LegalDocumentESbirkaOpenDataClient:
         url = self.build_url(year=year, number=number)
         return self._fetch_jsonld(url, max_bytes=ESBIRKA_OPENDATA_MAX_RESPONSE_BYTES)
 
-    def _fetch_jsonld(self, url: str, *, max_bytes: int) -> tuple[Any, str]:
+    def _fetch_jsonld(
+        self,
+        url: str,
+        *,
+        max_bytes: int,
+        timeout: float | None = None,
+    ) -> tuple[Any, str]:
         try:
             result = safe_https_get(
                 url,
                 allowed_hosts=ESBIRKA_OPENDATA_ALLOWED_HOSTS,
-                timeout=_REQUEST_TIMEOUT,
+                timeout=float(timeout if timeout is not None else _REQUEST_TIMEOUT),
                 max_bytes=max_bytes,
-                headers={"Accept": "application/ld+json, application/json"},
+                headers={"Accept": "application/ld+json, application/sparql-results+json, application/json"},
             )
         except SafeHttpsError as exc:
             if exc.kind in {"network", "timeout"}:
@@ -370,6 +446,47 @@ class LegalDocumentESbirkaOpenDataClient:
         if payload is None:
             raise ValueError("Neočekávaný formát odpovědi.")
         return payload, result.final_url
+
+    def _fetch_sparql(self, query: str) -> Any:
+        url = (
+            f"{ESBIRKA_OPENDATA_SPARQL_URL}?"
+            + urlencode(
+                {
+                    "query": query,
+                    "format": "application/sparql-results+json",
+                }
+            )
+        )
+        payload, _final_url = self._fetch_jsonld(
+            url,
+            max_bytes=ESBIRKA_OPENDATA_SPARQL_MAX_RESPONSE_BYTES,
+            timeout=_SPARQL_TIMEOUT,
+        )
+        return payload
+
+    def _sparql_bindings(self, payload: Any) -> list[dict[str, Any]]:
+        if not isinstance(payload, dict):
+            return []
+        results = payload.get("results")
+        if not isinstance(results, dict):
+            return []
+        bindings = results.get("bindings")
+        if not isinstance(bindings, list):
+            return []
+        return [row for row in bindings if isinstance(row, dict)]
+
+    def _sparql_binding_value(self, row: dict[str, Any], name: str) -> str:
+        binding = row.get(name)
+        if not isinstance(binding, dict):
+            return ""
+        return str(binding.get("value") or "").strip()
+
+    def _fragment_type_code(self, value: Any) -> str:
+        text = self._coerce_id_text(value)
+        if not text:
+            return ""
+        return text.rstrip("/").rsplit("/", 1)[-1].strip()
+
 
     def _fragment_ref_from_value(
         self,
