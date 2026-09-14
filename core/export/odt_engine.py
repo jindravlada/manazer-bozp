@@ -31,11 +31,52 @@ _PLACEHOLDER_PARA_RE = re.compile(
 
 _ODT_FRAGMENT_PREFIX = "[[[ODT_FRAGMENT]]]"
 
+# Aktivní obsah z uživatelské šablony se do exportu nepřenáší.
+_ACTIVE_ODT_ZIP_PREFIXES = ("Basic/", "Scripts/", "ObjectReplacements/")
+_ACTIVE_ODT_OBJECT_ENTRY = re.compile(r"^Object \d+(/|$)")
+_ACTIVE_ODT_MEDIA_TYPE = re.compile(
+    r"ole-object|vnd\.sun\.star\.ole",
+    re.IGNORECASE,
+)
+_MANIFEST_FILE_ENTRY_RE = re.compile(
+    r"<manifest:file-entry\b[^>]*?(?:/>|>\s*</manifest:file-entry>)",
+    re.DOTALL,
+)
+
 _EXPORT_IMAGE_STYLE = "ExportImage"
 _AUDIT_NOTE_STYLE = "AuditNote"
 _AUDIT_BOLD_STYLE = "AuditBold"
 _AUDIT_CRITERION_STYLE = "AuditCriterion"
 _KEEP_WITH_NEXT_STYLE = "ExportKeepWithNext"
+
+
+def is_active_odt_zip_entry(name: str) -> bool:
+    """True pro makra, skripty a vložené OLE objekty v ODT balíčku."""
+    normalized = str(name or "").replace("\\", "/").lstrip("./")
+    if not normalized:
+        return False
+    if normalized.lower() == "meta-inf/macrosignatures.xml":
+        return True
+    for prefix in _ACTIVE_ODT_ZIP_PREFIXES:
+        if normalized == prefix.rstrip("/") or normalized.startswith(prefix):
+            return True
+    return bool(_ACTIVE_ODT_OBJECT_ENTRY.match(normalized))
+
+
+def strip_active_odt_manifest_entries(manifest_xml: str) -> str:
+    """Odstraní z manifestu položky aktivního obsahu (Basic/Scripts/OLE)."""
+
+    def keep(match: re.Match[str]) -> str:
+        entry = match.group(0)
+        path_match = re.search(r'manifest:full-path="([^"]*)"', entry)
+        media_match = re.search(r'manifest:media-type="([^"]*)"', entry)
+        path = path_match.group(1) if path_match else ""
+        media = media_match.group(1) if media_match else ""
+        if is_active_odt_zip_entry(path) or _ACTIVE_ODT_MEDIA_TYPE.search(media):
+            return ""
+        return entry
+
+    return _MANIFEST_FILE_ENTRY_RE.sub(keep, manifest_xml)
 
 
 @dataclass(frozen=True)
@@ -212,7 +253,13 @@ class OdtExportEngine:
         try:
             with zipfile.ZipFile(template, "r") as zin, zipfile.ZipFile(output, "w") as zout:
                 written_names: set[str] = set()
-                for item in zin.infolist():
+                items = [
+                    item
+                    for item in zin.infolist()
+                    if not is_active_odt_zip_entry(item.filename)
+                ]
+                stripped_active = len(items) != len(zin.infolist())
+                for item in items:
                     data = zin.read(item.filename)
 
                     if item.filename == "content.xml":
@@ -230,9 +277,14 @@ class OdtExportEngine:
                         xml = data.decode("utf-8")
                         xml = self._replace_placeholders(xml, normalized_values)
                         data = xml.encode("utf-8")
-                    elif item.filename == "META-INF/manifest.xml" and image_registry:
+                    elif item.filename == "META-INF/manifest.xml" and (
+                        image_registry or stripped_active
+                    ):
                         xml = data.decode("utf-8")
-                        xml = self._inject_manifest_images(xml, image_registry)
+                        if stripped_active:
+                            xml = strip_active_odt_manifest_entries(xml)
+                        if image_registry:
+                            xml = self._inject_manifest_images(xml, image_registry)
                         data = xml.encode("utf-8")
 
                     self._writestr(zout, item, data)

@@ -5,7 +5,11 @@ from datetime import date, datetime
 from pathlib import Path
 
 from core.export import open_export_file
-from core.export.odt_engine import _sync_written_file
+from core.export.odt_engine import (
+    _sync_written_file,
+    is_active_odt_zip_entry,
+    strip_active_odt_manifest_entries,
+)
 
 from core.services.attachment_service import attachment_service
 from core.services.storage_service import storage_service
@@ -210,13 +214,23 @@ class ZaverecnaZpravaService:
 
     def _fill_odt_template(self, template_path: Path, output_path: Path, values: dict) -> None:
         with zipfile.ZipFile(template_path, "r") as zin, zipfile.ZipFile(output_path, "w") as zout:
-            for item in zin.infolist():
+            items = [
+                item
+                for item in zin.infolist()
+                if not is_active_odt_zip_entry(item.filename)
+            ]
+            stripped_active = len(items) != len(zin.infolist())
+            for item in items:
                 data = zin.read(item.filename)
                 if item.filename == "content.xml":
                     xml = data.decode("utf-8")
                     for key, value in values.items():
                         xml = xml.replace("${" + key + "}", self._escape_odt_text(value))
                     data = xml.encode("utf-8")
+                elif item.filename == "META-INF/manifest.xml" and stripped_active:
+                    data = strip_active_odt_manifest_entries(
+                        data.decode("utf-8")
+                    ).encode("utf-8")
                 zout.writestr(item, data)
         _sync_written_file(output_path)
 

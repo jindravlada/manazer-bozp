@@ -3351,11 +3351,23 @@ class SetreniDialog(QDialog):
         import html
         import zipfile
 
+        from core.export.odt_engine import (
+            is_active_odt_zip_entry,
+            strip_active_odt_manifest_entries,
+        )
+
         accident_number = self.accident.number if self.accident is not None else ""
         escaped_number = html.escape(str(accident_number), quote=False)
 
         with zipfile.ZipFile(template_path, "r") as zin, zipfile.ZipFile(output_path, "w") as zout:
-            for item in zin.infolist():
+
+            items = [
+                item
+                for item in zin.infolist()
+                if not is_active_odt_zip_entry(item.filename)
+            ]
+            stripped_active = len(items) != len(zin.infolist())
+            for item in items:
                 data = zin.read(item.filename)
                 if item.filename == "content.xml":
                     xml = data.decode("utf-8")
@@ -3365,6 +3377,10 @@ class SetreniDialog(QDialog):
                     if "Číslo úrazu:" in xml:
                         xml = xml.replace("Číslo úrazu:", f"Číslo úrazu: {escaped_number}", 1)
                     data = xml.encode("utf-8")
+                elif item.filename == "META-INF/manifest.xml" and stripped_active:
+                    data = strip_active_odt_manifest_entries(
+                        data.decode("utf-8")
+                    ).encode("utf-8")
                 zout.writestr(item, data)
 
     def _open_setreni_form(self, template_filename, title):
