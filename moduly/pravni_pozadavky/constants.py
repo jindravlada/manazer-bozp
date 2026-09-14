@@ -1,4 +1,5 @@
 import re
+from datetime import date
 from typing import NamedTuple
 
 COMPLIANCE_SPLNENO = "splneno"
@@ -440,6 +441,7 @@ NOVELIZATION_REMOTE_CHECKSUM_NOTE_PREFIX = "esbirka-ref:"
 DETECTED_VERSION_NAME_PREFIX = "Nově zjištěné znění"
 VERSION_STATUS_IN_USE = "Používané"
 VERSION_STATUS_PENDING_ADOPTION = "Nově zjištěné"
+VERSION_STATUS_FUTURE = "Budoucí"
 VERSION_STATUS_HISTORICAL = "Historické"
 WORDING_STATUS_PENDING = "Nové znění čeká na převzetí"
 WORDING_STATUS_ADOPTED = "Převzato"
@@ -452,10 +454,32 @@ def detected_version_name(version_label: str) -> str:
     return f"{DETECTED_VERSION_NAME_PREFIX} – {label}"
 
 
-def legal_document_version_status_label(version, *, current_version_id: int | None) -> str:
+def legal_document_version_status_label(
+    version,
+    *,
+    current_version_id: int | None,
+    as_of: date | None = None,
+) -> str:
     if bool(getattr(version, "pending_adoption", False)):
         return VERSION_STATUS_PENDING_ADOPTION
+    from moduly.pravni_pozadavky.sluzby.legal_document_version_temporal import (
+        TEMPORAL_STATE_FUTURE,
+        classify_temporal_wording,
+        is_identified_temporal_version,
+    )
+
+    on_date = as_of or date.today()
     version_id = getattr(version, "id", None)
+    if is_identified_temporal_version(version):
+        state = classify_temporal_wording(
+            effective_from=getattr(version, "effective_from", None),
+            on_date=on_date,
+        )
+        if state == TEMPORAL_STATE_FUTURE:
+            return VERSION_STATUS_FUTURE
+        if current_version_id is not None and version_id == current_version_id:
+            return VERSION_STATUS_IN_USE
+        return VERSION_STATUS_HISTORICAL
     if current_version_id is not None and version_id == current_version_id:
         return VERSION_STATUS_IN_USE
     return VERSION_STATUS_HISTORICAL

@@ -94,6 +94,7 @@ class LegalDocumentJsonExportService:
             "publication_date": self._serialize_date(version.publication_date),
             "source_url": self._text(version.source_url),
             "local_file_path": self._text(version.local_file_path),
+            "source_eli": self._text(version.source_eli) or None,
             "checksum": self._text(version.checksum),
             "note": self._text(version.note),
         }

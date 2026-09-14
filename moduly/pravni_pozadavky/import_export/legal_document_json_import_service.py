@@ -134,6 +134,7 @@ class LegalDocumentJsonImportService:
             publication_date=self._parse_date(version_data.get("publication_date")),
             source_url=self._optional_text(version_data.get("source_url")),
             local_file_path=self._optional_text(version_data.get("local_file_path")),
+            source_eli=self._optional_text(version_data.get("source_eli")),
             checksum=self._optional_text(version_data.get("checksum")),
             note=self._optional_text(version_data.get("note")),
         )

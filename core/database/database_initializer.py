@@ -3521,12 +3521,37 @@ def _ensure_legal_change_columns() -> None:
         _add_column("legal_changes", 'evaluation_note TEXT DEFAULT ""')
 
 
+LEGAL_DOCUMENT_VERSION_SOURCE_ELI_UNIQUE_INDEX = (
+    "uq_legal_document_versions_document_source_eli"
+)
+
+
 def _ensure_legal_document_version_columns() -> None:
     columns = _table_columns("legal_document_versions")
     if not columns:
         return
     if "pending_adoption" not in columns:
         _add_column("legal_document_versions", "pending_adoption BOOLEAN DEFAULT 0")
+    if "source_eli" not in columns:
+        _add_column("legal_document_versions", "source_eli VARCHAR(255)")
+    _ensure_legal_document_version_source_eli_unique_index()
+
+
+def _ensure_legal_document_version_source_eli_unique_index() -> None:
+    columns = _table_columns("legal_document_versions")
+    if not columns or "source_eli" not in columns:
+        return
+    if LEGAL_DOCUMENT_VERSION_SOURCE_ELI_UNIQUE_INDEX in _table_indexes(
+        "legal_document_versions"
+    ):
+        return
+    _ensure_index(
+        LEGAL_DOCUMENT_VERSION_SOURCE_ELI_UNIQUE_INDEX,
+        (
+            f"CREATE UNIQUE INDEX {LEGAL_DOCUMENT_VERSION_SOURCE_ELI_UNIQUE_INDEX} "
+            "ON legal_document_versions (legal_document_id, source_eli)"
+        ),
+    )
 
 
 def _ensure_legal_change_sections_table() -> None:

@@ -123,6 +123,15 @@ class LegalDocumentESbirkaOpenDataClient:
             return ""
         return match.group(1)
 
+    def normalize_source_eli(self, value: Any) -> str:
+        return self.normalize_wording_eli(value)
+
+    def effective_from_from_source_eli(self, source_eli: str) -> date | None:
+        normalized = self.normalize_source_eli(source_eli)
+        if not normalized:
+            return None
+        return self._parse_wording_date(normalized)
+
     def _select_act_record(self, payload: Any) -> dict[str, Any]:
         if isinstance(payload, dict):
             graph = payload.get("@graph")

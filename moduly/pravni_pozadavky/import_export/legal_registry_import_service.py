@@ -18,6 +18,9 @@ from moduly.pravni_pozadavky.modely.legal_requirement import LegalRequirement
 from moduly.pravni_pozadavky.modely.legal_requirement_sanction import LegalRequirementSanction
 from moduly.pravni_pozadavky.modely.legal_requirement_source import LegalRequirementSource
 from moduly.pravni_pozadavky.modely.legal_section import LegalSection
+from moduly.pravni_pozadavky.sluzby.legal_document_version_temporal import (
+    normalize_stored_source_eli,
+)
 
 SUPPORTED_EXPORT_VERSIONS = {1, 2}
 
@@ -180,6 +183,7 @@ class LegalRegistryImportService:
                 publication_date=self._parse_date(record.get("publication_date")),
                 source_url=self._text(record.get("source_url")),
                 local_file_path=self._text(record.get("local_file_path")),
+                source_eli=normalize_stored_source_eli(record.get("source_eli")),
                 checksum=self._text(record.get("checksum")),
                 note=self._text(record.get("note")),
                 pending_adoption=bool(record.get("pending_adoption", False)),

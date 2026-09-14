@@ -61,7 +61,13 @@ class LegalDocumentVersionTable(QTableWidget):
 
         enable_typed_sorting(self)
 
-    def load_versions(self, versions, *, current_version_id: int | None = None) -> None:
+    def load_versions(
+        self,
+        versions,
+        *,
+        current_version_id: int | None = None,
+        as_of: date | None = None,
+    ) -> None:
         with sorting_paused(self):
             self.setRowCount(len(versions))
 
@@ -70,6 +76,7 @@ class LegalDocumentVersionTable(QTableWidget):
                 status_label = legal_document_version_status_label(
                     version,
                     current_version_id=current_version_id,
+                    as_of=as_of,
                 )
                 self.setItem(
                     row,

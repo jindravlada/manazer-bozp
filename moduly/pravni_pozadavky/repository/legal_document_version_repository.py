@@ -79,6 +79,25 @@ class LegalDocumentVersionRepository:
             )
             return session.scalar(stmt)
 
+    def find_by_source_eli(
+        self,
+        document_id: int,
+        source_eli: str | None,
+    ) -> LegalDocumentVersion | None:
+        normalized = (source_eli or "").strip()
+        if not normalized:
+            return None
+        with get_session() as session:
+            stmt = (
+                select(LegalDocumentVersion)
+                .where(
+                    LegalDocumentVersion.legal_document_id == document_id,
+                    LegalDocumentVersion.source_eli == normalized,
+                )
+                .order_by(LegalDocumentVersion.id.asc())
+            )
+            return session.scalar(stmt)
+
     def get_by_id(self, version_id: int) -> LegalDocumentVersion | None:
         with get_session() as session:
             return session.get(LegalDocumentVersion, version_id)
