@@ -542,6 +542,36 @@ class LegalSectionStructureCompareServiceTestCase(unittest.TestCase):
             ),
         )
 
+    def test_canonical_keeps_cast_repeal_and_leading_intro(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="20",
+                text=(
+                    "Zákon č. 87/2023 Sb., o dozoru nad trhem s výrobky, se mění takto: "
+                    "12. Část pátá se včetně nadpisu zrušuje. 13. Příloha zní:"
+                ),
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="20",
+                text=(
+                    "12. Část pátá se včetně nadpisu zrušuje. 13. Příloha zní: "
+                    "Zákon č. 87/2023 Sb., o dozoru nad trhem s výrobky, se mění takto:"
+                ),
+                sort_order=1,
+            ),
+        ]
+        self.assertTrue(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
+
     def test_canonical_does_not_strip_casti_inflection(self) -> None:
         stored = [
             _SectionStub(
@@ -863,6 +893,211 @@ class LegalSectionStructureCompareServiceTestCase(unittest.TestCase):
             ),
         ]
         self.assertFalse(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
+
+    def test_canonical_equal_ignores_footnote_after_year(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="2",
+                text="platném ke dni 31. prosince 1995 a vznikly přede dnem účinnosti",
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="2",
+                text="platném ke dni 31. prosince 19952) a vznikly přede dnem účinnosti",
+                sort_order=1,
+            ),
+        ]
+        self.assertTrue(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
+
+    def test_canonical_detects_real_year_change(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="2",
+                text="platném ke dni 31. prosince 1995 a vznikly přede dnem účinnosti",
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="2",
+                text="platném ke dni 31. prosince 1996 a vznikly přede dnem účinnosti",
+                sort_order=1,
+            ),
+        ]
+        self.assertFalse(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
+
+    def test_canonical_equal_ignores_footnote_after_eu_number(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="3",
+                text='podle nařízení Evropského parlamentu a Rady (EU) 2016/679 a zákonem',
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="3",
+                text='podle nařízení Evropského parlamentu a Rady (EU) 2016/6791 a zákonem',
+                sort_order=1,
+            ),
+        ]
+        self.assertTrue(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
+
+    def test_canonical_equal_ignores_opendata_missing_diacritic(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="2",
+                text="prostor včetně zařízení nebo jeho části (např. zásobník, větrací potrubí).",
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="2",
+                text="prostor včetně zařízení nebo jeho části (např. zasobník, větrací potrubí).",
+                sort_order=1,
+            ),
+        ]
+        self.assertTrue(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
+
+    def test_canonical_equal_matches_novela_closing_paragraph(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="5",
+                text="Zaměstnavatel zajistí ochranu zdraví.",
+            ),
+            _SectionStub(
+                section_id=2,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="6",
+                text="Vyhláška č. 342/1997 Sb. se zrušuje.",
+            ),
+            _SectionStub(
+                section_id=3,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="7",
+                text="Tato vyhláška nabývá účinnosti dnem 1. dubna 2012.",
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="5",
+                text="Zaměstnavatel zajistí ochranu zdraví.",
+                sort_order=1,
+            ),
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="6",
+                text="Vyhláška č. 342/1997 Sb. se zrušuje.",
+                sort_order=2,
+            ),
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="7",
+                text="Tato vyhláška nabývá účinnosti dnem 1. dubna 2012.",
+                sort_order=3,
+            ),
+        ]
+        self.assertTrue(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
+
+    def test_canonical_equal_ignores_footnote_after_closing_paren(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="9a",
+                text="Úmluva (CMR) se použijí obdobně ve vnitrostátní dopravě.",
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="9a",
+                text="Úmluva (CMR)31) se použijí obdobně ve vnitrostátní dopravě.",
+                sort_order=1,
+            ),
+        ]
+        self.assertTrue(
+            legal_section_structure_compare_service.trees_content_equal(
+                stored_sections=stored,
+                parsed_sections=parsed,
+            ),
+        )
+
+    def test_canonical_equal_ignores_nested_novela_paragraph_keys(self) -> None:
+        stored = [
+            _SectionStub(
+                section_id=1,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="14",
+                text="Zrušuje se vyhláška č. 101/1995 Sb.",
+            ),
+            _SectionStub(
+                section_id=2,
+                section_type=SECTION_PARAGRAPH,
+                paragraph="15",
+                text="Osoby uznané za zdravotně způsobilé se považují za způsobilé podle této vyhlášky.",
+            ),
+        ]
+        parsed = [
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="14",
+                text="Zrušuje se vyhláška č. 101/1995 Sb.",
+                sort_order=1,
+            ),
+            ParsedLegalSection(
+                section_type=SECTION_PARAGRAPH,
+                paragraph="15",
+                text="Osoby uznané za zdravotně způsobilé se považují za způsobilé podle této vyhlášky.",
+                sort_order=2,
+                parent_sort_order=1,
+            ),
+        ]
+        self.assertTrue(
             legal_section_structure_compare_service.trees_content_equal(
                 stored_sections=stored,
                 parsed_sections=parsed,

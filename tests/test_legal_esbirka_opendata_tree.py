@@ -265,6 +265,126 @@ class LegalESbirkaOpenDataTreeTestCase(unittest.TestCase):
         self.assertNotIn("uskutečnění jízdy vlaku", odst.text)
         self.assertNotIn("zajišťovalo bezpečné provozování", odst.text)
 
+    def test_novela_articles_are_included_in_parsed_tree(self) -> None:
+        iris = [
+            f"{_BASE}/norma/par_5",
+            f"{_BASE}/norma/par_5/frag_1",
+            f"{_BASE}/novela/par_6",
+            f"{_BASE}/novela/par_6/frag_2",
+            f"{_BASE}/novela/cl_2",
+            f"{_BASE}/novela/cl_2/frag_3",
+        ]
+        wording = _wording(iris)
+        contents = [
+            _content("dokument/norma/par_5", "<var>§ 5</var>", "Paragraf"),
+            _content(
+                "dokument/norma/par_5/frag_1",
+                "Zaměstnavatel zajistí ochranu zdraví.",
+                "Odstavec_Dc",
+            ),
+            _content("dokument/novela/par_6", "<var>§ 6</var>", "Paragraf"),
+            _content(
+                "dokument/novela/par_6/frag_2",
+                "Vyhláška č. 342/1997 Sb. se zrušuje.",
+                "Odstavec_Dc",
+            ),
+            _content("dokument/novela/cl_2", "<var>Čl. II</var>", "Clanek"),
+            _content(
+                "dokument/novela/cl_2/frag_3",
+                "Tato vyhláška nabývá účinnosti dnem 1. prosince 2012.",
+                "Odstavec_Dc",
+            ),
+        ]
+        parsed = legal_document_esbirka_opendata_tree_builder.build_parsed_sections(
+            wording,
+            contents,
+        )
+        paragraphs = {item.paragraph: item for item in parsed if item.paragraph}
+        self.assertIn("5", paragraphs)
+        self.assertIn("6", paragraphs)
+        self.assertIn("2", paragraphs)
+        self.assertIn("zrušuje", paragraphs["6"].text or paragraphs["6"].title)
+        self.assertIn("nabývá účinnosti", paragraphs["2"].text or paragraphs["2"].title)
+
+    def test_novela_nested_paragraph_body_is_not_inlined_into_parent(self) -> None:
+        iris = [
+            f"{_BASE}/novela/par_14",
+            f"{_BASE}/novela/par_14/frag_heading",
+            f"{_BASE}/novela/par_14/frag_intro",
+            f"{_BASE}/novela/par_14/bod_1",
+            f"{_BASE}/novela/par_14/frag_leaked",
+            f"{_BASE}/novela/par_14/par_15",
+            f"{_BASE}/novela/par_14/par_15/frag_15",
+        ]
+        wording = _wording(iris)
+        contents = [
+            _content("dokument/novela/par_14", "<var>§ 14</var>", "Paragraf"),
+            _content("dokument/novela/par_14/frag_heading", "Zrušovací ustanovení", "Nadpis_pod"),
+            _content("dokument/novela/par_14/frag_intro", "Zrušují se:", "Odstavec_Dc"),
+            _content(
+                "dokument/novela/par_14/bod_1",
+                "<var>1.</var> Vyhláška č. 101/1995 Sb.",
+                "Bod_Dd",
+            ),
+            _content(
+                "dokument/novela/par_14/frag_leaked",
+                "Osoby uznané za zdravotně způsobilé se považují za způsobilé podle této vyhlášky.",
+                "Odstavec_Dc",
+            ),
+            _content("dokument/novela/par_14/par_15", "<var>§ 15</var>", "Paragraf"),
+            _content("dokument/novela/par_14/par_15/frag_15", "Přechodné ustanovení", "Nadpis_pod"),
+        ]
+        parsed = legal_document_esbirka_opendata_tree_builder.build_parsed_sections(
+            wording,
+            contents,
+        )
+        paragraphs = {item.paragraph: item for item in parsed if item.paragraph}
+        parent_text = f"{paragraphs['14'].title} {paragraphs['14'].text}"
+        self.assertIn("101/1995", parent_text)
+        self.assertNotIn("Osoby uznané", parent_text)
+        self.assertEqual(paragraphs["15"].parent_sort_order, paragraphs["14"].sort_order)
+
+    def test_novela_skips_replacement_annex_heading_and_table(self) -> None:
+        iris = [
+            f"{_BASE}/novela/par_20",
+            f"{_BASE}/novela/par_20/frag_intro",
+            f"{_BASE}/novela/par_20/bod_13",
+            f"{_BASE}/novela/par_20/bod_13/frag_head",
+            f"{_BASE}/novela/par_20/bod_13/frag_title",
+            f"{_BASE}/novela/par_20/bod_13/frag_table",
+        ]
+        wording = _wording(iris)
+        contents = [
+            _content("dokument/novela/par_20", "<var>§ 20</var>", "Paragraf"),
+            _content(
+                "dokument/novela/par_20/frag_intro",
+                "Zákon č. 87/2023 Sb. se mění takto:",
+                "Odstavec_Dc",
+            ),
+            _content("dokument/novela/par_20/bod_13", "<var>13.</var> Příloha zní:", "Bod_Dd"),
+            _content("dokument/novela/par_20/bod_13/frag_head", "Příloha", "Hlavicka_priloha"),
+            _content(
+                "dokument/novela/par_20/bod_13/frag_title",
+                "Seznam orgánů dozoru příslušných k postupu podle nařízení o dozoru nad trhem",
+                "Nadpis",
+            ),
+            _content(
+                "dokument/novela/par_20/bod_13/frag_table",
+                "<table><tr><td>ČOI</td></tr></table>",
+                "Tabulka",
+            ),
+        ]
+        parsed = legal_document_esbirka_opendata_tree_builder.build_parsed_sections(
+            wording,
+            contents,
+        )
+        section = next(item for item in parsed if item.paragraph == "20")
+        combined = f"{section.title} {section.text}"
+        self.assertIn("87/2023", combined)
+        self.assertIn("Příloha zní", combined)
+        self.assertIn("Seznam orgánů dozoru", combined)
+        self.assertNotIn("ČOI", combined)
+
     def test_b_empty_or_unrelated_contents_are_not_a_valid_tree(self) -> None:
         wording = _wording([f"{_BASE}/norma/cast_1", f"{_BASE}/norma/cast_1/par_1"])
         with self.assertRaisesRegex(ValueError, "Neočekávaný formát"):

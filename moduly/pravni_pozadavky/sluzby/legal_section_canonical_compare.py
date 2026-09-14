@@ -7,6 +7,7 @@ Uložený strom se nemění. Diff po nalezení změny používá nový strom.
 from __future__ import annotations
 
 import re
+import unicodedata
 from collections import Counter
 
 from moduly.pravni_pozadavky.constants import (
@@ -27,10 +28,12 @@ _ITEM_SPLIT_RE = re.compile(r"(?:(?<=\s)|(?<=^))(\d+)\.\s+")
 _WORD_RE = re.compile(r"[0-9a-záčďéěíňóřšťúůýž]+", re.IGNORECASE)
 _FOOTNOTE_RE = re.compile(
     r"(?<=[A-Za-zÁČĎÉĚÍŇÓŘŠŤÚŮÝŽáčďéěíňóřšťúůýž]{2})\d{1,3}[a-z]?\)"
-    r"|(?<=[.,;:\"”'\s])\d{1,3}[a-z]?\)"
-    r"|(?<=\d)\d{1,2}[a-z]?\)",
+    r"|(?<=[.,;:\"”'\s)\-])\d{1,2}[a-z]?\)"
+    r"|(?<=\d{4})\d{1,2}[a-z]?\)"
+    r"|(?<=(?<!\d)\d)\d{1,2}[a-z]?\)",
     re.UNICODE,
 )
+_EU_REG_FOOTNOTE_DIGIT_RE = re.compile(r"(?<=/\d{3})[1-9](?!\d)")
 _CATEGORY_PAREN_RE = re.compile(r"(?<=[a-z]\d)\)", re.IGNORECASE)
 _ORDINAL = (
     r"první|druhý|druhá|třetí|čtvrtý|čtvrtá|pátý|pátá|šestý|šestá|"
@@ -46,7 +49,7 @@ _LEAKED_STRUCTURE_RE = re.compile(
     rf"(?:^|\s)(?:"
     rf"(?:{_ORDINAL})\s+{_STRUCT_WORD}"
     rf"|{_STRUCT_WORD}\s+(?:{_ORDINAL}|{_ROMAN_HEAD}|[0-9]+)"
-    rf")\b.*$",
+    rf")\b(?!\s+se\b).*$",
     re.IGNORECASE | re.DOTALL,
 )
 _BOILERPLATE_RE = re.compile(
@@ -105,6 +108,7 @@ def canonical_compare_text(value: str | None) -> str:
     text = _DASH_RE.sub("-", text)
     text = _QUOTE_RE.sub('"', text)
     text = _FOOTNOTE_RE.sub("", text)
+    text = _EU_REG_FOOTNOTE_DIGIT_RE.sub("", text)
     text = _CATEGORY_PAREN_RE.sub("", text)
     text = _LEAKED_STRUCTURE_RE.sub("", text)
     text = _BOILERPLATE_RE.sub(" ", text)
@@ -145,9 +149,16 @@ def _only_one_side_has_ch_letters(stored_entries: list, parsed_entries: list) ->
 def _collapse_to_paragraph(units: dict[str, str]) -> dict[str, str]:
     collapsed: dict[str, str] = {}
     for key, text in units.items():
-        target = key.split("/", 1)[0] if key.startswith("§:") else key
+        target = _paragraph_root(key)
         collapsed[target] = f"{collapsed.get(target, '')} {text}".strip()
     return collapsed
+
+
+def _paragraph_root(identity_key: str) -> str:
+    paragraph_parts = [part for part in identity_key.split("/") if part.startswith("§:")]
+    if paragraph_parts:
+        return paragraph_parts[-1]
+    return identity_key.split("/", 1)[0] if identity_key.startswith("§:") else identity_key
 
 
 def _canonical_identity_key(identity_key: str) -> str:
@@ -205,7 +216,23 @@ def _word_sets_compatible(left: str, right: str) -> bool:
     right_words = _word_set(right)
     if left_words == right_words:
         return True
-    return _only_duplicate_letter_typos(left_words, right_words)
+    if _only_duplicate_letter_typos(left_words, right_words):
+        return True
+    return _only_diacritic_typos(left_words, right_words)
+
+
+def _only_diacritic_typos(left: frozenset[str], right: frozenset[str]) -> bool:
+    leftovers = (left - right) | (right - left)
+    if not leftovers:
+        return False
+    if any(len(word) < 5 or any(char.isdigit() for char in word) for word in leftovers):
+        return False
+    return {_fold_diacritics(word) for word in left} == {_fold_diacritics(word) for word in right}
+
+
+def _fold_diacritics(word: str) -> str:
+    normalized = unicodedata.normalize("NFKD", word)
+    return "".join(char for char in normalized if not unicodedata.combining(char))
 
 
 def _only_duplicate_letter_typos(left: frozenset[str], right: frozenset[str]) -> bool:

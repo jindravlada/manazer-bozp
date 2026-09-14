@@ -40,10 +40,12 @@ _STRUCTURAL_KINDS = {
     "hlava": SECTION_HEAD,
     "dil": SECTION_DIVISION,
     "par": SECTION_PARAGRAPH,
+    "cl": SECTION_PARAGRAPH,
     "odst": SECTION_SUBSECTION,
     "pism": SECTION_LETTER,
     "priloha": SECTION_ATTACHMENT,
 }
+_BODY_DOCUMENT_PARTS = {"norma", "novela"}
 _HEADING_TYPES = {"Nadpis", "Nadpis_pod", "Nadpis_nad"}
 _BODY_TYPES = {
     "Odstavec_Dc",
@@ -52,6 +54,8 @@ _BODY_TYPES = {
     "Bod_Dd",
     "Hlavicka_priloha",
 }
+_NOVELA_SKIP_TYPES = {"Tabulka", "Hlavicka_priloha"}
+_NESTED_PARAGRAPH_LEAK_MIN_CHARS = 80
 _CZECH_ORDINALS = {
     1: "PRVNÍ",
     2: "DRUHÁ",
@@ -194,10 +198,32 @@ class LegalDocumentESbirkaOpenDataTreeBuilder:
             return False
         if fragment.section_kind == "priloha":
             return fragment.document_part == "prilohy"
-        return fragment.document_part == "norma"
+        if fragment.section_kind == "cl":
+            return fragment.document_part == "novela"
+        return fragment.document_part in _BODY_DOCUMENT_PARTS
 
     def _document_path(self, fragment: ESbirkaOpenDataFragmentRef) -> str:
         return "/".join(fragment.path_segments)
+
+    def _has_nested_structural_paragraphs(
+        self,
+        own_path: str,
+        structural_paths: dict[str, ESbirkaOpenDataFragmentRef],
+    ) -> bool:
+        prefix = f"{own_path}/"
+        return any(
+            path.startswith(prefix) and child.section_kind in {"par", "cl"}
+            for path, child in structural_paths.items()
+        )
+
+    def _should_skip_novela_dump(
+        self,
+        fragment: ESbirkaOpenDataFragmentRef,
+        content: ESbirkaOpenDataFragmentContent,
+    ) -> bool:
+        if fragment.document_part != "novela":
+            return False
+        return content.fragment_type in _NOVELA_SKIP_TYPES
 
     def _should_skip_nested_child(self, remainder: str) -> bool:
         """Přeskočit vnoučata přes strukturální uzel; vnořené body ponechat."""
@@ -264,28 +290,46 @@ class LegalDocumentESbirkaOpenDataTreeBuilder:
 
         own_path = self._document_path(fragment)
         prefix = f"{own_path}/"
+        skip_misplaced_body = (
+            fragment.section_kind == "par"
+            and fragment.document_part == "novela"
+            and self._has_nested_structural_paragraphs(own_path, structural_paths)
+        )
+        inline_children = []
         for child in fragments:
             if child.fragment_eli == fragment.fragment_eli:
                 continue
             child_path = self._document_path(child)
             if not child_path.startswith(prefix):
                 continue
+            remainder = child_path[len(prefix) :]
             if fragment.section_kind != "priloha":
-                remainder = child_path[len(prefix) :]
                 if self._should_skip_nested_child(remainder):
                     continue
                 if child_path in structural_paths:
                     continue
                 if child.section_kind not in {"frag", "bod"} and child.section_kind in _STRUCTURAL_KINDS:
                     continue
+            inline_children.append((child, remainder))
+        inline_children.sort(key=lambda item: self._fragment_sort_key(item[0]))
+        for child, remainder in inline_children:
             content = content_by_eli.get(child.fragment_eli)
             if content is None:
                 continue
             text = self._plain_text(content.html)
             if not text:
                 continue
+            if self._should_skip_novela_dump(fragment, content):
+                continue
+            if (
+                skip_misplaced_body
+                and "/" not in remainder
+                and content.fragment_type == "Odstavec_Dc"
+                and len(text) >= _NESTED_PARAGRAPH_LEAK_MIN_CHARS
+            ):
+                continue
             if content.fragment_type in _HEADING_TYPES:
-                if fragment.section_kind in {"cast", "hlava", "dil"}:
+                if fragment.section_kind in {"cast", "hlava", "dil"} or "/" in remainder:
                     bodies.append(text)
                 else:
                     headings.append(text)
@@ -320,6 +364,8 @@ class LegalDocumentESbirkaOpenDataTreeBuilder:
         number = fragment.section_number.casefold()
         if fragment.section_kind == "par":
             return folded in {f"§ {number}", f"§{number}"}
+        if fragment.section_kind == "cl":
+            return folded in {f"čl. {number}", f"čl {number}", f"článek {number}"}
         if fragment.section_kind == "pism":
             return folded in {f"{number})", f"{number}."}
         if fragment.section_kind == "odst":
@@ -388,6 +434,7 @@ class LegalDocumentESbirkaOpenDataTreeBuilder:
 def _kind_rank(kind: str) -> int:
     order = {
         "norma": 0,
+        "novela": 0,
         "prilohy": 0,
         "cast": 1,
         "priloha": 1,
@@ -395,10 +442,11 @@ def _kind_rank(kind: str) -> int:
         "dil": 3,
         "oddil": 4,
         "par": 5,
+        "cl": 5,
         "odst": 6,
         "pism": 7,
-        "bod": 8,
-        "frag": 9,
+        "frag": 8,
+        "bod": 9,
     }
     return order.get(kind, 50)
 
