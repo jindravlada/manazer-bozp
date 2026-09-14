@@ -1,11 +1,52 @@
 import hashlib
+import logging
 import os
 import platform
 import shutil
+import stat
 from pathlib import Path
 
 from core.paths import project_root
 from core.utils.confined_path import require_confined_path
+
+logger = logging.getLogger(__name__)
+
+_WORKSPACE_DIR_MODE = 0o700
+
+
+def ensure_private_workspace_root(path: Path) -> None:
+    """Na POSIX nastaví kořen workspace na 0700, pokud patří aktuálnímu uživateli.
+
+    Windows se nemění. Symlink kořen se nenasleduje. Chyba nesmí shodit start.
+    """
+    if platform.system() == "Windows" or os.name == "nt":
+        return
+    try:
+        info = os.lstat(path)
+    except OSError:
+        logger.warning("Nelze ověřit práva workspace %s.", path, exc_info=True)
+        return
+    if stat.S_ISLNK(info.st_mode) or not stat.S_ISDIR(info.st_mode):
+        return
+    try:
+        if info.st_uid != os.getuid():
+            logger.warning(
+                "Workspace %s nepatří aktuálnímu uživateli, práva se nemění.",
+                path,
+            )
+            return
+    except AttributeError:
+        return
+    if stat.S_IMODE(info.st_mode) == _WORKSPACE_DIR_MODE:
+        return
+    try:
+        os.chmod(path, _WORKSPACE_DIR_MODE, follow_symlinks=False)
+    except (OSError, NotImplementedError, TypeError):
+        logger.warning(
+            "Nepodařilo se nastavit práva workspace %s.",
+            path,
+            exc_info=True,
+        )
 
 
 class StorageService:
@@ -32,6 +73,7 @@ class StorageService:
 
     def ensure_structure(self) -> None:
         self.base.mkdir(parents=True, exist_ok=True)
+        ensure_private_workspace_root(self.base)
         self.database_dir.mkdir(parents=True, exist_ok=True)
         self.attachments_dir.mkdir(parents=True, exist_ok=True)
         self.backups_dir.mkdir(parents=True, exist_ok=True)
