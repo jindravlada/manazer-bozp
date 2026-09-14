@@ -6,11 +6,15 @@ from datetime import date
 from html import unescape
 from pathlib import Path
 
-import requests
+from core.http_safe import SafeHttpsError, safe_https_get
 
 ESBIRKA_BASE_URL = "https://www.esbirka.cz/cs"
+ESBIRKA_ALLOWED_HOSTS = frozenset({"www.esbirka.cz"})
 ESBIRKA_VERSION_CHECKSUM_PREFIX = "esbirka:"
 _REQUEST_TIMEOUT = 60
+# Zákoník práce (fixture 262/2006) má cca 0,75 MiB HTML; 4 MiB nechává rezervu.
+ESBIRKA_MAX_RESPONSE_BYTES = 4_194_304
+_MAX_RESPONSE_BYTES = ESBIRKA_MAX_RESPONSE_BYTES
 _FRAGS_START = '<div class="Frags">'
 _FRAGS_ARTICLE_END = "</article>"
 _NOT_FOUND_MARKER = "Stránka nenalezena"
@@ -140,21 +144,48 @@ class LegalDocumentESbirkaClient:
         year = int(match.group(3))
         return date(year, month, day)
 
-    def build_url(self, *, year: int, number: str) -> str:
+    def _normalize_year(self, year: int) -> int:
+        if isinstance(year, bool) or not isinstance(year, int):
+            text = str(year or "").strip()
+            if not text.isdigit():
+                raise ValueError("Rok musí být číslo.")
+            year = int(text)
+        if year < 1 or year > 9999:
+            raise ValueError("Rok musí být číslo.")
+        return year
+
+    def _normalize_number(self, number: str) -> str:
         normalized_number = (number or "").strip()
         if not normalized_number:
             raise ValueError("Číslo předpisu je povinné.")
-        return f"{ESBIRKA_BASE_URL}/{year}-{normalized_number}"
+        if not normalized_number.isdigit():
+            raise ValueError("Číslo předpisu smí obsahovat pouze číslice.")
+        return normalized_number
+
+    def build_url(self, *, year: int, number: str) -> str:
+        normalized_year = self._normalize_year(year)
+        normalized_number = self._normalize_number(number)
+        return f"{ESBIRKA_BASE_URL}/{normalized_year}-{normalized_number}"
 
     def fetch_full_text_html(self, *, year: int, number: str) -> str:
         url = self.build_url(year=year, number=number)
         try:
-            response = requests.get(url, timeout=_REQUEST_TIMEOUT, allow_redirects=True)
-            response.raise_for_status()
-        except requests.RequestException as exc:
-            raise ValueError("Internet není dostupný.") from exc
+            result = safe_https_get(
+                url,
+                allowed_hosts=ESBIRKA_ALLOWED_HOSTS,
+                timeout=_REQUEST_TIMEOUT,
+                max_bytes=_MAX_RESPONSE_BYTES,
+                headers={"Accept": "text/html,application/xhtml+xml"},
+            )
+        except SafeHttpsError as exc:
+            if exc.kind in {"network", "timeout"}:
+                raise ValueError("Internet není dostupný.") from exc
+            raise ValueError(str(exc)) from exc
 
-        html = response.text
+        if result.status_code != 200:
+            raise ValueError("Internet není dostupný.")
+
+        html = result.body.decode("utf-8", errors="replace")
         if _NOT_FOUND_MARKER in html:
             raise ValueError("Předpis nenalezen.")
         if _FRAGS_START not in html:

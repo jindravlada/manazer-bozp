@@ -1,29 +1,60 @@
+import json
+
 try:
     import requests
 except ImportError:
     requests = None
 
+from core.http_safe import safe_https_get
 from core.services.cz_nace_service import cz_nace_service
+
+ARES_ALLOWED_HOSTS = frozenset({"ares.gov.cz"})
+ARES_TIMEOUT_SECONDS = 10
+ARES_MAX_RESPONSE_BYTES = 1_048_576
 
 
 class AresService:
     BASE_URL = "https://ares.gov.cz/ekonomicke-subjekty-v-be/rest/ekonomicke-subjekty"
 
+    def _normalize_ico(self, ico: str) -> str | None:
+        digits = "".join(ch for ch in str(ico or "") if ch.isdigit())
+        if not digits:
+            if str(ico or "").strip():
+                raise ValueError("IČO smí obsahovat pouze číslice.")
+            return None
+        if len(digits) > 8:
+            raise ValueError("IČO smí obsahovat nejvýše 8 číslic.")
+        return digits
+
     def find_by_ico(self, ico: str) -> dict | None:
         if requests is None:
             raise RuntimeError("Knihovna requests není nainstalovaná.")
 
-        ico = "".join(ch for ch in ico if ch.isdigit())
-        if not ico:
+        normalized = self._normalize_ico(ico)
+        if not normalized:
             return None
 
-        response = requests.get(f"{self.BASE_URL}/{ico}", timeout=10)
-        if response.status_code != 200:
+        result = safe_https_get(
+            f"{self.BASE_URL}/{normalized}",
+            allowed_hosts=ARES_ALLOWED_HOSTS,
+            timeout=ARES_TIMEOUT_SECONDS,
+            max_bytes=ARES_MAX_RESPONSE_BYTES,
+            headers={"Accept": "application/json"},
+        )
+
+        if result.status_code != 200:
             return None
 
-        data = response.json()
+        try:
+            data = json.loads(result.body.decode("utf-8"))
+        except (UnicodeDecodeError, ValueError):
+            return None
+        if not isinstance(data, dict):
+            return None
 
         address = data.get("sidlo", {})
+        if not isinstance(address, dict):
+            address = {}
         address_text = self._format_address(address)
 
         nace_codes = data.get("czNace", [])
@@ -33,7 +64,7 @@ class AresService:
         nace_display_list = cz_nace_service.get_displays(nace_codes)
 
         return {
-            "ico": data.get("ico", ico),
+            "ico": data.get("ico", normalized),
             "name": data.get("obchodniJmeno", ""),
             "address": address_text,
             "nace_list": nace_display_list,

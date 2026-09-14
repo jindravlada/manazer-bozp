@@ -4,8 +4,6 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-import requests
-
 _TMP = Path(tempfile.mkdtemp())
 
 with patch.object(Path, "home", return_value=_TMP):
@@ -192,18 +190,27 @@ class LegalDocumentInternetImportTestCase(unittest.TestCase):
         self.assertEqual(document.document_type, "narizeni_vlady")
 
     def test_fetch_not_found_raises_value_error(self) -> None:
-        with patch("requests.get") as get_mock:
-            response = get_mock.return_value
-            response.raise_for_status.return_value = None
-            response.text = "<html><body><h1>Stránka nenalezena</h1></body></html>"
+        from core.http_safe import SafeHttpsResponse
+
+        html = "<html><body><h1>Stránka nenalezena</h1></body></html>"
+        with patch(
+            "moduly.pravni_pozadavky.import_export.legal_document_esbirka_client.safe_https_get",
+            return_value=SafeHttpsResponse(
+                status_code=200,
+                body=html.encode("utf-8"),
+                final_url="https://www.esbirka.cz/cs/1999-99999",
+            ),
+        ):
             with self.assertRaises(ValueError) as context:
                 legal_document_esbirka_client.fetch_full_text_html(year=1999, number="99999")
         self.assertEqual(str(context.exception), "Předpis nenalezen.")
 
     def test_fetch_network_error_raises_value_error(self) -> None:
+        from core.http_safe import SafeHttpsError
+
         with patch(
-            "requests.get",
-            side_effect=requests.ConnectionError("offline"),
+            "moduly.pravni_pozadavky.import_export.legal_document_esbirka_client.safe_https_get",
+            side_effect=SafeHttpsError("Služba není dostupná.", kind="network"),
         ):
             with self.assertRaises(ValueError) as context:
                 legal_document_esbirka_client.fetch_full_text_html(year=2006, number="262")
