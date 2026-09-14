@@ -14,6 +14,33 @@
 
 ---
 
+# Verze 4.0.0
+
+Datum vydání:
+
+14. 9. 2026
+
+Před vydáním 4.0.0 prošel Manažer BOZP systematickým interním bezpečnostním review produkčního kódu. Nalezené potvrzené problémy byly opraveny a pokryty regresními testy. Nešlo o nezávislý profesionální penetrační test ani bezpečnostní certifikaci.
+
+## Bezpečnost a ochrana dat
+
+- omezení cest souboru znalosti, příloh a referenčních fotografií na určená úložiště
+- bezpečnější práce s importy, přílohami a ODT, včetně odstranění aktivního obsahu z exportních šablon
+- zpevnění HTTPS komunikace ARES a e-Sbírky (pouze HTTPS, allowlist hostů, ruční redirecty, limit velikosti odpovědi)
+- ochrana lokálních dat a dočasných souborů
+- atomická migrace unikátního omezení ročních zpráv auditů
+- sjednocení automatických safety záloh na formát mbbackup
+- připnutí přímých runtime závislostí, PyInstalleru a linuxdeploy
+
+## Další změny od 3.4.5
+
+- evidence změn právních požadavků a práce s novelizací bez přepisu používaného znění
+- záložka Po ukončení DPN a související povinnosti v Knize úrazů
+- nesblokování okna při tvorbě a obnově zálohy
+- export plánu interních auditů do ODT a další úpravy přehledů auditů a prověrek
+
+---
+
 # Verze 3.4.5
 
 Datum vydání:

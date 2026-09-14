@@ -48,6 +48,14 @@ class ChangelogPhase90TestCase(unittest.TestCase):
         path = project_root() / CHANGELOG_FILENAME
         self.assertTrue(path.is_file(), f"Chybí soubor {path}")
 
+    def test_changelog_contains_release_notes_for_4_0_0(self) -> None:
+        content = load_changelog_text()
+
+        self.assertIn("# Verze 4.0.0", content)
+        self.assertIn("14. 9. 2026", content)
+        self.assertIn("systematickým interním bezpečnostním review", content)
+        self.assertIn("Nešlo o nezávislý profesionální penetrační test", content)
+
     def test_changelog_contains_release_notes_for_3_4_5(self) -> None:
         content = load_changelog_text()
 
@@ -88,6 +96,7 @@ class ChangelogPhase90TestCase(unittest.TestCase):
         self.assertIsNotNone(viewer)
         assert viewer is not None
         text = viewer.toPlainText()
+        self.assertIn("Verze 4.0.0", text)
         self.assertIn("Verze 3.4.5", text)
         self.assertIn("Verze 3.4.0", text)
         self.assertIn("Verze 3.1.0", text)
