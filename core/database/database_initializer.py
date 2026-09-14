@@ -857,17 +857,54 @@ def _ensure_bozp_annual_report_table() -> None:
         _add_column("bozp_annual_reports", "zpracoval_worker_id INTEGER")
 
 
+# Test hook: "before_drop" | "after_drop" | "after_rename". V produkci vždy None.
+_AUDIT_ANNUAL_REPORTS_FAIL_AFTER: str | None = None
+
+_AUDIT_ANNUAL_REPORTS_NEW_SQL = """
+CREATE TABLE audit_annual_reports_new (
+    id INTEGER NOT NULL PRIMARY KEY,
+    year INTEGER NOT NULL,
+    audit_program_id INTEGER NOT NULL,
+    silne_stranky TEXT DEFAULT '' NOT NULL,
+    top_priority TEXT DEFAULT '' NOT NULL,
+    doporuceni_specialisty TEXT DEFAULT '' NOT NULL,
+    zpracoval VARCHAR(150) DEFAULT '' NOT NULL,
+    zpracoval_worker_id INTEGER,
+    created_at DATETIME,
+    updated_at DATETIME,
+    CONSTRAINT uq_audit_annual_reports_year_program UNIQUE (year, audit_program_id)
+)
+"""
+
+
 def _ensure_audit_annual_report_table() -> None:
     from moduly.audity.modely.audit_annual_report import AuditAnnualReport
 
     columns = _table_columns("audit_annual_reports")
     if not columns:
+        if _table_exists("audit_annual_reports_new"):
+            helper_count = _table_row_count("audit_annual_reports_new")
+            if helper_count:
+                raise RuntimeError(
+                    "Nalezena pomocná tabulka audit_annual_reports_new s daty, "
+                    "ale živá tabulka audit_annual_reports chybí. "
+                    "Migrace se zastavila, aby nedošlo ke ztrátě dat."
+                )
+            with _db_engine().connect() as connection:
+                connection.execute(text("DROP TABLE IF EXISTS audit_annual_reports_new"))
+                connection.commit()
         AuditAnnualReport.__table__.create(bind=_db_engine(), checkfirst=True)
         return
     if "audit_program_id" not in columns:
         _add_column("audit_annual_reports", "audit_program_id INTEGER")
     if _audit_annual_reports_has_year_only_unique():
         _migrate_audit_annual_reports_year_program_unique()
+
+
+def _table_row_count(table_name: str) -> int:
+    with _db_engine().connect() as connection:
+        value = connection.execute(text(f"SELECT COUNT(*) FROM {table_name}")).scalar()
+        return int(value or 0)
 
 
 def _audit_annual_reports_has_year_only_unique() -> bool:
@@ -898,8 +935,15 @@ def _audit_annual_reports_has_year_only_unique() -> bool:
 
 
 def _migrate_audit_annual_reports_year_program_unique() -> None:
-    from moduly.audity.modely.audit_annual_report import AuditAnnualReport
+    """Přestaví unique(year) → unique(year, audit_program_id) v jedné SQLite transakci."""
+    import sqlite3
+
+    from core.database.session import dispose_database_engine, reconfigure_database_engine
+    from core.services.storage_service import storage_service
     from moduly.audity.sluzby.audit_annual_program_service import audit_annual_program_service
+
+    if not _audit_annual_reports_has_year_only_unique():
+        return
 
     with _db_engine().connect() as connection:
         rows = connection.execute(
@@ -909,40 +953,128 @@ def _migrate_audit_annual_reports_year_program_unique() -> None:
                 "FROM audit_annual_reports"
             )
         ).mappings().all()
+        source_count = int(
+            connection.execute(text("SELECT COUNT(*) FROM audit_annual_reports")).scalar() or 0
+        )
 
     migrated_rows: list[dict] = []
+    unresolved: list[int] = []
     for row in rows:
-        program_id = row["audit_program_id"]
+        payload = dict(row)
+        program_id = payload.get("audit_program_id")
         if program_id is None:
-            programs = audit_annual_program_service.list_programs_for_year(row["year"])
+            programs = audit_annual_program_service.list_programs_for_year(payload["year"])
             if len(programs) != 1:
+                unresolved.append(int(payload["id"]))
                 continue
             program_id = programs[0].id
-        migrated_rows.append({**row, "audit_program_id": program_id})
+        payload["audit_program_id"] = program_id
+        migrated_rows.append(payload)
 
-    with _db_engine().connect() as connection:
-        connection.execute(text("DROP TABLE audit_annual_reports"))
-        connection.commit()
+    if unresolved:
+        raise RuntimeError(
+            "Migrace ročních zpráv auditů nemůže doplnit audit_program_id "
+            f"pro řádky id={unresolved}. Původní tabulka zůstane beze změny."
+        )
+    if len(migrated_rows) != source_count:
+        raise RuntimeError(
+            "Migrace ročních zpráv auditů: počet připravených řádků "
+            f"({len(migrated_rows)}) neodpovídá zdroji ({source_count}). "
+            "Původní tabulka zůstane beze změny."
+        )
 
-    AuditAnnualReport.__table__.create(bind=_db_engine(), checkfirst=True)
+    db_path = storage_service.database_path
+    dispose_database_engine()
+    connection = sqlite3.connect(str(db_path.resolve()))
+    try:
+        connection.execute("BEGIN IMMEDIATE")
+        tables = {
+            str(item[0])
+            for item in connection.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table'"
+            ).fetchall()
+        }
+        if "audit_annual_reports" not in tables:
+            raise RuntimeError(
+                "Migrace ročních zpráv auditů: živá tabulka audit_annual_reports chybí."
+            )
+        if "audit_annual_reports_new" in tables:
+            helper_count = int(
+                connection.execute(
+                    "SELECT COUNT(*) FROM audit_annual_reports_new"
+                ).fetchone()[0]
+            )
+            if helper_count:
+                raise RuntimeError(
+                    "Pomocná tabulka audit_annual_reports_new už obsahuje data. "
+                    "Migrace se zastavila, aby nedošlo ke ztrátě dat."
+                )
+            connection.execute("DROP TABLE IF EXISTS audit_annual_reports_new")
 
-    if not migrated_rows:
-        return
+        live_count = int(
+            connection.execute("SELECT COUNT(*) FROM audit_annual_reports").fetchone()[0]
+        )
+        if live_count != source_count:
+            raise RuntimeError(
+                "Migrace ročních zpráv auditů: počet řádků se změnil před zápisem "
+                f"(očekáváno {source_count}, nyní {live_count})."
+            )
 
-    with _db_engine().connect() as connection:
+        connection.execute(_AUDIT_ANNUAL_REPORTS_NEW_SQL)
         for row in migrated_rows:
             connection.execute(
-                text(
-                    "INSERT INTO audit_annual_reports "
-                    "(id, year, audit_program_id, silne_stranky, top_priority, "
-                    "doporuceni_specialisty, zpracoval, zpracoval_worker_id, created_at, updated_at) "
-                    "VALUES "
-                    "(:id, :year, :audit_program_id, :silne_stranky, :top_priority, "
-                    ":doporuceni_specialisty, :zpracoval, :zpracoval_worker_id, :created_at, :updated_at)"
+                """
+                INSERT INTO audit_annual_reports_new (
+                    id, year, audit_program_id, silne_stranky, top_priority,
+                    doporuceni_specialisty, zpracoval, zpracoval_worker_id,
+                    created_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    row["id"],
+                    row["year"],
+                    row["audit_program_id"],
+                    row["silne_stranky"] if row["silne_stranky"] is not None else "",
+                    row["top_priority"] if row["top_priority"] is not None else "",
+                    row["doporuceni_specialisty"]
+                    if row["doporuceni_specialisty"] is not None
+                    else "",
+                    row["zpracoval"] if row["zpracoval"] is not None else "",
+                    row["zpracoval_worker_id"],
+                    row["created_at"],
+                    row["updated_at"],
                 ),
-                row,
             )
+
+        target_count = int(
+            connection.execute(
+                "SELECT COUNT(*) FROM audit_annual_reports_new"
+            ).fetchone()[0]
+        )
+        if target_count != source_count:
+            raise RuntimeError(
+                "Migrace ročních zpráv auditů: počet převedených řádků "
+                f"({target_count}) neodpovídá zdroji ({source_count})."
+            )
+
+        if _AUDIT_ANNUAL_REPORTS_FAIL_AFTER == "before_drop":
+            raise RuntimeError("simulated-fail:before_drop")
+        connection.execute("DROP TABLE audit_annual_reports")
+        if _AUDIT_ANNUAL_REPORTS_FAIL_AFTER == "after_drop":
+            raise RuntimeError("simulated-fail:after_drop")
+        connection.execute(
+            "ALTER TABLE audit_annual_reports_new RENAME TO audit_annual_reports"
+        )
+        if _AUDIT_ANNUAL_REPORTS_FAIL_AFTER == "after_rename":
+            raise RuntimeError("simulated-fail:after_rename")
         connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+        reconfigure_database_engine(force=True)
 
 
 def _ensure_audit_process_maturity_snapshot_table() -> None:
