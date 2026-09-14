@@ -93,6 +93,7 @@ class LegalDocumentVersionRepository:
                 .where(
                     LegalDocumentVersion.legal_document_id == document_id,
                     LegalDocumentVersion.source_eli == normalized,
+                    LegalDocumentVersion.active.is_(True),
                 )
                 .order_by(LegalDocumentVersion.id.asc())
             )

@@ -69,7 +69,11 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.pravni_pozadavky.ui.legal_change_detail_dialog import LegalChangeDetailDialog
     from moduly.pravni_pozadavky.ui.legal_document_version_table import LegalDocumentVersionTable
-    from tests.legal_opendata_check_fakes import fake_in_force_tree, parsed_sections_from_version
+    from tests.legal_opendata_check_fakes import (
+        fake_in_force_tree,
+        parsed_sections_from_version,
+        patch_no_future_wordings,
+    )
 
 
 class LegalVersionAdoptionTestCase(unittest.TestCase):
@@ -102,6 +106,9 @@ class LegalVersionAdoptionTestCase(unittest.TestCase):
             session.execute(delete(LegalDocumentVersion))
             session.execute(delete(LegalDocument))
             session.commit()
+        no_futures = patch_no_future_wordings()
+        no_futures.start()
+        self.addCleanup(no_futures.stop)
 
     def _create_document_and_versions(self):
         document = legal_document_service.create(

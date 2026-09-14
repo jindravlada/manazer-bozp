@@ -121,6 +121,20 @@ class LegalDocumentESbirkaOpenDataTreeBuilder:
             sections=tuple(sections),
         )
 
+    def fetch_tree_for_source_eli(self, source_eli: str) -> ESbirkaOpenDataParsedTree:
+        wording = legal_document_esbirka_opendata_client.fetch_wording_fragments(source_eli)
+        contents = legal_document_esbirka_opendata_client.fetch_wording_fragment_contents(
+            wording.source_eli,
+        )
+        sections = self.build_parsed_sections(wording, contents)
+        return ESbirkaOpenDataParsedTree(
+            source_eli=wording.source_eli,
+            source_url=wording.source_url,
+            effective_from=wording.effective_from,
+            version_label=f"e-Sbírka {wording.source_eli}",
+            sections=tuple(sections),
+        )
+
     def fetch_in_force_parsed_sections(
         self,
         *,

@@ -68,7 +68,11 @@ with patch.object(Path, "home", return_value=_TMP):
         legal_document_version_service,
     )
     from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
-    from tests.legal_opendata_check_fakes import fake_in_force_tree, parsed_sections_from_version
+    from tests.legal_opendata_check_fakes import (
+        fake_in_force_tree,
+        parsed_sections_from_version,
+        patch_no_future_wordings,
+    )
 
 
 class LegalCheckNovelizationServiceTestCase(unittest.TestCase):
@@ -91,6 +95,10 @@ class LegalCheckNovelizationServiceTestCase(unittest.TestCase):
             session.execute(delete(LegalDocumentVersion))
             session.execute(delete(LegalDocument))
             session.commit()
+
+        no_futures = patch_no_future_wordings()
+        no_futures.start()
+        self.addCleanup(no_futures.stop)
 
         self.fixture_390 = Path(__file__).resolve().parent / "data" / "sample_esbirka_390_2021.html"
         self.fixture_html = self.fixture_390.read_text(encoding="utf-8")

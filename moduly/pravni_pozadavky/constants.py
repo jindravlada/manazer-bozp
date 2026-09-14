@@ -462,6 +462,8 @@ def legal_document_version_status_label(
 ) -> str:
     if bool(getattr(version, "pending_adoption", False)):
         return VERSION_STATUS_PENDING_ADOPTION
+    if bool(getattr(version, "future_wording", False)):
+        return VERSION_STATUS_FUTURE
     from moduly.pravni_pozadavky.sluzby.legal_document_version_temporal import (
         TEMPORAL_STATE_FUTURE,
         classify_temporal_wording,

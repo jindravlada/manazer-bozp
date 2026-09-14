@@ -88,6 +88,7 @@ class LegalDocumentVersionService:
         checksum: str = "",
         note: str = "",
         pending_adoption: bool = False,
+        future_wording: bool = False,
         active: bool = True,
     ) -> LegalDocumentVersion:
         self._validate_document_id(legal_document_id)
@@ -111,6 +112,7 @@ class LegalDocumentVersionService:
             checksum=checksum.strip(),
             note=note.strip(),
             pending_adoption=pending_adoption,
+            future_wording=future_wording,
             active=active,
         )
         return self._persist_create(version)
@@ -132,6 +134,7 @@ class LegalDocumentVersionService:
         checksum: str = "",
         note: str = "",
         pending_adoption: bool | None = None,
+        future_wording: bool | None = None,
         active: bool = True,
     ) -> LegalDocumentVersion | None:
         version = self.repository.get_by_id(version_id)
@@ -164,6 +167,8 @@ class LegalDocumentVersionService:
         version.note = note.strip()
         if pending_adoption is not None:
             version.pending_adoption = pending_adoption
+        if future_wording is not None:
+            version.future_wording = future_wording
         version.active = active
         return self._persist_update(version)
 
@@ -210,6 +215,16 @@ class LegalDocumentVersionService:
         if version is None:
             return None
         version.pending_adoption = pending_adoption
+        if not pending_adoption:
+            version.future_wording = False
+        return self.repository.update(version)
+
+    def retire_source_eli(self, version_id: int) -> LegalDocumentVersion | None:
+        version = self.repository.get_by_id(version_id)
+        if version is None:
+            return None
+        version.source_eli = None
+        version.active = False
         return self.repository.update(version)
 
     def deactivate(self, version_id: int) -> LegalDocumentVersion | None:

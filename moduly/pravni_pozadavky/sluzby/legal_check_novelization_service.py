@@ -72,6 +72,7 @@ class LegalCheckNovelizationService:
             )
 
         if not self._trees_match(stored_version, tree):
+            self._sync_future_wordings(document)
             return NovelizationCheckResult(
                 status=NOVELIZATION_UNCHANGED,
                 stored_version_id=stored_version.id,
@@ -80,7 +81,7 @@ class LegalCheckNovelizationService:
                 tree=tree,
             )
 
-        return NovelizationCheckResult(
+        result = NovelizationCheckResult(
             status=NOVELIZATION_UNCHANGED,
             reference_checksum=fetched.reference_checksum,
             stored_version_id=stored_version.id,
@@ -91,6 +92,8 @@ class LegalCheckNovelizationService:
             effective_from=tree.effective_from,
             source_url=tree.source_url,
         )
+        self._sync_future_wordings(document)
+        return result
 
     def check_document(
         self,
@@ -125,38 +128,69 @@ class LegalCheckNovelizationService:
         existing_change = self._find_recorded_change(
             document.id,
             remote_checksum=remote_checksum,
-            pending=existing_for_eli if existing_for_eli and existing_for_eli.pending_adoption else None,
+            pending=(
+                existing_for_eli
+                if existing_for_eli is not None
+                and (existing_for_eli.pending_adoption or existing_for_eli.future_wording)
+                else None
+            ),
         )
         content_matches = self._trees_match(stored_version, tree)
 
         if (
             existing_for_eli is not None
-            and existing_for_eli.pending_adoption
             and existing_for_eli.id != stored_version.id
+            and (existing_for_eli.future_wording or existing_for_eli.pending_adoption)
         ):
-            return self._reuse_recorded_change(
-                document=document,
-                stored_version=stored_version,
-                tree=tree,
-                remote_checksum=remote_checksum,
-                check_run_id=check_run_id,
-                pending=existing_for_eli,
-                existing_change=existing_change,
-                label=label,
+            pending = self._promote_existing_detected_version(
+                document,
+                existing_for_eli,
+                tree,
+                remote_checksum,
+            )
+            if pending is None:
+                return self._finish_with_futures(
+                    document,
+                    NovelizationCheckResult(
+                        status=NOVELIZATION_FAILED,
+                        error="Nové znění se nepodařilo uložit.",
+                        document_label=label,
+                        remote=fetched.remote,
+                        tree=tree,
+                    ),
+                    skip_eli=tree.source_eli,
+                )
+            return self._finish_with_futures(
+                document,
+                self._reuse_recorded_change(
+                    document=document,
+                    stored_version=stored_version,
+                    tree=tree,
+                    remote_checksum=remote_checksum,
+                    check_run_id=check_run_id,
+                    pending=pending,
+                    existing_change=existing_change,
+                    label=label,
+                ),
+                skip_eli=tree.source_eli,
             )
 
         if content_matches:
             self._stamp_identifiers_if_needed(stored_version, tree, remote_checksum)
-            return NovelizationCheckResult(
-                status=NOVELIZATION_UNCHANGED,
-                reference_checksum=remote_checksum,
-                stored_version_id=stored_version.id,
-                document_label=label,
-                remote=fetched.remote,
-                tree=tree,
-                source_eli=tree.source_eli,
-                effective_from=tree.effective_from,
-                source_url=tree.source_url,
+            return self._finish_with_futures(
+                document,
+                NovelizationCheckResult(
+                    status=NOVELIZATION_UNCHANGED,
+                    reference_checksum=remote_checksum,
+                    stored_version_id=stored_version.id,
+                    document_label=label,
+                    remote=fetched.remote,
+                    tree=tree,
+                    source_eli=tree.source_eli,
+                    effective_from=tree.effective_from,
+                    source_url=tree.source_url,
+                ),
+                skip_eli=tree.source_eli,
             )
 
         if (
@@ -164,12 +198,16 @@ class LegalCheckNovelizationService:
             and not existing_for_eli.pending_adoption
             and existing_for_eli.id == stored_version.id
         ):
-            return NovelizationCheckResult(
-                status=NOVELIZATION_FAILED,
-                error="Oficiální znění má stejné ELI, ale odlišný obsah.",
-                document_label=label,
-                remote=fetched.remote,
-                tree=tree,
+            return self._finish_with_futures(
+                document,
+                NovelizationCheckResult(
+                    status=NOVELIZATION_FAILED,
+                    error="Oficiální znění má stejné ELI, ale odlišný obsah.",
+                    document_label=label,
+                    remote=fetched.remote,
+                    tree=tree,
+                ),
+                skip_eli=tree.source_eli,
             )
 
         if existing_change is not None and self._is_confirmed_by_completed_check(existing_change):
@@ -181,10 +219,14 @@ class LegalCheckNovelizationService:
                 existing_pending=existing_for_eli if existing_for_eli and existing_for_eli.pending_adoption else None,
             )
             if pending is None:
-                return NovelizationCheckResult(
-                    status=NOVELIZATION_FAILED,
-                    error="Nové znění se nepodařilo uložit.",
-                    document_label=label,
+                return self._finish_with_futures(
+                    document,
+                    NovelizationCheckResult(
+                        status=NOVELIZATION_FAILED,
+                        error="Nové znění se nepodařilo uložit.",
+                        document_label=label,
+                    ),
+                    skip_eli=tree.source_eli,
                 )
             if existing_change.new_legal_document_version_id != pending.id:
                 from moduly.pravni_pozadavky.sluzby.legal_change_service import (
@@ -194,13 +236,17 @@ class LegalCheckNovelizationService:
                 legal_change_service.attach_detected_version(existing_change.id, pending.id)
                 existing_change = legal_change_service.get_by_id(existing_change.id) or existing_change
             self._sync_change_sections(existing_change)
-            return NovelizationCheckResult(
-                status=NOVELIZATION_UNCHANGED,
-                reference_checksum=remote_checksum,
-                stored_version_id=stored_version.id,
-                document_label=label,
-                remote=fetched.remote,
-                tree=tree,
+            return self._finish_with_futures(
+                document,
+                NovelizationCheckResult(
+                    status=NOVELIZATION_UNCHANGED,
+                    reference_checksum=remote_checksum,
+                    stored_version_id=stored_version.id,
+                    document_label=label,
+                    remote=fetched.remote,
+                    tree=tree,
+                ),
+                skip_eli=tree.source_eli,
             )
 
         pending = self._ensure_pending_version(
@@ -211,10 +257,14 @@ class LegalCheckNovelizationService:
             existing_pending=existing_for_eli if existing_for_eli and existing_for_eli.pending_adoption else None,
         )
         if pending is None:
-            return NovelizationCheckResult(
-                status=NOVELIZATION_FAILED,
-                error="Nové znění se nepodařilo uložit.",
-                document_label=label,
+            return self._finish_with_futures(
+                document,
+                NovelizationCheckResult(
+                    status=NOVELIZATION_FAILED,
+                    error="Nové znění se nepodařilo uložit.",
+                    document_label=label,
+                ),
+                skip_eli=tree.source_eli,
             )
 
         change = self._ensure_legal_change(
@@ -227,15 +277,160 @@ class LegalCheckNovelizationService:
             existing_change=existing_change,
         )
         self._sync_change_sections(change)
-        return NovelizationCheckResult(
-            status=NOVELIZATION_CHANGED,
-            change=change,
-            reference_checksum=remote_checksum,
-            stored_version_id=stored_version.id,
-            document_label=label,
-            remote=fetched.remote,
-            tree=tree,
+        return self._finish_with_futures(
+            document,
+            NovelizationCheckResult(
+                status=NOVELIZATION_CHANGED,
+                change=change,
+                reference_checksum=remote_checksum,
+                stored_version_id=stored_version.id,
+                document_label=label,
+                remote=fetched.remote,
+                tree=tree,
+            ),
+            skip_eli=tree.source_eli,
         )
+
+    def _finish_with_futures(
+        self,
+        document: LegalDocument,
+        result: NovelizationCheckResult,
+        *,
+        skip_eli: str | None = None,
+    ) -> NovelizationCheckResult:
+        self._sync_future_wordings(document, skip_eli=skip_eli)
+        return result
+
+    def _promote_existing_detected_version(
+        self,
+        document: LegalDocument,
+        existing: LegalDocumentVersion,
+        tree: ESbirkaOpenDataParsedTree,
+        remote_checksum: str,
+    ) -> LegalDocumentVersion | None:
+        stored_version = legal_document_version_service.get_current_version(document.id)
+        if stored_version is None:
+            return None
+        if existing.pending_adoption:
+            return self._ensure_pending_version(
+                document,
+                stored_version,
+                tree,
+                remote_checksum,
+                existing_pending=existing,
+            )
+        if not existing.future_wording:
+            return None
+        if not self._trees_match(existing, tree):
+            legal_document_version_service.retire_source_eli(existing.id)
+            return self._ensure_pending_version(
+                document,
+                stored_version,
+                tree,
+                remote_checksum,
+                existing_pending=None,
+            )
+        return legal_document_version_service.set_pending_adoption(existing.id, True)
+
+    def _sync_future_wordings(
+        self,
+        document: LegalDocument,
+        *,
+        skip_eli: str | None = None,
+    ) -> None:
+        try:
+            wordings = legal_document_esbirka_opendata_client.fetch_temporal_wordings(
+                year=document.year if document.year is not None else "",
+                number=document.number or "",
+            )
+        except (SafeHttpsError, ValueError, OSError) as exc:
+            logger.info(
+                "Budoucí znění předpisu %s se nepodařilo načíst: %s",
+                legal_document_display_label(document),
+                exc,
+            )
+            return
+
+        futures = legal_document_esbirka_opendata_client.select_future_wordings(
+            wordings,
+            date.today(),
+        )
+        skipped = (skip_eli or "").strip()
+        current = legal_document_version_service.get_current_version(document.id)
+        for wording in futures:
+            if not wording.source_eli or wording.source_eli == skipped:
+                continue
+            try:
+                tree = legal_document_esbirka_opendata_tree_builder.fetch_tree_for_source_eli(
+                    wording.source_eli,
+                )
+            except (SafeHttpsError, ValueError, OSError) as exc:
+                logger.info(
+                    "Budoucí znění %s předpisu %s se nepodařilo sestavit: %s",
+                    wording.source_eli,
+                    legal_document_display_label(document),
+                    exc,
+                )
+                continue
+            self._ensure_future_version(document, tree, current)
+
+    def _ensure_future_version(
+        self,
+        document: LegalDocument,
+        tree: ESbirkaOpenDataParsedTree,
+        current: LegalDocumentVersion | None,
+    ) -> LegalDocumentVersion | None:
+        from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
+
+        checksum = legal_document_esbirka_opendata_client.build_version_checksum(tree.source_eli)
+        existing = legal_document_version_service.find_by_source_eli(document.id, tree.source_eli)
+        if existing is not None:
+            if current is not None and existing.id == current.id:
+                return existing
+            if existing.pending_adoption:
+                return existing
+            if existing.future_wording:
+                if self._trees_match(existing, tree):
+                    return existing
+                legal_document_version_service.retire_source_eli(existing.id)
+            else:
+                return existing
+
+        created = None
+        try:
+            created = legal_document_version_service.create(
+                legal_document_id=document.id,
+                version_name=detected_version_name(tree.version_label),
+                checksum=checksum,
+                source_eli=tree.source_eli,
+                source_url=tree.source_url,
+                effective_from=tree.effective_from,
+                publication_date=tree.effective_from,
+                pending_adoption=False,
+                future_wording=True,
+            )
+            sections = legal_section_service.create_tree_from_parsed(
+                legal_document_id=document.id,
+                legal_document_version_id=created.id,
+                parsed_sections=list(tree.sections),
+            )
+            if not sections:
+                raise ValueError("Nové znění se nepodařilo uložit.")
+        except (ValueError, OSError) as exc:
+            if created is not None:
+                self._discard_incomplete_pending(created)
+            logger.info(
+                "Uložení budoucího znění předpisu %s selhalo: %s",
+                legal_document_display_label(document),
+                exc,
+            )
+            return None
+
+        current_after = legal_document_version_service.get_current_version(document.id)
+        if current is not None and (current_after is None or current_after.id != current.id):
+            self._discard_incomplete_pending(created)
+            return None
+        return created
 
     def _fetch_in_force_tree(
         self,
@@ -473,6 +668,7 @@ class LegalCheckNovelizationService:
     def _discard_incomplete_pending(self, pending: LegalDocumentVersion) -> None:
         pending.source_eli = None
         pending.pending_adoption = True
+        pending.future_wording = False
         pending.active = False
         legal_document_version_service.repository.update(pending)
 

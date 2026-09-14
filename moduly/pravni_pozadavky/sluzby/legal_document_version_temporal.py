@@ -47,7 +47,12 @@ def select_effective_version(
         for version in versions
         if include_pending or not bool(getattr(version, "pending_adoption", False))
     ]
-    identified = [version for version in candidates if is_identified_temporal_version(version)]
+    identified = [
+        version
+        for version in candidates
+        if is_identified_temporal_version(version)
+        and not bool(getattr(version, "future_wording", False))
+    ]
     applicable = [
         version
         for version in identified

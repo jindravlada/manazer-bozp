@@ -1,10 +1,22 @@
 from datetime import date
+from unittest.mock import patch
 
+from moduly.pravni_pozadavky.import_export.legal_document_esbirka_opendata_client import (
+    legal_document_esbirka_opendata_client,
+)
 from moduly.pravni_pozadavky.import_export.legal_document_esbirka_opendata_tree import (
     ESbirkaOpenDataParsedTree,
 )
 from moduly.pravni_pozadavky.parser.legal_document_parser_models import ParsedLegalSection
 from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
+
+
+def patch_no_future_wordings():
+    return patch.object(
+        legal_document_esbirka_opendata_client,
+        "fetch_temporal_wordings",
+        return_value=(),
+    )
 
 
 def parsed_sections_from_version(version_id: int) -> list[ParsedLegalSection]:

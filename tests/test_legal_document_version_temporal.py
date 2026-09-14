@@ -331,6 +331,7 @@ class LegalDocumentVersionTemporalTestCase(unittest.TestCase):
             source_section_ids,
         )
         self.assertIn("source_eli", _table_columns("legal_document_versions"))
+        self.assertIn("future_wording", _table_columns("legal_document_versions"))
         self.assertIn(
             LEGAL_DOCUMENT_VERSION_SOURCE_ELI_UNIQUE_INDEX,
             _table_indexes("legal_document_versions"),
@@ -536,6 +537,45 @@ class LegalDocumentVersionTemporalTestCase(unittest.TestCase):
         assert after is not None
         self.assertEqual(before.id, legacy.id)
         self.assertEqual(after.id, future.id)
+
+    def test_catalog_future_wording_is_not_current_after_effective_from(self) -> None:
+        document = self._create_document()
+        legacy = legal_document_version_service.create(
+            legal_document_id=document.id,
+            version_name="Aktuální znění",
+        )
+        future = legal_document_version_service.create(
+            legal_document_id=document.id,
+            version_name="Znění 2027",
+            source_eli=ELI_2027,
+            effective_from=date(2027, 1, 1),
+            future_wording=True,
+        )
+
+        before = legal_document_version_service.get_effective_version(
+            document.id,
+            AS_OF_BEFORE_2027,
+        )
+        after = legal_document_version_service.get_effective_version(
+            document.id,
+            AS_OF_2027,
+        )
+        current = legal_document_version_service.get_current_version(document.id)
+        assert before is not None
+        assert after is not None
+        assert current is not None
+        self.assertEqual(before.id, legacy.id)
+        self.assertEqual(after.id, legacy.id)
+        self.assertEqual(current.id, legacy.id)
+        self.assertFalse(future.pending_adoption)
+        self.assertEqual(
+            legal_document_version_status_label(
+                future,
+                current_version_id=current.id,
+                as_of=AS_OF_2027,
+            ),
+            VERSION_STATUS_FUTURE,
+        )
 
     def test_opendata_helpers_normalize_eli_and_effective_from(self) -> None:
         self.assertEqual(

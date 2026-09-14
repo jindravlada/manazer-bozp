@@ -33,6 +33,7 @@ with patch.object(Path, "home", return_value=_TMP):
         SECTION_PARAGRAPH,
         SECTION_PART,
         SECTION_SUBSECTION,
+        VERSION_STATUS_FUTURE,
         VERSION_STATUS_IN_USE,
         VERSION_STATUS_PENDING_ADOPTION,
         legal_document_version_status_label,
@@ -41,6 +42,7 @@ with patch.object(Path, "home", return_value=_TMP):
         legal_document_esbirka_client,
     )
     from moduly.pravni_pozadavky.import_export.legal_document_esbirka_opendata_client import (
+        ESbirkaOpenDataTemporalWording,
         legal_document_esbirka_opendata_client,
     )
     from moduly.pravni_pozadavky.import_export.legal_document_esbirka_opendata_tree import (
@@ -70,11 +72,17 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.pravni_pozadavky.sluzby.legal_version_adoption_service import (
         legal_version_adoption_service,
     )
-    from tests.legal_opendata_check_fakes import fake_in_force_tree, parsed_sections_from_version
+    from tests.legal_opendata_check_fakes import (
+        fake_in_force_tree,
+        parsed_sections_from_version,
+        patch_no_future_wordings,
+    )
 
 
 _IN_FORCE = "eli/cz/sb/2006/262/2026-01-01"
 _FUTURE = "eli/cz/sb/2006/262/2027-01-01"
+_FUTURE_2 = "eli/cz/sb/2006/262/2028-01-01"
+_ACT_URL = "https://opendata.eselpoint.gov.cz/esel-esb/eli/cz/sb/2006/262"
 
 
 class LegalCheckOpenDataWorkflowTestCase(unittest.TestCase):
@@ -101,6 +109,9 @@ class LegalCheckOpenDataWorkflowTestCase(unittest.TestCase):
             session.execute(delete(LegalDocumentVersion))
             session.execute(delete(LegalDocument))
             session.commit()
+        no_futures = patch_no_future_wordings()
+        no_futures.start()
+        self.addCleanup(no_futures.stop)
 
     def _legacy_document(self):
         document = legal_document_service.create(
@@ -447,6 +458,227 @@ class LegalCheckOpenDataWorkflowTestCase(unittest.TestCase):
         assert current is not None
         self.assertEqual(current.id, version.id)
         self.assertFalse(current.pending_adoption)
+
+    def _temporal_wording(self, eli: str) -> ESbirkaOpenDataTemporalWording:
+        return ESbirkaOpenDataTemporalWording(
+            source_eli=eli,
+            source_url=_ACT_URL,
+            effective_from=date.fromisoformat(eli.rsplit("/", 1)[-1]),
+            version_label=f"e-Sbírka {eli}",
+        )
+
+    def _patch_futures(self, *trees):
+        wordings = tuple(self._temporal_wording(tree.source_eli) for tree in trees)
+        by_eli = {tree.source_eli: tree for tree in trees}
+
+        def _fetch_tree(source_eli: str):
+            return by_eli[source_eli]
+
+        return (
+            patch.object(
+                legal_document_esbirka_opendata_client,
+                "fetch_temporal_wordings",
+                return_value=wordings,
+            ),
+            patch.object(
+                legal_document_esbirka_opendata_tree_builder,
+                "fetch_tree_for_source_eli",
+                side_effect=_fetch_tree,
+            ),
+        )
+
+    def test_future_versions_are_stored_without_today_change(self) -> None:
+        document, version, _section = self._legacy_document()
+        future_sections = parsed_sections_from_version(version.id)
+        future_sections[0].text = "Budoucí znění 2027"
+        second_sections = parsed_sections_from_version(version.id)
+        second_sections[0].text = "Budoucí znění 2028"
+        future_tree = fake_in_force_tree(_FUTURE, future_sections)
+        second_tree = fake_in_force_tree(_FUTURE_2, second_sections)
+        run = self._begin_run()
+        future_patches = self._patch_futures(future_tree, second_tree)
+        with self._patch_tree(version.id, _IN_FORCE), future_patches[0], future_patches[1]:
+            result = legal_check_novelization_service.check_document(
+                document,
+                check_run_id=run.id,
+            )
+        self.assertEqual(result.status, NOVELIZATION_UNCHANGED)
+        self.assertIsNone(result.change)
+        self.assertEqual(legal_change_service.list_by_document(document.id), [])
+        current = legal_document_version_service.get_current_version(document.id)
+        assert current is not None
+        self.assertEqual(current.id, version.id)
+        versions = legal_document_version_service.list_by_document(document.id)
+        self.assertEqual(len(versions), 3)
+        futures = [item for item in versions if item.future_wording]
+        self.assertEqual({item.source_eli for item in futures}, {_FUTURE, _FUTURE_2})
+        self.assertTrue(all(not item.pending_adoption for item in futures))
+        self.assertEqual(
+            legal_document_version_status_label(futures[0], current_version_id=current.id),
+            VERSION_STATUS_FUTURE,
+        )
+
+    def test_first_check_stores_futures_without_legal_change(self) -> None:
+        document, version, _section = self._legacy_document()
+        future_sections = parsed_sections_from_version(version.id)
+        future_sections[0].text = "Budoucí znění 2027"
+        future_tree = fake_in_force_tree(_FUTURE, future_sections)
+        future_patches = self._patch_futures(future_tree)
+        with self._patch_tree(version.id, _IN_FORCE), future_patches[0], future_patches[1]:
+            result = legal_check_novelization_service.initialize_reference_state(document)
+        self.assertEqual(result.status, NOVELIZATION_UNCHANGED)
+        self.assertIsNone(result.change)
+        self.assertEqual(legal_change_service.list_by_document(document.id), [])
+        current = legal_document_version_service.get_current_version(document.id)
+        assert current is not None
+        self.assertEqual(current.id, version.id)
+        stored = legal_document_version_service.find_by_source_eli(document.id, _FUTURE)
+        assert stored is not None
+        self.assertTrue(stored.future_wording)
+        self.assertFalse(stored.pending_adoption)
+        self.assertEqual(stored.source_eli, _FUTURE)
+        self.assertEqual(stored.effective_from, date(2027, 1, 1))
+
+    def test_repeated_check_does_not_duplicate_future_version(self) -> None:
+        document, version, _section = self._legacy_document()
+        future_sections = parsed_sections_from_version(version.id)
+        future_sections[0].text = "Budoucí znění 2027"
+        future_tree = fake_in_force_tree(_FUTURE, future_sections)
+        run1 = self._begin_run()
+        future_patches = self._patch_futures(future_tree)
+        with self._patch_tree(version.id, _IN_FORCE), future_patches[0], future_patches[1]:
+            first = legal_check_novelization_service.check_document(
+                document,
+                check_run_id=run1.id,
+            )
+        self.assertEqual(first.status, NOVELIZATION_UNCHANGED)
+        legal_check_run_service._mark_completed(run1.id, documents_checked_count=1, changes_found_count=0)
+        run2 = legal_check_run_service._begin_automatic_check(date(2026, 9, 15), date(2026, 9, 16))
+        future_patches = self._patch_futures(future_tree)
+        with self._patch_tree(version.id, _IN_FORCE), future_patches[0], future_patches[1]:
+            second = legal_check_novelization_service.check_document(
+                document,
+                check_run_id=run2.id,
+            )
+        self.assertEqual(second.status, NOVELIZATION_UNCHANGED)
+        versions = [
+            item
+            for item in legal_document_version_service.list_by_document(document.id)
+            if item.source_eli == _FUTURE
+        ]
+        self.assertEqual(len(versions), 1)
+        self.assertTrue(versions[0].future_wording)
+        self.assertFalse(versions[0].pending_adoption)
+
+    def test_future_content_change_does_not_mutate_stored_version(self) -> None:
+        document, version, _section = self._legacy_document()
+        original_sections = parsed_sections_from_version(version.id)
+        original_sections[0].text = "Původní budoucí text"
+        updated_sections = parsed_sections_from_version(version.id)
+        updated_sections[0].text = "Upravené budoucí text"
+        run1 = self._begin_run()
+        first_tree = fake_in_force_tree(_FUTURE, original_sections)
+        future_patches = self._patch_futures(first_tree)
+        with self._patch_tree(version.id, _IN_FORCE), future_patches[0], future_patches[1]:
+            legal_check_novelization_service.check_document(document, check_run_id=run1.id)
+        stored = legal_document_version_service.find_by_source_eli(document.id, _FUTURE)
+        assert stored is not None
+        stored_id = stored.id
+        original_text = legal_section_service.list_by_version(stored_id)[0].text
+        legal_check_run_service._mark_completed(run1.id, documents_checked_count=1, changes_found_count=0)
+        run2 = legal_check_run_service._begin_automatic_check(date(2026, 9, 15), date(2026, 9, 16))
+        updated_tree = fake_in_force_tree(_FUTURE, updated_sections)
+        future_patches = self._patch_futures(updated_tree)
+        with self._patch_tree(version.id, _IN_FORCE), future_patches[0], future_patches[1]:
+            legal_check_novelization_service.check_document(document, check_run_id=run2.id)
+        retired = legal_document_version_service.get_by_id(stored_id)
+        assert retired is not None
+        self.assertFalse(retired.active)
+        self.assertIsNone(retired.source_eli)
+        self.assertEqual(legal_section_service.list_by_version(stored_id)[0].text, original_text)
+        replacement = legal_document_version_service.find_by_source_eli(document.id, _FUTURE)
+        assert replacement is not None
+        self.assertNotEqual(replacement.id, stored_id)
+        self.assertTrue(replacement.future_wording)
+        self.assertEqual(
+            legal_section_service.list_by_version(replacement.id)[0].text,
+            "Upravené budoucí text",
+        )
+        current = legal_document_version_service.get_current_version(document.id)
+        assert current is not None
+        self.assertEqual(current.id, version.id)
+
+    def test_in_force_future_eli_creates_change_and_adopt_reuses_version(self) -> None:
+        document, version, _section = self._legacy_document()
+        future_sections = parsed_sections_from_version(version.id)
+        future_sections[0].text = "Budoucí účinné znění"
+        future_tree = fake_in_force_tree(_FUTURE, future_sections)
+        run1 = self._begin_run()
+        future_patches = self._patch_futures(future_tree)
+        with self._patch_tree(version.id, _IN_FORCE), future_patches[0], future_patches[1]:
+            first = legal_check_novelization_service.check_document(
+                document,
+                check_run_id=run1.id,
+            )
+        self.assertEqual(first.status, NOVELIZATION_UNCHANGED)
+        stored_future = legal_document_version_service.find_by_source_eli(document.id, _FUTURE)
+        assert stored_future is not None
+        future_id = stored_future.id
+        legal_check_run_service._mark_completed(run1.id, documents_checked_count=1, changes_found_count=0)
+
+        class _EffectiveDate(date):
+            @classmethod
+            def today(cls):
+                return date(2027, 1, 1)
+
+        run2 = legal_check_run_service._begin_automatic_check(date(2027, 1, 1), date(2027, 1, 1))
+        with patch(
+            "moduly.pravni_pozadavky.sluzby.legal_document_version_service.date",
+            _EffectiveDate,
+        ), patch(
+            "moduly.pravni_pozadavky.sluzby.legal_check_novelization_service.date",
+            _EffectiveDate,
+        ), patch.object(
+            legal_document_esbirka_opendata_tree_builder,
+            "fetch_in_force_tree",
+            return_value=future_tree,
+        ), patch.object(
+            legal_document_esbirka_opendata_client,
+            "fetch_temporal_wordings",
+            return_value=(self._temporal_wording(_FUTURE),),
+        ):
+            second = legal_check_novelization_service.check_document(
+                document,
+                check_run_id=run2.id,
+            )
+            self.assertEqual(second.status, NOVELIZATION_CHANGED)
+            assert second.change is not None
+            self.assertEqual(second.change.new_legal_document_version_id, future_id)
+            promoted = legal_document_version_service.get_by_id(future_id)
+            assert promoted is not None
+            self.assertTrue(promoted.pending_adoption)
+            current = legal_document_version_service.get_current_version(document.id)
+            assert current is not None
+            self.assertEqual(current.id, version.id)
+
+            adopted = legal_version_adoption_service.adopt_detected_version(second.change.id)
+            self.assertEqual(adopted.adopted_version.id, future_id)
+            self.assertFalse(adopted.adopted_version.pending_adoption)
+            self.assertFalse(adopted.adopted_version.future_wording)
+            current_after = legal_document_version_service.get_current_version(document.id)
+            assert current_after is not None
+            self.assertEqual(current_after.id, future_id)
+            self.assertEqual(
+                len([
+                    item
+                    for item in legal_document_version_service.list_by_document(
+                        document.id,
+                        include_inactive=True,
+                    )
+                    if item.source_eli == _FUTURE
+                ]),
+                1,
+            )
 
 
 if __name__ == "__main__":

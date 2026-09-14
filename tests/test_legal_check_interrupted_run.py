@@ -56,7 +56,11 @@ with patch.object(Path, "home", return_value=_TMP):
         legal_document_version_service,
     )
     from moduly.pravni_pozadavky.sluzby.legal_section_service import legal_section_service
-    from tests.legal_opendata_check_fakes import fake_in_force_tree, parsed_sections_from_version
+    from tests.legal_opendata_check_fakes import (
+        fake_in_force_tree,
+        parsed_sections_from_version,
+        patch_no_future_wordings,
+    )
 
 
 class LegalCheckInterruptedRunTestCase(unittest.TestCase):
@@ -79,6 +83,10 @@ class LegalCheckInterruptedRunTestCase(unittest.TestCase):
             session.execute(delete(LegalDocumentVersion))
             session.execute(delete(LegalDocument))
             session.commit()
+
+        no_futures = patch_no_future_wordings()
+        no_futures.start()
+        self.addCleanup(no_futures.stop)
 
         self.remote_eli = "eli/cz/sb/2021/390/2021-10-11"
         self.old_eli = "eli/cz/sb/2021/390/2020-01-01"

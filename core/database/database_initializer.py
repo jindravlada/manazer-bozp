@@ -3534,6 +3534,8 @@ def _ensure_legal_document_version_columns() -> None:
         _add_column("legal_document_versions", "pending_adoption BOOLEAN DEFAULT 0")
     if "source_eli" not in columns:
         _add_column("legal_document_versions", "source_eli VARCHAR(255)")
+    if "future_wording" not in columns:
+        _add_column("legal_document_versions", "future_wording BOOLEAN DEFAULT 0")
     _ensure_legal_document_version_source_eli_unique_index()
 
 

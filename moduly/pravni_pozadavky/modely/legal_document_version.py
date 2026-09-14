@@ -36,6 +36,7 @@ class LegalDocumentVersion(Base):
     note: Mapped[str] = mapped_column(Text, default="")
 
     pending_adoption: Mapped[bool] = mapped_column(Boolean, default=False)
+    future_wording: Mapped[bool] = mapped_column(Boolean, default=False)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
