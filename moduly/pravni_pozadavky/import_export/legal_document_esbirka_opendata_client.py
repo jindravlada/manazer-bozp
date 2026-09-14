@@ -5,7 +5,7 @@ import logging
 import re
 from dataclasses import dataclass
 from datetime import date
-from typing import Any
+from typing import Any, Sequence
 
 from core.http_safe import SafeHttpsError, safe_https_get
 from moduly.pravni_pozadavky.import_export.legal_document_number import (
@@ -23,6 +23,7 @@ ESBIRKA_LEGACY_CHECKSUM_PREFIX = "esbirka:"
 ESBIRKA_OPENDATA_MAX_RESPONSE_BYTES = 262_144
 _REQUEST_TIMEOUT = 30
 _LAST_WORDING_LOCAL_NAME = "má-poslední-znění"
+_WORDINGS_LOCAL_NAME = "má-znění"
 _ELI_IN_VALUE_RE = re.compile(r"(eli/cz/sb/\d{4}/\d+/\d{4}-\d{2}-\d{2})")
 _WORDING_DATE_RE = re.compile(r"/(\d{4}-\d{2}-\d{2})$")
 
@@ -30,6 +31,14 @@ _WORDING_DATE_RE = re.compile(r"/(\d{4}-\d{2}-\d{2})$")
 @dataclass(frozen=True)
 class ESbirkaOpenDataWording:
     last_wording_eli: str
+    source_url: str
+    effective_from: date | None
+    version_label: str
+
+
+@dataclass(frozen=True)
+class ESbirkaOpenDataTemporalWording:
+    source_eli: str
     source_url: str
     effective_from: date | None
     version_label: str
@@ -49,32 +58,17 @@ class LegalDocumentESbirkaOpenDataClient:
         year: int | str,
         number: str,
     ) -> ESbirkaOpenDataWording:
-        url = self.build_url(year=year, number=number)
-        try:
-            result = safe_https_get(
-                url,
-                allowed_hosts=ESBIRKA_OPENDATA_ALLOWED_HOSTS,
-                timeout=_REQUEST_TIMEOUT,
-                max_bytes=ESBIRKA_OPENDATA_MAX_RESPONSE_BYTES,
-                headers={"Accept": "application/ld+json, application/json"},
-            )
-        except SafeHttpsError as exc:
-            if exc.kind in {"network", "timeout"}:
-                raise ValueError("Internet není dostupný.") from exc
-            raise ValueError(str(exc)) from exc
-
-        if result.status_code == 404:
-            raise ValueError("Předpis nenalezen.")
-        if result.status_code != 200:
-            raise ValueError("Internet není dostupný.")
-
-        try:
-            payload = json.loads(result.body.decode("utf-8"))
-        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-            logger.warning("Neplatné JSON-LD e-Sbírky z %s", result.final_url)
-            raise ValueError("Neočekávaný formát odpovědi.") from exc
-
+        payload, url = self._fetch_act_payload(year=year, number=number)
         return self.extract_latest_wording(payload, source_url=url)
+
+    def fetch_temporal_wordings(
+        self,
+        *,
+        year: int | str,
+        number: str,
+    ) -> tuple[ESbirkaOpenDataTemporalWording, ...]:
+        payload, url = self._fetch_act_payload(year=year, number=number)
+        return self.extract_temporal_wordings(payload, source_url=url)
 
     def extract_latest_wording(
         self,
@@ -93,6 +87,68 @@ class LegalDocumentESbirkaOpenDataClient:
             source_url=source_url,
             effective_from=effective_from,
             version_label=f"e-Sbírka {last_wording_eli}",
+        )
+
+    def extract_temporal_wordings(
+        self,
+        payload: Any,
+        *,
+        source_url: str,
+    ) -> tuple[ESbirkaOpenDataTemporalWording, ...]:
+        record = self._select_act_record(payload)
+        items: list[ESbirkaOpenDataTemporalWording] = []
+        seen: set[str] = set()
+        for raw_value in self._find_wordings_values(record):
+            wording = self._temporal_wording_from_value(raw_value, source_url=source_url)
+            if wording is None or wording.source_eli in seen:
+                continue
+            seen.add(wording.source_eli)
+            items.append(wording)
+        if not items:
+            last_wording = self._temporal_wording_from_value(
+                self._find_last_wording_value(record),
+                source_url=source_url,
+            )
+            if last_wording is not None:
+                items.append(last_wording)
+        if not items:
+            raise ValueError("Neočekávaný formát odpovědi.")
+        return tuple(
+            sorted(
+                items,
+                key=lambda wording: (
+                    wording.effective_from or date.min,
+                    wording.source_eli,
+                ),
+            )
+        )
+
+    def select_in_force_wording(
+        self,
+        wordings: Sequence[ESbirkaOpenDataTemporalWording],
+        on_date: date,
+    ) -> ESbirkaOpenDataTemporalWording | None:
+        applicable = [
+            wording
+            for wording in wordings
+            if wording.effective_from is not None and wording.effective_from <= on_date
+        ]
+        if not applicable:
+            return None
+        return max(
+            applicable,
+            key=lambda wording: (wording.effective_from or date.min, wording.source_eli),
+        )
+
+    def select_future_wordings(
+        self,
+        wordings: Sequence[ESbirkaOpenDataTemporalWording],
+        on_date: date,
+    ) -> tuple[ESbirkaOpenDataTemporalWording, ...]:
+        return tuple(
+            wording
+            for wording in wordings
+            if wording.effective_from is not None and wording.effective_from > on_date
         )
 
     def build_version_checksum(self, last_wording_eli: str) -> str:
@@ -132,20 +188,77 @@ class LegalDocumentESbirkaOpenDataClient:
             return None
         return self._parse_wording_date(normalized)
 
+    def _fetch_act_payload(
+        self,
+        *,
+        year: int | str,
+        number: str,
+    ) -> tuple[Any, str]:
+        url = self.build_url(year=year, number=number)
+        try:
+            result = safe_https_get(
+                url,
+                allowed_hosts=ESBIRKA_OPENDATA_ALLOWED_HOSTS,
+                timeout=_REQUEST_TIMEOUT,
+                max_bytes=ESBIRKA_OPENDATA_MAX_RESPONSE_BYTES,
+                headers={"Accept": "application/ld+json, application/json"},
+            )
+        except SafeHttpsError as exc:
+            if exc.kind in {"network", "timeout"}:
+                raise ValueError("Internet není dostupný.") from exc
+            raise ValueError(str(exc)) from exc
+
+        if result.status_code == 404:
+            raise ValueError("Předpis nenalezen.")
+        if result.status_code != 200:
+            raise ValueError("Internet není dostupný.")
+
+        try:
+            payload = json.loads(result.body.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            logger.warning("Neplatné JSON-LD e-Sbírky z %s", result.final_url)
+            raise ValueError("Neočekávaný formát odpovědi.") from exc
+        return payload, url
+
+    def _temporal_wording_from_value(
+        self,
+        value: Any,
+        *,
+        source_url: str,
+    ) -> ESbirkaOpenDataTemporalWording | None:
+        source_eli = self.normalize_wording_eli(value)
+        if not source_eli:
+            return None
+        effective_from = self._parse_wording_date(source_eli)
+        if effective_from is None:
+            return None
+        return ESbirkaOpenDataTemporalWording(
+            source_eli=source_eli,
+            source_url=source_url,
+            effective_from=effective_from,
+            version_label=f"e-Sbírka {source_eli}",
+        )
+
     def _select_act_record(self, payload: Any) -> dict[str, Any]:
         if isinstance(payload, dict):
             graph = payload.get("@graph")
             if isinstance(graph, list):
                 for item in graph:
-                    if isinstance(item, dict) and self._find_last_wording_value(item) is not None:
+                    if isinstance(item, dict) and self._is_act_record(item):
                         return item
-            if self._find_last_wording_value(payload) is not None or "@id" in payload:
+            if self._is_act_record(payload) or "@id" in payload:
                 return payload
         if isinstance(payload, list):
             for item in payload:
-                if isinstance(item, dict) and self._find_last_wording_value(item) is not None:
+                if isinstance(item, dict) and self._is_act_record(item):
                     return item
         raise ValueError("Neočekávaný formát odpovědi.")
+
+    def _is_act_record(self, record: dict[str, Any]) -> bool:
+        return (
+            self._find_last_wording_value(record) is not None
+            or bool(self._find_wordings_values(record))
+        )
 
     def _find_last_wording_value(self, record: dict[str, Any]) -> Any:
         for key, value in record.items():
@@ -153,10 +266,25 @@ class LegalDocumentESbirkaOpenDataClient:
                 return value
         return None
 
+    def _find_wordings_values(self, record: dict[str, Any]) -> list[Any]:
+        for key, value in record.items():
+            if self._is_wordings_key(str(key)):
+                if value is None:
+                    return []
+                if isinstance(value, list):
+                    return value
+                return [value]
+        return []
+
     def _is_last_wording_key(self, key: str) -> bool:
+        return self._jsonld_local_name(key) == _LAST_WORDING_LOCAL_NAME
+
+    def _is_wordings_key(self, key: str) -> bool:
+        return self._jsonld_local_name(key) == _WORDINGS_LOCAL_NAME
+
+    def _jsonld_local_name(self, key: str) -> str:
         local = key.rsplit("/", 1)[-1]
-        local = local.rsplit(":", 1)[-1]
-        return local == _LAST_WORDING_LOCAL_NAME
+        return local.rsplit(":", 1)[-1]
 
     def _coerce_id_text(self, value: Any) -> str:
         if isinstance(value, list):
