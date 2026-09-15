@@ -1,16 +1,23 @@
-"""Testy pomocného skriptu pro přípravu nové verze aplikace."""
+"""Testy pomocného skriptu pro automatické zvýšení patch verze."""
 
 from __future__ import annotations
 
+import io
+import re
 import shutil
 import tempfile
 import unittest
+from contextlib import redirect_stderr
 from datetime import date
 from pathlib import Path
 from unittest.mock import patch
 
 import tools.release_version as release_module
-from tools.release_version import ReleaseVersionError, prepare_release
+from tools.release_version import (
+    ReleaseVersionError,
+    next_patch_version,
+    prepare_release,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SKELETON_FILES = (
@@ -30,7 +37,7 @@ TRACKED_RELATIVE_PATHS = (
     "installer.iss",
 )
 RELEASE_DATE = date(2026, 9, 15)
-RELEASE_DESCRIPTION = "Opravy exportu auditů a RPP"
+RELEASE_DESCRIPTION = "Úprava Kontrol změn RPP"
 
 
 def _read(path: Path) -> str:
@@ -57,13 +64,13 @@ def _seed_project(destination: Path) -> Path:
     return destination
 
 
-class ReleaseHelper1TestCase(unittest.TestCase):
+class ReleaseHelper2TestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls._live_snapshot = _snapshot_files(REPO_ROOT)
 
     def setUp(self) -> None:
-        self.work_dir = Path(tempfile.mkdtemp(prefix="release-helper-1-"))
+        self.work_dir = Path(tempfile.mkdtemp(prefix="release-helper-2-"))
         self.project = _seed_project(self.work_dir)
         self.original = _snapshot_files(self.project)
 
@@ -75,15 +82,60 @@ class ReleaseHelper1TestCase(unittest.TestCase):
         live = _snapshot_files(REPO_ROOT)
         if live != cls._live_snapshot:
             raise AssertionError(
-                "Testy RELEASE-HELPER-1 nesmí měnit aktuální verzi v pracovním stromu."
+                "Testy RELEASE-HELPER-2 nesmí měnit aktuální verzi v pracovním stromu."
             )
 
-    def _prepare(self, version: str = "4.0.2", description: str = RELEASE_DESCRIPTION):
+    def _set_current_version(self, version: str) -> None:
+        version_path = self.project / "core" / "version.py"
+        source = re.sub(
+            r'^APP_VERSION = "[^"]*"',
+            f'APP_VERSION = "{version}"',
+            _read(version_path),
+            count=1,
+            flags=re.MULTILINE,
+        )
+        version_path.write_text(source, encoding="utf-8")
+        readme_path = self.project / "README.md"
+        readme = re.sub(
+            r"^# Manažer BOZP \d+\.\d+\.\d+",
+            f"# Manažer BOZP {version}",
+            _read(readme_path),
+            count=1,
+            flags=re.MULTILINE,
+        )
+        readme_path.write_text(readme, encoding="utf-8")
+        self.original = _snapshot_files(self.project)
+
+    def _prepare(self, description: str = RELEASE_DESCRIPTION):
         return prepare_release(
-            version,
             description,
             project_root=self.project,
             today=RELEASE_DATE,
+        )
+
+    def _assert_released(self, version: str, description: str) -> None:
+        major, minor, patch = version.split(".")
+        source = _read(self.project / "core" / "version.py")
+        self.assertIn(f'APP_VERSION = "{version}"', source)
+        self.assertEqual(source.count("APP_VERSION = "), 1)
+        self.assertTrue(
+            _read(self.project / "README.md").startswith(f"# Manažer BOZP {version}")
+        )
+        changelog = _read(self.project / "CHANGELOG.md")
+        self.assertIn(f"# Verze {version}", changelog)
+        self.assertIn("Datum vydání:", changelog)
+        self.assertIn("15. 9. 2026", changelog)
+        self.assertIn(description, changelog)
+        info = _read(self.project / "version_info.txt")
+        self.assertIn(f"filevers=({major}, {minor}, {patch}, 0)", info)
+        self.assertIn(f"prodvers=({major}, {minor}, {patch}, 0)", info)
+        self.assertIn(f"StringStruct('FileVersion', '{version}')", info)
+        self.assertIn(f"StringStruct('ProductVersion', '{version}')", info)
+        installer = _read(self.project / "installer.iss")
+        self.assertIn(f'#define MyAppVersion "{version}"', installer)
+        self.assertIn(
+            f"OutputBaseFilename=Manazer_BOZP_{version.replace('.', '_')}_Setup",
+            installer,
         )
 
     def test_bumps_4_0_1_to_4_0_2(self) -> None:
@@ -91,60 +143,47 @@ class ReleaseHelper1TestCase(unittest.TestCase):
         self.assertEqual(result.old_version, "4.0.1")
         self.assertEqual(result.new_version, "4.0.2")
         self.assertTrue(result.changelog_added)
-
-    def test_app_version_is_updated(self) -> None:
-        self._prepare()
-        source = _read(self.project / "core" / "version.py")
-        self.assertIn('APP_VERSION = "4.0.2"', source)
-        self.assertNotIn('APP_VERSION = "4.0.1"', source)
-        self.assertEqual(source.count("APP_VERSION = "), 1)
-
-    def test_readme_contains_new_version(self) -> None:
-        self._prepare()
-        readme = _read(self.project / "README.md")
-        self.assertTrue(readme.startswith("# Manažer BOZP 4.0.2"))
-        self.assertFalse(readme.startswith("# Manažer BOZP 4.0.1"))
-
-    def test_changelog_adds_section_and_keeps_history(self) -> None:
-        changelog_before = _read(self.project / "CHANGELOG.md")
-        self._prepare()
+        self._assert_released("4.0.2", RELEASE_DESCRIPTION)
         changelog = _read(self.project / "CHANGELOG.md")
-        self.assertIn("# Verze 4.0.2", changelog)
-        self.assertIn("15. 9. 2026", changelog)
-        self.assertIn(RELEASE_DESCRIPTION, changelog)
         self.assertIn("# Verze 4.0.1", changelog)
+        self.assertLess(changelog.index("# Verze 4.0.2"), changelog.index("# Verze 4.0.1"))
+
+    def test_bumps_4_0_9_to_4_0_10(self) -> None:
+        self._set_current_version("4.0.9")
+        result = self._prepare("Oprava exportu plánu auditů")
+        self.assertEqual(result.old_version, "4.0.9")
+        self.assertEqual(result.new_version, "4.0.10")
+        self._assert_released("4.0.10", "Oprava exportu plánu auditů")
+
+    def test_bumps_4_2_99_to_4_2_100(self) -> None:
+        self._set_current_version("4.2.99")
+        result = self._prepare("Oprava zobrazení programu externího auditu")
+        self.assertEqual(result.old_version, "4.2.99")
+        self.assertEqual(result.new_version, "4.2.100")
+        self._assert_released("4.2.100", "Oprava zobrazení programu externího auditu")
+
+    def test_automatic_bump_keeps_major_and_minor(self) -> None:
+        self.assertEqual(next_patch_version("4.0.1"), "4.0.2")
+        self.assertEqual(next_patch_version("4.0.9"), "4.0.10")
+        self.assertEqual(next_patch_version("4.2.99"), "4.2.100")
+        for current in ("4.0.1", "4.0.9", "4.2.99"):
+            old_major, old_minor, _old_patch = current.split(".")
+            new_major, new_minor, _new_patch = next_patch_version(current).split(".")
+            self.assertEqual(new_major, old_major)
+            self.assertEqual(new_minor, old_minor)
+
+        result = self._prepare()
+        old_major, old_minor, _old_patch = result.old_version.split(".")
+        new_major, new_minor, _new_patch = result.new_version.split(".")
+        self.assertEqual((old_major, old_minor), ("4", "0"))
+        self.assertEqual((new_major, new_minor), ("4", "0"))
+
+    def test_generated_files_contain_computed_version(self) -> None:
+        self._prepare()
+        self._assert_released("4.0.2", RELEASE_DESCRIPTION)
+        changelog = _read(self.project / "CHANGELOG.md")
         self.assertIn("# Verze 4.0.0", changelog)
         self.assertIn("Manažer BOZP 4.0.1", changelog)
-        self.assertEqual(changelog.count("# Verze 4.0.1"), changelog_before.count("# Verze 4.0.1"))
-        self.assertEqual(changelog.count("# Verze 4.0.0"), changelog_before.count("# Verze 4.0.0"))
-        self.assertLess(
-            changelog.index("# Verze 4.0.2"),
-            changelog.index("# Verze 4.0.1"),
-        )
-
-    def test_version_info_matches_new_version(self) -> None:
-        self._prepare()
-        content = _read(self.project / "version_info.txt")
-        self.assertIn("filevers=(4, 0, 2, 0)", content)
-        self.assertIn("prodvers=(4, 0, 2, 0)", content)
-        self.assertIn("StringStruct('FileVersion', '4.0.2')", content)
-        self.assertIn("StringStruct('ProductVersion', '4.0.2')", content)
-        self.assertNotIn("StringStruct('FileVersion', '4.0.1')", content)
-
-    def test_installer_iss_matches_new_version(self) -> None:
-        self._prepare()
-        content = _read(self.project / "installer.iss")
-        self.assertIn('#define MyAppVersion "4.0.2"', content)
-        self.assertIn("OutputBaseFilename=Manazer_BOZP_4_0_2_Setup", content)
-        self.assertNotIn('#define MyAppVersion "4.0.1"', content)
-        self.assertNotIn("Manazer_BOZP_4_0_1_Setup", content)
-
-    def test_invalid_version_does_not_change_files(self) -> None:
-        for invalid in ("4.0", "abc", "4.0.2-beta", "v4.0.2"):
-            with self.subTest(version=invalid):
-                with self.assertRaises(ReleaseVersionError):
-                    self._prepare(version=invalid)
-                self.assertEqual(_snapshot_files(self.project), self.original)
 
     def test_error_during_operation_restores_files(self) -> None:
         (self.project / "generate_version_info.py").write_text(
@@ -154,6 +193,21 @@ class ReleaseHelper1TestCase(unittest.TestCase):
         with self.assertRaises(ReleaseVersionError) as caught:
             self._prepare()
         self.assertIn("generate_version_info.py", str(caught.exception))
+        self.assertEqual(_snapshot_files(self.project), self.original)
+
+    def test_missing_description_does_not_change_files(self) -> None:
+        for description in ("", "   "):
+            with self.subTest(description=repr(description)):
+                with self.assertRaises(ReleaseVersionError):
+                    self._prepare(description=description)
+                self.assertEqual(_snapshot_files(self.project), self.original)
+
+        parser = release_module.build_parser()
+        with redirect_stderr(io.StringIO()):
+            with self.assertRaises(SystemExit):
+                parser.parse_args([])
+            with self.assertRaises(SystemExit):
+                parser.parse_args(["4.0.2", "popis změny"])
         self.assertEqual(_snapshot_files(self.project), self.original)
 
     def test_helper_does_not_commit_tag_or_build(self) -> None:
@@ -189,19 +243,11 @@ class ReleaseHelper1TestCase(unittest.TestCase):
         self.assertEqual(len(recorded), 2)
         for command in recorded:
             self.assertEqual(command[0], release_module.sys.executable)
-            self.assertTrue(command[1].endswith("generate_version_info.py") or command[1].endswith("generate_installer_iss.py"))
+            self.assertTrue(
+                command[1].endswith("generate_version_info.py")
+                or command[1].endswith("generate_installer_iss.py")
+            )
             self.assertFalse(any(part == "git" for part in command))
-
-    def test_same_version_does_not_duplicate_changelog_section(self) -> None:
-        first = self._prepare()
-        self.assertTrue(first.changelog_added)
-        changelog_after_first = _read(self.project / "CHANGELOG.md")
-        second = self._prepare()
-        self.assertFalse(second.changelog_added)
-        changelog_after_second = _read(self.project / "CHANGELOG.md")
-        self.assertEqual(changelog_after_first.count("# Verze 4.0.2"), 1)
-        self.assertEqual(changelog_after_second, changelog_after_first)
-        self.assertIn('APP_VERSION = "4.0.2"', _read(self.project / "core" / "version.py"))
 
 
 if __name__ == "__main__":

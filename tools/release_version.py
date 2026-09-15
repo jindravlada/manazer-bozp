@@ -2,9 +2,10 @@
 """Připraví pracovní strom na novou verzi aplikace.
 
 Jediný zdroj čísla verze zůstává core/version.py → APP_VERSION.
+Nové číslo se nezadává: helper zachová major i minor a patch zvýší o 1.
 
 Příklad:
-    python tools/release_version.py 4.0.2 "Opravy exportu auditů a RPP"
+    python tools/release_version.py "Úprava Kontrol změn RPP"
 """
 
 from __future__ import annotations
@@ -113,6 +114,15 @@ def _parse_app_version(version_source: str) -> str:
     return current
 
 
+def next_patch_version(current: str) -> str:
+    if not VERSION_PATTERN.fullmatch(current):
+        raise ReleaseVersionError(
+            f"Stávající APP_VERSION nemá formát X.Y.Z: {current!r}"
+        )
+    major, minor, patch = current.split(".")
+    return f"{major}.{minor}.{int(patch) + 1}"
+
+
 def _parse_app_name(version_source: str) -> str:
     match = APP_NAME_ASSIGNMENT.search(version_source)
     if match is None:
@@ -202,16 +212,11 @@ def _run_generator(root: Path, script_name: str) -> None:
 
 def _validate(
     root: Path,
-    new_version: str,
     description: str,
-) -> tuple[Path, Path, Path, Path, Path, str, str]:
-    if not VERSION_PATTERN.fullmatch(new_version):
-        raise ReleaseVersionError(
-            f"Verze {new_version!r} nemá formát X.Y.Z."
-        )
+) -> tuple[Path, Path, Path, Path, Path, str, str, str]:
     normalized_description = description.strip()
     if not normalized_description:
-        raise ReleaseVersionError("Popis release nesmí být prázdný.")
+        raise ReleaseVersionError("Popis změny nesmí být prázdný.")
 
     version_path = root / "core" / "version.py"
     readme_path = root / "README.md"
@@ -227,6 +232,7 @@ def _validate(
 
     version_source = _read_text(version_path)
     old_version = _parse_app_version(version_source)
+    new_version = next_patch_version(old_version)
     app_name = _parse_app_name(version_source)
     readme = _read_text(readme_path)
     changelog = _read_text(changelog_path)
@@ -247,12 +253,12 @@ def _validate(
         version_info_path,
         installer_path,
         old_version,
+        new_version,
         app_name,
     )
 
 
 def prepare_release(
-    new_version: str,
     description: str,
     *,
     project_root: Path | None = None,
@@ -261,6 +267,8 @@ def prepare_release(
     root = (project_root or PROJECT_ROOT).resolve()
     release_date = today or date.today()
     normalized_description = description.strip()
+    if not normalized_description:
+        raise ReleaseVersionError("Popis změny nesmí být prázdný.")
 
     (
         version_path,
@@ -269,8 +277,9 @@ def prepare_release(
         version_info_path,
         installer_path,
         old_version,
+        new_version,
         app_name,
-    ) = _validate(root, new_version, normalized_description)
+    ) = _validate(root, normalized_description)
 
     targets = [
         version_path,
@@ -350,9 +359,10 @@ def format_report(result: ReleasePreparation, *, project_root: Path | None = Non
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Připraví pracovní strom na novou verzi Manažera BOZP.",
+        description=(
+            "Zvýší poslední číslo verze Manažera BOZP o 1 a připraví pracovní strom."
+        ),
     )
-    parser.add_argument("version", help="Nová verze ve formátu X.Y.Z")
     parser.add_argument(
         "description",
         help="Stručný popis změny pro novou sekci CHANGELOG.md",
@@ -364,7 +374,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     try:
-        result = prepare_release(args.version, args.description)
+        result = prepare_release(args.description)
     except ReleaseVersionError as exc:
         print(f"Chyba: {exc}", file=sys.stderr)
         return 1
