@@ -1,3 +1,3 @@
-# Manažer BOZP 4.0.0
+# Manažer BOZP 4.0.1
 
 Projektová dokumentace: [DOKUMENTACE.md](DOKUMENTACE.md)
