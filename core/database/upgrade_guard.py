@@ -882,6 +882,16 @@ def prepare_database_for_startup(
         method_support_integrity_ms,
         snapshot_backfill_ms,
     )
+
+    try:
+        from moduly.pravni_pozadavky.sluzby.legal_opendata_baseline_service import (
+            legal_opendata_baseline_service,
+        )
+
+        legal_opendata_baseline_service.apply_if_needed()
+    except Exception:
+        logger.exception("Open Data baseline RPP se nepodařilo dokončit")
+
     return result
 
 

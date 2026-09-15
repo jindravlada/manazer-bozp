@@ -65,7 +65,7 @@ class LegalChangeTable(QTableWidget):
         self.setColumnCount(8)
         self.setHorizontalHeaderLabels([
             "ID",
-            "Datum zveřejnění",
+            "Datum účinnosti znění",
             "Typ změny",
             "Předpis",
             "Název",

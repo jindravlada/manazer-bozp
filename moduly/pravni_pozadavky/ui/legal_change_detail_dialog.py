@@ -144,7 +144,7 @@ class LegalChangeDetailDialog(QDialog):
             "Typ změny:",
             CHANGE_TYPE_LABELS.get(self.change.change_type, self.change.change_type),
         )
-        self._add_readonly_row(form, "Datum zveřejnění:", _format_date(self.change.published_at))
+        self._add_readonly_row(form, "Datum účinnosti znění:", _format_date(self.change.published_at))
         self.evaluation_status_label = QLabel(_evaluation_status_label(self.change))
         self.evaluation_status_label.setWordWrap(True)
         form.addRow("Vyhodnoceno:", self.evaluation_status_label)

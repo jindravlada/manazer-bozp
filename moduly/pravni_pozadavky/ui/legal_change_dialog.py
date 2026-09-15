@@ -96,7 +96,7 @@ class LegalChangeDialog(QDialog):
         form.addRow("Typ změny:", self.change_type)
         form.addRow("Název:", self.title)
         form.addRow("Popis:", self.description)
-        form.addRow("Datum zveřejnění:", self.published_at)
+        form.addRow("Datum účinnosti znění:", self.published_at)
         form.addRow("Účinnost od:", self.effective_from)
         form.addRow("", self.evaluated)
         form.addRow("Vyhodnotil:", self.evaluated_by)

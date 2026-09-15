@@ -115,7 +115,13 @@ class LegalCheckNovelizationServiceTestCase(unittest.TestCase):
             number="390",
         )
 
-    def _create_document_with_version(self, *, checksum: str = ""):
+    def _create_document_with_version(
+        self,
+        *,
+        checksum: str = "",
+        source_eli: str | None = None,
+        effective_from: date | None = None,
+    ):
         document = legal_document_service.create(
             document_type=DOCUMENT_TYPE_ZAKON,
             title="Nařízení vlády č. 390/2021 Sb.",
@@ -127,6 +133,8 @@ class LegalCheckNovelizationServiceTestCase(unittest.TestCase):
             legal_document_id=document.id,
             version_name="Aktuální znění",
             checksum=checksum,
+            source_eli=source_eli,
+            effective_from=effective_from,
         )
         legal_section_service.create(
             legal_document_id=document.id,
@@ -298,6 +306,8 @@ class LegalCheckNovelizationServiceTestCase(unittest.TestCase):
     def test_run_automatic_check_counts_created_changes(self) -> None:
         document, _version = self._create_document_with_version(
             checksum=self._old_checksum(),
+            source_eli="eli/cz/sb/2021/390/2020-01-01",
+            effective_from=date(2020, 1, 1),
         )
         legal_check_run_service.create(
             title="První kontrola",

@@ -369,7 +369,7 @@ class UxStandardApply008PravniPozadavkyTestCase(unittest.TestCase):
         ]
         self.assertEqual(
             headers,
-            ["ID", "Datum zveřejnění", "Typ změny", "Předpis", "Název", "Vyhodnoceno", "Znění", "Aktivní"],
+            ["ID", "Datum účinnosti znění", "Typ změny", "Předpis", "Název", "Vyhodnoceno", "Znění", "Aktivní"],
         )
         self.assertNotIn("Předpis ID", headers)
         self.assertNotIn("Verze ID", headers)

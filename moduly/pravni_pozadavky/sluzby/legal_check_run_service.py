@@ -182,6 +182,14 @@ class LegalCheckRunService:
             run = self._mark_cancelled(run.id)
             return self._build_result(run, is_first_check=is_first_check)
 
+        from moduly.pravni_pozadavky.sluzby.legal_opendata_baseline_service import (
+            legal_opendata_baseline_service,
+        )
+
+        if legal_opendata_baseline_service.needs_baseline():
+            self._notify_status(on_status, "Připravuji Open Data baseline…")
+            legal_opendata_baseline_service.apply_if_needed()
+
         documents = legal_document_service.list_all(include_inactive=False)
         total = len(documents)
         from moduly.pravni_pozadavky.sluzby.legal_check_novelization_service import (

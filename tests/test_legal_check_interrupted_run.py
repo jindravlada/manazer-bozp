@@ -115,6 +115,8 @@ class LegalCheckInterruptedRunTestCase(unittest.TestCase):
             legal_document_id=document.id,
             version_name="Aktuální znění",
             checksum=self._old_checksum(),
+            source_eli=self.old_eli,
+            effective_from=date(2020, 1, 1),
         )
         legal_section_service.create(
             legal_document_id=document.id,
