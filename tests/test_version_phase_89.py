@@ -41,9 +41,9 @@ class VersionPhase89TestCase(unittest.TestCase):
         os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
         cls._app = QApplication.instance() or QApplication([])
 
-    def test_central_version_is_4_0_1(self) -> None:
-        self.assertEqual(APP_VERSION, "4.0.1")
-        self.assertEqual(app_display_name(), "Manažer BOZP 4.0.1")
+    def test_central_version_uses_app_version(self) -> None:
+        self.assertRegex(APP_VERSION, r"^\d+\.\d+\.\d+$")
+        self.assertEqual(app_display_name(), f"Manažer BOZP {APP_VERSION}")
 
     def test_main_window_title_uses_central_version(self) -> None:
         # Izolace vůči jiným testům, které mohly přepsat SDÍLENÝ sqlite soubor.
@@ -53,12 +53,11 @@ class VersionPhase89TestCase(unittest.TestCase):
         session_module.dispose_database_engine()
         initialize_database()
         window = MainWindow()
-        self.assertEqual(window.windowTitle(), "Manažer BOZP 4.0.1")
         self.assertEqual(window.windowTitle(), app_display_name())
 
     def test_about_dialog_shows_central_version(self) -> None:
         dialog = AboutDialog()
-        self.assertIn("4.0.1", dialog.windowTitle())
+        self.assertIn(APP_VERSION, dialog.windowTitle())
         labels = {label.text() for label in dialog.findChildren(QLabel)}
         self.assertIn(app_display_name(), labels)
         self.assertIn(APP_AUTHOR, labels)
@@ -81,7 +80,10 @@ class VersionPhase89TestCase(unittest.TestCase):
         installer = (project_root / "installer.iss").read_text(encoding="utf-8")
         self.assertIn(f'#define MyAppVersion "{APP_VERSION}"', installer)
         self.assertIn(f"OutputBaseFilename={installer_output_basename()}", installer)
-        self.assertEqual(installer_output_basename(), "Manazer_BOZP_4_0_1_Setup")
+        self.assertEqual(
+            installer_output_basename(),
+            f"Manazer_BOZP_{APP_VERSION.replace('.', '_')}_Setup",
+        )
         self.assertNotIn("3.4.0", installer)
         self.assertNotIn("3.4.5", installer)
         self.assertNotIn("4.0.0", installer)

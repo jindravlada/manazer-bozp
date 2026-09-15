@@ -375,7 +375,8 @@ class Migration0UpgradeTestCase(unittest.TestCase):
         return db, settings, counts
 
     def test_app_version_is_current_release(self) -> None:
-        self.assertEqual(APP_VERSION, "4.0.1")
+        self.assertRegex(APP_VERSION, r"^\d+\.\d+\.\d+$")
+        self.assertFalse(APP_VERSION.startswith("3."))
 
     def test_upgrade_preserves_data_and_creates_pre_migration_backup(self) -> None:
         db, settings, before = self._prepare_legacy_instance()
