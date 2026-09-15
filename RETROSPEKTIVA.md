@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-15 – RPP-CHECK-ACTIVE-2
+
+**Co se povedlo:** Z UI Kontrol změn zmizel sloupec Aktivní a tlačítko Deaktivovat/Obnovit. Historické běhy zůstávají v seznamu; `LegalCheckRun.active` je dál jen interní soft-off.
+
+**Co už bychom dnes udělali jinak:** Soft-off číselníku nekopírovat na historické kontrolní běhy. Uživatel u dokončené kontroly nepotřebuje Deaktivovat.
+
+**Co bylo zbytečně složité:** Nic – stačilo skrýt ovládání a nechat model, filtry i `deactivate()`/`restore()`.
+
+**Jaké nové pravidlo z toho vzniklo:** U Kontrol změn se Aktivovat/Deaktivovat v běžném UI nevytváří. `LegalCheckRun.active` se nemaže a nemigruje; ruční deaktivace poslední dokončené kontroly by ovlivnila období další kontroly.
+
+---
+
 ### 2026-09-11 – AUDIT-EXPORT-FIX-1
 
 **Co se povedlo:** Zápatí exportu Plánu interních auditů už nepoužívá text závěrečné zprávy. Název plánu se bere z `${program_nazev}`.

@@ -106,7 +106,18 @@ class UxStandardApply010TestCase(unittest.TestCase):
         tab = KontrolyLegislativyTab()
         self.assertTrue(tab.perform_check_btn.isEnabled())
         self.assertFalse(tab.open_btn.isEnabled())
-        self.assertFalse(tab.toggle_btn.isEnabled())
+        self.assertFalse(hasattr(tab, "toggle_btn"))
+
+        labels = [btn.text() for btn in tab.findChildren(QPushButton)]
+        self.assertNotIn("Deaktivovat", labels)
+        self.assertNotIn("Obnovit", labels)
+        self.assertNotIn("Aktivovat", labels)
+
+        headers = [
+            tab.table.horizontalHeaderItem(column).text()
+            for column in range(tab.table.columnCount())
+        ]
+        self.assertNotIn("Aktivní", headers)
 
         self.assertEqual(
             tab.table.selectionMode(),
@@ -114,15 +125,15 @@ class UxStandardApply010TestCase(unittest.TestCase):
         )
         self._select_rows(tab.table, [0], tab._refresh_action_buttons)
         self.assertTrue(tab.open_btn.isEnabled())
-        self.assertTrue(tab.toggle_btn.isEnabled())
-        self.assertEqual(tab.toggle_btn.text(), "Deaktivovat")
 
         self._select_rows(tab.table, [0, 1], tab._refresh_action_buttons)
         self.assertFalse(tab.open_btn.isEnabled())
-        self.assertFalse(tab.toggle_btn.isEnabled())
 
         source = inspect.getsource(kontroly_module)
         self.assertNotIn('"Vyberte kontrolu."', source)
+        self.assertNotIn("toggle_selected_run", source)
+        self.assertNotIn("Deaktivovat", source)
+        self.assertNotIn("Obnovit", source)
 
         tab.table.clearSelection()
         tab._refresh_action_buttons()
@@ -130,7 +141,6 @@ class UxStandardApply010TestCase(unittest.TestCase):
             "moduly.pravni_pozadavky.ui.kontroly_legislativy_tab.QMessageBox.information"
         ) as info:
             tab.open_selected_run()
-            tab.toggle_selected_run()
             info.assert_not_called()
 
     def test_kontroly_double_click_and_context_menu(self) -> None:
@@ -176,8 +186,7 @@ class UxStandardApply010TestCase(unittest.TestCase):
         ):
             tab._show_table_context_menu(QPoint(10, 10))
 
-        self.assertEqual(labels[0], "Otevřít")
-        self.assertIn("Deaktivovat", labels)
+        self.assertEqual(labels, ["Otevřít"])
 
     # --- Nastavení číselníky ---
 

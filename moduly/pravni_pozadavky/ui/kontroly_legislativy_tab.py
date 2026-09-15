@@ -46,12 +46,9 @@ class KontrolyLegislativyTab(QWidget):
 
         self.perform_check_btn = QPushButton("Provést kontrolu")
         self.open_btn = QPushButton("Otevřít")
-        self.toggle_btn = QPushButton("Deaktivovat")
         self.open_btn.setEnabled(False)
-        self.toggle_btn.setEnabled(False)
         toolbar.addWidget(self.perform_check_btn)
         toolbar.addWidget(self.open_btn)
-        toolbar.addWidget(self.toggle_btn)
         toolbar.addStretch()
 
         self.table = LegalCheckRunTable()
@@ -63,7 +60,6 @@ class KontrolyLegislativyTab(QWidget):
 
         self.perform_check_btn.clicked.connect(self.perform_check)
         self.open_btn.clicked.connect(self.open_selected_run)
-        self.toggle_btn.clicked.connect(self.toggle_selected_run)
         self.table.doubleClicked.connect(self.open_selected_run)
         self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.table.customContextMenuRequested.connect(self._show_table_context_menu)
@@ -100,14 +96,7 @@ class KontrolyLegislativyTab(QWidget):
         return legal_check_run_service.get_by_id(run_id)
 
     def _refresh_action_buttons(self, *_args) -> None:
-        run = self._selected_run()
-        single = run is not None
-        self.open_btn.setEnabled(single)
-        self.toggle_btn.setEnabled(single)
-        if run is None:
-            self.toggle_btn.setText("Deaktivovat")
-        else:
-            self.toggle_btn.setText("Obnovit" if not run.active else "Deaktivovat")
+        self.open_btn.setEnabled(self._selected_run() is not None)
 
     def _update_action_buttons(self) -> None:
         # Kompatibilita se staršími voláními / testy.
@@ -127,8 +116,6 @@ class KontrolyLegislativyTab(QWidget):
         menu = QMenu(self)
         open_action = menu.addAction("Otevřít", self.open_selected_run)
         open_action.setEnabled(single)
-        toggle_action = menu.addAction(self.toggle_btn.text(), self.toggle_selected_run)
-        toggle_action.setEnabled(single)
         menu.exec(self.table.viewport().mapToGlobal(position))
 
     def perform_check(self) -> None:
@@ -193,25 +180,4 @@ class KontrolyLegislativyTab(QWidget):
         except ValueError as exc:
             QMessageBox.warning(self, "Kontroly změn", str(exc))
             return
-        self.refresh()
-
-    def toggle_selected_run(self) -> None:
-        run = self._selected_run()
-        if run is None:
-            return
-
-        if run.active:
-            answer = QMessageBox.question(
-                self,
-                "Deaktivovat kontrolu",
-                "Opravdu deaktivovat vybranou kontrolu?",
-                QMessageBox.Yes | QMessageBox.No,
-                QMessageBox.No,
-            )
-            if answer == QMessageBox.Yes:
-                legal_check_run_service.deactivate(run.id)
-                self.refresh()
-            return
-
-        legal_check_run_service.restore(run.id)
         self.refresh()

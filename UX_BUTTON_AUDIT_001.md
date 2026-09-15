@@ -396,7 +396,8 @@ Roční plán: „Vyberte prověrku.“
 |---|---|---|---|---|---|---|---|
 | Provést kontrolu | `perform_check_btn` | 0 | ne | — | ne | ne | ne |
 | Otevřít | `open_btn` | 1 | ano | — | ano | ano | ne |
-| Deaktivovat ↔ Obnovit | `toggle_btn` | 1 | ano | **dyn `setText`** | ano | ne | ne |
+
+`LegalCheckRun.active` se v tomto UI neovládá (RPP-CHECK-ACTIVE-2).
 
 ### 10.4 Zjištěné změny (`zmeny_legislativy_tab.py`)
 
@@ -529,7 +530,7 @@ Společný vzor číselníků (po APPLY-010):
 | Odebrat | Šablony, přílohy, poznámky, knowledge |
 | Aktivovat / Deaktivovat | Nastavení, Rizika, Koordinace (+ nested) |
 | Archivovat / Obnovit | Právní procesy (dyn); Přezkoumání (2 tlačítka) |
-| Deaktivovat / Obnovit | Právní předpisy/změny/kontroly + editor subzáložky (dyn) |
+| Deaktivovat / Obnovit | Právní předpisy/změny + editor subzáložky (dyn); **ne** Kontroly změn |
 | Splněno / Vrátit do aktivních / Zrušit / netrvá | Úkoly (legacy) |
 | Označit jako vyhodnocené | Zjištěné změny |
 | Označit jako zkontrolované | Kvalita dat / podobnosti |
@@ -545,7 +546,7 @@ Společný vzor číselníků (po APPLY-010):
 | Varianta | Kde | Popis |
 |---|---|---|
 | **Dvě samostatná** Aktivovat + Deaktivovat | Nastavení, Identifikace, Katalog, Koordinace (+ většina nested tabů), hazard measures/photos/inventory | Enable podle `active` |
-| **Dyn `setText`** Deaktivovat ↔ Obnovit | Předpisy, Kontroly změn, Změny; sections/versions/sanctions; EntityLinks | Jedno tlačítko |
+| **Dyn `setText`** Deaktivovat ↔ Obnovit | Předpisy, Změny; sections/versions/sanctions; EntityLinks | Jedno tlačítko |
 | **Dyn `setText`** Archivovat ↔ Obnovit | Řídicí procesy | Jedno tlačítko |
 | **Dvě samostatná** Archivovat + Obnovit | Revize posouzení rizik | Podle archived |
 | **Dvě samostatná** Deaktivovat + Obnovit | Audity knowledge reference photos | |
@@ -558,7 +559,7 @@ Společný vzor číselníků (po APPLY-010):
 ### C. Kombinovaná / dynamická stavová tlačítka (seznam)
 
 1. Právní – `archive_btn` (Archivovat/Obnovit)  
-2. Právní – `toggle_btn` předpisy / kontroly / změny  
+2. Právní – `toggle_btn` předpisy / změny (ne Kontroly změn)  
 3. Právní editor – sections / versions / sanctions toggles  
 4. `EntityLinksWidget.toggle_btn`  
 5. Prověrky knowledge – Aktivní / neaktivní  

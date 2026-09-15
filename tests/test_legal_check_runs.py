@@ -217,6 +217,48 @@ class LegalCheckRunServiceTestCase(unittest.TestCase):
         assert last_completed is not None
         self.assertEqual(last_completed.id, newer.id)
 
+    def test_newer_completed_run_does_not_deactivate_older(self) -> None:
+        older = self._create_run(title="Starší dokončená")
+        legal_check_run_service.complete_run(older.id)
+        newer = self._create_run(
+            title="Novější dokončená",
+            period_from=date(2024, 7, 1),
+            period_to=date(2024, 9, 30),
+        )
+        legal_check_run_service.complete_run(newer.id)
+
+        older = legal_check_run_service.get_by_id(older.id)
+        newer = legal_check_run_service.get_by_id(newer.id)
+        assert older is not None and newer is not None
+        self.assertTrue(older.active)
+        self.assertTrue(newer.active)
+        last_completed = legal_check_run_service.get_last_completed_run()
+        assert last_completed is not None
+        self.assertEqual(last_completed.id, newer.id)
+        self.assertFalse(legal_check_run_service.is_first_automatic_check())
+
+    def test_get_last_completed_skips_inactive_completed_run(self) -> None:
+        older = self._create_run(title="Starší aktivní")
+        legal_check_run_service.complete_run(older.id)
+        newer = self._create_run(
+            title="Novější deaktivovaná",
+            period_from=date(2024, 7, 1),
+            period_to=date(2024, 9, 30),
+        )
+        legal_check_run_service.complete_run(newer.id)
+        legal_check_run_service.deactivate(newer.id)
+
+        last_completed = legal_check_run_service.get_last_completed_run()
+        assert last_completed is not None
+        self.assertEqual(last_completed.id, older.id)
+        self.assertFalse(legal_check_run_service.is_first_automatic_check())
+
+    def test_active_field_remains_on_model_with_default_true(self) -> None:
+        from moduly.pravni_pozadavky.modely.legal_check_run import LegalCheckRun
+
+        column = LegalCheckRun.__table__.c.active
+        self.assertTrue(column.default.arg)
+
     def test_get_last_completed_ignores_cancelled_and_error(self) -> None:
         completed = self._create_run(title="Dokončená")
         legal_check_run_service.complete_run(completed.id)

@@ -1,13 +1,11 @@
 from datetime import date, datetime
 
-from PySide6.QtGui import QColor, QBrush
 from PySide6.QtWidgets import QHeaderView, QTableWidget
 
 from core.widgets.typed_table_sort import (
     create_typed_item,
     enable_typed_sorting,
     sorting_paused,
-    typed_bool,
     typed_date,
     typed_datetime,
     typed_empty,
@@ -60,7 +58,7 @@ class LegalCheckRunTable(QTableWidget):
     def __init__(self):
         super().__init__()
 
-        self.setColumnCount(7)
+        self.setColumnCount(6)
         self.setHorizontalHeaderLabels([
             "ID",
             "Název",
@@ -68,7 +66,6 @@ class LegalCheckRunTable(QTableWidget):
             "Období do",
             "Datum kontroly",
             "Stav",
-            "Aktivní",
         ])
 
         self.setColumnHidden(0, True)
@@ -84,13 +81,12 @@ class LegalCheckRunTable(QTableWidget):
         header = self.horizontalHeader()
         header.setStretchLastSection(False)
         header.setSectionResizeMode(1, QHeaderView.Stretch)
-        for column in (2, 3, 4, 5, 6):
+        for column in (2, 3, 4, 5):
             header.setSectionResizeMode(column, QHeaderView.Fixed)
         self.setColumnWidth(2, 100)
         self.setColumnWidth(3, 100)
         self.setColumnWidth(4, 120)
         self.setColumnWidth(5, 110)
-        self.setColumnWidth(6, 80)
 
         enable_typed_sorting(self)
 
@@ -147,22 +143,6 @@ class LegalCheckRunTable(QTableWidget):
                         stable_id=record_id,
                     ),
                 )
-                self.setItem(
-                    row,
-                    6,
-                    create_typed_item(
-                        "Ano" if run.active else "Ne",
-                        typed_bool(run.active),
-                        stable_id=record_id,
-                    ),
-                )
-
-                if not run.active:
-                    brush = QBrush(QColor("#f0f0f0"))
-                    for column in range(self.columnCount()):
-                        item = self.item(row, column)
-                        if item is not None:
-                            item.setBackground(brush)
 
     def selected_run_id(self) -> int | None:
         selected = self.selectionModel().selectedRows()

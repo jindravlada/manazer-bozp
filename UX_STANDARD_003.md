@@ -71,7 +71,7 @@ Vyžaduje právě jeden výběr + stav záznamu.
 |---|---|
 | Aktivovat, Deaktivovat | Nastavení, Rizika, Koordinace |
 | Archivovat, Obnovit | Revize posouzení rizik; Řídicí procesy (dnes dyn) |
-| Deaktivovat ↔ Obnovit (dyn) | Právní předpisy / kontroly / změny |
+| Deaktivovat ↔ Obnovit (dyn) | Právní předpisy / zjištěné změny |
 | Splněno, Vrátit do aktivních, Zrušit / netrvá | Úkoly (legacy) |
 | Provést revizi | Revize posouzení rizik |
 | Označit jako vyhodnocené | Zjištěné změny |
@@ -308,13 +308,16 @@ Dočasně povolené výjimky (dokud modul neprojde APPLY STANDARD 003):
 | Místo | Současný vzor | Cíl při APPLY |
 |---|---|---|
 | Právní – Řídicí procesy | Archivovat↔Obnovit | dvě tlačítka Archivovat + Obnovit |
-| Právní – Předpisy / Kontroly / Změny | Deaktivovat↔Obnovit | dvě tlačítka Deaktivovat + **Aktivovat** *(nebo Obnovit, pokud workflow trvá na Obnovit – rozhodnout v APPLY Právní)* |
+| Právní – Předpisy / Zjištěné změny | Deaktivovat↔Obnovit | dvě tlačítka Deaktivovat + **Aktivovat** *(nebo Obnovit, pokud workflow trvá na Obnovit – rozhodnout v APPLY Právní)* |
 | EntityLinksWidget, legal sections/versions/sanctions | dyn | stejné jako nadřazený vzor číselníku |
 | Legacy `TableToolbar` | Aktivovat / Deaktivovat | nepoužívat |
 
 Doporučení pro Právní při APPLY: sjednotit na **Aktivovat / Deaktivovat**
-u předpisů a běhů (stejný význam jako Nastavení), a **Archivovat / Obnovit**
+u předpisů a zjištěných změn (stejný význam jako Nastavení), a **Archivovat / Obnovit**
 u řídicích procesů (archivace procesu).
+**Kontroly změn** toto ovládání nemají: `LegalCheckRun.active` je interní
+historický soft-off, v běžném UI se nezobrazuje ani neovládá
+(RPP-CHECK-ACTIVE-2).
 
 ### 6.4 Povolené dynamické tlačítko (trvalé výjimky)
 
@@ -524,10 +527,14 @@ Současný kód: jedno dyn Archivovat/Obnovit – výjimka § 6.3 do APPLY.
 ### Právní požadavky – Kontroly změn *(cílový stav)*
 
 ```text
-[Provést kontrolu] | [Otevřít*] | [Aktivovat] [Deaktivovat]
+[Provést kontrolu] | [Otevřít*]
 ```
 
 \*Do rozhodnutí § 5.3: pokud editor běhu = editace, přejmenovat na **Upravit**.
+
+Historické kontroly se zobrazují jako běžná historie. Sloupec **Aktivní**
+ani tlačítka **Aktivovat** / **Deaktivovat** / **Obnovit** se v tomto
+seznamu nevytvářejí (`LegalCheckRun.active` zůstává jen interně).
 
 ### Právní požadavky – Zjištěné změny *(cílový stav)*
 
