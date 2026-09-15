@@ -37,26 +37,40 @@ class AutomaticCheckRunResult:
 
 def format_automatic_check_user_message(result: AutomaticCheckRunResult) -> str:
     if result.failed_count > 0 and result.documents_checked_count == 0:
-        return "Kontrolu právních předpisů se nepodařilo provést."
-    if result.failed_count > 0:
-        return (
+        message = "Kontrolu právních předpisů se nepodařilo provést."
+    elif result.failed_count > 0:
+        message = (
             "Kontrolu se nepodařilo dokončit úplně.\n"
             f"Zkontrolováno: {result.documents_checked_count} z {result.documents_total_count}.\n"
             f"Nepodařilo se ověřit: {result.failed_count}.\n"
             f"Nalezené změny: {result.changes_count}."
         )
-    if result.is_first_check:
-        return (
+    elif result.is_first_check:
+        message = (
             "První kontrola legislativy byla dokončena.\n\n"
             f"Kontrolováno předpisů: {result.documents_checked_count}\n\n"
             "Byl vytvořen výchozí referenční stav pro sledování budoucích změn.\n\n"
             "Budoucí kontroly již budou vyhledávat pouze skutečné změny legislativy."
         )
-    return (
-        "Kontrola změn dokončena.\n"
-        f"Kontrolováno předpisů: {result.documents_checked_count}.\n"
-        f"Nalezené změny: {result.changes_count}."
-    )
+    else:
+        message = (
+            "Kontrola změn dokončena.\n"
+            f"Kontrolováno předpisů: {result.documents_checked_count}.\n"
+            f"Nalezené změny: {result.changes_count}."
+        )
+    detail = _failed_note_detail(result)
+    if result.failed_count > 0 and detail:
+        return f"{message}\n\n{detail}"
+    return message
+
+
+def _failed_note_detail(result: AutomaticCheckRunResult) -> str:
+    note = (result.run.note or "").strip()
+    marker = "Nepodařilo se ověřit:"
+    index = note.find(marker)
+    if index < 0:
+        return ""
+    return note[index:].strip()
 
 
 class LegalCheckRunService:
@@ -130,114 +144,142 @@ class LegalCheckRunService:
         failed_items: list[str] = []
         checked_ok = 0
         try:
-            self._notify_status(on_status, "Připravuji kontrolu…")
-            if self._check_cancelled(is_cancelled):
-                run = self._mark_cancelled(run.id)
-                return self._build_result(run, is_first_check=is_first_check)
-
-            documents = legal_document_service.list_all(include_inactive=False)
-            total = len(documents)
-            from moduly.pravni_pozadavky.sluzby.legal_check_novelization_service import (
-                NOVELIZATION_FAILED,
-                legal_check_novelization_service,
-            )
-            from moduly.pravni_pozadavky.sluzby.legal_document_version_service import (
-                legal_document_version_service,
+            from moduly.pravni_pozadavky.import_export.legal_document_esbirka_opendata_client import (
+                open_data_http_session,
             )
 
-            for index, document in enumerate(documents, start=1):
-                if self._check_cancelled(is_cancelled):
-                    run = self._mark_cancelled(run.id)
-                    return self._build_result(run, is_first_check=is_first_check)
-                label = legal_document_display_label(document)
-                self._notify_progress(on_progress, index, total, label)
-                if is_first_check:
-                    outcome = legal_check_novelization_service.initialize_reference_state(
-                        document,
-                    )
-                else:
-                    outcome = legal_check_novelization_service.check_document(
-                        document,
-                        check_run_id=run.id,
-                    )
-                if outcome.status == NOVELIZATION_FAILED:
-                    failed_items.append(
-                        f"- {outcome.document_label or label} — {outcome.error or 'ověření se nezdařilo.'}"
-                    )
-                    continue
-                checked_ok += 1
-                if (
-                    is_first_check
-                    and outcome.stored_version_id is not None
-                    and outcome.reference_checksum
-                ):
-                    deferred_references.append(
-                        (
-                            outcome.stored_version_id,
-                            outcome.reference_checksum,
-                            outcome.source_eli or "",
-                            outcome.effective_from,
-                            outcome.source_url or "",
-                        ),
-                    )
-
-            if self._check_cancelled(is_cancelled):
-                run = self._mark_cancelled(run.id)
-                return self._build_result(run, is_first_check=is_first_check)
-
-            if is_first_check:
-                changes_count = 0
-                for version_id, checksum, source_eli, effective_from, source_url in deferred_references:
-                    legal_document_version_service.apply_official_wording_identifiers(
-                        version_id,
-                        source_eli=source_eli,
-                        checksum=checksum,
-                        effective_from=effective_from,
-                        source_url=source_url,
-                    )
-            else:
-                from moduly.pravni_pozadavky.sluzby.legal_change_service import legal_change_service
-
-                changes_count = len(
-                    legal_change_service.list_by_check_run(run.id, include_inactive=False),
-                )
-
-            if failed_items:
-                failure_note = "Nepodařilo se ověřit:\n" + "\n".join(failed_items)
-                self.append_note(run.id, failure_note)
-
-            if failed_items and checked_ok == 0:
-                run = self._mark_error(
-                    run.id,
-                    "Kontrolu právních předpisů se nepodařilo provést.",
-                )
-                assert run is not None
-                run.documents_checked_count = 0
-                run.changes_found_count = 0
-                run = self.repository.update(run)
-                return self._build_result(
+            with open_data_http_session():
+                return self._execute_automatic_check(
                     run,
                     is_first_check=is_first_check,
-                    failed_count=len(failed_items),
-                    documents_total_count=total,
+                    deferred_references=deferred_references,
+                    failed_items=failed_items,
+                    checked_ok=checked_ok,
+                    on_status=on_status,
+                    on_progress=on_progress,
+                    is_cancelled=is_cancelled,
+                )
+        except ValueError:
+            raise
+        except Exception as exc:
+            self._mark_error(run.id, str(exc))
+            raise
+
+    def _execute_automatic_check(
+        self,
+        run: LegalCheckRun,
+        *,
+        is_first_check: bool,
+        deferred_references: list[tuple[int, str, str, date | None, str]],
+        failed_items: list[str],
+        checked_ok: int,
+        on_status: CheckStatusCallback | None,
+        on_progress: CheckProgressCallback | None,
+        is_cancelled: CancelCheckCallback | None,
+    ) -> AutomaticCheckRunResult:
+        self._notify_status(on_status, "Připravuji kontrolu…")
+        if self._check_cancelled(is_cancelled):
+            run = self._mark_cancelled(run.id)
+            return self._build_result(run, is_first_check=is_first_check)
+
+        documents = legal_document_service.list_all(include_inactive=False)
+        total = len(documents)
+        from moduly.pravni_pozadavky.sluzby.legal_check_novelization_service import (
+            NOVELIZATION_FAILED,
+            legal_check_novelization_service,
+        )
+        from moduly.pravni_pozadavky.sluzby.legal_document_version_service import (
+            legal_document_version_service,
+        )
+
+        for index, document in enumerate(documents, start=1):
+            if self._check_cancelled(is_cancelled):
+                run = self._mark_cancelled(run.id)
+                return self._build_result(run, is_first_check=is_first_check)
+            label = legal_document_display_label(document)
+            self._notify_progress(on_progress, index, total, label)
+            if is_first_check:
+                outcome = legal_check_novelization_service.initialize_reference_state(
+                    document,
+                )
+            else:
+                outcome = legal_check_novelization_service.check_document(
+                    document,
+                    check_run_id=run.id,
+                )
+            if outcome.status == NOVELIZATION_FAILED:
+                failed_items.append(
+                    f"- {outcome.document_label or label} — {outcome.error or 'ověření se nezdařilo.'}"
+                )
+                continue
+            checked_ok += 1
+            if (
+                is_first_check
+                and outcome.stored_version_id is not None
+                and outcome.reference_checksum
+            ):
+                deferred_references.append(
+                    (
+                        outcome.stored_version_id,
+                        outcome.reference_checksum,
+                        outcome.source_eli or "",
+                        outcome.effective_from,
+                        outcome.source_url or "",
+                    ),
                 )
 
-            run = self._mark_completed(
-                run.id,
-                documents_checked_count=checked_ok,
-                changes_found_count=changes_count,
+        if self._check_cancelled(is_cancelled):
+            run = self._mark_cancelled(run.id)
+            return self._build_result(run, is_first_check=is_first_check)
+
+        if is_first_check:
+            changes_count = 0
+            for version_id, checksum, source_eli, effective_from, source_url in deferred_references:
+                legal_document_version_service.apply_official_wording_identifiers(
+                    version_id,
+                    source_eli=source_eli,
+                    checksum=checksum,
+                    effective_from=effective_from,
+                    source_url=source_url,
+                )
+        else:
+            from moduly.pravni_pozadavky.sluzby.legal_change_service import legal_change_service
+
+            changes_count = len(
+                legal_change_service.list_by_check_run(run.id, include_inactive=False),
             )
+
+        if failed_items:
+            failure_note = "Nepodařilo se ověřit:\n" + "\n".join(failed_items)
+            self.append_note(run.id, failure_note)
+
+        if failed_items and checked_ok == 0:
+            run = self._mark_error(
+                run.id,
+                "Kontrolu právních předpisů se nepodařilo provést.",
+            )
+            assert run is not None
+            run.documents_checked_count = 0
+            run.changes_found_count = 0
+            run = self.repository.update(run)
             return self._build_result(
                 run,
                 is_first_check=is_first_check,
                 failed_count=len(failed_items),
                 documents_total_count=total,
             )
-        except ValueError:
-            raise
-        except Exception as exc:
-            self._mark_error(run.id, str(exc))
-            raise
+
+        run = self._mark_completed(
+            run.id,
+            documents_checked_count=checked_ok,
+            changes_found_count=changes_count,
+        )
+        return self._build_result(
+            run,
+            is_first_check=is_first_check,
+            failed_count=len(failed_items),
+            documents_total_count=total,
+        )
 
     def _begin_automatic_check(self, period_from: date, period_to: date) -> LegalCheckRun:
         now = datetime.now()

@@ -459,10 +459,12 @@ class LegalCheckESbirkaOpenDataTestCase(unittest.TestCase):
         self.assertEqual(result.run.status, CHECK_RUN_ERROR)
         self.assertEqual(result.failed_count, 1)
         self.assertEqual(result.documents_checked_count, 0)
-        self.assertEqual(
-            format_automatic_check_user_message(result),
-            "Kontrolu právních předpisů se nepodařilo provést.",
+        message = format_automatic_check_user_message(result)
+        self.assertTrue(
+            message.startswith("Kontrolu právních předpisů se nepodařilo provést.")
         )
+        self.assertIn("Nepodařilo se ověřit", message)
+        self.assertIn("Internet není dostupný.", message)
 
     def test_n_redirect_outside_allowlist_is_rejected(self) -> None:
         from core.http_safe import safe_https_get

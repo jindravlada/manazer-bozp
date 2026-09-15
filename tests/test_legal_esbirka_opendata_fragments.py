@@ -211,10 +211,10 @@ class LegalESbirkaOpenDataFragmentsTestCase(unittest.TestCase):
 
     def test_j_network_timeout_too_large_and_invalid_json_fail(self) -> None:
         cases = [
-            (SafeHttpsError("Služba není dostupná.", kind="network"), "Internet není dostupný."),
-            (SafeHttpsError("Vypršel časový limit spojení.", kind="timeout"), "Internet není dostupný."),
-            (SafeHttpsError("Odpověď je příliš velká.", kind="too_large"), "Odpověď je příliš velká."),
-            (SafeHttpsError("Neplatná adresa služby.", kind="invalid_url"), "Neplatná adresa služby."),
+            (SafeHttpsError("Služba není dostupná.", kind="network"), r"kind=network.*endpoint=wording"),
+            (SafeHttpsError("Vypršel časový limit spojení.", kind="timeout"), r"kind=timeout.*endpoint=wording"),
+            (SafeHttpsError("Odpověď je příliš velká.", kind="too_large"), r"kind=too_large.*endpoint=wording"),
+            (SafeHttpsError("Neplatná adresa služby.", kind="invalid_url"), r"kind=invalid_url.*endpoint=wording"),
         ]
         for error, message in cases:
             with self.subTest(kind=error.kind):
@@ -284,6 +284,8 @@ class LegalESbirkaOpenDataFragmentsTestCase(unittest.TestCase):
             )
         except ValueError as exc:
             message = str(exc)
+            if "kind=network" in message or "kind=timeout" in message or "kind=http_status" in message:
+                self.skipTest(message)
             if "Internet" in message or "dostupn" in message:
                 self.skipTest(message)
             raise

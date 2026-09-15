@@ -12,6 +12,7 @@ from moduly.pravni_pozadavky.constants import (
 )
 from moduly.pravni_pozadavky.import_export.legal_document_esbirka_opendata_client import (
     ESbirkaOpenDataWording,
+    format_opendata_fetch_error,
     legal_document_esbirka_opendata_client,
 )
 from moduly.pravni_pozadavky.import_export.legal_document_esbirka_opendata_tree import (
@@ -448,21 +449,30 @@ class LegalCheckNovelizationService:
             logger.info("Kontrola předpisu %s selhala: %s", label, exc)
             return NovelizationCheckResult(
                 status=NOVELIZATION_FAILED,
-                error=str(exc) or "Předpis se nepodařilo ověřit.",
+                error=format_opendata_fetch_error(
+                    kind=exc.kind,
+                    endpoint="-",
+                    status_code=exc.status_code,
+                    detail=str(exc),
+                ),
                 document_label=label,
             )
         except ValueError as exc:
             logger.info("Kontrola předpisu %s selhala: %s", label, exc)
             return NovelizationCheckResult(
                 status=NOVELIZATION_FAILED,
-                error=str(exc) or "Předpis se nepodařilo ověřit.",
+                error=str(exc) or "ověření se nezdařilo.",
                 document_label=label,
             )
         except OSError as exc:
             logger.warning("Síťová chyba při kontrole předpisu %s: %s", label, exc)
             return NovelizationCheckResult(
                 status=NOVELIZATION_FAILED,
-                error="Internet není dostupný.",
+                error=format_opendata_fetch_error(
+                    kind="network",
+                    endpoint="-",
+                    detail=str(exc) or "síťová chyba",
+                ),
                 document_label=label,
             )
 

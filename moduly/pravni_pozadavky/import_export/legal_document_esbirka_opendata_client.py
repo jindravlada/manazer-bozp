@@ -3,10 +3,14 @@ from __future__ import annotations
 import json
 import logging
 import re
+import time
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import date
-from typing import Any, Sequence
+from typing import Any, Iterator, Sequence
 from urllib.parse import urlencode, urlparse
+
+import requests
 
 from core.http_safe import SafeHttpsError, safe_https_get
 from moduly.pravni_pozadavky.import_export.legal_document_number import (
@@ -27,6 +31,7 @@ ESBIRKA_OPENDATA_WORDING_MAX_RESPONSE_BYTES = 1_048_576
 # SPARQL vrátí texty všech fragmentů znění v jedné odpovědi (~2 MiB u 262/2006).
 ESBIRKA_OPENDATA_SPARQL_URL = f"https://{ESBIRKA_OPENDATA_HOST}/sparql"
 ESBIRKA_OPENDATA_SPARQL_MAX_RESPONSE_BYTES = 8_388_608
+ESBIRKA_OPENDATA_HTTP_MAX_RETRIES = 3
 _SPARQL_TIMEOUT = 60
 _REQUEST_TIMEOUT = 30
 _PRED_HAS_FRAGMENT = (
@@ -102,7 +107,44 @@ class ESbirkaOpenDataFragmentContent:
     text: str
 
 
+def classify_opendata_endpoint(url: str) -> str:
+    parsed = urlparse(str(url or "").strip())
+    path = (parsed.path or "").rstrip("/")
+    if path.endswith("/sparql"):
+        return "sparql"
+    parts = [item for item in path.split("/") if item]
+    if len(parts) >= 7:
+        return "wording"
+    return "act"
+
+
+def format_opendata_fetch_error(
+    *,
+    kind: str,
+    endpoint: str,
+    status_code: int | None = None,
+    detail: str = "",
+) -> str:
+    status = "-" if status_code is None else str(int(status_code))
+    text = f"kind={kind} status={status} endpoint={endpoint}"
+    extra = (detail or "").strip()
+    if extra:
+        text = f"{text} — {extra}"
+    return text
+
+
 class LegalDocumentESbirkaOpenDataClient:
+    def __init__(self) -> None:
+        self._http_session: requests.Session | None = None
+        self._sleep = time.sleep
+
+    @property
+    def http_session(self) -> requests.Session | None:
+        return self._http_session
+
+    def bind_http_session(self, session: requests.Session | None) -> None:
+        self._http_session = session
+
     def build_url(self, *, year: int | str, number: str) -> str:
         normalized_number, normalized_year = normalize_legal_act_number_and_year(
             number,
@@ -420,31 +462,67 @@ class LegalDocumentESbirkaOpenDataClient:
         max_bytes: int,
         timeout: float | None = None,
     ) -> tuple[Any, str]:
+        endpoint = classify_opendata_endpoint(url)
         try:
             result = safe_https_get(
                 url,
                 allowed_hosts=ESBIRKA_OPENDATA_ALLOWED_HOSTS,
                 timeout=float(timeout if timeout is not None else _REQUEST_TIMEOUT),
                 max_bytes=max_bytes,
+                session=self._http_session,
                 headers={"Accept": "application/ld+json, application/sparql-results+json, application/json"},
+                max_retries=ESBIRKA_OPENDATA_HTTP_MAX_RETRIES,
+                sleep=self._sleep,
             )
         except SafeHttpsError as exc:
-            if exc.kind in {"network", "timeout"}:
-                raise ValueError("Internet není dostupný.") from exc
-            raise ValueError(str(exc)) from exc
+            raise ValueError(
+                format_opendata_fetch_error(
+                    kind=exc.kind,
+                    endpoint=endpoint,
+                    status_code=exc.status_code,
+                    detail=str(exc),
+                )
+            ) from exc
 
         if result.status_code == 404:
-            raise ValueError("Předpis nenalezen.")
+            raise ValueError(
+                format_opendata_fetch_error(
+                    kind="http_status",
+                    endpoint=endpoint,
+                    status_code=404,
+                    detail="Předpis nenalezen.",
+                )
+            )
         if result.status_code != 200:
-            raise ValueError("Internet není dostupný.")
+            raise ValueError(
+                format_opendata_fetch_error(
+                    kind="http_status",
+                    endpoint=endpoint,
+                    status_code=result.status_code,
+                )
+            )
 
         try:
             payload = json.loads(result.body.decode("utf-8"))
         except (UnicodeDecodeError, json.JSONDecodeError) as exc:
             logger.warning("Neplatné JSON-LD e-Sbírky z %s", result.final_url)
-            raise ValueError("Neočekávaný formát odpovědi.") from exc
+            raise ValueError(
+                format_opendata_fetch_error(
+                    kind="invalid_response",
+                    endpoint=endpoint,
+                    status_code=result.status_code,
+                    detail="Neočekávaný formát odpovědi.",
+                )
+            ) from exc
         if payload is None:
-            raise ValueError("Neočekávaný formát odpovědi.")
+            raise ValueError(
+                format_opendata_fetch_error(
+                    kind="invalid_response",
+                    endpoint=endpoint,
+                    status_code=result.status_code,
+                    detail="Neočekávaný formát odpovědi.",
+                )
+            )
         return payload, result.final_url
 
     def _fetch_sparql(self, query: str) -> Any:
@@ -687,6 +765,20 @@ class LegalDocumentESbirkaOpenDataClient:
             return date.fromisoformat(match.group(1))
         except ValueError:
             return None
+
+
+@contextmanager
+def open_data_http_session() -> Iterator[requests.Session]:
+    """Jedna sdílená HTTPS session pro celý běh Kontroly změn."""
+    client = legal_document_esbirka_opendata_client
+    session = requests.Session()
+    previous = client.http_session
+    client.bind_http_session(session)
+    try:
+        yield session
+    finally:
+        client.bind_http_session(previous)
+        session.close()
 
 
 legal_document_esbirka_opendata_client = LegalDocumentESbirkaOpenDataClient()

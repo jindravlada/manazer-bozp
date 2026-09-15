@@ -341,6 +341,21 @@ class SecHardeningNet1TestCase(unittest.TestCase):
         self.assertNotIn("www.zakonyprolidi.cz", ESBIRKA_OPENDATA_ALLOWED_HOSTS)
         self.assertEqual(ARES_MAX_RESPONSE_BYTES, 1_048_576)
 
+    def test_default_429_is_not_retried(self) -> None:
+        first = _FakeRawResponse(status=429, headers={"Retry-After": "1"})
+        slept = []
+        result = safe_https_get(
+            _ARES_URL,
+            allowed_hosts=_ALLOWED,
+            timeout=_TIMEOUT,
+            max_bytes=_MAX_BYTES,
+            request=_request_sequence([first]),
+            sleep=slept.append,
+        )
+        self.assertEqual(result.status_code, 429)
+        self.assertEqual(slept, [])
+        self.assertTrue(first.closed)
+
 
 if __name__ == "__main__":
     unittest.main()

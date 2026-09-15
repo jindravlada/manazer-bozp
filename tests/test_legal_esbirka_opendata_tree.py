@@ -435,7 +435,7 @@ class LegalESbirkaOpenDataTreeTestCase(unittest.TestCase):
             "moduly.pravni_pozadavky.import_export.legal_document_esbirka_opendata_client.safe_https_get",
             side_effect=SafeHttpsError("Služba není dostupná.", kind="network"),
         ):
-            with self.assertRaisesRegex(ValueError, "Internet není dostupný"):
+            with self.assertRaisesRegex(ValueError, r"kind=network.*endpoint=sparql"):
                 legal_document_esbirka_opendata_client.fetch_wording_fragment_contents(_ELI)
 
     def test_e_live_262_and_361_build_text_trees(self) -> None:
@@ -452,6 +452,8 @@ class LegalESbirkaOpenDataTreeTestCase(unittest.TestCase):
             )
         except ValueError as exc:
             message = str(exc)
+            if "kind=network" in message or "kind=timeout" in message or "kind=http_status" in message:
+                self.skipTest(message)
             if "Internet" in message or "dostupn" in message:
                 self.skipTest(message)
             raise
