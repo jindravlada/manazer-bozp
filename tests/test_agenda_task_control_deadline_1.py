@@ -163,7 +163,18 @@ class AgendaTaskControlDeadline1TestCase(unittest.TestCase):
             requires_verification=False,
         )
         self.assertEqual(task.computed_status, "Ukončeno")
-        self.assertIsNone(_item_for_task(task.id))
+        item = _item_for_task(task.id)
+        self.assertIsNotNone(item)
+        self.assertEqual(item.status, "Ukončeno")
+        page = AgendaPage()
+        page.refresh()
+        active_ids = {
+            page.table.item(row, COL_TITLE).data(Qt.ItemDataRole.UserRole).source_id
+            for row in range(page.table.rowCount())
+            if page.table.item(row, COL_TITLE).data(Qt.ItemDataRole.UserRole).item_type
+            == ITEM_TYPE_TASK
+        }
+        self.assertNotIn(task.id, active_ids)
         dots, events = _calendar_data(today=_TODAY_BETWEEN)
         self.assertNotIn(_DUE, dots)
         self.assertNotIn(_DUE, events)
@@ -217,7 +228,18 @@ class AgendaTaskControlDeadline1TestCase(unittest.TestCase):
         )
         reloaded = task_service.get_task_by_id(task.id)
         self.assertEqual(reloaded.computed_status, "Ukončeno")
-        self.assertIsNone(_item_for_task(reloaded.id))
+        item = _item_for_task(reloaded.id)
+        self.assertIsNotNone(item)
+        self.assertEqual(item.status, "Ukončeno")
+        page = AgendaPage()
+        page.refresh()
+        active_ids = {
+            page.table.item(row, COL_TITLE).data(Qt.ItemDataRole.UserRole).source_id
+            for row in range(page.table.rowCount())
+            if page.table.item(row, COL_TITLE).data(Qt.ItemDataRole.UserRole).item_type
+            == ITEM_TYPE_TASK
+        }
+        self.assertNotIn(reloaded.id, active_ids)
         dots, events = _calendar_data(today=date(2026, 9, 10))
         joined = "\n".join(
             block for blocks in events.values() for block in blocks

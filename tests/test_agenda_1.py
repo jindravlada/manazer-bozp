@@ -189,7 +189,7 @@ class Agenda1TestCase(unittest.TestCase):
             for row in range(page.table.rowCount())
         ]
         done_ids = {(p.item_type, p.source_id) for p in payloads}
-        self.assertNotIn((ITEM_TYPE_TASK, done_task.id), done_ids)
+        self.assertIn((ITEM_TYPE_TASK, done_task.id), done_ids)
         self.assertNotIn((ITEM_TYPE_TASK, open_task.id), done_ids)
 
         page.status_filter.setCurrentText(STATUS_MODE_ALL)
@@ -200,7 +200,7 @@ class Agenda1TestCase(unittest.TestCase):
         ]
         all_ids = {(p.item_type, p.source_id) for p in payloads}
         self.assertIn((ITEM_TYPE_TASK, open_task.id), all_ids)
-        self.assertNotIn((ITEM_TYPE_TASK, done_task.id), all_ids)
+        self.assertIn((ITEM_TYPE_TASK, done_task.id), all_ids)
 
     def test_open_correct_editor(self) -> None:
         task = task_service.create_task(

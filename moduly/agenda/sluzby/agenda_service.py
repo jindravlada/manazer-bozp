@@ -134,13 +134,18 @@ def _from_tasks(*, today: date) -> list[AgendaItem]:
     source_labels = task_source_short_labels(tasks)
     for task in tasks:
         status = task.computed_status or ""
-        if status in (TASK_STATUS_CLOSED, TASK_STATUS_CANCELED):
+        # Zrušené úkoly zůstávají mimo agregaci (AGENDA-TASK-HISTORY-2).
+        # Ukončené musí projít do UI filtrů Splněné / Vše.
+        if status == TASK_STATUS_CANCELED:
             continue
         title = (task.title or "").strip() or "Bez názvu"
         source = (source_labels.get(int(task.id)) or "").strip() or "—"
         person = (task.responsible_person or "").strip()
         waiting_check = is_waiting_effectiveness_check(task)
-        decisive = task_urgency_due_date(task)
+        if status == TASK_STATUS_CLOSED:
+            decisive = task.due_date
+        else:
+            decisive = task_urgency_due_date(task)
         items.append(
             AgendaItem(
                 item_type=ITEM_TYPE_TASK,

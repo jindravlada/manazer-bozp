@@ -325,7 +325,10 @@ def build_calendar_day_data(
     items = [
         item
         for item in agenda_service.get_items(today=today, now=now)
-        if item.due_date is not None and item.row_state != ROW_STATE_CANCELED
+        if item.due_date is not None
+        and item.row_state != ROW_STATE_CANCELED
+        # Ukončené úkoly patří do filtrů Agendy, ne do kalendáře na ploše.
+        and not (item.item_type == ITEM_TYPE_TASK and item.row_state == ROW_STATE_DONE)
     ]
 
     by_day: dict[date, list[AgendaItem]] = {}
