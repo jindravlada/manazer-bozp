@@ -14,6 +14,16 @@
 
 ---
 
+# Verze 4.0.2
+
+Datum vydání:
+
+21. 9. 2026
+
+Agenda: ukončené úkoly ve filtrech Splněné a Vše
+
+---
+
 # Verze 4.0.1
 
 Datum vydání:
