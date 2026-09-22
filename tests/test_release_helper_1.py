@@ -38,10 +38,44 @@ TRACKED_RELATIVE_PATHS = (
 )
 RELEASE_DATE = date(2026, 9, 15)
 RELEASE_DESCRIPTION = "Úprava Kontrol změn RPP"
+APP_VERSION_ASSIGNMENT = re.compile(
+    r'^APP_VERSION = "([^"]*)"$',
+    re.MULTILINE,
+)
+CHANGELOG_VERSION_HEADING = re.compile(
+    r"^# Verze (\d+\.\d+\.\d+)$",
+    re.MULTILINE,
+)
 
 
 def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
+
+
+def _parse_copy_app_version(source: str) -> str:
+    match = APP_VERSION_ASSIGNMENT.search(source)
+    if match is None:
+        raise AssertionError("V kopii core/version.py chybí APP_VERSION.")
+    return match.group(1)
+
+
+def _version_tuple(version: str) -> tuple[int, int, int]:
+    major, minor, patch = version.split(".")
+    return int(major), int(minor), int(patch)
+
+
+def _drop_newer_changelog_sections(changelog: str, current: str) -> str:
+    """Nechá v CHANGELOG jen sekce aktuální a starší, aby helper mohl přidat další patch."""
+    matches = list(CHANGELOG_VERSION_HEADING.finditer(changelog))
+    if not matches:
+        return changelog
+    limit = _version_tuple(current)
+    parts = [changelog[: matches[0].start()]]
+    for index, match in enumerate(matches):
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(changelog)
+        if _version_tuple(match.group(1)) <= limit:
+            parts.append(changelog[match.start() : end])
+    return "".join(parts)
 
 
 def _snapshot_files(root: Path) -> dict[str, bytes]:
@@ -104,7 +138,16 @@ class ReleaseHelper2TestCase(unittest.TestCase):
             flags=re.MULTILINE,
         )
         readme_path.write_text(readme, encoding="utf-8")
+        changelog_path = self.project / "CHANGELOG.md"
+        changelog_path.write_text(
+            _drop_newer_changelog_sections(_read(changelog_path), version),
+            encoding="utf-8",
+        )
         self.original = _snapshot_files(self.project)
+
+    def _copy_current_and_next(self) -> tuple[str, str]:
+        current = _parse_copy_app_version(_read(self.project / "core" / "version.py"))
+        return current, next_patch_version(current)
 
     def _prepare(self, description: str = RELEASE_DESCRIPTION):
         return prepare_release(
@@ -139,6 +182,8 @@ class ReleaseHelper2TestCase(unittest.TestCase):
         )
 
     def test_bumps_4_0_1_to_4_0_2(self) -> None:
+        self._set_current_version("4.0.1")
+        self.assertNotIn("# Verze 4.0.2", _read(self.project / "CHANGELOG.md"))
         result = self._prepare()
         self.assertEqual(result.old_version, "4.0.1")
         self.assertEqual(result.new_version, "4.0.2")
@@ -172,18 +217,30 @@ class ReleaseHelper2TestCase(unittest.TestCase):
             self.assertEqual(new_major, old_major)
             self.assertEqual(new_minor, old_minor)
 
+        old_version, new_version = self._copy_current_and_next()
         result = self._prepare()
-        old_major, old_minor, _old_patch = result.old_version.split(".")
-        new_major, new_minor, _new_patch = result.new_version.split(".")
-        self.assertEqual((old_major, old_minor), ("4", "0"))
-        self.assertEqual((new_major, new_minor), ("4", "0"))
+        self.assertEqual(result.old_version, old_version)
+        self.assertEqual(result.new_version, new_version)
+        old_major, old_minor, old_patch = old_version.split(".")
+        new_major, new_minor, new_patch = new_version.split(".")
+        self.assertEqual(new_major, old_major)
+        self.assertEqual(new_minor, old_minor)
+        self.assertEqual(int(new_patch), int(old_patch) + 1)
 
     def test_generated_files_contain_computed_version(self) -> None:
-        self._prepare()
-        self._assert_released("4.0.2", RELEASE_DESCRIPTION)
+        old_version, new_version = self._copy_current_and_next()
+        result = self._prepare()
+        self.assertEqual(result.old_version, old_version)
+        self.assertEqual(result.new_version, new_version)
+        self._assert_released(new_version, RELEASE_DESCRIPTION)
         changelog = _read(self.project / "CHANGELOG.md")
         self.assertIn("# Verze 4.0.0", changelog)
         self.assertIn("Manažer BOZP 4.0.1", changelog)
+        self.assertIn(f"# Verze {old_version}", changelog)
+        self.assertLess(
+            changelog.index(f"# Verze {new_version}"),
+            changelog.index(f"# Verze {old_version}"),
+        )
 
     def test_error_during_operation_restores_files(self) -> None:
         (self.project / "generate_version_info.py").write_text(
