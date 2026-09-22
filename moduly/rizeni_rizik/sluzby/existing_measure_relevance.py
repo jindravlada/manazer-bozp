@@ -140,6 +140,25 @@ def replace_refs_in_session(session, model, measure_id: int, refs: list[ExposedT
         )
 
 
+def replace_assessment_refs_in_session(
+    session,
+    model,
+    assessment_id: int,
+    refs: list[ExposedTargetRef] | tuple[ExposedTargetRef, ...] | None,
+) -> None:
+    """Nastaví M:N vazby posouzení jako celek (source_type + id je identita)."""
+    session.execute(delete(model).where(model.assessment_id == assessment_id))
+    for sort_order, ref in enumerate(unique_refs(refs), start=1):
+        session.add(
+            model(
+                assessment_id=assessment_id,
+                exposed_group_id=ref.source_id,
+                source_type=ref.source_type,
+                sort_order=sort_order,
+            )
+        )
+
+
 def list_assessment_refs_in_session(session, model, assessment_id: int) -> list[ExposedTargetRef]:
     stmt = (
         select(model.source_type, model.exposed_group_id)

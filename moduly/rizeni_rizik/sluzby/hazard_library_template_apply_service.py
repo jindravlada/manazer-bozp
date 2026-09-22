@@ -26,6 +26,7 @@ from moduly.rizeni_rizik.repository.hazard_library_template_repository import (
 )
 from moduly.rizeni_rizik.sluzby.existing_measure_relevance import (
     copy_relevance_refs,
+    replace_assessment_refs_in_session,
     replace_refs_in_session,
 )
 from moduly.rizeni_rizik.sluzby.exposed_target_ref import (
@@ -327,16 +328,12 @@ class HazardLibraryTemplateApplyService:
                     )
                     session.add(hazard_assessment)
                     session.flush()
-
-                    for sort_order, ref in enumerate(target_refs, start=1):
-                        session.add(
-                            HazardRiskAssessmentExposedGroup(
-                                assessment_id=hazard_assessment.id,
-                                exposed_group_id=ref.source_id,
-                                source_type=ref.source_type,
-                                sort_order=sort_order,
-                            ),
-                        )
+                    replace_assessment_refs_in_session(
+                        session,
+                        HazardRiskAssessmentExposedGroup,
+                        int(hazard_assessment.id),
+                        target_refs,
+                    )
                     assessment_count += 1
 
                     existing_measures, required_measures = assessment_measures[assessment.id]

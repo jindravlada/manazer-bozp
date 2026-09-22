@@ -22,6 +22,7 @@ from moduly.rizeni_rizik.modely.hazard_risk_assessment_exposed_group import (
 )
 from moduly.rizeni_rizik.sluzby.existing_measure_relevance import (
     copy_relevance_refs,
+    replace_assessment_refs_in_session,
     replace_refs_in_session,
 )
 from moduly.rizeni_rizik.sluzby.exposed_target_ref import (
@@ -58,6 +59,65 @@ from moduly.rizeni_rizik.sluzby.hazard_library_template_service import (
 
 class HazardCatalogInstanceUpdateError(ValueError):
     pass
+
+
+def delete_inventory_item_tree_in_session(session, inventory_item_id: int) -> None:
+    """Smaže persistovaný strom instance (eventy, posouzení, zásady, vazby).
+
+    Samotný inventory item, Master ani jiné instance nemění.
+    """
+    from sqlalchemy import delete, select
+
+    event_ids = list(
+        session.scalars(
+            select(HazardEvent.id).where(HazardEvent.inventory_item_id == inventory_item_id)
+        )
+    )
+    if not event_ids:
+        return
+
+    assessment_ids = list(
+        session.scalars(
+            select(HazardRiskAssessment.id).where(
+                HazardRiskAssessment.hazard_event_id.in_(event_ids)
+            )
+        )
+    )
+    if assessment_ids:
+        existing_ids = list(
+            session.scalars(
+                select(HazardExistingMeasure.id).where(
+                    HazardExistingMeasure.hazard_risk_assessment_id.in_(assessment_ids)
+                )
+            )
+        )
+        if existing_ids:
+            session.execute(
+                delete(HazardExistingMeasureExposedGroup).where(
+                    HazardExistingMeasureExposedGroup.measure_id.in_(existing_ids)
+                )
+            )
+        session.execute(
+            delete(HazardRequiredMeasure).where(
+                HazardRequiredMeasure.hazard_risk_assessment_id.in_(assessment_ids)
+            )
+        )
+        session.execute(
+            delete(HazardExistingMeasure).where(
+                HazardExistingMeasure.hazard_risk_assessment_id.in_(assessment_ids)
+            )
+        )
+        session.execute(
+            delete(HazardRiskAssessmentExposedGroup).where(
+                HazardRiskAssessmentExposedGroup.assessment_id.in_(assessment_ids)
+            )
+        )
+        session.execute(
+            delete(HazardRiskAssessment).where(HazardRiskAssessment.id.in_(assessment_ids))
+        )
+    session.execute(
+        delete(HazardEvent).where(HazardEvent.inventory_item_id == inventory_item_id)
+    )
 
 
 @dataclass(frozen=True)
@@ -258,58 +318,7 @@ class HazardCatalogInstanceUpdateService:
         return events, event_assessments, assessment_measures
 
     def _delete_inventory_item_tree(self, session, inventory_item_id: int) -> None:
-        from sqlalchemy import delete, select
-
-        event_ids = list(
-            session.scalars(
-                select(HazardEvent.id).where(HazardEvent.inventory_item_id == inventory_item_id)
-            )
-        )
-        if not event_ids:
-            return
-
-        assessment_ids = list(
-            session.scalars(
-                select(HazardRiskAssessment.id).where(
-                    HazardRiskAssessment.hazard_event_id.in_(event_ids)
-                )
-            )
-        )
-        if assessment_ids:
-            existing_ids = list(
-                session.scalars(
-                    select(HazardExistingMeasure.id).where(
-                        HazardExistingMeasure.hazard_risk_assessment_id.in_(assessment_ids)
-                    )
-                )
-            )
-            if existing_ids:
-                session.execute(
-                    delete(HazardExistingMeasureExposedGroup).where(
-                        HazardExistingMeasureExposedGroup.measure_id.in_(existing_ids)
-                    )
-                )
-            session.execute(
-                delete(HazardRequiredMeasure).where(
-                    HazardRequiredMeasure.hazard_risk_assessment_id.in_(assessment_ids)
-                )
-            )
-            session.execute(
-                delete(HazardExistingMeasure).where(
-                    HazardExistingMeasure.hazard_risk_assessment_id.in_(assessment_ids)
-                )
-            )
-            session.execute(
-                delete(HazardRiskAssessmentExposedGroup).where(
-                    HazardRiskAssessmentExposedGroup.assessment_id.in_(assessment_ids)
-                )
-            )
-            session.execute(
-                delete(HazardRiskAssessment).where(HazardRiskAssessment.id.in_(assessment_ids))
-            )
-        session.execute(
-            delete(HazardEvent).where(HazardEvent.inventory_item_id == inventory_item_id)
-        )
+        delete_inventory_item_tree_in_session(session, inventory_item_id)
 
     def _copy_template_tree_to_item(
         self,
@@ -360,16 +369,12 @@ class HazardCatalogInstanceUpdateService:
                 )
                 session.add(hazard_assessment)
                 session.flush()
-
-                for sort_order, ref in enumerate(target_refs, start=1):
-                    session.add(
-                        HazardRiskAssessmentExposedGroup(
-                            assessment_id=hazard_assessment.id,
-                            exposed_group_id=ref.source_id,
-                            source_type=ref.source_type,
-                            sort_order=sort_order,
-                        ),
-                    )
+                replace_assessment_refs_in_session(
+                    session,
+                    HazardRiskAssessmentExposedGroup,
+                    int(hazard_assessment.id),
+                    target_refs,
+                )
                 assessment_count += 1
 
                 existing_measures, required_measures = assessment_measures[assessment.id]

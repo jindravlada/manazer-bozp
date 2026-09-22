@@ -12,7 +12,7 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import delete, select
+from sqlalchemy import select
 
 from core.services.photo_optimization import (
     PhotoOptimizationError,
@@ -97,6 +97,7 @@ from moduly.rizeni_rizik.sluzby.existing_measure_relevance import (
     apply_assessment_ref_changes,
     copy_relevance_refs,
     list_refs_for_measures_in_session,
+    replace_assessment_refs_in_session,
     replace_refs_in_session,
     resolve_create_refs,
     validate_measure_refs,
@@ -224,6 +225,7 @@ class HazardIdentificationWorkingCopy:
         self.photos: list[IdWcPhoto] = []
         self._next_temp_id = -1
         self._dirty = False
+        self._replaced_from_master_item_ids: set[int] = set()
 
     @classmethod
     def load(cls, identification_id: int) -> HazardIdentificationWorkingCopy:
@@ -2149,6 +2151,8 @@ class HazardIdentificationWorkingCopy:
                 wc_event.assessments.append(wc_assessment)
             item.events.append(wc_event)
 
+        if item.id > 0:
+            self._replaced_from_master_item_ids.add(int(item.id))
         self._touch()
         return IdApplyResult(
             item=item,
@@ -2191,6 +2195,7 @@ class HazardIdentificationWorkingCopy:
                 self._apply_basics(identification, basics)
 
             id_map: dict[int, int] = {}
+            self._delete_replaced_item_trees(session)
             self._commit_items(session, id_map)
             self._commit_photos(session, identification)
 
@@ -2218,6 +2223,7 @@ class HazardIdentificationWorkingCopy:
         finally:
             session.close()
 
+        self._replaced_from_master_item_ids.clear()
         self.mark_clean()
         reloaded = HazardIdentificationWorkingCopy.load(self.identification_id)
         self.items = reloaded.items
@@ -2258,6 +2264,18 @@ class HazardIdentificationWorkingCopy:
         if "active" in data:
             identification.active = bool(data["active"])
         identification.updated_at = datetime.now()
+
+    def _delete_replaced_item_trees(self, session) -> None:
+        from moduly.rizeni_rizik.sluzby.hazard_catalog_instance_update_service import (
+            delete_inventory_item_tree_in_session,
+        )
+
+        for item_id in sorted(self._replaced_from_master_item_ids):
+            if item_id <= 0:
+                continue
+            delete_inventory_item_tree_in_session(session, item_id)
+        if self._replaced_from_master_item_ids:
+            session.flush()
 
     def _commit_items(self, session, id_map: dict[int, int]) -> None:
         for item in self.items:
@@ -2373,26 +2391,18 @@ class HazardIdentificationWorkingCopy:
             assessment_db_id = int(db_assessment.id)
             id_map[assessment.id] = assessment_db_id
 
-        session.execute(
-            delete(HazardRiskAssessmentExposedGroup).where(
-                HazardRiskAssessmentExposedGroup.assessment_id == assessment_db_id,
-            ),
-        )
         refs = list(assessment.target_refs)
         if not refs:
             refs = refs_from_legacy_group_ids(
                 assessment.exposed_group_ids,
                 legacy_single_id=assessment.exposed_group_id,
             )
-        for sort_order, ref in enumerate(refs, start=1):
-            session.add(
-                HazardRiskAssessmentExposedGroup(
-                    assessment_id=assessment_db_id,
-                    exposed_group_id=ref.source_id,
-                    source_type=ref.source_type,
-                    sort_order=sort_order,
-                ),
-            )
+        replace_assessment_refs_in_session(
+            session,
+            HazardRiskAssessmentExposedGroup,
+            assessment_db_id,
+            refs,
+        )
 
         for measure in assessment.existing_measures:
             self._commit_measure(

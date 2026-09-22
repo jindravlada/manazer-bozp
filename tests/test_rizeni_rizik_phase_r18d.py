@@ -104,20 +104,36 @@ class HazardCatalogInstanceCompareR18dTestCase(unittest.TestCase):
         from core.database.session import get_session
         from moduly.rizeni_rizik.modely.hazard_event import HazardEvent
         from moduly.rizeni_rizik.modely.hazard_existing_measure import HazardExistingMeasure
+        from moduly.rizeni_rizik.modely.hazard_existing_measure_exposed_group import (
+            HazardExistingMeasureExposedGroup,
+        )
         from moduly.rizeni_rizik.modely.hazard_identification import HazardIdentification
         from moduly.rizeni_rizik.modely.hazard_inventory_item import HazardInventoryItem
+        from moduly.rizeni_rizik.modely.hazard_library_template_assessment_exposed_group import (
+            HazardLibraryTemplateAssessmentExposedGroup,
+        )
+        from moduly.rizeni_rizik.modely.hazard_library_template_existing_measure_exposed_group import (
+            HazardLibraryTemplateExistingMeasureExposedGroup,
+        )
         from moduly.rizeni_rizik.modely.hazard_required_measure import HazardRequiredMeasure
         from moduly.rizeni_rizik.modely.hazard_risk_assessment import HazardRiskAssessment
+        from moduly.rizeni_rizik.modely.hazard_risk_assessment_exposed_group import (
+            HazardRiskAssessmentExposedGroup,
+        )
 
         with get_session() as session:
+            session.execute(delete(HazardExistingMeasureExposedGroup))
+            session.execute(delete(HazardLibraryTemplateExistingMeasureExposedGroup))
             session.execute(delete(HazardLibraryTemplateRequiredMeasure))
             session.execute(delete(HazardLibraryTemplateExistingMeasure))
+            session.execute(delete(HazardLibraryTemplateAssessmentExposedGroup))
             session.execute(delete(HazardLibraryTemplateAssessment))
             session.execute(delete(HazardLibraryTemplateEvent))
             session.execute(delete(HazardLibraryTemplateOperation))
             session.execute(delete(HazardLibraryTemplate))
             session.execute(delete(HazardRequiredMeasure))
             session.execute(delete(HazardExistingMeasure))
+            session.execute(delete(HazardRiskAssessmentExposedGroup))
             session.execute(delete(HazardRiskAssessment))
             session.execute(delete(HazardEvent))
             session.execute(delete(HazardInventoryItem))

@@ -45,6 +45,18 @@ Pokud ano, aktualizovat příslušný dokument ve stejném sprintu nebo ihned po
 
 ## Historie retrospektiv
 
+### 2026-09-22 – RISK-MASTER-SYNC-2
+
+**Co se povedlo:** Výslovná aktualizace instance z Masteru v editoru identifikace znovu nahrazuje strom až při Uložit. Apply M:N vazeb nastavuje požadovaný stav jako celek, r18d už nezávisí na pořadí testů.
+
+**Co už bychom dnes udělali jinak:** Už při zavedení pracovní kopie commitovat náhradu stromu stejně jako `update_from_master` (smazat + vložit), ne jen INSERT nových temp ID.
+
+**Co bylo zbytečně složité:** Nic – stačil příznak replace-from-master ve WC a existující `delete_inventory_item_tree_in_session`.
+
+**Jaké nové pravidlo z toho vzniklo:** Náhrada instance z Masteru v WC je odložená do Uložit. Commit maže jen strom označené provozní instance. M:N vazby se při kopírování přepisují jako celek (`source_type` + id). Unique index a oprava historických dat se v tomto sprintu nepřidávají.
+
+---
+
 ### 2026-09-15 – RPP-CHECK-ACTIVE-2
 
 **Co se povedlo:** Z UI Kontrol změn zmizel sloupec Aktivní a tlačítko Deaktivovat/Obnovit. Historické běhy zůstávají v seznamu; `LegalCheckRun.active` je dál jen interní soft-off.
