@@ -29,6 +29,7 @@ from moduly.rizeni_rizik.sluzby.hazard_risk_assessment_service import (
 )
 from moduly.rizeni_rizik.ui.existing_measure_relevance_selector import (
     ExistingMeasureRelevanceSelector,
+    add_active_checkbox_separated as _add_active_checkbox_separated,
 )
 
 
@@ -66,7 +67,7 @@ class HazardExistingMeasureDialog(QDialog):
         form.addRow("Popis opatření *:", self.description)
         form.addRow("Poznámka:", self.note)
         form.addRow(f"{EXISTING_MEASURE_RELEVANCE_LABEL}:", self.relevance)
-        form.addRow("", self.active_checkbox)
+        _add_active_checkbox_separated(form, self.active_checkbox)
 
         layout.addLayout(form)
 

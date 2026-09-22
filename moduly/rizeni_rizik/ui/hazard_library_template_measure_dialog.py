@@ -34,6 +34,7 @@ from moduly.rizeni_rizik.sluzby.hazard_library_template_working_copy import (
 )
 from moduly.rizeni_rizik.ui.existing_measure_relevance_selector import (
     ExistingMeasureRelevanceSelector,
+    add_active_checkbox_separated as _add_active_checkbox_separated,
 )
 
 
@@ -85,7 +86,9 @@ class HazardLibraryTemplateMeasureDialog(QDialog):
         if measure_type == "existing":
             self.relevance = ExistingMeasureRelevanceSelector(self)
             form.addRow(f"{EXISTING_MEASURE_RELEVANCE_LABEL}:", self.relevance)
-        form.addRow("", self.active_checkbox)
+            _add_active_checkbox_separated(form, self.active_checkbox)
+        else:
+            form.addRow("", self.active_checkbox)
 
         layout.addLayout(form)
 

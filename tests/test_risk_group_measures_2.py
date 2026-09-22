@@ -11,7 +11,7 @@ from dataclasses import fields
 from pathlib import Path
 from unittest.mock import patch
 
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QWidget
 from sqlalchemy import delete
 
 _TMP = Path(tempfile.mkdtemp(prefix="risk-group-measures-2-"))
@@ -151,6 +151,10 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.rizeni_rizik.sluzby.pravidla_bezpecne_prace_service import (
         pravidla_bezpecne_prace_service,
+    )
+    from moduly.rizeni_rizik.ui.existing_measure_relevance_selector import (
+        EXISTING_MEASURE_ACTIVE_GAP_OBJECT_NAME,
+        EXISTING_MEASURE_ACTIVE_GAP_PX,
     )
     from moduly.rizeni_rizik.ui.hazard_existing_measure_dialog import (
         HazardExistingMeasureDialog,
@@ -820,6 +824,56 @@ class RiskGroupMeasures2TestCase(unittest.TestCase):
             ),
             {self.ref_a.key},
         )
+
+    def _assert_active_separated_from_relevance(self, dialog) -> None:
+        dialog.show()
+        self._app.processEvents()
+        gap = dialog.findChild(QWidget, EXISTING_MEASURE_ACTIVE_GAP_OBJECT_NAME)
+        self.assertIsNotNone(gap)
+        self.assertEqual(gap.height(), EXISTING_MEASURE_ACTIVE_GAP_PX)
+        self.assertFalse(dialog.relevance.isAncestorOf(dialog.active_checkbox))
+        self.assertEqual(dialog.active_checkbox.text(), "Aktivní")
+        last_group = dialog.relevance._checkboxes[-1][1]
+        group_bottom = last_group.mapTo(dialog, last_group.rect().bottomLeft()).y()
+        active_top = dialog.active_checkbox.mapTo(
+            dialog,
+            dialog.active_checkbox.rect().topLeft(),
+        ).y()
+        self.assertGreaterEqual(active_top - group_bottom, EXISTING_MEASURE_ACTIVE_GAP_PX)
+        dialog.close()
+
+    def test_active_checkbox_is_separated_from_relevance(self) -> None:
+        identification, _item, event = self._create_identification()
+        assessment = self._create_assessment(
+            identification, event, [self.group_a, self.group_b]
+        )
+        measure = hazard_existing_measure_service.create_measure(
+            hazard_identification_id=identification.id,
+            hazard_risk_assessment_id=assessment.id,
+            description="Oddělení Aktivní",
+        )
+        instance_dialog = HazardExistingMeasureDialog(
+            hazard_identification_id=identification.id,
+            hazard_risk_assessment_id=assessment.id,
+            measure=measure,
+        )
+        self._assert_active_separated_from_relevance(instance_dialog)
+
+        template, _event, catalog_assessment = self._create_catalog(
+            [self.group_a, self.group_b]
+        )
+        catalog_measure = hazard_library_template_existing_measure_service.create_measure(
+            template_id=template.id,
+            template_assessment_id=catalog_assessment.id,
+            description="Oddělení Aktivní katalog",
+        )
+        catalog_dialog = HazardLibraryTemplateMeasureDialog(
+            template_id=template.id,
+            template_assessment_id=catalog_assessment.id,
+            measure=catalog_measure,
+            measure_type="existing",
+        )
+        self._assert_active_separated_from_relevance(catalog_dialog)
 
 
 if __name__ == "__main__":
