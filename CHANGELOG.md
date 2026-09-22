@@ -14,6 +14,16 @@
 
 ---
 
+# Verze 4.0.3
+
+Datum vydání:
+
+22. 9. 2026
+
+Rizika: relevance zásad bezpečné práce podle ohrožených skupin
+
+---
+
 # Verze 4.0.2
 
 Datum vydání:
