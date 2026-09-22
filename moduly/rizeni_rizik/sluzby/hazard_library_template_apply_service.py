@@ -11,6 +11,9 @@ from moduly.rizeni_rizik.constants import (
 )
 from moduly.rizeni_rizik.modely.hazard_event import HazardEvent
 from moduly.rizeni_rizik.modely.hazard_existing_measure import HazardExistingMeasure
+from moduly.rizeni_rizik.modely.hazard_existing_measure_exposed_group import (
+    HazardExistingMeasureExposedGroup,
+)
 from moduly.rizeni_rizik.modely.hazard_inventory_item import HazardInventoryItem
 from moduly.rizeni_rizik.modely.hazard_library_template import HazardLibraryTemplate
 from moduly.rizeni_rizik.modely.hazard_required_measure import HazardRequiredMeasure
@@ -20,6 +23,10 @@ from moduly.rizeni_rizik.modely.hazard_risk_assessment_exposed_group import (
 )
 from moduly.rizeni_rizik.repository.hazard_library_template_repository import (
     HazardLibraryTemplateOperationRepository,
+)
+from moduly.rizeni_rizik.sluzby.existing_measure_relevance import (
+    copy_relevance_refs,
+    replace_refs_in_session,
 )
 from moduly.rizeni_rizik.sluzby.exposed_target_ref import (
     effective_target_refs,
@@ -232,6 +239,7 @@ class HazardLibraryTemplateApplyService:
             event_assessments[event.id] = assessments
 
         assessment_measures: dict[int, tuple[list, list]] = {}
+        existing_measure_refs: dict[int, list] = {}
         for event in events:
             for assessment in event_assessments[event.id]:
                 existing = [
@@ -251,6 +259,12 @@ class HazardLibraryTemplateApplyService:
                     if include_inactive or measure.active
                 ]
                 assessment_measures[assessment.id] = (existing, required)
+                for measure in existing:
+                    existing_measure_refs[measure.id] = (
+                        hazard_library_template_existing_measure_service.get_target_refs(
+                            measure.id,
+                        )
+                    )
 
         from core.database.session import get_session
 
@@ -327,15 +341,24 @@ class HazardLibraryTemplateApplyService:
 
                     existing_measures, required_measures = assessment_measures[assessment.id]
                     for measure in existing_measures:
-                        session.add(
-                            HazardExistingMeasure(
-                                hazard_risk_assessment_id=hazard_assessment.id,
-                                description=measure.description,
-                                note=measure.note or "",
-                                active=measure.active if include_inactive else True,
-                                modified=False,
-                                sort_order=measure.sort_order,
-                            )
+                        instance_measure = HazardExistingMeasure(
+                            hazard_risk_assessment_id=hazard_assessment.id,
+                            description=measure.description,
+                            note=measure.note or "",
+                            active=measure.active if include_inactive else True,
+                            modified=False,
+                            sort_order=measure.sort_order,
+                        )
+                        session.add(instance_measure)
+                        session.flush()
+                        replace_refs_in_session(
+                            session,
+                            HazardExistingMeasureExposedGroup,
+                            int(instance_measure.id),
+                            copy_relevance_refs(
+                                existing_measure_refs.get(measure.id, []),
+                                target_refs,
+                            ),
                         )
                         existing_measure_count += 1
                     for measure in required_measures:

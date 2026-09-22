@@ -212,6 +212,11 @@ class HazardRiskAssessmentService:
         if assessment is None:
             return None
 
+        old_refs = self.group_repository.list_refs(assessment_id)
+        if not old_refs and assessment.exposed_group_id:
+            old_refs = [
+                ExposedTargetRef(SOURCE_TYPE_HAZARD_GROUP, assessment.exposed_group_id)
+            ]
         validated_refs = self._validate_target_refs(
             target_refs,
             exposed_group_ids=exposed_group_ids,
@@ -244,6 +249,16 @@ class HazardRiskAssessmentService:
         assessment.updated_at = datetime.now()
         mark_assessment_modified_if_catalog_instance(assessment)
         saved = self.repository.update(assessment)
+        if old_refs != validated_refs:
+            from moduly.rizeni_rizik.sluzby.hazard_existing_measure_service import (
+                hazard_existing_measure_service,
+            )
+
+            hazard_existing_measure_service.sync_relevance_for_assessment(
+                saved.id,
+                old_refs=old_refs,
+                new_refs=validated_refs,
+            )
         self.group_repository.replace_refs(saved.id, validated_refs)
         return saved
 

@@ -47,12 +47,22 @@ from moduly.rizeni_rizik.modely.hazard_library_template_event import HazardLibra
 from moduly.rizeni_rizik.modely.hazard_library_template_legal_link import (
     HazardLibraryTemplateLegalLink,
 )
+from moduly.rizeni_rizik.modely.hazard_library_template_assessment_exposed_group import (
+    HazardLibraryTemplateAssessmentExposedGroup,
+)
+from moduly.rizeni_rizik.modely.hazard_library_template_existing_measure_exposed_group import (
+    HazardLibraryTemplateExistingMeasureExposedGroup,
+)
 from moduly.rizeni_rizik.modely.hazard_library_template_measure import (
     HazardLibraryTemplateExistingMeasure,
     HazardLibraryTemplateRequiredMeasure,
 )
 from moduly.rizeni_rizik.modely.hazard_library_template_revision import (
     HazardLibraryTemplateRevision,
+)
+from moduly.rizeni_rizik.sluzby.existing_measure_relevance import (
+    attach_default_measure_relevance_in_session,
+    list_assessment_refs_in_session,
 )
 from moduly.rizeni_rizik.sluzby.hazard_catalog_legal_requirement_resolver import (
     LegalDocumentMatchKind,
@@ -1029,6 +1039,17 @@ class HazardCatalogProposalIncorporateService:
                 sort_order=self._next_existing_measure_sort_order(session, int(parent["id"])),
             )
             session.add(measure)
+            session.flush()
+            attach_default_measure_relevance_in_session(
+                session,
+                HazardLibraryTemplateExistingMeasureExposedGroup,
+                int(measure.id),
+                list_assessment_refs_in_session(
+                    session,
+                    HazardLibraryTemplateAssessmentExposedGroup,
+                    int(parent["id"]),
+                ),
+            )
             return
 
         if kind == CATALOG_PROPOSAL_KIND_REQUIRED_MEASURE:

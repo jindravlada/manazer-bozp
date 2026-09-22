@@ -12,6 +12,12 @@ def _db_engine():
     return engine
 
 
+LAST_EXISTING_MEASURE_RELEVANCE_BACKFILL = {
+    "instance": 0,
+    "catalog": 0,
+}
+
+
 def initialize_database() -> None:
     from core.models.attachment import Attachment  # noqa: F401
     from core.shared.modely.finding import Finding  # noqa: F401
@@ -139,6 +145,9 @@ def initialize_database() -> None:
     from moduly.rizeni_rizik.modely.hazard_event import HazardEvent  # noqa: F401
     from moduly.rizeni_rizik.modely.hazard_risk_assessment import HazardRiskAssessment  # noqa: F401
     from moduly.rizeni_rizik.modely.hazard_existing_measure import HazardExistingMeasure  # noqa: F401
+    from moduly.rizeni_rizik.modely.hazard_existing_measure_exposed_group import (  # noqa: F401
+        HazardExistingMeasureExposedGroup,
+    )
     from moduly.rizeni_rizik.modely.hazard_required_measure import HazardRequiredMeasure  # noqa: F401
     from moduly.rizeni_rizik.modely.risk_measure_review import RiskMeasureReview  # noqa: F401
     from moduly.rizeni_rizik.modely.risk_measure_review_item import (  # noqa: F401
@@ -148,6 +157,13 @@ def initialize_database() -> None:
         HazardIdentificationPhoto,
     )
     from moduly.rizeni_rizik.modely.hazard_library_template import HazardLibraryTemplate  # noqa: F401
+    from moduly.rizeni_rizik.modely.hazard_library_template_measure import (  # noqa: F401
+        HazardLibraryTemplateExistingMeasure,
+        HazardLibraryTemplateRequiredMeasure,
+    )
+    from moduly.rizeni_rizik.modely.hazard_library_template_existing_measure_exposed_group import (  # noqa: F401
+        HazardLibraryTemplateExistingMeasureExposedGroup,
+    )
     from moduly.rizeni_rizik.modely.hazard_source_category import (  # noqa: F401
         HazardSourceCategory,
     )
@@ -260,6 +276,8 @@ def initialize_database() -> None:
     _migrate_hazard_risk_assessment_groups_and_drop_consequence()
     _migrate_exposed_target_source_type_columns()
     _ensure_hazard_existing_measures_table()
+    _ensure_data_migration_flags_table()
+    _ensure_hazard_existing_measure_exposed_groups_table()
     _ensure_hazard_required_measures_table()
     _ensure_risk_measure_reviews_table()
     _ensure_risk_measure_review_items_table()
@@ -272,6 +290,8 @@ def initialize_database() -> None:
     _ensure_hazard_library_template_assessment_exposed_groups_table()
     _migrate_hazard_library_template_assessment_groups_and_drop_consequence()
     _ensure_hazard_library_template_measures_tables()
+    _ensure_hazard_library_template_existing_measure_exposed_groups_table()
+    _run_existing_measure_relevance_backfill_once()
     _ensure_hazard_library_template_revisions_table()
     _ensure_hazard_library_template_legal_links_table()
     _ensure_pravidla_bezpecne_prace_editions_tables()
@@ -1990,6 +2010,35 @@ def _ensure_hazard_existing_measures_table() -> None:
         _add_column("hazard_existing_measures", "modified BOOLEAN DEFAULT 0")
 
 
+def _ensure_hazard_existing_measure_exposed_groups_table() -> None:
+    columns = _table_columns("hazard_existing_measure_exposed_groups")
+    if not columns:
+        from moduly.rizeni_rizik.modely.hazard_existing_measure_exposed_group import (
+            HazardExistingMeasureExposedGroup,
+        )
+
+        HazardExistingMeasureExposedGroup.__table__.create(
+            bind=_db_engine(),
+            checkfirst=True,
+        )
+    _ensure_index(
+        "idx_hazard_existing_measure_groups_measure",
+        """
+        CREATE INDEX IF NOT EXISTS idx_hazard_existing_measure_groups_measure
+        ON hazard_existing_measure_exposed_groups (measure_id)
+        """,
+    )
+    _ensure_index(
+        "idx_hazard_existing_measure_groups_unique",
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_hazard_existing_measure_groups_unique
+        ON hazard_existing_measure_exposed_groups (
+            measure_id, source_type, exposed_group_id
+        )
+        """,
+    )
+
+
 def _ensure_hazard_required_measures_table() -> None:
     columns = _table_columns("hazard_required_measures")
     if not columns:
@@ -2512,6 +2561,168 @@ def _ensure_hazard_library_template_measures_tables() -> None:
         )
 
         HazardLibraryTemplateRequiredMeasure.__table__.create(bind=_db_engine(), checkfirst=True)
+
+
+def _ensure_hazard_library_template_existing_measure_exposed_groups_table() -> None:
+    columns = _table_columns("hazard_library_template_existing_measure_exposed_groups")
+    if not columns:
+        from moduly.rizeni_rizik.modely.hazard_library_template_existing_measure_exposed_group import (
+            HazardLibraryTemplateExistingMeasureExposedGroup,
+        )
+
+        HazardLibraryTemplateExistingMeasureExposedGroup.__table__.create(
+            bind=_db_engine(),
+            checkfirst=True,
+        )
+    _ensure_index(
+        "idx_hazard_library_existing_measure_groups_measure",
+        """
+        CREATE INDEX IF NOT EXISTS idx_hazard_library_existing_measure_groups_measure
+        ON hazard_library_template_existing_measure_exposed_groups (measure_id)
+        """,
+    )
+    _ensure_index(
+        "idx_hazard_library_existing_measure_groups_unique",
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_hazard_library_existing_measure_groups_unique
+        ON hazard_library_template_existing_measure_exposed_groups (
+            measure_id, source_type, exposed_group_id
+        )
+        """,
+    )
+
+
+EXISTING_MEASURE_RELEVANCE_MIGRATION = "existing_measure_relevance_v1"
+
+
+def _ensure_data_migration_flags_table() -> None:
+    if _table_exists("data_migration_flags"):
+        return
+    with _db_engine().connect() as connection:
+        connection.execute(
+            text(
+                """
+                CREATE TABLE IF NOT EXISTS data_migration_flags (
+                    name VARCHAR(100) NOT NULL PRIMARY KEY,
+                    applied_at DATETIME NOT NULL
+                )
+                """
+            )
+        )
+        connection.commit()
+
+
+def _data_migration_applied(name: str) -> bool:
+    _ensure_data_migration_flags_table()
+    with _db_engine().connect() as connection:
+        row = connection.execute(
+            text("SELECT 1 FROM data_migration_flags WHERE name = :name"),
+            {"name": name},
+        ).fetchone()
+    return row is not None
+
+
+def _mark_data_migration_applied(name: str) -> None:
+    _ensure_data_migration_flags_table()
+    with _db_engine().connect() as connection:
+        connection.execute(
+            text(
+                """
+                INSERT OR IGNORE INTO data_migration_flags (name, applied_at)
+                VALUES (:name, :applied_at)
+                """
+            ),
+            {"name": name, "applied_at": datetime.now()},
+        )
+        connection.commit()
+
+
+def _run_existing_measure_relevance_backfill_once() -> dict[str, int]:
+    """Jednorázová migrace – prázdná relevance po odebrání skupiny se znovu nedoplňuje."""
+    if _data_migration_applied(EXISTING_MEASURE_RELEVANCE_MIGRATION):
+        LAST_EXISTING_MEASURE_RELEVANCE_BACKFILL["instance"] = 0
+        LAST_EXISTING_MEASURE_RELEVANCE_BACKFILL["catalog"] = 0
+        return dict(LAST_EXISTING_MEASURE_RELEVANCE_BACKFILL)
+    counts = _backfill_existing_measure_relevance()
+    _mark_data_migration_applied(EXISTING_MEASURE_RELEVANCE_MIGRATION)
+    return counts
+
+
+def _backfill_existing_measure_relevance() -> dict[str, int]:
+    """Doplní relevanci zásad na všechny skupiny posouzení. Idempotentní.
+
+    Zásada bez jakékoli vazby dostane všechny aktuální skupiny/role
+    nadřazeného posouzení. Zásada, která už vazby má, se nemění.
+    """
+    instance_count = 0
+    catalog_count = 0
+    if _table_exists("hazard_existing_measures") and _table_exists(
+        "hazard_existing_measure_exposed_groups"
+    ):
+        with _db_engine().connect() as connection:
+            result = connection.execute(
+                text(
+                    """
+                    INSERT INTO hazard_existing_measure_exposed_groups (
+                        measure_id,
+                        exposed_group_id,
+                        source_type,
+                        sort_order
+                    )
+                    SELECT
+                        m.id,
+                        g.exposed_group_id,
+                        COALESCE(NULLIF(TRIM(g.source_type), ''), 'hazard_group'),
+                        g.sort_order
+                    FROM hazard_existing_measures AS m
+                    JOIN hazard_risk_assessment_exposed_groups AS g
+                      ON g.assessment_id = m.hazard_risk_assessment_id
+                    WHERE NOT EXISTS (
+                        SELECT 1
+                        FROM hazard_existing_measure_exposed_groups AS r
+                        WHERE r.measure_id = m.id
+                    )
+                    """
+                )
+            )
+            instance_count = int(result.rowcount or 0)
+            connection.commit()
+
+    if _table_exists("hazard_library_template_existing_measures") and _table_exists(
+        "hazard_library_template_existing_measure_exposed_groups"
+    ):
+        with _db_engine().connect() as connection:
+            result = connection.execute(
+                text(
+                    """
+                    INSERT INTO hazard_library_template_existing_measure_exposed_groups (
+                        measure_id,
+                        exposed_group_id,
+                        source_type,
+                        sort_order
+                    )
+                    SELECT
+                        m.id,
+                        g.exposed_group_id,
+                        COALESCE(NULLIF(TRIM(g.source_type), ''), 'hazard_group'),
+                        g.sort_order
+                    FROM hazard_library_template_existing_measures AS m
+                    JOIN hazard_library_template_assessment_exposed_groups AS g
+                      ON g.assessment_id = m.template_assessment_id
+                    WHERE NOT EXISTS (
+                        SELECT 1
+                        FROM hazard_library_template_existing_measure_exposed_groups AS r
+                        WHERE r.measure_id = m.id
+                    )
+                    """
+                )
+            )
+            catalog_count = int(result.rowcount or 0)
+            connection.commit()
+
+    LAST_EXISTING_MEASURE_RELEVANCE_BACKFILL["instance"] = instance_count
+    LAST_EXISTING_MEASURE_RELEVANCE_BACKFILL["catalog"] = catalog_count
+    return dict(LAST_EXISTING_MEASURE_RELEVANCE_BACKFILL)
 
 
 def _ensure_hazard_library_template_revisions_table() -> None:

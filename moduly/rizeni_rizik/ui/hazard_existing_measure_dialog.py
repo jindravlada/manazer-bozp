@@ -9,13 +9,26 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box
-from moduly.rizeni_rizik.constants import HAZARD_EXISTING_MEASURE_DIALOG_TITLE
+from moduly.rizeni_rizik.constants import (
+    EXISTING_MEASURE_RELEVANCE_LABEL,
+    HAZARD_EXISTING_MEASURE_DIALOG_TITLE,
+)
+from moduly.rizeni_rizik.sluzby.existing_measure_relevance import (
+    EXISTING_MEASURE_RELEVANCE_REQUIRED,
+)
+from moduly.rizeni_rizik.sluzby.exposed_target_ref import ExposedTargetRef
 from moduly.rizeni_rizik.sluzby.hazard_identification_working_copy import (
     find_identification_working_copy,
 )
 from moduly.rizeni_rizik.sluzby.hazard_existing_measure_service import (
     HazardExistingMeasureError,
     hazard_existing_measure_service,
+)
+from moduly.rizeni_rizik.sluzby.hazard_risk_assessment_service import (
+    hazard_risk_assessment_service,
+)
+from moduly.rizeni_rizik.ui.existing_measure_relevance_selector import (
+    ExistingMeasureRelevanceSelector,
 )
 
 
@@ -37,7 +50,7 @@ class HazardExistingMeasureDialog(QDialog):
         self.read_only = read_only
 
         self.setWindowTitle(HAZARD_EXISTING_MEASURE_DIALOG_TITLE)
-        self.resize(560, 320)
+        self.resize(560, 420)
 
         layout = QVBoxLayout(self)
         form = QFormLayout()
@@ -46,11 +59,13 @@ class HazardExistingMeasureDialog(QDialog):
         self.description.setMinimumHeight(100)
         self.note = QPlainTextEdit()
         self.note.setMinimumHeight(60)
+        self.relevance = ExistingMeasureRelevanceSelector(self)
         self.active_checkbox = QCheckBox("Aktivní")
         self.active_checkbox.setChecked(True)
 
         form.addRow("Popis opatření *:", self.description)
         form.addRow("Poznámka:", self.note)
+        form.addRow(f"{EXISTING_MEASURE_RELEVANCE_LABEL}:", self.relevance)
         form.addRow("", self.active_checkbox)
 
         layout.addLayout(form)
@@ -60,16 +75,37 @@ class HazardExistingMeasureDialog(QDialog):
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
 
+        available = self._assessment_refs()
         if measure is not None:
             self.description.setPlainText(measure.description)
             self.note.setPlainText(measure.note or "")
             self.active_checkbox.setChecked(bool(measure.active))
+            self.relevance.set_options(available, self._measure_refs(measure))
+        else:
+            self.relevance.set_options(available)
 
         if read_only:
             self.description.setReadOnly(True)
             self.note.setReadOnly(True)
+            self.relevance.setEnabled(False)
             self.active_checkbox.setEnabled(False)
             buttons.button(QDialogButtonBox.StandardButton.Save).setEnabled(False)
+
+    def _assessment_refs(self) -> list[ExposedTargetRef]:
+        store = find_identification_working_copy(self)
+        if store is not None:
+            assessment = store.get_assessment(self.hazard_risk_assessment_id)
+            if assessment is not None:
+                return list(assessment.target_refs)
+        return hazard_risk_assessment_service.get_target_refs(
+            self.hazard_risk_assessment_id,
+        )
+
+    def _measure_refs(self, measure) -> list[ExposedTargetRef]:
+        stored = getattr(measure, "target_refs", None)
+        if stored is not None:
+            return list(stored)
+        return hazard_existing_measure_service.get_target_refs(measure.id)
 
     def accept(self) -> None:
         if self.read_only:
@@ -77,6 +113,14 @@ class HazardExistingMeasureDialog(QDialog):
             return
 
         data = self.get_data()
+        if self.relevance.available_refs() and not data["target_refs"]:
+            QMessageBox.warning(
+                self,
+                HAZARD_EXISTING_MEASURE_DIALOG_TITLE,
+                EXISTING_MEASURE_RELEVANCE_REQUIRED,
+            )
+            return
+
         store = find_identification_working_copy(self)
         try:
             if store is not None:
@@ -114,4 +158,5 @@ class HazardExistingMeasureDialog(QDialog):
             "description": self.description.toPlainText().strip(),
             "note": self.note.toPlainText().strip(),
             "active": self.active_checkbox.isChecked(),
+            "target_refs": self.relevance.selected_refs(),
         }

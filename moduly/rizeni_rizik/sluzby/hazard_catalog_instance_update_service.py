@@ -11,11 +11,18 @@ from moduly.rizeni_rizik.constants import (
 )
 from moduly.rizeni_rizik.modely.hazard_event import HazardEvent
 from moduly.rizeni_rizik.modely.hazard_existing_measure import HazardExistingMeasure
+from moduly.rizeni_rizik.modely.hazard_existing_measure_exposed_group import (
+    HazardExistingMeasureExposedGroup,
+)
 from moduly.rizeni_rizik.modely.hazard_inventory_item import HazardInventoryItem
 from moduly.rizeni_rizik.modely.hazard_required_measure import HazardRequiredMeasure
 from moduly.rizeni_rizik.modely.hazard_risk_assessment import HazardRiskAssessment
 from moduly.rizeni_rizik.modely.hazard_risk_assessment_exposed_group import (
     HazardRiskAssessmentExposedGroup,
+)
+from moduly.rizeni_rizik.sluzby.existing_measure_relevance import (
+    copy_relevance_refs,
+    replace_refs_in_session,
 )
 from moduly.rizeni_rizik.sluzby.exposed_target_ref import (
     effective_target_refs,
@@ -269,6 +276,19 @@ class HazardCatalogInstanceUpdateService:
             )
         )
         if assessment_ids:
+            existing_ids = list(
+                session.scalars(
+                    select(HazardExistingMeasure.id).where(
+                        HazardExistingMeasure.hazard_risk_assessment_id.in_(assessment_ids)
+                    )
+                )
+            )
+            if existing_ids:
+                session.execute(
+                    delete(HazardExistingMeasureExposedGroup).where(
+                        HazardExistingMeasureExposedGroup.measure_id.in_(existing_ids)
+                    )
+                )
             session.execute(
                 delete(HazardRequiredMeasure).where(
                     HazardRequiredMeasure.hazard_risk_assessment_id.in_(assessment_ids)
@@ -277,6 +297,11 @@ class HazardCatalogInstanceUpdateService:
             session.execute(
                 delete(HazardExistingMeasure).where(
                     HazardExistingMeasure.hazard_risk_assessment_id.in_(assessment_ids)
+                )
+            )
+            session.execute(
+                delete(HazardRiskAssessmentExposedGroup).where(
+                    HazardRiskAssessmentExposedGroup.assessment_id.in_(assessment_ids)
                 )
             )
             session.execute(
@@ -349,15 +374,26 @@ class HazardCatalogInstanceUpdateService:
 
                 existing_measures, required_measures = assessment_measures[assessment.id]
                 for measure in existing_measures:
-                    session.add(
-                        HazardExistingMeasure(
-                            hazard_risk_assessment_id=hazard_assessment.id,
-                            description=measure.description,
-                            note=measure.note or "",
-                            active=True,
-                            modified=False,
-                            sort_order=measure.sort_order,
-                        )
+                    instance_measure = HazardExistingMeasure(
+                        hazard_risk_assessment_id=hazard_assessment.id,
+                        description=measure.description,
+                        note=measure.note or "",
+                        active=True,
+                        modified=False,
+                        sort_order=measure.sort_order,
+                    )
+                    session.add(instance_measure)
+                    session.flush()
+                    replace_refs_in_session(
+                        session,
+                        HazardExistingMeasureExposedGroup,
+                        int(instance_measure.id),
+                        copy_relevance_refs(
+                            hazard_library_template_existing_measure_service.get_target_refs(
+                                measure.id,
+                            ),
+                            target_refs,
+                        ),
                     )
                     existing_measure_count += 1
                 for measure in required_measures:

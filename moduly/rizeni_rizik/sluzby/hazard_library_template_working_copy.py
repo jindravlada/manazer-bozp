@@ -50,6 +50,9 @@ from moduly.rizeni_rizik.modely.hazard_library_template_measure import (
     HazardLibraryTemplateExistingMeasure,
     HazardLibraryTemplateRequiredMeasure,
 )
+from moduly.rizeni_rizik.modely.hazard_library_template_existing_measure_exposed_group import (
+    HazardLibraryTemplateExistingMeasureExposedGroup,
+)
 from moduly.rizeni_rizik.modely.hazard_library_template_revision import (
     HazardLibraryTemplateRevision,
 )
@@ -71,6 +74,13 @@ from moduly.rizeni_rizik.sluzby.hazard_library_template_legal_link_service impor
 from moduly.rizeni_rizik.sluzby.hazard_library_template_required_measure_service import (
     HazardLibraryTemplateRequiredMeasureError,
 )
+from moduly.rizeni_rizik.sluzby.existing_measure_relevance import (
+    apply_assessment_ref_changes,
+    list_refs_for_measures_in_session,
+    replace_refs_in_session,
+    resolve_create_refs,
+    validate_measure_refs,
+)
 from moduly.rizeni_rizik.sluzby.exposed_target_ref import (
     SOURCE_TYPE_HAZARD_GROUP,
     ExposedTargetRef,
@@ -89,6 +99,7 @@ class WcMeasure:
     note: str = ""
     active: bool = True
     sort_order: int = 0
+    target_refs: list[ExposedTargetRef] = field(default_factory=list)
 
 
 @dataclass
@@ -238,6 +249,11 @@ class HazardLibraryTemplateWorkingCopy:
                             ),
                         ),
                     )
+                    existing_refs = list_refs_for_measures_in_session(
+                        session,
+                        HazardLibraryTemplateExistingMeasureExposedGroup,
+                        [int(measure.id) for measure in existing],
+                    )
                     for measure in existing:
                         wc_assessment.existing_measures.append(
                             WcMeasure(
@@ -247,6 +263,7 @@ class HazardLibraryTemplateWorkingCopy:
                                 note=measure.note or "",
                                 active=bool(measure.active),
                                 sort_order=int(measure.sort_order or 0),
+                                target_refs=list(existing_refs.get(int(measure.id), [])),
                             ),
                         )
                     required = list(
@@ -633,6 +650,7 @@ class HazardLibraryTemplateWorkingCopy:
             exclude_assessment_id=assessment_id,
             active=active,
         )
+        old_refs = list(assessment.target_refs)
         assessment.exposed_group_id = legacy_exposed_group_id(refs)
         assessment.exposed_group_ids = list(group_ids)
         assessment.target_refs = list(refs)
@@ -640,6 +658,7 @@ class HazardLibraryTemplateWorkingCopy:
         assessment.conclusion = conclusion.strip()
         assessment.note = note.strip()
         assessment.active = active
+        self._sync_existing_measure_refs(assessment, old_refs=old_refs, new_refs=refs)
         self._touch()
         return self._assessment_proxy(assessment)
 
@@ -668,6 +687,20 @@ class HazardLibraryTemplateWorkingCopy:
         assessment.active = False
         self._touch()
         return True
+
+    def _sync_existing_measure_refs(
+        self,
+        assessment: WcAssessment,
+        *,
+        old_refs: list[ExposedTargetRef],
+        new_refs: list[ExposedTargetRef],
+    ) -> None:
+        for measure in assessment.existing_measures:
+            measure.target_refs = apply_assessment_ref_changes(
+                measure.target_refs,
+                old_assessment_refs=old_refs,
+                new_assessment_refs=new_refs,
+            )
 
     def _assessment_proxy(self, assessment: WcAssessment) -> HazardLibraryTemplateAssessment:
         return HazardLibraryTemplateAssessment(
@@ -816,6 +849,7 @@ class HazardLibraryTemplateWorkingCopy:
         description: str,
         note: str = "",
         active: bool = True,
+        target_refs: list[ExposedTargetRef] | tuple[ExposedTargetRef, ...] | None = None,
     ) -> WcMeasure:
         del template_id
         return self._create_measure(
@@ -824,6 +858,7 @@ class HazardLibraryTemplateWorkingCopy:
             note=note,
             active=active,
             existing=True,
+            target_refs=target_refs,
         )
 
     def create_required_measure(
@@ -853,6 +888,7 @@ class HazardLibraryTemplateWorkingCopy:
         description: str,
         note: str = "",
         active: bool = True,
+        target_refs: list[ExposedTargetRef] | tuple[ExposedTargetRef, ...] | None = None,
     ) -> WcMeasure | None:
         del template_id
         return self._update_measure(
@@ -862,6 +898,7 @@ class HazardLibraryTemplateWorkingCopy:
             note=note,
             active=active,
             existing=True,
+            target_refs=target_refs,
         )
 
     def update_required_measure(
@@ -904,6 +941,7 @@ class HazardLibraryTemplateWorkingCopy:
         note: str,
         active: bool,
         existing: bool,
+        target_refs: list[ExposedTargetRef] | tuple[ExposedTargetRef, ...] | None = None,
     ) -> WcMeasure:
         assessment = self.get_assessment(template_assessment_id)
         if assessment is None:
@@ -932,6 +970,12 @@ class HazardLibraryTemplateWorkingCopy:
             existing=existing,
         )
         sort_order = max((row.sort_order for row in bucket), default=0) + 1
+        measure_refs: list[ExposedTargetRef] = []
+        if existing:
+            try:
+                measure_refs = resolve_create_refs(target_refs, assessment.target_refs)
+            except ValueError as error:
+                raise HazardLibraryTemplateExistingMeasureError(str(error)) from error
         measure = WcMeasure(
             id=self._alloc_id(),
             template_assessment_id=template_assessment_id,
@@ -939,6 +983,7 @@ class HazardLibraryTemplateWorkingCopy:
             note=note.strip(),
             active=active,
             sort_order=sort_order,
+            target_refs=measure_refs,
         )
         bucket.append(measure)
         self._touch()
@@ -953,6 +998,7 @@ class HazardLibraryTemplateWorkingCopy:
         note: str,
         active: bool,
         existing: bool,
+        target_refs: list[ExposedTargetRef] | tuple[ExposedTargetRef, ...] | None = None,
     ) -> WcMeasure | None:
         measure = (
             self.get_existing_measure(measure_id)
@@ -990,6 +1036,14 @@ class HazardLibraryTemplateWorkingCopy:
         measure.description = normalized
         measure.note = note.strip()
         measure.active = active
+        if existing and target_refs is not None:
+            try:
+                measure.target_refs = validate_measure_refs(
+                    target_refs,
+                    assessment.target_refs,
+                )
+            except ValueError as error:
+                raise HazardLibraryTemplateExistingMeasureError(str(error)) from error
         self._touch()
         return measure
 
@@ -1365,6 +1419,7 @@ class HazardLibraryTemplateWorkingCopy:
             if existing
             else HazardLibraryTemplateRequiredMeasure
         )
+        measure_db_id: int | None = None
         if measure.id > 0:
             db_measure = session.get(model_cls, measure.id)
             if db_measure is None:
@@ -1375,17 +1430,26 @@ class HazardLibraryTemplateWorkingCopy:
             db_measure.active = measure.active
             db_measure.sort_order = measure.sort_order
             db_measure.updated_at = datetime.now()
-            return
-        db_measure = model_cls(
-            template_assessment_id=assessment_db_id,
-            description=measure.description,
-            note=measure.note,
-            active=measure.active,
-            sort_order=measure.sort_order,
-        )
-        session.add(db_measure)
-        session.flush()
-        id_map[measure.id] = int(db_measure.id)
+            measure_db_id = int(db_measure.id)
+        else:
+            db_measure = model_cls(
+                template_assessment_id=assessment_db_id,
+                description=measure.description,
+                note=measure.note,
+                active=measure.active,
+                sort_order=measure.sort_order,
+            )
+            session.add(db_measure)
+            session.flush()
+            measure_db_id = int(db_measure.id)
+            id_map[measure.id] = measure_db_id
+        if existing and measure_db_id is not None:
+            replace_refs_in_session(
+                session,
+                HazardLibraryTemplateExistingMeasureExposedGroup,
+                measure_db_id,
+                list(measure.target_refs),
+            )
 
     def _commit_legal_links(self, session) -> None:
         for link in self.legal_links:

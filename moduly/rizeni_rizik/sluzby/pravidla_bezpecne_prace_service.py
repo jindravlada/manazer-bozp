@@ -31,6 +31,7 @@ from moduly.rizeni_rizik.constants import (
     DEFAULT_RISK_SEVERITY,
     RISK_SEVERITIES,
 )
+from moduly.rizeni_rizik.sluzby.existing_measure_relevance import refs_match_targets
 from moduly.rizeni_rizik.sluzby.exposed_target_ref import (
     SOURCE_TYPE_HAZARD_GROUP,
     SOURCE_TYPE_ROLE,
@@ -468,10 +469,22 @@ class PravidlaBezpecnePraceService:
                 ):
                     continue
 
-                for measure in hazard_existing_measure_service.get_for_assessment(
+                measures = hazard_existing_measure_service.get_for_assessment(
                     row.assessment.id,
                     include_inactive=False,
-                ):
+                )
+                refs_by_measure = (
+                    hazard_existing_measure_service.relevance_repository.list_refs_for_measures(
+                        [measure.id for measure in measures],
+                    )
+                )
+                for measure in measures:
+                    if not refs_match_targets(
+                        refs_by_measure.get(measure.id, []),
+                        role_ids=target_roles,
+                        group_ids=target_groups,
+                    ):
+                        continue
                     text = normalize_rule_text(measure.description or "")
                     if not text:
                         continue

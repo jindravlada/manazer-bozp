@@ -423,6 +423,7 @@ def is_identification_risk_assessment_read_only(status: str) -> bool:
 EXISTING_MEASURES_TITLE = "Zásady bezpečné práce"
 HAZARD_EXISTING_MEASURE_DIALOG_TITLE = "Zásady bezpečné práce"
 EXISTING_MEASURE_SELECT_ASSESSMENT = "Vyberte posouzení rizika."
+EXISTING_MEASURE_RELEVANCE_LABEL = "Platí pro"
 
 EXISTING_MEASURE_COL_ID = 0
 EXISTING_MEASURE_COL_DESCRIPTION = 1

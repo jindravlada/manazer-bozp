@@ -1,9 +1,18 @@
 from datetime import datetime
 
 from moduly.rizeni_rizik.modely.hazard_existing_measure import HazardExistingMeasure
+from moduly.rizeni_rizik.repository.hazard_existing_measure_exposed_group_repository import (
+    HazardExistingMeasureExposedGroupRepository,
+)
 from moduly.rizeni_rizik.repository.hazard_existing_measure_repository import (
     HazardExistingMeasureRepository,
 )
+from moduly.rizeni_rizik.sluzby.existing_measure_relevance import (
+    apply_assessment_ref_changes,
+    resolve_create_refs,
+    validate_measure_refs,
+)
+from moduly.rizeni_rizik.sluzby.exposed_target_ref import ExposedTargetRef
 from moduly.rizeni_rizik.sluzby.hazard_catalog_instance_modification import (
     mark_existing_measure_modified_if_catalog_instance,
 )
@@ -25,6 +34,7 @@ def normalize_measure_description(description: str) -> str:
 class HazardExistingMeasureService:
     def __init__(self):
         self.repository = HazardExistingMeasureRepository()
+        self.relevance_repository = HazardExistingMeasureExposedGroupRepository()
 
     def get_for_assessment(
         self,
@@ -55,6 +65,9 @@ class HazardExistingMeasureService:
             counts[assessment_id] = self.repository.count_active_for_assessment(assessment_id)
         return counts
 
+    def get_target_refs(self, measure_id: int) -> list[ExposedTargetRef]:
+        return self.relevance_repository.list_refs(measure_id)
+
     def create_measure(
         self,
         *,
@@ -63,6 +76,7 @@ class HazardExistingMeasureService:
         description: str,
         note: str = "",
         active: bool = True,
+        target_refs: list[ExposedTargetRef] | tuple[ExposedTargetRef, ...] | None = None,
     ) -> HazardExistingMeasure:
         normalized_description = description.strip()
         if not normalized_description:
@@ -75,6 +89,7 @@ class HazardExistingMeasureService:
             exclude_measure_id=None,
             active=active,
         )
+        refs = self._resolve_create_refs(hazard_risk_assessment_id, target_refs)
 
         measure = HazardExistingMeasure(
             hazard_risk_assessment_id=hazard_risk_assessment_id,
@@ -84,7 +99,9 @@ class HazardExistingMeasureService:
             sort_order=self.repository.next_sort_order(hazard_risk_assessment_id),
         )
         mark_existing_measure_modified_if_catalog_instance(measure)
-        return self.repository.add(measure)
+        saved = self.repository.add(measure)
+        self.relevance_repository.replace_refs(saved.id, refs)
+        return saved
 
     def update_measure(
         self,
@@ -95,6 +112,7 @@ class HazardExistingMeasureService:
         description: str,
         note: str = "",
         active: bool = True,
+        target_refs: list[ExposedTargetRef] | tuple[ExposedTargetRef, ...] | None = None,
     ) -> HazardExistingMeasure | None:
         measure = self.repository.get_by_id(measure_id)
         if measure is None:
@@ -111,6 +129,9 @@ class HazardExistingMeasureService:
             exclude_measure_id=measure_id,
             active=active,
         )
+        refs = None
+        if target_refs is not None:
+            refs = self._validate_refs(hazard_risk_assessment_id, target_refs)
 
         measure.hazard_risk_assessment_id = hazard_risk_assessment_id
         measure.description = normalized_description
@@ -118,7 +139,51 @@ class HazardExistingMeasureService:
         measure.active = active
         measure.updated_at = datetime.now()
         mark_existing_measure_modified_if_catalog_instance(measure)
-        return self.repository.update(measure)
+        saved = self.repository.update(measure)
+        if refs is not None:
+            self.relevance_repository.replace_refs(saved.id, refs)
+        return saved
+
+    def sync_relevance_for_assessment(
+        self,
+        assessment_id: int,
+        *,
+        old_refs: list[ExposedTargetRef],
+        new_refs: list[ExposedTargetRef],
+    ) -> None:
+        measures = self.repository.get_for_assessment(assessment_id, include_inactive=True)
+        refs_by_id = self.relevance_repository.list_refs_for_measures(
+            [measure.id for measure in measures],
+        )
+        for measure in measures:
+            updated = apply_assessment_ref_changes(
+                refs_by_id.get(measure.id, []),
+                old_assessment_refs=old_refs,
+                new_assessment_refs=new_refs,
+            )
+            self.relevance_repository.replace_refs(measure.id, updated)
+
+    def _resolve_create_refs(
+        self,
+        assessment_id: int,
+        target_refs: list[ExposedTargetRef] | tuple[ExposedTargetRef, ...] | None,
+    ) -> list[ExposedTargetRef]:
+        assessment_refs = hazard_risk_assessment_service.get_target_refs(assessment_id)
+        try:
+            return resolve_create_refs(target_refs, assessment_refs)
+        except ValueError as error:
+            raise HazardExistingMeasureError(str(error)) from error
+
+    def _validate_refs(
+        self,
+        assessment_id: int,
+        target_refs: list[ExposedTargetRef] | tuple[ExposedTargetRef, ...] | None,
+    ) -> list[ExposedTargetRef]:
+        assessment_refs = hazard_risk_assessment_service.get_target_refs(assessment_id)
+        try:
+            return validate_measure_refs(target_refs, assessment_refs)
+        except ValueError as error:
+            raise HazardExistingMeasureError(str(error)) from error
 
     def activate_measure(self, measure_id: int) -> bool:
         measure = self.repository.get_by_id(measure_id)

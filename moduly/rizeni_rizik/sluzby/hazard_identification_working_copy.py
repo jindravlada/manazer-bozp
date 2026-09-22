@@ -34,6 +34,9 @@ from moduly.rizeni_rizik.constants import (
 )
 from moduly.rizeni_rizik.modely.hazard_event import HazardEvent
 from moduly.rizeni_rizik.modely.hazard_existing_measure import HazardExistingMeasure
+from moduly.rizeni_rizik.modely.hazard_existing_measure_exposed_group import (
+    HazardExistingMeasureExposedGroup,
+)
 from moduly.rizeni_rizik.modely.hazard_identification import HazardIdentification
 from moduly.rizeni_rizik.modely.hazard_identification_photo import HazardIdentificationPhoto
 from moduly.rizeni_rizik.modely.hazard_inventory_item import HazardInventoryItem
@@ -90,6 +93,14 @@ from moduly.rizeni_rizik.sluzby.hazard_risk_assessment_service import (
     HazardRiskAssessmentError,
     HazardRiskAssessmentRow,
 )
+from moduly.rizeni_rizik.sluzby.existing_measure_relevance import (
+    apply_assessment_ref_changes,
+    copy_relevance_refs,
+    list_refs_for_measures_in_session,
+    replace_refs_in_session,
+    resolve_create_refs,
+    validate_measure_refs,
+)
 from moduly.rizeni_rizik.sluzby.exposed_target_ref import (
     SOURCE_TYPE_HAZARD_GROUP,
     ExposedTargetRef,
@@ -112,6 +123,7 @@ class IdWcMeasure:
     active: bool = True
     modified: bool = False
     sort_order: int = 0
+    target_refs: list[ExposedTargetRef] = field(default_factory=list)
 
     def display_title(self) -> str:
         return (self.title or self.description or "").strip()
@@ -337,6 +349,11 @@ class HazardIdentificationWorkingCopy:
                                 ),
                             ),
                         )
+                        existing_refs = list_refs_for_measures_in_session(
+                            session,
+                            HazardExistingMeasureExposedGroup,
+                            [int(measure.id) for measure in existing],
+                        )
                         for measure in existing:
                             wc_assessment.existing_measures.append(
                                 IdWcMeasure(
@@ -347,6 +364,7 @@ class HazardIdentificationWorkingCopy:
                                     active=bool(measure.active),
                                     modified=bool(measure.modified),
                                     sort_order=int(measure.sort_order or 0),
+                                    target_refs=list(existing_refs.get(int(measure.id), [])),
                                 ),
                             )
                         required = list(
@@ -971,6 +989,7 @@ class HazardIdentificationWorkingCopy:
             exclude_assessment_id=assessment_id,
             active=active,
         )
+        old_refs = list(assessment.target_refs)
         current_event = self._find_event_containing_assessment(assessment_id)
         if current_event is not None and current_event.id != hazard_event_id:
             current_event.assessments = [
@@ -992,6 +1011,7 @@ class HazardIdentificationWorkingCopy:
             target_refs=refs,
             severity=normalized_severity,
         )
+        self._sync_existing_measure_refs(assessment, old_refs=old_refs, new_refs=refs)
         self._mark_assessment_modified(assessment, event)
         self._touch()
         return self._assessment_proxy(assessment)
@@ -1226,6 +1246,20 @@ class HazardIdentificationWorkingCopy:
             active=active,
         )
 
+    def _sync_existing_measure_refs(
+        self,
+        assessment: IdWcAssessment,
+        *,
+        old_refs: list[ExposedTargetRef],
+        new_refs: list[ExposedTargetRef],
+    ) -> None:
+        for measure in assessment.existing_measures:
+            measure.target_refs = apply_assessment_ref_changes(
+                measure.target_refs,
+                old_assessment_refs=old_refs,
+                new_assessment_refs=new_refs,
+            )
+
     def _mark_assessment_modified(
         self,
         assessment: IdWcAssessment,
@@ -1293,6 +1327,7 @@ class HazardIdentificationWorkingCopy:
         description: str,
         note: str = "",
         active: bool = True,
+        target_refs: list[ExposedTargetRef] | tuple[ExposedTargetRef, ...] | None = None,
     ) -> IdWcMeasure:
         return self._create_measure(
             hazard_risk_assessment_id,
@@ -1300,6 +1335,7 @@ class HazardIdentificationWorkingCopy:
             note=note,
             active=active,
             existing=True,
+            target_refs=target_refs,
         )
 
     def create_required_measure(
@@ -1337,6 +1373,7 @@ class HazardIdentificationWorkingCopy:
         description: str,
         note: str = "",
         active: bool = True,
+        target_refs: list[ExposedTargetRef] | tuple[ExposedTargetRef, ...] | None = None,
     ) -> IdWcMeasure | None:
         return self._update_measure(
             measure_id,
@@ -1345,6 +1382,7 @@ class HazardIdentificationWorkingCopy:
             note=note,
             active=active,
             existing=True,
+            target_refs=target_refs,
         )
 
     def update_required_measure(
@@ -1397,6 +1435,7 @@ class HazardIdentificationWorkingCopy:
         active: bool,
         existing: bool,
         title: str = "",
+        target_refs: list[ExposedTargetRef] | tuple[ExposedTargetRef, ...] | None = None,
     ) -> IdWcMeasure:
         assessment = self.get_assessment(hazard_risk_assessment_id)
         if assessment is None:
@@ -1430,6 +1469,12 @@ class HazardIdentificationWorkingCopy:
             existing=existing,
         )
         sort_order = max((row.sort_order for row in bucket), default=0) + 1
+        measure_refs: list[ExposedTargetRef] = []
+        if existing:
+            try:
+                measure_refs = resolve_create_refs(target_refs, assessment.target_refs)
+            except ValueError as error:
+                raise HazardExistingMeasureError(str(error)) from error
         measure = IdWcMeasure(
             id=self._alloc_id(),
             hazard_risk_assessment_id=hazard_risk_assessment_id,
@@ -1438,6 +1483,7 @@ class HazardIdentificationWorkingCopy:
             note=measure_note,
             active=active,
             sort_order=sort_order,
+            target_refs=measure_refs,
         )
         self._mark_measure_modified(measure, assessment)
         bucket.append(measure)
@@ -1471,6 +1517,7 @@ class HazardIdentificationWorkingCopy:
         active: bool,
         existing: bool,
         title: str = "",
+        target_refs: list[ExposedTargetRef] | tuple[ExposedTargetRef, ...] | None = None,
     ) -> IdWcMeasure | None:
         measure = (
             self._get_existing_measure(measure_id)
@@ -1537,6 +1584,14 @@ class HazardIdentificationWorkingCopy:
         measure.description = measure_description
         measure.note = measure_note
         measure.active = active
+        if existing and target_refs is not None:
+            try:
+                measure.target_refs = validate_measure_refs(
+                    target_refs,
+                    assessment.target_refs,
+                )
+            except ValueError as error:
+                raise HazardExistingMeasureError(str(error)) from error
         self._mark_measure_modified(measure, assessment)
         self._touch()
         return measure
@@ -1883,6 +1938,12 @@ class HazardIdentificationWorkingCopy:
                             active=measure.active if include_inactive else True,
                             modified=False,
                             sort_order=measure.sort_order,
+                            target_refs=copy_relevance_refs(
+                                hazard_library_template_existing_measure_service.get_target_refs(
+                                    measure.id,
+                                ),
+                                target_refs,
+                            ),
                         ),
                     )
                     existing_measure_count += 1
@@ -2062,6 +2123,12 @@ class HazardIdentificationWorkingCopy:
                             active=measure.active if include_inactive else True,
                             modified=False,
                             sort_order=measure.sort_order,
+                            target_refs=copy_relevance_refs(
+                                hazard_library_template_existing_measure_service.get_target_refs(
+                                    measure.id,
+                                ),
+                                target_refs,
+                            ),
                         ),
                     )
                     existing_measure_count += 1
@@ -2354,6 +2421,7 @@ class HazardIdentificationWorkingCopy:
         id_map: dict[int, int],
     ) -> None:
         model_cls = HazardExistingMeasure if existing else HazardRequiredMeasure
+        measure_db_id: int | None = None
         if measure.id > 0:
             db_measure = session.get(model_cls, measure.id)
             if db_measure is None:
@@ -2370,29 +2438,38 @@ class HazardIdentificationWorkingCopy:
             db_measure.modified = measure.modified
             db_measure.sort_order = measure.sort_order
             db_measure.updated_at = datetime.now()
-            return
-        if existing:
-            db_measure = model_cls(
-                hazard_risk_assessment_id=assessment_db_id,
-                description=measure.description,
-                note=measure.note,
-                active=measure.active,
-                modified=measure.modified,
-                sort_order=measure.sort_order,
-            )
+            measure_db_id = int(db_measure.id)
         else:
-            db_measure = model_cls(
-                hazard_risk_assessment_id=assessment_db_id,
-                title=measure.display_title(),
-                description=measure.display_title(),
-                note=measure.display_description(),
-                active=measure.active,
-                modified=measure.modified,
-                sort_order=measure.sort_order,
+            if existing:
+                db_measure = model_cls(
+                    hazard_risk_assessment_id=assessment_db_id,
+                    description=measure.description,
+                    note=measure.note,
+                    active=measure.active,
+                    modified=measure.modified,
+                    sort_order=measure.sort_order,
+                )
+            else:
+                db_measure = model_cls(
+                    hazard_risk_assessment_id=assessment_db_id,
+                    title=measure.display_title(),
+                    description=measure.display_title(),
+                    note=measure.display_description(),
+                    active=measure.active,
+                    modified=measure.modified,
+                    sort_order=measure.sort_order,
+                )
+            session.add(db_measure)
+            session.flush()
+            measure_db_id = int(db_measure.id)
+            id_map[measure.id] = measure_db_id
+        if existing and measure_db_id is not None:
+            replace_refs_in_session(
+                session,
+                HazardExistingMeasureExposedGroup,
+                measure_db_id,
+                list(measure.target_refs),
             )
-        session.add(db_measure)
-        session.flush()
-        id_map[measure.id] = int(db_measure.id)
 
     def _commit_photos(self, session, identification: HazardIdentification) -> None:
         identification_number = identification.identification_number or str(identification.id)

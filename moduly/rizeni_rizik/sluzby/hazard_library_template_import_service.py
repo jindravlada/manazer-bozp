@@ -44,6 +44,13 @@ from moduly.rizeni_rizik.sluzby.hazard_required_measure_service import (
 from moduly.rizeni_rizik.sluzby.hazard_risk_assessment_service import (
     hazard_risk_assessment_service,
 )
+from moduly.rizeni_rizik.modely.hazard_library_template_existing_measure_exposed_group import (
+    HazardLibraryTemplateExistingMeasureExposedGroup,
+)
+from moduly.rizeni_rizik.sluzby.existing_measure_relevance import (
+    copy_relevance_refs,
+    replace_refs_in_session,
+)
 from moduly.rizeni_rizik.sluzby.exposed_target_ref import (
     effective_target_refs,
     has_exposed_target_refs,
@@ -263,14 +270,23 @@ class HazardLibraryTemplateImportService:
 
                     existing_measures, required_measures = assessment_measures[assessment.id]
                     for measure in existing_measures:
-                        session.add(
-                            HazardLibraryTemplateExistingMeasure(
-                                template_assessment_id=template_assessment.id,
-                                description=measure.description,
-                                note=measure.note or "",
-                                active=measure.active if include_inactive else True,
-                                sort_order=measure.sort_order,
-                            )
+                        template_measure = HazardLibraryTemplateExistingMeasure(
+                            template_assessment_id=template_assessment.id,
+                            description=measure.description,
+                            note=measure.note or "",
+                            active=measure.active if include_inactive else True,
+                            sort_order=measure.sort_order,
+                        )
+                        session.add(template_measure)
+                        session.flush()
+                        replace_refs_in_session(
+                            session,
+                            HazardLibraryTemplateExistingMeasureExposedGroup,
+                            int(template_measure.id),
+                            copy_relevance_refs(
+                                hazard_existing_measure_service.get_target_refs(measure.id),
+                                target_refs,
+                            ),
                         )
                         existing_measure_count += 1
                     for measure in required_measures:

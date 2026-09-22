@@ -79,6 +79,13 @@ from moduly.rizeni_rizik.sluzby.exposed_target_ref import (
 from moduly.rizeni_rizik.sluzby.hazard_catalog_proposal_incorporate_service import (
     HazardCatalogProposalIncorporateService,
 )
+from moduly.rizeni_rizik.modely.hazard_library_template_existing_measure_exposed_group import (
+    HazardLibraryTemplateExistingMeasureExposedGroup,
+)
+from moduly.rizeni_rizik.sluzby.existing_measure_relevance import (
+    attach_default_measure_relevance_in_session,
+    list_assessment_refs_in_session,
+)
 from moduly.rizeni_rizik.sluzby.hazard_library_template_existing_measure_service import (
     normalize_template_measure_description,
 )
@@ -753,17 +760,21 @@ class HazardCatalogPackageIncorporateService:
                 description = (measure.description or "").strip()
                 if not description:
                     continue
-                session.add(
-                    HazardLibraryTemplateExistingMeasure(
-                        template_assessment_id=assessment_id,
-                        description=description,
-                        note=(measure.note or "").strip(),
-                        active=True,
-                        sort_order=self._order._next_existing_measure_sort_order(
-                            session,
-                            assessment_id,
-                        ),
+                catalog_measure = HazardLibraryTemplateExistingMeasure(
+                    template_assessment_id=assessment_id,
+                    description=description,
+                    note=(measure.note or "").strip(),
+                    active=True,
+                    sort_order=self._order._next_existing_measure_sort_order(
+                        session,
+                        assessment_id,
                     ),
+                )
+                session.add(catalog_measure)
+                self._attach_default_existing_measure_relevance(
+                    session,
+                    catalog_measure,
+                    assessment_id,
                 )
                 existing_added += 1
             for measure in assessment.required_measures:
@@ -842,20 +853,38 @@ class HazardCatalogPackageIncorporateService:
             if key in known:
                 continue
             known.add(key)
-            session.add(
-                HazardLibraryTemplateExistingMeasure(
-                    template_assessment_id=assessment_id,
-                    description=description,
-                    note=(measure.note or "").strip(),
-                    active=True,
-                    sort_order=self._order._next_existing_measure_sort_order(
-                        session,
-                        assessment_id,
-                    ),
+            catalog_measure = HazardLibraryTemplateExistingMeasure(
+                template_assessment_id=assessment_id,
+                description=description,
+                note=(measure.note or "").strip(),
+                active=True,
+                sort_order=self._order._next_existing_measure_sort_order(
+                    session,
+                    assessment_id,
                 ),
+            )
+            session.add(catalog_measure)
+            self._attach_default_existing_measure_relevance(
+                session,
+                catalog_measure,
+                assessment_id,
             )
             added += 1
         return added
+
+    @staticmethod
+    def _attach_default_existing_measure_relevance(session, measure, assessment_id: int) -> None:
+        session.flush()
+        attach_default_measure_relevance_in_session(
+            session,
+            HazardLibraryTemplateExistingMeasureExposedGroup,
+            int(measure.id),
+            list_assessment_refs_in_session(
+                session,
+                HazardLibraryTemplateAssessmentExposedGroup,
+                int(assessment_id),
+            ),
+        )
 
     def _add_unique_required_measures(self, session, *, assessment_id: int, measures) -> int:
         existing = session.scalars(
