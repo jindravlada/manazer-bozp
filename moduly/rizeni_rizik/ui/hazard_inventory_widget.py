@@ -79,9 +79,6 @@ from moduly.rizeni_rizik.sluzby.hazard_event_service import (
     hazard_event_service,
 )
 from moduly.rizeni_rizik.sluzby.hazard_inventory_item_service import hazard_inventory_item_service
-from moduly.rizeni_rizik.sluzby.hazard_library_template_service import (
-    hazard_library_template_service,
-)
 from moduly.rizeni_rizik.sluzby.hazard_risk_assessment_service import hazard_risk_assessment_service
 from moduly.rizeni_rizik.sluzby.hazard_source_category_service import (
     hazard_source_category_service,
@@ -395,25 +392,9 @@ class HazardInventoryWidget(QWidget):
             QMessageBox.information(self, INVENTORY_ITEM_DIALOG_TITLE, WORKPLACE_ANALYSIS_SELECT_ITEM)
             return
 
-        # R21: katalogová instance → editor Masteru; legacy lokální → starý dialog.
-        if item.source_template_id is not None:
-            template = hazard_library_template_service.get_by_id(item.source_template_id)
-            if template is None:
-                QMessageBox.warning(
-                    self,
-                    HAZARD_LIBRARY_DIALOG_TITLE,
-                    "Zdroj rizika v katalogu nebyl nalezen.",
-                )
-                return
-            item_id = item.id
-            dialog = HazardLibraryTemplateDialog(
-                self,
-                template=template,
-                on_template_persisted=lambda saved: self._on_master_edited(item_id, saved),
-            )
-            exec_maximized(dialog)
-            return
-
+        # RISK-INSTANCE-EDIT-1: Upravit vždy edituje provozní instanci,
+        # i když položka vznikla převzetím z katalogu. Master se otevírá
+        # jen v Katalogu zdrojů rizik, ne skrytě z Analýzy pracoviště.
         dialog = HazardInventoryItemDialog(
             self,
             hazard_identification_id=self._identification_id,
@@ -425,6 +406,7 @@ class HazardInventoryWidget(QWidget):
             self._notify_editor_dirty()
 
     def _on_master_edited(self, inventory_item_id: int, template) -> None:
+        """Obnoví instanci po výslovném uložení Masteru (ne z akce Upravit)."""
         store = self._store()
         if store is not None:
             try:
