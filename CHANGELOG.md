@@ -14,6 +14,16 @@
 
 ---
 
+# Verze 4.0.4
+
+Datum vydání:
+
+22. 9. 2026
+
+Rizika: oddělení lokálních úprav provozu a bezpečná aktualizace z Masteru
+
+---
+
 # Verze 4.0.3
 
 Datum vydání:
