@@ -14,6 +14,16 @@
 
 ---
 
+# Verze 4.0.5
+
+Datum vydání:
+
+24. 9. 2026
+
+RPP a rizika: Open Data import, nevyřešené právní odkazy AI a úprava výběru Platí pro
+
+---
+
 # Verze 4.0.4
 
 Datum vydání:
