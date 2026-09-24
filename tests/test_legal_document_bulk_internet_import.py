@@ -34,9 +34,12 @@ with patch.object(Path, "home", return_value=_TMP):
         DUPLICATE_SKIP_MESSAGE,
         legal_document_bulk_internet_import_service,
     )
-    from moduly.pravni_pozadavky.import_export.legal_document_esbirka_client import (
-        legal_document_esbirka_client,
+    from moduly.pravni_pozadavky.import_export.legal_document_esbirka_opendata_tree import (
+        ESbirkaOpenDataParsedTree,
+        legal_document_esbirka_opendata_tree_builder,
     )
+    from moduly.pravni_pozadavky.parser.legal_document_parser_models import ParsedLegalSection
+    from moduly.pravni_pozadavky.constants import SECTION_PARAGRAPH
     from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
 
 
@@ -85,27 +88,36 @@ class BulkInternetImportServiceTestCase(unittest.TestCase):
             session.execute(delete(LegalDocument))
             session.commit()
 
-        self.data_dir = Path(__file__).resolve().parent / "data"
-        self.fixture_262 = self.data_dir / "sample_esbirka_262_2006.html"
-        self.fixture_390 = self.data_dir / "sample_esbirka_390_2021.html"
-
-    def _fixture_html(self, fixture_path: Path) -> str:
-        return fixture_path.read_text(encoding="utf-8")
-
-    def _fetch_side_effect(self, *, year: int, number: str) -> str:
-        fixture_map = {
-            (2006, "262"): self.fixture_262,
-            (2021, "390"): self.fixture_390,
+    def _fetch_side_effect(self, *, year, number: str, on_date):
+        titles = {
+            (2006, "262"): "Zákon zákoník práce",
+            (2021, "390"): "Nařízení vlády o bližších podmínkách poskytování osobních ochranných pracovních prostředků",
         }
-        fixture_path = fixture_map.get((year, number))
-        if fixture_path is None:
+        key = (int(year), str(number))
+        title = titles.get(key)
+        if title is None:
             raise ValueError("Předpis nenalezen.")
-        return self._fixture_html(fixture_path)
+        return ESbirkaOpenDataParsedTree(
+            source_eli=f"eli/cz/sb/{year}/{number}/2026-01-01",
+            source_url=f"https://opendata.eselpoint.gov.cz/esel-esb/eli/cz/sb/{year}/{number}",
+            effective_from=None,
+            version_label="e-Sbírka",
+            sections=(
+                ParsedLegalSection(
+                    section_type=SECTION_PARAGRAPH,
+                    paragraph="1",
+                    title="Rozsah",
+                    text="Text ustanovení.",
+                    sort_order=1,
+                ),
+            ),
+            document_title=title,
+        )
 
     def test_bulk_import_continues_after_error(self) -> None:
         with patch.object(
-            legal_document_esbirka_client,
-            "fetch_full_text_html",
+            legal_document_esbirka_opendata_tree_builder,
+            "fetch_in_force_tree",
             side_effect=self._fetch_side_effect,
         ):
             summary = legal_document_bulk_internet_import_service.import_lines(
@@ -130,8 +142,8 @@ class BulkInternetImportServiceTestCase(unittest.TestCase):
         )
 
         with patch.object(
-            legal_document_esbirka_client,
-            "fetch_full_text_html",
+            legal_document_esbirka_opendata_tree_builder,
+            "fetch_in_force_tree",
             side_effect=self._fetch_side_effect,
         ) as fetch_mock:
             summary = legal_document_bulk_internet_import_service.import_lines("262/2006")
@@ -154,8 +166,8 @@ class BulkInternetImportServiceTestCase(unittest.TestCase):
         )
 
         with patch.object(
-            legal_document_esbirka_client,
-            "fetch_full_text_html",
+            legal_document_esbirka_opendata_tree_builder,
+            "fetch_in_force_tree",
             side_effect=self._fetch_side_effect,
         ):
             summary = legal_document_bulk_internet_import_service.import_lines(
@@ -178,8 +190,8 @@ class BulkInternetImportServiceTestCase(unittest.TestCase):
         status_events: list[str] = []
 
         with patch.object(
-            legal_document_esbirka_client,
-            "fetch_full_text_html",
+            legal_document_esbirka_opendata_tree_builder,
+            "fetch_in_force_tree",
             side_effect=self._fetch_side_effect,
         ):
             summary = legal_document_bulk_internet_import_service.import_lines(
@@ -204,8 +216,8 @@ class BulkInternetImportServiceTestCase(unittest.TestCase):
             return cancelled_after["value"] >= 1
 
         with patch.object(
-            legal_document_esbirka_client,
-            "fetch_full_text_html",
+            legal_document_esbirka_opendata_tree_builder,
+            "fetch_in_force_tree",
             side_effect=self._fetch_side_effect,
         ):
             summary = legal_document_bulk_internet_import_service.import_lines(

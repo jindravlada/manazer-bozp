@@ -94,23 +94,25 @@ def _tree_signature(tree: LegalSectionTree) -> tuple:
 
 def _import_nv_390_sections():
     from pathlib import Path
-    from unittest.mock import patch
 
     from moduly.pravni_pozadavky.import_export.legal_document_esbirka_client import (
         legal_document_esbirka_client,
     )
-    from moduly.pravni_pozadavky.import_export.legal_document_internet_import_service import (
-        legal_document_internet_import_service,
+    from moduly.pravni_pozadavky.import_export.legal_document_json_import_service import (
+        legal_document_json_import_service,
     )
+    from moduly.pravni_pozadavky.parser.legal_document_parser import legal_document_parser
 
     fixture = Path(__file__).resolve().parent / "data" / "sample_esbirka_390_2021.html"
     html = fixture.read_text(encoding="utf-8")
-    with patch.object(legal_document_esbirka_client, "fetch_full_text_html", return_value=html):
-        result = legal_document_internet_import_service.import_from_internet(
-            document_type="narizeni_vlady",
-            number="390",
-            year=2021,
-        )
+    parsed = legal_document_parser.parse_text(
+        legal_document_esbirka_client.html_to_text(html),
+        document_type="narizeni_vlady",
+        number="390",
+        year=2021,
+        title=legal_document_esbirka_client.extract_title(html),
+    )
+    result = legal_document_json_import_service.import_data(parsed.to_dict())
     return legal_section_service.list_by_version(result.version_id)
 
 

@@ -87,6 +87,30 @@ class LegalDocumentInternetImportTestCase(unittest.TestCase):
         finally:
             Path(temp_path).unlink(missing_ok=True)
 
+    def _tree_from_html_fixture(self, fixture_path: Path, *, number: str, year: int):
+        from moduly.pravni_pozadavky.import_export.legal_document_esbirka_opendata_tree import (
+            ESbirkaOpenDataParsedTree,
+        )
+        from moduly.pravni_pozadavky.parser.legal_document_parser import legal_document_parser
+
+        html = self._fixture_html(fixture_path)
+        title = legal_document_esbirka_client.extract_title(html)
+        parsed = legal_document_parser.parse_text(
+            legal_document_esbirka_client.html_to_text(html),
+            document_type="zakon",
+            number=number,
+            year=year,
+            title=title,
+        )
+        return ESbirkaOpenDataParsedTree(
+            source_eli=f"eli/cz/sb/{year}/{number}/2026-01-01",
+            source_url=f"https://opendata.eselpoint.gov.cz/esel-esb/eli/cz/sb/{year}/{number}",
+            effective_from=None,
+            version_label="e-Sbírka",
+            sections=tuple(parsed.sections),
+            document_title=title,
+        )
+
     def _import_via_internet_mock(
         self,
         fixture_path: Path,
@@ -94,18 +118,30 @@ class LegalDocumentInternetImportTestCase(unittest.TestCase):
         document_type: str,
         number: str,
         year: int,
+        on_status=None,
     ):
-        html = self._fixture_html(fixture_path)
+        from moduly.pravni_pozadavky.import_export.legal_document_esbirka_opendata_tree import (
+            legal_document_esbirka_opendata_tree_builder,
+        )
+
+        tree = self._tree_from_html_fixture(fixture_path, number=number, year=year)
         with patch.object(
+            legal_document_esbirka_opendata_tree_builder,
+            "fetch_in_force_tree",
+            return_value=tree,
+        ) as fetch_tree, patch.object(
             legal_document_esbirka_client,
             "fetch_full_text_html",
-            return_value=html,
+            side_effect=AssertionError("HTML e-Sbírka se nesmí volat"),
         ):
-            return legal_document_internet_import_service.import_from_internet(
+            result = legal_document_internet_import_service.import_from_internet(
                 document_type=document_type,
                 number=number,
                 year=year,
+                on_status=on_status,
             )
+        fetch_tree.assert_called()
+        return result
 
     def _section_snapshot(self, version_id: int) -> list[tuple]:
         sections = legal_section_service.list_by_version(version_id)
@@ -222,19 +258,14 @@ class LegalDocumentInternetImportTestCase(unittest.TestCase):
         self.assertEqual(str(context.exception), "Neočekávaný formát stránky.")
 
     def test_import_reports_progress_statuses(self) -> None:
-        html = self._fixture_html(self.fixture_390)
         statuses: list[str] = []
-        with patch.object(
-            legal_document_esbirka_client,
-            "fetch_full_text_html",
-            return_value=html,
-        ):
-            legal_document_internet_import_service.import_from_internet(
-                document_type="narizeni_vlady",
-                number="390",
-                year=2021,
-                on_status=statuses.append,
-            )
+        self._import_via_internet_mock(
+            self.fixture_390,
+            document_type="narizeni_vlady",
+            number="390",
+            year=2021,
+            on_status=statuses.append,
+        )
 
         self.assertEqual(
             statuses,
@@ -394,6 +425,97 @@ class LegalDocumentInternetImportTestCase(unittest.TestCase):
         document = legal_document_service.get_by_id(result.document_id)
         assert document is not None
         self.assertEqual(document.document_type, "narizeni_vlady")
+
+    def test_opendata_title_uses_prefix_fragments_not_citation(self) -> None:
+        from moduly.pravni_pozadavky.import_export.legal_document_esbirka_opendata_client import (
+            ESbirkaOpenDataFragmentContent,
+        )
+        from moduly.pravni_pozadavky.import_export.legal_document_esbirka_opendata_tree import (
+            legal_document_esbirka_opendata_tree_builder,
+        )
+
+        contents = (
+            ESbirkaOpenDataFragmentContent(
+                fragment_eli="eli/prefix-type",
+                fragment_type="Prefix_Type",
+                html="NAŘÍZENÍ VLÁDY",
+                text="NAŘÍZENÍ VLÁDY",
+            ),
+            ESbirkaOpenDataFragmentContent(
+                fragment_eli="eli/prefix-title",
+                fragment_type="Prefix_Title",
+                html="o bližších požadavcích na zajištění bezpečnosti a ochrany zdraví při práci v prostředí s nebezpečím výbuchu",
+                text="o bližších požadavcích na zajištění bezpečnosti a ochrany zdraví při práci v prostředí s nebezpečím výbuchu",
+            ),
+            ESbirkaOpenDataFragmentContent(
+                fragment_eli="eli/citation",
+                fragment_type="Prefix_Number",
+                html="406",
+                text="406",
+            ),
+        )
+        title = legal_document_esbirka_opendata_tree_builder.document_title_from_contents(contents)
+        self.assertEqual(
+            title,
+            "Nařízení vlády o bližších požadavcích na zajištění bezpečnosti a ochrany zdraví při práci v prostředí s nebezpečím výbuchu",
+        )
+        self.assertNotIn("406/2004", title)
+
+    def test_import_does_not_allow_zakonyprolidi(self) -> None:
+        from moduly.pravni_pozadavky.import_export.legal_document_esbirka_client import (
+            ESBIRKA_ALLOWED_HOSTS,
+        )
+        from moduly.pravni_pozadavky.import_export.legal_document_esbirka_opendata_client import (
+            ESBIRKA_OPENDATA_ALLOWED_HOSTS,
+            ESBIRKA_OPENDATA_BASE_URL,
+        )
+
+        self.assertNotIn("www.zakonyprolidi.cz", ESBIRKA_ALLOWED_HOSTS)
+        self.assertNotIn("zakonyprolidi.cz", ESBIRKA_ALLOWED_HOSTS)
+        self.assertNotIn("www.zakonyprolidi.cz", ESBIRKA_OPENDATA_ALLOWED_HOSTS)
+        self.assertNotIn("zakonyprolidi.cz", ESBIRKA_OPENDATA_ALLOWED_HOSTS)
+        self.assertTrue(ESBIRKA_OPENDATA_BASE_URL.startswith("https://opendata.eselpoint.gov.cz/"))
+
+    def test_import_not_found_and_network_errors(self) -> None:
+        from moduly.pravni_pozadavky.import_export.legal_document_esbirka_opendata_tree import (
+            legal_document_esbirka_opendata_tree_builder,
+        )
+
+        with patch.object(
+            legal_document_esbirka_opendata_tree_builder,
+            "fetch_in_force_tree",
+            side_effect=ValueError("Předpis nenalezen."),
+        ):
+            with self.assertRaises(ValueError) as missing:
+                legal_document_internet_import_service.import_from_internet(
+                    number="99999",
+                    year=1999,
+                )
+        self.assertEqual(str(missing.exception), "Předpis nenalezen.")
+
+        with patch.object(
+            legal_document_esbirka_opendata_tree_builder,
+            "fetch_in_force_tree",
+            side_effect=ValueError("kind=timeout status=- endpoint=act — Vypršel časový limit spojení."),
+        ):
+            with self.assertRaises(ValueError) as timeout:
+                legal_document_internet_import_service.import_from_internet(
+                    number="262",
+                    year=2006,
+                )
+        self.assertEqual(str(timeout.exception), "Internet není dostupný.")
+
+        with patch.object(
+            legal_document_esbirka_opendata_tree_builder,
+            "fetch_in_force_tree",
+            side_effect=ValueError("kind=network status=- endpoint=act — Služba není dostupná."),
+        ):
+            with self.assertRaises(ValueError) as offline:
+                legal_document_internet_import_service.import_from_internet(
+                    number="262",
+                    year=2006,
+                )
+        self.assertEqual(str(offline.exception), "Internet není dostupný.")
 
     def _clear_database(self) -> None:
         from sqlalchemy import delete

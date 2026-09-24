@@ -47,6 +47,8 @@ _STRUCTURAL_KINDS = {
 }
 _BODY_DOCUMENT_PARTS = {"norma", "novela"}
 _HEADING_TYPES = {"Nadpis", "Nadpis_pod", "Nadpis_nad"}
+_PREFIX_TYPE = "Prefix_Type"
+_PREFIX_TITLE = "Prefix_Title"
 _BODY_TYPES = {
     "Odstavec_Dc",
     "Pokracovani_Text",
@@ -94,6 +96,7 @@ class ESbirkaOpenDataParsedTree:
     effective_from: date | None
     version_label: str
     sections: tuple[ParsedLegalSection, ...]
+    document_title: str = ""
 
 
 class LegalDocumentESbirkaOpenDataTreeBuilder:
@@ -112,20 +115,16 @@ class LegalDocumentESbirkaOpenDataTreeBuilder:
         contents = legal_document_esbirka_opendata_client.fetch_wording_fragment_contents(
             wording.source_eli,
         )
-        sections = self.build_parsed_sections(wording, contents)
-        return ESbirkaOpenDataParsedTree(
-            source_eli=wording.source_eli,
-            source_url=wording.source_url,
-            effective_from=wording.effective_from,
-            version_label=f"e-Sbírka {wording.source_eli}",
-            sections=tuple(sections),
-        )
+        return self._tree_from_wording(wording, contents)
 
     def fetch_tree_for_source_eli(self, source_eli: str) -> ESbirkaOpenDataParsedTree:
         wording = legal_document_esbirka_opendata_client.fetch_wording_fragments(source_eli)
         contents = legal_document_esbirka_opendata_client.fetch_wording_fragment_contents(
             wording.source_eli,
         )
+        return self._tree_from_wording(wording, contents)
+
+    def _tree_from_wording(self, wording, contents) -> ESbirkaOpenDataParsedTree:
         sections = self.build_parsed_sections(wording, contents)
         return ESbirkaOpenDataParsedTree(
             source_eli=wording.source_eli,
@@ -133,7 +132,28 @@ class LegalDocumentESbirkaOpenDataTreeBuilder:
             effective_from=wording.effective_from,
             version_label=f"e-Sbírka {wording.source_eli}",
             sections=tuple(sections),
+            document_title=self.document_title_from_contents(contents),
         )
+
+    def document_title_from_contents(
+        self,
+        contents: Sequence[ESbirkaOpenDataFragmentContent],
+    ) -> str:
+        """Název z oficiálních fragmentů Prefix_Type a Prefix_Title."""
+        type_text = ""
+        title_text = ""
+        for item in contents:
+            plain = self._plain_text(item.html or item.text)
+            if not plain:
+                continue
+            if item.fragment_type == _PREFIX_TYPE and not type_text:
+                type_text = plain
+            elif item.fragment_type == _PREFIX_TITLE and not title_text:
+                title_text = plain
+        heading = type_text[:1].upper() + type_text[1:].lower() if type_text else ""
+        if heading and title_text:
+            return f"{heading} {title_text}".strip()
+        return title_text or heading
 
     def fetch_in_force_parsed_sections(
         self,
