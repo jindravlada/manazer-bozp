@@ -875,6 +875,132 @@ class RiskGroupMeasures2TestCase(unittest.TestCase):
         )
         self._assert_active_separated_from_relevance(catalog_dialog)
 
+    def test_relevance_list_stays_compact_and_scrolls(self) -> None:
+        from PySide6.QtWidgets import QDialogButtonBox, QMessageBox, QPushButton
+
+        from moduly.rizeni_rizik.ui.existing_measure_relevance_selector import (
+            EXISTING_MEASURE_RELEVANCE_LIST_MAX_HEIGHT,
+            ExistingMeasureRelevanceSelector,
+        )
+        from moduly.rizeni_rizik.ui.hazard_required_measure_dialog import (
+            HazardRequiredMeasureDialog,
+        )
+
+        two = [self.group_a, self.group_b]
+        many = [ensure_exposed_group(f"RGM2 scroll {index:02d}") for index in range(32)]
+        identification, _item, event = self._create_identification()
+        assessment_two = self._create_assessment(identification, event, two)
+        assessment_many = self._create_assessment(identification, event, many)
+        measure_two = hazard_existing_measure_service.create_measure(
+            hazard_identification_id=identification.id,
+            hazard_risk_assessment_id=assessment_two.id,
+            description="Dvě skupiny",
+        )
+        measure_many = hazard_existing_measure_service.create_measure(
+            hazard_identification_id=identification.id,
+            hazard_risk_assessment_id=assessment_many.id,
+            description="Třicet dva skupin",
+        )
+        template, _catalog_event, catalog_many = self._create_catalog(many)
+        catalog_measure = hazard_library_template_existing_measure_service.create_measure(
+            template_id=template.id,
+            template_assessment_id=catalog_many.id,
+            description="Katalog třicet dva",
+        )
+
+        compact = HazardExistingMeasureDialog(
+            hazard_identification_id=identification.id,
+            hazard_risk_assessment_id=assessment_two.id,
+            measure=measure_two,
+        )
+        self._show(compact)
+        compact_scroll = compact.relevance._scroll
+        self.assertLess(compact_scroll.height(), EXISTING_MEASURE_RELEVANCE_LIST_MAX_HEIGHT)
+        self.assertEqual(compact_scroll.verticalScrollBar().maximum(), 0)
+        self.assertLess(compact.minimumSizeHint().height(), 500)
+        compact.close()
+
+        for dialog in (
+            HazardExistingMeasureDialog(
+                hazard_identification_id=identification.id,
+                hazard_risk_assessment_id=assessment_many.id,
+                measure=measure_many,
+            ),
+            HazardLibraryTemplateMeasureDialog(
+                template_id=template.id,
+                template_assessment_id=catalog_many.id,
+                measure=catalog_measure,
+                measure_type="existing",
+            ),
+        ):
+            self._show(dialog)
+            scroll = dialog.relevance._scroll
+            self.assertLessEqual(scroll.height(), EXISTING_MEASURE_RELEVANCE_LIST_MAX_HEIGHT)
+            self.assertGreater(scroll.verticalScrollBar().maximum(), 0)
+            buttons = dialog.findChild(QDialogButtonBox)
+            self.assertIsNotNone(buttons)
+            button_bottom = buttons.mapTo(dialog, buttons.rect().bottomLeft()).y()
+            self.assertLessEqual(button_bottom, dialog.height())
+            self.assertLess(dialog.height(), 800)
+            self.assertFalse(dialog.relevance.isAncestorOf(dialog.active_checkbox))
+
+            dialog.active_checkbox.setChecked(False)
+            self._button(dialog, "Označit vše").click()
+            self.assertEqual(len(dialog.relevance.selected_refs()), 32)
+            self.assertFalse(dialog.active_checkbox.isChecked())
+            dialog.active_checkbox.setChecked(True)
+            self._button(dialog, "Odznačit vše").click()
+            self.assertEqual(dialog.relevance.selected_refs(), [])
+            self.assertTrue(dialog.active_checkbox.isChecked())
+            self.assertEqual(len(dialog.relevance.findChildren(QPushButton)), 2)
+            self.assertIsInstance(dialog.relevance, ExistingMeasureRelevanceSelector)
+            dialog.close()
+
+        instance = HazardExistingMeasureDialog(
+            hazard_identification_id=identification.id,
+            hazard_risk_assessment_id=assessment_two.id,
+            measure=measure_two,
+        )
+        instance.relevance._set_all_checked(False)
+        with patch.object(QMessageBox, "warning") as warning:
+            instance.accept()
+        warning.assert_called_once()
+        self.assertIn(EXISTING_MEASURE_RELEVANCE_REQUIRED, warning.call_args.args)
+        self.assertEqual(
+            _keys(hazard_existing_measure_service.get_target_refs(measure_two.id)),
+            {self.ref_a.key, self.ref_b.key},
+        )
+        instance.close()
+
+        question = HazardRequiredMeasureDialog(
+            hazard_identification_id=identification.id,
+            hazard_risk_assessment_id=assessment_two.id,
+        )
+        self.assertIsNone(question.findChild(ExistingMeasureRelevanceSelector))
+        catalog_question = HazardLibraryTemplateMeasureDialog(
+            template_id=template.id,
+            template_assessment_id=catalog_many.id,
+            measure_type="required",
+        )
+        self.assertIsNone(catalog_question.relevance)
+        self.assertIsNone(catalog_question.findChild(ExistingMeasureRelevanceSelector))
+        question.close()
+        catalog_question.close()
+
+    def _show(self, dialog) -> None:
+        dialog.show()
+        dialog.adjustSize()
+        self._app.processEvents()
+
+    @staticmethod
+    def _button(dialog, text: str):
+        from PySide6.QtWidgets import QPushButton
+
+        for button in dialog.relevance.findChildren(QPushButton):
+            if button.text() == text:
+                return button
+        raise AssertionError(text)
+
 
 if __name__ == "__main__":
     unittest.main()
