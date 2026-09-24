@@ -1762,6 +1762,15 @@ class AiPeerReviewWidget(QWidget):
         if self._package_session is not None and self._on_catalog_incorporated is not None:
             self._on_catalog_incorporated(None)
 
+    def _package_for_incorporate(self, record_id: int):
+        if self._package_session is not None:
+            item = self._package_session.get_package(record_id)
+            return None if item is None else item.package
+        record = ai_peer_review_service.package_repository.get_by_id(record_id)
+        if record is None:
+            return None
+        return ai_peer_review_service.package_repository.package_from_record(record)
+
     def _incorporate_selected_package(self) -> None:
         from moduly.rizeni_rizik.constants_library import (
             CATALOG_AI_PACKAGE_INCORPORATE_SUCCESS,
@@ -1791,6 +1800,19 @@ class AiPeerReviewWidget(QWidget):
                 AI_PEER_REVIEW_NO_CHANGE_CANNOT_DECIDE_MESSAGE,
             )
             return
+
+        package = self._package_for_incorporate(record_id)
+        if package is not None:
+            unresolved = hazard_catalog_package_incorporate_service.unresolved_legal_references(
+                package,
+            )
+            if unresolved:
+                from moduly.rizeni_rizik.ui.hazard_catalog_ai_package_edit_dialog import (
+                    confirm_unresolved_legal_links,
+                )
+
+                if not confirm_unresolved_legal_links(self, unresolved):
+                    return
 
         overrides: dict[int, int] = {}
         while True:

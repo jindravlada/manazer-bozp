@@ -38,7 +38,7 @@ from core.ai_oponentni.proposal_package_types import (
 from core.ai_oponentni.repository.ai_proposal_package_repository import (
     AiProposalPackageRepository,
 )
-from core.widgets.dialog_utils import create_save_cancel_box
+from core.widgets.dialog_utils import configure_resizable_form_dialog, create_save_cancel_box
 from core.widgets.multi_exposed_group_selector import MultiExposedGroupSelector
 from core.widgets.multi_legal_document_selector import MultiLegalDocumentSelector
 from core.widgets.multi_responsibility_role_selector import MultiResponsibilityRoleSelector
@@ -107,6 +107,40 @@ def collect_legal_document_ids_from_links(
             seen_unresolved.add(reference.casefold())
 
     return selected_ids, unresolved, reference_by_id
+
+
+class UnresolvedLegalLinksConfirmDialog(QDialog):
+    """Potvrzení, že nevyřešené právní citace se do balíku nezapíší."""
+
+    def __init__(self, parent, references: list[str]):
+        super().__init__(parent)
+        self.setWindowTitle("Právní odkazy k dořešení")
+        configure_resizable_form_dialog(self, width=640, height=420, min_width=480, min_height=280)
+
+        layout = QVBoxLayout(self)
+        intro = QLabel("Balík obsahuje právní odkazy, které nebudou zapracovány:")
+        intro.setWordWrap(True)
+        layout.addWidget(intro)
+
+        listing = QPlainTextEdit()
+        listing.setReadOnly(True)
+        listing.setPlainText("\n".join(f"• {reference}" for reference in references))
+        layout.addWidget(listing, 1)
+
+        question = QLabel("Chcete přesto pokračovat v zapracování ostatních návrhů?")
+        question.setWordWrap(True)
+        layout.addWidget(question)
+
+        buttons = QDialogButtonBox()
+        cancel = buttons.addButton("Zrušit", QDialogButtonBox.ButtonRole.RejectRole)
+        confirm = buttons.addButton("Pokračovat", QDialogButtonBox.ButtonRole.AcceptRole)
+        cancel.clicked.connect(self.reject)
+        confirm.clicked.connect(self.accept)
+        layout.addWidget(buttons)
+
+
+def confirm_unresolved_legal_links(parent, references: list[str]) -> bool:
+    return bool(UnresolvedLegalLinksConfirmDialog(parent, references).exec())
 
 
 def resolve_target_event_name(

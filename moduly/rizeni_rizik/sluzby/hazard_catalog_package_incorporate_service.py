@@ -65,9 +65,12 @@ from moduly.rizeni_rizik.modely.hazard_library_template_measure import (
 from moduly.rizeni_rizik.modely.hazard_library_template_revision import (
     HazardLibraryTemplateRevision,
 )
+from moduly.pravni_pozadavky.sluzby.legal_document_service import legal_document_service
 from moduly.rizeni_rizik.sluzby.hazard_catalog_legal_requirement_resolver import (
     LegalDocumentMatchKind,
     hazard_catalog_legal_document_resolver,
+    normalize_legal_citation_text,
+    parse_legal_citation,
 )
 from moduly.rizeni_rizik.sluzby.exposed_target_ref import (
     SOURCE_TYPE_HAZARD_GROUP,
@@ -294,6 +297,8 @@ class HazardCatalogPackageIncorporateService:
 
             for link in package.legal_links:
                 document_id = self._resolve_legal_document_id(link)
+                if document_id is None:
+                    continue
                 session.add(
                     HazardLibraryTemplateLegalLink(
                         template_id=template_id,
@@ -308,6 +313,16 @@ class HazardCatalogPackageIncorporateService:
                     ),
                 )
                 legal_link_count += 1
+
+            if (
+                event_count
+                + assessment_count
+                + merged_assessment_count
+                + existing_measure_count
+                + required_measure_count
+                + legal_link_count
+            ) <= 0:
+                raise HazardCatalogPackageIncorporateError(CATALOG_INCORPORATE_ERROR_EMPTY_RESULT)
 
             db_record.status = PACKAGE_STATUS_INCORPORATED
             db_template.version_number += 1
@@ -1148,20 +1163,50 @@ class HazardCatalogPackageIncorporateService:
             )
         return ids[0]
 
-    def _resolve_legal_document_id(self, link) -> int:
+    def unresolved_legal_references(self, package) -> list[str]:
+        """Citace bez jednoznačného předpisu. Neukládají se jako právní vazba."""
+        references: list[str] = []
+        seen: set[str] = set()
+        for link in package.legal_links:
+            if self._resolve_legal_document_id(link) is not None:
+                continue
+            reference = (link.reference or "").strip()
+            key = reference.casefold()
+            if not reference or key in seen:
+                continue
+            seen.add(key)
+            references.append(reference)
+        return references
+
+    def _resolve_legal_document_id(self, link) -> int | None:
         if link.legal_document_id is not None:
             return int(link.legal_document_id)
-        match = hazard_catalog_legal_document_resolver.resolve(link.reference or "")
-        if match.kind == LegalDocumentMatchKind.EXACT and match.document_id is not None:
-            return int(match.document_id)
-        if match.kind == LegalDocumentMatchKind.AMBIGUOUS:
-            raise HazardCatalogPackageIncorporateError(
-                f"Právní odkaz „{link.reference}“ odpovídá více předpisům. "
-                "Upravte balík a vyberte konkrétní předpis.",
-            )
-        raise HazardCatalogPackageIncorporateError(
-            f"Právní odkaz „{link.reference}“ nebyl v registru předpisů nalezen. "
-            "Upravte balík a vyberte existující právní předpis.",
+        reference = link.reference or ""
+        match = hazard_catalog_legal_document_resolver.resolve(reference)
+        if match.kind != LegalDocumentMatchKind.EXACT or match.document_id is None:
+            return None
+        document = legal_document_service.get_by_id(int(match.document_id))
+        if document is None or not self._assignment_is_unambiguous(reference, document):
+            return None
+        return int(match.document_id)
+
+    @staticmethod
+    def _assignment_is_unambiguous(reference: str, document) -> bool:
+        """Shoda citace nebo celého textu. Podobnost čísla předpis nepřiřadí."""
+        citation = parse_legal_citation(reference)
+        if citation is not None and hazard_catalog_legal_document_resolver._document_matches_citation(
+            document,
+            citation,
+        ):
+            return True
+        normalized = normalize_legal_citation_text(reference)
+        if not normalized:
+            return False
+        fields = hazard_catalog_legal_document_resolver._candidate_fields(document)
+        return any(
+            normalize_legal_citation_text(field) == normalized
+            for field in fields
+            if field
         )
 
     @staticmethod
@@ -1504,6 +1549,8 @@ class HazardCatalogPackageIncorporateService:
 
         for link in package.legal_links:
             document_id = self._resolve_legal_document_id(link)
+            if document_id is None:
+                continue
             sort_order = max((row.sort_order for row in working_copy.legal_links), default=0) + 1
             working_copy.legal_links.append(
                 WcLegalLink(
