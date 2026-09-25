@@ -14,6 +14,16 @@
 
 ---
 
+# Verze 4.0.6
+
+Datum vydání:
+
+25. 9. 2026
+
+Audity: oddělení plánování, přípravy a skutečného zahájení auditu. Plánovaný audit lze založit bez data zahájení, snapshot vzniká až vědomou funkcí Připravit audit a skutečné provádění vyžaduje Datum zahájení.
+
+---
+
 # Verze 4.0.5
 
 Datum vydání:
