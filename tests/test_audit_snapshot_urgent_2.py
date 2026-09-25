@@ -212,6 +212,13 @@ class ManualV2CreateTestCase(unittest.TestCase):
                     "title": "Ruční U2c",
                 },
                 commission_members=None,
+                scope_processes=[
+                    {
+                        "process_id": "proc_m",
+                        "process_name": "Proces M",
+                        "display_order": 0,
+                    }
+                ],
             )
             audit = audit_program_service.prepare_audit_from_visit(audit.id)
             return audit, mocked
@@ -260,6 +267,9 @@ class ManualV2CreateTestCase(unittest.TestCase):
                     "year": 2026,
                     "started_at": date.today(),
                 },
+                scope_processes=[
+                    {"process_id": "proc_b", "process_name": "Proces B"}
+                ],
             )
             with self.assertRaises(AuditV2SnapshotError) as ctx:
                 audit_program_service.prepare_audit_from_visit(audit.id)
@@ -288,6 +298,9 @@ class ManualV2CreateTestCase(unittest.TestCase):
                     "year": 2026,
                     "started_at": date.today(),
                 },
+                scope_processes=[
+                    {"process_id": "proc_err", "process_name": "Proces Err"}
+                ],
             )
             with self.assertRaises(AuditV2SnapshotError):
                 audit_program_service.prepare_audit_from_visit(audit.id)
@@ -335,6 +348,9 @@ class ManualV2CreateTestCase(unittest.TestCase):
                     "year": 2026,
                     "started_at": date.today(),
                 },
+                scope_processes=[
+                    {"process_id": "proc_m", "process_name": "Proces M"}
+                ],
             )
             with self.assertRaises(SystemAuditWorkplaceError) as ctx:
                 audit_program_service.prepare_audit_from_visit(audit.id)

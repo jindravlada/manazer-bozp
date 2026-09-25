@@ -883,6 +883,16 @@ def prepare_database_for_startup(
         snapshot_backfill_ms,
     )
 
+    from moduly.audity.sluzby.audit_manual_scope_2_schema_migration import (
+        prepare_audit_manual_scope_2_schema,
+    )
+
+    prepare_audit_manual_scope_2_schema(
+        workspace_root=workspace_root,
+        database_path=database_path,
+        settings_path=settings_path,
+    )
+
     try:
         from moduly.pravni_pozadavky.sluzby.legal_opendata_baseline_service import (
             legal_opendata_baseline_service,

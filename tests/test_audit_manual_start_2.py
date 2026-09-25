@@ -39,6 +39,7 @@ with patch.object(Path, "home", return_value=_TMP):
         AUDIT_METHODOLOGY_GENERATION_PLANNED_UNFROZEN_V1,
         AUDIT_METHODOLOGY_GENERATION_V2,
         AUDIT_QUESTION_KIND_EXTRAORDINARY,
+        AUDIT_SCOPE_REQUIRED_MESSAGE,
         AUDIT_STATUS_PLANOVANO,
         AUDIT_STATUS_PROBIHA,
         CONTROL_POINT_SEVERITY_STREDNI,
@@ -129,7 +130,7 @@ class AuditManualStart2TestCase(unittest.TestCase):
         )
         self.assertEqual(_snapshot_count(audit.id), 0)
 
-    def test_04_prepare_manual_uses_all_processes_and_keeps_started_at(self) -> None:
+    def test_04_prepare_manual_uses_saved_scope_and_keeps_started_at(self) -> None:
         audit_extraordinary_question_service.create_question(
             question_text="Ruční mimořádné",
             severity=CONTROL_POINT_SEVERITY_STREDNI,
@@ -145,12 +146,34 @@ class AuditManualStart2TestCase(unittest.TestCase):
         self.assertFalse(widget.prepare_button.isHidden())
         widget.close()
 
+        with self.assertRaises(ValueError) as blocked:
+            audit_program_service.prepare_audit_from_visit(audit.id)
+        self.assertEqual(str(blocked.exception), AUDIT_SCOPE_REQUIRED_MESSAGE)
+        self.assertEqual(_snapshot_count(audit.id), 0)
+
+        from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
+        from moduly.audity.sluzby.audit_scope_service import replace_audit_scope_processes
+
+        processes = audit_knowledge_service.get_processes(ensure=True)
+        replace_audit_scope_processes(
+            audit.id,
+            [
+                {
+                    "process_id": item.id,
+                    "process_name": item.nazev,
+                    "display_order": index,
+                }
+                for index, item in enumerate(processes)
+            ],
+        )
+        expected_ids = {item.id for item in processes}
+
         with patch(
             "moduly.audity.sluzby.audit_v2_create_service.prepare_planned_audit",
             wraps=prepare_planned_audit,
         ) as prepare:
             prepared = audit_program_service.prepare_audit_from_visit(audit.id)
-        self.assertIsNone(prepare.call_args.kwargs["planned_process_ids"])
+        self.assertEqual(prepare.call_args.kwargs["planned_process_ids"], expected_ids)
         self.assertEqual(prepared.started_at, started)
         self.assertEqual(prepared.methodology_generation, AUDIT_METHODOLOGY_GENERATION_V2)
         self.assertIsNotNone(prepared.questions_frozen_at)
@@ -173,6 +196,14 @@ class AuditManualStart2TestCase(unittest.TestCase):
         )
         self.assertEqual(blocked, AUDIT_EXECUTION_REQUIRES_PREPARATION_MESSAGE)
 
+        from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
+        from moduly.audity.sluzby.audit_scope_service import replace_audit_scope_processes
+
+        process = audit_knowledge_service.get_processes(ensure=True)[0]
+        replace_audit_scope_processes(
+            audit.id,
+            [{"process_id": process.id, "process_name": process.nazev}],
+        )
         prepared = audit_program_service.prepare_audit_from_visit(audit.id)
         dialog.audit = prepared
         still = dialog._execution_block_message(

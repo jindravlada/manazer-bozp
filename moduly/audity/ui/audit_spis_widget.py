@@ -1,12 +1,15 @@
 from datetime import date
 
 from PySide6.QtWidgets import (
+    QCheckBox,
     QComboBox,
     QFormLayout,
     QGroupBox,
     QHBoxLayout,
     QLabel,
     QPushButton,
+    QScrollArea,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -16,6 +19,10 @@ from core.widgets.workplace_selector import WorkplaceSelector
 from moduly.audity.constants import (
     AUDIT_PREPARE_BUTTON,
     AUDIT_PREPARED_ON_LABEL,
+    AUDIT_SCOPE_CLEAR,
+    AUDIT_SCOPE_GROUP,
+    AUDIT_SCOPE_SELECT_ALL,
+    AUDIT_SCOPE_SUMMARY,
     AUDIT_STATUS_PLANOVANO,
     AUDIT_TYPES,
     DEFAULT_AUDIT_TYPE,
@@ -74,6 +81,39 @@ class AuditSpisWidget(QWidget):
         terms_form.addRow("Plánované datum:", self.audit_date_edit)
         terms_form.addRow("Datum zahájení:", self.started_at_edit)
         layout.addWidget(terms_group)
+
+        self._scope_checks: list[QCheckBox] = []
+        self._scope_editable = False
+        self.scope_group = QGroupBox(AUDIT_SCOPE_GROUP)
+        self.scope_group.setVisible(False)
+        scope_layout = QVBoxLayout(self.scope_group)
+        scope_buttons = QHBoxLayout()
+        self.scope_select_all_button = QPushButton(AUDIT_SCOPE_SELECT_ALL)
+        self.scope_clear_button = QPushButton(AUDIT_SCOPE_CLEAR)
+        self.scope_select_all_button.clicked.connect(self.select_all_scope)
+        self.scope_clear_button.clicked.connect(self.clear_scope)
+        scope_buttons.addWidget(self.scope_select_all_button)
+        scope_buttons.addWidget(self.scope_clear_button)
+        scope_buttons.addStretch()
+        scope_layout.addLayout(scope_buttons)
+        self.scope_summary_label = QLabel(AUDIT_SCOPE_SUMMARY.format(selected=0, total=0))
+        self.scope_summary_label.setObjectName("InfoText")
+        scope_layout.addWidget(self.scope_summary_label)
+        self.scope_scroll = QScrollArea()
+        self.scope_scroll.setWidgetResizable(True)
+        self.scope_scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        self.scope_scroll.setMaximumHeight(180)
+        self.scope_scroll.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Maximum,
+        )
+        self._scope_list = QWidget()
+        self._scope_list_layout = QVBoxLayout(self._scope_list)
+        self._scope_list_layout.setContentsMargins(0, 0, 0, 0)
+        self._scope_list_layout.setSpacing(2)
+        self.scope_scroll.setWidget(self._scope_list)
+        scope_layout.addWidget(self.scope_scroll)
+        layout.addWidget(self.scope_group)
 
         prepare_row = QHBoxLayout()
         self.prepare_button = QPushButton(AUDIT_PREPARE_BUTTON)
@@ -228,6 +268,92 @@ class AuditSpisWidget(QWidget):
         else:
             self.prepared_label.clear()
             self.prepared_label.setVisible(False)
+
+    def hide_audit_scope(self) -> None:
+        self.scope_group.setVisible(False)
+        self._scope_editable = False
+
+    def show_editable_scope(
+        self,
+        processes: list[tuple[str, str]],
+        selected_ids: set[str] | None = None,
+    ) -> None:
+        selected = set(selected_ids or ())
+        self._fill_scope(
+            processes,
+            selected,
+            editable=True,
+        )
+
+    def show_readonly_scope(self, processes: list[tuple[str, str]]) -> None:
+        ids = {process_id for process_id, _name in processes}
+        self._fill_scope(processes, ids, editable=False)
+
+    def select_all_scope(self) -> None:
+        if not self._scope_editable:
+            return
+        for checkbox in self._scope_checks:
+            checkbox.setChecked(True)
+        self._update_scope_summary()
+
+    def clear_scope(self) -> None:
+        if not self._scope_editable:
+            return
+        for checkbox in self._scope_checks:
+            checkbox.setChecked(False)
+        self._update_scope_summary()
+
+    def selected_scope(self) -> list[dict]:
+        chosen: list[dict] = []
+        order = 0
+        for checkbox in self._scope_checks:
+            if not checkbox.isChecked():
+                continue
+            chosen.append(
+                {
+                    "process_id": checkbox.property("process_id"),
+                    "process_name": checkbox.text(),
+                    "display_order": order,
+                }
+            )
+            order += 1
+        return chosen
+
+    def _fill_scope(
+        self,
+        processes: list[tuple[str, str]],
+        selected_ids: set[str],
+        *,
+        editable: bool,
+    ) -> None:
+        while self._scope_list_layout.count():
+            item = self._scope_list_layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+        self._scope_checks = []
+        self._scope_editable = editable
+        self.scope_select_all_button.setEnabled(editable)
+        self.scope_clear_button.setEnabled(editable)
+        for process_id, process_name in processes:
+            checkbox = QCheckBox(process_name)
+            checkbox.setProperty("process_id", process_id)
+            checkbox.setEnabled(editable)
+            checkbox.blockSignals(True)
+            checkbox.setChecked(process_id in selected_ids)
+            checkbox.blockSignals(False)
+            checkbox.toggled.connect(lambda _checked: self._update_scope_summary())
+            self._scope_list_layout.addWidget(checkbox)
+            self._scope_checks.append(checkbox)
+        self.scope_group.setVisible(True)
+        self._update_scope_summary()
+
+    def _update_scope_summary(self) -> None:
+        total = len(self._scope_checks)
+        selected = sum(1 for checkbox in self._scope_checks if checkbox.isChecked())
+        self.scope_summary_label.setText(
+            AUDIT_SCOPE_SUMMARY.format(selected=selected, total=total)
+        )
 
     def get_data(self) -> dict:
         return {

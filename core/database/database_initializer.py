@@ -84,6 +84,7 @@ def initialize_database() -> None:
     from moduly.audity.modely.audit_question_support_snapshot import (  # noqa: F401
         AuditQuestionSupportSnapshot,
     )
+    from moduly.audity.modely.audit_scope_process import AuditScopeProcess  # noqa: F401
     from moduly.audity.modely.audit_section_summary import (  # noqa: F401
         AuditSectionSummary,
     )

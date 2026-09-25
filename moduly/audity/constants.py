@@ -420,6 +420,17 @@ AUDIT_EXECUTION_REQUIRES_PREPARATION_MESSAGE = (
 AUDIT_EXECUTION_REQUIRES_SAVE_THEN_PREPARE_MESSAGE = (
     "Audit je nutné nejprve uložit a připravit."
 )
+AUDIT_SCOPE_GROUP = "Rozsah auditu"
+AUDIT_SCOPE_SELECT_ALL = "Vybrat vše"
+AUDIT_SCOPE_CLEAR = "Zrušit výběr"
+AUDIT_SCOPE_SUMMARY = "Vybráno: {selected} z {total} procesů"
+AUDIT_SCOPE_REQUIRED_MESSAGE = (
+    "Nejprve zvolte alespoň jeden řídicí proces v rozsahu auditu."
+)
+AUDIT_SCOPE_UNAVAILABLE_MESSAGE = (
+    "Rozsah auditu obsahuje řídicí proces, který už není v metodice dostupný: {names}. "
+    "Upravte rozsah před přípravou auditu."
+)
 AUDIT_COMPLETION_REQUIRES_PREPARATION_MESSAGE = (
     "Audit nelze dokončit. Nejprve použijte na záložce Spis funkci Připravit audit."
 )

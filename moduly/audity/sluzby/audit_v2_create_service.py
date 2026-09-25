@@ -281,8 +281,9 @@ def create_manual_audit_with_v2_snapshot(
     *,
     fields: dict,
     commission_members: list[dict] | None = None,
+    scope_processes: list[dict] | None = None,
 ) -> Audit:
-    """Ruční audit z přehledu: plán bez snapshotu. Příprava zmrazí všechny procesy."""
+    """Ruční audit z přehledu: plán bez snapshotu. Rozsah se ukládá v téže transakci."""
     workplace_id = fields.get("workplace_id")
     if workplace_id is None or int(workplace_id) <= 0:
         raise AuditV2CreateError("Auditovaný provoz není zvolen.")
@@ -294,6 +295,7 @@ def create_manual_audit_with_v2_snapshot(
         workplace_id=int(workplace_id),
         commission_members=commission_members,
         link_visit_id=None,
+        scope_processes=scope_processes,
     )
 
 
@@ -303,6 +305,7 @@ def create_unfrozen_program_audit(
     workplace_id: int,
     commission_members: list[dict] | None = None,
     link_visit_id: int | None = None,
+    scope_processes: list[dict] | None = None,
 ) -> Audit:
     """Plán z programu: audit, číslo, komise a vazba. Bez snapshotu a bez Mimořádných ověření."""
     if workplace_id is None or int(workplace_id) <= 0:
@@ -366,6 +369,11 @@ def create_unfrozen_program_audit(
                 visit_db = session.get(AuditProgramVisit, int(link_visit_id))
                 assert visit_db is not None
                 visit_db.audit_id = audit.id
+
+            if scope_processes is not None:
+                from moduly.audity.sluzby.audit_scope_service import write_scope_processes
+
+                write_scope_processes(session, int(audit.id), scope_processes)
 
             session.commit()
             session.refresh(audit)

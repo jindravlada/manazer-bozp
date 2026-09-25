@@ -11,6 +11,7 @@ from moduly.audity.modely.audit_extraordinary_question import (
     AuditExtraordinaryQuestion,
     AuditExtraordinaryQuestionTarget,
 )
+from moduly.audity.modely.audit_scope_process import AuditScopeProcess
 from moduly.audity.modely.audit_section_summary import AuditSectionSummary
 
 __all__ = [
@@ -23,5 +24,6 @@ __all__ = [
     "AuditProgramVisitProcess",
     "AuditProgramWorkplace",
     "AuditQuestionSnapshot",
+    "AuditScopeProcess",
     "AuditSectionSummary",
 ]

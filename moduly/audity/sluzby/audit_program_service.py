@@ -644,7 +644,10 @@ class AuditProgramService:
             raise ValueError(str(exc)) from exc
 
     def prepare_audit_from_visit(self, audit_id: int) -> Audit:
-        """Zmrazí metodiku plánu. Bez návštěvy programu bere všechny aktivní procesy."""
+        """Zmrazí metodiku plánu. Ruční audit bere jen uložený rozsah, ne všechny procesy."""
+        from moduly.audity.sluzby.audit_scope_service import (
+            require_manual_planned_process_ids,
+        )
         from moduly.audity.sluzby.audit_service import audit_service
         from moduly.audity.sluzby.audit_v2_create_service import (
             AuditV2CreateError,
@@ -654,7 +657,8 @@ class AuditProgramService:
         audit = audit_service.get_by_id(int(audit_id))
         if audit is None:
             raise ValueError(f"Audit {audit_id} neexistuje.")
-        planned_process_ids: set[str] | None = None
+        knowledge_tree = audit_knowledge_service.get_knowledge_tree(ensure=True)
+        planned_process_ids: set[str] | None
         if audit.program_visit_id:
             visit_processes = self.repository.list_visit_processes(int(audit.program_visit_id))
             planned_process_ids = {
@@ -662,7 +666,11 @@ class AuditProgramService:
                 for item in visit_processes
                 if str(item.process_id or "").strip()
             }
-        knowledge_tree = audit_knowledge_service.get_knowledge_tree(ensure=True)
+        else:
+            planned_process_ids = require_manual_planned_process_ids(
+                int(audit.id),
+                knowledge_tree,
+            )
         try:
             return prepare_planned_audit(
                 int(audit_id),

@@ -34,6 +34,7 @@ from moduly.audity.constants import (
     AUDIT_LEAD_RECOMMENDATION_STALE_REVIEW_MESSAGE,
     AUDIT_PREPARE_BUTTON,
     AUDIT_PREPARE_CONFIRM_MESSAGE,
+    AUDIT_SCOPE_REQUIRED_MESSAGE,
     AUDIT_START_DATE_REQUIRED_MESSAGE,
     FINDING_SOURCE_LABEL,
     TAB_LABELS,
@@ -157,6 +158,7 @@ class AuditDialog(QDialog):
         self.history_widget.content_modified.connect(self._on_deferred_dirty)
         self.conclusion_widget.load_audit(audit)
         self.commission_widget.set_audit_context(audit_id)
+        self._apply_scope_mode()
         self._capture_baseline()
 
     def _on_tab_changed(self, index: int) -> None:
@@ -318,9 +320,77 @@ class AuditDialog(QDialog):
             return AUDIT_START_DATE_REQUIRED_MESSAGE
         return None
 
+    def _apply_scope_mode(self) -> None:
+        audit = self.audit
+        if self._visit_context is not None or (
+            audit is not None and getattr(audit, "program_visit_id", None)
+        ):
+            self.spis_widget.hide_audit_scope()
+            return
+
+        from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
+        from moduly.audity.sluzby.audit_scope_service import (
+            list_audit_scope_processes,
+            snapshot_scope_labels,
+        )
+        from moduly.audity.sluzby.audit_v2_create_service import is_planned_unfrozen
+
+        editable = audit is None or (
+            getattr(audit, "id", None)
+            and is_planned_unfrozen(audit)
+            and getattr(audit, "questions_frozen_at", None) is None
+        )
+        if editable:
+            catalog = [
+                (process.id, process.nazev)
+                for process in audit_knowledge_service.get_processes(ensure=True)
+            ]
+            known = {process_id for process_id, _name in catalog}
+            selected: set[str] = set()
+            if audit is not None and getattr(audit, "id", None):
+                for row in list_audit_scope_processes(int(audit.id)):
+                    selected.add(row.process_id)
+                    if row.process_id not in known:
+                        catalog.append(
+                            (row.process_id, row.process_name or row.process_id)
+                        )
+                        known.add(row.process_id)
+            self.spis_widget.show_editable_scope(catalog, selected)
+            return
+        if audit is not None and getattr(audit, "id", None):
+            self.spis_widget.show_readonly_scope(snapshot_scope_labels(int(audit.id)))
+            return
+        self.spis_widget.hide_audit_scope()
+
+    def _manual_scope_is_editable(self) -> bool:
+        audit = self.audit
+        if self._visit_context is not None:
+            return False
+        if audit is not None and getattr(audit, "program_visit_id", None):
+            return False
+        return self.spis_widget.scope_group.isVisible() and self.spis_widget._scope_editable
+
     def _prepare_audit(self) -> None:
         if self.audit is None or not getattr(self.audit, "id", None):
             return
+        if self._manual_scope_is_editable():
+            chosen = self.spis_widget.selected_scope()
+            if not chosen:
+                QMessageBox.warning(
+                    self,
+                    AUDIT_PREPARE_BUTTON,
+                    AUDIT_SCOPE_REQUIRED_MESSAGE,
+                )
+                return
+            from moduly.audity.sluzby.audit_scope_service import (
+                replace_audit_scope_processes,
+            )
+
+            try:
+                replace_audit_scope_processes(int(self.audit.id), chosen)
+            except Exception as exc:
+                QMessageBox.warning(self, AUDIT_PREPARE_BUTTON, str(exc))
+                return
         box = QMessageBox(self)
         box.setIcon(QMessageBox.Icon.Question)
         box.setWindowTitle(AUDIT_PREPARE_BUTTON)
@@ -384,6 +454,7 @@ class AuditDialog(QDialog):
                     created = create_manual_audit_with_v2_snapshot(
                         fields=payload,
                         commission_members=data.get("commission_members"),
+                        scope_processes=self.spis_widget.selected_scope(),
                     )
             except (
                 AuditV2CreateError,
@@ -410,6 +481,22 @@ class AuditDialog(QDialog):
             if updated is None:
                 return False
             self.save_commission_members(self.audit.id, data)
+            if (
+                not getattr(updated, "program_visit_id", None)
+                and self.spis_widget._scope_editable
+            ):
+                from moduly.audity.sluzby.audit_scope_service import (
+                    replace_audit_scope_processes,
+                )
+
+                try:
+                    replace_audit_scope_processes(
+                        int(updated.id),
+                        self.spis_widget.selected_scope(),
+                    )
+                except Exception as exc:
+                    QMessageBox.warning(self, "Nový audit", str(exc))
+                    return False
             self.audit = updated
             self._reload_after_persist()
 
@@ -430,6 +517,7 @@ class AuditDialog(QDialog):
         self.processes_widget.refresh_findings_display()
         self.terrain_widget.refresh_findings_display()
         self.extraordinary_widget.refresh_findings_display()
+        self._apply_scope_mode()
 
     def _done_accept(self) -> None:
         self._closing = True
@@ -501,10 +589,15 @@ class AuditDialog(QDialog):
         data.update(self.conclusion_widget.get_data())
         data.update(self.history_widget.get_data())
         data["commission_members"] = self.commission_widget.get_members_for_save()
+        data["scope_processes"] = self.spis_widget.selected_scope()
         return data
 
     def prepare_save_payload(self, data: dict) -> dict:
-        payload = {key: value for key, value in data.items() if key != "commission_members"}
+        payload = {
+            key: value
+            for key, value in data.items()
+            if key not in {"commission_members", "scope_processes"}
+        }
 
         workplace_id = payload.get("workplace_id")
         if workplace_id is None:
