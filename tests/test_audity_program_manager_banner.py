@@ -114,7 +114,13 @@ class AuditProgramBannerServiceTestCase(unittest.TestCase):
             planned_date=date(2026, 7, 15),
         )
 
-        info = audit_program_service.get_banner_info()
+        class _FrozenDate(date):
+            @classmethod
+            def today(cls) -> date:
+                return date(2026, 6, 1)
+
+        with patch("moduly.audity.sluzby.audit_program_service.date", _FrozenDate):
+            info = audit_program_service.get_banner_info()
 
         self.assertTrue(info.has_program)
         self.assertEqual(info.program_name, "ZX-ZF 2026–2029")
