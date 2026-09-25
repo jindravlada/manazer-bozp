@@ -12,7 +12,6 @@ from core.shared.sluzby.performance_evaluation_methodology_service import (
 )
 from moduly.audity.constants import (
     AUDIT_PROGRAM_VISIT_PROCESS_STATUS_COMPLETED,
-    AUDIT_PROGRAM_VISIT_STATUS_COMPLETED,
     AUDIT_PROGRAM_VISIT_STATUS_SKIPPED,
 )
 from moduly.audity.modely.audit import Audit
@@ -307,11 +306,7 @@ class AuditProgramFinalExportContextService:
         ]
         if not visits:
             return "V programu nejsou evidovány plánované návštěvy auditů."
-        completed = sum(
-            1
-            for visit in visits
-            if visit.status == AUDIT_PROGRAM_VISIT_STATUS_COMPLETED or visit.audit_id is not None
-        )
+        completed = audit_program_service.count_finished_visit_audits(visits)
         coverage = audit_program_service.get_program_coverage(program.id)
         completion = coverage.completion_percent if coverage is not None else 0.0
         return (

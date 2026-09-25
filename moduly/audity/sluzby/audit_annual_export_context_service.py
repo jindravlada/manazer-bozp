@@ -40,7 +40,6 @@ from moduly.audity.sluzby.audit_process_maturity_history_service import (
     audit_process_maturity_history_service,
 )
 from moduly.audity.constants import (
-    AUDIT_PROGRAM_VISIT_STATUS_COMPLETED,
     AUDIT_PROGRAM_VISIT_STATUS_SKIPPED,
     CONTROL_POINT_SEVERITY_DEFAULT,
     CONTROL_POINT_SEVERITY_KRITICKA,
@@ -1297,11 +1296,7 @@ class AuditAnnualExportContextService:
             ]
             if not visits:
                 continue
-            completed = sum(
-                1
-                for visit in visits
-                if visit.status == AUDIT_PROGRAM_VISIT_STATUS_COMPLETED or visit.audit_id is not None
-            )
+            completed = audit_program_service.count_finished_visit_audits(visits)
             lines.append(
                 f"• {program.name}: {completed} z {len(visits)} plánovaných auditů v roce {year} dokončeno"
             )

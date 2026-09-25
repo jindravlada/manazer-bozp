@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from datetime import date, datetime
 
 from moduly.audity.constants import (
+    AUDIT_STATUS_DOKONCENO,
     AUDIT_PROGRAM_MANUAL_DISTRIBUTE_BLOCKED,
     AUDIT_PROGRAM_MANUAL_GENERATE_BLOCKED,
     AUDIT_PROGRAM_STATUS_APPROVED,
@@ -205,12 +206,76 @@ class AuditProgramService:
             nearest_visit_workplace=nearest_workplace or None,
         )
 
+    def linked_audit_is_finished(
+        self,
+        visit: AuditProgramVisit,
+        audits_by_id: dict[int, Audit] | None = None,
+    ) -> bool:
+        """Návštěva je splněná jen s navázaným auditem ve stavu Dokončeno.
+
+        Rozhoduje ``finished_at`` přes ``AuditService.derive_status``.
+        Samotné ``audit_id`` ani ``visit.status == completed`` nestačí.
+        Dokončený audit se počítá i bez úspěšné synchronizace stavu návštěvy.
+        """
+        if visit.audit_id is None:
+            return False
+        audit = None
+        if audits_by_id is not None:
+            audit = audits_by_id.get(int(visit.audit_id))
+        if audit is None:
+            from moduly.audity.sluzby.audit_service import audit_service
+
+            audit = audit_service.get_by_id(int(visit.audit_id))
+        if audit is None:
+            return False
+        from moduly.audity.sluzby.audit_service import audit_service
+
+        return (
+            audit_service.derive_status(audit.started_at, audit.finished_at)
+            == AUDIT_STATUS_DOKONCENO
+        )
+
+    def count_finished_visit_audits(self, visits: list[AuditProgramVisit]) -> int:
+        audits_by_id = self._audits_for_visit_links(visits)
+        return sum(
+            1 for visit in visits if self.linked_audit_is_finished(visit, audits_by_id)
+        )
+
+    def _audits_for_visit_links(
+        self,
+        visits: list[AuditProgramVisit],
+    ) -> dict[int, Audit]:
+        audit_ids = sorted(
+            {int(visit.audit_id) for visit in visits if visit.audit_id is not None}
+        )
+        if not audit_ids:
+            return {}
+        from sqlalchemy import select
+
+        from core.database.session import get_session
+
+        with get_session() as session:
+            rows = list(session.scalars(select(Audit).where(Audit.id.in_(audit_ids))))
+            for row in rows:
+                session.expunge(row)
+        return {int(row.id): row for row in rows}
+
     def get_nearest_unstarted_visit(self, program_id: int) -> AuditProgramVisit | None:
-        visits = [
+        """Nejbližší neuzavřená návštěva.
+
+        Vyřazuje zrušené návštěvy a návštěvy s dokončeným auditem.
+        Založený nebo probíhající audit návštěvu ve sledování nechává.
+        """
+        candidates = [
             visit
             for visit in self.repository.list_visits(program_id)
             if visit.status != AUDIT_PROGRAM_VISIT_STATUS_SKIPPED
-            and visit.audit_id is None
+        ]
+        audits_by_id = self._audits_for_visit_links(candidates)
+        visits = [
+            visit
+            for visit in candidates
+            if not self.linked_audit_is_finished(visit, audits_by_id)
         ]
         if not visits:
             return None
