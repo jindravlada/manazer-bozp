@@ -120,6 +120,26 @@ class AuditDeferredEdits:
             or self._section_summaries
         )
 
+    def has_execution_changes(self) -> bool:
+        """Provádění auditu. Dok↔Terén a výchozí Nekontrolováno sem nepatří."""
+        from core.shared.constants import CONTROL_RESULT_NEKONTROLOVANO
+
+        for pending in self._control_results.values():
+            if str(getattr(pending, "result", "") or "") != CONTROL_RESULT_NEKONTROLOVANO:
+                return True
+            if str(getattr(pending, "note", "") or "").strip():
+                return True
+        if self._photos:
+            return True
+        if self._finding_updates or self._finding_creates or self._finding_deletes:
+            return True
+        if self._task_updates or self._task_creates:
+            return True
+        for summary in self._section_summaries.values():
+            if str(summary.summary_text or "").strip():
+                return True
+        return False
+
     def clear(self) -> None:
         self._control_results.clear()
         self._photos.clear()

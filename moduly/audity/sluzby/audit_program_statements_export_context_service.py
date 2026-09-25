@@ -15,6 +15,7 @@ from moduly.audity.constants import (
     AUDIT_PROGRAM_PRINT_STATEMENTS_RESULT_V,
     AUDIT_PROGRAM_PRINT_STATEMENTS_RESULT_VD,
     AUDIT_PROGRAM_PRINT_STATEMENTS_STATUS_CURRENT,
+    AUDIT_PROGRAM_PRINT_STATEMENTS_STATUS_UNFROZEN,
     AUDIT_PROGRAM_PRINT_STATEMENTS_STATUS_FROZEN,
     EXTRAORDINARY_SNAPSHOT_ORDER_BASE,
     PROCESS_TERM_CRITERION,
@@ -393,6 +394,17 @@ class AuditProgramStatementsExportContextService:
         planned_period = _planned_period(visit.planned_year, visit.planned_month)
 
         if visit.audit_id is not None:
+            audit = audit_service.get_by_id(int(visit.audit_id))
+            from moduly.audity.sluzby.audit_v2_create_service import is_planned_unfrozen
+
+            if audit is not None and is_planned_unfrozen(audit):
+                return self._build_from_current_methodology(
+                    visit,
+                    program_label=program_label,
+                    planned_period=planned_period,
+                    workplace_name=workplace_name,
+                    document_status=AUDIT_PROGRAM_PRINT_STATEMENTS_STATUS_UNFROZEN,
+                )
             return self._build_from_audit(
                 visit.audit_id,
                 program_label=program_label,
@@ -441,6 +453,7 @@ class AuditProgramStatementsExportContextService:
         program_label: str,
         planned_period: str,
         workplace_name: str,
+        document_status: str = AUDIT_PROGRAM_PRINT_STATEMENTS_STATUS_CURRENT,
     ) -> AuditProgramStatementsExportContext:
         workplace_id = visit.workplace_id
         if workplace_id is None or int(workplace_id) <= 0:
@@ -471,7 +484,7 @@ class AuditProgramStatementsExportContextService:
             program_label=program_label,
             planned_period=planned_period,
             workplace_name=workplace_name,
-            document_status=AUDIT_PROGRAM_PRINT_STATEMENTS_STATUS_CURRENT,
+            document_status=document_status,
             rows=rows,
         )
 

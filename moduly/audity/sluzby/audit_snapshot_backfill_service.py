@@ -29,6 +29,7 @@ from core.shared.constants import ENTITY_AUDITY
 from core.shared.modely.control_result import ControlResult
 from moduly.audity.constants import (
     AUDIT_METHODOLOGY_GENERATION_LEGACY_V1,
+    AUDIT_METHODOLOGY_GENERATION_PLANNED_UNFROZEN_V1,
     AUDIT_METHODOLOGY_SOURCE_SNAPSHOT,
     AUDIT_QUESTION_KIND_LEGACY,
 )
@@ -232,6 +233,13 @@ def classify_audit_backfill_state(
     del methodology_drafts
     generation = str(audit.methodology_generation or "").strip()
     source = str(audit.methodology_source or "").strip()
+
+    if generation == AUDIT_METHODOLOGY_GENERATION_PLANNED_UNFROZEN_V1:
+        return AuditBackfillIntegrityItem(
+            audit_id=audit.id,
+            status=AUDIT_BACKFILL_STATUS_OTHER_GENERATION,
+            detail="planned-unfrozen-v1",
+        )
 
     if generation and generation != AUDIT_METHODOLOGY_GENERATION_LEGACY_V1:
         return AuditBackfillIntegrityItem(

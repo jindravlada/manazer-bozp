@@ -4,7 +4,9 @@ from PySide6.QtWidgets import (
     QComboBox,
     QFormLayout,
     QGroupBox,
+    QHBoxLayout,
     QLabel,
+    QPushButton,
     QVBoxLayout,
     QWidget,
 )
@@ -12,6 +14,8 @@ from PySide6.QtWidgets import (
 from core.widgets.nullable_date_edit import NullableDateEdit
 from core.widgets.workplace_selector import WorkplaceSelector
 from moduly.audity.constants import (
+    AUDIT_PREPARE_BUTTON,
+    AUDIT_PREPARED_ON_LABEL,
     AUDIT_STATUS_PLANOVANO,
     AUDIT_TYPES,
     DEFAULT_AUDIT_TYPE,
@@ -67,9 +71,20 @@ class AuditSpisWidget(QWidget):
 
         terms_group = QGroupBox("Termíny")
         terms_form = QFormLayout(terms_group)
-        terms_form.addRow("Datum auditu:", self.audit_date_edit)
+        terms_form.addRow("Plánované datum:", self.audit_date_edit)
         terms_form.addRow("Datum zahájení:", self.started_at_edit)
         layout.addWidget(terms_group)
+
+        prepare_row = QHBoxLayout()
+        self.prepare_button = QPushButton(AUDIT_PREPARE_BUTTON)
+        self.prepare_button.setVisible(False)
+        self.prepared_label = QLabel("")
+        self.prepared_label.setObjectName("InfoText")
+        self.prepared_label.setVisible(False)
+        prepare_row.addWidget(self.prepare_button)
+        prepare_row.addWidget(self.prepared_label)
+        prepare_row.addStretch()
+        layout.addLayout(prepare_row)
 
         self.type_combo = QComboBox()
         self.type_combo.addItems(AUDIT_TYPES)
@@ -106,6 +121,8 @@ class AuditSpisWidget(QWidget):
         self.planned_month_combo.setCurrentIndex(0)
         self._finished_at = None
         self._update_derived_status()
+        self.prepare_button.setVisible(False)
+        self.prepared_label.setVisible(False)
 
     def _update_derived_status(self) -> None:
         started_at = self.started_at_edit.get_date()
@@ -195,6 +212,22 @@ class AuditSpisWidget(QWidget):
         self.workplace_selector.set_workplace(workplace_id, workplace_name or "")
 
         self._update_derived_status()
+        self._refresh_prepare_state(audit)
+
+    def _refresh_prepare_state(self, audit) -> None:
+        from moduly.audity.sluzby.audit_v2_create_service import is_planned_unfrozen
+
+        frozen_at = getattr(audit, "questions_frozen_at", None) if audit is not None else None
+        unfrozen = audit is not None and getattr(audit, "id", None) and is_planned_unfrozen(audit)
+        self.prepare_button.setVisible(bool(unfrozen) and frozen_at is None)
+        if frozen_at is not None and not unfrozen:
+            self.prepared_label.setText(
+                AUDIT_PREPARED_ON_LABEL.format(date=frozen_at.strftime("%d.%m.%Y"))
+            )
+            self.prepared_label.setVisible(True)
+        else:
+            self.prepared_label.clear()
+            self.prepared_label.setVisible(False)
 
     def get_data(self) -> dict:
         return {

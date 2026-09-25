@@ -129,6 +129,7 @@ class AuditProcessesWidget(QWidget):
         self._planned_process_ids: set[str] | None = None
         self._on_verification_type_changed = None
         self._question_source: AuditQuestionSource | None = None
+        self._unprepared = False
 
         header_row = QHBoxLayout()
         header_row.setContentsMargins(0, 0, 0, 0)
@@ -230,10 +231,36 @@ class AuditProcessesWidget(QWidget):
 
     def set_question_source(self, source: AuditQuestionSource | None) -> None:
         """Nastaví přednačtený zdroj otázek (snapshot/live) a obnoví strom."""
+        self._unprepared = False
         self._question_source = source
         self.reload_processes()
 
+    def show_unprepared_state(self) -> None:
+        from moduly.audity.constants import AUDIT_NOT_PREPARED_TAB_MESSAGE
+
+        self._unprepared = True
+        self._question_source = None
+        self.knowledge_tree.reload_tree(roots=())
+        self.center_title_label.setText(self._tab_title)
+        self.center_description_label.setText(AUDIT_NOT_PREPARED_TAB_MESSAGE)
+        self.center_description_label.setVisible(True)
+        self.knowledge_widget.clear_criterion()
+        self.overview_widget.show_process(None)
+        self.methodology_panel.show_hint(AUDIT_NOT_PREPARED_TAB_MESSAGE)
+        self.content_stack.setCurrentIndex(self._PAGE_HINT)
+        if self.checklist_btn is not None:
+            self.checklist_btn.setEnabled(False)
+
     def _export_terrain_checklist(self) -> None:
+        if getattr(self, "_unprepared", False):
+            from moduly.audity.constants import AUDIT_NOT_PREPARED_TAB_MESSAGE
+
+            QMessageBox.information(
+                self,
+                TERRAIN_CHECKLIST_DIALOG_TITLE,
+                AUDIT_NOT_PREPARED_TAB_MESSAGE,
+            )
+            return
         if self._audit_id is None:
             QMessageBox.information(
                 self,
@@ -323,6 +350,9 @@ class AuditProcessesWidget(QWidget):
         self.refresh_findings_display()
 
     def reload_processes(self) -> None:
+        if getattr(self, "_unprepared", False):
+            self.show_unprepared_state()
+            return
         self._clear_catalog_error()
         source = self._question_source
         if source is None and self._audit_id is not None:

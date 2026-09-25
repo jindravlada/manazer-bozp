@@ -341,6 +341,7 @@ class AtomicV2CreateTestCase(unittest.TestCase):
             return_value=self.tree,
         ) as mocked_tree:
             audit = audit_program_service.create_audit_from_visit(self.visit.id, started_at=date(2026, 4, 10))
+            audit = audit_program_service.prepare_audit_from_visit(audit.id)
             return audit, mocked_tree
 
     def test_new_audit_is_snapshot_v2(self) -> None:
@@ -392,6 +393,7 @@ class AtomicV2CreateTestCase(unittest.TestCase):
             return_value=self.tree,
         ):
             audit = audit_program_service.create_audit_from_visit(visit.id, started_at=date(2026, 4, 10))
+            audit = audit_program_service.prepare_audit_from_visit(audit.id)
 
         with get_session() as session:
             snaps = list(
@@ -418,13 +420,16 @@ class AtomicV2CreateTestCase(unittest.TestCase):
             "get_knowledge_tree",
             return_value=bad_tree,
         ):
+            audit = audit_program_service.create_audit_from_visit(
+                self.visit.id, started_at=date(2026, 4, 10)
+            )
             with self.assertRaises(AuditV2SnapshotError):
-                audit_program_service.create_audit_from_visit(self.visit.id, started_at=date(2026, 4, 10))
+                audit_program_service.prepare_audit_from_visit(audit.id)
 
-        self.assertEqual(len(audit_service.get_all()), before_audits)
+        self.assertEqual(len(audit_service.get_all()), before_audits + 1)
         refreshed = audit_program_service.repository.get_visit(self.visit.id)
         assert refreshed is not None
-        self.assertIsNone(refreshed.audit_id)
+        self.assertEqual(refreshed.audit_id, audit.id)
 
         with get_session() as session:
             orphan_snaps = list(
@@ -560,10 +565,12 @@ class AtomicV2CreateTestCase(unittest.TestCase):
         ), patch.object(
             audit_knowledge_service, "get_knowledge_tree", side_effect=counting_tree
         ):
-            audit_program_service.create_audit_from_visit(self.visit.id, started_at=date(2026, 4, 10))
+            audit = audit_program_service.create_audit_from_visit(self.visit.id, started_at=date(2026, 4, 10))
+            self.assertEqual(tree_calls["n"], 0)
+            audit_program_service.prepare_audit_from_visit(audit.id)
 
         self.assertEqual(tree_calls["n"], 1)
-        self.assertLessEqual(ensure_calls["n"], 1)
+        self.assertLessEqual(ensure_calls["n"], 2)
 
 
 if __name__ == "__main__":

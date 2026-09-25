@@ -424,8 +424,9 @@ class StartAuditMessagesTestCase(unittest.TestCase):
             system_audit_workplace_service.set_system_audit_workplace_id(self.system_wp.id)
 
     def test_missing_system_workplace_message(self) -> None:
+        audit = audit_program_service.create_audit_from_visit(self.visit.id, started_at=date(2026, 4, 10))
         with self.assertRaises(SystemAuditWorkplaceError) as ctx:
-            audit_program_service.create_audit_from_visit(self.visit.id, started_at=date(2026, 4, 10))
+            audit_program_service.prepare_audit_from_visit(audit.id)
         self.assertEqual(str(ctx.exception), AUDIT_START_MISSING_SYSTEM_WORKPLACE)
 
     def test_unclassified_blocks_with_overview(self) -> None:
@@ -443,17 +444,20 @@ class StartAuditMessagesTestCase(unittest.TestCase):
         with patch.object(
             audit_knowledge_service, "get_knowledge_tree", return_value=tree
         ):
+            audit = audit_program_service.create_audit_from_visit(
+                self.visit.id, started_at=date(2026, 4, 10)
+            )
             with self.assertRaises(AuditV2SnapshotError) as ctx:
-                audit_program_service.create_audit_from_visit(self.visit.id, started_at=date(2026, 4, 10))
+                audit_program_service.prepare_audit_from_visit(audit.id)
         message = str(ctx.exception)
         self.assertIn(AUDIT_START_UNCLASSIFIED_QUESTIONS, message)
         self.assertIn("Proces V2b", message)
         self.assertIn("Sekce V2b", message)
         self.assertIn("unc_q", message)
-        self.assertEqual(len(audit_service.get_all()), before)
+        self.assertEqual(len(audit_service.get_all()), before + 1)
         visit = audit_program_service.repository.get_visit(self.visit.id)
         assert visit is not None
-        self.assertIsNone(visit.audit_id)
+        self.assertEqual(visit.audit_id, audit.id)
 
     def test_classified_creates_v2_snapshot(self) -> None:
         self._set_system()
@@ -473,6 +477,7 @@ class StartAuditMessagesTestCase(unittest.TestCase):
             audit_knowledge_service, "get_knowledge_tree", return_value=tree
         ):
             audit = audit_program_service.create_audit_from_visit(self.visit.id, started_at=date(2026, 4, 10))
+            audit = audit_program_service.prepare_audit_from_visit(audit.id)
         self.assertEqual(audit.methodology_generation, AUDIT_METHODOLOGY_GENERATION_V2)
         self.assertEqual(audit.methodology_source, AUDIT_METHODOLOGY_SOURCE_SNAPSHOT)
         with get_session() as session:
@@ -521,6 +526,7 @@ class StartAuditMessagesTestCase(unittest.TestCase):
             audit_knowledge_service, "get_knowledge_tree", return_value=tree
         ):
             audit = audit_program_service.create_audit_from_visit(visit.id, started_at=date(2026, 4, 10))
+            audit = audit_program_service.prepare_audit_from_visit(audit.id)
         with get_session() as session:
             snaps = list(
                 session.scalars(

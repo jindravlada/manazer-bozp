@@ -213,7 +213,7 @@ class AudityPageTestCase(unittest.TestCase):
                 "Rok",
                 "Plánovaný měsíc",
                 "Auditovaný provoz",
-                "Datum auditu",
+                "Plánované datum",
                 "Celkem",
                 "Závady",
                 "Nedostatky",

@@ -514,7 +514,7 @@ class AuditProverkySectionNoteFunctionalTestCase(unittest.TestCase):
             inspect.getsource(create_manual_audit_with_v2_snapshot),
         )
         source = inspect.getsource(AuditProgramService.create_audit_from_visit)
-        self.assertIn("create_audit_with_v2_snapshot", source)
+        self.assertIn("create_unfrozen_program_audit", source)
 
     def test_create_inspection_paths_set_new_mode(self) -> None:
         via_dialog = bozp_inspection_service.create_inspection(title="Cesta dialog")

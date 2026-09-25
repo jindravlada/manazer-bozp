@@ -15,7 +15,6 @@ from moduly.audity.constants import (
     AUDIT_PROGRAM_VISIT_STATUS_COMPLETED,
     AUDIT_PROGRAM_VISIT_STATUS_SKIPPED,
     AUDIT_PROGRAM_VISIT_STATUSES,
-    AUDIT_START_DATE_REQUIRED_MESSAGE,
     DEFAULT_AUDIT_PROGRAM_STANDARDS,
     DEFAULT_AUDIT_PROGRAM_STATUS,
     DEFAULT_AUDIT_PROGRAM_VISIT_PROCESS_STATUS,
@@ -576,23 +575,20 @@ class AuditProgramService:
         self,
         visit_id: int,
         *,
-        started_at: date,
+        started_at: date | None = None,
         fields: dict | None = None,
         commission_members: list[dict] | None = None,
     ) -> Audit:
         """
-        Založí audit v2 ze návštěvy: audit + snapshot + vazba v jedné transakci.
+        Založí plán auditu ze návštěvy: audit, číslo, komise a vazba.
 
-        ``started_at`` musí zadat uživatel. Při chybě ROLLBACK — nezůstane audit,
-        číslo, snapshot ani ``visit.audit_id``.
+        Snapshot, questions_frozen_at ani Mimořádná ověření nevzniknou.
+        ``started_at`` může zůstat prázdné.
         """
         from moduly.audity.sluzby.audit_v2_create_service import (
             AuditV2CreateError,
-            create_audit_with_v2_snapshot,
+            create_unfrozen_program_audit,
         )
-
-        if started_at is None:
-            raise ValueError(AUDIT_START_DATE_REQUIRED_MESSAGE)
 
         visit = self.repository.get_visit(visit_id)
         if visit is None:
@@ -610,13 +606,6 @@ class AuditProgramService:
         workplace_id = editor_fields.get("workplace_id", visit.workplace_id)
         if workplace_id is None or int(workplace_id) <= 0:
             raise ValueError("Návštěva nemá přiřazený provoz.")
-
-        visit_processes = self.repository.list_visit_processes(visit_id)
-        planned_process_ids = {
-            str(item.process_id).strip()
-            for item in visit_processes
-            if str(item.process_id or "").strip()
-        }
 
         workplace_name = str(
             editor_fields.get("workplace_name") or self._resolve_workplace_name(visit)
@@ -644,18 +633,41 @@ class AuditProgramService:
         payload["program_id"] = program.id
         payload["program_visit_id"] = visit.id
 
-        # Metodika max. jednou (ensure_catalogs uvnitř get_knowledge_tree).
-        knowledge_tree = audit_knowledge_service.get_knowledge_tree(ensure=True)
-
         try:
-            return create_audit_with_v2_snapshot(
+            return create_unfrozen_program_audit(
                 fields=payload,
                 workplace_id=int(workplace_id),
-                planned_process_ids=planned_process_ids,
                 commission_members=commission_members,
                 link_visit_id=int(visit_id),
+            )
+        except AuditV2CreateError as exc:
+            raise ValueError(str(exc)) from exc
+
+    def prepare_audit_from_visit(self, audit_id: int) -> Audit:
+        """Zmrazí metodiku plánu auditu. Datum zahájení ani plánované datum nemění."""
+        from moduly.audity.sluzby.audit_service import audit_service
+        from moduly.audity.sluzby.audit_v2_create_service import (
+            AuditV2CreateError,
+            prepare_planned_audit,
+        )
+
+        audit = audit_service.get_by_id(int(audit_id))
+        if audit is None:
+            raise ValueError(f"Audit {audit_id} neexistuje.")
+        planned_process_ids: set[str] | None = None
+        if audit.program_visit_id:
+            visit_processes = self.repository.list_visit_processes(int(audit.program_visit_id))
+            planned_process_ids = {
+                str(item.process_id).strip()
+                for item in visit_processes
+                if str(item.process_id or "").strip()
+            }
+        knowledge_tree = audit_knowledge_service.get_knowledge_tree(ensure=True)
+        try:
+            return prepare_planned_audit(
+                int(audit_id),
+                planned_process_ids=planned_process_ids,
                 knowledge_tree=knowledge_tree,
-                ensure_knowledge=False,
             )
         except AuditV2CreateError as exc:
             raise ValueError(str(exc)) from exc

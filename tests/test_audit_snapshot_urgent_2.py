@@ -484,6 +484,7 @@ class ProgramVisitStillV2TestCase(unittest.TestCase):
             audit_knowledge_service, "get_knowledge_tree", return_value=tree
         ):
             audit = audit_program_service.create_audit_from_visit(visit.id, started_at=date(2026, 4, 10))
+            audit = audit_program_service.prepare_audit_from_visit(audit.id)
         self.assertEqual(audit.methodology_generation, AUDIT_METHODOLOGY_GENERATION_V2)
         with get_session() as session:
             snaps = list(

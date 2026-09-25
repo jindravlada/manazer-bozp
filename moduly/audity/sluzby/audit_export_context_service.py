@@ -887,7 +887,7 @@ class AuditExportContext:
             f"Celkové hodnocení: {self.overall_rating_label()}",
             f"Auditovaný provoz: {_text(self.audit.workplace_name) or '—'}",
             f"Auditovaný systém: {self.audited_system_label()}",
-            f"Datum auditu: {_fmt_date(self.audit.audit_date) or '—'}",
+            f"Plánované datum: {_fmt_date(self.audit.audit_date) or '—'}",
             f"Počet auditních tvrzení: {stats.control_points_checked}",
             f"Počet neshod: {stats.ratings_nevyhovuje}",
             f"Počet doporučení: {stats.ratings_vyhovuje_s_doporucenim}",

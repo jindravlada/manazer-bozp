@@ -26,8 +26,13 @@ from core.widgets.editor_dialog_controller import (
     confirm_unsaved_editor_close,
 )
 from moduly.audity.constants import (
+    AUDIT_COMPLETION_REQUIRES_PREPARATION_MESSAGE,
+    AUDIT_COMPLETION_REQUIRES_START_DATE_MESSAGE,
+    AUDIT_EXECUTION_REQUIRES_PREPARATION_MESSAGE,
     AUDIT_LEAD_RECOMMENDATION_EMPTY_REVIEW_MESSAGE,
     AUDIT_LEAD_RECOMMENDATION_STALE_REVIEW_MESSAGE,
+    AUDIT_PREPARE_BUTTON,
+    AUDIT_PREPARE_CONFIRM_MESSAGE,
     AUDIT_START_DATE_REQUIRED_MESSAGE,
     FINDING_SOURCE_LABEL,
     TAB_LABELS,
@@ -199,6 +204,7 @@ class AuditDialog(QDialog):
             button.setAutoDefault(False)
             button.setDefault(False)
 
+        self.spis_widget.prepare_button.clicked.connect(self._prepare_audit)
         self._save_btn.clicked.connect(self._save_keep_open)
         self._save_close_btn.clicked.connect(self._save_and_close)
         self._close_btn.clicked.connect(self._request_close)
@@ -229,6 +235,13 @@ class AuditDialog(QDialog):
         self.terrain_widget.set_notes_mode(notes_mode)
         self.extraordinary_widget.set_notes_mode(None)
         # Jeden resolve pro všechny záložky — snapshot bez ensure_catalogs / get_knowledge_tree.
+        from moduly.audity.sluzby.audit_v2_create_service import is_planned_unfrozen
+
+        if self.audit is not None and is_planned_unfrozen(self.audit):
+            self.processes_widget.show_unprepared_state()
+            self.terrain_widget.show_unprepared_state()
+            self.extraordinary_widget.show_unprepared_state()
+            return
         try:
             source = audit_question_source_service.resolve_for_audit(audit_id)
         except AuditQuestionSourceError as exc:
@@ -267,8 +280,6 @@ class AuditDialog(QDialog):
         return self.audit is None and self._visit_context is not None
 
     def _validate_visit_draft(self, data: dict) -> str | None:
-        if data.get("started_at") is None:
-            return AUDIT_START_DATE_REQUIRED_MESSAGE
         workplace_id = data.get("workplace_id")
         if workplace_id is None:
             workplace_id = audit_service.resolve_workplace_id_by_name(
@@ -277,6 +288,60 @@ class AuditDialog(QDialog):
         if workplace_id is None or int(workplace_id) <= 0:
             return AUDITABLE_WORKPLACE_REQUIRED_MESSAGE
         return None
+
+    def _audit_is_prepared(self) -> bool:
+        from moduly.audity.sluzby.audit_v2_create_service import is_planned_unfrozen
+
+        audit = self.audit
+        if audit is None or is_planned_unfrozen(audit):
+            return False
+        return getattr(audit, "questions_frozen_at", None) is not None
+
+    def _form_has_execution(self, data: dict) -> bool:
+        if not audit_service.is_conclusion_blank(data.get("conclusion_text")):
+            return True
+        if not is_recommendation_blank(data.get("lead_auditor_recommendation")):
+            return True
+        if str(data.get("silne_stranky") or "").strip():
+            return True
+        return False
+
+    def _execution_block_message(self, data: dict) -> str | None:
+        if not self._deferred.has_execution_changes() and not self._form_has_execution(data):
+            return None
+        if not self._audit_is_prepared():
+            return AUDIT_EXECUTION_REQUIRES_PREPARATION_MESSAGE
+        if data.get("started_at") is None:
+            return AUDIT_START_DATE_REQUIRED_MESSAGE
+        return None
+
+    def _prepare_audit(self) -> None:
+        if self.audit is None or not getattr(self.audit, "id", None):
+            return
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Question)
+        box.setWindowTitle(AUDIT_PREPARE_BUTTON)
+        box.setText(AUDIT_PREPARE_CONFIRM_MESSAGE)
+        yes_btn = box.addButton("Ano", QMessageBox.ButtonRole.YesRole)
+        box.addButton("Ne", QMessageBox.ButtonRole.NoRole)
+        box.exec()
+        if box.clickedButton() is not yes_btn:
+            return
+        try:
+            prepared = audit_program_service.prepare_audit_from_visit(int(self.audit.id))
+        except (
+            AuditV2CreateError,
+            SystemAuditWorkplaceError,
+            AuditExtraordinaryError,
+            ValueError,
+        ) as exc:
+            QMessageBox.warning(self, AUDIT_PREPARE_BUTTON, str(exc))
+            return
+        self.audit = prepared
+        self.spis_widget.load_audit(prepared)
+        self.conclusion_widget.load_audit(prepared)
+        self.set_audit_id(prepared.id)
+        self._capture_baseline()
 
     def _persist(self) -> bool:
         """Zápis Spis/Závěr/komise + odložených zjištění/úkolů/výsledků kontroly."""
@@ -296,6 +361,11 @@ class AuditDialog(QDialog):
 
         self.processes_widget.capture_section_summary()
         self.terrain_widget.capture_section_summary()
+
+        execution_error = self._execution_block_message(data)
+        if execution_error is not None:
+            QMessageBox.warning(self, FINDING_SOURCE_LABEL, execution_error)
+            return False
 
         if self.audit is None:
             payload = self.prepare_save_payload(data)
@@ -467,6 +537,16 @@ class AuditDialog(QDialog):
         if not valid:
             QMessageBox.warning(self, "Auditní tým", message)
             self.tabs.setCurrentWidget(self.commission_widget)
+            return False
+
+        data_for_gate = self.get_data()
+        if not self._audit_is_prepared():
+            QMessageBox.warning(self, "Závěr", AUDIT_COMPLETION_REQUIRES_PREPARATION_MESSAGE)
+            self.tabs.setCurrentWidget(self.spis_widget)
+            return False
+        if data_for_gate.get("started_at") is None:
+            QMessageBox.warning(self, "Závěr", AUDIT_COMPLETION_REQUIRES_START_DATE_MESSAGE)
+            self.tabs.setCurrentWidget(self.spis_widget)
             return False
 
         self.processes_widget.capture_section_summary()

@@ -35,8 +35,9 @@ with patch.object(Path, "home", return_value=_TMP):
 
     from core.database.session import get_session
     from moduly.audity.constants import (
+        AUDIT_METHODOLOGY_GENERATION_PLANNED_UNFROZEN_V1,
         AUDIT_PROGRAM_VISIT_STARTED_ELSEWHERE,
-        AUDIT_START_DATE_REQUIRED_MESSAGE,
+        AUDIT_STATUS_PLANOVANO,
         AUDIT_STATUS_PROBIHA,
         COMMISSION_MISSING_LEADER_MESSAGE,
         DEFAULT_AUDIT_PROGRAM_STANDARDS,
@@ -207,22 +208,23 @@ class AuditStartDeferredSave1TestCase(unittest.TestCase):
         self.assertIsNone(refreshed.audit_id)
         self.assertEqual(audit_service.get_all(), [])
 
-    def test_07_save_without_started_at_validates_before_db(self) -> None:
+    def test_07_save_without_started_at_creates_unfrozen_plan(self) -> None:
         _, visit = self._create_visit()
         dialog = AuditDialog(visit_context=self._visit_context(visit.id))
         self._fill_commission(dialog)
-        statements, listener = self._capture_writes()
-        try:
-            with patch("moduly.audity.ui.audit_dialog.QMessageBox.warning") as warning:
-                saved = dialog._persist()
-        finally:
-            self._stop_capture(listener)
-        self.assertFalse(saved)
-        warning.assert_called()
-        self.assertIn(AUDIT_START_DATE_REQUIRED_MESSAGE, warning.call_args.args[2])
-        self.assertFalse(
-            any(stmt.startswith(("INSERT", "UPDATE", "DELETE")) for stmt in statements),
-            statements[:20],
+        with patch("moduly.audity.ui.audit_dialog.QMessageBox.warning") as warning:
+            saved = dialog._persist()
+        self.assertTrue(saved)
+        warning.assert_not_called()
+        audit = dialog.audit
+        assert audit is not None
+        self.assertIsNone(audit.started_at)
+        self.assertEqual(audit.status, AUDIT_STATUS_PLANOVANO)
+        self.assertEqual(_snapshot_count(audit.id), 0)
+        self.assertIsNone(audit.questions_frozen_at)
+        self.assertEqual(
+            audit.methodology_generation,
+            AUDIT_METHODOLOGY_GENERATION_PLANNED_UNFROZEN_V1,
         )
         self._close_dialog(dialog)
 
@@ -261,26 +263,37 @@ class AuditStartDeferredSave1TestCase(unittest.TestCase):
         refreshed = audit_program_service.repository.get_visit(visit.id)
         assert refreshed is not None
         self.assertEqual(refreshed.audit_id, audit.id)
-        self.assertGreater(_snapshot_count(audit.id), 0)
+        self.assertEqual(_snapshot_count(audit.id), 0)
+        self.assertEqual(
+            audit.methodology_generation,
+            AUDIT_METHODOLOGY_GENERATION_PLANNED_UNFROZEN_V1,
+        )
         self.assertEqual(dialog.spis_widget.number_label.text(), audit.number)
         self._close_dialog(dialog)
 
-    def test_11_snapshot_error_rolls_back_audit_and_visit(self) -> None:
+    def test_11_snapshot_error_rolls_back_prepare_not_the_plan(self) -> None:
         _, visit = self._create_visit()
+        audit = audit_program_service.create_audit_from_visit(
+            visit.id,
+            started_at=date(2026, 4, 12),
+        )
         with patch.object(
             audit_question_snapshot_service,
             "build_v2_snapshot_for_audit",
             side_effect=AuditV2SnapshotError("snapshot selhal"),
         ):
             with self.assertRaises((AuditV2SnapshotError, ValueError)):
-                audit_program_service.create_audit_from_visit(
-                    visit.id,
-                    started_at=date(2026, 4, 12),
-                )
-        self.assertEqual(audit_service.get_all(), [])
+                audit_program_service.prepare_audit_from_visit(audit.id)
+        refreshed_audit = audit_service.get_by_id(audit.id)
+        assert refreshed_audit is not None
+        self.assertEqual(
+            refreshed_audit.methodology_generation,
+            AUDIT_METHODOLOGY_GENERATION_PLANNED_UNFROZEN_V1,
+        )
+        self.assertIsNone(refreshed_audit.questions_frozen_at)
         refreshed = audit_program_service.repository.get_visit(visit.id)
         assert refreshed is not None
-        self.assertIsNone(refreshed.audit_id)
+        self.assertEqual(refreshed.audit_id, audit.id)
         with get_session() as session:
             total = session.scalar(select(func.count()).select_from(AuditQuestionSnapshot))
         self.assertEqual(int(total or 0), 0)
@@ -422,14 +435,12 @@ class AuditStartDeferredSave1TestCase(unittest.TestCase):
         page.close()
         self.assertNotEqual(program_b.id, visit_a.program_id)
 
-    def test_service_requires_started_at(self) -> None:
+    def test_service_allows_missing_started_at(self) -> None:
         _, visit = self._create_visit()
-        with self.assertRaises(TypeError):
-            audit_program_service.create_audit_from_visit(visit.id)
-        with self.assertRaises(ValueError) as ctx:
-            audit_program_service.create_audit_from_visit(visit.id, started_at=None)
-        self.assertEqual(str(ctx.exception), AUDIT_START_DATE_REQUIRED_MESSAGE)
-        self.assertEqual(audit_service.get_all(), [])
+        audit = audit_program_service.create_audit_from_visit(visit.id, started_at=None)
+        self.assertIsNone(audit.started_at)
+        self.assertEqual(audit.status, AUDIT_STATUS_PLANOVANO)
+        self.assertEqual(_snapshot_count(audit.id), 0)
 
 
 if __name__ == "__main__":

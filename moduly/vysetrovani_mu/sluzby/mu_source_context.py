@@ -115,7 +115,7 @@ def _context_from_audit(source_id: int | None) -> MuSourceContext:
     source_record_html = (
         f"<b>Číslo auditu:</b> {audit.number or ''}<br>"
         f"<b>Název:</b> {audit.title or ''}<br>"
-        f"<b>Datum auditu:</b> {audit_date}<br>"
+        f"<b>Plánované datum:</b> {audit_date}<br>"
         f"<b>Auditovaný provoz:</b> {audit.workplace_name or ''}<br>"
         f"<b>Stav:</b> {audit.status or ''}"
     )

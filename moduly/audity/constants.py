@@ -391,7 +391,7 @@ AUDIT_PROGRAM_STATUS_VISIT_SKIPPED = "✓ Návštěva zrušena."
 AUDIT_PROGRAM_STATUS_AUDIT_CREATED = "✓ Audit založen."
 AUDIT_PROGRAM_STATUS_AUDIT_COMPLETED = "✓ Audit dokončen."
 
-AUDIT_PROGRAM_START_AUDIT_BUTTON = "Zahájit audit..."
+AUDIT_PROGRAM_START_AUDIT_BUTTON = "Založit plán auditu..."
 AUDIT_PROGRAM_OPEN_AUDIT_BUTTON = "Otevřít audit"
 AUDIT_PROTOCOL_BUTTON_LABEL = "Protokol z interního auditu..."
 AUDIT_PROTOCOL_DIALOG_TITLE = "Protokol z interního auditu"
@@ -403,6 +403,29 @@ AUDIT_PROGRAM_VISIT_STARTED_ELSEWHERE = (
 )
 AUDIT_PROGRAM_VISIT_NO_AUDIT = "Návštěva nemá vytvořený audit."
 AUDIT_START_DATE_REQUIRED_MESSAGE = "Vyplňte datum zahájení auditu."
+AUDIT_PREPARE_BUTTON = "Připravit audit"
+AUDIT_PREPARED_ON_LABEL = "Audit připraven dne {date}"
+AUDIT_PREPARE_CONFIRM_MESSAGE = (
+    "Přípravou auditu bude vytvořen snapshot aktuálních auditních tvrzení "
+    "a mimořádných ověření.\n\n"
+    "Další změny metodiky se již do tohoto auditu automaticky nepromítnou.\n\n"
+    "Chcete audit připravit?"
+)
+AUDIT_NOT_PREPARED_TAB_MESSAGE = (
+    "Audit ještě není připraven. Nejprve použijte na záložce Spis funkci Připravit audit."
+)
+AUDIT_EXECUTION_REQUIRES_PREPARATION_MESSAGE = (
+    "Audit ještě není připraven. Nejprve použijte na záložce Spis funkci Připravit audit."
+)
+AUDIT_COMPLETION_REQUIRES_PREPARATION_MESSAGE = (
+    "Audit nelze dokončit. Nejprve použijte na záložce Spis funkci Připravit audit."
+)
+AUDIT_COMPLETION_REQUIRES_START_DATE_MESSAGE = (
+    "Audit nelze dokončit. Vyplňte datum zahájení auditu."
+)
+AUDIT_PROGRAM_PRINT_STATEMENTS_STATUS_UNFROZEN = (
+    "Aktuální metodika – audit ještě není připraven, metodika není zmrazena"
+)
 
 AUDIT_PROGRAM_MANUAL_GENERATE_BLOCKED = (
     "Program byl ručně upraven. Automatické generování návštěv je vypnuto."
@@ -599,6 +622,8 @@ AUDIT_QUESTION_KIND_LEGACY = "legacy"
 
 # AUDIT-METHOD-V2a: generace a druhy otázek nové metodiky.
 AUDIT_METHODOLOGY_GENERATION_V2 = "v2"
+# AUDIT-PLANNING-PREP-1: plán z programu, snapshot ještě nevznikl.
+AUDIT_METHODOLOGY_GENERATION_PLANNED_UNFROZEN_V1 = "planned-unfrozen-v1"
 
 AUDIT_QUESTION_KIND_SYSTEM = "system"
 AUDIT_QUESTION_KIND_OPERATION = "operation"
