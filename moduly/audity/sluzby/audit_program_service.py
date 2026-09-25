@@ -745,22 +745,65 @@ class AuditProgramService:
         except AuditV2CreateError as exc:
             raise ValueError(str(exc)) from exc
 
-    def sync_on_audit_completed(self, audit_id: int, *, finished_at: date) -> None:
-        visit = self.repository.get_visit_by_audit_id(audit_id)
+    def sync_on_audit_completed(
+        self,
+        audit_id: int,
+        *,
+        finished_at: date,
+        session=None,
+    ) -> None:
+        """Uzavře návštěvu a její procesy. S předanou session necommituje."""
+        if session is None:
+            from core.database.session import get_session
+
+            with get_session() as own_session:
+                try:
+                    self._sync_on_audit_completed(
+                        own_session,
+                        int(audit_id),
+                        finished_at=finished_at,
+                    )
+                    own_session.commit()
+                except Exception:
+                    own_session.rollback()
+                    raise
+            return
+        self._sync_on_audit_completed(
+            session,
+            int(audit_id),
+            finished_at=finished_at,
+        )
+
+    def _sync_on_audit_completed(self, session, audit_id: int, *, finished_at: date) -> None:
+        from sqlalchemy import select
+
+        visit = session.scalars(
+            select(AuditProgramVisit).where(AuditProgramVisit.audit_id == int(audit_id))
+        ).first()
         if visit is None:
             return
 
         visit.status = AUDIT_PROGRAM_VISIT_STATUS_COMPLETED
-        self.repository.update_visit(visit)
-
         completed_at = datetime.combine(finished_at, datetime.min.time())
-        for visit_process in self.repository.list_visit_processes(visit.id):
+        processes = session.scalars(
+            select(AuditProgramVisitProcess).where(
+                AuditProgramVisitProcess.visit_id == visit.id
+            )
+        )
+        for visit_process in processes:
             if visit_process.status != AUDIT_PROGRAM_VISIT_PROCESS_STATUS_PLANNED:
                 continue
-            visit_process.status = AUDIT_PROGRAM_VISIT_PROCESS_STATUS_COMPLETED
-            visit_process.audit_id = audit_id
-            visit_process.completed_at = completed_at
-            self.repository.update_visit_process(visit_process)
+            self._complete_visit_process(
+                visit_process,
+                audit_id=int(audit_id),
+                completed_at=completed_at,
+            )
+
+    @staticmethod
+    def _complete_visit_process(visit_process, *, audit_id: int, completed_at: datetime) -> None:
+        visit_process.status = AUDIT_PROGRAM_VISIT_PROCESS_STATUS_COMPLETED
+        visit_process.audit_id = audit_id
+        visit_process.completed_at = completed_at
 
     def get_program_overview(self, program_id: int) -> AuditProgramOverview | None:
         program = self.repository.get_program(program_id)

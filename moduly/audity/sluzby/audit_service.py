@@ -144,33 +144,42 @@ class AuditService:
                 )
 
         data["updated_at"] = datetime.now()
+        if becoming_finished:
+            return self._commit_first_completion(int(audit_id), data)
         # Zápis jen přes id v nové session — ne merge instance držené editorem.
-        updated = self.repository.update_fields(audit_id, **data)
-        if updated is None:
-            return None
+        return self.repository.update_fields(audit_id, **data)
 
-        if not was_finished and updated.finished_at is not None:
-            from moduly.audity.sluzby.audit_program_service import audit_program_service
-            from moduly.audity.sluzby.audit_extraordinary_assignment_service import (
-                audit_extraordinary_assignment_service,
-            )
-            from core.database.session import get_session
+    def _commit_first_completion(self, audit_id: int, data: dict) -> Audit | None:
+        """První přechod na Dokončeno: audit, návštěva, procesy a mimořádná ověření v jedné TX."""
+        from core.database.session import get_session
+        from moduly.audity.sluzby.audit_extraordinary_assignment_service import (
+            audit_extraordinary_assignment_service,
+        )
+        from moduly.audity.sluzby.audit_program_service import audit_program_service
 
-            audit_program_service.sync_on_audit_completed(
-                updated.id,
-                finished_at=updated.finished_at,
-            )
-            with get_session() as session:
-                try:
-                    audit_extraordinary_assignment_service.finalize_for_completed_audit(
-                        session, int(updated.id)
-                    )
-                    session.commit()
-                except Exception:
-                    session.rollback()
-                    raise
-
-        return updated
+        with get_session() as session:
+            try:
+                audit = session.get(Audit, int(audit_id))
+                if audit is None:
+                    return None
+                for key, value in data.items():
+                    setattr(audit, key, value)
+                audit_program_service.sync_on_audit_completed(
+                    int(audit.id),
+                    finished_at=audit.finished_at,
+                    session=session,
+                )
+                audit_extraordinary_assignment_service.finalize_for_completed_audit(
+                    session,
+                    int(audit.id),
+                )
+                session.commit()
+                session.refresh(audit)
+                session.expunge(audit)
+                return audit
+            except Exception:
+                session.rollback()
+                raise
 
     def delete_audit(self, audit_id: int) -> bool:
         from moduly.audity.sluzby.audit_extraordinary_assignment_service import (
