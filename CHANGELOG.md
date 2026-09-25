@@ -14,6 +14,16 @@
 
 ---
 
+# Verze 4.0.7
+
+Datum vydání:
+
+25. 9. 2026
+
+Audity: dokončení nového životního cyklu plánování, přípravy a provádění auditů. Ručně založený audit používá vědomý postup Založit → Připravit → Zahájit. U ručního auditu lze před přípravou určit rozsah auditu výběrem řídicích procesů; bez zvoleného rozsahu jej nelze připravit. Program auditů považuje návštěvu za splněnou až po skutečném dokončení navázaného auditu. Samotné založení nebo probíhající audit se jako dokončený nezapočítává. Dokončení auditu, návštěvy programu, jejích procesů a mimořádných ověření probíhá atomicky. Při chybě se přechod do stavu Dokončeno neuloží částečně.
+
+---
+
 # Verze 4.0.6
 
 Datum vydání:
