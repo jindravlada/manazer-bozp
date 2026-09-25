@@ -29,6 +29,7 @@ from moduly.audity.constants import (
     AUDIT_COMPLETION_REQUIRES_PREPARATION_MESSAGE,
     AUDIT_COMPLETION_REQUIRES_START_DATE_MESSAGE,
     AUDIT_EXECUTION_REQUIRES_PREPARATION_MESSAGE,
+    AUDIT_EXECUTION_REQUIRES_SAVE_THEN_PREPARE_MESSAGE,
     AUDIT_LEAD_RECOMMENDATION_EMPTY_REVIEW_MESSAGE,
     AUDIT_LEAD_RECOMMENDATION_STALE_REVIEW_MESSAGE,
     AUDIT_PREPARE_BUTTON,
@@ -309,6 +310,8 @@ class AuditDialog(QDialog):
     def _execution_block_message(self, data: dict) -> str | None:
         if not self._deferred.has_execution_changes() and not self._form_has_execution(data):
             return None
+        if self.audit is None:
+            return AUDIT_EXECUTION_REQUIRES_SAVE_THEN_PREPARE_MESSAGE
         if not self._audit_is_prepared():
             return AUDIT_EXECUTION_REQUIRES_PREPARATION_MESSAGE
         if data.get("started_at") is None:

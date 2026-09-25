@@ -213,6 +213,7 @@ class ManualV2CreateTestCase(unittest.TestCase):
                 },
                 commission_members=None,
             )
+            audit = audit_program_service.prepare_audit_from_visit(audit.id)
             return audit, mocked
 
     def test_06_manual_system_only_system(self) -> None:
@@ -253,17 +254,19 @@ class ManualV2CreateTestCase(unittest.TestCase):
         tree = _fake_tree("proc_b", "Proces B", section)
         before = len(audit_service.get_all())
         with patch.object(audit_knowledge_service, "get_knowledge_tree", return_value=tree):
+            audit = create_manual_audit_with_v2_snapshot(
+                fields={
+                    "workplace_id": self.ops_wp.id,
+                    "year": 2026,
+                    "started_at": date.today(),
+                },
+            )
             with self.assertRaises(AuditV2SnapshotError) as ctx:
-                create_manual_audit_with_v2_snapshot(
-                    fields={
-                        "workplace_id": self.ops_wp.id,
-                        "year": 2026,
-                        "started_at": date.today(),
-                    },
-                )
+                audit_program_service.prepare_audit_from_visit(audit.id)
         self.assertIn("Proces B", str(ctx.exception))
         self.assertIn("unc_b", str(ctx.exception))
-        self.assertEqual(len(audit_service.get_all()), before)
+        self.assertEqual(len(audit_service.get_all()), before + 1)
+        self.assertIsNone(audit_service.get_by_id(audit.id).questions_frozen_at)
 
     def test_09_error_leaves_no_audit_or_snapshot(self) -> None:
         section = _section(
@@ -279,15 +282,16 @@ class ManualV2CreateTestCase(unittest.TestCase):
                 or 0
             )
         with patch.object(audit_knowledge_service, "get_knowledge_tree", return_value=tree):
+            audit = create_manual_audit_with_v2_snapshot(
+                fields={
+                    "workplace_id": self.ops_wp.id,
+                    "year": 2026,
+                    "started_at": date.today(),
+                },
+            )
             with self.assertRaises(AuditV2SnapshotError):
-                create_manual_audit_with_v2_snapshot(
-                    fields={
-                        "workplace_id": self.ops_wp.id,
-                        "year": 2026,
-                        "started_at": date.today(),
-                    },
-                )
-        self.assertEqual({a.id for a in audit_service.get_all()}, before_audits)
+                audit_program_service.prepare_audit_from_visit(audit.id)
+        self.assertEqual({a.id for a in audit_service.get_all()}, before_audits | {audit.id})
         with get_session() as session:
             after_snaps = int(
                 session.scalar(text("SELECT COUNT(*) FROM audit_question_snapshots"))
@@ -325,14 +329,15 @@ class ManualV2CreateTestCase(unittest.TestCase):
         with patch.object(
             audit_knowledge_service, "get_knowledge_tree", return_value=self.tree
         ):
+            audit = create_manual_audit_with_v2_snapshot(
+                fields={
+                    "workplace_id": self.ops_wp.id,
+                    "year": 2026,
+                    "started_at": date.today(),
+                },
+            )
             with self.assertRaises(SystemAuditWorkplaceError) as ctx:
-                create_manual_audit_with_v2_snapshot(
-                    fields={
-                        "workplace_id": self.ops_wp.id,
-                        "year": 2026,
-                        "started_at": date.today(),
-                    },
-                )
+                audit_program_service.prepare_audit_from_visit(audit.id)
         self.assertIn(AUDIT_START_MISSING_SYSTEM_WORKPLACE, str(ctx.exception))
 
     def test_reopen_system_shows_only_system(self) -> None:

@@ -417,6 +417,9 @@ AUDIT_NOT_PREPARED_TAB_MESSAGE = (
 AUDIT_EXECUTION_REQUIRES_PREPARATION_MESSAGE = (
     "Audit ještě není připraven. Nejprve použijte na záložce Spis funkci Připravit audit."
 )
+AUDIT_EXECUTION_REQUIRES_SAVE_THEN_PREPARE_MESSAGE = (
+    "Audit je nutné nejprve uložit a připravit."
+)
 AUDIT_COMPLETION_REQUIRES_PREPARATION_MESSAGE = (
     "Audit nelze dokončit. Nejprve použijte na záložce Spis funkci Připravit audit."
 )

@@ -58,7 +58,7 @@ with patch.object(Path, "home", return_value=_TMP):
         AUDIT_BACKFILL_STATUS_OTHER_GENERATION,
         classify_audit_backfill_state,
     )
-    from moduly.audity.sluzby.audit_v2_create_service import create_manual_audit_with_v2_snapshot
+    from moduly.audity.sluzby.audit_v2_create_service import create_audit_with_v2_snapshot
     from moduly.audity.ui.audit_dialog import AuditDialog
     from tests.audit_v2a_test_support import prepare_v2_audit_create
 
@@ -246,14 +246,15 @@ class AuditPlanningPrep1TestCase(unittest.TestCase):
         self.assertEqual(prepared.status, AUDIT_STATUS_PLANOVANO)
 
     def test_08_existing_v2_snapshot_is_not_regenerated(self) -> None:
-        audit = create_manual_audit_with_v2_snapshot(
+        audit = create_audit_with_v2_snapshot(
             fields={
                 "title": "Ruční",
                 "year": 2026,
                 "workplace_id": self._operation_wp.id,
                 "started_at": date(2026, 3, 1),
                 "audit_date": date(2026, 3, 1),
-            }
+            },
+            workplace_id=self._operation_wp.id,
         )
         before = _snapshot_count(audit.id)
         frozen_at = audit.questions_frozen_at

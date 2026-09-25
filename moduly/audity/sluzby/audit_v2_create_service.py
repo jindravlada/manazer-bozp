@@ -1,7 +1,8 @@
-"""Atomické založení auditu rovnou jako snapshot v2 (AUDIT-SNAPSHOT-URGENT-2).
+"""Založení auditu a zmrazení metodiky v2.
 
-Společná cesta pro Program auditů i ruční „Nový audit“.
-Nevytváří live audit s dodatečným přepnutím na snapshot.
+Program i ruční Nový audit se nejdřív ukládají jako planned-unfrozen-v1.
+Snapshot vznikne až explicitní přípravou. create_audit_with_v2_snapshot
+zůstává pro cesty, které snapshot potřebují hned.
 """
 
 from __future__ import annotations
@@ -281,22 +282,18 @@ def create_manual_audit_with_v2_snapshot(
     fields: dict,
     commission_members: list[dict] | None = None,
 ) -> Audit:
-    """Ruční audit z přehledu: všechny aktivní procesy + filtr Systém/Provoz."""
+    """Ruční audit z přehledu: plán bez snapshotu. Příprava zmrazí všechny procesy."""
     workplace_id = fields.get("workplace_id")
     if workplace_id is None or int(workplace_id) <= 0:
         raise AuditV2CreateError("Auditovaný provoz není zvolen.")
     payload = dict(fields)
     if not payload.get("year"):
         payload["year"] = date.today().year
-    if payload.get("started_at") is None and payload.get("audit_date") is None:
-        payload["started_at"] = date.today()
-    return create_audit_with_v2_snapshot(
+    return create_unfrozen_program_audit(
         fields=payload,
         workplace_id=int(workplace_id),
-        planned_process_ids=None,
         commission_members=commission_members,
         link_visit_id=None,
-        ensure_knowledge=True,
     )
 
 

@@ -644,7 +644,7 @@ class AuditProgramService:
             raise ValueError(str(exc)) from exc
 
     def prepare_audit_from_visit(self, audit_id: int) -> Audit:
-        """Zmrazí metodiku plánu auditu. Datum zahájení ani plánované datum nemění."""
+        """Zmrazí metodiku plánu. Bez návštěvy programu bere všechny aktivní procesy."""
         from moduly.audity.sluzby.audit_service import audit_service
         from moduly.audity.sluzby.audit_v2_create_service import (
             AuditV2CreateError,

@@ -510,7 +510,7 @@ class AuditProverkySectionNoteFunctionalTestCase(unittest.TestCase):
             mocked_tree.assert_not_called()
         self.assertEqual(snapshot_audit.notes_mode, NOTES_MODE_SECTION_SUMMARY_V1)
         self.assertIn(
-            "create_audit_with_v2_snapshot",
+            "create_unfrozen_program_audit",
             inspect.getsource(create_manual_audit_with_v2_snapshot),
         )
         source = inspect.getsource(AuditProgramService.create_audit_from_visit)
