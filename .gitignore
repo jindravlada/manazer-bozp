@@ -87,3 +87,6 @@ squashfs-root/
 
 # PyInstaller
 *.spec
+
+# Zálohy zdrojového projektu (tools/backup_source.py)
+source_backups/
