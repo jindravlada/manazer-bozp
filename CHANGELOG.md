@@ -14,6 +14,16 @@
 
 ---
 
+# Verze 4.0.8
+
+Datum vydání:
+
+1. 10. 2026
+
+Audity: podpora vícedenních auditů a sjednocení pořadí auditních tvrzení. Do Spisu auditu bylo doplněno nepovinné Předpokládané datum ukončení. U zahájeného vícedenního auditu používá Agenda toto datum pro hlídání termínu; pokud není vyplněné, zachovává se dosavadní chování podle Data zahájení. Význam Plánovaného data, Data zahájení a skutečného dokončení auditu se nemění. Tisk Auditních tvrzení u připraveného auditu používá stejné pořadí řídicích procesů, oblastí a tvrzení jako samotné provádění auditu. Mimořádná ověření zůstávají při tisku za běžnými tvrzeními.
+
+---
+
 # Verze 4.0.7
 
 Datum vydání:
