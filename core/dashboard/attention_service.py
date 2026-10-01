@@ -183,11 +183,11 @@ def audit_title(audit) -> str:
 def _from_audits(_today: date) -> list[AttentionItem]:
     items: list[AttentionItem] = []
     for audit in audit_service.get_all():
-        due_date = audit.started_at
-        if due_date is None:
+        if audit.started_at is None:
             continue
         if audit.finished_at is not None:
             continue
+        due_date = audit.expected_end_date or audit.started_at
         title = audit_title(audit)
         items.append(
             AttentionItem(

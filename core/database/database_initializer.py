@@ -1189,6 +1189,7 @@ def _ensure_audit_columns() -> None:
         "audit_date": "audit_date DATE",
         "started_at": "started_at DATE",
         "finished_at": "finished_at DATE",
+        "expected_end_date": "expected_end_date DATE",
         "status": "status VARCHAR(30) DEFAULT 'Plánováno' NOT NULL",
         "audit_type": "audit_type VARCHAR(30) DEFAULT 'Řádný' NOT NULL",
         "workplace_id": "workplace_id INTEGER",

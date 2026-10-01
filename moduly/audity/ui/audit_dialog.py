@@ -478,6 +478,10 @@ class AuditDialog(QDialog):
                 QMessageBox.warning(self, "Závěr", str(exc))
                 self.tabs.setCurrentWidget(self.conclusion_widget)
                 return False
+            except ValueError as exc:
+                QMessageBox.warning(self, "Audit", str(exc))
+                self.tabs.setCurrentWidget(self.spis_widget)
+                return False
             if updated is None:
                 return False
             self.save_commission_members(self.audit.id, data)

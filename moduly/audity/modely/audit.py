@@ -21,6 +21,8 @@ class Audit(Base):
     audit_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     started_at: Mapped[date | None] = mapped_column(Date, nullable=True)
     finished_at: Mapped[date | None] = mapped_column(Date, nullable=True)
+    # AUDIT-EXPECTED-END-2: nepovinný předpokládaný konec vícedenního auditu.
+    expected_end_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     status: Mapped[str] = mapped_column(String(30), default=DEFAULT_AUDIT_SPIS_STATUS, nullable=False)
     audit_type: Mapped[str] = mapped_column(String(30), default=DEFAULT_AUDIT_TYPE, nullable=False)
 

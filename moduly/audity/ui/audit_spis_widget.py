@@ -74,12 +74,14 @@ class AuditSpisWidget(QWidget):
 
         self.audit_date_edit = NullableDateEdit()
         self.started_at_edit = NullableDateEdit()
+        self.expected_end_date_edit = NullableDateEdit()
         self.started_at_edit.dateChanged.connect(self._update_derived_status)
 
         terms_group = QGroupBox("Termíny")
         terms_form = QFormLayout(terms_group)
         terms_form.addRow("Plánované datum:", self.audit_date_edit)
         terms_form.addRow("Datum zahájení:", self.started_at_edit)
+        terms_form.addRow("Předpokládané datum ukončení:", self.expected_end_date_edit)
         layout.addWidget(terms_group)
 
         self._scope_checks: list[QCheckBox] = []
@@ -160,6 +162,7 @@ class AuditSpisWidget(QWidget):
         self._populate_year_combo()
         self.planned_month_combo.setCurrentIndex(0)
         self._finished_at = None
+        self.expected_end_date_edit.clear_date()
         self._update_derived_status()
         self.prepare_button.setVisible(False)
         self.prepared_label.setVisible(False)
@@ -208,6 +211,7 @@ class AuditSpisWidget(QWidget):
         else:
             self.audit_date_edit.clear_date()
         self.started_at_edit.clear_date()
+        self.expected_end_date_edit.clear_date()
         self._finished_at = None
         self.set_number(None)
         self._update_derived_status()
@@ -244,6 +248,12 @@ class AuditSpisWidget(QWidget):
             self.started_at_edit.set_date_value(started_at)
         else:
             self.started_at_edit.clear_date()
+
+        expected_end_date = getattr(audit, "expected_end_date", None)
+        if expected_end_date is not None:
+            self.expected_end_date_edit.set_date_value(expected_end_date)
+        else:
+            self.expected_end_date_edit.clear_date()
 
         self._finished_at = getattr(audit, "finished_at", None)
 
@@ -361,6 +371,7 @@ class AuditSpisWidget(QWidget):
             "planned_month": self.planned_month_combo.currentData(),
             "audit_date": self.audit_date_edit.get_date(),
             "started_at": self.started_at_edit.get_date(),
+            "expected_end_date": self.expected_end_date_edit.get_date(),
             "finished_at": self._finished_at,
             "audit_type": self.type_combo.currentText(),
             "workplace_id": self.workplace_selector.current_workplace_id(),

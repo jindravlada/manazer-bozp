@@ -105,6 +105,7 @@ class AuditRepository:
             "audit_date": audit.audit_date,
             "started_at": audit.started_at,
             "finished_at": audit.finished_at,
+            "expected_end_date": getattr(audit, "expected_end_date", None),
             "status": audit.status,
             "audit_type": audit.audit_type,
             "workplace_id": audit.workplace_id,

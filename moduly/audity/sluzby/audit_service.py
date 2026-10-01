@@ -16,6 +16,7 @@ from core.shared.sluzby.control_result_service import control_result_service
 from core.shared.sluzby.finding_service import finding_service
 from moduly.audity.constants import (
     AUDIT_CONCLUSION_REQUIRED_MESSAGE,
+    AUDIT_EXPECTED_END_BEFORE_START_MESSAGE,
     AUDIT_LEAD_RECOMMENDATION_REQUIRED_MESSAGE,
     AUDIT_LEAD_RECOMMENDATION_SIGNATURE_INVALID_MESSAGE,
     AUDIT_SPIS_STATUSES,
@@ -100,6 +101,7 @@ class AuditService:
             "audit_date": existing.audit_date,
             "started_at": existing.started_at,
             "finished_at": existing.finished_at,
+            "expected_end_date": existing.expected_end_date,
             "audit_type": existing.audit_type,
             "workplace_id": existing.workplace_id,
             "workplace_name": existing.workplace_name,
@@ -424,6 +426,13 @@ class AuditService:
 
         started_at = data.get("started_at")
         finished_at = data.get("finished_at")
+        expected_end_date = data.get("expected_end_date")
+        if (
+            started_at is not None
+            and expected_end_date is not None
+            and expected_end_date < started_at
+        ):
+            raise ValueError(AUDIT_EXPECTED_END_BEFORE_START_MESSAGE)
         status = self.derive_status(started_at, finished_at)
         if status not in AUDIT_SPIS_STATUSES:
             raise ValueError(f"Neplatný stav auditu: {status}")
@@ -434,6 +443,7 @@ class AuditService:
             "audit_date": data.get("audit_date"),
             "started_at": started_at,
             "finished_at": finished_at,
+            "expected_end_date": expected_end_date,
             "status": status,
             "audit_type": audit_type,
             "workplace_id": data.get("workplace_id"),

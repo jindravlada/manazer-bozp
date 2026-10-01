@@ -28,6 +28,9 @@ AUDIT_CONCLUSION_LABEL = "Závěr auditu"
 AUDIT_CONCLUSION_REQUIRED_MESSAGE = (
     "Audit nelze dokončit. Vyplňte závěr auditu."
 )
+AUDIT_EXPECTED_END_BEFORE_START_MESSAGE = (
+    "Předpokládané datum ukončení nesmí být dříve než datum zahájení."
+)
 AUDIT_CONCLUSION_EXPORT_SECTION = "Závěr auditu"
 AUDIT_STRENGTHS_EXPORT_SECTION = "Silné stránky"
 
