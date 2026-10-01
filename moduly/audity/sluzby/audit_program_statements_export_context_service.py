@@ -40,9 +40,8 @@ from moduly.audity.sluzby.audit_question_snapshot_service import (
     audit_question_snapshot_service,
 )
 from moduly.audity.sluzby.audit_question_source_service import (
-    SnapshotAssertionView,
     audit_question_source_service,
-    build_knowledge_tree_from_snapshot_views,
+    filter_knowledge_roots_by_question_kind,
 )
 from moduly.audity.sluzby.audit_service import audit_service
 from moduly.audity.sluzby.system_audit_workplace_service import (
@@ -337,21 +336,37 @@ def _items_from_drafts(
     ]
 
 
-def _items_from_views(
-    views: tuple[SnapshotAssertionView, ...] | list[SnapshotAssertionView],
+def _items_from_knowledge_roots(
+    roots: list[KnowledgeTreeNode] | tuple[KnowledgeTreeNode, ...],
 ) -> list[tuple[str, str, str, str, str, str]]:
-    return [
-        (
-            view.process_id,
-            view.process_name,
-            view.section_id,
-            view.section_name,
-            view.assertion_text,
-            view.verification_type,
-        )
-        for view in views
-        if view.is_in_scope
-    ]
+    """Pořadí tvrzení jako ve stromu provádění: proces, oblast, get_audit_questions."""
+    items: list[tuple[str, str, str, str, str, str]] = []
+
+    def walk(process_id: str, process_name: str, nodes) -> None:
+        for node in nodes:
+            section = node.section if isinstance(node.section, dict) else None
+            if section is not None:
+                section_id = str(section.get("id") or node.node_id or "").strip()
+                section_name = str(section.get("nazev") or node.label or "").strip()
+                for question in audit_knowledge_service.get_audit_questions(section):
+                    items.append(
+                        (
+                            process_id,
+                            process_name,
+                            section_id,
+                            section_name,
+                            str(question.get("text") or question.get("nazev") or ""),
+                            str(question.get("verification_type") or ""),
+                        )
+                    )
+            if node.children:
+                walk(process_id, process_name, node.children)
+
+    for process in roots:
+        process_id = str(process.process_id or process.node_id or "").strip()
+        process_name = str(process.process_label or process.label or "").strip()
+        walk(process_id, process_name, process.children)
+    return items
 
 
 def _append_extraordinary_drafts(
@@ -430,9 +445,17 @@ class AuditProgramStatementsExportContextService:
         if audit is None:
             raise ValueError("Audit návštěvy nebyl nalezen.")
         source = audit_question_source_service.resolve_for_audit(int(audit_id), audit=audit)
-        views = tuple(view for view in source.assertions if view.is_in_scope)
-        roots = build_knowledge_tree_from_snapshot_views(views)
-        rows = _rows_from_items(_items_from_views(views), roots)
+        standard_roots = filter_knowledge_roots_by_question_kind(
+            source.roots,
+            extraordinary_only=False,
+        )
+        extraordinary_roots = filter_knowledge_roots_by_question_kind(
+            source.roots,
+            extraordinary_only=True,
+        )
+        items = _items_from_knowledge_roots(standard_roots)
+        items.extend(_items_from_knowledge_roots(extraordinary_roots))
+        rows = _rows_from_items(items, source.roots)
         if not rows:
             raise AuditProgramStatementsEmptyError(AUDIT_PROGRAM_PRINT_STATEMENTS_EMPTY)
         number = _display(audit.number) or str(audit.id)
