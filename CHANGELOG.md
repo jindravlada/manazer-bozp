@@ -14,6 +14,16 @@
 
 ---
 
+# Verze 4.0.9
+
+Datum vydání:
+
+2. 10. 2026
+
+Audity: sjednocení názvu protokolu a úprava tisku auditních tvrzení. Výsledný dokument interního auditu je terminologicky sjednocen na „Protokol z interního auditu“. Označení „Protokol z interního auditu“ je použito v hlavním nadpisu i v zápatí dokumentu. V tisku auditních tvrzení byl mírně rozšířen sloupec „Způsob ověření“, aby se hodnota „Dokumentace“ zobrazovala na jednom řádku.
+
+---
+
 # Verze 4.0.8
 
 Datum vydání:
