@@ -67,6 +67,11 @@ def _odt_content(path: Path) -> str:
         return zin.read("content.xml").decode("utf-8")
 
 
+def _odt_styles(path: Path) -> str:
+    with zipfile.ZipFile(path, "r") as zin:
+        return zin.read("styles.xml").decode("utf-8")
+
+
 def _odt_plain_text(content: str) -> str:
     """ODT content.xml → čitelný text (tagy, text:s, line-break)."""
     text = re.sub(r"<text:line-break\s*/>", "\n", content)
@@ -216,6 +221,25 @@ class AudityProtokolExportTestCase(unittest.TestCase):
         self.assertTrue(path.exists())
         self.assertEqual(path.suffix.lower(), ".odt")
 
+    def test_document_title_is_internal_audit_protocol(self) -> None:
+        audit = self._create_audit()
+        assert audit is not None
+
+        path = protokol_audit_service.generate_for_audit(audit)
+        content = _odt_content(path)
+        styles = _odt_styles(path)
+        title = "Protokol z interního auditu"
+        obsolete = (
+            "Zpráva z interního auditu",
+            "ZPRÁVA Z INTERNÍHO AUDITU",
+        )
+
+        self.assertIn(title, content)
+        self.assertIn(f"{title} č. {audit.number}", styles)
+        for old in obsolete:
+            self.assertNotIn(old, content)
+            self.assertNotIn(old, styles)
+
     def test_statistics_in_output(self) -> None:
         audit = self._create_audit()
         assert audit is not None
@@ -239,7 +263,7 @@ class AudityProtokolExportTestCase(unittest.TestCase):
         self.assertIn(audit.number, content)
         self.assertIn("Auditních tvrzení: 1", content)
         self.assertIn("Vyhovuje: 1", content)
-        self.assertIn("ZPRÁVA Z INTERNÍHO AUDITU", content)
+        self.assertIn("Protokol z interního auditu", content)
 
     def test_evaluation_in_output_includes_only_recommendations_and_noncompliance(self) -> None:
         audit = self._create_audit()
@@ -483,7 +507,7 @@ class AudityProtokolExportTestCase(unittest.TestCase):
         content = _odt_content(path)
 
         headings = (
-            "ZPRÁVA Z INTERNÍHO AUDITU",
+            "Protokol z interního auditu",
             "Základní informace",
             "CELKOVÉ HODNOCENÍ",
             "Přehled výsledků",
