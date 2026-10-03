@@ -94,16 +94,8 @@ class SecHardeningBuild1TestCase(unittest.TestCase):
                 capture_output=True,
                 text=True,
             )
-            self.assertNotEqual(failed.returncode, 0)
-            self.assertIn("SHA-256 linuxdeploy nesouhlasí", failed.stderr)
-
-        self.assertTrue(LINUXDEPLOY.is_file())
-        real = subprocess.run(
-            [sys.executable, str(VERIFY_SCRIPT), str(LINUXDEPLOY)],
-            capture_output=True,
-            text=True,
-        )
-        self.assertEqual(real.returncode, 0, real.stderr)
+        self.assertNotEqual(failed.returncode, 0)
+        self.assertIn("SHA-256 linuxdeploy nesouhlasí", failed.stderr)
 
         wrong_pin_run = subprocess.run(
             [sys.executable, str(VERIFY_SCRIPT), str(REQUIREMENTS)],
@@ -113,14 +105,25 @@ class SecHardeningBuild1TestCase(unittest.TestCase):
         self.assertEqual(wrong_pin_run.returncode, 1)
         self.assertIn("SHA-256 linuxdeploy nesouhlasí", wrong_pin_run.stderr)
 
-    def test_e_build_scripts_do_not_fetch_floating_continuous(self) -> None:
+    def test_e_pin_uses_url_and_sha_not_asset_id(self) -> None:
+        official_url = (
+            "https://github.com/linuxdeploy/linuxdeploy/releases/download/"
+            "continuous/linuxdeploy-x86_64.AppImage"
+        )
+        pinned_sha = "8aea8da0f7f7039d2a2cecb14657d752a222a5e1d3825caeef186c82f751cdd1"
+        pin = PIN_FILE.read_text(encoding="utf-8")
+        self.assertIn(f"LINUXDEPLOY_URL={official_url}", pin)
+        self.assertIn(f"LINUXDEPLOY_SHA256={pinned_sha}", pin)
+        self.assertNotIn("LINUXDEPLOY_GITHUB_ASSET_ID", pin)
+        self.assertNotIn("538917371", pin)
         for name in ("build_release.sh", "build_old_release.sh"):
             content = (PROJECT_ROOT / name).read_text(encoding="utf-8")
-            self.assertNotIn("releases/download/continuous", content)
             self.assertIn("packaging/verify_linuxdeploy.py", content)
-        pin = PIN_FILE.read_text(encoding="utf-8")
-        self.assertIn("36a2d7e274d12e1050d0e9ecfe11d339ed54720b2bec464c286d53f8b07f5c62", pin)
-        self.assertIn("is rewritten", pin)
+            self.assertNotIn("538917371", content)
+            self.assertNotIn("releases/assets/", content)
+        release = (PROJECT_ROOT / "build_release.sh").read_text(encoding="utf-8")
+        self.assertIn("--ensure", release)
+        self.assertNotIn("releases/download/continuous", release)
 
     def test_f_linux_add_data_stays_complete(self) -> None:
         for name in ("build_release.sh", "build_old_release.sh"):
@@ -145,6 +148,111 @@ class SecHardeningBuild1TestCase(unittest.TestCase):
         self.assertNotIn("./linuxdeploy-x86_64.AppImage --appimage-extract", old)
         self.assertIn("docker rm -f", old)
         self.assertIn("docker run --rm", old)
+
+    def _load_helpers(self):
+        packaging = str(PROJECT_ROOT / "packaging")
+        if packaging not in sys.path:
+            sys.path.insert(0, packaging)
+        from verify_linuxdeploy import (  # noqa: WPS433
+            ensure_linuxdeploy,
+            expected_sha256,
+            expected_url,
+        )
+
+        return ensure_linuxdeploy, expected_sha256, expected_url
+
+    def test_i_real_pin_loads_official_url_and_full_sha(self) -> None:
+        _ensure, expected_sha256, expected_url = self._load_helpers()
+        digest = expected_sha256(PIN_FILE)
+        url = expected_url(PIN_FILE)
+        self.assertEqual(
+            url,
+            "https://github.com/linuxdeploy/linuxdeploy/releases/download/"
+            "continuous/linuxdeploy-x86_64.AppImage",
+        )
+        self.assertEqual(len(digest), 64)
+        self.assertRegex(digest, r"^[0-9a-f]{64}$")
+        self.assertEqual(
+            digest,
+            "8aea8da0f7f7039d2a2cecb14657d752a222a5e1d3825caeef186c82f751cdd1",
+        )
+
+    def test_j_existing_file_with_wrong_sha_is_rejected(self) -> None:
+        ensure_linuxdeploy, _sha, _url = self._load_helpers()
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "linuxdeploy-x86_64.AppImage"
+            target.write_bytes(b"local-wrong")
+            expected = hashlib.sha256(b"official").hexdigest()
+            pin = Path(tmp) / "linuxdeploy.pin"
+            pin.write_text(
+                "LINUXDEPLOY_URL=https://example.invalid/linuxdeploy-x86_64.AppImage\n"
+                f"LINUXDEPLOY_SHA256={expected}\n",
+                encoding="utf-8",
+            )
+            with self.assertRaises(ValueError) as caught:
+                ensure_linuxdeploy(target, pin_path=pin, downloader=self.fail)
+            message = str(caught.exception)
+            self.assertIn("nebude použit", message)
+            self.assertIn(expected, message)
+            self.assertIn(hashlib.sha256(b"local-wrong").hexdigest(), message)
+            self.assertEqual(target.read_bytes(), b"local-wrong")
+
+    def test_k_missing_file_is_downloaded_and_verified(self) -> None:
+        ensure_linuxdeploy, _sha, _url = self._load_helpers()
+        payload = b"official-linuxdeploy"
+        expected = hashlib.sha256(payload).hexdigest()
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "linuxdeploy-x86_64.AppImage"
+            pin = Path(tmp) / "linuxdeploy.pin"
+            url = "https://example.invalid/linuxdeploy-x86_64.AppImage"
+            pin.write_text(
+                f"LINUXDEPLOY_URL={url}\nLINUXDEPLOY_SHA256={expected}\n",
+                encoding="utf-8",
+            )
+
+            def downloader(requested_url: str, destination: Path) -> None:
+                self.assertEqual(requested_url, url)
+                destination.write_bytes(payload)
+
+            ensure_linuxdeploy(target, pin_path=pin, downloader=downloader)
+            self.assertEqual(target.read_bytes(), payload)
+            self.assertTrue(target.stat().st_mode & 0o111)
+
+    def test_l_failed_download_and_bad_payload_are_rejected(self) -> None:
+        ensure_linuxdeploy, _sha, _url = self._load_helpers()
+        expected = hashlib.sha256(b"official").hexdigest()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            pin = root / "linuxdeploy.pin"
+            pin.write_text(
+                "LINUXDEPLOY_URL=https://example.invalid/linuxdeploy-x86_64.AppImage\n"
+                f"LINUXDEPLOY_SHA256={expected}\n",
+                encoding="utf-8",
+            )
+            missing = root / "missing.AppImage"
+
+            def fail_download(_url: str, _destination: Path) -> None:
+                raise OSError("síť nedostupná")
+
+            with self.assertRaises(ValueError) as failed:
+                ensure_linuxdeploy(missing, pin_path=pin, downloader=fail_download)
+            self.assertIn("Stažení linuxdeploy selhalo", str(failed.exception))
+            self.assertFalse(missing.exists())
+            self.assertFalse(Path(str(missing) + ".partial").exists())
+
+            bad_target = root / "bad.AppImage"
+
+            def bad_payload(_url: str, destination: Path) -> None:
+                destination.write_bytes(b"tampered")
+
+            with self.assertRaises(ValueError) as mismatched:
+                ensure_linuxdeploy(bad_target, pin_path=pin, downloader=bad_payload)
+            message = str(mismatched.exception)
+            self.assertIn("staženého linuxdeploy", message)
+            self.assertIn(expected, message)
+            self.assertIn(hashlib.sha256(b"tampered").hexdigest(), message)
+            self.assertFalse(bad_target.exists())
+            self.assertFalse(Path(str(bad_target) + ".partial").exists())
 
 
 if __name__ == "__main__":

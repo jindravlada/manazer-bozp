@@ -24,12 +24,7 @@ if ! command -v pyinstaller >/dev/null 2>&1; then
 fi
 
 LINUXDEPLOY_APPIMAGE="$PROJECT_DIR/linuxdeploy-x86_64.AppImage"
-if [ ! -f "$LINUXDEPLOY_APPIMAGE" ]; then
-  echo "Chybí linuxdeploy-x86_64.AppImage"
-  exit 1
-fi
-
-python3 "$PROJECT_DIR/packaging/verify_linuxdeploy.py" "$LINUXDEPLOY_APPIMAGE"
+python3 "$PROJECT_DIR/packaging/verify_linuxdeploy.py" --ensure "$LINUXDEPLOY_APPIMAGE"
 
 LINUXDEPLOY_WORKDIR="$(mktemp -d)"
 cleanup_linuxdeploy_workdir() {
