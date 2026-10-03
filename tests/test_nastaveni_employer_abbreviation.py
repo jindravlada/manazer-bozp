@@ -91,7 +91,7 @@ class EmployerAbbreviationSettingsTestCase(unittest.TestCase):
             default_abbreviation("Hlavní firma s.r.o."),
         )
 
-    def test_settings_sd_kd_used_not_auto_s_kd(self) -> None:
+    def test_settings_manual_abbreviation_beats_automatic(self) -> None:
         settings_service.save_employer(
             ico="00000000",
             name="ZX - Zkušební firma, a.s.",
@@ -133,14 +133,14 @@ class EmployerAbbreviationSettingsTestCase(unittest.TestCase):
             name="ZX - Zkušební firma, a.s.",
             address="Praha",
             nace="",
-            abbreviation="KD",
+            abbreviation="ZF",
         )
         second = bozp_coordination_service.create_coordination(
             subject="Druhá",
             meeting_date=date.today(),
         )
         second_main = coordination_employer_service.list_for_coordination(second.id)[0]
-        self.assertEqual(second_main.abbreviation, "KD")
+        self.assertEqual(second_main.abbreviation, "ZF")
 
         # Existující záznam zůstává beze změny.
         reloaded = coordination_employer_service.get_by_id(first_main.id)
