@@ -90,3 +90,42 @@ squashfs-root/
 
 # Zálohy zdrojového projektu (tools/backup_source.py)
 source_backups/
+
+# ------------------------------------------------------
+# Provozní data, zálohy a lokální artefakty
+# Nesmí se omylem dostat do Gitu přes git add.
+# Už sledované soubory (AppDir, AppImage, databáze v původní
+# historii) tímto pravidlem samy nezmizí.
+# ------------------------------------------------------
+*.db
+*.sqlite
+*.sqlite3
+*.mbbackup
+
+Zalohy/
+ZZáloha/
+.test-tmp/
+.venv-oldlinux/
+Wokna/
+
+build90a/
+dist90a/
+AppDir90a/
+
+# Instalátory. AppImage, AppDir/ a squashfs-root/ jsou výše.
+*.exe
+
+# Záložní ZIP archivy v kořeni (MB3.0v3.zip, ManagerBOZP-*.zip, …).
+# Globální *.zip se nepoužívá: jediný sledovaný ZIP je
+# AppDir/usr/bin/_internal/base_library.zip a testy mohou
+# potřebovat vlastní ZIP (např. export katalogu rizik).
+/*.zip
+
+# Lokální klíče a credentials.
+# Veřejný svazek CA certifi/cacert.pem leží jen v AppDir/ a je
+# krytý pravidlem AppDir/. Jiný potřebný *.pem projekt nemá.
+*.pem
+id_rsa
+id_ed25519
+client_secret*
+*credentials*
