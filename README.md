@@ -2,6 +2,27 @@
 
 Aktuální verze: 4.0.9
 
+## 📥 Stažení aplikace
+
+Hotovou aplikaci není nutné sestavovat ze zdrojových kódů.
+
+### Linux
+
+**Manažer BOZP 4.0.9 – AppImage**
+
+[⬇️ Stáhnout Manažer BOZP pro Linux](https://github.com/jindravlada/manazer-bozp/releases/download/v4.0.9/Manazer-BOZP-4.0.9-x86_64.AppImage)
+
+Po stažení nastavte soubor jako spustitelný a spusťte jej.
+
+### Windows
+
+**Windows instalátor se připravuje.**
+
+Po sestavení a ověření na čistém Windows počítači bude Setup.exe
+doplněn ke stejnému veřejnému vydání.
+
+[Všechna vydání a soubory ke stažení](https://github.com/jindravlada/manazer-bozp/releases)
+
 ## O aplikaci
 
 Manažer BOZP je lokální desktopová aplikace pro podporu evidence a řízení agendy bezpečnosti a ochrany zdraví při práci.
