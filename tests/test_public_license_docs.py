@@ -34,6 +34,12 @@ class PublicLicenseDocsTestCase(unittest.TestCase):
         self.assertIn("LicenseFile=LICENSE.txt", installer)
         self.assertIn("LicenseFile=LICENSE.txt", generator)
         self.assertTrue((PROJECT_ROOT / "LICENSE.txt").is_file())
+        repo_url = "https://github.com/jindravlada/manazer-bozp"
+        for field in ("AppPublisherURL", "AppSupportURL", "AppUpdatesURL"):
+            self.assertIn(f"{field}={repo_url}", installer)
+            self.assertIn(f"{field}={repo_url}", generator)
+        self.assertNotIn("https://github.com/\n", installer)
+        self.assertNotIn("https://github.com/\n", generator)
 
     def test_readme_links_and_paths(self) -> None:
         readme_path = PROJECT_ROOT / "README.md"
