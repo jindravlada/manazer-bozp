@@ -16,10 +16,11 @@ Po stažení nastavte soubor jako spustitelný a spusťte jej.
 
 ### Windows
 
-**Windows instalátor se připravuje.**
+**Manažer BOZP 4.0.9 – instalační program**
 
-Po sestavení a ověření na čistém Windows počítači bude Setup.exe
-doplněn ke stejnému veřejnému vydání.
+[⬇️ Stáhnout Manažer BOZP pro Windows](https://github.com/jindravlada/manazer-bozp/releases/download/v4.0.9/Manazer_BOZP_4_0_9_Setup.exe)
+
+Určeno pro Windows 10/11.
 
 [Všechna vydání a soubory ke stažení](https://github.com/jindravlada/manazer-bozp/releases)
 
