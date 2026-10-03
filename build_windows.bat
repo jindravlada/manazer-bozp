@@ -20,7 +20,7 @@ rmdir /s /q installer 2>nul
 del ManazerBOZP.spec 2>nul
 
 pyinstaller --clean --onedir --windowed ^
-  --icon manager_bozp.ico ^
+  --icon core\resources\manager_bozp.ico ^
   --version-file version_info.txt ^
   --name ManazerBOZP ^
   --add-data "moduly;moduly" ^
@@ -36,7 +36,24 @@ if errorlevel 1 (
     exit /b 1
 )
 
-"C:\Users\Test\AppData\Local\Programs\Inno Setup 6\ISCC.exe" installer.iss
+set "ISCC="
+where ISCC.exe >nul 2>&1
+if not errorlevel 1 (
+    for /f "delims=" %%I in ('where ISCC.exe') do (
+        if not defined ISCC set "ISCC=%%I"
+    )
+)
+if not defined ISCC if exist "%ProgramFiles%\Inno Setup 6\ISCC.exe" set "ISCC=%ProgramFiles%\Inno Setup 6\ISCC.exe"
+if not defined ISCC if exist "%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe" set "ISCC=%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe"
+if not defined ISCC if exist "%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe" set "ISCC=%LOCALAPPDATA%\Programs\Inno Setup 6\ISCC.exe"
+if not defined ISCC (
+    echo.
+    echo Inno Setup 6 nebyl nalezen. Nainstalujte Inno Setup 6 nebo zpřístupněte ISCC.exe přes PATH.
+    pause
+    exit /b 1
+)
+
+"%ISCC%" installer.iss
 
 if errorlevel 1 (
     echo.

@@ -136,6 +136,26 @@ class SecHardeningBuild1TestCase(unittest.TestCase):
         for folder in _APP_DATAS:
             self.assertIn(f'--add-data "{folder};{folder}"', content)
 
+    def test_g2_windows_build_does_not_depend_on_a_user_profile(self) -> None:
+        icon = "core\\resources\\manager_bozp.ico"
+        bat = (PROJECT_ROOT / "build_windows.bat").read_text(encoding="utf-8")
+        installer = (PROJECT_ROOT / "installer.iss").read_text(encoding="utf-8")
+        generator = (PROJECT_ROOT / "generate_installer_iss.py").read_text(encoding="utf-8")
+        version = (PROJECT_ROOT / "core" / "version.py").read_text(encoding="utf-8")
+
+        self.assertNotIn("C:\\Users\\kubaj", bat)
+        self.assertNotIn("C:\\Users\\", bat)
+        self.assertIn("where ISCC.exe", bat)
+        self.assertIn("%ProgramFiles%\\Inno Setup 6\\ISCC.exe", bat)
+        self.assertIn("%ProgramFiles(x86)%\\Inno Setup 6\\ISCC.exe", bat)
+        self.assertIn("%LOCALAPPDATA%\\Programs\\Inno Setup 6\\ISCC.exe", bat)
+        self.assertIn("Inno Setup 6 nebyl nalezen", bat)
+        self.assertIn(f"--icon {icon}", bat)
+        self.assertIn(f"SetupIconFile={icon}", installer)
+        self.assertIn("SetupIconFile=core\\\\resources\\\\manager_bozp.ico", generator)
+        self.assertTrue((PROJECT_ROOT / "core" / "resources" / "manager_bozp.ico").is_file())
+        self.assertIn('APP_VERSION = "4.0.9"', version)
+
     def test_h_existing_packaging_assertions_still_hold(self) -> None:
         release = (PROJECT_ROOT / "build_release.sh").read_text(encoding="utf-8")
         old = (PROJECT_ROOT / "build_old_release.sh").read_text(encoding="utf-8")
