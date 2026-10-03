@@ -38,6 +38,11 @@ from moduly.audity.sluzby.audit_program_planning_config_service import (
     WorkplacePlanningConfig,
     audit_program_planning_config_service,
 )
+from moduly.audity.sluzby.audit_program_process_distribution import (
+    PlannedVisitSlot,
+    WorkplaceProcessPlan,
+    plan_coordinated_process_distribution,
+)
 from moduly.nastaveni.constants.workplace_audit_constants import (
     DEFAULT_WORKPLACE_AUDIT_INTERVAL_MONTHS,
 )
@@ -972,50 +977,74 @@ class AuditProgramService:
             (item.visit_id, item.process_id) for item in visit_processes
         }
         assigned_by_workplace = self._assigned_process_ids_by_workplace(visits, visit_processes)
+        processes_by_visit: dict[int, set[str]] = {}
+        for item in visit_processes:
+            processes_by_visit.setdefault(item.visit_id, set()).add(item.process_id)
 
-        created: list[AuditProgramVisitProcess] = []
+        process_ids = [process.id for process in processes]
+        program_process_ids = set(process_ids)
+        plans: list[WorkplaceProcessPlan] = []
+        ordinal = 0
         skipped = 0
 
         for workplace in self.repository.list_workplaces(program_id):
             if not workplace.active:
                 continue
-            if (
-                only_workplace_ids is not None
-                and workplace.workplace_id not in only_workplace_ids
-            ):
-                continue
 
             workplace_visits = visits_by_workplace.get(workplace.workplace_id, [])
-            if not workplace_visits:
+            in_scope = only_workplace_ids is None or (
+                workplace.workplace_id in only_workplace_ids
+            )
+            if in_scope and workplace_visits:
+                already_assigned = assigned_by_workplace.get(workplace.workplace_id, set())
+                skipped += len(already_assigned & program_process_ids)
+
+            plans.append(
+                WorkplaceProcessPlan(
+                    ordinal=ordinal,
+                    visits=tuple(
+                        PlannedVisitSlot(
+                            visit_id=visit.id,
+                            year=visit.planned_year,
+                            month=visit.planned_month,
+                        )
+                        for visit in workplace_visits
+                    ),
+                    fill=in_scope and bool(workplace_visits),
+                    assigned_process_ids=frozenset(
+                        assigned_by_workplace.get(workplace.workplace_id, set())
+                    ),
+                    assigned_by_visit=tuple(
+                        (visit.id, frozenset(processes_by_visit.get(visit.id, set())))
+                        for visit in workplace_visits
+                    ),
+                )
+            )
+            ordinal += 1
+
+        assignments = plan_coordinated_process_distribution(process_ids, plans)
+        process_by_id = {process.id: process for process in processes}
+        created: list[AuditProgramVisitProcess] = []
+
+        for assignment in assignments:
+            key = (assignment.visit_id, assignment.process_id)
+            if key in existing_visit_process_keys:
+                skipped += 1
                 continue
 
-            already_assigned = assigned_by_workplace.get(workplace.workplace_id, set())
-
-            for index, process in enumerate(processes):
-                if process.id in already_assigned:
-                    skipped += 1
-                    continue
-
-                target_visit = workplace_visits[index % len(workplace_visits)]
-                key = (target_visit.id, process.id)
-                if key in existing_visit_process_keys:
-                    skipped += 1
-                    already_assigned.add(process.id)
-                    continue
-
-                standards = self._resolve_process_standards(process, program)
-                visit_process = self.repository.add_visit_process(
-                    AuditProgramVisitProcess(
-                        visit_id=target_visit.id,
-                        process_id=process.id,
-                        process_name=process.nazev,
-                        standards_json=self.dump_standards(standards),
-                        status=DEFAULT_AUDIT_PROGRAM_VISIT_PROCESS_STATUS,
-                    )
+            process = process_by_id[assignment.process_id]
+            standards = self._resolve_process_standards(process, program)
+            visit_process = self.repository.add_visit_process(
+                AuditProgramVisitProcess(
+                    visit_id=assignment.visit_id,
+                    process_id=process.id,
+                    process_name=process.nazev,
+                    standards_json=self.dump_standards(standards),
+                    status=DEFAULT_AUDIT_PROGRAM_VISIT_PROCESS_STATUS,
                 )
-                existing_visit_process_keys.add(key)
-                already_assigned.add(process.id)
-                created.append(visit_process)
+            )
+            existing_visit_process_keys.add(key)
+            created.append(visit_process)
 
         return AuditProgramDistributionResult(
             created_processes=tuple(created),
