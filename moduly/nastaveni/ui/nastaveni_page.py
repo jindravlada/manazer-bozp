@@ -7,6 +7,7 @@ from PySide6.QtCore import Qt
 
 from core.services.ares_service import ares_service
 from core.services.cz_nace_service import cz_nace_service
+from core.widgets.editor_dialog_controller import confirm_unsaved_editor_close
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_utils import configure_table_columns
 from core.widgets.typed_table_sort import (
@@ -67,6 +68,10 @@ class NastaveniPage(QWidget):
         self.tabs.addTab(self.employer_tab, "Zaměstnavatel")
 
         layout.addWidget(self.tabs)
+        self._restoring_settings_tab = False
+        self._accepted_settings_tab = self.tabs.currentIndex()
+        self._employer_baseline: tuple[str, str, str, str, str] | None = None
+        self.tabs.currentChanged.connect(self._on_settings_tab_changed)
         self.refresh()
 
     def _employer_tab(self):
@@ -548,7 +553,68 @@ class NastaveniPage(QWidget):
         if chosen:
             self._show_employer_nace(chosen)
 
-    def save_employer(self):
+    def employer_has_unsaved_changes(self) -> bool:
+        """Údaje ve formuláři se liší od posledního uloženého stavu."""
+        if self._employer_baseline is None:
+            return False
+        return self._employer_snapshot() != self._employer_baseline
+
+    def confirm_leave_employer_edit(self) -> bool:
+        """Povolí odchod. Při neuložených změnách se zeptá Uložit / Neukládat / Zrušit."""
+        if not self.employer_has_unsaved_changes():
+            return True
+        decision = confirm_unsaved_editor_close(self, title="Zaměstnavatel")
+        if decision == "cancel":
+            return False
+        if decision == "discard":
+            self._reload_employer_form()
+            return True
+        return self.save_employer()
+
+    def _on_settings_tab_changed(self, index: int) -> None:
+        if self._restoring_settings_tab:
+            return
+        previous = self._accepted_settings_tab
+        employer_index = self.tabs.indexOf(self.employer_tab)
+        if previous == employer_index and index != employer_index:
+            if not self.confirm_leave_employer_edit():
+                self._restoring_settings_tab = True
+                self.tabs.setCurrentIndex(previous)
+                self._restoring_settings_tab = False
+                return
+        self._accepted_settings_tab = self.tabs.currentIndex()
+
+    def _employer_snapshot(self) -> tuple[str, str, str, str, str]:
+        return (
+            self.employer_ico.text(),
+            self.employer_name.text(),
+            self.employer_abbreviation.text(),
+            self.employer_address.text(),
+            self._stored_employer_nace(),
+        )
+
+    def _capture_employer_baseline(self) -> None:
+        self._employer_baseline = self._employer_snapshot()
+
+    def _reload_employer_form(self) -> None:
+        """Vrátí formulář na poslední uložený záznam. DB nemění."""
+        employer = settings_service.get_employer()
+        if employer:
+            self.employer_ico.setText(employer.ico or "")
+            self.employer_name.setText(employer.name or "")
+            self.employer_address.setText(employer.address or "")
+            self.employer_abbreviation.setText(getattr(employer, "abbreviation", "") or "")
+            self._show_employer_nace(employer.nace)
+        else:
+            self.employer_ico.clear()
+            self.employer_name.clear()
+            self.employer_address.clear()
+            self.employer_abbreviation.clear()
+            self._show_employer_nace("")
+        self._update_employer_abbreviation_placeholder()
+        self._capture_employer_baseline()
+
+    def save_employer(self) -> bool:
         try:
             settings_service.save_employer(
                 ico=self.employer_ico.text().strip(),
@@ -559,8 +625,14 @@ class NastaveniPage(QWidget):
             )
         except SettingsEmployerError as exc:
             QMessageBox.warning(self, "Zaměstnavatel", str(exc))
-            return
+            return False
         self.refresh()
+        QMessageBox.information(
+            self,
+            "Zaměstnavatel",
+            "Údaje zaměstnavatele byly uloženy.",
+        )
+        return True
 
     def add_worker(self):
         dialog = ThpWorkerDialog(self)
@@ -1085,16 +1157,7 @@ class NastaveniPage(QWidget):
         menu.exec(self.responsibility_role_table.viewport().mapToGlobal(position))
 
     def refresh(self):
-        employer = settings_service.get_employer()
-        if employer:
-            self.employer_ico.setText(employer.ico)
-            self.employer_name.setText(employer.name)
-            self.employer_address.setText(employer.address)
-            self.employer_abbreviation.setText(getattr(employer, "abbreviation", "") or "")
-            self._show_employer_nace(employer.nace)
-        else:
-            self._show_employer_nace("")
-        self._update_employer_abbreviation_placeholder()
+        self._reload_employer_form()
 
         self.refresh_workers()
         self.refresh_persons()

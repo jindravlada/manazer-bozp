@@ -107,7 +107,7 @@ class CzNaceEmployer4TestCase(unittest.TestCase):
         return data
 
     def _save(self) -> None:
-        with patch.object(QMessageBox, "warning"):
+        with patch.object(QMessageBox, "warning"), patch.object(QMessageBox, "information"):
             self.page.save_employer()
 
     def test_a_single_code_is_applied_without_dialog(self) -> None:

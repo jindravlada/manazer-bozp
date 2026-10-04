@@ -100,7 +100,7 @@ class CzNaceEmployer2TestCase(unittest.TestCase):
         self.page.employer_name.setText("Dopravce")
         self.page.employer_ico.setText("12345678")
 
-        with patch.object(QMessageBox, "warning"):
+        with patch.object(QMessageBox, "warning"), patch.object(QMessageBox, "information"):
             self.page.save_employer()
 
         employer = settings_service.get_employer()
@@ -119,7 +119,7 @@ class CzNaceEmployer2TestCase(unittest.TestCase):
         self.assertEqual(self.page.employer_nace.currentText(), _DISPLAY)
         self.assertEqual(self.page.employer_nace.currentData(), "49.20")
 
-        with patch.object(QMessageBox, "warning"):
+        with patch.object(QMessageBox, "warning"), patch.object(QMessageBox, "information"):
             self.page.save_employer()
 
         employer = settings_service.get_employer()
@@ -140,7 +140,7 @@ class CzNaceEmployer2TestCase(unittest.TestCase):
         self.assertEqual(self.page.employer_nace.count(), catalog_count)
         self.assertEqual(self.page._stored_employer_nace(), "62010")
 
-        with patch.object(QMessageBox, "warning"):
+        with patch.object(QMessageBox, "warning"), patch.object(QMessageBox, "information"):
             self.page.save_employer()
 
         employer = settings_service.get_employer()

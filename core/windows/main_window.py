@@ -1,7 +1,7 @@
 from datetime import date
 
 from PySide6.QtCore import QSize, QStringListModel, Qt
-from PySide6.QtGui import QKeySequence, QShortcut
+from PySide6.QtGui import QCloseEvent, QKeySequence, QShortcut
 from PySide6.QtWidgets import (
     QCompleter,
     QDialog,
@@ -341,15 +341,33 @@ class MainWindow(QMainWindow):
             style.polish(button)
             button.update()
 
-    def _show(self, key):
-        if key in self._pages:
-            widget = self._page_widgets.get(key)
-            if widget is not None and hasattr(widget, "refresh"):
-                widget.refresh()
+    def _confirm_unsaved_employer_edit(self) -> bool:
+        """Neuložené údaje zaměstnavatele chrání přechod modulu i zavření okna."""
+        page = self._page_widgets.get("nastaveni")
+        confirm = getattr(page, "confirm_leave_employer_edit", None)
+        if not callable(confirm):
+            return True
+        return bool(confirm())
 
-            self.stack.setCurrentIndex(self._pages[key])
-            self._update_sidebar_active(key)
-            self.statusBar().showMessage(f"Otevřen modul: {key}")
+    def _show(self, key):
+        if key not in self._pages:
+            return
+        if not self._confirm_unsaved_employer_edit():
+            return
+
+        widget = self._page_widgets.get(key)
+        if widget is not None and hasattr(widget, "refresh"):
+            widget.refresh()
+
+        self.stack.setCurrentIndex(self._pages[key])
+        self._update_sidebar_active(key)
+        self.statusBar().showMessage(f"Otevřen modul: {key}")
+
+    def closeEvent(self, event: QCloseEvent) -> None:  # noqa: N802
+        if not self._confirm_unsaved_employer_edit():
+            event.ignore()
+            return
+        super().closeEvent(event)
 
     def current_page_widget(self) -> QWidget | None:
         """Aktuální stránka modulu (bez případného QScrollArea wrapperu ve stacku)."""
