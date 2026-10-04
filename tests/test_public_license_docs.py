@@ -44,15 +44,26 @@ class PublicLicenseDocsTestCase(unittest.TestCase):
     def test_readme_links_and_paths(self) -> None:
         readme_path = PROJECT_ROOT / "README.md"
         readme = readme_path.read_text(encoding="utf-8")
-        self.assertTrue(readme.startswith("# Manažer BOZP 4.0.9"))
+        self.assertTrue(readme.startswith("# Manažer BOZP 4.0.10"))
         self.assertIn("GPL-3.0-or-later", readme)
         self.assertIn("Copyright © 2026 Ing. Vladimír Jindra", readme)
         self.assertNotIn("/home/", readme)
         self.assertNotIn("C:\\Users\\", readme)
         self.assertNotIn("DOKUMENTACE.md", readme)
+        release_prefix = "https://github.com/jindravlada/manazer-bozp/releases"
+        self.assertIn(
+            f"{release_prefix}/download/v4.0.10/Manazer-BOZP-4.0.10-x86_64.AppImage",
+            readme,
+        )
+        self.assertIn(
+            f"{release_prefix}/download/v4.0.10/Manazer_BOZP_4_0_10_Setup.exe",
+            readme,
+        )
 
         for match in _MARKDOWN_LINK.finditer(readme):
             target = match.group(1).strip()
+            if target.startswith(release_prefix):
+                continue
             self.assertFalse(target.startswith(("http://", "https://")), target)
             self.assertTrue((readme_path.parent / target).is_file(), target)
 

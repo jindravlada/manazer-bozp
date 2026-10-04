@@ -14,6 +14,16 @@
 
 ---
 
+# Verze 4.0.10
+
+Datum vydání:
+
+4. 10. 2026
+
+Audity: při plánování programu se auditované procesy střídají mezi provozy, aby se stejná skladba neopakovala na všech pracovištích stejně. Kontrola změn právních předpisů běží spolehlivěji na pozadí a při chybě zapíše podrobnosti do diagnostického logu. U zaměstnavatele se Hlavní CZ-NACE zobrazuje jako kód a název činnosti. Má-li subjekt v ARES více činností, hlavní se vybere ručně a první položka seznamu se už nepovažuje za převažující. Uložení údajů zaměstnavatele se potvrdí. Při odchodu s neuloženými změnami se aplikace zeptá, zda je uložit.
+
+---
+
 # Verze 4.0.9
 
 Datum vydání:
