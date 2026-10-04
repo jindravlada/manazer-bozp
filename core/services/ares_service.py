@@ -60,13 +60,17 @@ class AresService:
         nace_codes = data.get("czNace", [])
         if not isinstance(nace_codes, list):
             nace_codes = []
+        raw_codes = [str(code).strip() for code in nace_codes if str(code).strip()]
 
-        nace_display_list = cz_nace_service.get_displays(nace_codes)
+        nace_display_list = cz_nace_service.get_displays(raw_codes)
+        main_code = raw_codes[0] if raw_codes else ""
 
         return {
             "ico": data.get("ico", normalized),
             "name": data.get("obchodniJmeno", ""),
             "address": address_text,
+            "nace_codes": raw_codes,
+            "nace_code": main_code,
             "nace_list": nace_display_list,
             "nace": nace_display_list[0] if nace_display_list else "",
         }

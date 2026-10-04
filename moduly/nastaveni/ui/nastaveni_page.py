@@ -81,6 +81,7 @@ class NastaveniPage(QWidget):
         self.employer_abbreviation.setMaxLength(32)
         self.employer_nace = QComboBox()
         self.employer_nace.setEditable(True)
+        self.employer_nace.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
         # Dlouhé položky CZ-NACE nesmí určovat minimální šířku celé stránky / okna.
         self.employer_nace.setSizeAdjustPolicy(
             QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
@@ -132,10 +133,11 @@ class NastaveniPage(QWidget):
             f"automaticky: {suggested}" if suggested else ""
         )
     def _setup_cz_nace_completer(self):
-        displays = cz_nace_service.get_all_displays()
-
+        displays: list[str] = []
         self.employer_nace.clear()
-        self.employer_nace.addItems(displays)
+        for code, display in cz_nace_service.entries():
+            self.employer_nace.addItem(display, code)
+            displays.append(display)
 
         completer = QCompleter(displays, self)
         completer.setCaseSensitivity(Qt.CaseInsensitive)
@@ -143,6 +145,38 @@ class NastaveniPage(QWidget):
         completer.setCompletionMode(QCompleter.PopupCompletion)
 
         self.employer_nace.setCompleter(completer)
+
+    def _show_employer_nace(self, raw: str) -> None:
+        """Do pole vloží položku číselníku, nebo ponechá neznámou hodnotu."""
+        found = cz_nace_service.lookup(raw)
+        if found is not None:
+            code, _display = found
+            index = self.employer_nace.findData(code)
+            if index >= 0:
+                self.employer_nace.setCurrentIndex(index)
+                return
+
+        self.employer_nace.setCurrentIndex(-1)
+        self.employer_nace.setEditText(str(raw or "").strip())
+
+    def _stored_employer_nace(self) -> str:
+        """Kód vybrané položky. Neznámý text se ukládá beze změny."""
+        text = self.employer_nace.currentText().strip()
+        if not text:
+            return ""
+
+        index = self.employer_nace.currentIndex()
+        if index >= 0 and self.employer_nace.itemText(index).strip() == text:
+            data = self.employer_nace.itemData(index)
+            if data:
+                return str(data).strip()
+
+        for row in range(self.employer_nace.count()):
+            if self.employer_nace.itemText(row).strip() == text:
+                data = self.employer_nace.itemData(row)
+                if data:
+                    return str(data).strip()
+        return text
 
     def _workers_tab(self):
         tab = QWidget()
@@ -487,10 +521,7 @@ class NastaveniPage(QWidget):
         self.employer_ico.setText(data.get("ico", ""))
         self.employer_name.setText(data.get("name", ""))
         self.employer_address.setText(data.get("address", ""))
-
-        self.employer_nace.clear()
-        self.employer_nace.addItems(data.get("nace_list", []))
-        self.employer_nace.setEditText(data.get("nace", ""))
+        self._show_employer_nace(data.get("nace_code") or data.get("nace") or "")
 
     def save_employer(self):
         try:
@@ -498,7 +529,7 @@ class NastaveniPage(QWidget):
                 ico=self.employer_ico.text().strip(),
                 name=self.employer_name.text().strip(),
                 address=self.employer_address.text().strip(),
-                nace=self.employer_nace.currentText().strip(),
+                nace=self._stored_employer_nace(),
                 abbreviation=self.employer_abbreviation.text().strip(),
             )
         except SettingsEmployerError as exc:
@@ -1035,7 +1066,7 @@ class NastaveniPage(QWidget):
             self.employer_name.setText(employer.name)
             self.employer_address.setText(employer.address)
             self.employer_abbreviation.setText(getattr(employer, "abbreviation", "") or "")
-            self.employer_nace.setEditText(employer.nace)
+            self._show_employer_nace(employer.nace)
         self._update_employer_abbreviation_placeholder()
 
         self.refresh_workers()
