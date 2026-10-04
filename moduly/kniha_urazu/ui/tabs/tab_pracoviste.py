@@ -191,11 +191,14 @@ class TabPracoviste(QWidget):
         self.adresa_sidla_subjektu.setPlainText(data.get("address", ""))
 
         nace_list = data.get("nace_list") or []
+        main = str(data.get("nace") or "").strip()
+        if not main and len(nace_list) == 1:
+            main = str(nace_list[0]).strip()
+        if not main:
+            return
         if nace_list:
             self.ekonomicka_cinnost_subjektu.set_values(nace_list)
-            self.ekonomicka_cinnost_subjektu.set_value(data.get("nace", nace_list[0]))
-        else:
-            self.ekonomicka_cinnost_subjektu.set_value(data.get("nace", ""))
+        self.ekonomicka_cinnost_subjektu.set_value(main)
 
     def get_data(self) -> dict:
         workplace_name = self.workplace.display_text()

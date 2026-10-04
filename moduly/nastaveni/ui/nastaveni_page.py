@@ -33,6 +33,7 @@ from moduly.nastaveni.sluzby.settings_service import (
     settings_service,
 )
 from moduly.nastaveni.sluzby.workplace_hierarchy_service import WorkplaceHierarchyError
+from moduly.nastaveni.ui.employer_nace_choice_dialog import EmployerNaceChoiceDialog
 from moduly.nastaveni.ui.person_dialog import PersonDialog
 from moduly.nastaveni.ui.exposed_group_dialog import ExposedGroupDialog
 from moduly.nastaveni.ui.responsibility_role_dialog import ResponsibilityRoleDialog
@@ -145,6 +146,7 @@ class NastaveniPage(QWidget):
         completer.setCompletionMode(QCompleter.PopupCompletion)
 
         self.employer_nace.setCompleter(completer)
+        self.employer_nace.setCurrentIndex(-1)
 
     def _show_employer_nace(self, raw: str) -> None:
         """Do pole vloží položku číselníku, nebo ponechá neznámou hodnotu."""
@@ -521,7 +523,30 @@ class NastaveniPage(QWidget):
         self.employer_ico.setText(data.get("ico", ""))
         self.employer_name.setText(data.get("name", ""))
         self.employer_address.setText(data.get("address", ""))
-        self._show_employer_nace(data.get("nace_code") or data.get("nace") or "")
+        self._apply_ares_nace(data)
+
+    def _ares_nace_codes(self, data: dict) -> list[str]:
+        codes = data.get("nace_codes")
+        if isinstance(codes, list):
+            return [str(code).strip() for code in codes if str(code).strip()]
+        single = str(data.get("nace_code") or data.get("nace") or "").strip()
+        return [single] if single else []
+
+    def _apply_ares_nace(self, data: dict) -> None:
+        """Jeden kód nastaví pole. Více kódů jen po výběru uživatele."""
+        codes = self._ares_nace_codes(data)
+        if len(codes) == 1:
+            self._show_employer_nace(codes[0])
+            return
+        if len(codes) < 2:
+            return
+        chosen = EmployerNaceChoiceDialog(
+            self,
+            codes=codes,
+            current=self._stored_employer_nace(),
+        ).choose()
+        if chosen:
+            self._show_employer_nace(chosen)
 
     def save_employer(self):
         try:
@@ -1067,6 +1092,8 @@ class NastaveniPage(QWidget):
             self.employer_address.setText(employer.address)
             self.employer_abbreviation.setText(getattr(employer, "abbreviation", "") or "")
             self._show_employer_nace(employer.nace)
+        else:
+            self._show_employer_nace("")
         self._update_employer_abbreviation_placeholder()
 
         self.refresh_workers()

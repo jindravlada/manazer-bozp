@@ -57,13 +57,13 @@ class AresService:
             address = {}
         address_text = self._format_address(address)
 
-        nace_codes = data.get("czNace", [])
-        if not isinstance(nace_codes, list):
-            nace_codes = []
-        raw_codes = [str(code).strip() for code in nace_codes if str(code).strip()]
-
-        nace_display_list = cz_nace_service.get_displays(raw_codes)
-        main_code = raw_codes[0] if raw_codes else ""
+        raw_codes = self._cz_nace_codes(data.get("czNace"))
+        nace_display_list = [
+            cz_nace_service.get_display(code) for code in raw_codes
+        ]
+        # Pořadí czNace neurčuje převažující činnost. Hlavní kód jen při jedné položce.
+        main_code = raw_codes[0] if len(raw_codes) == 1 else ""
+        main_display = nace_display_list[0] if len(raw_codes) == 1 else ""
 
         return {
             "ico": data.get("ico", normalized),
@@ -72,8 +72,26 @@ class AresService:
             "nace_codes": raw_codes,
             "nace_code": main_code,
             "nace_list": nace_display_list,
-            "nace": nace_display_list[0] if nace_display_list else "",
+            "nace": main_display,
         }
+
+    def _cz_nace_codes(self, value) -> list[str]:
+        """Kódy z pole czNace. czNace2008 se nepoužívá."""
+        if not isinstance(value, list):
+            return []
+        codes: list[str] = []
+        seen: set[str] = set()
+        for item in value:
+            if isinstance(item, bool) or item is None:
+                continue
+            if not isinstance(item, (str, int)):
+                continue
+            text = str(item).strip()
+            if not text or text in seen:
+                continue
+            seen.add(text)
+            codes.append(text)
+        return codes
 
     def _format_address(self, address: dict) -> str:
         street = address.get("nazevUlice") or ""

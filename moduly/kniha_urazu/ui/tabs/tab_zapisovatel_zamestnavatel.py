@@ -235,11 +235,11 @@ class TabZapisovatelZamestnavatel(QWidget):
         self.dalsi_zamestnavatel_adresa.setPlainText(data.get("address", ""))
 
         nace_list = data.get("nace_list") or []
-        if nace_list:
-            # Zachovat plný číselník; ARES vrací už display hodnoty.
-            self._set_cz_nace_value(self.dalsi_zamestnavatel_cinnost, data.get("nace", nace_list[0]))
-        else:
-            self._set_cz_nace_value(self.dalsi_zamestnavatel_cinnost, data.get("nace", ""))
+        main = str(data.get("nace") or "").strip()
+        if not main and len(nace_list) == 1:
+            main = str(nace_list[0]).strip()
+        if main:
+            self._set_cz_nace_value(self.dalsi_zamestnavatel_cinnost, main)
 
     def get_vrchni_dozor(self) -> str:
         if self.vrchni_dozor_oip.isChecked():
