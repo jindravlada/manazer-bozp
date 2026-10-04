@@ -1,5 +1,7 @@
 from datetime import date
 
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
     QDialog,
     QHBoxLayout,
@@ -62,17 +64,23 @@ class LegalCheckProgressDialog(QDialog):
         self.cancel_btn.clicked.connect(self._request_cancel)
         self.close_btn.clicked.connect(self.reject)
 
-        worker = self._runner.worker
-        worker.status.connect(self._update_status)
-        worker.progress.connect(self._update_progress)
-        worker.finished.connect(self._on_finished)
-        worker.failed.connect(self._on_failed)
-        worker.cancelled.connect(self._on_cancelled)
+        queued = Qt.ConnectionType.QueuedConnection
+        runner = self._runner
+        runner.status.connect(self._update_status, queued)
+        runner.progress.connect(self._update_progress, queued)
+        runner.finished.connect(self._on_finished, queued)
+        runner.failed.connect(self._on_failed, queued)
+        runner.cancelled.connect(self._on_cancelled, queued)
+        self.destroyed.connect(lambda *_args: runner.release_ui())
 
         self._runner.start()
 
     def result_data(self) -> AutomaticCheckRunResult | None:
         return self._result
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        self._runner.release_ui()
+        super().closeEvent(event)
 
     def _update_status(self, message: str) -> None:
         self.status_label.setText(message)
@@ -90,7 +98,7 @@ class LegalCheckProgressDialog(QDialog):
     def _request_cancel(self) -> None:
         self.cancel_btn.setEnabled(False)
         self.status_label.setText("Ruším kontrolu…")
-        self._runner.worker.request_cancel()
+        self._runner.request_cancel()
 
     def _on_finished(self, result: AutomaticCheckRunResult) -> None:
         self._result = result
