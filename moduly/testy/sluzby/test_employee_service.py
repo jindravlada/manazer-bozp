@@ -86,6 +86,30 @@ class TestEmployeeService:
         employee.updated_at = datetime.now()
         return self.repository.update(employee)
 
+    def update_employee_details(
+        self,
+        employee_id: int,
+        *,
+        personal_number: str,
+        first_name: str,
+        last_name: str,
+        workplace_id: int | None,
+        responsibility_role_ids: list[int] | None,
+        active: bool,
+    ) -> TestEmployee:
+        """Úprava všech údajů editoru v jednom zápisu."""
+        employee = self._require_employee(employee_id)
+        number = self._validate_personal_number(personal_number)
+        self._ensure_unique_personal_number(number, exclude_employee_id=employee_id)
+        employee.personal_number = number
+        employee.first_name = self._validate_name(first_name, "Vyplňte jméno.")
+        employee.last_name = self._validate_name(last_name, "Vyplňte příjmení.")
+        employee.workplace_id = self._require_workplace(workplace_id)
+        role_ids = self._require_roles(responsibility_role_ids)
+        employee.active = bool(active)
+        employee.updated_at = datetime.now()
+        return self.repository.update_with_roles(employee, role_ids)
+
     def set_active(self, employee_id: int, *, active: bool) -> TestEmployee:
         employee = self._require_employee(employee_id)
         employee.active = bool(active)

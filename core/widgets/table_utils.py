@@ -1371,6 +1371,41 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         header.setSectionResizeMode(COL_FINDING_DUE, QHeaderView.Interactive)
         header.setSectionResizeMode(COL_FINDING_TASK, QHeaderView.Stretch)
 
+    elif profile == "test_employees":
+        from moduly.testy.constants import (
+            COL_FIRST_NAME,
+            COL_ID,
+            COL_LAST_NAME,
+            COL_PERSONAL_NUMBER,
+            COL_ROLES,
+            COL_STATUS,
+            COL_WORKPLACE,
+        )
+
+        table.setWordWrap(False)
+        table.setTextElideMode(Qt.TextElideMode.ElideRight)
+        widths = {
+            COL_ID: 0,
+            COL_PERSONAL_NUMBER: 120,
+            COL_LAST_NAME: 160,
+            COL_FIRST_NAME: 140,
+            COL_ROLES: 220,
+            COL_WORKPLACE: 220,
+            COL_STATUS: 110,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        table.setColumnHidden(COL_ID, True)
+        header.setSectionResizeMode(COL_ROLES, QHeaderView.Stretch)
+        for column in (
+            COL_PERSONAL_NUMBER,
+            COL_LAST_NAME,
+            COL_FIRST_NAME,
+            COL_WORKPLACE,
+            COL_STATUS,
+        ):
+            header.setSectionResizeMode(column, QHeaderView.Interactive)
+
     table.verticalHeader().setVisible(False)
     if profile not in ("controls_year_matrix", "yearly_plan"):
         table.setAlternatingRowColors(True)

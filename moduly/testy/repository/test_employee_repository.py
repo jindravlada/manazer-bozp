@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from core.database.session import get_session
 from core.utils.czech_sort import czech_sorted
@@ -55,6 +55,31 @@ class TestEmployeeRepository:
     def update(self, employee: TestEmployee) -> TestEmployee:
         with get_session() as session:
             employee = session.merge(employee)
+            session.commit()
+            session.refresh(employee)
+            return employee
+
+    def update_with_roles(
+        self,
+        employee: TestEmployee,
+        role_ids: list[int],
+    ) -> TestEmployee:
+        with get_session() as session:
+            employee = session.merge(employee)
+            session.flush()
+            session.execute(
+                delete(TestEmployeeRole).where(
+                    TestEmployeeRole.employee_id == employee.id,
+                ),
+            )
+            for sort_order, role_id in enumerate(role_ids, start=1):
+                session.add(
+                    TestEmployeeRole(
+                        employee_id=employee.id,
+                        responsibility_role_id=role_id,
+                        sort_order=sort_order,
+                    ),
+                )
             session.commit()
             session.refresh(employee)
             return employee
