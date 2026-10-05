@@ -44,6 +44,8 @@ class MultiResponsibilityRoleSelector(QWidget):
         layout.addLayout(top)
         layout.addWidget(self.list_widget)
 
+        self._suspend_commit = False
+
         self.btn_add.clicked.connect(self.add_current)
         self.btn_remove.clicked.connect(self.remove_selected)
         self.selector.lineEdit().returnPressed.connect(self.add_current)
@@ -54,21 +56,29 @@ class MultiResponsibilityRoleSelector(QWidget):
         if role_id is None:
             return
         self._append_role_id(role_id)
-        self.selector.set_role_id(None)
+        self._refresh_offer()
 
     def remove_selected(self) -> None:
         for item in self.list_widget.selectedItems():
             row = self.list_widget.row(item)
             self.list_widget.takeItem(row)
+        self._refresh_offer()
 
     def selected_role_ids(self) -> list[int]:
-        self._commit_pending_selector_role()
-        return self._list_role_ids()
+        if self._suspend_commit:
+            return self._list_role_ids()
+        self._suspend_commit = True
+        try:
+            self._commit_pending_selector_role()
+            return self._list_role_ids()
+        finally:
+            self._suspend_commit = False
 
     def set_role_ids(self, role_ids: list[int] | tuple[int, ...] | None) -> None:
         self.list_widget.clear()
         for role_id in role_ids or ():
             self._append_role_id(int(role_id))
+        self._refresh_offer()
 
     def reload(self, preserve_ids: list[int] | None = None) -> None:
         current = preserve_ids if preserve_ids is not None else self.selected_role_ids()
@@ -91,18 +101,22 @@ class MultiResponsibilityRoleSelector(QWidget):
         ]
 
     def _on_selector_activated(self, _index: int) -> None:
-        role_id = self.selector.current_role_id()
+        role_id = self.selector.ensure_selected_role_id()
         if role_id is None:
             return
         self._append_role_id(role_id)
-        self.selector.set_role_id(None)
+        self._refresh_offer()
 
     def _commit_pending_selector_role(self) -> None:
-        role_id = self.selector.current_role_id()
+        role_id = self.selector.ensure_selected_role_id()
         if role_id is None:
             return
         self._append_role_id(role_id)
-        self.selector.set_role_id(None)
+        self._refresh_offer()
+
+    def _refresh_offer(self) -> None:
+        """Nabídka pro nové přiřazení: aktivní role, které ještě nejsou v seznamu."""
+        self.selector.reload(exclude_ids=self._list_role_ids())
 
     def _list_role_ids(self) -> list[int]:
         ids: list[int] = []

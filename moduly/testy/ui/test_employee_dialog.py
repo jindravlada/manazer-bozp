@@ -18,6 +18,9 @@ from core.widgets.dialog_utils import (
     wrap_in_scroll_area,
 )
 from core.widgets.editor_dialog_controller import EditorDialogController
+from core.widgets.multi_responsibility_role_selector import (
+    MultiResponsibilityRoleSelector,
+)
 from core.widgets.workplace_selector import WorkplaceSelector
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.testy.constants import DIALOG_TITLE_EDIT, DIALOG_TITLE_NEW, MODULE_NAME
@@ -26,7 +29,6 @@ from moduly.testy.sluzby.test_employee_service import (
     TestEmployeeError,
     test_employee_service,
 )
-from moduly.testy.ui.test_employee_roles_selector import TestEmployeeRolesSelector
 
 
 class TestEmployeeDialog(QDialog):
@@ -61,7 +63,7 @@ class TestEmployeeDialog(QDialog):
             include_empty=True,
             allow_custom_value=False,
         )
-        self.roles = TestEmployeeRolesSelector(self)
+        self.roles = MultiResponsibilityRoleSelector(self)
         self.active_checkbox = QCheckBox("Aktivní")
         self.active_checkbox.setChecked(True)
 

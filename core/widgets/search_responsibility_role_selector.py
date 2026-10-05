@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Collection
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QCompleter
 
@@ -21,15 +23,24 @@ class SearchResponsibilityRoleSelector(SearchComboBox):
         self._preserve_role_id: int | None = None
         self.reload()
 
-    def reload(self, preserve_id: int | None = None) -> None:
+    def reload(
+        self,
+        preserve_id: int | None = None,
+        *,
+        exclude_ids: Collection[int] | None = None,
+    ) -> None:
         if preserve_id is not None:
             self._preserve_role_id = preserve_id
 
         current_id = self.current_role_id()
         preserve_id = self._preserve_role_id or current_id
         self._preserve_role_id = None
+        excluded = {int(role_id) for role_id in exclude_ids or ()}
 
+        line_edit = self.lineEdit()
         self.blockSignals(True)
+        if line_edit is not None:
+            line_edit.blockSignals(True)
         self.clear()
         self._roles_by_id = {}
 
@@ -38,10 +49,17 @@ class SearchResponsibilityRoleSelector(SearchComboBox):
             key=lambda role: role.name.casefold(),
         )
         for role in roles:
-            self._roles_by_id[int(role.id)] = role
-            self.addItem(role.name, int(role.id))
+            role_id = int(role.id)
+            if role_id in excluded:
+                continue
+            self._roles_by_id[role_id] = role
+            self.addItem(role.name, role_id)
 
-        if preserve_id is not None and preserve_id not in self._roles_by_id:
+        if (
+            preserve_id is not None
+            and preserve_id not in excluded
+            and preserve_id not in self._roles_by_id
+        ):
             role = responsibility_role_service.get_by_id(preserve_id)
             if role is not None:
                 label = role.name
@@ -51,15 +69,21 @@ class SearchResponsibilityRoleSelector(SearchComboBox):
                 self.addItem(label, int(role.id))
 
         self._update_completer()
-        if preserve_id is not None:
+        if preserve_id is not None and preserve_id not in excluded:
             self.set_role_id(preserve_id)
         else:
             self.setCurrentIndex(-1)
             self.setCurrentText("")
         self.blockSignals(False)
+        if line_edit is not None:
+            line_edit.blockSignals(False)
 
     def current_role_id(self) -> int | None:
-        data = self.currentData()
+        index = self.currentIndex()
+        text = self.currentText().strip()
+        if index < 0 or self.itemText(index).strip().casefold() != text.casefold():
+            return None
+        data = self.itemData(index)
         if data is None:
             return None
         try:
