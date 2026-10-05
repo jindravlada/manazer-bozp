@@ -1405,6 +1405,28 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             COL_STATUS,
         ):
             header.setSectionResizeMode(column, QHeaderView.Interactive)
+    elif profile == "written_question_topics":
+        from moduly.testy.constants import (
+            TOPIC_COL_DESCRIPTION,
+            TOPIC_COL_ID,
+            TOPIC_COL_NAME,
+            TOPIC_COL_STATUS,
+        )
+
+        table.setWordWrap(False)
+        table.setTextElideMode(Qt.TextElideMode.ElideRight)
+        widths = {
+            TOPIC_COL_ID: 0,
+            TOPIC_COL_NAME: 220,
+            TOPIC_COL_DESCRIPTION: 320,
+            TOPIC_COL_STATUS: 110,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        table.setColumnHidden(TOPIC_COL_ID, True)
+        header.setSectionResizeMode(TOPIC_COL_DESCRIPTION, QHeaderView.Stretch)
+        header.setSectionResizeMode(TOPIC_COL_NAME, QHeaderView.Interactive)
+        header.setSectionResizeMode(TOPIC_COL_STATUS, QHeaderView.Interactive)
 
     table.verticalHeader().setVisible(False)
     if profile not in ("controls_year_matrix", "yearly_plan"):

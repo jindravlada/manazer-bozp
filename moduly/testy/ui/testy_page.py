@@ -1,10 +1,10 @@
-from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QCheckBox,
     QHBoxLayout,
     QLabel,
     QMessageBox,
     QPushButton,
+    QTabWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -20,6 +20,8 @@ from core.widgets.table_utils import configure_table_columns
 from moduly.testy.constants import (
     ACTION_EDIT,
     ACTION_NEW,
+    AGENDA_EMPLOYEES,
+    AGENDA_WRITTEN_TOPICS,
     COL_ID,
     MODULE_NAME,
     PAGE_SUBTITLE,
@@ -29,10 +31,11 @@ from moduly.testy.constants import (
 from moduly.testy.sluzby.test_employee_service import test_employee_service
 from moduly.testy.ui.test_employee_dialog import TestEmployeeDialog
 from moduly.testy.ui.test_employee_table import TestEmployeeTable
+from moduly.testy.ui.written_question_topics_tab import WrittenQuestionTopicsTab
 
 
 class TestyPage(QWidget):
-    """Evidence zaměstnanců modulu Testy."""
+    """Modul Testy: agendy zaměstnanců a okruhů písemných otázek."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -44,6 +47,22 @@ class TestyPage(QWidget):
         subtitle = QLabel(PAGE_SUBTITLE)
         subtitle.setObjectName("InfoText")
         subtitle.setWordWrap(True)
+
+        self.tabs = QTabWidget()
+        self.employees_tab = self._build_employees_tab()
+        self.topics_tab = WrittenQuestionTopicsTab()
+        self.tabs.addTab(self.employees_tab, AGENDA_EMPLOYEES)
+        self.tabs.addTab(self.topics_tab, AGENDA_WRITTEN_TOPICS)
+
+        layout.addWidget(title)
+        layout.addWidget(subtitle)
+        layout.addWidget(self.tabs, 1)
+
+        self.refresh()
+
+    def _build_employees_tab(self) -> QWidget:
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
 
         toolbar = QHBoxLayout()
         self.new_btn = QPushButton(ACTION_NEW)
@@ -61,8 +80,6 @@ class TestyPage(QWidget):
         configure_table_columns(self.table, "test_employees")
         self.text_filter = FilterBar(self.table, placeholder=SEARCH_PLACEHOLDER)
 
-        layout.addWidget(title)
-        layout.addWidget(subtitle)
         layout.addLayout(toolbar)
         layout.addWidget(self.text_filter)
         layout.addWidget(self.table, 1)
@@ -77,8 +94,7 @@ class TestyPage(QWidget):
             on_edit=self.edit_selected,
             can_edit=lambda: self.edit_btn.isEnabled(),
         )
-
-        self.refresh()
+        return tab
 
     def refresh(self) -> None:
         selected_id = self.table.selected_employee_id()

@@ -60,6 +60,7 @@ def initialize_database() -> None:
     from moduly.nastaveni.modely.responsibility_role import ResponsibilityRole  # noqa: F401
     from moduly.testy.modely.test_employee import TestEmployee  # noqa: F401
     from moduly.testy.modely.test_employee_role import TestEmployeeRole  # noqa: F401
+    from moduly.testy.modely.written_question_topic import WrittenQuestionTopic  # noqa: F401
     from moduly.nastaveni.modely.exposed_group import ExposedGroup  # noqa: F401
     from moduly.kniha_urazu.modely.accident import Accident  # noqa: F401
     from moduly.kniha_urazu.modely.investigation import AccidentInvestigation  # noqa: F401
@@ -256,6 +257,7 @@ def initialize_database() -> None:
     _ensure_workplace_hierarchy_columns()
     _ensure_responsibility_roles_table()
     _ensure_test_employee_tables()
+    _ensure_test_written_question_topics_table()
     _ensure_exposed_groups_table()
     _ensure_professions_tables()
     _ensure_hazard_source_categories_table()
@@ -3673,6 +3675,13 @@ def _ensure_test_employee_columns() -> None:
         _add_column("test_employees", "title_after VARCHAR(50) DEFAULT ''")
     if "may_examine" not in columns:
         _add_column("test_employees", "may_examine BOOLEAN DEFAULT 0")
+
+
+def _ensure_test_written_question_topics_table() -> None:
+    if not _table_columns("test_written_question_topics"):
+        from moduly.testy.modely.written_question_topic import WrittenQuestionTopic
+
+        WrittenQuestionTopic.__table__.create(bind=_db_engine(), checkfirst=True)
 
 
 def _ensure_responsibility_roles_table() -> None:

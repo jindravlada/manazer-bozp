@@ -33,3 +33,23 @@ COLUMN_HEADERS = [
     "Provoz (pracoviště)",
     "Stav",
 ]
+
+AGENDA_EMPLOYEES = "Zaměstnanci"
+AGENDA_WRITTEN_TOPICS = "Okruhy otázek"
+
+TOPIC_ACTION_NEW = "Nový okruh"
+TOPIC_DIALOG_TITLE_NEW = "Nový okruh"
+TOPIC_DIALOG_TITLE_EDIT = "Okruh"
+TOPIC_SEARCH_PLACEHOLDER = "🔍 Hledat okruh..."
+
+TOPIC_COL_ID = 0
+TOPIC_COL_NAME = 1
+TOPIC_COL_DESCRIPTION = 2
+TOPIC_COL_STATUS = 3
+
+TOPIC_COLUMN_HEADERS = [
+    "ID",
+    "Název",
+    "Popis",
+    "Stav",
+]
