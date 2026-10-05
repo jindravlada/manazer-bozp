@@ -36,6 +36,7 @@ with patch.object(Path, "home", return_value=_TMP):
         AGENDA_ORAL_QUESTIONS,
         AGENDA_ORAL_TOPICS,
         AGENDA_QUESTIONS,
+        AGENDA_TESTS,
         AGENDA_WRITTEN_TOPICS,
         ORAL_QUESTION_COL_STATUS,
         ORAL_QUESTION_COL_TEXT,
@@ -289,12 +290,13 @@ class OralTopicsAndQuestionsTestCase(unittest.TestCase):
         self.assertTrue(self.questions.edit_btn.isEnabled())
 
     def test_agendas_order(self) -> None:
-        self.assertEqual(self.page.tabs.count(), 5)
+        self.assertEqual(self.page.tabs.count(), 6)
         self.assertEqual(self.page.tabs.tabText(0), AGENDA_EMPLOYEES)
         self.assertEqual(self.page.tabs.tabText(1), AGENDA_WRITTEN_TOPICS)
         self.assertEqual(self.page.tabs.tabText(2), AGENDA_QUESTIONS)
         self.assertEqual(self.page.tabs.tabText(3), AGENDA_ORAL_TOPICS)
         self.assertEqual(self.page.tabs.tabText(4), AGENDA_ORAL_QUESTIONS)
+        self.assertEqual(self.page.tabs.tabText(5), AGENDA_TESTS)
         self.assertEqual(self.topics.new_btn.text(), "Nový okruh")
         self.assertEqual(self.questions.new_btn.text(), "Nová otázka")
 

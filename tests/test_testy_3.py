@@ -41,6 +41,7 @@ with patch.object(Path, "home", return_value=_TMP):
         AGENDA_ORAL_QUESTIONS,
         AGENDA_ORAL_TOPICS,
         AGENDA_QUESTIONS,
+        AGENDA_TESTS,
         AGENDA_WRITTEN_TOPICS,
         COL_FIRST_NAME,
         COL_PERSONAL_NUMBER,
@@ -252,12 +253,13 @@ class WrittenQuestionTopicTestCase(unittest.TestCase):
         labels = {label.objectName(): label.text() for label in self.page.findChildren(QLabel)}
         self.assertEqual(labels.get("PageTitle"), MODULE_NAME)
         self.assertEqual(labels.get("InfoText"), PAGE_SUBTITLE)
-        self.assertEqual(self.page.tabs.count(), 5)
+        self.assertEqual(self.page.tabs.count(), 6)
         self.assertEqual(self.page.tabs.tabText(0), AGENDA_EMPLOYEES)
         self.assertEqual(self.page.tabs.tabText(1), AGENDA_WRITTEN_TOPICS)
         self.assertEqual(self.page.tabs.tabText(2), AGENDA_QUESTIONS)
         self.assertEqual(self.page.tabs.tabText(3), AGENDA_ORAL_TOPICS)
         self.assertEqual(self.page.tabs.tabText(4), AGENDA_ORAL_QUESTIONS)
+        self.assertEqual(self.page.tabs.tabText(5), AGENDA_TESTS)
 
         workplace = settings_service.save_workplace(name="Provoz 3")
         role = responsibility_role_service.create_role(name="Mistr 3")

@@ -65,6 +65,13 @@ def initialize_database() -> None:
     from moduly.testy.modely.written_question_answer import WrittenQuestionAnswer  # noqa: F401
     from moduly.testy.modely.oral_question_topic import OralQuestionTopic  # noqa: F401
     from moduly.testy.modely.oral_question import OralQuestion  # noqa: F401
+    from moduly.testy.modely.test_definition import TestDefinition  # noqa: F401
+    from moduly.testy.modely.test_definition_written_topic import (  # noqa: F401
+        TestDefinitionWrittenTopic,
+    )
+    from moduly.testy.modely.test_definition_oral_topic import (  # noqa: F401
+        TestDefinitionOralTopic,
+    )
     from moduly.nastaveni.modely.exposed_group import ExposedGroup  # noqa: F401
     from moduly.kniha_urazu.modely.accident import Accident  # noqa: F401
     from moduly.kniha_urazu.modely.investigation import AccidentInvestigation  # noqa: F401
@@ -264,6 +271,7 @@ def initialize_database() -> None:
     _ensure_test_written_question_topics_table()
     _ensure_test_written_question_tables()
     _ensure_test_oral_question_tables()
+    _ensure_test_definition_tables()
     _ensure_exposed_groups_table()
     _ensure_professions_tables()
     _ensure_hazard_source_categories_table()
@@ -3710,6 +3718,23 @@ def _ensure_test_oral_question_tables() -> None:
         from moduly.testy.modely.oral_question import OralQuestion
 
         OralQuestion.__table__.create(bind=_db_engine(), checkfirst=True)
+
+
+def _ensure_test_definition_tables() -> None:
+    if not _table_columns("test_definitions"):
+        from moduly.testy.modely.test_definition import TestDefinition
+
+        TestDefinition.__table__.create(bind=_db_engine(), checkfirst=True)
+    if not _table_columns("test_definition_written_topics"):
+        from moduly.testy.modely.test_definition_written_topic import (
+            TestDefinitionWrittenTopic,
+        )
+
+        TestDefinitionWrittenTopic.__table__.create(bind=_db_engine(), checkfirst=True)
+    if not _table_columns("test_definition_oral_topics"):
+        from moduly.testy.modely.test_definition_oral_topic import TestDefinitionOralTopic
+
+        TestDefinitionOralTopic.__table__.create(bind=_db_engine(), checkfirst=True)
 
 
 def _ensure_responsibility_roles_table() -> None:

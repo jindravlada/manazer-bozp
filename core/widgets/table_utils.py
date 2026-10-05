@@ -1473,6 +1473,40 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         header.setSectionResizeMode(ORAL_QUESTION_COL_TEXT, QHeaderView.Stretch)
         for column in (ORAL_QUESTION_COL_TOPIC, ORAL_QUESTION_COL_STATUS):
             header.setSectionResizeMode(column, QHeaderView.Interactive)
+    elif profile == "test_definitions":
+        from moduly.testy.constants import (
+            TEST_COL_ID,
+            TEST_COL_NAME,
+            TEST_COL_ORAL,
+            TEST_COL_QUESTION_COUNT,
+            TEST_COL_STATUS,
+            TEST_COL_VALIDITY,
+            TEST_COL_WRITTEN,
+        )
+
+        table.setWordWrap(False)
+        table.setTextElideMode(Qt.TextElideMode.ElideRight)
+        widths = {
+            TEST_COL_ID: 0,
+            TEST_COL_NAME: 220,
+            TEST_COL_WRITTEN: 120,
+            TEST_COL_ORAL: 110,
+            TEST_COL_QUESTION_COUNT: 120,
+            TEST_COL_VALIDITY: 120,
+            TEST_COL_STATUS: 110,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        table.setColumnHidden(TEST_COL_ID, True)
+        header.setSectionResizeMode(TEST_COL_NAME, QHeaderView.Stretch)
+        for column in (
+            TEST_COL_WRITTEN,
+            TEST_COL_ORAL,
+            TEST_COL_QUESTION_COUNT,
+            TEST_COL_VALIDITY,
+            TEST_COL_STATUS,
+        ):
+            header.setSectionResizeMode(column, QHeaderView.Interactive)
 
     table.verticalHeader().setVisible(False)
     if profile not in ("controls_year_matrix", "yearly_plan"):
