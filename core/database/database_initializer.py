@@ -58,6 +58,8 @@ def initialize_database() -> None:
     from moduly.nastaveni.modely.person import Person  # noqa: F401
     from moduly.nastaveni.modely.workplace import Workplace  # noqa: F401
     from moduly.nastaveni.modely.responsibility_role import ResponsibilityRole  # noqa: F401
+    from moduly.testy.modely.test_employee import TestEmployee  # noqa: F401
+    from moduly.testy.modely.test_employee_role import TestEmployeeRole  # noqa: F401
     from moduly.nastaveni.modely.exposed_group import ExposedGroup  # noqa: F401
     from moduly.kniha_urazu.modely.accident import Accident  # noqa: F401
     from moduly.kniha_urazu.modely.investigation import AccidentInvestigation  # noqa: F401
@@ -253,6 +255,7 @@ def initialize_database() -> None:
     _ensure_workplace_audit_columns()
     _ensure_workplace_hierarchy_columns()
     _ensure_responsibility_roles_table()
+    _ensure_test_employee_tables()
     _ensure_exposed_groups_table()
     _ensure_professions_tables()
     _ensure_hazard_source_categories_table()
@@ -3645,6 +3648,17 @@ def _ensure_ai_proposal_packages_table() -> None:
         from core.ai_oponentni.modely.ai_proposal_package import AiProposalPackageRecord
 
         AiProposalPackageRecord.__table__.create(bind=_db_engine(), checkfirst=True)
+
+
+def _ensure_test_employee_tables() -> None:
+    if not _table_columns("test_employees"):
+        from moduly.testy.modely.test_employee import TestEmployee
+
+        TestEmployee.__table__.create(bind=_db_engine(), checkfirst=True)
+    if not _table_columns("test_employee_roles"):
+        from moduly.testy.modely.test_employee_role import TestEmployeeRole
+
+        TestEmployeeRole.__table__.create(bind=_db_engine(), checkfirst=True)
 
 
 def _ensure_responsibility_roles_table() -> None:
