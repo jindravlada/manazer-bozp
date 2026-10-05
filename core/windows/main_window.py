@@ -247,6 +247,7 @@ class MainWindow(QMainWindow):
             "rizeni_rizik",
             "koordinace_bozp",
             "pravni_pozadavky",
+            "testy",
             "dokumentace",
             "statistiky",
         ]

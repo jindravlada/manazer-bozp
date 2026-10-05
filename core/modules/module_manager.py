@@ -11,6 +11,7 @@ from moduly.schuzky.module import get_module_definition as schuzky_module
 from moduly.sablony_udalosti.module import get_module_definition as sablony_udalosti_module
 from moduly.vysetrovani_mu.module import get_module_definition as vysetrovani_mu_module
 from moduly.pravni_pozadavky.module import get_module_definition as pravni_pozadavky_module
+from moduly.testy.module import get_module_definition as testy_module
 from moduly.smlouvy_ozo.module import get_module_definition as smlouvy_ozo_module
 from moduly.sprava_dat.module import get_module_definition as sprava_dat_module
 from moduly.nastaveni.module import get_module_definition as nastaveni_module
@@ -31,6 +32,7 @@ class ModuleManager:
             rizeni_rizik_module(),
             koordinace_bozp_module(),
             pravni_pozadavky_module(),
+            testy_module(),
             vysetrovani_mu_module(),
             smlouvy_ozo_module(),
             sprava_dat_module(),
