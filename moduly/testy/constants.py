@@ -53,3 +53,32 @@ TOPIC_COLUMN_HEADERS = [
     "Popis",
     "Stav",
 ]
+
+AGENDA_QUESTIONS = "Otázky"
+QUESTION_ACTION_NEW = "Nová otázka"
+QUESTION_DIALOG_TITLE_NEW = "Nová otázka"
+QUESTION_DIALOG_TITLE_EDIT = "Otázka"
+QUESTION_SEARCH_PLACEHOLDER = "🔍 Hledat otázku..."
+QUESTION_TOPIC_FILTER_ALL = "Všechny okruhy"
+ANSWER_KIND_TEXT = "text"
+ANSWER_KIND_IMAGE = "image"
+ANSWER_KIND_TEXT_LABEL = "Textové"
+ANSWER_KIND_IMAGE_LABEL = "Obrázkové"
+ANSWER_KIND_SWITCH_CONFIRM = (
+    "Přepnutí typu odpovědí vymaže již zadané odpovědi A, B a C. Pokračovat?"
+)
+ANSWER_LETTERS = ("A", "B", "C")
+
+QUESTION_COL_ID = 0
+QUESTION_COL_TEXT = 1
+QUESTION_COL_TOPIC = 2
+QUESTION_COL_KIND = 3
+QUESTION_COL_STATUS = 4
+
+QUESTION_COLUMN_HEADERS = [
+    "ID",
+    "Otázka",
+    "Okruh",
+    "Typ odpovědí",
+    "Stav",
+]

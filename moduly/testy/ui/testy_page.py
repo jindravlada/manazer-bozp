@@ -21,6 +21,7 @@ from moduly.testy.constants import (
     ACTION_EDIT,
     ACTION_NEW,
     AGENDA_EMPLOYEES,
+    AGENDA_QUESTIONS,
     AGENDA_WRITTEN_TOPICS,
     COL_ID,
     MODULE_NAME,
@@ -32,6 +33,7 @@ from moduly.testy.sluzby.test_employee_service import test_employee_service
 from moduly.testy.ui.test_employee_dialog import TestEmployeeDialog
 from moduly.testy.ui.test_employee_table import TestEmployeeTable
 from moduly.testy.ui.written_question_topics_tab import WrittenQuestionTopicsTab
+from moduly.testy.ui.written_questions_tab import WrittenQuestionsTab
 
 
 class TestyPage(QWidget):
@@ -51,8 +53,10 @@ class TestyPage(QWidget):
         self.tabs = QTabWidget()
         self.employees_tab = self._build_employees_tab()
         self.topics_tab = WrittenQuestionTopicsTab()
+        self.questions_tab = WrittenQuestionsTab()
         self.tabs.addTab(self.employees_tab, AGENDA_EMPLOYEES)
         self.tabs.addTab(self.topics_tab, AGENDA_WRITTEN_TOPICS)
+        self.tabs.addTab(self.questions_tab, AGENDA_QUESTIONS)
 
         layout.addWidget(title)
         layout.addWidget(subtitle)

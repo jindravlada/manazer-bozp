@@ -61,6 +61,8 @@ def initialize_database() -> None:
     from moduly.testy.modely.test_employee import TestEmployee  # noqa: F401
     from moduly.testy.modely.test_employee_role import TestEmployeeRole  # noqa: F401
     from moduly.testy.modely.written_question_topic import WrittenQuestionTopic  # noqa: F401
+    from moduly.testy.modely.written_question import WrittenQuestion  # noqa: F401
+    from moduly.testy.modely.written_question_answer import WrittenQuestionAnswer  # noqa: F401
     from moduly.nastaveni.modely.exposed_group import ExposedGroup  # noqa: F401
     from moduly.kniha_urazu.modely.accident import Accident  # noqa: F401
     from moduly.kniha_urazu.modely.investigation import AccidentInvestigation  # noqa: F401
@@ -258,6 +260,7 @@ def initialize_database() -> None:
     _ensure_responsibility_roles_table()
     _ensure_test_employee_tables()
     _ensure_test_written_question_topics_table()
+    _ensure_test_written_question_tables()
     _ensure_exposed_groups_table()
     _ensure_professions_tables()
     _ensure_hazard_source_categories_table()
@@ -3682,6 +3685,17 @@ def _ensure_test_written_question_topics_table() -> None:
         from moduly.testy.modely.written_question_topic import WrittenQuestionTopic
 
         WrittenQuestionTopic.__table__.create(bind=_db_engine(), checkfirst=True)
+
+
+def _ensure_test_written_question_tables() -> None:
+    if not _table_columns("test_written_questions"):
+        from moduly.testy.modely.written_question import WrittenQuestion
+
+        WrittenQuestion.__table__.create(bind=_db_engine(), checkfirst=True)
+    if not _table_columns("test_written_question_answers"):
+        from moduly.testy.modely.written_question_answer import WrittenQuestionAnswer
+
+        WrittenQuestionAnswer.__table__.create(bind=_db_engine(), checkfirst=True)
 
 
 def _ensure_responsibility_roles_table() -> None:
