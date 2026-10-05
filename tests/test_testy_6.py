@@ -33,6 +33,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from core.database.session import get_session
     from moduly.testy.constants import (
         AGENDA_EMPLOYEES,
+        AGENDA_EXAMS,
         AGENDA_ORAL_QUESTIONS,
         AGENDA_ORAL_TOPICS,
         AGENDA_QUESTIONS,
@@ -628,13 +629,14 @@ class TestDefinitionTestCase(unittest.TestCase):
         self.assertFalse(self.tests.edit_btn.isEnabled())
         self.tests.table.selectRow(visible[0])
         self.assertTrue(self.tests.edit_btn.isEnabled())
-        self.assertEqual(self.page.tabs.count(), 6)
+        self.assertEqual(self.page.tabs.count(), 7)
         self.assertEqual(self.page.tabs.tabText(0), AGENDA_EMPLOYEES)
         self.assertEqual(self.page.tabs.tabText(1), AGENDA_WRITTEN_TOPICS)
         self.assertEqual(self.page.tabs.tabText(2), AGENDA_QUESTIONS)
         self.assertEqual(self.page.tabs.tabText(3), AGENDA_ORAL_TOPICS)
         self.assertEqual(self.page.tabs.tabText(4), AGENDA_ORAL_QUESTIONS)
         self.assertEqual(self.page.tabs.tabText(5), AGENDA_TESTS)
+        self.assertEqual(self.page.tabs.tabText(6), AGENDA_EXAMS)
         self.assertEqual(self.tests.new_btn.text(), "Nový test")
         self.assertEqual(active.id, test_definition_service.get_test(active.id).id)
 

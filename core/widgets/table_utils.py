@@ -1507,6 +1507,37 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             TEST_COL_STATUS,
         ):
             header.setSectionResizeMode(column, QHeaderView.Interactive)
+    elif profile == "test_exams":
+        from moduly.testy.constants import (
+            EXAM_COL_DATE,
+            EXAM_COL_EMPLOYEE,
+            EXAM_COL_ID,
+            EXAM_COL_STATUS,
+            EXAM_COL_TEST,
+            EXAM_COL_VALID_UNTIL,
+        )
+
+        table.setWordWrap(False)
+        table.setTextElideMode(Qt.TextElideMode.ElideRight)
+        widths = {
+            EXAM_COL_ID: 0,
+            EXAM_COL_DATE: 120,
+            EXAM_COL_EMPLOYEE: 240,
+            EXAM_COL_TEST: 200,
+            EXAM_COL_VALID_UNTIL: 120,
+            EXAM_COL_STATUS: 120,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        table.setColumnHidden(EXAM_COL_ID, True)
+        header.setSectionResizeMode(EXAM_COL_EMPLOYEE, QHeaderView.Stretch)
+        for column in (
+            EXAM_COL_DATE,
+            EXAM_COL_TEST,
+            EXAM_COL_VALID_UNTIL,
+            EXAM_COL_STATUS,
+        ):
+            header.setSectionResizeMode(column, QHeaderView.Interactive)
 
     table.verticalHeader().setVisible(False)
     if profile not in ("controls_year_matrix", "yearly_plan"):

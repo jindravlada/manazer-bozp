@@ -72,6 +72,15 @@ def initialize_database() -> None:
     from moduly.testy.modely.test_definition_oral_topic import (  # noqa: F401
         TestDefinitionOralTopic,
     )
+    from moduly.testy.modely.test_exam import TestExam  # noqa: F401
+    from moduly.testy.modely.test_exam_examiner import TestExamExaminer  # noqa: F401
+    from moduly.testy.modely.test_exam_written_question import (  # noqa: F401
+        TestExamWrittenQuestion,
+    )
+    from moduly.testy.modely.test_exam_written_answer import (  # noqa: F401
+        TestExamWrittenAnswer,
+    )
+    from moduly.testy.modely.test_exam_oral_question import TestExamOralQuestion  # noqa: F401
     from moduly.nastaveni.modely.exposed_group import ExposedGroup  # noqa: F401
     from moduly.kniha_urazu.modely.accident import Accident  # noqa: F401
     from moduly.kniha_urazu.modely.investigation import AccidentInvestigation  # noqa: F401
@@ -272,6 +281,7 @@ def initialize_database() -> None:
     _ensure_test_written_question_tables()
     _ensure_test_oral_question_tables()
     _ensure_test_definition_tables()
+    _ensure_test_exam_tables()
     _ensure_exposed_groups_table()
     _ensure_professions_tables()
     _ensure_hazard_source_categories_table()
@@ -3735,6 +3745,25 @@ def _ensure_test_definition_tables() -> None:
         from moduly.testy.modely.test_definition_oral_topic import TestDefinitionOralTopic
 
         TestDefinitionOralTopic.__table__.create(bind=_db_engine(), checkfirst=True)
+
+
+def _ensure_test_exam_tables() -> None:
+    from moduly.testy.modely.test_exam import TestExam
+    from moduly.testy.modely.test_exam_examiner import TestExamExaminer
+    from moduly.testy.modely.test_exam_oral_question import TestExamOralQuestion
+    from moduly.testy.modely.test_exam_written_answer import TestExamWrittenAnswer
+    from moduly.testy.modely.test_exam_written_question import TestExamWrittenQuestion
+
+    if not _table_columns("test_exams"):
+        TestExam.__table__.create(bind=_db_engine(), checkfirst=True)
+    if not _table_columns("test_exam_examiners"):
+        TestExamExaminer.__table__.create(bind=_db_engine(), checkfirst=True)
+    if not _table_columns("test_exam_written_questions"):
+        TestExamWrittenQuestion.__table__.create(bind=_db_engine(), checkfirst=True)
+    if not _table_columns("test_exam_written_answers"):
+        TestExamWrittenAnswer.__table__.create(bind=_db_engine(), checkfirst=True)
+    if not _table_columns("test_exam_oral_questions"):
+        TestExamOralQuestion.__table__.create(bind=_db_engine(), checkfirst=True)
 
 
 def _ensure_responsibility_roles_table() -> None:
