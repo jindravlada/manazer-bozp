@@ -29,11 +29,16 @@ class TestEmployee(Base):
     personal_number: Mapped[str] = mapped_column(String(50), nullable=False)
     first_name: Mapped[str] = mapped_column(String(100), nullable=False)
     last_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    title_before: Mapped[str] = mapped_column(String(50), default="")
+    title_after: Mapped[str] = mapped_column(String(50), default="")
     workplace_id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey("workplaces.id"),
         nullable=False,
     )
+    # Smí být nabídnut jako zkoušející, předseda nebo člen komise.
+    # Konkrétní role se určuje až u zkoušky, ne u zaměstnance.
+    may_examine: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(
@@ -41,3 +46,15 @@ class TestEmployee(Base):
         default=datetime.now,
         onupdate=datetime.now,
     )
+
+    @property
+    def display_name(self) -> str:
+        """Celé jméno včetně titulů, např. „Ing. Jan Novák, Ph.D.“."""
+        from moduly.smlouvy_ozo.constants import format_ozo_display_name
+
+        return format_ozo_display_name(
+            self.title_before,
+            self.first_name,
+            self.last_name,
+            self.title_after,
+        )

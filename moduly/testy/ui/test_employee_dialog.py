@@ -47,9 +47,9 @@ class TestEmployeeDialog(QDialog):
         configure_resizable_form_dialog(
             self,
             width=560,
-            height=520,
+            height=620,
             min_width=440,
-            min_height=420,
+            min_height=480,
         )
 
         layout = QVBoxLayout(self)
@@ -57,8 +57,10 @@ class TestEmployeeDialog(QDialog):
         form = QFormLayout(form_host)
 
         self.personal_number = QLineEdit()
+        self.title_before = QLineEdit()
         self.first_name = QLineEdit()
         self.last_name = QLineEdit()
+        self.title_after = QLineEdit()
         self.workplace = WorkplaceSelector(
             include_empty=True,
             allow_custom_value=False,
@@ -66,13 +68,17 @@ class TestEmployeeDialog(QDialog):
         self.roles = MultiResponsibilityRoleSelector(self)
         self.active_checkbox = QCheckBox("Aktivní")
         self.active_checkbox.setChecked(True)
+        self.may_examine = QCheckBox("Zkoušející / člen komise")
 
         form.addRow("Osobní číslo:", self.personal_number)
+        form.addRow("Titul před jménem:", self.title_before)
         form.addRow("Jméno:", self.first_name)
         form.addRow("Příjmení:", self.last_name)
+        form.addRow("Titul za jménem:", self.title_after)
         form.addRow("Provoz (pracoviště):", self.workplace)
         form.addRow("Funkce / role:", self.roles)
         form.addRow("", self.active_checkbox)
+        form.addRow("", self.may_examine)
 
         layout.addWidget(wrap_in_scroll_area(form_host), 1)
 
@@ -91,11 +97,14 @@ class TestEmployeeDialog(QDialog):
 
         if employee is not None:
             self.personal_number.setText(employee.personal_number)
+            self.title_before.setText(employee.title_before or "")
             self.first_name.setText(employee.first_name)
             self.last_name.setText(employee.last_name)
+            self.title_after.setText(employee.title_after or "")
             self._set_workplace(employee.workplace_id)
             self.roles.set_role_ids(role_ids or [])
             self.active_checkbox.setChecked(employee.active)
+            self.may_examine.setChecked(bool(employee.may_examine))
 
         self._editor.capture_baseline()
 
@@ -119,20 +128,26 @@ class TestEmployeeDialog(QDialog):
     def get_data(self) -> dict:
         return {
             "personal_number": self.personal_number.text(),
+            "title_before": self.title_before.text(),
             "first_name": self.first_name.text(),
             "last_name": self.last_name.text(),
+            "title_after": self.title_after.text(),
             "workplace_id": self._workplace_id(),
             "responsibility_role_ids": self.roles.selected_role_ids(),
+            "may_examine": self.may_examine.isChecked(),
             "active": self.active_checkbox.isChecked(),
         }
 
     def _snapshot(self) -> tuple:
         return (
             self.personal_number.text(),
+            self.title_before.text(),
             self.first_name.text(),
             self.last_name.text(),
+            self.title_after.text(),
             self._workplace_id(),
             tuple(self.roles.selected_role_ids()),
+            self.may_examine.isChecked(),
             self.active_checkbox.isChecked(),
         )
 

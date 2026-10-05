@@ -3655,10 +3655,24 @@ def _ensure_test_employee_tables() -> None:
         from moduly.testy.modely.test_employee import TestEmployee
 
         TestEmployee.__table__.create(bind=_db_engine(), checkfirst=True)
+    _ensure_test_employee_columns()
     if not _table_columns("test_employee_roles"):
         from moduly.testy.modely.test_employee_role import TestEmployeeRole
 
         TestEmployeeRole.__table__.create(bind=_db_engine(), checkfirst=True)
+
+
+def _ensure_test_employee_columns() -> None:
+    """Doplní tituly a oprávnění ke zkoušení, existující řádky nemění."""
+    columns = _table_columns("test_employees")
+    if not columns:
+        return
+    if "title_before" not in columns:
+        _add_column("test_employees", "title_before VARCHAR(50) DEFAULT ''")
+    if "title_after" not in columns:
+        _add_column("test_employees", "title_after VARCHAR(50) DEFAULT ''")
+    if "may_examine" not in columns:
+        _add_column("test_employees", "may_examine BOOLEAN DEFAULT 0")
 
 
 def _ensure_responsibility_roles_table() -> None:

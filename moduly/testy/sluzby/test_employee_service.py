@@ -38,6 +38,9 @@ class TestEmployeeService:
         workplace_id: int,
         responsibility_role_ids: list[int],
         active: bool = True,
+        title_before: str = "",
+        title_after: str = "",
+        may_examine: bool = False,
     ) -> TestEmployee:
         number = self._validate_personal_number(personal_number)
         self._ensure_unique_personal_number(number)
@@ -50,7 +53,10 @@ class TestEmployeeService:
             personal_number=number,
             first_name=first,
             last_name=last,
+            title_before=self._normalize_title(title_before),
+            title_after=self._normalize_title(title_after),
             workplace_id=workplace,
+            may_examine=bool(may_examine),
             active=bool(active),
         )
         return self.repository.add_with_roles(employee, role_ids)
@@ -68,6 +74,14 @@ class TestEmployeeService:
 
     def list_employees(self, *, include_inactive: bool = False) -> list[TestEmployee]:
         return self.repository.get_all(include_inactive=include_inactive)
+
+    def list_eligible_examiners(self) -> list[TestEmployee]:
+        """Aktivní zaměstnanci, které lze nabídnout ke zkoušení nebo do komise."""
+        return [
+            employee
+            for employee in self.repository.get_all(include_inactive=False)
+            if employee.may_examine
+        ]
 
     def update_employee(
         self,
@@ -96,6 +110,9 @@ class TestEmployeeService:
         workplace_id: int | None,
         responsibility_role_ids: list[int] | None,
         active: bool,
+        title_before: str = "",
+        title_after: str = "",
+        may_examine: bool = False,
     ) -> TestEmployee:
         """Úprava všech údajů editoru v jednom zápisu."""
         employee = self._require_employee(employee_id)
@@ -104,8 +121,11 @@ class TestEmployeeService:
         employee.personal_number = number
         employee.first_name = self._validate_name(first_name, "Vyplňte jméno.")
         employee.last_name = self._validate_name(last_name, "Vyplňte příjmení.")
+        employee.title_before = self._normalize_title(title_before)
+        employee.title_after = self._normalize_title(title_after)
         employee.workplace_id = self._require_workplace(workplace_id)
         role_ids = self._require_roles(responsibility_role_ids)
+        employee.may_examine = bool(may_examine)
         employee.active = bool(active)
         employee.updated_at = datetime.now()
         return self.repository.update_with_roles(employee, role_ids)
@@ -158,6 +178,9 @@ class TestEmployeeService:
         if not normalized:
             raise TestEmployeeError(message)
         return normalized
+
+    def _normalize_title(self, value: str) -> str:
+        return " ".join(str(value or "").strip().split())
 
     def _ensure_unique_personal_number(
         self,
