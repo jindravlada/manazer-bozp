@@ -21,6 +21,8 @@ from moduly.testy.constants import (
     ACTION_EDIT,
     ACTION_NEW,
     AGENDA_EMPLOYEES,
+    AGENDA_ORAL_QUESTIONS,
+    AGENDA_ORAL_TOPICS,
     AGENDA_QUESTIONS,
     AGENDA_WRITTEN_TOPICS,
     COL_ID,
@@ -30,6 +32,8 @@ from moduly.testy.constants import (
     SHOW_INACTIVE_LABEL,
 )
 from moduly.testy.sluzby.test_employee_service import test_employee_service
+from moduly.testy.ui.oral_question_topics_tab import OralQuestionTopicsTab
+from moduly.testy.ui.oral_questions_tab import OralQuestionsTab
 from moduly.testy.ui.test_employee_dialog import TestEmployeeDialog
 from moduly.testy.ui.test_employee_table import TestEmployeeTable
 from moduly.testy.ui.written_question_topics_tab import WrittenQuestionTopicsTab
@@ -37,7 +41,7 @@ from moduly.testy.ui.written_questions_tab import WrittenQuestionsTab
 
 
 class TestyPage(QWidget):
-    """Modul Testy: agendy zaměstnanců a okruhů písemných otázek."""
+    """Modul Testy: zaměstnanci, písemné a ústní okruhy a otázky."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -54,9 +58,13 @@ class TestyPage(QWidget):
         self.employees_tab = self._build_employees_tab()
         self.topics_tab = WrittenQuestionTopicsTab()
         self.questions_tab = WrittenQuestionsTab()
+        self.oral_topics_tab = OralQuestionTopicsTab()
+        self.oral_questions_tab = OralQuestionsTab()
         self.tabs.addTab(self.employees_tab, AGENDA_EMPLOYEES)
         self.tabs.addTab(self.topics_tab, AGENDA_WRITTEN_TOPICS)
         self.tabs.addTab(self.questions_tab, AGENDA_QUESTIONS)
+        self.tabs.addTab(self.oral_topics_tab, AGENDA_ORAL_TOPICS)
+        self.tabs.addTab(self.oral_questions_tab, AGENDA_ORAL_QUESTIONS)
 
         layout.addWidget(title)
         layout.addWidget(subtitle)

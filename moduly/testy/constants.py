@@ -82,3 +82,18 @@ QUESTION_COLUMN_HEADERS = [
     "Typ odpovědí",
     "Stav",
 ]
+
+AGENDA_ORAL_TOPICS = "Ústní okruhy"
+AGENDA_ORAL_QUESTIONS = "Ústní otázky"
+
+ORAL_QUESTION_COL_ID = 0
+ORAL_QUESTION_COL_TEXT = 1
+ORAL_QUESTION_COL_TOPIC = 2
+ORAL_QUESTION_COL_STATUS = 3
+
+ORAL_QUESTION_COLUMN_HEADERS = [
+    "ID",
+    "Otázka",
+    "Okruh",
+    "Stav",
+]

@@ -1405,7 +1405,7 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             COL_STATUS,
         ):
             header.setSectionResizeMode(column, QHeaderView.Interactive)
-    elif profile == "written_question_topics":
+    elif profile in ("written_question_topics", "oral_question_topics"):
         from moduly.testy.constants import (
             TOPIC_COL_DESCRIPTION,
             TOPIC_COL_ID,
@@ -1450,6 +1450,28 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         table.setColumnHidden(QUESTION_COL_ID, True)
         header.setSectionResizeMode(QUESTION_COL_TEXT, QHeaderView.Stretch)
         for column in (QUESTION_COL_TOPIC, QUESTION_COL_KIND, QUESTION_COL_STATUS):
+            header.setSectionResizeMode(column, QHeaderView.Interactive)
+    elif profile == "oral_questions":
+        from moduly.testy.constants import (
+            ORAL_QUESTION_COL_ID,
+            ORAL_QUESTION_COL_STATUS,
+            ORAL_QUESTION_COL_TEXT,
+            ORAL_QUESTION_COL_TOPIC,
+        )
+
+        table.setWordWrap(False)
+        table.setTextElideMode(Qt.TextElideMode.ElideRight)
+        widths = {
+            ORAL_QUESTION_COL_ID: 0,
+            ORAL_QUESTION_COL_TEXT: 360,
+            ORAL_QUESTION_COL_TOPIC: 180,
+            ORAL_QUESTION_COL_STATUS: 110,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        table.setColumnHidden(ORAL_QUESTION_COL_ID, True)
+        header.setSectionResizeMode(ORAL_QUESTION_COL_TEXT, QHeaderView.Stretch)
+        for column in (ORAL_QUESTION_COL_TOPIC, ORAL_QUESTION_COL_STATUS):
             header.setSectionResizeMode(column, QHeaderView.Interactive)
 
     table.verticalHeader().setVisible(False)
