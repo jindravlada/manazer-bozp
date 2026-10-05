@@ -1,7 +1,10 @@
 """Textové sekce Úvod / Návaznost pro exporty (AUDIT-INTRO-2).
 
 Používá AuditHistoryService (batch, bez zápisu do DB).
-Nepropsuje se do Protokolu auditu ani terénního checklistu.
+Sekce Úvod se nepropsuje do Protokolu auditu ani terénního checklistu.
+
+Text „Změny od posledního auditu“ sem nepatří. Je to samostatná sekce
+obou výstupů auditu (protokol i podrobná zpráva), hned pod tabulkou komise.
 """
 
 from __future__ import annotations
@@ -10,8 +13,6 @@ from collections.abc import Sequence
 from datetime import date, datetime
 
 from moduly.audity.constants import (
-    AUDIT_INTRO_CHANGES_EMPTY,
-    AUDIT_INTRO_EXPORT_CHANGES_HEADING,
     AUDIT_INTRO_EXPORT_FINDINGS_HEADING,
     AUDIT_INTRO_EXPORT_PREVIOUS_AUDITS_HEADING,
     AUDIT_INTRO_EXPORT_TASKS_HEADING,
@@ -35,11 +36,6 @@ def _fmt_date(value: date | datetime | None) -> str:
     return value.strftime("%d.%m.%Y")
 
 
-def _normalize_multiline(value: str | None) -> str:
-    """Zachová odstavce a zalomení; neupravuje obsah."""
-    return str(value or "").replace("\r\n", "\n").replace("\r", "\n")
-
-
 def _labeled_block(index: int, title: str, fields: list[tuple[str, str]]) -> str:
     lines = [f"{index}. {title}"]
     for label, value in fields:
@@ -50,22 +46,17 @@ def _labeled_block(index: int, title: str, fields: list[tuple[str, str]]) -> str
 
 def format_detailed_intro_section(
     *,
-    changes_since_last: str | None,
     history: WorkplaceHistory,
 ) -> str:
-    """Sekce Úvod pro podrobnou zprávu — stejná data jako záložka Úvod."""
+    """Sekce Úvod pro podrobnou zprávu — historie provozu bez textu změn.
+
+    Text změn od posledního auditu se exportuje samostatně, aby se v dokumentu
+    neopakoval a při prázdné hodnotě nevznikl nadpis.
+    """
     blocks: list[str] = []
 
-    changes_raw = _normalize_multiline(changes_since_last)
-    if not changes_raw.strip():
-        changes_body = AUDIT_INTRO_CHANGES_EMPTY
-    else:
-        changes_body = changes_raw.rstrip("\n")
-    blocks.append(f"{AUDIT_INTRO_EXPORT_CHANGES_HEADING}\n\n{changes_body}")
-
     if history.is_first_audit:
-        blocks.append(AUDIT_INTRO_FIRST_AUDIT_MESSAGE)
-        return "\n\n".join(blocks)
+        return AUDIT_INTRO_FIRST_AUDIT_MESSAGE
 
     audit_lines = [
         _labeled_block(
@@ -164,10 +155,7 @@ class AuditIntroExportService:
             current_audit=audit,
             include_process_history=False,
         )
-        return format_detailed_intro_section(
-            changes_since_last=getattr(audit, "changes_since_last", None),
-            history=history,
-        )
+        return format_detailed_intro_section(history=history)
 
     def build_continuity_text_for_audits(self, audits: Sequence[Audit]) -> str:
         aggregate = audit_history_service.aggregate_continuity_for_audits(audits)

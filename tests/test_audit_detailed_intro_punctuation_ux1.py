@@ -127,13 +127,16 @@ class AuditDetailedIntroPunctuationUx1TestCase(unittest.TestCase):
             protokol_audit_service.generate_detailed_report_for_audit(current)
         )
         for heading in (
-            AUDIT_INTRO_EXPORT_CHANGES_HEADING,
             AUDIT_INTRO_EXPORT_PREVIOUS_AUDITS_HEADING,
             AUDIT_INTRO_EXPORT_FINDINGS_HEADING,
             AUDIT_INTRO_EXPORT_TASKS_HEADING,
         ):
             self.assertIn(heading, content)
             self.assertIn(f"{heading}{_HEADING_BREAK}", content)
+        self.assertIn(
+            f'text:style-name="H">{AUDIT_INTRO_CHANGES_LABEL}</text:p>',
+            content,
+        )
 
     def test_headings_without_colon_are_not_standalone(self) -> None:
         _earlier, current = self._audit_with_history()
@@ -141,13 +144,13 @@ class AuditDetailedIntroPunctuationUx1TestCase(unittest.TestCase):
             protokol_audit_service.generate_detailed_report_for_audit(current)
         )
         for label in (
-            AUDIT_INTRO_CHANGES_LABEL,
             AUDIT_INTRO_PREVIOUS_AUDITS_GROUP,
             AUDIT_INTRO_FINDINGS_GROUP,
             AUDIT_INTRO_TASKS_GROUP,
         ):
             self.assertNotIn(f"{label}{_HEADING_BREAK}", content)
             self.assertIn(f"{label}:{_HEADING_BREAK}", content)
+        self.assertNotIn(f"{AUDIT_INTRO_CHANGES_LABEL}:{_HEADING_BREAK}", content)
 
     def test_planned_2028_not_in_2026_detailed_intro(self) -> None:
         current = self._create(
@@ -173,7 +176,7 @@ class AuditDetailedIntroPunctuationUx1TestCase(unittest.TestCase):
         self.assertIn(str(earlier.number or earlier.id), intro)
         self.assertIn("Historické zjištění punct", intro)
         self.assertIn("Historický úkol punct", intro)
-        self.assertIn("Nová linka montáže.", intro)
+        self.assertNotIn("Nová linka montáže.", intro)
         self.assertIn("Datum:", intro)
         self.assertIn("Stav:", intro)
 
@@ -181,7 +184,6 @@ class AuditDetailedIntroPunctuationUx1TestCase(unittest.TestCase):
         _earlier, current = self._audit_with_history()
         intro = audit_intro_export_service.build_detailed_intro_text(current)
         for heading in (
-            AUDIT_INTRO_EXPORT_CHANGES_HEADING,
             AUDIT_INTRO_EXPORT_PREVIOUS_AUDITS_HEADING,
             AUDIT_INTRO_EXPORT_FINDINGS_HEADING,
             AUDIT_INTRO_EXPORT_TASKS_HEADING,
@@ -193,7 +195,6 @@ class AuditDetailedIntroPunctuationUx1TestCase(unittest.TestCase):
         )
         triple = f"{_HEADING_BREAK}{_HEADING_BREAK}{_HEADING_BREAK}"
         for heading in (
-            AUDIT_INTRO_EXPORT_CHANGES_HEADING,
             AUDIT_INTRO_EXPORT_PREVIOUS_AUDITS_HEADING,
             AUDIT_INTRO_EXPORT_FINDINGS_HEADING,
             AUDIT_INTRO_EXPORT_TASKS_HEADING,

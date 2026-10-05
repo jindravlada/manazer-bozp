@@ -138,7 +138,8 @@ class AuditIntro2ExportTestCase(unittest.TestCase):
         path = protokol_audit_service.generate_detailed_report_for_audit(audit)
         content = _odt_text(path)
         self.assertIn(AUDIT_INTRO_EXPORT_SECTION, content)
-        self.assertIn(AUDIT_INTRO_CHANGES_LABEL, content)
+        self.assertNotIn(AUDIT_INTRO_CHANGES_LABEL, content)
+        self.assertNotIn(AUDIT_INTRO_CHANGES_EMPTY, content)
         self.assertIn(AUDIT_INTRO_FIRST_AUDIT_MESSAGE, content)
 
     def test_detailed_report_shows_saved_changes(self) -> None:
@@ -147,19 +148,25 @@ class AuditIntro2ExportTestCase(unittest.TestCase):
             audit.id,
             changes_since_last="Nová linka.\n\nDruhý odstavec.",
         )
-        text = audit_export_context_service.build(
+        context = audit_export_context_service.build(
             audit, config=DETAILED_REPORT_DOCUMENT_CONFIG
-        ).intro_text()
-        self.assertIn("Nová linka.", text)
-        self.assertIn("Druhý odstavec.", text)
-        self.assertNotIn(AUDIT_INTRO_CHANGES_EMPTY, text)
+        )
+        section = context.changes_since_last_section_text().plain_text()
+        self.assertIn("Nová linka.", section)
+        self.assertIn("Druhý odstavec.", section)
+        self.assertIn(AUDIT_INTRO_CHANGES_LABEL, section)
+        intro = context.intro_text()
+        self.assertNotIn("Nová linka.", intro)
+        self.assertNotIn(AUDIT_INTRO_CHANGES_LABEL, intro)
+        self.assertNotIn(AUDIT_INTRO_CHANGES_EMPTY, intro)
 
     def test_detailed_report_empty_changes_message(self) -> None:
         audit = self._create_audit()
-        text = audit_export_context_service.build(
+        context = audit_export_context_service.build(
             audit, config=DETAILED_REPORT_DOCUMENT_CONFIG
-        ).intro_text()
-        self.assertIn(AUDIT_INTRO_CHANGES_EMPTY, text)
+        )
+        self.assertNotIn(AUDIT_INTRO_CHANGES_EMPTY, context.intro_text())
+        self.assertEqual(context.changes_since_last_section_text().paragraphs, [])
 
     def test_first_audit_no_empty_history_tables(self) -> None:
         audit = self._create_audit()
@@ -170,7 +177,7 @@ class AuditIntro2ExportTestCase(unittest.TestCase):
         self.assertNotIn(AUDIT_INTRO_PREVIOUS_AUDITS_GROUP, text)
         self.assertNotIn(AUDIT_INTRO_FINDINGS_GROUP, text)
         self.assertNotIn(AUDIT_INTRO_TASKS_GROUP, text)
-        self.assertIn(AUDIT_INTRO_CHANGES_LABEL, text)
+        self.assertNotIn(AUDIT_INTRO_CHANGES_LABEL, text)
 
     def test_previous_audits_findings_tasks_exclude_current(self) -> None:
         previous = self._create_audit(
@@ -254,7 +261,9 @@ class AuditIntro2ExportTestCase(unittest.TestCase):
             current, config=DETAILED_REPORT_DOCUMENT_CONFIG
         ).placeholder_values()
         intro = values["uvod_text"]
-        self.assertIn("Změna organizace směn.", intro)
+        self.assertNotIn("Změna organizace směn.", intro)
+        changes = values["zmeny_od_posledniho_auditu_text"].plain_text()
+        self.assertIn("Změna organizace směn.", changes)
         self.assertIn(AUDIT_INTRO_PREVIOUS_AUDITS_GROUP, intro)
         self.assertIn(str(previous.number or previous.id), intro)
         self.assertIn(str(older.number or older.id), intro)
@@ -322,7 +331,8 @@ class AuditIntro2ExportTestCase(unittest.TestCase):
         protocol_path = protokol_audit_service.generate_for_audit(current)
         protocol_content = _odt_text(protocol_path)
         self.assertNotIn(AUDIT_INTRO_EXPORT_SECTION, protocol_content)
-        self.assertNotIn("Text změn jen pro podrobnou zprávu.", protocol_content)
+        self.assertIn("Text změn jen pro podrobnou zprávu.", protocol_content)
+        self.assertIn(AUDIT_INTRO_CHANGES_LABEL, protocol_content)
         self.assertNotIn(AUDIT_INTRO_CHANGES_EMPTY, protocol_content)
         self.assertNotIn("Historické zjištění protokol", protocol_content)
 

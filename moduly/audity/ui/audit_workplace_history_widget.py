@@ -111,6 +111,13 @@ class AuditWorkplaceHistoryWidget(QWidget):
 
         changes_group = QGroupBox(AUDIT_INTRO_CHANGES_LABEL)
         changes_layout = QVBoxLayout(changes_group)
+        changes_hint = QLabel(
+            "Obecná informace o změnách, které nastaly od předchozího auditu. "
+            "Nejde o zjištění ke konkrétní auditní otázce."
+        )
+        changes_hint.setWordWrap(True)
+        changes_hint.setObjectName("InfoText")
+        changes_layout.addWidget(changes_hint)
         self._changes_edit = QPlainTextEdit()
         self._changes_edit.setPlaceholderText(
             "Popište relevantní změny provozu od posledního auditu…"

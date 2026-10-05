@@ -54,6 +54,7 @@ from core.shared.sluzby.finding_service import finding_service
 from moduly.audity.constants import (
     AUDIT_CONCLUSION_EXPORT_SECTION,
     AUDIT_FINDING_REPORT_TYPE_ORDER,
+    AUDIT_INTRO_CHANGES_LABEL,
     AUDIT_QUESTION_KIND_EXTRAORDINARY,
     AUDIT_STRENGTHS_EXPORT_SECTION,
     COMMISSION_RECORD_INVITED,
@@ -1168,6 +1169,27 @@ class AuditExportContext:
                 paragraphs.append(OdtParagraph.text(block))
         return OdtRichContent(paragraphs=paragraphs)
 
+    def changes_since_last_section_text(self) -> OdtRichContent:
+        """Sekce Změny od posledního auditu — nadpis jen při neprázdném textu.
+
+        Stejná uložená hodnota ``changes_since_last`` pro protokol i podrobnou
+        zprávu. Prázdný text nevykreslí nadpis ani odstavec.
+        """
+        raw = getattr(self.audit, "changes_since_last", None)
+        text = str(raw or "").replace("\r\n", "\n").replace("\r", "\n").rstrip("\n")
+        if not text.strip():
+            return OdtRichContent(omit_when_empty=True)
+        paragraphs: list[OdtParagraph] = [
+            OdtParagraph.blank_line(style="H"),
+            OdtParagraph.text(AUDIT_INTRO_CHANGES_LABEL, style="H"),
+        ]
+        for block in text.split("\n"):
+            if not block.strip():
+                paragraphs.append(OdtParagraph.blank_line())
+            else:
+                paragraphs.append(OdtParagraph.text(block))
+        return OdtRichContent(paragraphs=paragraphs)
+
     def intro_text(self) -> str:
         """Sekce Úvod — pouze podrobná zpráva (AUDIT-INTRO-2)."""
         return audit_intro_export_service.build_detailed_intro_text(self.audit)
@@ -1347,6 +1369,7 @@ class AuditExportContext:
             "ukoly_text": accepted_measures,
             "zaver_text": conclusion,
             "zaver_auditu_text": self.audit_conclusion_section_text(),
+            "zmeny_od_posledniho_auditu_text": self.changes_since_last_section_text(),
             "statistika_text": results_overview,
             "souhrn_text": executive_summary,
             "datum_vygenerovani": datetime.now().strftime("%d.%m.%Y"),
