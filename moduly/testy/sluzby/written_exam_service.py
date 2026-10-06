@@ -1,8 +1,7 @@
 """Elektronická písemná část zkoušky. Služba není závislá na Qt.
 
-Čas, ukládání voleb a ukončení písemné části jdou volat bez obrazovky.
-Pokračování havarovaného testu po novém spuštění aplikace sem nepatří;
-uložené volby a čas zahájení na to později stačí.
+Čas, ukládání voleb, ukončení i navázání na rozpracovaný test jdou volat
+bez obrazovky. Pokračování nemění snapshot, pořadí ani čas zahájení.
 """
 
 from __future__ import annotations
@@ -141,6 +140,43 @@ def can_start_electronic_written_state(
     )
 
 
+def is_written_part_in_progress(
+    status: str,
+    started_at: datetime | None,
+    finished_at: datetime | None,
+    finish_reason: str | None,
+) -> bool:
+    """Zahájeno, písemná část běží a ještě nebyla odevzdána ani vypršela."""
+    return (
+        status == EXAM_STATUS_STARTED
+        and started_at is not None
+        and finished_at is None
+        and not str(finish_reason or "").strip()
+    )
+
+
+def electronic_written_action(
+    *,
+    status: str,
+    uses_written: bool,
+    question_count: int,
+    written_started_at: datetime | None,
+    written_finished_at: datetime | None,
+    written_finish_reason: str | None,
+) -> str:
+    """``continue``, ``start``, nebo prázdný řetězec, když akce není."""
+    if is_written_part_in_progress(
+        status,
+        written_started_at,
+        written_finished_at,
+        written_finish_reason,
+    ):
+        return "continue"
+    if can_start_electronic_written_state(status, uses_written, question_count):
+        return "start"
+    return ""
+
+
 def start_confirmation_text(
     *,
     employee_name: str,
@@ -189,15 +225,45 @@ class WrittenExamService:
         self.repository = TestExamRepository()
 
     def can_start(self, exam_id: int) -> bool:
+        return self.electronic_action(exam_id) == "start"
+
+    def can_continue(self, exam_id: int) -> bool:
+        return self.electronic_action(exam_id) == "continue"
+
+    def electronic_action(self, exam_id: int) -> str:
         exam = self.repository.get_by_id(exam_id)
         if exam is None:
-            return False
+            return ""
         count = len(self.repository.get_written_questions(exam_id))
-        return can_start_electronic_written_state(
-            exam.status,
-            exam.uses_written,
-            count,
+        return electronic_written_action(
+            status=exam.status,
+            uses_written=exam.uses_written,
+            question_count=count,
+            written_started_at=exam.written_started_at,
+            written_finished_at=exam.written_finished_at,
+            written_finish_reason=exam.written_finish_reason,
         )
+
+    def resume(self, exam_id: int, *, now: datetime | None = None) -> str:
+        """Naváže na rozpracovaný test.
+
+        Nezakládá zkoušku, snapshot ani nový čas. Když limit od původního
+        zahájení už vypršel, písemnou část ukončí jako vypršení a vrátí
+        ``expired``. Jinak vrátí prázdný řetězec a test zůstane otevřený.
+        """
+        if not self.can_continue(exam_id):
+            raise TestExamError("V elektronickém testu nelze pokračovat.")
+        before = self._loaded_exam(exam_id)
+        started_at = before.written_started_at
+        reason = self.sync_deadline(exam_id, now=now)
+        after = self._loaded_exam(exam_id)
+        if after.written_started_at != started_at:
+            raise TestExamError("Čas písemné části se nesmí nastavit znovu.")
+        if reason == WRITTEN_FINISH_EXPIRED:
+            return reason
+        if reason or not self.can_continue(exam_id):
+            raise TestExamError("V elektronickém testu nelze pokračovat.")
+        return ""
 
     def confirmation_text(self, exam_id: int) -> str:
         exam = self._loaded_exam(exam_id)

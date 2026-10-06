@@ -385,6 +385,18 @@ class MainWindow(QMainWindow):
         else:
             self._workspace_stack.setCurrentWidget(self._workspace)
 
+    def restore_after_written_exam(self, exam_id: int) -> None:
+        """Po předání počítače vrátí Manažer na záložku Zkoušky."""
+        self.set_electronic_exam_lock(False)
+        self._show("testy")
+        page = self.current_page_widget()
+        focus = getattr(page, "show_exams_tab", None)
+        if callable(focus):
+            focus(int(exam_id))
+        self.show()
+        self.raise_()
+        self.activateWindow()
+
     def _show(self, key):
         if self._electronic_exam_locked:
             return

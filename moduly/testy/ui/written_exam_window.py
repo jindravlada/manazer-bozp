@@ -26,7 +26,9 @@ from PySide6.QtWidgets import (
 )
 
 from moduly.testy.constants import (
+    MODULE_NAME,
     WRITTEN_FINISHED_TEXT,
+    WRITTEN_HANDOVER_TEXT,
     WRITTEN_NEXT,
     WRITTEN_PREVIOUS,
     WRITTEN_SUBMIT,
@@ -48,6 +50,36 @@ _QUESTION_IMAGE_MAX = (720, 400)
 _ANSWER_IMAGE_MAX = (360, 220)
 _QUESTION_IMAGE_WITH_ROW_MAX = (640, 220)
 _ANSWER_IMAGE_ROW_MAX = (420, 240)
+
+
+class _HandoverDialog(QMessageBox):
+    """Jediné potvrzení po ukončení písemné části. Není to výsledek testu."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setObjectName("written-exam-handover")
+        self.setWindowTitle(MODULE_NAME)
+        self.setIcon(QMessageBox.Icon.Information)
+        self.setText(WRITTEN_HANDOVER_TEXT)
+        self.setStandardButtons(QMessageBox.StandardButton.Ok)
+        self.setWindowModality(Qt.WindowModality.ApplicationModal)
+        self.setEscapeButton(QMessageBox.StandardButton.NoButton)
+
+    def reject(self) -> None:  # noqa: N802
+        return
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:  # noqa: N802
+        if event.key() == Qt.Key.Key_Escape:
+            event.accept()
+            return
+        super().keyPressEvent(event)
+
+
+def present_written_handover(parent, on_accepted) -> _HandoverDialog:
+    dialog = _HandoverDialog(parent)
+    dialog.accepted.connect(on_accepted)
+    dialog.open()
+    return dialog
 
 
 class _BoundedScroll(QScrollArea):
@@ -80,6 +112,8 @@ class WrittenExamWindow(QDialog):
         self.clock = clock or WrittenExamClock()
         self._host = parent.window() if parent is not None else None
         self._close_allowed = False
+        self._returned = False
+        self._handover: _HandoverDialog | None = None
         self._phase = "running"
         self._index = 0
         self._screen = written_exam_service.screen(self.exam_id)
@@ -122,6 +156,7 @@ class WrittenExamWindow(QDialog):
     def release_testing_lock(self) -> None:
         """Interní cesta pro vývoj a testy. Není zabezpečení administrátora."""
         self._close_allowed = True
+        self._dismiss_handover()
         if self._timer.isActive():
             self._timer.stop()
         self._lock_host(False)
@@ -550,11 +585,52 @@ class WrittenExamWindow(QDialog):
         self._show_finished()
 
     def _show_finished(self) -> None:
+        already = self._phase == "finished"
         self._phase = "finished"
         if self._timer.isActive():
             self._timer.stop()
         self._screen = written_exam_service.screen(self.exam_id)
         self._stack.setCurrentIndex(1)
+        if not already:
+            self._present_handover()
+
+    def _present_handover(self) -> None:
+        if self._handover is not None:
+            return
+        self._handover = present_written_handover(self, self._schedule_return)
+
+    def _schedule_return(self) -> None:
+        QTimer.singleShot(0, self._return_to_manager)
+
+    def _dismiss_handover(self) -> None:
+        box = self._handover
+        self._handover = None
+        if box is None:
+            return
+        box.blockSignals(True)
+        box.hide()
+        box.deleteLater()
+
+    def _return_to_manager(self) -> None:
+        if self._returned:
+            return
+        self._returned = True
+        self._close_allowed = True
+        if self._timer.isActive():
+            self._timer.stop()
+        host = self._host
+        exam_id = self.exam_id
+        self._lock_host(False)
+        self.hide()
+        self.close()
+        restore = getattr(host, "restore_after_written_exam", None)
+        if callable(restore):
+            restore(exam_id)
+            return
+        parent = self.parent()
+        finish = getattr(parent, "note_written_exam_finished", None)
+        if callable(finish):
+            finish(exam_id)
 
     def _lock_host(self, locked: bool) -> None:
         host = self._host

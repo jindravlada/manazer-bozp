@@ -80,6 +80,12 @@ class TestyPage(QWidget):
 
         self.refresh()
 
+    def show_exams_tab(self, exam_id: int | None = None) -> None:
+        index = self.tabs.indexOf(self.exams_tab)
+        if index >= 0:
+            self.tabs.setCurrentIndex(index)
+        self.exams_tab.focus_exam(exam_id)
+
     def _build_employees_tab(self) -> QWidget:
         tab = QWidget()
         layout = QVBoxLayout(tab)

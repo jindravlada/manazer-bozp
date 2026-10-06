@@ -635,7 +635,8 @@ class ElectronicWrittenExamTestCase(unittest.TestCase):
         self.assertNotIn("INTERNI", _visible_text(window))
         self.assertNotIn("test_exam", _visible_text(window))
         self._select_named(tab, "Potvrzení")
-        self.assertFalse(tab.start_btn.isEnabled())
+        self.assertEqual(tab.start_btn.text(), "Pokračovat v elektronickém testu")
+        self.assertTrue(tab.start_btn.isEnabled())
         self.assertEqual(oral_exam.status, EXAM_STATUS_PREPARED)
 
     def test_testing_screen_navigation_answers_and_submit(self) -> None:

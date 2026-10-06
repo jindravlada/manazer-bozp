@@ -21,6 +21,7 @@ from core.widgets.table_row_actions import install_table_row_actions
 from core.widgets.table_selection import refresh_and_restore_selection
 from core.widgets.table_utils import configure_table_columns
 from moduly.testy.constants import (
+    EXAM_ACTION_CONTINUE_WRITTEN,
     EXAM_ACTION_DETAIL,
     EXAM_ACTION_PREPARE,
     EXAM_ACTION_START_WRITTEN,
@@ -29,13 +30,17 @@ from moduly.testy.constants import (
     EXAM_COL_TEST,
     EXAM_SEARCH_PLACEHOLDER,
     MODULE_NAME,
+    WRITTEN_FINISH_EXPIRED,
 )
 from moduly.testy.sluzby.test_exam_service import TestExamError, test_exam_service
 from moduly.testy.sluzby.written_exam_service import written_exam_service
 from moduly.testy.ui.test_exam_detail_dialog import TestExamDetailDialog
 from moduly.testy.ui.test_exam_prepare_dialog import TestExamPrepareDialog
 from moduly.testy.ui.test_exam_table import TestExamTable
-from moduly.testy.ui.written_exam_window import WrittenExamWindow
+from moduly.testy.ui.written_exam_window import (
+    WrittenExamWindow,
+    present_written_handover,
+)
 
 _ROLE_SEARCH = Qt.ItemDataRole.UserRole + 1
 
@@ -75,6 +80,7 @@ class TestExamsTab(QWidget):
         self.detail_btn.clicked.connect(self.open_selected)
         self.start_btn.clicked.connect(self.start_electronic_test)
         self._written_exam_window: WrittenExamWindow | None = None
+        self._handover = None
         self.table.doubleClicked.connect(self.open_selected)
         self.table.itemSelectionChanged.connect(self._update_action_buttons)
         install_table_row_actions(
@@ -112,7 +118,11 @@ class TestExamsTab(QWidget):
 
     def start_electronic_test(self) -> None:
         exam_id = self.table.selected_exam_id()
-        if exam_id is None or not written_exam_service.can_start(exam_id):
+        action = written_exam_service.electronic_action(exam_id) if exam_id else ""
+        if action == "continue":
+            self._continue_electronic_test(int(exam_id))
+            return
+        if exam_id is None or action != "start":
             self._update_action_buttons()
             return
         answer = QMessageBox.question(
@@ -134,6 +144,29 @@ class TestExamsTab(QWidget):
         window = WrittenExamWindow(exam_id, self)
         self._written_exam_window = window
         window.enter_testing_mode()
+
+    def _continue_electronic_test(self, exam_id: int) -> None:
+        try:
+            reason = written_exam_service.resume(exam_id)
+        except TestExamError as error:
+            QMessageBox.warning(self, MODULE_NAME, str(error))
+            self.refresh()
+            return
+        if reason == WRITTEN_FINISH_EXPIRED:
+            self._handover = present_written_handover(
+                self,
+                lambda: self.focus_exam(exam_id),
+            )
+            return
+        window = WrittenExamWindow(exam_id, self)
+        self._written_exam_window = window
+        window.enter_testing_mode()
+
+    def focus_exam(self, exam_id: int | None) -> None:
+        self._reload(exam_id)
+
+    def note_written_exam_finished(self, exam_id: int) -> None:
+        self.focus_exam(exam_id)
 
     def _reload(self, exam_id: int | None) -> None:
         self.table.load_exams(test_exam_service.list_exams())
@@ -161,6 +194,10 @@ class TestExamsTab(QWidget):
     def _update_action_buttons(self) -> None:
         exam_id = self.table.selected_exam_id()
         self.detail_btn.setEnabled(exam_id is not None)
-        self.start_btn.setEnabled(
-            exam_id is not None and written_exam_service.can_start(exam_id)
-        )
+        action = written_exam_service.electronic_action(exam_id) if exam_id else ""
+        if action == "continue":
+            self.start_btn.setText(EXAM_ACTION_CONTINUE_WRITTEN)
+            self.start_btn.setEnabled(True)
+            return
+        self.start_btn.setText(EXAM_ACTION_START_WRITTEN)
+        self.start_btn.setEnabled(action == "start")

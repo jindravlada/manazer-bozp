@@ -155,6 +155,7 @@ AGENDA_EXAMS = "Zkoušky"
 EXAM_ACTION_PREPARE = "Připravit zkoušku"
 EXAM_ACTION_DETAIL = "Detail"
 EXAM_ACTION_START_WRITTEN = "Zahájit elektronický test"
+EXAM_ACTION_CONTINUE_WRITTEN = "Pokračovat v elektronickém testu"
 EXAM_DIALOG_TITLE = "Připravit zkoušku"
 EXAM_DETAIL_TITLE = "Zkouška"
 EXAM_SEARCH_PLACEHOLDER = "🔍 Hledat zkoušku..."
@@ -208,6 +209,10 @@ WRITTEN_FINISH_SUBMITTED = "submitted"
 WRITTEN_FINISH_EXPIRED = "expired"
 
 WRITTEN_FINISHED_TEXT = "Písemná část testu byla ukončena."
+WRITTEN_HANDOVER_TEXT = (
+    "Písemná část testu byla ukončena.\n"
+    "Předejte počítač zkoušejícímu."
+)
 WRITTEN_SUBMIT_INCOMPLETE = (
     "Nemáte zodpovězeny všechny otázky. Opravdu chcete test odevzdat?"
 )
