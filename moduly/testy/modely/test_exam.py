@@ -56,8 +56,17 @@ class TestExam(Base):
     validity_value: Mapped[int] = mapped_column(Integer, nullable=False)
     validity_unit: Mapped[str] = mapped_column(String(20), nullable=False)
 
-    # Průběh elektronické písemné části. Celkový stav zkoušky zůstává Zahájeno,
-    # dokud další krok nevyhodnotí celou zkoušku včetně případné ústní části.
+    # Průběh a uložené vyhodnocení elektronické písemné části.
+    # Čísla a výsledek vzniknou až při definitivním ukončení, ze snapshotu
+    # této zkoušky. Prázdné hodnoty neznamenají Vyhověl ani Nevyhověl.
     written_started_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     written_finished_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     written_finish_reason: Mapped[str] = mapped_column(String(20), default="", nullable=False)
+    written_question_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    written_correct_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    written_incorrect_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    written_unanswered_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    written_allowed_wrong_answers: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    written_result: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    exam_result: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    written_evaluated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

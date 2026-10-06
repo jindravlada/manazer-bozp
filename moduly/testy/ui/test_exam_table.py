@@ -15,12 +15,15 @@ from core.widgets.typed_table_sort import (
 from moduly.testy.constants import (
     EXAM_COL_DATE,
     EXAM_COL_EMPLOYEE,
+    EXAM_COL_EXAM_RESULT,
     EXAM_COL_ID,
     EXAM_COL_STATUS,
     EXAM_COL_TEST,
     EXAM_COL_VALID_UNTIL,
+    EXAM_COL_WRITTEN_RESULT,
     EXAM_COLUMN_HEADERS,
     EXAM_STATUS_LABELS,
+    written_result_label,
 )
 from moduly.testy.modely.test_exam import TestExam
 from moduly.testy.sluzby.test_exam_service import format_exam_date
@@ -59,6 +62,8 @@ class TestExamTable(QTableWidget):
             self.setRowCount(len(exams))
             for row, exam in enumerate(exams):
                 status = EXAM_STATUS_LABELS.get(exam.status, exam.status)
+                written_result = written_result_label(exam.written_result)
+                exam_result = written_result_label(exam.exam_result)
                 values = {
                     EXAM_COL_ID: (str(exam.id), typed_text(str(exam.id))),
                     EXAM_COL_DATE: (format_exam_date(exam.exam_date), typed_date(exam.exam_date)),
@@ -72,6 +77,8 @@ class TestExamTable(QTableWidget):
                         typed_date(exam.valid_until),
                     ),
                     EXAM_COL_STATUS: (status, typed_text(status)),
+                    EXAM_COL_WRITTEN_RESULT: (written_result, typed_text(written_result)),
+                    EXAM_COL_EXAM_RESULT: (exam_result, typed_text(exam_result)),
                 }
                 search = " ".join(
                     [

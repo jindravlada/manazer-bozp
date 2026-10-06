@@ -444,8 +444,7 @@ class ElectronicWrittenExamTestCase(unittest.TestCase):
         self.assertEqual(reason, "submitted")
         fresh = test_exam_service.get_exam(exam.id)
         assert fresh is not None
-        self.assertEqual(fresh.status, EXAM_STATUS_STARTED)
-        self.assertNotEqual(fresh.status, EXAM_STATUS_COMPLETED)
+        self.assertEqual(fresh.status, EXAM_STATUS_COMPLETED)
         self.assertEqual(fresh.written_finish_reason, "submitted")
         self.assertEqual(fresh.written_finished_at, submitted_at)
         with self.assertRaises(WrittenExamClosed):
@@ -482,7 +481,7 @@ class ElectronicWrittenExamTestCase(unittest.TestCase):
         )
         expired = test_exam_service.get_exam(timed.id)
         assert expired is not None
-        self.assertEqual(expired.status, EXAM_STATUS_STARTED)
+        self.assertEqual(expired.status, EXAM_STATUS_COMPLETED)
         self.assertEqual(expired.written_finish_reason, "expired")
         self.assertEqual(expired.written_finished_at, deadline)
         later = deadline + timedelta(seconds=15)
@@ -738,7 +737,7 @@ class ElectronicWrittenExamTestCase(unittest.TestCase):
         self.assertEqual(confirm.call_args.args[2], WRITTEN_SUBMIT_CONFIRM)
         finished = test_exam_service.get_exam(exam.id)
         assert finished is not None
-        self.assertEqual(finished.status, EXAM_STATUS_STARTED)
+        self.assertEqual(finished.status, EXAM_STATUS_COMPLETED)
         self.assertEqual(finished.written_finish_reason, "submitted")
         self.assertIsNotNone(finished.written_finished_at)
         label = window.findChild(QLabel, "written-exam-finished")
@@ -777,7 +776,7 @@ class ElectronicWrittenExamTestCase(unittest.TestCase):
         assert fresh is not None
         self.assertEqual(fresh.written_finish_reason, "expired")
         self.assertEqual(fresh.written_finished_at, _STARTED + timedelta(seconds=70))
-        self.assertEqual(fresh.status, EXAM_STATUS_STARTED)
+        self.assertEqual(fresh.status, EXAM_STATUS_COMPLETED)
         self.assertEqual(
             window.findChild(QLabel, "written-exam-finished").text(),
             WRITTEN_FINISHED_TEXT,

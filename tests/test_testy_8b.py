@@ -51,6 +51,7 @@ with patch.object(Path, "home", return_value=_TMP):
         EXAM_ACTION_CONTINUE_WRITTEN,
         EXAM_ACTION_START_WRITTEN,
         EXAM_COL_TEST,
+        EXAM_STATUS_COMPLETED,
         EXAM_STATUS_PREPARED,
         EXAM_STATUS_STARTED,
         EXAMINER_MODE_NONE,
@@ -543,7 +544,7 @@ class WrittenResumeTestCase(unittest.TestCase):
         self.assertEqual(reason, WRITTEN_FINISH_EXPIRED)
         finished = test_exam_service.get_exam(exam.id)
         assert finished is not None
-        self.assertEqual(finished.status, EXAM_STATUS_STARTED)
+        self.assertEqual(finished.status, EXAM_STATUS_COMPLETED)
         self.assertEqual(finished.written_finish_reason, WRITTEN_FINISH_EXPIRED)
         self.assertEqual(finished.written_finished_at, expired_at)
         self.assertEqual(finished.written_started_at, _STARTED)
@@ -579,7 +580,7 @@ class WrittenResumeTestCase(unittest.TestCase):
         finished = test_exam_service.get_exam(exam.id)
         assert finished is not None
         self.assertEqual(finished.written_finish_reason, WRITTEN_FINISH_EXPIRED)
-        self.assertEqual(finished.status, EXAM_STATUS_STARTED)
+        self.assertEqual(finished.status, EXAM_STATUS_COMPLETED)
         self._accept(dialog)
         self.assertFalse(tab.start_btn.isEnabled())
         self.assertEqual(tab.table.selected_exam_id(), exam.id)
@@ -640,7 +641,7 @@ class WrittenResumeTestCase(unittest.TestCase):
         self.assertEqual(page.exams_tab.table.selected_exam_id(), exam.id)
         finished = test_exam_service.get_exam(exam.id)
         assert finished is not None
-        self.assertEqual(finished.status, EXAM_STATUS_STARTED)
+        self.assertEqual(finished.status, EXAM_STATUS_COMPLETED)
         self.assertEqual(finished.written_finish_reason, WRITTEN_FINISH_SUBMITTED)
         self.assertFalse(page.exams_tab.start_btn.isEnabled())
         with self.assertRaises(WrittenExamClosed):
@@ -668,7 +669,7 @@ class WrittenResumeTestCase(unittest.TestCase):
             test_exam_service.get_exam(other.id).written_finish_reason,
             WRITTEN_FINISH_EXPIRED,
         )
-        self.assertEqual(test_exam_service.get_exam(other.id).status, EXAM_STATUS_STARTED)
+        self.assertEqual(test_exam_service.get_exam(other.id).status, EXAM_STATUS_COMPLETED)
         self._accept(expired_dialog)
         self.assertFalse(expired_window.isVisible())
         with self.assertRaises(WrittenExamClosed):

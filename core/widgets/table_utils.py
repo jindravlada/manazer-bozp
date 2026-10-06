@@ -1511,10 +1511,12 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         from moduly.testy.constants import (
             EXAM_COL_DATE,
             EXAM_COL_EMPLOYEE,
+            EXAM_COL_EXAM_RESULT,
             EXAM_COL_ID,
             EXAM_COL_STATUS,
             EXAM_COL_TEST,
             EXAM_COL_VALID_UNTIL,
+            EXAM_COL_WRITTEN_RESULT,
         )
 
         table.setWordWrap(False)
@@ -1526,6 +1528,8 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             EXAM_COL_TEST: 200,
             EXAM_COL_VALID_UNTIL: 120,
             EXAM_COL_STATUS: 120,
+            EXAM_COL_WRITTEN_RESULT: 140,
+            EXAM_COL_EXAM_RESULT: 150,
         }
         for column, width in widths.items():
             table.setColumnWidth(column, width)
@@ -1536,6 +1540,8 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             EXAM_COL_TEST,
             EXAM_COL_VALID_UNTIL,
             EXAM_COL_STATUS,
+            EXAM_COL_WRITTEN_RESULT,
+            EXAM_COL_EXAM_RESULT,
         ):
             header.setSectionResizeMode(column, QHeaderView.Interactive)
 

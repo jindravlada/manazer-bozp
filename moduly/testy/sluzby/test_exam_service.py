@@ -33,6 +33,7 @@ from moduly.testy.modely.test_exam import TestExam
 from moduly.testy.modely.test_exam_examiner import TestExamExaminer
 from moduly.testy.modely.test_exam_oral_question import TestExamOralQuestion
 from moduly.testy.modely.test_exam_written_answer import TestExamWrittenAnswer
+from moduly.testy.modely.test_exam_written_choice import TestExamWrittenChoice
 from moduly.testy.modely.test_exam_written_question import TestExamWrittenQuestion
 from moduly.testy.repository.test_exam_repository import TestExamRepository
 from moduly.testy.sluzby.oral_question_service import oral_question_service
@@ -305,6 +306,10 @@ class TestExamService:
 
     def get_written_answers(self, exam_question_id: int) -> list[TestExamWrittenAnswer]:
         return self.repository.get_written_answers(exam_question_id)
+
+    def get_written_choices(self, exam_id: int) -> list[TestExamWrittenChoice]:
+        self._require_exam(exam_id)
+        return self.repository.get_written_choices(exam_id)
 
     def get_oral_questions(self, exam_id: int) -> list[TestExamOralQuestion]:
         self._require_exam(exam_id)

@@ -14,10 +14,16 @@ from sqlalchemy import select
 
 from core.database.session import get_session
 from moduly.testy.constants import (
+    EXAM_STATUS_COMPLETED,
     EXAM_STATUS_PREPARED,
     EXAM_STATUS_STARTED,
     WRITTEN_FINISH_EXPIRED,
     WRITTEN_FINISH_SUBMITTED,
+    WRITTEN_OUTCOME_CORRECT,
+    WRITTEN_OUTCOME_INCORRECT,
+    WRITTEN_OUTCOME_UNANSWERED,
+    WRITTEN_RESULT_FAILED,
+    WRITTEN_RESULT_PASSED,
 )
 from moduly.testy.modely.test_exam import TestExam
 from moduly.testy.modely.test_exam_written_answer import TestExamWrittenAnswer
@@ -220,6 +226,54 @@ def question_answer_marks(
     ]
 
 
+@dataclass(frozen=True)
+class WrittenPartScore:
+    """Uložené vyhodnocení písemné části. Nezávisí na živé bance otázek."""
+
+    question_count: int
+    correct_count: int
+    incorrect_count: int
+    unanswered_count: int
+    allowed_wrong_answers: int
+    result: str
+
+    @property
+    def error_count(self) -> int:
+        return self.incorrect_count + self.unanswered_count
+
+
+def score_written_outcomes(
+    outcomes: list[str],
+    allowed_wrong_answers: int,
+) -> WrittenPartScore:
+    """Chyba je chybná i nezodpovězená otázka. Limit se bere ze snapshotu zkoušky."""
+    correct = 0
+    incorrect = 0
+    unanswered = 0
+    for outcome in outcomes:
+        if outcome == WRITTEN_OUTCOME_CORRECT:
+            correct += 1
+        elif outcome == WRITTEN_OUTCOME_INCORRECT:
+            incorrect += 1
+        elif outcome == WRITTEN_OUTCOME_UNANSWERED:
+            unanswered += 1
+        else:
+            raise TestExamError("Neznámý výsledek písemné otázky.")
+    allowed = int(allowed_wrong_answers)
+    if isinstance(allowed_wrong_answers, bool) or allowed < 0:
+        raise TestExamError("Povolený počet chyb není platný.")
+    errors = incorrect + unanswered
+    result = WRITTEN_RESULT_PASSED if errors <= allowed else WRITTEN_RESULT_FAILED
+    return WrittenPartScore(
+        question_count=len(outcomes),
+        correct_count=correct,
+        incorrect_count=incorrect,
+        unanswered_count=unanswered,
+        allowed_wrong_answers=allowed,
+        result=result,
+    )
+
+
 class WrittenExamService:
     def __init__(self) -> None:
         self.repository = TestExamRepository()
@@ -372,7 +426,7 @@ class WrittenExamService:
         session.expire_on_commit = False
         try:
             exam = self._require(session, exam_id)
-            self._ensure_open(exam, moment)
+            self._ensure_open(session, exam, moment)
             question = session.get(TestExamWrittenQuestion, int(exam_question_id))
             if question is None or int(question.exam_id) != int(exam.id):
                 raise TestExamError("Otázka nepatří k této zkoušce.")
@@ -416,10 +470,10 @@ class WrittenExamService:
         session.expire_on_commit = False
         try:
             exam = self._require(session, exam_id)
-            if exam.status != EXAM_STATUS_STARTED or exam.written_started_at is None:
-                raise TestExamError("Písemná část není zahájená.")
             if exam.written_finish_reason:
                 raise WrittenExamClosed("Písemná část už byla ukončena.")
+            if exam.status != EXAM_STATUS_STARTED or exam.written_started_at is None:
+                raise TestExamError("Písemná část není zahájená.")
             if (
                 remaining_written_seconds(
                     exam.written_started_at,
@@ -431,7 +485,7 @@ class WrittenExamService:
                 reason = WRITTEN_FINISH_EXPIRED
             else:
                 reason = WRITTEN_FINISH_SUBMITTED
-            self._mark_finished(exam, reason, moment)
+            self._mark_finished(session, exam, reason, moment)
             session.commit()
             return reason
         except TestExamError:
@@ -464,7 +518,7 @@ class WrittenExamService:
             ):
                 session.rollback()
                 return ""
-            self._mark_finished(exam, WRITTEN_FINISH_EXPIRED, moment)
+            self._mark_finished(session, exam, WRITTEN_FINISH_EXPIRED, moment)
             session.commit()
             return WRITTEN_FINISH_EXPIRED
         except TestExamError:
@@ -473,11 +527,11 @@ class WrittenExamService:
         finally:
             session.close()
 
-    def _ensure_open(self, exam: TestExam, now: datetime) -> None:
-        if exam.status != EXAM_STATUS_STARTED or exam.written_started_at is None:
-            raise TestExamError("Písemná část není zahájená.")
+    def _ensure_open(self, session, exam: TestExam, now: datetime) -> None:
         if exam.written_finish_reason:
             raise WrittenExamClosed("Písemná část už byla ukončena.")
+        if exam.status != EXAM_STATUS_STARTED or exam.written_started_at is None:
+            raise TestExamError("Písemná část není zahájená.")
         if (
             remaining_written_seconds(
                 exam.written_started_at,
@@ -486,14 +540,48 @@ class WrittenExamService:
             )
             <= 0
         ):
-            self._mark_finished(exam, WRITTEN_FINISH_EXPIRED, now)
+            self._mark_finished(session, exam, WRITTEN_FINISH_EXPIRED, now)
             raise WrittenExamClosed("Čas písemné části vypršel.")
 
-    def _mark_finished(self, exam: TestExam, reason: str, now: datetime) -> None:
+    def _mark_finished(self, session, exam: TestExam, reason: str, now: datetime) -> None:
         exam.written_finished_at = now
         exam.written_finish_reason = reason
-        if exam.status == EXAM_STATUS_PREPARED:
-            exam.status = EXAM_STATUS_STARTED
+        self._record_written_result(session, exam, now)
+        exam.status = EXAM_STATUS_COMPLETED
+
+    def _record_written_result(self, session, exam: TestExam, now: datetime) -> None:
+        """Vyhodnotí snapshot této zkoušky. Už uložený výsledek znovu nepočítá."""
+        if exam.written_evaluated_at is not None:
+            return
+        questions = self._questions(session, exam.id)
+        choices = {
+            int(choice.exam_question_id): choice
+            for choice in self._choices(session, exam.id)
+        }
+        outcomes: list[str] = []
+        for question in questions:
+            choice = choices.get(int(question.id))
+            if choice is None:
+                outcomes.append(WRITTEN_OUTCOME_UNANSWERED)
+                continue
+            answer = session.get(TestExamWrittenAnswer, int(choice.exam_answer_id))
+            if (
+                answer is None
+                or int(answer.exam_question_id) != int(question.id)
+                or not answer.is_correct
+            ):
+                outcomes.append(WRITTEN_OUTCOME_INCORRECT)
+                continue
+            outcomes.append(WRITTEN_OUTCOME_CORRECT)
+        score = score_written_outcomes(outcomes, int(exam.allowed_wrong_answers))
+        exam.written_question_count = score.question_count
+        exam.written_correct_count = score.correct_count
+        exam.written_incorrect_count = score.incorrect_count
+        exam.written_unanswered_count = score.unanswered_count
+        exam.written_allowed_wrong_answers = score.allowed_wrong_answers
+        exam.written_result = score.result
+        exam.exam_result = score.result
+        exam.written_evaluated_at = now
 
     def _moment(self, now: datetime | None) -> datetime:
         if now is None:
