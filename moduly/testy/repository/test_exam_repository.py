@@ -5,6 +5,7 @@ from moduly.testy.modely.test_exam import TestExam
 from moduly.testy.modely.test_exam_examiner import TestExamExaminer
 from moduly.testy.modely.test_exam_oral_question import TestExamOralQuestion
 from moduly.testy.modely.test_exam_written_answer import TestExamWrittenAnswer
+from moduly.testy.modely.test_exam_written_choice import TestExamWrittenChoice
 from moduly.testy.modely.test_exam_written_question import TestExamWrittenQuestion
 
 
@@ -42,6 +43,15 @@ class TestExamRepository:
                 select(TestExamWrittenAnswer)
                 .where(TestExamWrittenAnswer.exam_question_id == int(exam_question_id))
                 .order_by(TestExamWrittenAnswer.position, TestExamWrittenAnswer.id)
+            )
+            return list(session.scalars(stmt))
+
+    def get_written_choices(self, exam_id: int) -> list[TestExamWrittenChoice]:
+        with get_session() as session:
+            stmt = (
+                select(TestExamWrittenChoice)
+                .where(TestExamWrittenChoice.exam_id == int(exam_id))
+                .order_by(TestExamWrittenChoice.id)
             )
             return list(session.scalars(stmt))
 

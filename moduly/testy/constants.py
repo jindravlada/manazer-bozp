@@ -154,6 +154,7 @@ TEST_COLUMN_HEADERS = [
 AGENDA_EXAMS = "Zkoušky"
 EXAM_ACTION_PREPARE = "Připravit zkoušku"
 EXAM_ACTION_DETAIL = "Detail"
+EXAM_ACTION_START_WRITTEN = "Zahájit elektronický test"
 EXAM_DIALOG_TITLE = "Připravit zkoušku"
 EXAM_DETAIL_TITLE = "Zkouška"
 EXAM_SEARCH_PLACEHOLDER = "🔍 Hledat zkoušku..."
@@ -202,3 +203,15 @@ EXAM_COLUMN_HEADERS = [
 ]
 
 EXAM_SNAPSHOT_ENTITY = "test_exam_snapshot"
+
+WRITTEN_FINISH_SUBMITTED = "submitted"
+WRITTEN_FINISH_EXPIRED = "expired"
+
+WRITTEN_FINISHED_TEXT = "Písemná část testu byla ukončena."
+WRITTEN_SUBMIT_INCOMPLETE = (
+    "Nemáte zodpovězeny všechny otázky. Opravdu chcete test odevzdat?"
+)
+WRITTEN_SUBMIT_CONFIRM = "Opravdu chcete test odevzdat?"
+WRITTEN_PREVIOUS = "Předchozí"
+WRITTEN_NEXT = "Další"
+WRITTEN_SUBMIT = "Odevzdat test"

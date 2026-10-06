@@ -81,6 +81,9 @@ def initialize_database() -> None:
         TestExamWrittenAnswer,
     )
     from moduly.testy.modely.test_exam_oral_question import TestExamOralQuestion  # noqa: F401
+    from moduly.testy.modely.test_exam_written_choice import (  # noqa: F401
+        TestExamWrittenChoice,
+    )
     from moduly.nastaveni.modely.exposed_group import ExposedGroup  # noqa: F401
     from moduly.kniha_urazu.modely.accident import Accident  # noqa: F401
     from moduly.kniha_urazu.modely.investigation import AccidentInvestigation  # noqa: F401
@@ -3752,10 +3755,18 @@ def _ensure_test_exam_tables() -> None:
     from moduly.testy.modely.test_exam_examiner import TestExamExaminer
     from moduly.testy.modely.test_exam_oral_question import TestExamOralQuestion
     from moduly.testy.modely.test_exam_written_answer import TestExamWrittenAnswer
+    from moduly.testy.modely.test_exam_written_choice import TestExamWrittenChoice
     from moduly.testy.modely.test_exam_written_question import TestExamWrittenQuestion
 
     if not _table_columns("test_exams"):
         TestExam.__table__.create(bind=_db_engine(), checkfirst=True)
+    else:
+        _add_column("test_exams", "written_started_at DATETIME")
+        _add_column("test_exams", "written_finished_at DATETIME")
+        _add_column(
+            "test_exams",
+            "written_finish_reason VARCHAR(20) NOT NULL DEFAULT ''",
+        )
     if not _table_columns("test_exam_examiners"):
         TestExamExaminer.__table__.create(bind=_db_engine(), checkfirst=True)
     if not _table_columns("test_exam_written_questions"):
@@ -3764,6 +3775,8 @@ def _ensure_test_exam_tables() -> None:
         TestExamWrittenAnswer.__table__.create(bind=_db_engine(), checkfirst=True)
     if not _table_columns("test_exam_oral_questions"):
         TestExamOralQuestion.__table__.create(bind=_db_engine(), checkfirst=True)
+    if not _table_columns("test_exam_written_choices"):
+        TestExamWrittenChoice.__table__.create(bind=_db_engine(), checkfirst=True)
 
 
 def _ensure_responsibility_roles_table() -> None:

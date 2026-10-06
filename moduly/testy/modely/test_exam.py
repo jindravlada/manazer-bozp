@@ -55,3 +55,9 @@ class TestExam(Base):
     written_duration_seconds: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     validity_value: Mapped[int] = mapped_column(Integer, nullable=False)
     validity_unit: Mapped[str] = mapped_column(String(20), nullable=False)
+
+    # Průběh elektronické písemné části. Celkový stav zkoušky zůstává Zahájeno,
+    # dokud další krok nevyhodnotí celou zkoušku včetně případné ústní části.
+    written_started_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    written_finished_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    written_finish_reason: Mapped[str] = mapped_column(String(20), default="", nullable=False)

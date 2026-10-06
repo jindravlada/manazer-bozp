@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
 from core.widgets.dialog_utils import (
     configure_edit_action_button,
     configure_new_action_button,
+    configure_perform_action_button,
 )
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_row_actions import install_table_row_actions
@@ -22,16 +23,19 @@ from core.widgets.table_utils import configure_table_columns
 from moduly.testy.constants import (
     EXAM_ACTION_DETAIL,
     EXAM_ACTION_PREPARE,
+    EXAM_ACTION_START_WRITTEN,
     EXAM_COL_EMPLOYEE,
     EXAM_COL_ID,
     EXAM_COL_TEST,
     EXAM_SEARCH_PLACEHOLDER,
     MODULE_NAME,
 )
-from moduly.testy.sluzby.test_exam_service import test_exam_service
+from moduly.testy.sluzby.test_exam_service import TestExamError, test_exam_service
+from moduly.testy.sluzby.written_exam_service import written_exam_service
 from moduly.testy.ui.test_exam_detail_dialog import TestExamDetailDialog
 from moduly.testy.ui.test_exam_prepare_dialog import TestExamPrepareDialog
 from moduly.testy.ui.test_exam_table import TestExamTable
+from moduly.testy.ui.written_exam_window import WrittenExamWindow
 
 _ROLE_SEARCH = Qt.ItemDataRole.UserRole + 1
 
@@ -47,8 +51,12 @@ class TestExamsTab(QWidget):
         self.detail_btn = QPushButton(EXAM_ACTION_DETAIL)
         configure_edit_action_button(self.detail_btn)
         self.detail_btn.setEnabled(False)
+        self.start_btn = QPushButton(EXAM_ACTION_START_WRITTEN)
+        configure_perform_action_button(self.start_btn)
+        self.start_btn.setEnabled(False)
         toolbar.addWidget(self.prepare_btn)
         toolbar.addWidget(self.detail_btn)
+        toolbar.addWidget(self.start_btn)
         toolbar.addStretch()
 
         self.table = TestExamTable()
@@ -65,6 +73,8 @@ class TestExamsTab(QWidget):
 
         self.prepare_btn.clicked.connect(self.prepare_exam)
         self.detail_btn.clicked.connect(self.open_selected)
+        self.start_btn.clicked.connect(self.start_electronic_test)
+        self._written_exam_window: WrittenExamWindow | None = None
         self.table.doubleClicked.connect(self.open_selected)
         self.table.itemSelectionChanged.connect(self._update_action_buttons)
         install_table_row_actions(
@@ -100,6 +110,31 @@ class TestExamsTab(QWidget):
         dialog = TestExamDetailDialog(self, exam_id=exam.id)
         dialog.exec()
 
+    def start_electronic_test(self) -> None:
+        exam_id = self.table.selected_exam_id()
+        if exam_id is None or not written_exam_service.can_start(exam_id):
+            self._update_action_buttons()
+            return
+        answer = QMessageBox.question(
+            self,
+            MODULE_NAME,
+            written_exam_service.confirmation_text(exam_id),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+        try:
+            written_exam_service.start(exam_id)
+        except TestExamError as error:
+            QMessageBox.warning(self, MODULE_NAME, str(error))
+            self.refresh()
+            return
+        self.refresh()
+        window = WrittenExamWindow(exam_id, self)
+        self._written_exam_window = window
+        window.enter_testing_mode()
+
     def _reload(self, exam_id: int | None) -> None:
         self.table.load_exams(test_exam_service.list_exams())
         configure_table_columns(self.table, "test_exams")
@@ -124,4 +159,8 @@ class TestExamsTab(QWidget):
         return visible, total
 
     def _update_action_buttons(self) -> None:
-        self.detail_btn.setEnabled(self.table.selected_exam_id() is not None)
+        exam_id = self.table.selected_exam_id()
+        self.detail_btn.setEnabled(exam_id is not None)
+        self.start_btn.setEnabled(
+            exam_id is not None and written_exam_service.can_start(exam_id)
+        )

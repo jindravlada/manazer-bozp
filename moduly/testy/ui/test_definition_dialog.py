@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QButtonGroup,
     QCheckBox,
@@ -176,6 +177,7 @@ class TestDefinitionDialog(QDialog):
         self._update_summary()
         configure_form_tab_navigation(self)
         self._editor.capture_baseline()
+        self.setWindowState(self.windowState() | Qt.WindowState.WindowMaximized)
 
     def accept(self) -> None:
         data = self.get_data()

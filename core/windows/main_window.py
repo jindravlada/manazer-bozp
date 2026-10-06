@@ -50,13 +50,14 @@ class MainWindow(QMainWindow):
         self._page_widgets = {}
         self._sidebar_buttons: dict[str, QPushButton] = {}
         self._search_results = []
+        self._electronic_exam_locked = False
 
         self._create_toolbar()
 
         central = QWidget()
-        layout = QHBoxLayout(central)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        outer = QVBoxLayout(central)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
 
         self.stack = QStackedWidget()
         self.stack.setSizePolicy(
@@ -65,8 +66,23 @@ class MainWindow(QMainWindow):
         )
         self._load_modules()
 
-        layout.addWidget(self._sidebar())
+        self._workspace = QWidget()
+        layout = QHBoxLayout(self._workspace)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        self._sidebar_panel = self._sidebar()
+        layout.addWidget(self._sidebar_panel)
         layout.addWidget(self.stack, 1)
+
+        self._exam_cover = QLabel("Probíhá elektronický test.")
+        self._exam_cover.setObjectName("electronic-exam-cover")
+        self._exam_cover.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._exam_cover.setStyleSheet("font-size: 22px;")
+
+        self._workspace_stack = QStackedWidget()
+        self._workspace_stack.addWidget(self._workspace)
+        self._workspace_stack.addWidget(self._exam_cover)
+        outer.addWidget(self._workspace_stack)
 
         self.setCentralWidget(central)
 
@@ -91,6 +107,7 @@ class MainWindow(QMainWindow):
     def _create_toolbar(self):
         toolbar = QToolBar("Hlavní")
         toolbar.setMovable(False)
+        self._main_toolbar = toolbar
 
         toolbar.addWidget(QLabel("Hledat: "))
 
@@ -350,7 +367,27 @@ class MainWindow(QMainWindow):
             return True
         return bool(confirm())
 
+    def set_electronic_exam_lock(self, locked: bool) -> None:
+        """Schová navigaci Manažera po dobu elektronického testu.
+
+        Neblokuje klávesy operačního systému. Návrat do administrace
+        není součástí tohoto kroku.
+        """
+        self._electronic_exam_locked = bool(locked)
+        self._sidebar_panel.setVisible(not locked)
+        self._main_toolbar.setVisible(not locked)
+        status_bar = self.statusBar()
+        if status_bar is not None:
+            status_bar.setVisible(not locked)
+        self._global_search_shortcut.setEnabled(not locked)
+        if locked:
+            self._workspace_stack.setCurrentWidget(self._exam_cover)
+        else:
+            self._workspace_stack.setCurrentWidget(self._workspace)
+
     def _show(self, key):
+        if self._electronic_exam_locked:
+            return
         if key not in self._pages:
             return
         if not self._confirm_unsaved_employer_edit():
@@ -364,7 +401,16 @@ class MainWindow(QMainWindow):
         self._update_sidebar_active(key)
         self.statusBar().showMessage(f"Otevřen modul: {key}")
 
+    def keyPressEvent(self, event) -> None:  # noqa: N802
+        if self._electronic_exam_locked and event.key() == Qt.Key.Key_Escape:
+            event.accept()
+            return
+        super().keyPressEvent(event)
+
     def closeEvent(self, event: QCloseEvent) -> None:  # noqa: N802
+        if self._electronic_exam_locked:
+            event.ignore()
+            return
         if not self._confirm_unsaved_employer_edit():
             event.ignore()
             return
