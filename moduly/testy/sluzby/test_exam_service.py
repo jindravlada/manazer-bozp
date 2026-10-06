@@ -470,6 +470,7 @@ class TestExamService:
         source = written_question_service.attachment_path(attachment_id)
         if source is None:
             raise TestExamError("Obrázek se nepodařilo zmrazit.")
+        # Bajty už normalizovaného obrázku. Snapshot je znovu nezmenšuje ani nekomprimuje.
         data = source.read_bytes()
         digest = hashlib.sha256(data).hexdigest()
         target_dir = storage_service.attachment_dir(EXAM_SNAPSHOT_ENTITY, exam_id)

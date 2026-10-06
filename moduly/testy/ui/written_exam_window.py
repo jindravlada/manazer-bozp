@@ -46,6 +46,8 @@ from moduly.testy.sluzby.written_exam_service import (
 
 _QUESTION_IMAGE_MAX = (720, 400)
 _ANSWER_IMAGE_MAX = (360, 220)
+_QUESTION_IMAGE_WITH_ROW_MAX = (640, 220)
+_ANSWER_IMAGE_ROW_MAX = (420, 240)
 
 
 class _BoundedScroll(QScrollArea):
@@ -376,9 +378,12 @@ class WrittenExamWindow(QDialog):
         text.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         layout.addWidget(heading)
         layout.addWidget(text)
+        image_row = bool(question.options) and all(
+            option.image_stored_path for option in question.options
+        )
         picture = self._image_label(
             question.image_stored_path,
-            _QUESTION_IMAGE_MAX,
+            _QUESTION_IMAGE_WITH_ROW_MAX if image_row else _QUESTION_IMAGE_MAX,
             "written-exam-question-image",
         )
         if picture is not None:
@@ -387,9 +392,14 @@ class WrittenExamWindow(QDialog):
         for button in self._answer_group.buttons():
             self._answer_group.removeButton(button)
 
+        answers_host = QWidget()
+        answers_host.setObjectName("written-exam-answers")
+        answers_layout = QHBoxLayout(answers_host) if image_row else QVBoxLayout(answers_host)
+        answers_layout.setContentsMargins(0, 0, 0, 0)
+        answer_max = _ANSWER_IMAGE_ROW_MAX if image_row else _ANSWER_IMAGE_MAX
         for option in question.options:
             row = QWidget()
-            row_layout = QHBoxLayout(row)
+            row_layout = QVBoxLayout(row) if image_row else QHBoxLayout(row)
             row_layout.setContentsMargins(0, 8, 0, 8)
             radio = QRadioButton(option.letter)
             radio.setObjectName(f"written-exam-answer-{option.letter}")
@@ -402,7 +412,12 @@ class WrittenExamWindow(QDialog):
                     self._on_answer(checked, qid, aid)
                 )
             )
-            row_layout.addWidget(radio, alignment=Qt.AlignmentFlag.AlignTop)
+            alignment = (
+                Qt.AlignmentFlag.AlignHCenter
+                if image_row
+                else Qt.AlignmentFlag.AlignTop
+            )
+            row_layout.addWidget(radio, alignment=alignment)
             detail = QVBoxLayout()
             if option.text.strip():
                 caption = QLabel(option.text)
@@ -412,17 +427,20 @@ class WrittenExamWindow(QDialog):
                 detail.addWidget(caption)
             image = self._image_label(
                 option.image_stored_path,
-                _ANSWER_IMAGE_MAX,
+                answer_max,
                 f"written-exam-answer-image-{option.letter}",
             )
             if image is not None:
+                if image_row:
+                    image.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 detail.addWidget(image)
             row_layout.addLayout(detail, 1)
-            layout.addWidget(row)
+            answers_layout.addWidget(row, 1 if image_row else 0)
             if question.selected_exam_answer_id == option.exam_answer_id:
                 radio.blockSignals(True)
                 radio.setChecked(True)
                 radio.blockSignals(False)
+        layout.addWidget(answers_host)
 
         layout.addStretch()
         previous = self._question_scroll.takeWidget()

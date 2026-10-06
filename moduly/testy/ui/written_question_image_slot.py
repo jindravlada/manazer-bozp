@@ -9,9 +9,14 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QMessageBox, QPushButton, QVBoxLayout, QWidget
 
 from core.ui.photo_picker_dialog import PhotoPickerDialog
+from moduly.testy.constants import MODULE_NAME
+from moduly.testy.sluzby.written_image_normalizer import (
+    WrittenImageError,
+    assert_input_within_limit,
+)
 
 
 class WrittenQuestionImageSlot(QWidget):
@@ -53,9 +58,15 @@ class WrittenQuestionImageSlot(QWidget):
         self.set_source_path(str(selected))
 
     def set_source_path(self, path: str) -> None:
+        candidate = Path(path)
+        try:
+            assert_input_within_limit(candidate)
+        except WrittenImageError as error:
+            QMessageBox.warning(self, MODULE_NAME, str(error))
+            return
         self._source_path = path
         self._removed = False
-        self._show_preview(Path(path))
+        self._show_preview(candidate)
         self._refresh_buttons()
         self.changed.emit()
 

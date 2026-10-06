@@ -239,7 +239,11 @@ class AttachmentService:
                             f"Cílový soubor přílohy už existuje: {target.name}"
                         )
                     try:
-                        stored, _stored_name = self._store_source_file(source, target)
+                        stored, _stored_name = self._store_source_file(
+                            source,
+                            target,
+                            verbatim=staging.is_verbatim(source),
+                        )
                     except PhotoOptimizationError as exc:
                         raise AttachmentStagingError(str(exc)) from exc
                     copied_paths.append(stored)
@@ -372,8 +376,14 @@ class AttachmentService:
         sess.close()
         return prepared
 
-    def _store_source_file(self, source: Path, target: Path) -> tuple[Path, str]:
-        if source.suffix.lower() in _IMAGE_SUFFIXES:
+    def _store_source_file(
+        self,
+        source: Path,
+        target: Path,
+        *,
+        verbatim: bool = False,
+    ) -> tuple[Path, str]:
+        if not verbatim and source.suffix.lower() in _IMAGE_SUFFIXES:
             try:
                 optimized = optimize_image_bytes(source)
             except PhotoOptimizationError:

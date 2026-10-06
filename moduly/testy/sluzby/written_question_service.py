@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import tempfile
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -17,13 +18,18 @@ from moduly.testy.constants import ANSWER_KIND_IMAGE, ANSWER_KIND_TEXT, ANSWER_L
 from moduly.testy.modely.written_question import WrittenQuestion
 from moduly.testy.modely.written_question_answer import WrittenQuestionAnswer
 from moduly.testy.repository.written_question_repository import WrittenQuestionRepository
+from moduly.testy.sluzby.written_image_normalizer import (
+    SUPPORTED_EXTENSIONS,
+    WrittenImageError,
+    normalize_written_image,
+)
 from moduly.testy.sluzby.written_question_topic_service import (
     written_question_topic_service,
 )
 
 ENTITY_QUESTION_IMAGE = "test_written_question"
 ENTITY_ANSWER_IMAGE = "test_written_answer"
-IMAGE_EXTENSIONS = frozenset({".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif"})
+IMAGE_EXTENSIONS = SUPPORTED_EXTENSIONS
 
 
 class WrittenQuestionError(ValueError):
@@ -171,13 +177,49 @@ class WrittenQuestionService:
         )
         stored_note = str(note or "").strip()
 
+        temp_dir = tempfile.TemporaryDirectory(prefix="testy-written-image-")
+        try:
+            directory = Path(temp_dir.name)
+            image_source = self._materialize_new_image(
+                image_source,
+                directory,
+                "Obrázek otázky",
+            )
+            normalized_answers = self._materialize_answers(normalized_answers, directory)
+            return self._commit_question(
+                existing,
+                topic_id=topic.id,
+                stored_text=stored_text,
+                kind=kind,
+                normalized_answers=normalized_answers,
+                image_source=image_source,
+                question_image_attachment_id=question_image_attachment_id,
+                stored_note=stored_note,
+                active=active,
+            )
+        finally:
+            temp_dir.cleanup()
+
+    def _commit_question(
+        self,
+        existing: WrittenQuestion | None,
+        *,
+        topic_id: int,
+        stored_text: str,
+        kind: str,
+        normalized_answers: list[WrittenAnswerInput],
+        image_source: str | None,
+        question_image_attachment_id: int | None,
+        stored_note: str,
+        active: bool,
+    ) -> WrittenQuestion:
         session = get_session()
         session.expire_on_commit = False
         prepared: list[PreparedAttachmentChanges] = []
         try:
             if existing is None:
                 question = WrittenQuestion(
-                    topic_id=topic.id,
+                    topic_id=topic_id,
                     text=stored_text,
                     answer_kind=kind,
                     note=stored_note,
@@ -200,7 +242,7 @@ class WrittenQuestionService:
                 question = session.get(WrittenQuestion, existing.id)
                 if question is None:
                     raise WrittenQuestionError("Otázka nebyla nalezena.")
-                question.topic_id = topic.id
+                question.topic_id = topic_id
                 question.text = stored_text
                 question.answer_kind = kind
                 question.note = stored_note
@@ -279,7 +321,7 @@ class WrittenQuestionService:
             staging = AttachmentStagingState()
             if current_attachment_id:
                 staging.mark_for_removal(int(current_attachment_id))
-            staging.add_pending_path(source_path)
+            staging.add_verbatim_path(source_path)
             prepared = attachment_service.prepare_attachment_staging(
                 entity_type,
                 entity_id,
@@ -420,6 +462,44 @@ class WrittenQuestionService:
         if file_path.suffix.lower() not in IMAGE_EXTENSIONS:
             raise WrittenQuestionError(f"{label} není podporovaný obrázek.")
         return str(file_path)
+
+    def _materialize_answers(
+        self,
+        answers: list[WrittenAnswerInput],
+        directory: Path,
+    ) -> list[WrittenAnswerInput]:
+        prepared: list[WrittenAnswerInput] = []
+        for index, answer in enumerate(answers):
+            letter = ANSWER_LETTERS[index]
+            source = self._materialize_new_image(
+                answer.image_source_path,
+                directory,
+                f"Obrázek odpovědi {letter}",
+            )
+            prepared.append(
+                WrittenAnswerInput(
+                    text=answer.text,
+                    image_source_path=source,
+                    image_attachment_id=answer.image_attachment_id,
+                    is_correct=answer.is_correct,
+                )
+            )
+        return prepared
+
+    def _materialize_new_image(
+        self,
+        source: str | None,
+        directory: Path,
+        label: str,
+    ) -> str | None:
+        text = str(source or "").strip()
+        if not text:
+            return None
+        try:
+            normalized = normalize_written_image(Path(text), directory)
+        except WrittenImageError as exc:
+            raise WrittenQuestionError(f"{label}: {exc}") from exc
+        return str(normalized.path)
 
 
 written_question_service = WrittenQuestionService()
