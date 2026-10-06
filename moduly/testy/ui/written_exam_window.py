@@ -50,6 +50,10 @@ _QUESTION_IMAGE_MAX = (720, 400)
 _ANSWER_IMAGE_MAX = (360, 220)
 _QUESTION_IMAGE_WITH_ROW_MAX = (640, 220)
 _ANSWER_IMAGE_ROW_MAX = (420, 240)
+_QUESTION_TEXT_PX = 20
+_ANSWER_TEXT_PX = 18
+_ANSWERED_MARK = "●"
+_ANSWERED_LEGEND = "● zodpovězeno"
 
 
 class _HandoverDialog(QMessageBox):
@@ -90,6 +94,19 @@ class _BoundedScroll(QScrollArea):
 
     def sizeHint(self) -> QSize:
         return QSize(640, 360)
+
+
+class _SelectLabel(QLabel):
+    """Klik na text nebo obrázek odpovědi vybere stejné tlačítko jako kroužek."""
+
+    def __init__(self, radio: QRadioButton, parent=None):
+        super().__init__(parent)
+        self._radio = radio
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+
+    def mousePressEvent(self, event) -> None:  # noqa: N802
+        self._radio.setChecked(True)
+        event.accept()
 
 
 def fit_pixmap(pixmap: QPixmap, max_width: int, max_height: int) -> QPixmap:
@@ -251,14 +268,19 @@ class WrittenExamWindow(QDialog):
 
         body = QHBoxLayout()
         body.setSpacing(12)
+        nav_column = QWidget()
+        nav_column.setObjectName("written-exam-nav-column")
+        nav_column.setFixedWidth(132)
+        nav_column_layout = QVBoxLayout(nav_column)
+        nav_column_layout.setContentsMargins(0, 0, 0, 0)
+        nav_column_layout.setSpacing(4)
         self._nav_scroll = _BoundedScroll()
         self._nav_scroll.setWidgetResizable(True)
         self._nav_scroll.setHorizontalScrollBarPolicy(
             Qt.ScrollBarPolicy.ScrollBarAlwaysOff
         )
-        self._nav_scroll.setFixedWidth(104)
         self._nav_scroll.setSizePolicy(
-            QSizePolicy.Policy.Fixed,
+            QSizePolicy.Policy.Expanding,
             QSizePolicy.Policy.Expanding,
         )
         self._nav_host = QWidget()
@@ -273,17 +295,18 @@ class WrittenExamWindow(QDialog):
                 color: white;
                 font-weight: 700;
             }
-            QPushButton[answered="true"][current="false"] {
-                background-color: #dcfce7;
-                color: #14532d;
-                font-weight: 700;
-            }
-            QPushButton[answered="false"][current="false"] {
+            QPushButton[current="false"] {
                 background-color: #f5f5f4;
                 color: #44403c;
             }
             """
         )
+        self._nav_legend = QLabel(_ANSWERED_LEGEND)
+        self._nav_legend.setObjectName("written-exam-nav-legend")
+        self._nav_legend.setWordWrap(True)
+        self._nav_legend.setStyleSheet("font-size: 11px; color: #78716c;")
+        nav_column_layout.addWidget(self._nav_scroll, 1)
+        nav_column_layout.addWidget(self._nav_legend)
 
         self._question_scroll = _BoundedScroll()
         self._question_scroll.setWidgetResizable(True)
@@ -294,7 +317,7 @@ class WrittenExamWindow(QDialog):
             QSizePolicy.Policy.Expanding,
             QSizePolicy.Policy.Expanding,
         )
-        body.addWidget(self._nav_scroll)
+        body.addWidget(nav_column)
         body.addWidget(self._question_scroll, 1)
         running.addLayout(body, 1)
 
@@ -379,10 +402,10 @@ class WrittenExamWindow(QDialog):
     def _paint_navigation(self) -> None:
         for index, question in enumerate(self._screen.questions):
             button = self._nav_buttons[index]
-            button.setProperty(
-                "answered",
-                "true" if question.selected_exam_answer_id is not None else "false",
-            )
+            answered = question.selected_exam_answer_id is not None
+            mark = f" {_ANSWERED_MARK}" if answered else ""
+            button.setText(f"{question.position}{mark}")
+            button.setProperty("answered", "true" if answered else "false")
             button.setProperty("current", "true" if index == self._index else "false")
             button.style().unpolish(button)
             button.style().polish(button)
@@ -409,7 +432,11 @@ class WrittenExamWindow(QDialog):
         text = QLabel(question.text)
         text.setObjectName("written-exam-question-text")
         text.setWordWrap(True)
-        text.setStyleSheet("font-size: 18px;")
+        text.setSizePolicy(
+            QSizePolicy.Policy.Preferred,
+            QSizePolicy.Policy.Minimum,
+        )
+        text.setStyleSheet(f"font-size: {_QUESTION_TEXT_PX}px;")
         text.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         layout.addWidget(heading)
         layout.addWidget(text)
@@ -430,16 +457,22 @@ class WrittenExamWindow(QDialog):
         answers_host = QWidget()
         answers_host.setObjectName("written-exam-answers")
         answers_layout = QHBoxLayout(answers_host) if image_row else QVBoxLayout(answers_host)
-        answers_layout.setContentsMargins(0, 0, 0, 0)
+        answers_layout.setContentsMargins(0, 4, 0, 4)
+        answers_layout.setSpacing(12)
         answer_max = _ANSWER_IMAGE_ROW_MAX if image_row else _ANSWER_IMAGE_MAX
         for option in question.options:
             row = QWidget()
             row_layout = QVBoxLayout(row) if image_row else QHBoxLayout(row)
-            row_layout.setContentsMargins(0, 8, 0, 8)
+            row_layout.setContentsMargins(0, 6, 0, 6)
+            row_layout.setSpacing(10)
             radio = QRadioButton(option.letter)
             radio.setObjectName(f"written-exam-answer-{option.letter}")
             radio.setProperty("examAnswerId", option.exam_answer_id)
-            radio.setMinimumHeight(36)
+            radio.setMinimumHeight(44)
+            radio.setStyleSheet(
+                "QRadioButton { font-size: 18px; spacing: 10px; }"
+                "QRadioButton::indicator { width: 22px; height: 22px; }"
+            )
             radio.setAutoExclusive(True)
             self._answer_group.addButton(radio)
             radio.toggled.connect(
@@ -454,16 +487,23 @@ class WrittenExamWindow(QDialog):
             )
             row_layout.addWidget(radio, alignment=alignment)
             detail = QVBoxLayout()
+            detail.setSpacing(8)
             if option.text.strip():
-                caption = QLabel(option.text)
+                caption = _SelectLabel(radio)
+                caption.setText(option.text)
                 caption.setWordWrap(True)
                 caption.setObjectName(f"written-exam-answer-text-{option.letter}")
-                caption.setStyleSheet("font-size: 16px;")
+                caption.setStyleSheet(f"font-size: {_ANSWER_TEXT_PX}px;")
+                caption.setSizePolicy(
+                    QSizePolicy.Policy.Preferred,
+                    QSizePolicy.Policy.Minimum,
+                )
                 detail.addWidget(caption)
             image = self._image_label(
                 option.image_stored_path,
                 answer_max,
                 f"written-exam-answer-image-{option.letter}",
+                radio,
             )
             if image is not None:
                 if image_row:
@@ -489,6 +529,7 @@ class WrittenExamWindow(QDialog):
         relative_path: str,
         max_size: tuple[int, int],
         object_name: str,
+        radio: QRadioButton | None = None,
     ) -> QLabel | None:
         path = test_exam_service.resolve_snapshot_image(relative_path)
         if path is None:
@@ -496,7 +537,7 @@ class WrittenExamWindow(QDialog):
         pixmap = QPixmap(str(path))
         if pixmap.isNull():
             return None
-        label = QLabel()
+        label = _SelectLabel(radio) if radio is not None else QLabel()
         label.setObjectName(object_name)
         label.setProperty("snapshotPath", relative_path)
         label.setPixmap(fit_pixmap(pixmap, max_size[0], max_size[1]))
@@ -537,6 +578,9 @@ class WrittenExamWindow(QDialog):
             self._show_question(self._index)
             return
         self._screen = written_exam_service.screen(self.exam_id)
+        if self._index < len(self._screen.questions) - 1:
+            self._show_question(self._index + 1)
+            return
         self._paint_navigation()
 
     def _on_tick(self) -> None:

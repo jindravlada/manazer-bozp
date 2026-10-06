@@ -674,12 +674,11 @@ class ElectronicWrittenExamTestCase(unittest.TestCase):
         first = screen.questions[0]
         self._choose(window, first.options[0].letter)
         self.assertEqual(len(written_exam_service.choices(exam.id)), 1)
+        window._jump(0)
         self._choose(window, first.options[1].letter)
         stored = written_exam_service.choices(exam.id)
         self.assertEqual(len(stored), 1)
         self.assertEqual(stored[0].selected_letter, first.options[1].letter)
-
-        window.next_button.click()
         self.assertEqual(window._index, 1)
         self.assertEqual(
             window.findChild(QLabel, "written-exam-question-text").text(),
@@ -706,6 +705,8 @@ class ElectronicWrittenExamTestCase(unittest.TestCase):
             f"written-exam-answer-{first.options[1].letter}",
         )
         self.assertTrue(checked.isChecked())
+        window.next_button.click()
+        self.assertEqual(window._index, 1)
 
         window._jump(len(screen.questions) - 1)
         self.assertFalse(window.next_button.isEnabled())
