@@ -115,6 +115,8 @@ class TestExamsTab(QWidget):
             return
         dialog = TestExamDetailDialog(self, exam_id=exam.id)
         dialog.exec()
+        if dialog.results_changed:
+            self.refresh()
 
     def start_electronic_test(self) -> None:
         exam_id = self.table.selected_exam_id()

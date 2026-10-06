@@ -233,6 +233,20 @@ def written_result_label(code: str | None) -> str:
     """Prázdný text, dokud písemná část nebo zkouška nemá uložený výsledek."""
     return WRITTEN_RESULT_LABELS.get(str(code or "").strip(), "")
 
+
+EXAM_ACTION_RECORD_ORAL_FAILURE = "Zaznamenat neúspěch u ústní části"
+EXAM_ACTION_CLEAR_ORAL_FAILURE = "Zrušit neúspěch u ústní části"
+ORAL_FAILURE_CONFIRM = (
+    "Opravdu chcete zaznamenat, že zaměstnanec u ústní části zkoušky nevyhověl? "
+    "Celkový výsledek zkoušky bude změněn na Nevyhověl."
+)
+ORAL_FAILURE_CLEAR_CONFIRM = (
+    "Opravdu chcete zrušit evidovaný neúspěch u ústní části? "
+    "Jde o opravu evidovaného údaje. "
+    "Výsledek zkoušky se vrátí na uložený výsledek písemné části."
+)
+ORAL_PART_FAILED_LINE = "Ústní část: Nevyhověl"
+
 EXAM_SNAPSHOT_ENTITY = "test_exam_snapshot"
 
 WRITTEN_FINISH_SUBMITTED = "submitted"

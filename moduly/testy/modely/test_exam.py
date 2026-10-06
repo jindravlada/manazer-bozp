@@ -70,3 +70,5 @@ class TestExam(Base):
     written_result: Mapped[str | None] = mapped_column(String(20), nullable=True)
     exam_result: Mapped[str | None] = mapped_column(String(20), nullable=True)
     written_evaluated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    # Jen dodatečný zápis neúspěchu. Prázdná hodnota není stav Vyhověl.
+    oral_failed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

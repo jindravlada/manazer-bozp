@@ -10,6 +10,8 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QGroupBox,
     QLabel,
+    QMessageBox,
+    QPushButton,
     QVBoxLayout,
     QWidget,
 )
@@ -20,10 +22,16 @@ from core.widgets.dialog_utils import (
 )
 from moduly.testy.constants import (
     ANSWER_KIND_IMAGE,
+    EXAM_ACTION_CLEAR_ORAL_FAILURE,
+    EXAM_ACTION_RECORD_ORAL_FAILURE,
     EXAM_DETAIL_TITLE,
     EXAM_ROLE_LABELS,
     EXAM_STATUS_LABELS,
     EXAMINER_MODE_LABELS,
+    MODULE_NAME,
+    ORAL_FAILURE_CLEAR_CONFIRM,
+    ORAL_FAILURE_CONFIRM,
+    ORAL_PART_FAILED_LINE,
     WRITTEN_OUTCOME_CORRECT,
     WRITTEN_OUTCOME_INCORRECT,
     WRITTEN_OUTCOME_LABELS,
@@ -31,13 +39,15 @@ from moduly.testy.constants import (
     written_result_label,
 )
 from moduly.testy.sluzby.test_definition_service import format_test_duration
-from moduly.testy.sluzby.test_exam_service import format_exam_date, test_exam_service
+from moduly.testy.sluzby.test_exam_service import TestExamError, format_exam_date, test_exam_service
 
 
 class TestExamDetailDialog(QDialog):
     def __init__(self, parent=None, exam_id: int | None = None):
         super().__init__(parent)
         self.setWindowTitle(EXAM_DETAIL_TITLE)
+        self.exam_id = exam_id
+        self.results_changed = False
         configure_resizable_form_dialog(
             self,
             width=860,
@@ -61,6 +71,13 @@ class TestExamDetailDialog(QDialog):
         )
         self.written_summary.hide()
         form.addWidget(self.written_summary)
+        self.oral_failure_button = QPushButton()
+        self.oral_failure_button.setObjectName("exam-oral-failure-button")
+        self.oral_failure_button.setAutoDefault(False)
+        self.oral_failure_button.setDefault(False)
+        self.oral_failure_button.hide()
+        self.oral_failure_button.clicked.connect(self._change_oral_failure)
+        form.addWidget(self.oral_failure_button, alignment=Qt.AlignmentFlag.AlignLeft)
 
         self.written_box = QGroupBox("Písemné otázky")
         self.written_layout = QVBoxLayout(self.written_box)
@@ -82,7 +99,9 @@ class TestExamDetailDialog(QDialog):
         exam = test_exam_service.get_exam(exam_id)
         if exam is None:
             self.summary.setText("Zkouška nebyla nalezena.")
+            self.oral_failure_button.hide()
             return
+        self.exam_id = int(exam.id)
         people = test_exam_service.get_examiners(exam.id)
         commission = "\n".join(
             f"{EXAM_ROLE_LABELS.get(person.role, person.role)}: {person.display_name}"
@@ -92,6 +111,7 @@ class TestExamDetailDialog(QDialog):
         oral = test_exam_service.get_oral_questions(exam.id)
         self._fill_summary(exam, commission, written)
         self._fill_written_summary(exam)
+        self._sync_oral_failure_button(exam)
         self._fill_written(exam, written)
         self._fill_oral(oral)
         self.written_box.setVisible(bool(exam.uses_written))
@@ -122,20 +142,65 @@ class TestExamDetailDialog(QDialog):
             self.written_summary.clear()
             self.written_summary.hide()
             return
-        self.written_summary.setText(
-            "\n".join(
-                [
-                    f"Počet otázek: {exam.written_question_count}",
-                    f"Správně: {exam.written_correct_count}",
-                    f"Chybně: {exam.written_incorrect_count}",
-                    f"Nezodpovězeno: {exam.written_unanswered_count}",
-                    f"Povolené chyby: {exam.written_allowed_wrong_answers}",
-                    f"Výsledek písemné části: {written_result_label(exam.written_result)}",
-                    f"Výsledek zkoušky: {written_result_label(exam.exam_result)}",
-                ]
-            )
-        )
+        lines = [
+            f"Počet otázek: {exam.written_question_count}",
+            f"Správně: {exam.written_correct_count}",
+            f"Chybně: {exam.written_incorrect_count}",
+            f"Nezodpovězeno: {exam.written_unanswered_count}",
+            f"Povolené chyby: {exam.written_allowed_wrong_answers}",
+            f"Výsledek písemné části: {written_result_label(exam.written_result)}",
+        ]
+        if exam.oral_failed_at is not None:
+            lines.append(ORAL_PART_FAILED_LINE)
+        lines.append(f"Výsledek zkoušky: {written_result_label(exam.exam_result)}")
+        self.written_summary.setText("\n".join(lines))
         self.written_summary.show()
+
+    def _sync_oral_failure_button(self, exam) -> None:
+        action = test_exam_service.oral_failure_action(exam)
+        if action == "record":
+            self.oral_failure_button.setText(EXAM_ACTION_RECORD_ORAL_FAILURE)
+            self.oral_failure_button.show()
+            return
+        if action == "clear":
+            self.oral_failure_button.setText(EXAM_ACTION_CLEAR_ORAL_FAILURE)
+            self.oral_failure_button.show()
+            return
+        self.oral_failure_button.hide()
+
+    def _change_oral_failure(self) -> None:
+        if self.exam_id is None:
+            return
+        exam = test_exam_service.get_exam(self.exam_id)
+        action = test_exam_service.oral_failure_action(exam)
+        if action == "record":
+            title = EXAM_ACTION_RECORD_ORAL_FAILURE
+            text = ORAL_FAILURE_CONFIRM
+        elif action == "clear":
+            title = EXAM_ACTION_CLEAR_ORAL_FAILURE
+            text = ORAL_FAILURE_CLEAR_CONFIRM
+        else:
+            self._sync_oral_failure_button(exam)
+            return
+        answer = QMessageBox.question(
+            self,
+            title,
+            text,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+        try:
+            if action == "record":
+                test_exam_service.record_oral_failure(self.exam_id)
+            else:
+                test_exam_service.clear_oral_failure(self.exam_id)
+        except TestExamError as error:
+            QMessageBox.warning(self, MODULE_NAME, str(error))
+            return
+        self.results_changed = True
+        self.load_exam(self.exam_id)
 
     def _fill_written(self, exam, questions) -> None:
         while self.written_layout.count():

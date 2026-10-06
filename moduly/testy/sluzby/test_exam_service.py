@@ -22,12 +22,15 @@ from moduly.testy.constants import (
     EXAM_ROLE_EXAMINER,
     EXAM_ROLE_MEMBER,
     EXAM_SNAPSHOT_ENTITY,
+    EXAM_STATUS_COMPLETED,
     EXAM_STATUS_PREPARED,
     EXAMINER_MODE_COMMISSION,
     EXAMINER_MODE_NONE,
     EXAMINER_MODE_SINGLE,
     VALIDITY_UNIT_MONTHS,
     VALIDITY_UNIT_YEARS,
+    WRITTEN_RESULT_FAILED,
+    WRITTEN_RESULT_PASSED,
 )
 from moduly.testy.modely.test_exam import TestExam
 from moduly.testy.modely.test_exam_examiner import TestExamExaminer
@@ -314,6 +317,84 @@ class TestExamService:
     def get_oral_questions(self, exam_id: int) -> list[TestExamOralQuestion]:
         self._require_exam(exam_id)
         return self.repository.get_oral_questions(exam_id)
+
+    def oral_failure_action(self, exam: TestExam | None) -> str:
+        """``record``, ``clear``, nebo prázdný řetězec, když akce není."""
+        if exam is None or not self._oral_failure_exam_ready(exam):
+            return ""
+        if exam.oral_failed_at is not None:
+            return "clear"
+        return "record"
+
+    def record_oral_failure(self, exam_id: int, *, now: datetime | None = None) -> TestExam:
+        """Zapíše neúspěch ústní části. Písemný výsledek ani jeho počty nemění."""
+        moment = self._moment(now)
+        return self._update_oral_failure(exam_id, failed_at=moment)
+
+    def clear_oral_failure(self, exam_id: int) -> TestExam:
+        """Zruší evidovaný neúspěch a vrátí výsledek zkoušky na uložený písemný."""
+        return self._update_oral_failure(exam_id, failed_at=None)
+
+    def _oral_failure_exam_ready(self, exam: TestExam) -> bool:
+        return (
+            exam.status == EXAM_STATUS_COMPLETED
+            and bool(exam.uses_oral)
+            and exam.written_result == WRITTEN_RESULT_PASSED
+        )
+
+    def _update_oral_failure(
+        self,
+        exam_id: int,
+        *,
+        failed_at: datetime | None,
+    ) -> TestExam:
+        session = get_session()
+        session.expire_on_commit = False
+        try:
+            exam = session.get(TestExam, int(exam_id))
+            if exam is None:
+                raise TestExamError("Zkouška nebyla nalezena.")
+            self._validate_oral_failure_change(exam, recording=failed_at is not None)
+            if failed_at is None:
+                exam.oral_failed_at = None
+                exam.exam_result = exam.written_result
+            else:
+                exam.oral_failed_at = failed_at
+                exam.exam_result = WRITTEN_RESULT_FAILED
+            session.commit()
+            session.refresh(exam)
+            session.expunge(exam)
+            return exam
+        except TestExamError:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    def _validate_oral_failure_change(self, exam: TestExam, *, recording: bool) -> None:
+        if exam.status != EXAM_STATUS_COMPLETED:
+            raise TestExamError(
+                "Neúspěch ústní části lze zaznamenat jen u dokončené zkoušky."
+                if recording
+                else "Neúspěch ústní části lze zrušit jen u dokončené zkoušky."
+            )
+        if not exam.uses_oral:
+            raise TestExamError("Zkouška podle snapshotu nemá ústní část.")
+        if exam.written_result != WRITTEN_RESULT_PASSED:
+            raise TestExamError(
+                "Neúspěch ústní části lze zaznamenat jen když písemná část vyhověla."
+            )
+        if recording and exam.oral_failed_at is not None:
+            raise TestExamError("Neúspěch ústní části už je zaznamenán.")
+        if not recording and exam.oral_failed_at is None:
+            raise TestExamError("Neúspěch ústní části není zaznamenán.")
+
+    def _moment(self, now: datetime | None) -> datetime:
+        if now is None:
+            return datetime.now()
+        if not isinstance(now, datetime):
+            raise TestExamError("Neplatný čas.")
+        return now
 
     def resolve_snapshot_image(self, relative_path: str | None) -> Path | None:
         text = str(relative_path or "").strip()
