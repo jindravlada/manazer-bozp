@@ -28,6 +28,7 @@ from core.widgets.table_utils import configure_table_columns
 from moduly.testy.constants import (
     EXAM_ACTION_CONTINUE_WRITTEN,
     EXAM_ACTION_DETAIL,
+    EXAM_ACTION_ENTER_PAPER,
     EXAM_ACTION_PREPARE,
     EXAM_ACTION_PRINT_WRITTEN,
     EXAM_ACTION_START_WRITTEN,
@@ -41,6 +42,7 @@ from moduly.testy.constants import (
 from moduly.testy.sluzby.paper_test_export_service import paper_test_export_service
 from moduly.testy.sluzby.test_exam_service import TestExamError, test_exam_service
 from moduly.testy.sluzby.written_exam_service import written_exam_service
+from moduly.testy.ui.paper_answer_dialog import PaperAnswerDialog
 from moduly.testy.ui.paper_test_options_dialog import PaperTestOptionsDialog
 from moduly.testy.ui.test_exam_detail_dialog import TestExamDetailDialog
 from moduly.testy.ui.test_exam_prepare_dialog import TestExamPrepareDialog
@@ -71,10 +73,15 @@ class TestExamsTab(QWidget):
         self.print_btn.setObjectName("exam-print-paper-button")
         configure_perform_action_button(self.print_btn)
         self.print_btn.setEnabled(False)
+        self.paper_btn = QPushButton(EXAM_ACTION_ENTER_PAPER)
+        self.paper_btn.setObjectName("exam-enter-paper-button")
+        configure_perform_action_button(self.paper_btn)
+        self.paper_btn.setEnabled(False)
         toolbar.addWidget(self.prepare_btn)
         toolbar.addWidget(self.detail_btn)
         toolbar.addWidget(self.start_btn)
         toolbar.addWidget(self.print_btn)
+        toolbar.addWidget(self.paper_btn)
         toolbar.addStretch()
 
         self.table = TestExamTable()
@@ -93,6 +100,7 @@ class TestExamsTab(QWidget):
         self.detail_btn.clicked.connect(self.open_selected)
         self.start_btn.clicked.connect(self.start_electronic_test)
         self.print_btn.clicked.connect(self.print_paper_test)
+        self.paper_btn.clicked.connect(self.enter_paper_answers)
         self._written_exam_window: WrittenExamWindow | None = None
         self._handover = None
         self.table.doubleClicked.connect(self.open_selected)
@@ -246,11 +254,28 @@ class TestExamsTab(QWidget):
         if result.key_path is not None:
             open_export_file(result.key_path, parent=self, title="Klíč správných odpovědí")
 
+    def enter_paper_answers(self) -> None:
+        exam_id = self.table.selected_exam_id()
+        if exam_id is None or not written_exam_service.can_enter_paper(exam_id):
+            self._update_action_buttons()
+            return
+        try:
+            dialog = PaperAnswerDialog(exam_id, self)
+        except TestExamError as error:
+            QMessageBox.warning(self, MODULE_NAME, str(error))
+            return
+        dialog.exec()
+        if dialog.evaluated:
+            self.focus_exam(exam_id)
+
     def _update_action_buttons(self) -> None:
         exam_id = self.table.selected_exam_id()
         self.detail_btn.setEnabled(exam_id is not None)
         self.print_btn.setEnabled(
             exam_id is not None and paper_test_export_service.can_export(exam_id)
+        )
+        self.paper_btn.setEnabled(
+            exam_id is not None and written_exam_service.can_enter_paper(exam_id)
         )
         action = written_exam_service.electronic_action(exam_id) if exam_id else ""
         if action == "continue":

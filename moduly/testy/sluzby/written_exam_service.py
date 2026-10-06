@@ -1,7 +1,8 @@
-"""Elektronická písemná část zkoušky. Služba není závislá na Qt.
+"""Písemná část zkoušky. Služba není závislá na Qt.
 
-Čas, ukládání voleb, ukončení i navázání na rozpracovaný test jdou volat
-bez obrazovky. Pokračování nemění snapshot, pořadí ani čas zahájení.
+Elektronický průběh měří čas od zahájení. Papírový přepis A/B/C ukládá
+stejné volby a vyhodnotí je stejnou službou, ale časový limit jako dobu
+přepisu nepoužívá. Pokračování nemění snapshot ani pořadí otázek.
 """
 
 from __future__ import annotations
@@ -14,11 +15,18 @@ from sqlalchemy import select
 
 from core.database.session import get_session
 from moduly.testy.constants import (
+    ANSWER_LETTERS,
+    ELECTRONIC_BLOCKS_PAPER,
     EXAM_STATUS_COMPLETED,
     EXAM_STATUS_PREPARED,
     EXAM_STATUS_STARTED,
+    PAPER_BLOCKS_ELECTRONIC,
+    PAPER_ENTRY_LOCKED,
     WRITTEN_FINISH_EXPIRED,
+    WRITTEN_FINISH_PAPER,
     WRITTEN_FINISH_SUBMITTED,
+    WRITTEN_MODE_ELECTRONIC,
+    WRITTEN_MODE_PAPER,
     WRITTEN_OUTCOME_CORRECT,
     WRITTEN_OUTCOME_INCORRECT,
     WRITTEN_OUTCOME_UNANSWERED,
@@ -161,6 +169,17 @@ def is_written_part_in_progress(
     )
 
 
+def normalize_answer_letter(value: object) -> str:
+    """A/a, B/b a C/c. Cokoli jiného není platná odpověď."""
+    text = str(value or "").strip()
+    if len(text) != 1:
+        return ""
+    letter = text.upper()
+    if letter not in ANSWER_LETTERS:
+        return ""
+    return letter
+
+
 def electronic_written_action(
     *,
     status: str,
@@ -169,8 +188,11 @@ def electronic_written_action(
     written_started_at: datetime | None,
     written_finished_at: datetime | None,
     written_finish_reason: str | None,
+    written_mode: str = "",
 ) -> str:
     """``continue``, ``start``, nebo prázdný řetězec, když akce není."""
+    if str(written_mode or "") == WRITTEN_MODE_PAPER:
+        return ""
     if is_written_part_in_progress(
         status,
         written_started_at,
@@ -224,6 +246,27 @@ def question_answer_marks(
         (int(question_id) in answered_ids, index == current)
         for index, question_id in enumerate(question_ids)
     ]
+
+
+@dataclass(frozen=True)
+class PaperEntryLine:
+    """Jedna otázka v přepisu. Bez správné odpovědi a bez vyhodnocení."""
+
+    exam_question_id: int
+    position: int
+    letter: str
+
+
+@dataclass(frozen=True)
+class PaperEntrySheet:
+    exam_id: int
+    employee_display_name: str
+    test_name: str
+    lines: tuple[PaperEntryLine, ...]
+
+    @property
+    def question_count(self) -> int:
+        return len(self.lines)
 
 
 @dataclass(frozen=True)
@@ -296,6 +339,7 @@ class WrittenExamService:
             written_started_at=exam.written_started_at,
             written_finished_at=exam.written_finished_at,
             written_finish_reason=exam.written_finish_reason,
+            written_mode=exam.written_mode or "",
         )
 
     def resume(self, exam_id: int, *, now: datetime | None = None) -> str:
@@ -336,6 +380,8 @@ class WrittenExamService:
         try:
             exam = self._require(session, exam_id)
             questions = self._questions(session, exam.id)
+            if (exam.written_mode or "") == WRITTEN_MODE_PAPER:
+                raise TestExamError(PAPER_BLOCKS_ELECTRONIC)
             if exam.status != EXAM_STATUS_PREPARED:
                 raise TestExamError(
                     "Elektronický test lze zahájit jen u zkoušky ve stavu Připraveno."
@@ -343,6 +389,7 @@ class WrittenExamService:
             if not exam.uses_written or not questions:
                 raise TestExamError("Zkouška nemá písemnou část.")
             exam.status = EXAM_STATUS_STARTED
+            exam.written_mode = WRITTEN_MODE_ELECTRONIC
             exam.written_started_at = moment
             exam.written_finished_at = None
             exam.written_finish_reason = ""
@@ -412,6 +459,154 @@ class WrittenExamService:
         return sum(
             1 for question in view.questions if question.selected_exam_answer_id is None
         )
+
+    def can_enter_paper(self, exam_id: int | None) -> bool:
+        if not exam_id:
+            return False
+        exam = self.repository.get_by_id(exam_id)
+        if exam is None:
+            return False
+        if exam.written_finish_reason or exam.status != EXAM_STATUS_PREPARED:
+            return False
+        if (exam.written_mode or "") == WRITTEN_MODE_ELECTRONIC:
+            return False
+        if not exam.uses_written:
+            return False
+        return bool(self.repository.get_written_questions(exam.id))
+
+    def paper_sheet(self, exam_id: int) -> PaperEntrySheet:
+        """Přehled přepisu. Neobsahuje správné odpovědi ani vyhodnocení."""
+        if not self.can_enter_paper(exam_id):
+            raise TestExamError("Papírové odpovědi u této zkoušky nelze zadat.")
+        session = get_session()
+        try:
+            exam = self._require(session, exam_id)
+            choices = {
+                int(choice.exam_question_id): choice
+                for choice in self._choices(session, exam.id)
+            }
+            lines = []
+            for question in self._questions(session, exam.id):
+                choice = choices.get(int(question.id))
+                lines.append(
+                    PaperEntryLine(
+                        exam_question_id=int(question.id),
+                        position=int(question.position),
+                        letter=choice.selected_letter if choice is not None else "",
+                    )
+                )
+            return PaperEntrySheet(
+                exam_id=int(exam.id),
+                employee_display_name=exam.employee_display_name,
+                test_name=exam.test_name,
+                lines=tuple(lines),
+            )
+        finally:
+            session.close()
+
+    def save_paper_letter(
+        self,
+        exam_id: int,
+        exam_question_id: int,
+        letter: object,
+        *,
+        now: datetime | None = None,
+    ) -> None:
+        """Uloží A/B/C k otázce snapshotu. Časový limit zkoušky nespouští."""
+        normalized = normalize_answer_letter(letter)
+        if not normalized:
+            raise TestExamError("Odpověď musí být A, B nebo C.")
+        moment = self._moment(now)
+        session = get_session()
+        session.expire_on_commit = False
+        try:
+            exam = self._require(session, exam_id)
+            self._ensure_paper_editable(session, exam)
+            question = session.get(TestExamWrittenQuestion, int(exam_question_id))
+            if question is None or int(question.exam_id) != int(exam.id):
+                raise TestExamError("Otázka nepatří k této zkoušce.")
+            answer = next(
+                (
+                    item
+                    for item in self._answers(session, question.id)
+                    if item.letter == normalized
+                ),
+                None,
+            )
+            if answer is None:
+                raise TestExamError("Odpověď nepatří k této otázce.")
+            choice = session.scalar(
+                select(TestExamWrittenChoice).where(
+                    TestExamWrittenChoice.exam_id == int(exam.id),
+                    TestExamWrittenChoice.exam_question_id == int(question.id),
+                )
+            )
+            if choice is None:
+                session.add(
+                    TestExamWrittenChoice(
+                        exam_id=int(exam.id),
+                        exam_question_id=int(question.id),
+                        exam_answer_id=int(answer.id),
+                        selected_letter=answer.letter,
+                        saved_at=moment,
+                    )
+                )
+            else:
+                choice.exam_answer_id = int(answer.id)
+                choice.selected_letter = answer.letter
+                choice.saved_at = moment
+            exam.written_mode = WRITTEN_MODE_PAPER
+            session.commit()
+        except TestExamError:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    def clear_paper_answer(self, exam_id: int, exam_question_id: int) -> None:
+        """Smaže volbu otázky. Nezodpovězená otázka zůstane chybou až při vyhodnocení."""
+        session = get_session()
+        session.expire_on_commit = False
+        try:
+            exam = self._require(session, exam_id)
+            self._ensure_paper_editable(session, exam)
+            question = session.get(TestExamWrittenQuestion, int(exam_question_id))
+            if question is None or int(question.exam_id) != int(exam.id):
+                raise TestExamError("Otázka nepatří k této zkoušce.")
+            choice = session.scalar(
+                select(TestExamWrittenChoice).where(
+                    TestExamWrittenChoice.exam_id == int(exam.id),
+                    TestExamWrittenChoice.exam_question_id == int(question.id),
+                )
+            )
+            if choice is not None:
+                session.delete(choice)
+            session.commit()
+        except TestExamError:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    def evaluate_paper(self, exam_id: int, *, now: datetime | None = None) -> TestExam:
+        """Uzavře papírovou písemnou část stejným výpočtem jako elektronický test."""
+        moment = self._moment(now)
+        session = get_session()
+        session.expire_on_commit = False
+        try:
+            exam = self._require(session, exam_id)
+            self._ensure_paper_editable(session, exam)
+            exam.written_mode = WRITTEN_MODE_PAPER
+            self._mark_finished(session, exam, WRITTEN_FINISH_PAPER, moment)
+            session.commit()
+            session.refresh(exam)
+            session.expunge(exam)
+            return exam
+        except TestExamError:
+            session.rollback()
+            raise
+        finally:
+            session.close()
 
     def save_choice(
         self,
@@ -526,6 +721,20 @@ class WrittenExamService:
             raise
         finally:
             session.close()
+
+    def _ensure_paper_editable(self, session, exam: TestExam) -> None:
+        if exam.written_finish_reason or exam.status == EXAM_STATUS_COMPLETED:
+            raise TestExamError(PAPER_ENTRY_LOCKED)
+        if (
+            (exam.written_mode or "") == WRITTEN_MODE_ELECTRONIC
+            or exam.status == EXAM_STATUS_STARTED
+        ):
+            raise TestExamError(ELECTRONIC_BLOCKS_PAPER)
+        if exam.status != EXAM_STATUS_PREPARED:
+            raise TestExamError("Papírové odpovědi lze zadávat jen u připravené zkoušky.")
+        questions = self._questions(session, exam.id)
+        if not exam.uses_written or not questions:
+            raise TestExamError("Zkouška nemá písemnou část.")
 
     def _ensure_open(self, session, exam: TestExam, now: datetime) -> None:
         if exam.written_finish_reason:

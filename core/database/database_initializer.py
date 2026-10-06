@@ -3776,6 +3776,10 @@ def _ensure_test_exam_tables() -> None:
         _add_column("test_exams", "exam_result VARCHAR(20)")
         _add_column("test_exams", "written_evaluated_at DATETIME")
         _add_column("test_exams", "oral_failed_at DATETIME")
+        _add_column(
+            "test_exams",
+            "written_mode VARCHAR(20) NOT NULL DEFAULT ''",
+        )
     if not _table_columns("test_exam_examiners"):
         TestExamExaminer.__table__.create(bind=_db_engine(), checkfirst=True)
     if not _table_columns("test_exam_written_questions"):

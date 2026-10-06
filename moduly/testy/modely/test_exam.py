@@ -72,3 +72,5 @@ class TestExam(Base):
     written_evaluated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     # Jen dodatečný zápis neúspěchu. Prázdná hodnota není stav Vyhověl.
     oral_failed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    # Způsob provedení písemné části: prázdné, electronic, nebo paper.
+    written_mode: Mapped[str] = mapped_column(String(20), default="", nullable=False)

@@ -157,6 +157,8 @@ EXAM_ACTION_DETAIL = "Detail"
 EXAM_ACTION_START_WRITTEN = "Zahájit elektronický test"
 EXAM_ACTION_CONTINUE_WRITTEN = "Pokračovat v elektronickém testu"
 EXAM_ACTION_PRINT_WRITTEN = "Vytisknout písemný test"
+EXAM_ACTION_ENTER_PAPER = "Zadat odpovědi z papírového testu"
+EXAM_ACTION_EVALUATE_PAPER = "Vyhodnotit písemný test"
 PAPER_TEST_KEY_OPTION = "Vytvořit také klíč správných odpovědí"
 PAPER_TEST_INSTRUCTION = (
     "U každé otázky označte jednu správnou odpověď A, B nebo C."
@@ -256,6 +258,25 @@ EXAM_SNAPSHOT_ENTITY = "test_exam_snapshot"
 
 WRITTEN_FINISH_SUBMITTED = "submitted"
 WRITTEN_FINISH_EXPIRED = "expired"
+WRITTEN_FINISH_PAPER = "paper"
+
+WRITTEN_MODE_ELECTRONIC = "electronic"
+WRITTEN_MODE_PAPER = "paper"
+
+PAPER_EVALUATE_INCOMPLETE = (
+    "Některé otázky nemají zadanou odpověď. "
+    "Nezodpovězené otázky se při vyhodnocení počítají jako chyba. "
+    "Opravdu chcete test vyhodnotit?"
+)
+PAPER_EVALUATE_CONFIRM = "Opravdu chcete písemný test vyhodnotit?"
+PAPER_BLOCKS_ELECTRONIC = (
+    "Elektronický test nelze zahájit, protože u zkoušky už probíhá "
+    "zadávání papírových odpovědí."
+)
+ELECTRONIC_BLOCKS_PAPER = (
+    "Papírové odpovědi nelze zadat, protože elektronický test už byl zahájen."
+)
+PAPER_ENTRY_LOCKED = "Písemná část už byla dokončena."
 
 WRITTEN_FINISHED_TEXT = "Písemná část testu byla ukončena."
 WRITTEN_HANDOVER_TEXT = (
