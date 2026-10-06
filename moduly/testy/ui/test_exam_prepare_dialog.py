@@ -39,6 +39,7 @@ from moduly.testy.constants import (
 from moduly.testy.sluzby.test_definition_service import test_definition_service
 from moduly.testy.sluzby.test_employee_service import test_employee_service
 from moduly.testy.sluzby.test_exam_service import (
+    EXAMINEE_CANNOT_EXAMINE,
     TestExamError,
     calculate_valid_until,
     test_exam_service,
@@ -127,13 +128,12 @@ class TestExamPrepareDialog(QDialog):
         self._editor.install_auto_dirty_tracking()
 
         self.employee.set_people(test_employee_service.list_employees(include_inactive=False))
-        eligible = test_employee_service.list_eligible_examiners()
-        self.examiner.set_people(eligible)
-        self.chair.set_people(eligible)
-        self.member.set_people(eligible)
+        self._eligible_examiners = test_employee_service.list_eligible_examiners()
+        self._apply_examiner_choices()
         self._load_tests()
         self._apply_mode()
 
+        self.employee.currentTextChanged.connect(self._on_examinee_changed)
         self.test.currentIndexChanged.connect(self._on_test_changed)
         self.exam_date.dateChanged.connect(self._on_exam_date_changed)
         self.valid_until.dateChanged.connect(self._on_valid_edited)
@@ -219,6 +219,61 @@ class TestExamPrepareDialog(QDialog):
         self.mode_label.setText(EXAMINER_MODE_LABELS.get(mode, ""))
         self.single_box.setVisible(mode == EXAMINER_MODE_SINGLE)
         self.commission_box.setVisible(mode == EXAMINER_MODE_COMMISSION)
+
+    def _on_examinee_changed(self) -> None:
+        examinee_id = self.employee.person_id()
+        removed = False
+        if examinee_id is not None:
+            removed = self._drop_examinee_from_selection(int(examinee_id))
+        self._apply_examiner_choices()
+        if removed:
+            QMessageBox.warning(self, MODULE_NAME, EXAMINEE_CANNOT_EXAMINE)
+
+    def _apply_examiner_choices(self) -> None:
+        examinee_id = self.employee.person_id()
+        offered = [
+            person
+            for person in self._eligible_examiners
+            if examinee_id is None or int(person.id) != int(examinee_id)
+        ]
+        clear_examiner = self._combo_matches(self.examiner, examinee_id)
+        clear_chair = self._combo_matches(self.chair, examinee_id)
+        clear_member = self._combo_matches(self.member, examinee_id)
+        self.examiner.set_people(offered)
+        self.chair.set_people(offered)
+        self.member.set_people(offered)
+        if clear_examiner:
+            self.examiner.setCurrentIndex(0)
+        if clear_chair:
+            self.chair.setCurrentIndex(0)
+        if clear_member:
+            self.member.setCurrentIndex(0)
+
+    def _drop_examinee_from_selection(self, examinee_id: int) -> bool:
+        removed = self._combo_matches(self.examiner, examinee_id)
+        removed = self._combo_matches(self.chair, examinee_id) or removed
+        return self._remove_member_id(examinee_id) > 0 or removed
+
+    def _combo_matches(self, combo: ExamPersonCombo, employee_id: int | None) -> bool:
+        if employee_id is None:
+            return False
+        selected = combo.person_id()
+        return selected is not None and int(selected) == int(employee_id)
+
+    def _remove_member_id(self, employee_id: int) -> int:
+        removed = 0
+        for row in range(self.members.count() - 1, -1, -1):
+            item = self.members.item(row)
+            if item is None:
+                continue
+            try:
+                member_id = int(item.data(Qt.ItemDataRole.UserRole))
+            except (TypeError, ValueError):
+                continue
+            if member_id == int(employee_id):
+                self.members.takeItem(row)
+                removed += 1
+        return removed
 
     def _add_member(self) -> None:
         member_id = self.member.person_id()

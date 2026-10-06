@@ -52,6 +52,11 @@ class TestExamError(ValueError):
     pass
 
 
+EXAMINEE_CANNOT_EXAMINE = (
+    "Testovaný zaměstnanec nemůže být současně zkoušejícím ani členem komise."
+)
+
+
 def add_calendar_months(value: date, months: int) -> date:
     """Přičte kalendářní měsíce. 31. 1. + 1 měsíc je poslední únor, ne 31 dní."""
     year = value.year
@@ -146,6 +151,7 @@ class TestExamService:
 
         people = self._validate_people(
             test.examiner_mode,
+            employee_id=int(employee.id),
             examiner_id=examiner_id,
             chair_id=chair_id,
             member_ids=list(member_ids or []),
@@ -374,6 +380,7 @@ class TestExamService:
         self,
         mode: str,
         *,
+        employee_id: int,
         examiner_id: int | None,
         chair_id: int | None,
         member_ids: list[int],
@@ -385,18 +392,26 @@ class TestExamService:
         if mode == EXAMINER_MODE_SINGLE:
             if chair_id or member_ids:
                 raise TestExamError("Tento test má jednoho zkoušejícího, ne komisi.")
-            examiner = self._require_eligible(examiner_id, "Zkoušejícího")
+            examiner = self._require_other_examiner(
+                examiner_id,
+                employee_id,
+                "Zkoušejícího",
+            )
             return [{"employee": examiner, "role": EXAM_ROLE_EXAMINER}]
         if mode == EXAMINER_MODE_COMMISSION:
             if examiner_id:
                 raise TestExamError("U komise se vybírá předseda a členové.")
-            chair = self._require_eligible(chair_id, "Předsedu")
+            chair = self._require_other_examiner(chair_id, employee_id, "Předsedu")
             if not member_ids:
                 raise TestExamError("Přidejte alespoň jednoho člena komise.")
             people = [{"employee": chair, "role": EXAM_ROLE_CHAIR}]
             seen = {int(chair.id)}
             for member_id in member_ids:
-                member = self._require_eligible(member_id, "Člena komise")
+                member = self._require_other_examiner(
+                    member_id,
+                    employee_id,
+                    "Člena komise",
+                )
                 if int(member.id) in seen:
                     if int(member.id) == int(chair.id):
                         raise TestExamError("Předseda nemůže být současně členem komise.")
@@ -405,6 +420,16 @@ class TestExamService:
                 people.append({"employee": member, "role": EXAM_ROLE_MEMBER})
             return people
         raise TestExamError("Zvolte režim zkoušejících.")
+
+    def _require_other_examiner(
+        self,
+        selected_id: int | None,
+        employee_id: int,
+        label: str,
+    ):
+        if selected_id is not None and int(selected_id) == int(employee_id):
+            raise TestExamError(EXAMINEE_CANNOT_EXAMINE)
+        return self._require_eligible(selected_id, label)
 
     def _require_eligible(self, employee_id: int | None, label: str):
         employee = test_employee_service.get_employee(employee_id)
