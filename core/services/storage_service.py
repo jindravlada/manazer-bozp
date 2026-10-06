@@ -166,6 +166,7 @@ class StorageService:
             root / "moduly" / "proverky" / "templates",
             root / "moduly" / "audity" / "templates",
             root / "moduly" / "rizeni_rizik" / "templates",
+            root / "moduly" / "testy" / "templates",
         ]
 
     def ensure_default_templates(self) -> None:

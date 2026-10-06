@@ -175,9 +175,14 @@ class OdtRichContent:
 
 @dataclass(frozen=True)
 class OdtXmlFragment:
-    """Hotový ODF fragment (např. tabulka) nahrazující odstavec s placeholdérem."""
+    """Hotový ODF fragment (např. tabulka) nahrazující odstavec s placeholdérem.
+
+    ``images`` jsou dvojice (cesta v ODT balíčku, zdrojový soubor). Engine je
+    vloží do balíčku; běžný text se dál nikdy nebere jako cesta k souboru.
+    """
 
     xml: str
+    images: tuple[tuple[str, Path], ...] = ()
 
     def plain_text(self) -> str:
         text = re.sub(r"<text:line-break\s*/>", "\n", self.xml)
@@ -242,6 +247,10 @@ class OdtExportEngine:
                     needs_export_styles = True
             elif isinstance(value, OdtXmlFragment):
                 normalized_values[key_text] = _ODT_FRAGMENT_PREFIX + str(value.xml or "")
+                for archive_name, source in value.images:
+                    path = Path(source)
+                    if path.is_file():
+                        image_registry.append((str(archive_name), path))
             else:
                 normalized_values[key_text] = self._escape_odt_text(value)
 

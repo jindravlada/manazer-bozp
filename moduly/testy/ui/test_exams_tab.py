@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QFileDialog,
     QHBoxLayout,
     QMessageBox,
     QPushButton,
@@ -11,6 +14,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.export import open_export_file
+from core.services.storage_service import storage_service
 from core.widgets.dialog_utils import (
     configure_edit_action_button,
     configure_new_action_button,
@@ -24,6 +29,7 @@ from moduly.testy.constants import (
     EXAM_ACTION_CONTINUE_WRITTEN,
     EXAM_ACTION_DETAIL,
     EXAM_ACTION_PREPARE,
+    EXAM_ACTION_PRINT_WRITTEN,
     EXAM_ACTION_START_WRITTEN,
     EXAM_COL_EMPLOYEE,
     EXAM_COL_ID,
@@ -32,8 +38,10 @@ from moduly.testy.constants import (
     MODULE_NAME,
     WRITTEN_FINISH_EXPIRED,
 )
+from moduly.testy.sluzby.paper_test_export_service import paper_test_export_service
 from moduly.testy.sluzby.test_exam_service import TestExamError, test_exam_service
 from moduly.testy.sluzby.written_exam_service import written_exam_service
+from moduly.testy.ui.paper_test_options_dialog import PaperTestOptionsDialog
 from moduly.testy.ui.test_exam_detail_dialog import TestExamDetailDialog
 from moduly.testy.ui.test_exam_prepare_dialog import TestExamPrepareDialog
 from moduly.testy.ui.test_exam_table import TestExamTable
@@ -59,9 +67,14 @@ class TestExamsTab(QWidget):
         self.start_btn = QPushButton(EXAM_ACTION_START_WRITTEN)
         configure_perform_action_button(self.start_btn)
         self.start_btn.setEnabled(False)
+        self.print_btn = QPushButton(EXAM_ACTION_PRINT_WRITTEN)
+        self.print_btn.setObjectName("exam-print-paper-button")
+        configure_perform_action_button(self.print_btn)
+        self.print_btn.setEnabled(False)
         toolbar.addWidget(self.prepare_btn)
         toolbar.addWidget(self.detail_btn)
         toolbar.addWidget(self.start_btn)
+        toolbar.addWidget(self.print_btn)
         toolbar.addStretch()
 
         self.table = TestExamTable()
@@ -79,6 +92,7 @@ class TestExamsTab(QWidget):
         self.prepare_btn.clicked.connect(self.prepare_exam)
         self.detail_btn.clicked.connect(self.open_selected)
         self.start_btn.clicked.connect(self.start_electronic_test)
+        self.print_btn.clicked.connect(self.print_paper_test)
         self._written_exam_window: WrittenExamWindow | None = None
         self._handover = None
         self.table.doubleClicked.connect(self.open_selected)
@@ -193,9 +207,51 @@ class TestExamsTab(QWidget):
                 visible += 1
         return visible, total
 
+    def print_paper_test(self) -> None:
+        exam_id = self.table.selected_exam_id()
+        if exam_id is None or not paper_test_export_service.can_export(exam_id):
+            self._update_action_buttons()
+            return
+        options = PaperTestOptionsDialog(self)
+        if not options.exec():
+            return
+        exam = test_exam_service.get_exam(exam_id)
+        if exam is None:
+            self.refresh()
+            return
+        default_path = storage_service.exports_dir / paper_test_export_service.test_filename(exam)
+        chosen, _selected_filter = QFileDialog.getSaveFileName(
+            self,
+            "Písemný test",
+            str(default_path),
+            "OpenDocument (*.odt)",
+        )
+        if not chosen:
+            return
+        test_path = Path(chosen)
+        key_path = None
+        if options.include_key:
+            key_path = test_path.with_name(paper_test_export_service.key_filename(exam))
+        try:
+            result = paper_test_export_service.export(
+                exam_id,
+                test_path,
+                include_key=options.include_key,
+                key_path=key_path,
+            )
+        except TestExamError as error:
+            QMessageBox.warning(self, MODULE_NAME, str(error))
+            return
+        open_export_file(result.test_path, parent=self, title="Písemný test")
+        if result.key_path is not None:
+            open_export_file(result.key_path, parent=self, title="Klíč správných odpovědí")
+
     def _update_action_buttons(self) -> None:
         exam_id = self.table.selected_exam_id()
         self.detail_btn.setEnabled(exam_id is not None)
+        self.print_btn.setEnabled(
+            exam_id is not None and paper_test_export_service.can_export(exam_id)
+        )
         action = written_exam_service.electronic_action(exam_id) if exam_id else ""
         if action == "continue":
             self.start_btn.setText(EXAM_ACTION_CONTINUE_WRITTEN)
