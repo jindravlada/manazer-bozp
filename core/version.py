@@ -2,7 +2,7 @@
 
 APP_NAME = "Manažer BOZP"
 APP_EXE_NAME = "ManazerBOZP"
-APP_VERSION = "4.0.10"
+APP_VERSION = "4.0.11"
 APP_AUTHOR = "Ing. Vladimír Jindra"
 APP_COPYRIGHT = "© 2026 Ing. Vladimír Jindra"
 

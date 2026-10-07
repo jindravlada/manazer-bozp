@@ -44,7 +44,7 @@ class PublicLicenseDocsTestCase(unittest.TestCase):
     def test_readme_links_and_paths(self) -> None:
         readme_path = PROJECT_ROOT / "README.md"
         readme = readme_path.read_text(encoding="utf-8")
-        self.assertTrue(readme.startswith("# Manažer BOZP 4.0.10"))
+        self.assertTrue(readme.startswith("# Manažer BOZP 4.0.11"))
         self.assertIn("GPL-3.0-or-later", readme)
         self.assertIn("Copyright © 2026 Ing. Vladimír Jindra", readme)
         self.assertNotIn("/home/", readme)
@@ -52,11 +52,11 @@ class PublicLicenseDocsTestCase(unittest.TestCase):
         self.assertNotIn("DOKUMENTACE.md", readme)
         release_prefix = "https://github.com/jindravlada/manazer-bozp/releases"
         self.assertIn(
-            f"{release_prefix}/download/v4.0.10/Manazer-BOZP-4.0.10-x86_64.AppImage",
+            f"{release_prefix}/download/v4.0.11/Manazer-BOZP-4.0.11-x86_64.AppImage",
             readme,
         )
         self.assertIn(
-            f"{release_prefix}/download/v4.0.10/Manazer_BOZP_4_0_10_Setup.exe",
+            f"{release_prefix}/download/v4.0.11/Manazer_BOZP_4_0_11_Setup.exe",
             readme,
         )
 

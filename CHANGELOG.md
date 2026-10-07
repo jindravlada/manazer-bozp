@@ -14,6 +14,16 @@
 
 ---
 
+# Verze 4.0.11
+
+Datum vydání:
+
+7. 10. 2026
+
+Audity a prověrky: uložení zjištění a navázaných úkolů probíhá v jedné databázové transakci. Když se zjištění před uložením odstraní, nevznikne k němu úkol. Při chybě se neuloží jen část změn a opakované uložení stejnou úpravu nevloží znovu.
+
+---
+
 # Verze 4.0.10
 
 Datum vydání:

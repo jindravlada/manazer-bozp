@@ -154,7 +154,7 @@ class SecHardeningBuild1TestCase(unittest.TestCase):
         self.assertIn(f"SetupIconFile={icon}", installer)
         self.assertIn("SetupIconFile=core\\\\resources\\\\manager_bozp.ico", generator)
         self.assertTrue((PROJECT_ROOT / "core" / "resources" / "manager_bozp.ico").is_file())
-        self.assertIn('APP_VERSION = "4.0.10"', version)
+        self.assertIn('APP_VERSION = "4.0.11"', version)
 
     def test_h_existing_packaging_assertions_still_hold(self) -> None:
         release = (PROJECT_ROOT / "build_release.sh").read_text(encoding="utf-8")
