@@ -1,6 +1,7 @@
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
-from core.database.session import get_session
+from core.database.session import get_session, open_session
 from core.utils.czech_sort import czech_sorted, worker_sort_key
 from moduly.nastaveni.modely.employer import Employer
 from moduly.nastaveni.modely.thp_worker import ThpWorker
@@ -44,9 +45,17 @@ class SettingsRepository:
 
         return czech_sorted(workers, key=worker_sort_key)
 
-    def get_worker_by_id(self, worker_id: int) -> ThpWorker | None:
-        with get_session() as session:
-            return session.get(ThpWorker, worker_id)
+    def get_worker_by_id(
+        self,
+        worker_id: int,
+        *,
+        session: Session | None = None,
+    ) -> ThpWorker | None:
+        with open_session(session) as (current, owns):
+            worker = current.get(ThpWorker, worker_id)
+            if worker is not None and owns:
+                current.expunge(worker)
+            return worker
 
     def save_worker(self, worker: ThpWorker) -> ThpWorker:
         with get_session() as session:
@@ -68,9 +77,17 @@ class SettingsRepository:
     def get_all_workplaces(self, include_inactive: bool = False) -> list[Workplace]:
         return self.get_workplaces(include_inactive=include_inactive)
 
-    def get_workplace_by_id(self, workplace_id: int) -> Workplace | None:
-        with get_session() as session:
-            return session.get(Workplace, workplace_id)
+    def get_workplace_by_id(
+        self,
+        workplace_id: int,
+        *,
+        session: Session | None = None,
+    ) -> Workplace | None:
+        with open_session(session) as (current, owns):
+            workplace = current.get(Workplace, workplace_id)
+            if workplace is not None and owns:
+                current.expunge(workplace)
+            return workplace
 
     def save_workplace(self, workplace: Workplace) -> Workplace:
         with get_session() as session:

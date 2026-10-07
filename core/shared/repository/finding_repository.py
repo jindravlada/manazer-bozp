@@ -162,14 +162,16 @@ class FindingRepository:
                 return detached
             return stored
 
-    def delete(self, finding_id: int) -> bool:
-        with get_session() as session:
-            finding = session.get(Finding, finding_id)
+    def delete(self, finding_id: int, *, session: Session | None = None) -> bool:
+        with _open_session(session) as (sess, owns):
+            finding = sess.get(Finding, finding_id)
             if finding is None:
                 return False
 
-            session.delete(finding)
-            session.commit()
+            sess.delete(finding)
+            sess.flush()
+            if owns:
+                sess.commit()
             return True
 
     def delete_for_entity(self, entity_type: str, entity_id: int) -> int:

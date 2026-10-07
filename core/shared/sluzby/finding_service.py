@@ -1,5 +1,7 @@
 from datetime import date
 
+from sqlalchemy.orm import Session
+
 from core.shared.constants import (
     FINDING_STATUS_OTEVRENE,
     FINDING_STATUS_V_PROCESU,
@@ -29,22 +31,33 @@ class FindingService:
             raise ValueError(f"Neplatný typ entity: {entity_type}")
         return self.repository.get_for_entities(entity_type, entity_ids)
 
-    def get_by_id(self, finding_id: int) -> Finding | None:
-        return self.repository.get_by_id(finding_id)
+    def get_by_id(self, finding_id: int, *, session: Session | None = None) -> Finding | None:
+        return self.repository.get_by_id(finding_id, session=session)
 
     def get_by_ids(self, finding_ids: list[int] | tuple[int, ...]) -> list[Finding]:
         return self.repository.get_by_ids(finding_ids)
 
-    def get_by_task_id(self, task_id: int) -> Finding | None:
-        return self.repository.get_by_task_id(task_id)
+    def get_by_task_id(self, task_id: int, *, session: Session | None = None) -> Finding | None:
+        return self.repository.get_by_task_id(task_id, session=session)
 
-    def create(self, entity_type: str, entity_id: int, **fields) -> Finding:
+    def create(
+        self,
+        entity_type: str,
+        entity_id: int,
+        *,
+        session: Session | None = None,
+        **fields,
+    ) -> Finding:
         self._validate_entity(entity_type, entity_id)
         display_order = fields.pop("display_order", None)
         data = self._validated_fields(fields)
 
         if display_order is None:
-            display_order = self.repository.max_display_order(entity_type, entity_id) + 1
+            display_order = self.repository.max_display_order(
+                entity_type,
+                entity_id,
+                session=session,
+            ) + 1
 
         finding = Finding(
             entity_type=entity_type,
@@ -53,10 +66,16 @@ class FindingService:
             **data,
         )
         self._apply_status_side_effects(finding)
-        return self.repository.save(finding)
+        return self.repository.save(finding, session=session)
 
-    def update(self, finding_id: int, **fields) -> Finding | None:
-        finding = self.repository.get_by_id(finding_id)
+    def update(
+        self,
+        finding_id: int,
+        *,
+        session: Session | None = None,
+        **fields,
+    ) -> Finding | None:
+        finding = self.repository.get_by_id(finding_id, session=session)
         if finding is None:
             return None
 
@@ -79,10 +98,10 @@ class FindingService:
             finding.resolved_at = fields["resolved_at"]
 
         self._apply_status_side_effects(finding)
-        return self.repository.save(finding)
+        return self.repository.save(finding, session=session)
 
-    def delete(self, finding_id: int) -> bool:
-        return self.repository.delete(finding_id)
+    def delete(self, finding_id: int, *, session: Session | None = None) -> bool:
+        return self.repository.delete(finding_id, session=session)
 
     def delete_for_entity(self, entity_type: str, entity_id: int) -> int:
         self._validate_entity(entity_type, entity_id)

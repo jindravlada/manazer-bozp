@@ -116,9 +116,11 @@ class TaskRepository:
                 sess.refresh(task)
             return task
 
-    def update(self, task: Task) -> Task:
-        with get_session() as session:
-            task = session.merge(task)
-            session.commit()
-            session.refresh(task)
+    def update(self, task: Task, *, session: Session | None = None) -> Task:
+        with _open_session(session) as (sess, owns):
+            task = sess.merge(task)
+            sess.flush()
+            if owns:
+                sess.commit()
+                sess.refresh(task)
             return task

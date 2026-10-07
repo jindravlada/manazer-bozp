@@ -173,6 +173,7 @@ class InspectionVerificationService:
         verification_type: str,
         methodology_type: str | None = None,
         item: dict | None = None,
+        session=None,
     ) -> str:
         """Nastaví typ ověření pro prověrku. Vrací efektivní typ.
 
@@ -196,6 +197,7 @@ class InspectionVerificationService:
                 area_id=area,
                 section_id=section,
                 control_point_id=point,
+                session=session,
             )
             return methodology
 
@@ -205,6 +207,7 @@ class InspectionVerificationService:
             section_id=section,
             control_point_id=point,
             override_verification_type=target,
+            session=session,
         )
         return target
 

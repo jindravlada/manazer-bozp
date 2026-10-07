@@ -99,6 +99,7 @@ class AuditVerificationService:
         verification_type: str,
         methodology_type: str | None = None,
         item: dict | None = None,
+        session=None,
     ) -> str:
         """Nastaví typ ověření pro audit. Vrací efektivní typ.
 
@@ -122,6 +123,7 @@ class AuditVerificationService:
                 area_id=area,
                 section_id=section,
                 control_point_id=point,
+                session=session,
             )
             return methodology
 
@@ -131,6 +133,7 @@ class AuditVerificationService:
             section_id=section,
             control_point_id=point,
             override_verification_type=target,
+            session=session,
         )
         return target
 

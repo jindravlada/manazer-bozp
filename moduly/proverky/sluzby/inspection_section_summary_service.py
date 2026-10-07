@@ -45,12 +45,14 @@ class InspectionSectionSummaryService:
         area_id: str,
         section_id: str,
         summary_text: str,
+        session=None,
     ) -> InspectionSectionSummary | None:
         return self.repository.upsert(
             int(inspection_id),
             area_id=area_id,
             section_id=section_id,
             summary_text=summary_text,
+            session=session,
         )
 
     def delete_for_inspection(self, inspection_id: int) -> None:

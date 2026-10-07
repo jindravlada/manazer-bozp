@@ -190,6 +190,20 @@ class BozpInspectionDialog(QDialog):
         if self._persist():
             self._done_accept()
 
+    def _flush_deferred(self, entity_id: int) -> bool:
+        try:
+            self._deferred.flush(entity_id=entity_id)
+        except Exception as exc:
+            QMessageBox.warning(
+                self,
+                "Uložení",
+                "Odložené změny se nepodařilo uložit. Tato část uložení byla vrácena "
+                "a můžete ji zkusit znovu.\n\n"
+                f"{exc}",
+            )
+            return False
+        return True
+
     def _persist(self) -> bool:
         valid, message = self.commission_widget.validate()
         if not valid:
@@ -208,14 +222,16 @@ class BozpInspectionDialog(QDialog):
                 return False
             self.inspection = bozp_inspection_service.get_by_id(created.id) or created
             self._save_commission_members(self.inspection.id, data)
-            self._deferred.flush(entity_id=self.inspection.id)
+            if not self._flush_deferred(self.inspection.id):
+                return False
             self._reload_after_persist()
         else:
             updated = bozp_inspection_service.update_inspection(self.inspection.id, **payload)
             if updated is None:
                 return False
             self._save_commission_members(self.inspection.id, data)
-            self._deferred.flush(entity_id=self.inspection.id)
+            if not self._flush_deferred(self.inspection.id):
+                return False
             self.inspection = (
                 bozp_inspection_service.get_by_id(updated.id) or updated
             )
@@ -337,7 +353,8 @@ class BozpInspectionDialog(QDialog):
             self.inspection.id,
             data.get("commission_members", []),
         )
-        self._deferred.flush(entity_id=self.inspection.id)
+        if not self._flush_deferred(self.inspection.id):
+            return False
 
         self.inspection = bozp_inspection_service.get_by_id(updated.id) or updated
         self.conclusion_widget.load_inspection(self.inspection)

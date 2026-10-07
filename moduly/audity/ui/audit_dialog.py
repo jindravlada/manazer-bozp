@@ -272,6 +272,20 @@ class AuditDialog(QDialog):
         self.tasks_widget.refresh()
         self.conclusion_widget.refresh()
 
+    def _flush_deferred(self, entity_id: int) -> bool:
+        try:
+            self._deferred.flush(entity_id=entity_id)
+        except Exception as exc:
+            QMessageBox.warning(
+                self,
+                "Uložení",
+                "Odložené změny se nepodařilo uložit. Tato část uložení byla vrácena "
+                "a můžete ji zkusit znovu.\n\n"
+                f"{exc}",
+            )
+            return False
+        return True
+
     def _save_keep_open(self) -> None:
         self._persist()
 
@@ -467,10 +481,12 @@ class AuditDialog(QDialog):
             if created is None:
                 return False
             self.audit = created
-            self._deferred.flush(entity_id=created.id)
+            if not self._flush_deferred(created.id):
+                return False
             self._reload_after_persist()
         else:
-            self._deferred.flush(entity_id=self.audit.id)
+            if not self._flush_deferred(self.audit.id):
+                return False
             payload = self.prepare_save_payload(data)
             try:
                 updated = audit_service.update_audit(self.audit.id, **payload)
@@ -651,7 +667,8 @@ class AuditDialog(QDialog):
 
         self.processes_widget.capture_section_summary()
         self.terrain_widget.capture_section_summary()
-        self._deferred.flush(entity_id=self.audit.id)
+        if not self._flush_deferred(self.audit.id):
+            return False
 
         rec = self.conclusion_widget.recommendation_edit.toPlainText()
         current_sig = compute_results_signature(int(self.audit.id))
