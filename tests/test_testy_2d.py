@@ -40,7 +40,7 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from core.database.session import get_session
-    from moduly.testy.constants import COLUMN_HEADERS
+    from moduly.testy.constants import COLUMN_HEADERS, GENDER_MALE
     from moduly.testy.modely.test_employee import TestEmployee
     from moduly.testy.modely.test_employee_role import TestEmployeeRole
     from moduly.testy.sluzby.test_employee_service import test_employee_service
@@ -99,6 +99,7 @@ class TestEmployeeTitlesTestCase(unittest.TestCase):
             workplace_id=loaded.workplace_id,
             responsibility_role_ids=[self.role.id],
             active=True,
+            gender=GENDER_MALE,
         )
         self.assertEqual(updated.title_before, "Mgr.")
         self.assertEqual(updated.title_after, "MBA")
@@ -118,6 +119,7 @@ class TestEmployeeTitlesTestCase(unittest.TestCase):
             responsibility_role_ids=[self.role.id],
             may_examine=False,
             active=True,
+            gender=GENDER_MALE,
         )
         self.assertFalse(cleared.may_examine)
 
@@ -214,6 +216,10 @@ class TestEmployeeTitlesTestCase(unittest.TestCase):
         dialog.workplace.set_workplace_id(self.workplace.id)
         dialog.roles.set_role_ids([self.role.id])
         dialog.may_examine.setChecked(True)
+        for index in range(dialog.gender.count()):
+            if dialog.gender.itemData(index) == GENDER_MALE:
+                dialog.gender.setCurrentIndex(index)
+                break
         dialog.accept()
 
         saved = test_employee_service.get_employee(dialog.saved_employee_id)

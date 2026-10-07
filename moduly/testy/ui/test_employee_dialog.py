@@ -17,13 +17,22 @@ from core.widgets.dialog_utils import (
     create_save_cancel_box,
     wrap_in_scroll_area,
 )
+from core.widgets.no_wheel_guards import NoWheelComboBox
 from core.widgets.editor_dialog_controller import EditorDialogController
 from core.widgets.multi_responsibility_role_selector import (
     MultiResponsibilityRoleSelector,
 )
 from core.widgets.workplace_selector import WorkplaceSelector
 from moduly.nastaveni.sluzby.settings_service import settings_service
-from moduly.testy.constants import DIALOG_TITLE_EDIT, DIALOG_TITLE_NEW, MODULE_NAME
+from moduly.testy.constants import (
+    DIALOG_TITLE_EDIT,
+    DIALOG_TITLE_NEW,
+    GENDER_FEMALE,
+    GENDER_FEMALE_LABEL,
+    GENDER_MALE,
+    GENDER_MALE_LABEL,
+    MODULE_NAME,
+)
 from moduly.testy.modely.test_employee import TestEmployee
 from moduly.testy.sluzby.test_employee_service import (
     TestEmployeeError,
@@ -61,6 +70,11 @@ class TestEmployeeDialog(QDialog):
         self.first_name = QLineEdit()
         self.last_name = QLineEdit()
         self.title_after = QLineEdit()
+        self.gender = NoWheelComboBox()
+        self.gender.setObjectName("employee-gender")
+        self.gender.addItem("", None)
+        self.gender.addItem(GENDER_MALE_LABEL, GENDER_MALE)
+        self.gender.addItem(GENDER_FEMALE_LABEL, GENDER_FEMALE)
         self.workplace = WorkplaceSelector(
             include_empty=True,
             allow_custom_value=False,
@@ -75,6 +89,7 @@ class TestEmployeeDialog(QDialog):
         form.addRow("Jméno:", self.first_name)
         form.addRow("Příjmení:", self.last_name)
         form.addRow("Titul za jménem:", self.title_after)
+        form.addRow("Pohlaví:", self.gender)
         form.addRow("Provoz (pracoviště):", self.workplace)
         form.addRow("Funkce / role:", self.roles)
         form.addRow("", self.active_checkbox)
@@ -101,6 +116,7 @@ class TestEmployeeDialog(QDialog):
             self.first_name.setText(employee.first_name)
             self.last_name.setText(employee.last_name)
             self.title_after.setText(employee.title_after or "")
+            self._set_gender(getattr(employee, "gender", None))
             self._set_workplace(employee.workplace_id)
             self.roles.set_role_ids(role_ids or [])
             self.active_checkbox.setChecked(employee.active)
@@ -109,6 +125,9 @@ class TestEmployeeDialog(QDialog):
         self._editor.capture_baseline()
 
     def accept(self) -> None:
+        if self.gender.currentData() not in (GENDER_MALE, GENDER_FEMALE):
+            QMessageBox.warning(self, MODULE_NAME, "Vyberte pohlaví.")
+            return
         data = self.get_data()
         try:
             if self.employee_id is None:
@@ -132,6 +151,7 @@ class TestEmployeeDialog(QDialog):
             "first_name": self.first_name.text(),
             "last_name": self.last_name.text(),
             "title_after": self.title_after.text(),
+            "gender": self.gender.currentData(),
             "workplace_id": self._workplace_id(),
             "responsibility_role_ids": self.roles.selected_role_ids(),
             "may_examine": self.may_examine.isChecked(),
@@ -145,6 +165,7 @@ class TestEmployeeDialog(QDialog):
             self.first_name.text(),
             self.last_name.text(),
             self.title_after.text(),
+            self.gender.currentData(),
             self._workplace_id(),
             tuple(self.roles.selected_role_ids()),
             self.may_examine.isChecked(),
@@ -161,6 +182,13 @@ class TestEmployeeDialog(QDialog):
         if not isinstance(data, int):
             return None
         return int(data)
+
+    def _set_gender(self, gender: str | None) -> None:
+        for index in range(self.gender.count()):
+            if self.gender.itemData(index) == gender:
+                self.gender.setCurrentIndex(index)
+                return
+        self.gender.setCurrentIndex(0)
 
     def _set_workplace(self, workplace_id: int) -> None:
         workplace = settings_service.get_workplace_by_id(workplace_id)

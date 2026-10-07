@@ -3702,6 +3702,8 @@ def _ensure_test_employee_columns() -> None:
         _add_column("test_employees", "title_after VARCHAR(50) DEFAULT ''")
     if "may_examine" not in columns:
         _add_column("test_employees", "may_examine BOOLEAN DEFAULT 0")
+    if "gender" not in columns:
+        _add_column("test_employees", "gender VARCHAR(10)")
 
 
 def _ensure_test_written_question_topics_table() -> None:
@@ -3777,6 +3779,7 @@ def _ensure_test_exam_tables() -> None:
         _add_column("test_exams", "written_evaluated_at DATETIME")
         _add_column("test_exams", "oral_failed_at DATETIME")
         _add_column("test_exams", "written_mode VARCHAR(20)")
+        _add_column("test_exams", "employee_gender VARCHAR(10)")
     if not _table_columns("test_exam_examiners"):
         TestExamExaminer.__table__.create(bind=_db_engine(), checkfirst=True)
     if not _table_columns("test_exam_written_questions"):

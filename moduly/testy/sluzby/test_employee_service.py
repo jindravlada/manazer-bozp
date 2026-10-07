@@ -8,6 +8,7 @@ from moduly.nastaveni.sluzby.responsibility_role_service import (
     responsibility_role_service,
 )
 from moduly.nastaveni.sluzby.settings_service import settings_service
+from moduly.testy.constants import GENDER_FEMALE, GENDER_MALE
 from moduly.testy.modely.test_employee import TestEmployee
 from moduly.testy.repository.test_employee_repository import TestEmployeeRepository
 from moduly.testy.repository.test_employee_role_repository import (
@@ -41,6 +42,7 @@ class TestEmployeeService:
         title_before: str = "",
         title_after: str = "",
         may_examine: bool = False,
+        gender: str | None = None,
     ) -> TestEmployee:
         number = self._validate_personal_number(personal_number)
         self._ensure_unique_personal_number(number)
@@ -58,6 +60,7 @@ class TestEmployeeService:
             workplace_id=workplace,
             may_examine=bool(may_examine),
             active=bool(active),
+            gender=self._normalize_gender(gender, required=False),
         )
         return self.repository.add_with_roles(employee, role_ids)
 
@@ -113,6 +116,7 @@ class TestEmployeeService:
         title_before: str = "",
         title_after: str = "",
         may_examine: bool = False,
+        gender: str | None = None,
     ) -> TestEmployee:
         """Úprava všech údajů editoru v jednom zápisu."""
         employee = self._require_employee(employee_id)
@@ -126,6 +130,7 @@ class TestEmployeeService:
         employee.workplace_id = self._require_workplace(workplace_id)
         role_ids = self._require_roles(responsibility_role_ids)
         employee.may_examine = bool(may_examine)
+        employee.gender = self._normalize_gender(gender, required=True)
         employee.active = bool(active)
         employee.updated_at = datetime.now()
         return self.repository.update_with_roles(employee, role_ids)
@@ -181,6 +186,16 @@ class TestEmployeeService:
 
     def _normalize_title(self, value: str) -> str:
         return " ".join(str(value or "").strip().split())
+
+    def _normalize_gender(self, value: object, *, required: bool) -> str | None:
+        text = str(value or "").strip()
+        if not text:
+            if required:
+                raise TestEmployeeError("Vyberte pohlaví.")
+            return None
+        if text not in (GENDER_MALE, GENDER_FEMALE):
+            raise TestEmployeeError("Vyberte pohlaví.")
+        return text
 
     def _ensure_unique_personal_number(
         self,

@@ -14,6 +14,7 @@ from moduly.testy.constants import (
     EXAM_ROLE_MEMBER,
     EXAMINER_MODE_COMMISSION,
     EXAMINER_MODE_SINGLE,
+    GENDER_FEMALE,
 )
 
 # Ruční datum. Plánované datum z databáze se na doklad netiskne.
@@ -68,7 +69,7 @@ def render_protocol_closing_xml(
 
 def protocol_people(exam, examiners) -> list[tuple[str, str]]:
     """Podpisy podle režimu snapshotu. Jména jsou snímek, ne aktuální evidence."""
-    people = [("Zkoušený", _person_name(exam))]
+    people = [(examinee_role_label(getattr(exam, "employee_gender", None)), _person_name(exam))]
     ordered = sorted(
         list(examiners or []),
         key=lambda item: (int(getattr(item, "position", 0)), int(getattr(item, "id", 0))),
@@ -102,18 +103,16 @@ def _manual_outcome(label: str) -> str:
     )
 
 
+def examinee_role_label(gender: object) -> str:
+    """Pohlaví jen ze snapshotu. Chybějící údaj zůstane „Zkoušený“."""
+    if str(gender or "").strip() == GENDER_FEMALE:
+        return "Zkoušená"
+    return "Zkoušený"
+
+
 def _oral_block(position: int, text: str) -> str:
-    """Otázka a linky na poznámku drží pohromadě, aby se otázka neroztrhla."""
-    return (
-        '<table:table table:style-name="ProtocolOral">'
-        '<table:table-column table:style-name="ProtocolOralCol"/>'
-        '<table:table-row table:style-name="ProtocolOralRow">'
-        '<table:table-cell table:style-name="ProtocolOralCell" office:value-type="string">'
-        f'<text:p text:style-name="ProtocolOralText">{_xml(f"{int(position)}. {text}")}</text:p>'
-        '<text:p text:style-name="ProtocolNote">&#160;</text:p>'
-        '<text:p text:style-name="ProtocolNote">&#160;</text:p>'
-        "</table:table-cell></table:table-row></table:table>"
-    )
+    """Jedna otázka jako odstavec. Seznam se může rozdělit mezi stránky, otázka ne."""
+    return f'<text:p text:style-name="ProtocolOralText">{_xml(f"{int(position)}. {text}")}</text:p>'
 
 
 def _signature_block(people: list[tuple[str, str]]) -> str:
