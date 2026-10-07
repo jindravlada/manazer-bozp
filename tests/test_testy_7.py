@@ -838,7 +838,8 @@ class ExamSnapshotTestCase(unittest.TestCase):
             self.assertIn("71009", joined)
             self.assertIn("Text pro detail", joined)
             self.assertIn("Ústní text detailu", joined)
-            self.assertIn("(správná)", joined)
+            self.assertIn("první", joined)
+            self.assertNotIn("(správná)", joined)
             self.assertIn("Povolené chyby: 0", joined)
             image = detail.findChild(QLabel, "written-image-1")
             assert image is not None

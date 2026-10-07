@@ -7,7 +7,6 @@ from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
-    QFormLayout,
     QGroupBox,
     QLabel,
     QMessageBox,
@@ -32,12 +31,13 @@ from moduly.testy.constants import (
     ORAL_FAILURE_CLEAR_CONFIRM,
     ORAL_FAILURE_CONFIRM,
     ORAL_PART_FAILED_LINE,
-    WRITTEN_OUTCOME_CORRECT,
-    WRITTEN_OUTCOME_INCORRECT,
-    WRITTEN_OUTCOME_LABELS,
-    WRITTEN_OUTCOME_UNANSWERED,
     written_result_label,
 )
+
+_ANSWER_CORRECT_STYLE = "color: #15803d; font-weight: 700;"
+_ANSWER_ERROR_STYLE = "color: #b91c1c; font-weight: 700;"
+_ANSWER_ERROR_MARK = "\u2014 chyba"
+_UNANSWERED_ERROR = "Nezodpovězeno \u2014 chyba"
 from moduly.testy.sluzby.test_definition_service import format_test_duration
 from moduly.testy.sluzby.test_exam_service import TestExamError, format_exam_date, test_exam_service
 
@@ -229,82 +229,59 @@ class TestExamDetailDialog(QDialog):
                 image.setObjectName(f"written-image-{question.position}")
                 layout.addWidget(image)
             answers = test_exam_service.get_written_answers(question.id)
+            selected = None
             if exam.written_result:
-                layout.addWidget(self._question_verdict(question, answers, choices))
-            answers_form = QFormLayout()
+                choice = choices.get(int(question.id))
+                if choice is not None:
+                    selected = next(
+                        (
+                            answer
+                            for answer in answers
+                            if int(answer.id) == int(choice.exam_answer_id)
+                        ),
+                        None,
+                    )
+                if selected is None:
+                    missing = QLabel(_UNANSWERED_ERROR)
+                    missing.setObjectName(f"written-unanswered-{question.position}")
+                    missing.setStyleSheet(_ANSWER_ERROR_STYLE)
+                    layout.addWidget(missing)
             for answer in answers:
-                mark = " (správná)" if answer.is_correct else ""
+                caption, style = self._answer_presentation(
+                    question,
+                    answer,
+                    selected,
+                    evaluated=bool(exam.written_result),
+                )
+                text = QLabel(caption)
+                text.setWordWrap(True)
+                text.setObjectName(f"answer-{question.position}-{answer.letter}")
+                if style:
+                    text.setStyleSheet(style)
+                layout.addWidget(text)
                 if question.answer_kind == ANSWER_KIND_IMAGE:
-                    host = QWidget()
-                    host_layout = QVBoxLayout(host)
-                    host_layout.setContentsMargins(0, 0, 0, 0)
-                    host_layout.addWidget(QLabel(mark.strip() or " "))
                     picture = self._image_label(answer.image_stored_path, 160)
                     if picture is not None:
-                        picture.setObjectName(f"answer-image-{question.position}-{answer.letter}")
-                        host_layout.addWidget(picture)
-                    answers_form.addRow(f"{answer.letter})", host)
-                else:
-                    text = QLabel(f"{answer.text}{mark}")
-                    text.setWordWrap(True)
-                    text.setObjectName(f"answer-{question.position}-{answer.letter}")
-                    answers_form.addRow(f"{answer.letter})", text)
-            layout.addLayout(answers_form)
+                        picture.setObjectName(
+                            f"answer-image-{question.position}-{answer.letter}"
+                        )
+                        layout.addWidget(picture)
             self.written_layout.addWidget(block)
 
-    def _question_verdict(self, question, answers, choices) -> QWidget:
-        host = QWidget()
-        layout = QVBoxLayout(host)
-        layout.setContentsMargins(0, 0, 0, 0)
-        choice = choices.get(int(question.id))
-        selected = None
-        if choice is not None:
-            selected = next(
-                (answer for answer in answers if int(answer.id) == int(choice.exam_answer_id)),
-                None,
-            )
-        correct = next((answer for answer in answers if answer.is_correct), None)
-        if selected is None:
-            outcome = WRITTEN_OUTCOME_UNANSWERED
-        elif selected.is_correct:
-            outcome = WRITTEN_OUTCOME_CORRECT
-        else:
-            outcome = WRITTEN_OUTCOME_INCORRECT
-        verdict = QLabel(f"Vyhodnocení: {WRITTEN_OUTCOME_LABELS[outcome]}")
-        verdict.setObjectName(f"written-outcome-{question.position}")
-        verdict.setStyleSheet(self._outcome_style(outcome))
-        employee = QLabel(
-            "Odpověď zaměstnance: "
-            + (
-                "nezodpovězeno"
-                if selected is None
-                else self._answer_caption(question, selected)
-            )
-        )
-        employee.setWordWrap(True)
-        employee.setObjectName(f"written-employee-answer-{question.position}")
-        correct_label = QLabel(
-            "Správná odpověď: "
-            + (self._answer_caption(question, correct) if correct is not None else "není ve snapshotu")
-        )
-        correct_label.setWordWrap(True)
-        correct_label.setObjectName(f"written-correct-answer-{question.position}")
-        layout.addWidget(verdict)
-        layout.addWidget(employee)
-        layout.addWidget(correct_label)
-        return host
-
-    def _answer_caption(self, question, answer) -> str:
-        if question.answer_kind == ANSWER_KIND_IMAGE or not str(answer.text or "").strip():
-            return f"{answer.letter})"
-        return f"{answer.letter}) {answer.text}"
-
-    def _outcome_style(self, outcome: str) -> str:
-        if outcome == WRITTEN_OUTCOME_CORRECT:
-            return "color: #14532d; font-weight: 700;"
-        if outcome == WRITTEN_OUTCOME_INCORRECT:
-            return "color: #991b1b; font-weight: 700;"
-        return "color: #57534e; font-weight: 700;"
+    def _answer_presentation(self, question, answer, selected, *, evaluated: bool) -> tuple[str, str]:
+        body = f"{answer.letter})"
+        if question.answer_kind != ANSWER_KIND_IMAGE and str(answer.text or "").strip():
+            body = f"{answer.letter}) {answer.text}"
+        if not evaluated:
+            return body, ""
+        chosen = selected is not None and int(answer.id) == int(selected.id)
+        if chosen and answer.is_correct:
+            return body, _ANSWER_CORRECT_STYLE
+        if chosen:
+            return f"{body} {_ANSWER_ERROR_MARK}", _ANSWER_ERROR_STYLE
+        if answer.is_correct and (selected is None or not selected.is_correct):
+            return body, _ANSWER_CORRECT_STYLE
+        return body, ""
 
     def _fill_oral(self, questions) -> None:
         while self.oral_layout.count():

@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QRadioButton,
+    QWidget,
 )
 from sqlalchemy import delete, inspect
 
@@ -44,6 +45,7 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from moduly.testy.constants import (
+        ANSWER_KIND_IMAGE,
         ANSWER_KIND_TEXT,
         EXAM_COL_DATE,
         EXAM_COL_EMPLOYEE,
@@ -108,6 +110,8 @@ with patch.object(Path, "home", return_value=_TMP):
 
 _APP = QApplication.instance() or QApplication([])
 _STARTED = datetime(2026, 10, 6, 14, 0, 0)
+_ANSWER_CORRECT_STYLE = "color: #15803d; font-weight: 700;"
+_ANSWER_ERROR_STYLE = "color: #b91c1c; font-weight: 700;"
 
 
 class PrefixReverse:
@@ -462,22 +466,36 @@ class WrittenEvaluationTestCase(unittest.TestCase):
         self.assertIn("Povolené chyby: 0", summary)
         self.assertIn("Výsledek písemné části: Nevyhověl", summary)
         self.assertIn("Výsledek zkoušky: Nevyhověl", summary)
-        self._assert_question(detail, questions["Správná otázka"], "Správně", same=True)
-        self._assert_question(detail, questions["Chybná otázka"], "Chybně", same=False)
+        self._assert_question(detail, questions["Správná otázka"], same=True)
+        self._assert_question(detail, questions["Chybná otázka"], same=False)
         silent = questions["Tichá otázka"]
-        self.assertEqual(
-            detail.findChild(QLabel, f"written-outcome-{silent.position}").text(),
-            "Vyhodnocení: Nezodpovězeno",
+        missing = detail.findChild(QLabel, f"written-unanswered-{silent.position}")
+        assert missing is not None
+        self.assertEqual(missing.text(), "Nezodpovězeno — chyba")
+        self.assertEqual(missing.styleSheet(), _ANSWER_ERROR_STYLE)
+        silent_answers = test_exam_service.get_written_answers(silent.id)
+        correct = next(answer for answer in silent_answers if answer.is_correct)
+        correct_label = detail.findChild(
+            QLabel,
+            f"answer-{silent.position}-{correct.letter}",
         )
-        self.assertEqual(
-            detail.findChild(QLabel, f"written-employee-answer-{silent.position}").text(),
-            "Odpověď zaměstnance: nezodpovězeno",
-        )
-        self.assertTrue(
-            detail.findChild(QLabel, f"written-correct-answer-{silent.position}")
-            .text()
-            .startswith("Správná odpověď: ")
-        )
+        assert correct_label is not None
+        self.assertEqual(correct_label.styleSheet(), _ANSWER_CORRECT_STYLE)
+        self.assertNotIn("chyba", correct_label.text())
+        for answer in silent_answers:
+            if answer.letter == correct.letter:
+                continue
+            plain = detail.findChild(QLabel, f"answer-{silent.position}-{answer.letter}")
+            assert plain is not None
+            self.assertEqual(plain.styleSheet(), "")
+        self.assertIsNone(detail.findChild(QLabel, f"written-outcome-{silent.position}"))
+        self.assertIsNone(detail.findChild(QLabel, f"written-employee-answer-{silent.position}"))
+        self.assertIsNone(detail.findChild(QLabel, f"written-correct-answer-{silent.position}"))
+        visible = "\n".join(label.text() for label in detail.findChildren(QLabel))
+        self.assertNotIn("(správná)", visible)
+        self.assertNotIn("Vyhodnocení:", visible)
+        self.assertNotIn("Odpověď zaměstnance:", visible)
+        self.assertNotIn("Správná odpověď:", visible)
 
         table = TestExamTable()
         prepared = _prepare(
@@ -610,25 +628,128 @@ class WrittenEvaluationTestCase(unittest.TestCase):
                 now=_STARTED + timedelta(minutes=5),
             )
 
-    def _assert_question(self, detail, question, outcome: str, *, same: bool) -> None:
-        employee = detail.findChild(
-            QLabel,
-            f"written-employee-answer-{question.position}",
+    def test_detail_highlights_image_answers_without_changing_pictures(self) -> None:
+        from PIL import Image
+
+        topic = written_question_topic_service.create_topic(name="Obrázky detail")
+        folder = _TMP / "obrazky-detail"
+        folder.mkdir(parents=True, exist_ok=True)
+        colors = ((255, 0, 0), (0, 180, 0), (0, 0, 255))
+        paths = []
+        for index, color in enumerate(colors):
+            path = folder / f"{index}.png"
+            Image.new("RGB", (8, 8), color).save(path, "PNG")
+            paths.append(path)
+        written_question_service.create_question(
+            topic_id=topic.id,
+            text="Vyberte značku",
+            answer_kind=ANSWER_KIND_IMAGE,
+            answers=[
+                WrittenAnswerInput(image_source_path=str(paths[0])),
+                WrittenAnswerInput(image_source_path=str(paths[1]), is_correct=True),
+                WrittenAnswerInput(image_source_path=str(paths[2])),
+            ],
         )
-        correct = detail.findChild(
-            QLabel,
-            f"written-correct-answer-{question.position}",
+        test = test_definition_service.create_test(
+            name="Obrázkový detail",
+            uses_written=True,
+            allowed_wrong_answers=0,
+            seconds_per_question=60,
+            examiner_mode=EXAMINER_MODE_NONE,
+            validity_value=1,
+            validity_unit=VALIDITY_UNIT_YEARS,
+            written_topics=[TestTopicQuota(topic.id, 1)],
         )
-        verdict = detail.findChild(QLabel, f"written-outcome-{question.position}")
-        assert employee is not None and correct is not None and verdict is not None
-        self.assertEqual(verdict.text(), f"Vyhodnocení: {outcome}")
-        employee_answer = employee.text().removeprefix("Odpověď zaměstnance: ")
-        correct_answer = correct.text().removeprefix("Správná odpověď: ")
+        exam = self._started("91013", "Obrázek", test)
+        question = test_exam_service.get_written_questions(exam.id)[0]
+        answers = test_exam_service.get_written_answers(question.id)
+        wrong = next(answer for answer in answers if not answer.is_correct)
+        correct = next(answer for answer in answers if answer.is_correct)
+        before = {
+            answer.letter: test_exam_service.resolve_snapshot_image(answer.image_stored_path).read_bytes()
+            for answer in answers
+        }
+        written_exam_service.save_choice(
+            exam.id,
+            question.id,
+            wrong.id,
+            now=_STARTED + timedelta(seconds=2),
+        )
+        written_exam_service.submit(exam.id, now=_STARTED + timedelta(seconds=6))
+        detail = self._watch(TestExamDetailDialog(exam_id=exam.id))
+        wrong_label = detail.findChild(QLabel, f"answer-{question.position}-{wrong.letter}")
+        correct_label = detail.findChild(
+            QLabel,
+            f"answer-{question.position}-{correct.letter}",
+        )
+        assert wrong_label is not None and correct_label is not None
+        self.assertEqual(wrong_label.styleSheet(), _ANSWER_ERROR_STYLE)
+        self.assertIn("— chyba", wrong_label.text())
+        self.assertTrue(wrong_label.text().startswith(f"{wrong.letter})"))
+        self.assertEqual(correct_label.styleSheet(), _ANSWER_CORRECT_STYLE)
+        self.assertNotIn("chyba", correct_label.text())
+        plain = next(
+            answer
+            for answer in answers
+            if answer.letter not in {wrong.letter, correct.letter}
+        )
+        plain_label = detail.findChild(QLabel, f"answer-{question.position}-{plain.letter}")
+        assert plain_label is not None
+        self.assertEqual(plain_label.styleSheet(), "")
+        self.assertNotIn("chyba", plain_label.text())
+        for answer in answers:
+            picture = detail.findChild(
+                QLabel,
+                f"answer-image-{question.position}-{answer.letter}",
+            )
+            assert picture is not None
+            self.assertEqual(picture.styleSheet(), "")
+            self.assertFalse(picture.pixmap().isNull())
+            stored = test_exam_service.resolve_snapshot_image(answer.image_stored_path)
+            assert stored is not None
+            self.assertEqual(stored.read_bytes(), before[answer.letter])
+        joined = "\n".join(label.text() for label in detail.findChildren(QLabel))
+        self.assertNotIn("(správná)", joined)
+        self.assertNotIn("Vyhodnocení:", joined)
+
+    def _assert_question(self, detail, question, *, same: bool) -> None:
+        block = detail.findChild(QWidget, f"written-question-{question.position}")
+        assert block is not None
+        joined = "\n".join(label.text() for label in block.findChildren(QLabel))
+        self.assertNotIn("Vyhodnocení:", joined)
+        self.assertNotIn("(správná)", joined)
+        self.assertNotIn("Odpověď zaměstnance:", joined)
+        self.assertNotIn("Správná odpověď:", joined)
+        answers = test_exam_service.get_written_answers(question.id)
+        choice = next(
+            item
+            for item in test_exam_service.get_written_choices(detail.exam_id)
+            if int(item.exam_question_id) == int(question.id)
+        )
+        selected = next(
+            answer for answer in answers if int(answer.id) == int(choice.exam_answer_id)
+        )
+        correct = next(answer for answer in answers if answer.is_correct)
+        chosen = detail.findChild(QLabel, f"answer-{question.position}-{selected.letter}")
+        right = detail.findChild(QLabel, f"answer-{question.position}-{correct.letter}")
+        assert chosen is not None and right is not None
         if same:
-            self.assertEqual(employee_answer, correct_answer)
+            self.assertTrue(selected.is_correct)
+            self.assertEqual(chosen.styleSheet(), _ANSWER_CORRECT_STYLE)
+            self.assertNotIn("chyba", chosen.text())
+            self.assertNotIn("Vyhodnocení: Správně", joined)
         else:
-            self.assertNotEqual(employee_answer, correct_answer)
-        self.assertNotEqual(employee_answer, "nezodpovězeno")
+            self.assertFalse(selected.is_correct)
+            self.assertEqual(chosen.styleSheet(), _ANSWER_ERROR_STYLE)
+            self.assertIn("— chyba", chosen.text())
+            self.assertEqual(right.styleSheet(), _ANSWER_CORRECT_STYLE)
+            self.assertNotIn("chyba", right.text())
+        for answer in answers:
+            if answer.letter in {selected.letter, correct.letter}:
+                continue
+            plain = detail.findChild(QLabel, f"answer-{question.position}-{answer.letter}")
+            assert plain is not None
+            self.assertEqual(plain.styleSheet(), "")
 
     def _row(self, table: TestExamTable, name: str) -> int:
         for row in range(table.rowCount()):

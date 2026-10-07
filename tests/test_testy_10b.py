@@ -475,15 +475,26 @@ class PaperAnswerTestCase(unittest.TestCase):
         self.assertIn("Chybně: 1", summary)
         self.assertIn("Nezodpovězeno: 1", summary)
         self.assertIn("Výsledek písemné části: Nevyhověl", summary)
-        employee_answer = detail.findChild(QLabel, "written-employee-answer-3")
-        correct_answer = detail.findChild(QLabel, "written-correct-answer-1")
-        outcome = detail.findChild(QLabel, "written-outcome-3")
-        assert employee_answer is not None
-        assert correct_answer is not None
-        assert outcome is not None
-        self.assertIn("nezodpovězeno", employee_answer.text())
-        self.assertTrue(correct_answer.text().startswith("Správná odpověď:"))
-        self.assertIn("Nezodpovězeno", outcome.text())
+        self._assert_detail_highlight(detail, questions[0], correct=True)
+        self._assert_detail_highlight(detail, questions[1], correct=False)
+        missing = detail.findChild(QLabel, f"written-unanswered-{questions[2].position}")
+        assert missing is not None
+        self.assertEqual(missing.text(), "Nezodpovězeno — chyba")
+        self.assertIn("#b91c1c", missing.styleSheet())
+        self.assertIn("font-weight: 700", missing.styleSheet())
+        right = _letter(questions[2].id, correct=True)
+        correct_label = detail.findChild(
+            QLabel,
+            f"answer-{questions[2].position}-{right}",
+        )
+        assert correct_label is not None
+        self.assertIn("#15803d", correct_label.styleSheet())
+        self.assertIn("font-weight: 700", correct_label.styleSheet())
+        visible = "\n".join(label.text() for label in detail.findChildren(QLabel))
+        self.assertNotIn("(správná)", visible)
+        self.assertNotIn("Vyhodnocení:", visible)
+        self.assertNotIn("Odpověď zaměstnance:", visible)
+        self.assertNotIn("Správná odpověď:", visible)
 
         filled = _written_exam(
             employee,
@@ -763,6 +774,37 @@ class PaperAnswerTestCase(unittest.TestCase):
         tab._update_action_buttons()
         self.assertTrue(tab.paper_btn.isEnabled())
         self.assertFalse(tab.start_btn.isEnabled())
+
+    def _assert_detail_highlight(self, detail, question, *, correct: bool) -> None:
+        answers = test_exam_service.get_written_answers(question.id)
+        chosen_letter = _letter(question.id, correct=correct)
+        right_letter = _letter(question.id, correct=True)
+        chosen = detail.findChild(QLabel, f"answer-{question.position}-{chosen_letter}")
+        right = detail.findChild(QLabel, f"answer-{question.position}-{right_letter}")
+        assert chosen is not None and right is not None
+        if correct:
+            self.assertIn("#15803d", chosen.styleSheet())
+            self.assertIn("font-weight: 700", chosen.styleSheet())
+            self.assertNotIn("chyba", chosen.text())
+            self.assertNotIn("Vyhodnocení: Správně", "\n".join(
+                label.text()
+                for label in detail.findChildren(QLabel)
+                if label.objectName().startswith(f"answer-{question.position}-")
+                or label.objectName() == f"written-text-{question.position}"
+            ))
+        else:
+            self.assertIn("#b91c1c", chosen.styleSheet())
+            self.assertIn("font-weight: 700", chosen.styleSheet())
+            self.assertIn("— chyba", chosen.text())
+            self.assertIn("#15803d", right.styleSheet())
+            self.assertIn("font-weight: 700", right.styleSheet())
+            self.assertNotIn("chyba", right.text())
+        for answer in answers:
+            if answer.letter in {chosen_letter, right_letter}:
+                continue
+            plain = detail.findChild(QLabel, f"answer-{question.position}-{answer.letter}")
+            assert plain is not None
+            self.assertEqual(plain.styleSheet(), "")
 
     def _open(self, exam_id: int) -> PaperAnswerDialog:
         dialog = PaperAnswerDialog(exam_id)
