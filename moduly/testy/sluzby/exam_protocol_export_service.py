@@ -124,7 +124,6 @@ class ExamProtocolExportService:
                 oral_items,
                 people,
                 error_listing_xml=listing_xml,
-                gender=getattr(exam, "employee_gender", None),
             )
             paper_test_export_service.engine.render(
                 template,

@@ -1,4 +1,4 @@
-"""TESTY-11b: kompaktní ústní otázky, instrukce testu a pohlaví zaměstnance."""
+"""TESTY-11b: kompaktní ústní otázky, instrukce testu a jednotný podpis zkoušeného."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
+from PySide6.QtWidgets import QApplication
 from sqlalchemy import delete, text
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -56,10 +56,6 @@ with patch.object(Path, "home", return_value=_TMP):
         EXAMINER_MODE_COMMISSION,
         EXAMINER_MODE_NONE,
         EXAMINER_MODE_SINGLE,
-        GENDER_FEMALE,
-        GENDER_FEMALE_LABEL,
-        GENDER_MALE,
-        GENDER_MALE_LABEL,
         PAPER_TEST_INSTRUCTION,
         VALIDITY_UNIT_YEARS,
         WRITTEN_MODE_ELECTRONIC,
@@ -97,10 +93,7 @@ with patch.object(Path, "home", return_value=_TMP):
         TestTopicQuota,
         test_definition_service,
     )
-    from moduly.testy.sluzby.test_employee_service import (
-        TestEmployeeError,
-        test_employee_service,
-    )
+    from moduly.testy.sluzby.test_employee_service import test_employee_service
     from moduly.testy.sluzby.test_exam_service import test_exam_service
     from moduly.testy.sluzby.written_question_service import (
         WrittenAnswerInput,
@@ -132,7 +125,6 @@ def _employee(number: str, first: str, last: str, **kwargs):
         title_before=kwargs.get("title_before", ""),
         title_after=kwargs.get("title_after", ""),
         may_examine=kwargs.get("may_examine", False),
-        gender=kwargs.get("gender"),
     )
 
 
@@ -219,12 +211,15 @@ def _finish_electronic(exam_id: int) -> None:
     )
 
 
-def _select_gender(dialog: TestEmployeeDialog, gender: str) -> None:
-    for index in range(dialog.gender.count()):
-        if dialog.gender.itemData(index) == gender:
-            dialog.gender.setCurrentIndex(index)
-            return
-    raise AssertionError(gender)
+def _raw_value(table: str, row_id: int, column: str):
+    with _db_engine().connect() as connection:
+        return connection.execute(
+            text(f"SELECT {column} FROM {table} WHERE id = :row_id"),
+            {"row_id": row_id},
+        ).scalar()
+
+
+_EXAMINEE_LABEL = "Zkoušený(á):"
 
 
 class GenderAndProtocolTestCase(unittest.TestCase):
@@ -297,97 +292,74 @@ class GenderAndProtocolTestCase(unittest.TestCase):
             self.assertIn('fo:margin-bottom="0.04cm"', style)
             self.assertIn('fo:keep-together="always"', style)
 
-    def test_employee_gender_storage_and_legacy_null(self) -> None:
-        male = _employee("11b-m", "Jan", "Novak", gender=GENDER_MALE)
-        female = _employee("11b-f", "Eva", "Mala", gender=GENDER_FEMALE)
-        legacy = _employee("11b-n", "Eva", "Neurcena")
-        self.assertEqual(test_employee_service.get_employee(male.id).gender, GENDER_MALE)
-        self.assertEqual(test_employee_service.get_employee(female.id).gender, GENDER_FEMALE)
-        loaded = test_employee_service.get_employee(legacy.id)
+    def test_employee_is_saved_without_gender(self) -> None:
+        self.assertNotIn("gender", _table_columns("test_employees"))
+        created = _employee("11b-new", "Eva", "Nova", title_before="Ing.", may_examine=True)
+        self.assertFalse(hasattr(created, "gender"))
+        loaded = test_employee_service.get_employee(created.id)
         assert loaded is not None
-        self.assertIsNone(loaded.gender)
         self.assertEqual(loaded.first_name, "Eva")
-        with self.assertRaises(TestEmployeeError):
-            _employee("11b-x", "Jan", "Spatny", gender="jine")
+        self.assertEqual(loaded.title_before, "Ing.")
+        self.assertTrue(loaded.may_examine)
 
-        kept = test_employee_service.update_employee(
-            legacy.id,
+        updated = test_employee_service.update_employee_details(
+            created.id,
             personal_number=loaded.personal_number,
-            first_name=loaded.first_name,
+            first_name="Eliška",
             last_name=loaded.last_name,
+            title_before=loaded.title_before,
+            workplace_id=loaded.workplace_id,
+            responsibility_role_ids=test_employee_service.get_role_ids(created.id),
+            active=True,
+            may_examine=False,
         )
-        self.assertIsNone(kept.gender)
+        self.assertEqual(updated.first_name, "Eliška")
+        self.assertFalse(updated.may_examine)
+        self.assertFalse(hasattr(updated, "gender"))
 
-    def test_editor_requires_choice_and_does_not_preselect_null(self) -> None:
+    def test_editor_saves_without_gender(self) -> None:
         workplace = settings_service.save_workplace(name="Provoz editor")
         role = responsibility_role_service.create_role(name="Role editor")
         dialog = TestEmployeeDialog()
         self.addCleanup(dialog.close)
-        self.assertEqual(dialog.gender.objectName(), "employee-gender")
-        self.assertEqual(dialog.gender.itemText(1), GENDER_MALE_LABEL)
-        self.assertEqual(dialog.gender.itemText(2), GENDER_FEMALE_LABEL)
-        self.assertIsNone(dialog.gender.currentData())
-
-        dialog.personal_number.setText("11b-new")
+        self.assertFalse(hasattr(dialog, "gender"))
+        dialog.personal_number.setText("11b-ui")
+        dialog.title_before.setText("Bc.")
         dialog.first_name.setText("Eva")
         dialog.last_name.setText("Nova")
         dialog.workplace.set_workplace_id(workplace.id)
         dialog.roles.set_role_ids([role.id])
-        with patch.object(QMessageBox, "warning") as warning:
-            dialog.accept()
-        self.assertIn("Vyberte pohlaví.", warning.call_args[0][2])
-        self.assertNotEqual(dialog.result(), QDialog.DialogCode.Accepted)
-        self.assertIsNone(test_employee_service.get_by_personal_number("11b-new"))
-
-        _select_gender(dialog, GENDER_FEMALE)
+        dialog.may_examine.setChecked(True)
         dialog.accept()
+
         created = test_employee_service.get_employee(dialog.saved_employee_id)
         assert created is not None
-        self.assertEqual(created.gender, GENDER_FEMALE)
+        self.assertEqual(created.display_name, "Bc. Eva Nova")
+        self.assertTrue(created.may_examine)
+        self.assertFalse(hasattr(created, "gender"))
 
-        legacy = _employee(
-            "11b-old",
-            "Jan",
-            "Stary",
-            workplace="Provoz stary",
-            role_name="Role stary",
-            title_before="Ing.",
-            may_examine=True,
-        )
         edit = TestEmployeeDialog(
-            employee=test_employee_service.get_employee(legacy.id),
-            role_ids=test_employee_service.get_role_ids(legacy.id),
+            employee=created,
+            role_ids=test_employee_service.get_role_ids(created.id),
         )
         self.addCleanup(edit.close)
-        self.assertIsNone(edit.gender.currentData())
-        self.assertEqual(edit.title_before.text(), "Ing.")
+        self.assertFalse(hasattr(edit, "gender"))
+        self.assertEqual(edit.title_before.text(), "Bc.")
         self.assertTrue(edit.may_examine.isChecked())
-        with patch.object(QMessageBox, "warning") as warning:
-            edit.accept()
-        self.assertIn("Vyberte pohlaví.", warning.call_args[0][2])
-        self.assertIsNone(test_employee_service.get_employee(legacy.id).gender)
-
-        _select_gender(edit, GENDER_MALE)
+        edit.last_name.setText("Nová")
         edit.accept()
-        saved = test_employee_service.get_employee(legacy.id)
+        saved = test_employee_service.get_employee(created.id)
         assert saved is not None
-        self.assertEqual(saved.gender, GENDER_MALE)
-        self.assertEqual(saved.title_before, "Ing.")
+        self.assertEqual(saved.last_name, "Nová")
+        self.assertEqual(saved.title_before, "Bc.")
         self.assertTrue(saved.may_examine)
-        self.assertEqual(saved.first_name, "Jan")
 
-        again = TestEmployeeDialog(employee=saved, role_ids=[])
-        self.addCleanup(again.close)
-        self.assertEqual(again.gender.currentData(), GENDER_MALE)
-
-    def test_snapshot_and_signature_label_on_both_protocols(self) -> None:
-        self.assertEqual(examinee_role_label(GENDER_MALE), "Zkoušený")
-        self.assertEqual(examinee_role_label(GENDER_FEMALE), "Zkoušená")
-        self.assertEqual(examinee_role_label(None), "Zkoušený")
-        self.assertEqual(examinee_role_label(""), "Zkoušený")
+    def test_new_exam_and_both_protocols_use_one_label(self) -> None:
+        self.assertEqual(examinee_role_label(), _EXAMINEE_LABEL)
+        self.assertNotIn("employee_gender", _table_columns("test_exams"))
         commission = protocol_people(
             SimpleNamespace(
-                employee_gender=GENDER_FEMALE,
+                employee_gender="female",
                 employee_display_name="Eva Malá",
                 examiner_mode=EXAMINER_MODE_COMMISSION,
             ),
@@ -398,121 +370,98 @@ class GenderAndProtocolTestCase(unittest.TestCase):
         )
         self.assertEqual(
             [role for role, _name in commission],
-            ["Zkoušená", "Předseda komise", "Člen komise"],
+            [_EXAMINEE_LABEL, "Předseda komise", "Člen komise"],
         )
 
         topic_id = _written_topic("Snapshot 11b")
         oral = _oral_topics("Ústní snapshot")
-        examiner = _employee("11b-ex", "Adam", "Zkus", may_examine=True, gender=GENDER_MALE)
-        male = _employee("11b-man", "Jan", "Novak", title_before="Ing.", gender=GENDER_MALE)
-        female = _employee("11b-woman", "Eva", "Mala", title_before="Mgr.", gender=GENDER_FEMALE)
-        unnamed = _employee("11b-legacy", "Eva", "Bezudaje")
-
-        male_exam = _prepare(
-            male.id,
-            name="Muž",
-            topic_id=topic_id,
-            oral_topics=oral,
-            examiner_mode=EXAMINER_MODE_SINGLE,
-            examiner_id=examiner.id,
-        )
-        female_exam = _prepare(
-            female.id,
-            name="Žena",
-            topic_id=topic_id,
-            oral_topics=oral,
-            examiner_mode=EXAMINER_MODE_SINGLE,
-            examiner_id=examiner.id,
-        )
-        legacy_exam = _prepare(
-            unnamed.id,
+        examiner = _employee("11b-ex", "Adam", "Zkus", may_examine=True)
+        examinee = _employee("11b-man", "Jan", "Novak", title_before="Ing.")
+        exam = _prepare(
+            examinee.id,
             name="Bez pohlaví",
             topic_id=topic_id,
             oral_topics=oral,
+            examiner_mode=EXAMINER_MODE_SINGLE,
+            examiner_id=examiner.id,
         )
-        self.assertEqual(test_exam_service.get_exam(male_exam.id).employee_gender, GENDER_MALE)
-        self.assertEqual(
-            test_exam_service.get_exam(female_exam.id).employee_gender,
-            GENDER_FEMALE,
-        )
-        self.assertIsNone(test_exam_service.get_exam(legacy_exam.id).employee_gender)
+        stored = test_exam_service.get_exam(exam.id)
+        assert stored is not None
+        self.assertFalse(hasattr(stored, "employee_gender"))
+        self.assertEqual(stored.employee_display_name, "Ing. Jan Novak")
 
-        test_employee_service.update_employee_details(
-            female.id,
-            personal_number="11b-woman",
-            first_name="Eva",
-            last_name="Mala",
-            title_before="Mgr.",
-            workplace_id=female.workplace_id,
-            responsibility_role_ids=test_employee_service.get_role_ids(female.id),
-            active=True,
-            gender=GENDER_MALE,
-        )
-        self.assertEqual(
-            test_exam_service.get_exam(female_exam.id).employee_gender,
-            GENDER_FEMALE,
-        )
+        paper = self.folder / "paper.odt"
+        paper_test_export_service.export(exam.id, paper)
+        _finish_electronic(exam.id)
+        protocol = exam_protocol_export_service.export(exam.id, self.folder / "protocol.odt")
+        for path in (paper, protocol):
+            plain = _plain(path)
+            self.assertEqual(plain.count(_EXAMINEE_LABEL), 2)
+            self.assertLess(plain.index(_EXAMINEE_LABEL), plain.index("ÚSTNÍ ČÁST"))
+            self.assertLess(plain.index("CELKOVÝ VÝSLEDEK ZKOUŠKY"), plain.rindex(_EXAMINEE_LABEL))
+            self.assertNotIn("Zkoušená", plain)
+            self.assertIn("Ing. Jan Novak", plain)
+            self.assertIn("Zkoušející", plain)
+            self.assertNotIn("Předseda komise", plain)
 
-        cases = (
-            (male_exam, "Zkoušený", "Zkoušená", "Ing. Jan Novak"),
-            (female_exam, "Zkoušená", "Zkoušený", "Mgr. Eva Mala"),
-            (legacy_exam, "Zkoušený", "Zkoušená", "Eva Bezudaje"),
-        )
-        for exam, present, absent, name in cases:
-            paper = self.folder / f"paper-{exam.id}.odt"
-            paper_test_export_service.export(exam.id, paper)
-            _finish_electronic(exam.id)
-            protocol = exam_protocol_export_service.export(
-                exam.id,
-                self.folder / f"protocol-{exam.id}.odt",
-            )
-            for path in (paper, protocol):
-                plain = _plain(path)
-                self.assertIn(present, plain)
-                self.assertNotIn(absent, plain)
-                self.assertIn(name, plain)
-                if exam.id == legacy_exam.id:
-                    self.assertNotIn("Zkoušející", plain)
-                    self.assertNotIn("Předseda komise", plain)
-                else:
-                    self.assertIn("Zkoušející", plain)
-                xml = _xml(path)
-                self.assertNotIn('text:style-name="ProtocolNote"', xml)
-                if exam.id == legacy_exam.id:
-                    self.assertIn("ÚSTNÍ ČÁST", plain)
-
-    def test_migration_adds_nullable_columns_without_guessing(self) -> None:
-        employee = _employee("11b-mig", "Jan", "Puvodni")
+    def test_legacy_gender_column_stays_readable(self) -> None:
+        employee = _employee("11b-mig", "Eva", "Puvodni", title_before="Mgr.")
         topic_id = _written_topic("Migrace 11b")
         exam = _prepare(employee.id, name="Historická", topic_id=topic_id)
-        self.assertIsNone(employee.gender)
-        self.assertIsNone(test_exam_service.get_exam(exam.id).employee_gender)
-
-        with _db_engine().connect() as connection:
-            connection.execute(text("ALTER TABLE test_employees DROP COLUMN gender"))
-            connection.execute(text("ALTER TABLE test_exams DROP COLUMN employee_gender"))
-            connection.commit()
         self.assertNotIn("gender", _table_columns("test_employees"))
         self.assertNotIn("employee_gender", _table_columns("test_exams"))
+
+        with _db_engine().connect() as connection:
+            connection.execute(text("ALTER TABLE test_employees ADD COLUMN gender VARCHAR(10)"))
+            connection.execute(
+                text("ALTER TABLE test_exams ADD COLUMN employee_gender VARCHAR(10)")
+            )
+            connection.execute(
+                text("UPDATE test_exams SET employee_gender = 'female' WHERE id = :exam_id"),
+                {"exam_id": exam.id},
+            )
+            connection.execute(
+                text("UPDATE test_employees SET gender = 'female' WHERE id = :employee_id"),
+                {"employee_id": employee.id},
+            )
+            connection.commit()
 
         _ensure_test_employee_columns()
         _ensure_test_exam_tables()
         self.assertIn("gender", _table_columns("test_employees"))
         self.assertIn("employee_gender", _table_columns("test_exams"))
+        self.assertEqual(_raw_value("test_exams", exam.id, "employee_gender"), "female")
 
         loaded = test_employee_service.get_employee(employee.id)
         assert loaded is not None
-        self.assertEqual(loaded.first_name, "Jan")
-        self.assertEqual(loaded.last_name, "Puvodni")
-        self.assertIsNone(loaded.gender)
+        self.assertEqual(loaded.display_name, "Mgr. Eva Puvodni")
         restored = test_exam_service.get_exam(exam.id)
         assert restored is not None
-        self.assertIsNone(restored.employee_gender)
-        self.assertEqual(restored.employee_display_name, "Jan Puvodni")
+        self.assertEqual(restored.employee_display_name, "Mgr. Eva Puvodni")
+        self.assertFalse(hasattr(restored, "employee_gender"))
+        self.assertTrue(test_exam_service.get_written_questions(exam.id))
 
-        _ensure_test_employee_columns()
-        _ensure_test_exam_tables()
-        self.assertIsNone(test_employee_service.get_employee(employee.id).gender)
+        paper = self.folder / "legacy-paper.odt"
+        paper_test_export_service.export(exam.id, paper)
+        _finish_electronic(exam.id)
+        protocol = exam_protocol_export_service.export(exam.id, self.folder / "legacy-protocol.odt")
+        for path in (paper, protocol):
+            plain = _plain(path)
+            self.assertEqual(plain.count(_EXAMINEE_LABEL), 2)
+            self.assertNotIn("Zkoušená", plain)
+            self.assertIn("Mgr. Eva Puvodni", plain)
+        self.assertEqual(_raw_value("test_exams", exam.id, "employee_gender"), "female")
+        self.assertEqual(_raw_value("test_employees", employee.id, "gender"), "female")
+
+        later = _employee("11b-after", "Jan", "Novy")
+        later_exam = _prepare(later.id, name="Nová po sloupci", topic_id=topic_id)
+        self.assertIsNone(_raw_value("test_exams", later_exam.id, "employee_gender"))
+        self.assertIsNone(_raw_value("test_employees", later.id, "gender"))
+
+        with _db_engine().connect() as connection:
+            connection.execute(text("ALTER TABLE test_employees DROP COLUMN gender"))
+            connection.execute(text("ALTER TABLE test_exams DROP COLUMN employee_gender"))
+            connection.commit()
 
 
 if __name__ == "__main__":

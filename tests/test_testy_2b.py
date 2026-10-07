@@ -47,7 +47,6 @@ with patch.object(Path, "home", return_value=_TMP):
         COL_WORKPLACE,
         COLUMN_HEADERS,
         SHOW_INACTIVE_LABEL,
-        GENDER_MALE,
         STATUS_ACTIVE_LABEL,
         STATUS_INACTIVE_LABEL,
     )
@@ -98,10 +97,6 @@ class TestEmployeeUiTestCase(unittest.TestCase):
         if role_ids is not None:
             dialog.roles.set_role_ids(role_ids)
         dialog.active_checkbox.setChecked(active)
-        for index in range(dialog.gender.count()):
-            if dialog.gender.itemData(index) == GENDER_MALE:
-                dialog.gender.setCurrentIndex(index)
-                break
 
     def _warning_text(self, warning) -> str:
         self.assertTrue(warning.called)
@@ -132,10 +127,6 @@ class TestEmployeeUiTestCase(unittest.TestCase):
                 self.last_name.setText("Malá")
                 self.workplace.set_workplace_id(workplace_id)
                 self.roles.set_role_ids(role_ids)
-                for index in range(self.gender.count()):
-                    if self.gender.itemData(index) == GENDER_MALE:
-                        self.gender.setCurrentIndex(index)
-                        break
                 self.accept()
                 return int(QDialog.DialogCode.Accepted)
 

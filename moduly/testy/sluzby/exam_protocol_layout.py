@@ -14,8 +14,9 @@ from moduly.testy.constants import (
     EXAM_ROLE_MEMBER,
     EXAMINER_MODE_COMMISSION,
     EXAMINER_MODE_SINGLE,
-    GENDER_FEMALE,
 )
+
+EXAMINEE_SIGNATURE_LABEL = "Zkoušený(á):"
 
 # Ruční datum. Plánované datum z databáze se na doklad netiskne.
 BLANK_EXAM_DATE_LINE = "Datum: ______________________"
@@ -33,15 +34,13 @@ WRITTEN_CONFIRM_BLANK = "_" * 30
 def render_paper_protocol_xml(
     oral_items: list[tuple[int, str]],
     people: list[tuple[str, str]],
-    *,
-    gender: object = None,
 ) -> str:
     """Závěr papírového testu. Otázky už jsou v dokumentu před tímto blokem."""
     parts = [
         '<text:p text:style-name="ProtocolDivider">&#160;</text:p>',
         '<text:p text:style-name="ProtocolHeading">PÍSEMNÁ ČÁST</text:p>',
         _manual_outcome("Výsledek písemné části:"),
-        render_written_confirmation_xml(gender),
+        render_written_confirmation_xml(),
         render_protocol_closing_xml(oral_items, people),
     ]
     return "".join(parts)
@@ -53,7 +52,6 @@ def render_electronic_protocol_xml(
     people: list[tuple[str, str]],
     *,
     error_listing_xml: str = "",
-    gender: object = None,
 ) -> str:
     """Písemný souhrn, výpis chyb a stejný závěr jako u papírového testu."""
     listing = error_listing_xml or (
@@ -65,15 +63,14 @@ def render_electronic_protocol_xml(
         parts.append(f'<text:p text:style-name="ProtocolText">{_xml(line)}</text:p>')
     parts.append(f'<text:p text:style-name="ProtocolText">{_xml(WRITTEN_RESULT_LINE)}</text:p>')
     parts.append(listing)
-    parts.append(render_written_confirmation_xml(gender))
+    parts.append(render_written_confirmation_xml())
     parts.append(render_protocol_closing_xml(oral_items, people))
     return "".join(parts)
 
 
-def render_written_confirmation_xml(gender: object) -> str:
+def render_written_confirmation_xml() -> str:
     """První podpis po písemné části. Závěrečný podpis zkoušeného neruší."""
-    label = examinee_role_label(gender)
-    line = f"{label}: {WRITTEN_CONFIRM_BLANK}"
+    line = f"{examinee_role_label()} {WRITTEN_CONFIRM_BLANK}"
     return (
         f'<text:p text:style-name="ProtocolConfirm">{_xml(WRITTEN_CONFIRM_SENTENCE)}</text:p>'
         f'<text:p text:style-name="ProtocolText">{_xml(line)}</text:p>'
@@ -110,7 +107,7 @@ def render_protocol_closing_xml(
 
 def protocol_people(exam, examiners) -> list[tuple[str, str]]:
     """Podpisy podle režimu snapshotu. Jména jsou snímek, ne aktuální evidence."""
-    people = [(examinee_role_label(getattr(exam, "employee_gender", None)), _person_name(exam))]
+    people = [(examinee_role_label(), _person_name(exam))]
     ordered = sorted(
         list(examiners or []),
         key=lambda item: (int(getattr(item, "position", 0)), int(getattr(item, "id", 0))),
@@ -144,11 +141,9 @@ def _manual_outcome(label: str) -> str:
     )
 
 
-def examinee_role_label(gender: object) -> str:
-    """Pohlaví jen ze snapshotu. Chybějící údaj zůstane „Zkoušený“."""
-    if str(gender or "").strip() == GENDER_FEMALE:
-        return "Zkoušená"
-    return "Zkoušený"
+def examinee_role_label() -> str:
+    """Jednotný podpis zkoušeného pro oba podpisy protokolu."""
+    return EXAMINEE_SIGNATURE_LABEL
 
 
 def _oral_block(position: int, text: str, *, keep_with_next: bool) -> str:

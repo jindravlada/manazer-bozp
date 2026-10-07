@@ -464,7 +464,7 @@ class ExamProtocolTestCase(unittest.TestCase):
             "S výsledkem písemné části souhlasím, špatné odpovědi mi byly vysvětleny:",
             plain,
         )
-        self.assertLess(plain.index("Zkoušený:"), plain.index("ÚSTNÍ ČÁST"))
+        self.assertLess(plain.index("Zkoušený(á):"), plain.index("ÚSTNÍ ČÁST"))
         self.assertLess(plain.index("CELKOVÝ VÝSLEDEK ZKOUŠKY"), plain.rindex("Zkoušený"))
         oral_rows = test_exam_service.get_oral_questions(passed.id)
         self.assertLess(

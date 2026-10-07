@@ -167,10 +167,6 @@ PAPER_BATCH_DIALOG_TITLE = "Hromadná příprava papírových testů"
 PAPER_TEST_INSTRUCTION = (
     "U každé otázky zakroužkujte jednu správnou odpověď A, B nebo C."
 )
-GENDER_MALE = "male"
-GENDER_FEMALE = "female"
-GENDER_MALE_LABEL = "Muž"
-GENDER_FEMALE_LABEL = "Žena"
 EXAM_DIALOG_TITLE = "Připravit zkoušku"
 EXAM_DETAIL_TITLE = "Zkouška"
 EXAM_SEARCH_PLACEHOLDER = "🔍 Hledat zkoušku..."

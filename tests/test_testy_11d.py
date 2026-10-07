@@ -50,8 +50,6 @@ with patch.object(Path, "home", return_value=_TMP):
         EXAMINER_MODE_COMMISSION,
         EXAMINER_MODE_NONE,
         EXAMINER_MODE_SINGLE,
-        GENDER_FEMALE,
-        GENDER_MALE,
         VALIDITY_UNIT_YEARS,
         WRITTEN_MODE_ELECTRONIC,
         WRITTEN_RESULT_PASSED,
@@ -148,7 +146,6 @@ def _employee(number: str, first: str, last: str, **kwargs):
         responsibility_role_ids=[role.id],
         title_before=kwargs.get("title_before", ""),
         may_examine=kwargs.get("may_examine", False),
-        gender=kwargs.get("gender"),
     )
 
 
@@ -254,7 +251,6 @@ def _fingerprint(exam_id: int) -> tuple:
         exam.written_result,
         exam.exam_result,
         exam.oral_failed_at,
-        exam.employee_gender,
         tuple(questions),
         tuple(choices),
     )
@@ -291,8 +287,8 @@ class WrittenErrorProtocolTestCase(unittest.TestCase):
         self.folder.mkdir(parents=True, exist_ok=True)
 
     def test_electronic_lists_only_errors_and_keeps_both_signatures(self) -> None:
-        employee = _employee("11d-f", "Eva", "Mala", title_before="Mgr.", gender=GENDER_FEMALE)
-        examiner = _employee("11d-ex", "Adam", "Zkus", may_examine=True, gender=GENDER_MALE)
+        employee = _employee("11d-f", "Eva", "Mala", title_before="Mgr.")
+        examiner = _employee("11d-ex", "Adam", "Zkus", may_examine=True)
         topic = written_question_topic_service.create_topic(name="Chyby 11d")
         _text_question(topic.id, "Správná otázka alfa")
         _text_question(topic.id, "Chybná otázka beta")
@@ -339,8 +335,8 @@ class WrittenErrorProtocolTestCase(unittest.TestCase):
             self.assertNotIn(ERROR_LIST_HEADING, plain)
             self.assertNotIn(NO_WRITTEN_ERRORS_LINE, plain)
             self.assertLess(plain.index("Výsledek písemné části:"), plain.index(WRITTEN_CONFIRM_SENTENCE))
-            self.assertLess(plain.index("Zkoušená:"), plain.index("ÚSTNÍ ČÁST"))
-            self.assertLess(plain.index("CELKOVÝ VÝSLEDEK ZKOUŠKY"), plain.rindex("Zkoušená"))
+            self.assertLess(plain.index("Zkoušený(á):"), plain.index("ÚSTNÍ ČÁST"))
+            self.assertLess(plain.index("CELKOVÝ VÝSLEDEK ZKOUŠKY"), plain.rindex("Zkoušený(á):"))
             self.assertLess(plain.index("CELKOVÝ VÝSLEDEK ZKOUŠKY"), plain.index("Zkoušející"))
             self.assertNotIn("Jiné znění z banky", plain)
 
@@ -374,9 +370,9 @@ class WrittenErrorProtocolTestCase(unittest.TestCase):
         self.assertIn('fo:color="#15803d"', xml)
         self.assertLess(plain.index(WRITTEN_RESULT_LINE), plain.index(ERROR_LIST_HEADING))
         self.assertLess(plain.index(ERROR_LIST_HEADING), plain.index(WRITTEN_CONFIRM_SENTENCE))
-        self.assertLess(plain.index("Zkoušená:"), plain.index("ÚSTNÍ ČÁST"))
-        self.assertLess(plain.index("CELKOVÝ VÝSLEDEK ZKOUŠKY"), plain.rindex("Zkoušená"))
-        self.assertNotIn("Zkoušený", plain)
+        self.assertLess(plain.index("Zkoušený(á):"), plain.index("ÚSTNÍ ČÁST"))
+        self.assertLess(plain.index("CELKOVÝ VÝSLEDEK ZKOUŠKY"), plain.rindex("Zkoušený(á):"))
+        self.assertNotIn("Zkoušená", plain)
         oral = sorted(test_exam_service.get_oral_questions(exam.id), key=lambda item: item.position)
         self.assertEqual(xml.count('text:style-name="ProtocolOralNext"'), 2)
         self.assertEqual(xml.count('text:style-name="ProtocolOralText"'), 0)
@@ -402,7 +398,7 @@ class WrittenErrorProtocolTestCase(unittest.TestCase):
         self.assertEqual(missing.styleSheet(), qt_answer_style(TONE_ERROR))
 
     def test_no_errors_prints_a_short_line_and_snapshot_images_keep_color_off_the_picture(self) -> None:
-        employee = _employee("11d-m", "Jan", "Novak", gender=GENDER_MALE)
+        employee = _employee("11d-m", "Jan", "Novak")
         clear_topic = written_question_topic_service.create_topic(name="Bez chyb 11d")
         _text_question(clear_topic.id, "Jediná správná otázka")
         clear_exam = _prepare(
@@ -420,8 +416,8 @@ class WrittenErrorProtocolTestCase(unittest.TestCase):
         self.assertNotIn("Jediná správná otázka", clear_plain)
         self.assertNotIn(ERROR_MARK, clear_plain)
         self.assertNotIn(UNANSWERED_ERROR, clear_plain)
-        self.assertIn("Zkoušený:", clear_plain)
-        self.assertLess(clear_plain.index("CELKOVÝ VÝSLEDEK ZKOUŠKY"), clear_plain.rindex("Zkoušený"))
+        self.assertEqual(clear_plain.count("Zkoušený(á):"), 2)
+        self.assertLess(clear_plain.index("CELKOVÝ VÝSLEDEK ZKOUŠKY"), clear_plain.rindex("Zkoušený(á):"))
         self.assertNotIn("ÚSTNÍ ČÁST", clear_plain)
         self.assertNotIn("Zkoušená", clear_plain)
 

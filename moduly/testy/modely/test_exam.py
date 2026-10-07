@@ -46,8 +46,6 @@ class TestExam(Base):
     employee_display_name: Mapped[str] = mapped_column(String(300), nullable=False)
     employee_workplace_name: Mapped[str] = mapped_column(String(150), default="")
     employee_roles_text: Mapped[str] = mapped_column(Text, default="")
-    # Snímek pohlaví v okamžiku přípravy. NULL je historická zkouška bez údaje.
-    employee_gender: Mapped[str | None] = mapped_column(String(10), nullable=True)
 
     test_name: Mapped[str] = mapped_column(String(200), nullable=False)
     uses_written: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)

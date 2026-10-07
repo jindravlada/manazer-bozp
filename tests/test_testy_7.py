@@ -56,7 +56,6 @@ with patch.object(Path, "home", return_value=_TMP):
         EXAMINER_MODE_COMMISSION,
         EXAMINER_MODE_NONE,
         EXAMINER_MODE_SINGLE,
-        GENDER_MALE,
         VALIDITY_UNIT_MONTHS,
         VALIDITY_UNIT_YEARS,
     )
@@ -682,7 +681,6 @@ class ExamSnapshotTestCase(unittest.TestCase):
             title_before="MUDr.",
             title_after="",
             may_examine=False,
-            gender=GENDER_MALE,
         )
         settings_service.save_workplace(id=workplace.id, name="Jiný provoz")
         responsibility_role_service.update_role(role.id, name="Vedoucí směny")
@@ -728,7 +726,6 @@ class ExamSnapshotTestCase(unittest.TestCase):
             title_before="",
             title_after="",
             may_examine=True,
-            gender=GENDER_MALE,
         )
 
         fresh = test_exam_service.get_exam(exam.id)

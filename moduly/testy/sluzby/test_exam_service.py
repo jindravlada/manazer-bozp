@@ -27,8 +27,6 @@ from moduly.testy.constants import (
     EXAMINER_MODE_COMMISSION,
     EXAMINER_MODE_NONE,
     EXAMINER_MODE_SINGLE,
-    GENDER_FEMALE,
-    GENDER_MALE,
     VALIDITY_UNIT_MONTHS,
     VALIDITY_UNIT_YEARS,
     WRITTEN_RESULT_FAILED,
@@ -61,14 +59,6 @@ class TestExamError(ValueError):
 EXAMINEE_CANNOT_EXAMINE = (
     "Testovaný zaměstnanec nemůže být současně zkoušejícím ani členem komise."
 )
-
-
-def _snapshot_gender(value: object) -> str | None:
-    """Do snapshotu jde jen male/female. Prázdné ani jiné hodnoty se neodhadují."""
-    text = str(value or "").strip()
-    if text in (GENDER_MALE, GENDER_FEMALE):
-        return text
-    return None
 
 
 def _batch_person_label(employee) -> str:
@@ -373,7 +363,6 @@ class TestExamService:
             employee_display_name=employee.display_name,
             employee_workplace_name=self._workplace_name(employee.workplace_id),
             employee_roles_text=self._roles_text(employee.id),
-            employee_gender=_snapshot_gender(getattr(employee, "gender", None)),
             test_name=test.name,
             uses_written=bool(test.uses_written),
             uses_oral=bool(test.uses_oral),

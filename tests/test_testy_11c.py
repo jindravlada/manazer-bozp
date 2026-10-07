@@ -204,7 +204,7 @@ class OralPagingTestCase(unittest.TestCase):
             (3, "Třetí otázka"),
             (4, "Čtvrtá otázka"),
         ]
-        people = [("Zkoušený", "Jan Novak")]
+        people = [("Zkoušený(á):", "Jan Novak")]
         for items in (single, pair, many):
             paper = render_paper_protocol_xml(items, people)
             electronic = render_electronic_protocol_xml(["Počet otázek: 1"], items, people)

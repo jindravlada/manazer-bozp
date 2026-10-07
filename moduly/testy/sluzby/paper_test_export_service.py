@@ -169,7 +169,6 @@ class PaperTestExportService:
                             + render_paper_protocol_xml(
                                 oral_items,
                                 people,
-                                gender=getattr(exam, "employee_gender", None),
                             )
                             + _DOCUMENT_END
                         ),
