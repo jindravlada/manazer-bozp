@@ -457,8 +457,15 @@ class ExamProtocolTestCase(unittest.TestCase):
         self.assertIn("Nezodpovězeno: 0", plain)
         self.assertIn("Povolený počet chyb: 1", plain)
         self.assertIn(WRITTEN_RESULT_LINE, plain)
-        self.assertNotIn(question_text, plain)
-        self.assertNotIn("A)", plain)
+        self.assertIn("VÝPIS CHYBNĚ ZODPOVĚZENÝCH OTÁZEK", plain)
+        self.assertIn("Nezodpovězeno — chyba", plain)
+        self.assertIn(question_text, plain)
+        self.assertIn(
+            "S výsledkem písemné části souhlasím, špatné odpovědi mi byly vysvětleny:",
+            plain,
+        )
+        self.assertLess(plain.index("Zkoušený:"), plain.index("ÚSTNÍ ČÁST"))
+        self.assertLess(plain.index("CELKOVÝ VÝSLEDEK ZKOUŠKY"), plain.rindex("Zkoušený"))
         oral_rows = test_exam_service.get_oral_questions(passed.id)
         self.assertLess(
             plain.index(f"{oral_rows[0].position}. {oral_rows[0].text}"),

@@ -164,7 +164,15 @@ class PaperTestExportService:
                 {
                     "header": odt_rich(_header_paragraphs(exam, for_key=False)),
                     "questions": OdtXmlFragment(
-                        xml=questions_xml + render_paper_protocol_xml(oral_items, people) + _DOCUMENT_END,
+                        xml=(
+                            questions_xml
+                            + render_paper_protocol_xml(
+                                oral_items,
+                                people,
+                                gender=getattr(exam, "employee_gender", None),
+                            )
+                            + _DOCUMENT_END
+                        ),
                         images=tuple(images),
                     ),
                     "variant": variant_label(exam),

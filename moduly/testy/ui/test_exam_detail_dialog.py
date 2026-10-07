@@ -34,12 +34,14 @@ from moduly.testy.constants import (
     written_result_label,
 )
 
-_ANSWER_CORRECT_STYLE = "color: #15803d; font-weight: 700;"
-_ANSWER_ERROR_STYLE = "color: #b91c1c; font-weight: 700;"
-_ANSWER_ERROR_MARK = "\u2014 chyba"
-_UNANSWERED_ERROR = "Nezodpovězeno \u2014 chyba"
 from moduly.testy.sluzby.test_definition_service import format_test_duration
 from moduly.testy.sluzby.test_exam_service import TestExamError, format_exam_date, test_exam_service
+from moduly.testy.sluzby.written_answer_presentation import (
+    UNANSWERED_ERROR,
+    present_answer,
+    qt_answer_style,
+    selected_answer,
+)
 
 
 class TestExamDetailDialog(QDialog):
@@ -231,28 +233,20 @@ class TestExamDetailDialog(QDialog):
             answers = test_exam_service.get_written_answers(question.id)
             selected = None
             if exam.written_result:
-                choice = choices.get(int(question.id))
-                if choice is not None:
-                    selected = next(
-                        (
-                            answer
-                            for answer in answers
-                            if int(answer.id) == int(choice.exam_answer_id)
-                        ),
-                        None,
-                    )
+                selected = selected_answer(answers, choices.get(int(question.id)))
                 if selected is None:
-                    missing = QLabel(_UNANSWERED_ERROR)
+                    missing = QLabel(UNANSWERED_ERROR)
                     missing.setObjectName(f"written-unanswered-{question.position}")
-                    missing.setStyleSheet(_ANSWER_ERROR_STYLE)
+                    missing.setStyleSheet(qt_answer_style("error"))
                     layout.addWidget(missing)
             for answer in answers:
-                caption, style = self._answer_presentation(
+                caption, tone = present_answer(
                     question,
                     answer,
                     selected,
                     evaluated=bool(exam.written_result),
                 )
+                style = qt_answer_style(tone)
                 text = QLabel(caption)
                 text.setWordWrap(True)
                 text.setObjectName(f"answer-{question.position}-{answer.letter}")
@@ -267,21 +261,6 @@ class TestExamDetailDialog(QDialog):
                         )
                         layout.addWidget(picture)
             self.written_layout.addWidget(block)
-
-    def _answer_presentation(self, question, answer, selected, *, evaluated: bool) -> tuple[str, str]:
-        body = f"{answer.letter})"
-        if question.answer_kind != ANSWER_KIND_IMAGE and str(answer.text or "").strip():
-            body = f"{answer.letter}) {answer.text}"
-        if not evaluated:
-            return body, ""
-        chosen = selected is not None and int(answer.id) == int(selected.id)
-        if chosen and answer.is_correct:
-            return body, _ANSWER_CORRECT_STYLE
-        if chosen:
-            return f"{body} {_ANSWER_ERROR_MARK}", _ANSWER_ERROR_STYLE
-        if answer.is_correct and (selected is None or not selected.is_correct):
-            return body, _ANSWER_CORRECT_STYLE
-        return body, ""
 
     def _fill_oral(self, questions) -> None:
         while self.oral_layout.count():

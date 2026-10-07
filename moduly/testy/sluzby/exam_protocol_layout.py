@@ -22,14 +22,26 @@ BLANK_EXAM_DATE_LINE = "Datum: ______________________"
 CHECKBOX = "\u2610"
 MANUAL_RESULT_LINE = f"{CHECKBOX} VYHOVĚL        {CHECKBOX} NEVYHOVĚL"
 WRITTEN_RESULT_LINE = "Výsledek písemné části: VYHOVĚL"
+ERROR_LIST_HEADING = "VÝPIS CHYBNĚ ZODPOVĚZENÝCH OTÁZEK"
+NO_WRITTEN_ERRORS_LINE = "Bez chyb."
+WRITTEN_CONFIRM_SENTENCE = (
+    "S výsledkem písemné části souhlasím, špatné odpovědi mi byly vysvětleny:"
+)
+WRITTEN_CONFIRM_BLANK = "_" * 30
 
 
-def render_paper_protocol_xml(oral_items: list[tuple[int, str]], people: list[tuple[str, str]]) -> str:
+def render_paper_protocol_xml(
+    oral_items: list[tuple[int, str]],
+    people: list[tuple[str, str]],
+    *,
+    gender: object = None,
+) -> str:
     """Závěr papírového testu. Otázky už jsou v dokumentu před tímto blokem."""
     parts = [
         '<text:p text:style-name="ProtocolDivider">&#160;</text:p>',
         '<text:p text:style-name="ProtocolHeading">PÍSEMNÁ ČÁST</text:p>',
         _manual_outcome("Výsledek písemné části:"),
+        render_written_confirmation_xml(gender),
         render_protocol_closing_xml(oral_items, people),
     ]
     return "".join(parts)
@@ -39,14 +51,33 @@ def render_electronic_protocol_xml(
     summary_lines: list[str],
     oral_items: list[tuple[int, str]],
     people: list[tuple[str, str]],
+    *,
+    error_listing_xml: str = "",
+    gender: object = None,
 ) -> str:
-    """Písemný souhrn a stejný závěr jako u papírového testu, bez otázek A/B/C."""
+    """Písemný souhrn, výpis chyb a stejný závěr jako u papírového testu."""
+    listing = error_listing_xml or (
+        f'<text:p text:style-name="ProtocolHeading">{_xml(ERROR_LIST_HEADING)}</text:p>'
+        f'<text:p text:style-name="ProtocolText">{_xml(NO_WRITTEN_ERRORS_LINE)}</text:p>'
+    )
     parts = ['<text:p text:style-name="ProtocolHeading">PÍSEMNÁ ČÁST</text:p>']
     for line in summary_lines:
         parts.append(f'<text:p text:style-name="ProtocolText">{_xml(line)}</text:p>')
     parts.append(f'<text:p text:style-name="ProtocolText">{_xml(WRITTEN_RESULT_LINE)}</text:p>')
+    parts.append(listing)
+    parts.append(render_written_confirmation_xml(gender))
     parts.append(render_protocol_closing_xml(oral_items, people))
     return "".join(parts)
+
+
+def render_written_confirmation_xml(gender: object) -> str:
+    """První podpis po písemné části. Závěrečný podpis zkoušeného neruší."""
+    label = examinee_role_label(gender)
+    line = f"{label}: {WRITTEN_CONFIRM_BLANK}"
+    return (
+        f'<text:p text:style-name="ProtocolConfirm">{_xml(WRITTEN_CONFIRM_SENTENCE)}</text:p>'
+        f'<text:p text:style-name="ProtocolText">{_xml(line)}</text:p>'
+    )
 
 
 def render_protocol_closing_xml(
