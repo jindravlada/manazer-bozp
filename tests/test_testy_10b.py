@@ -10,9 +10,9 @@ from datetime import date, datetime
 from pathlib import Path
 from unittest.mock import patch
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QItemSelectionModel, Qt, QTimer
 from PySide6.QtTest import QTest
-from PySide6.QtWidgets import QApplication, QLabel, QMessageBox
+from PySide6.QtWidgets import QApplication, QDialog, QLabel, QMessageBox
 from sqlalchemy import delete
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -221,6 +221,19 @@ def _choice_for(exam_id: int, question_id: int):
         if int(choice.exam_question_id) == int(question_id):
             return choice
     return None
+
+
+def _select_rows(table, exam_ids: list[int]) -> None:
+    table.clearSelection()
+    flags = QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows
+    model = table.selectionModel()
+    assert model is not None
+    for exam_id in exam_ids:
+        for row in range(table.rowCount()):
+            item = table.item(row, EXAM_COL_ID)
+            if item is not None and int(item.data(Qt.ItemDataRole.UserRole)) == exam_id:
+                model.select(table.model().index(row, 0), flags)
+                break
 
 
 def _select_exam(table, exam_id: int) -> None:
@@ -629,6 +642,127 @@ class PaperAnswerTestCase(unittest.TestCase):
             tab.table.item(row, EXAM_COL_EXAM_RESULT).text(),
             WRITTEN_RESULT_FAILED_LABEL,
         )
+
+    def test_unset_mode_enables_paper_entry_until_finished_or_electronic(self) -> None:
+        employee = _employee("2010", "Petr", "Holý")
+        prepared = _written_exam(employee, "Režim nevyplněn", ["Otázka jedna"], allowed=0)
+        electronic = _written_exam(employee, "Už electronic", ["Otázka dvě"], allowed=0)
+        finished = _written_exam(employee, "Už dokončeno", ["Otázka tři"], allowed=0)
+        with get_session() as session:
+            row = session.get(TestExam, prepared.id)
+            assert row is not None
+            row.written_mode = None
+            session.commit()
+
+        stored = test_exam_service.get_exam(prepared.id)
+        assert stored is not None
+        self.assertIsNone(stored.written_mode)
+        self.assertEqual(stored.status, EXAM_STATUS_PREPARED)
+        self.assertIsNone(stored.written_started_at)
+        self.assertTrue(written_exam_service.can_enter_paper(prepared.id))
+
+        tab = self.page.exams_tab
+        tab.refresh()
+        self.assertFalse(tab.paper_btn.isEnabled())
+        _select_rows(tab.table, [prepared.id, electronic.id])
+        self.assertFalse(tab.paper_btn.isEnabled())
+        _select_exam(tab.table, prepared.id)
+        self.assertTrue(tab.paper_btn.isEnabled())
+        self.assertTrue(tab.start_btn.isEnabled())
+        self.assertTrue(tab.print_btn.isEnabled())
+
+        dialog = self._open(prepared.id)
+        dialog.close()
+        self.assertIsNone(test_exam_service.get_exam(prepared.id).written_mode)
+        tab._update_action_buttons()
+        self.assertTrue(tab.paper_btn.isEnabled())
+
+        tab.refresh()
+        self.assertEqual(tab.table.selected_exam_id(), prepared.id)
+        self.assertTrue(tab.paper_btn.isEnabled())
+
+        self.page.show()
+
+        def close_detail() -> None:
+            widget = QApplication.activeModalWidget()
+            if widget is not None:
+                widget.reject()
+
+        QTimer.singleShot(100, close_detail)
+        tab.open_selected()
+        self.assertEqual(tab.table.selected_exam_id(), prepared.id)
+        self.assertTrue(tab.paper_btn.isEnabled())
+        self.assertIsNone(test_exam_service.get_exam(prepared.id).written_mode)
+
+        target = _TMP / "fix1" / "vystup.odt"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        from moduly.testy.ui.paper_test_options_dialog import PaperTestOptionsDialog
+
+        def accept_without_key(dialog) -> QDialog.DialogCode:
+            dialog.key_checkbox.setChecked(False)
+            return QDialog.DialogCode.Accepted
+
+        with (
+            patch.object(PaperTestOptionsDialog, "exec", accept_without_key),
+            patch(
+                "moduly.testy.ui.test_exams_tab.QFileDialog.getSaveFileName",
+                return_value=(str(target), "OpenDocument (*.odt)"),
+            ),
+            patch("moduly.testy.ui.test_exams_tab.open_export_file"),
+        ):
+            tab.print_paper_test()
+        self.assertTrue(target.is_file())
+        self.assertTrue(tab.paper_btn.isEnabled())
+        self.assertIsNone(test_exam_service.get_exam(prepared.id).written_mode)
+        self.assertEqual(test_exam_service.get_exam(prepared.id).status, EXAM_STATUS_PREPARED)
+
+        written_exam_service.start(electronic.id)
+        tab.refresh()
+        _select_exam(tab.table, electronic.id)
+        self.assertFalse(tab.paper_btn.isEnabled())
+        self.assertFalse(written_exam_service.can_enter_paper(electronic.id))
+        with self.assertRaises(TestExamError) as electronic_blocked:
+            question = test_exam_service.get_written_questions(electronic.id)[0]
+            written_exam_service.save_paper_letter(
+                electronic.id,
+                question.id,
+                _letter(question.id, correct=True),
+            )
+        self.assertEqual(str(electronic_blocked.exception), ELECTRONIC_BLOCKS_PAPER)
+
+        written_exam_service.evaluate_paper(finished.id, now=_LATE)
+        tab.refresh()
+        _select_exam(tab.table, finished.id)
+        self.assertFalse(tab.paper_btn.isEnabled())
+        self.assertFalse(written_exam_service.can_enter_paper(finished.id))
+        done = test_exam_service.get_exam(finished.id)
+        assert done is not None
+        self.assertEqual(done.status, EXAM_STATUS_COMPLETED)
+        with self.assertRaises(TestExamError) as finished_blocked:
+            question = test_exam_service.get_written_questions(finished.id)[0]
+            written_exam_service.save_paper_letter(
+                finished.id,
+                question.id,
+                _letter(question.id, correct=True),
+            )
+        self.assertEqual(str(finished_blocked.exception), PAPER_ENTRY_LOCKED)
+
+        _select_exam(tab.table, prepared.id)
+        self.assertTrue(tab.paper_btn.isEnabled())
+        question = test_exam_service.get_written_questions(prepared.id)[0]
+        written_exam_service.save_paper_letter(
+            prepared.id,
+            question.id,
+            _letter(question.id, correct=True),
+        )
+        after_save = test_exam_service.get_exam(prepared.id)
+        assert after_save is not None
+        self.assertEqual(after_save.written_mode, WRITTEN_MODE_PAPER)
+        self.assertEqual(after_save.status, EXAM_STATUS_PREPARED)
+        self.assertIsNone(after_save.written_started_at)
+        tab._update_action_buttons()
+        self.assertTrue(tab.paper_btn.isEnabled())
+        self.assertFalse(tab.start_btn.isEnabled())
 
     def _open(self, exam_id: int) -> PaperAnswerDialog:
         dialog = PaperAnswerDialog(exam_id)

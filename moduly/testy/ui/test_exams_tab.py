@@ -139,6 +139,8 @@ class TestExamsTab(QWidget):
         dialog.exec()
         if dialog.results_changed:
             self.refresh()
+        else:
+            self._update_action_buttons()
 
     def start_electronic_test(self) -> None:
         exam_id = self.table.selected_exam_id()
@@ -253,6 +255,7 @@ class TestExamsTab(QWidget):
         open_export_file(result.test_path, parent=self, title="Písemný test")
         if result.key_path is not None:
             open_export_file(result.key_path, parent=self, title="Klíč správných odpovědí")
+        self._update_action_buttons()
 
     def enter_paper_answers(self) -> None:
         exam_id = self.table.selected_exam_id()
@@ -267,6 +270,8 @@ class TestExamsTab(QWidget):
         dialog.exec()
         if dialog.evaluated:
             self.focus_exam(exam_id)
+        else:
+            self._update_action_buttons()
 
     def _update_action_buttons(self) -> None:
         exam_id = self.table.selected_exam_id()

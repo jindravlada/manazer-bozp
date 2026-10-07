@@ -142,6 +142,25 @@ def format_remaining_label(total_seconds: int) -> str:
     return f"Zbývá: {format_remaining_clock(total_seconds)}"
 
 
+def written_part_finished(
+    *,
+    status: str,
+    written_finish_reason: str | None,
+    written_finished_at: datetime | None,
+) -> bool:
+    """Písemná část už byla odevzdána, vypršela, nebo je zkouška dokončená."""
+    return bool(
+        str(written_finish_reason or "").strip()
+        or written_finished_at is not None
+        or status == EXAM_STATUS_COMPLETED
+    )
+
+
+def paper_blocked_by_electronic_mode(written_mode: str | None) -> bool:
+    """NULL a prázdný režim ještě nejsou electronic."""
+    return str(written_mode or "") == WRITTEN_MODE_ELECTRONIC
+
+
 def can_start_electronic_written_state(
     status: str,
     uses_written: bool,
@@ -461,14 +480,25 @@ class WrittenExamService:
         )
 
     def can_enter_paper(self, exam_id: int | None) -> bool:
+        """Jedna připravená zkouška s písemným snapshotem, dokud část není hotová.
+
+        Nevyplněný ``written_mode`` (NULL i prázdný řetězec) akci neblokuje.
+        Režim electronic a dokončená písemná část ano.
+        """
         if not exam_id:
             return False
         exam = self.repository.get_by_id(exam_id)
         if exam is None:
             return False
-        if exam.written_finish_reason or exam.status != EXAM_STATUS_PREPARED:
+        if written_part_finished(
+            status=exam.status,
+            written_finish_reason=exam.written_finish_reason,
+            written_finished_at=exam.written_finished_at,
+        ):
             return False
-        if (exam.written_mode or "") == WRITTEN_MODE_ELECTRONIC:
+        if paper_blocked_by_electronic_mode(exam.written_mode):
+            return False
+        if exam.status != EXAM_STATUS_PREPARED or exam.written_started_at is not None:
             return False
         if not exam.uses_written:
             return False
@@ -723,11 +753,16 @@ class WrittenExamService:
             session.close()
 
     def _ensure_paper_editable(self, session, exam: TestExam) -> None:
-        if exam.written_finish_reason or exam.status == EXAM_STATUS_COMPLETED:
+        if written_part_finished(
+            status=exam.status,
+            written_finish_reason=exam.written_finish_reason,
+            written_finished_at=exam.written_finished_at,
+        ):
             raise TestExamError(PAPER_ENTRY_LOCKED)
         if (
-            (exam.written_mode or "") == WRITTEN_MODE_ELECTRONIC
+            paper_blocked_by_electronic_mode(exam.written_mode)
             or exam.status == EXAM_STATUS_STARTED
+            or exam.written_started_at is not None
         ):
             raise TestExamError(ELECTRONIC_BLOCKS_PAPER)
         if exam.status != EXAM_STATUS_PREPARED:
