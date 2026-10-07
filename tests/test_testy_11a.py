@@ -316,7 +316,7 @@ class ExamProtocolTestCase(unittest.TestCase):
         self.assertNotIn("WrittenSpacer", tail)
         self.assertIn('text:style-name="WrittenDocumentEnd"', tail)
         self.assertIn('fo:keep-together="always"', xml)
-        self.assertIn('text:style-name="ProtocolOralText"', xml)
+        self.assertEqual(xml.count('text:style-name="ProtocolOralNext"'), 2)
         self.assertNotIn('text:style-name="ProtocolNote"', xml)
         self.assertNotIn('table:style-name="ProtocolOral"', xml)
         self.assertIn("ProtocolSignRow", xml)

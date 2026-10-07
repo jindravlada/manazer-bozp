@@ -57,9 +57,19 @@ def render_protocol_closing_xml(
     parts: list[str] = []
     ordered = sorted(oral_items, key=lambda item: int(item[0]))
     if ordered:
+        # Nadpis má keep-with-next, takže nezůstane sám. První otázka ho drží
+        # i s druhou. Poslední otázka drží výsledek ústní části. Mezi tím se
+        # seznam může rozdělit, celý blok otázek se nedrží pohromadě.
         parts.append('<text:p text:style-name="ProtocolHeading">ÚSTNÍ ČÁST</text:p>')
-        for position, text in ordered:
-            parts.append(_oral_block(position, text))
+        last_index = len(ordered) - 1
+        for index, (position, text) in enumerate(ordered):
+            parts.append(
+                _oral_block(
+                    position,
+                    text,
+                    keep_with_next=index == 0 or index == last_index,
+                )
+            )
         parts.append(_manual_outcome("Výsledek ústní části:"))
     parts.append('<text:p text:style-name="ProtocolHeading">CELKOVÝ VÝSLEDEK ZKOUŠKY</text:p>')
     parts.append(f'<text:p text:style-name="ProtocolCheck">{_xml(MANUAL_RESULT_LINE)}</text:p>')
@@ -110,9 +120,10 @@ def examinee_role_label(gender: object) -> str:
     return "Zkoušený"
 
 
-def _oral_block(position: int, text: str) -> str:
-    """Jedna otázka jako odstavec. Seznam se může rozdělit mezi stránky, otázka ne."""
-    return f'<text:p text:style-name="ProtocolOralText">{_xml(f"{int(position)}. {text}")}</text:p>'
+def _oral_block(position: int, text: str, *, keep_with_next: bool) -> str:
+    """Jedna otázka jako odstavec. Sama se nedělí; seznam ano, kromě začátku a konce."""
+    style = "ProtocolOralNext" if keep_with_next else "ProtocolOralText"
+    return f'<text:p text:style-name="{style}">{_xml(f"{int(position)}. {text}")}</text:p>'
 
 
 def _signature_block(people: list[tuple[str, str]]) -> str:

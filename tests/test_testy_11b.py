@@ -288,7 +288,8 @@ class GenderAndProtocolTestCase(unittest.TestCase):
             between = xml[xml.index(first) : xml.index(second)]
             self.assertNotIn("ProtocolNote", between)
             self.assertNotIn("<table:table", between)
-            self.assertEqual(xml.count('text:style-name="ProtocolOralText"'), 2)
+            self.assertEqual(xml.count('text:style-name="ProtocolOralNext"'), 2)
+            self.assertEqual(xml.count('text:style-name="ProtocolOralText"'), 0)
             self.assertNotIn('text:style-name="ProtocolNote"', xml)
             self.assertNotIn('table:style-name="ProtocolOral"', xml)
             style = xml[xml.find('style:name="ProtocolOralText"') :][:420]
