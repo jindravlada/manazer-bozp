@@ -641,7 +641,10 @@ class ExamSnapshotTestCase(unittest.TestCase):
                 member_ids=[chair.id],
                 rng=PrefixReverse(),
             )
-        self.assertIn("Předseda", str(duplicate.exception))
+        self.assertIn(
+            "Předseda/předsedkyně komise nemůže být současně členem/členkou komise.",
+            str(duplicate.exception),
+        )
         with self.assertRaises(TestExamError) as repeated:
             test_exam_service.prepare_exam(
                 employee_id=candidate.id,

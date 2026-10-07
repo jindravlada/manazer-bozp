@@ -370,7 +370,7 @@ class GenderAndProtocolTestCase(unittest.TestCase):
         )
         self.assertEqual(
             [role for role, _name in commission],
-            [_EXAMINEE_LABEL, "Předseda komise", "Člen komise"],
+            [_EXAMINEE_LABEL, "Předseda/předsedkyně komise", "Člen(ka) komise"],
         )
 
         topic_id = _written_topic("Snapshot 11b")
@@ -402,7 +402,7 @@ class GenderAndProtocolTestCase(unittest.TestCase):
             self.assertNotIn("Zkoušená", plain)
             self.assertIn("Ing. Jan Novak", plain)
             self.assertIn("Zkoušející", plain)
-            self.assertNotIn("Předseda komise", plain)
+            self.assertNotIn("Předseda/předsedkyně komise", plain)
 
     def test_legacy_gender_column_stays_readable(self) -> None:
         employee = _employee("11b-mig", "Eva", "Puvodni", title_before="Mgr.")

@@ -57,7 +57,7 @@ class TestExamError(ValueError):
 
 
 EXAMINEE_CANNOT_EXAMINE = (
-    "Testovaný zaměstnanec nemůže být současně zkoušejícím ani členem komise."
+    "Testovaný zaměstnanec nemůže být současně zkoušejícím ani členem/členkou komise."
 )
 
 
@@ -502,7 +502,7 @@ class TestExamService:
             return
         lines = [
             "Hromadnou přípravu nelze provést. "
-            "Tito zaměstnanci jsou současně vybraní ke zkoušce a jako zkoušející nebo člen komise:",
+            "Tito zaměstnanci jsou současně vybraní ke zkoušce a jako zkoušející nebo člen(ka) komise:",
         ]
         lines.extend(_batch_person_label(employee) for employee in conflicts)
         lines.append("Nevytvořila se žádná zkouška.")
@@ -703,21 +703,29 @@ class TestExamService:
             return [{"employee": examiner, "role": EXAM_ROLE_EXAMINER}]
         if mode == EXAMINER_MODE_COMMISSION:
             if examiner_id:
-                raise TestExamError("U komise se vybírá předseda a členové.")
-            chair = self._require_other_examiner(chair_id, employee_id, "Předsedu")
+                raise TestExamError(
+                    "U komise se vybírá předseda/předsedkyně komise a člen(ka) komise."
+                )
+            chair = self._require_other_examiner(
+                chair_id,
+                employee_id,
+                "Předsedu/předsedkyni komise",
+            )
             if not member_ids:
-                raise TestExamError("Přidejte alespoň jednoho člena komise.")
+                raise TestExamError("Přidejte alespoň člena/členku komise.")
             people = [{"employee": chair, "role": EXAM_ROLE_CHAIR}]
             seen = {int(chair.id)}
             for member_id in member_ids:
                 member = self._require_other_examiner(
                     member_id,
                     employee_id,
-                    "Člena komise",
+                    "Člena/členku komise",
                 )
                 if int(member.id) in seen:
                     if int(member.id) == int(chair.id):
-                        raise TestExamError("Předseda nemůže být současně členem komise.")
+                        raise TestExamError(
+                            "Předseda/předsedkyně komise nemůže být současně členem/členkou komise."
+                        )
                     raise TestExamError("Osoba je v komisi vícekrát.")
                 seen.add(int(member.id))
                 people.append({"employee": member, "role": EXAM_ROLE_MEMBER})

@@ -309,7 +309,7 @@ class ExamProtocolTestCase(unittest.TestCase):
         self.assertIn("Ing. Jan Novak", plain)
         self.assertIn("Zkoušející", plain)
         self.assertIn("Bc. Adam Zkus", plain)
-        self.assertNotIn("Předseda komise", plain)
+        self.assertNotIn("Předseda/předsedkyně komise", plain)
         self.assertEqual(plain.count(MANUAL_RESULT_LINE), 3)
         self.assertEqual(xml.count('text:style-name="WrittenSpacer"'), 1)
         tail = xml[xml.rfind("</table:table>") :]
@@ -344,13 +344,13 @@ class ExamProtocolTestCase(unittest.TestCase):
         )
         paper_test_export_service.export(commission.id, self.folder / "komise.odt")
         commission_plain = _plain(self.folder / "komise.odt")
-        self.assertIn("Předseda komise", commission_plain)
+        self.assertIn("Předseda/předsedkyně komise", commission_plain)
         self.assertIn("Iva Predseda, Ph.D.", commission_plain)
-        self.assertIn("Člen komise", commission_plain)
+        self.assertIn("Člen(ka) komise", commission_plain)
         self.assertIn("Ing. Otto Clen", commission_plain)
         self.assertLess(
-            commission_plain.index("Předseda komise"),
-            commission_plain.index("Člen komise"),
+            commission_plain.index("Předseda/předsedkyně komise"),
+            commission_plain.index("Člen(ka) komise"),
         )
 
         batch_dir = self.folder / "davka"

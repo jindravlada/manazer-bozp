@@ -509,7 +509,7 @@ class WrittenErrorProtocolTestCase(unittest.TestCase):
         cases = (
             (none_exam, []),
             (single, ["Zkoušející"]),
-            (commission, ["Předseda komise", "Člen komise"]),
+            (commission, ["Předseda/předsedkyně komise", "Člen(ka) komise"]),
         )
         for exam, roles in cases:
             path = self.folder / f"{exam.id}.odt"
@@ -519,13 +519,13 @@ class WrittenErrorProtocolTestCase(unittest.TestCase):
             self.assertLess(plain.index(WRITTEN_CONFIRM_SENTENCE), plain.index("CELKOVÝ VÝSLEDEK ZKOUŠKY"))
             self.assertLess(plain.index("CELKOVÝ VÝSLEDEK ZKOUŠKY"), plain.rindex("Zkoušený"))
             self.assertNotIn("ÚSTNÍ ČÁST", plain)
-            for role in ("Zkoušející", "Předseda komise", "Člen komise"):
+            for role in ("Zkoušející", "Předseda/předsedkyně komise", "Člen(ka) komise"):
                 if role in roles:
                     self.assertLess(plain.index("CELKOVÝ VÝSLEDEK ZKOUŠKY"), plain.index(role))
                 else:
                     self.assertNotIn(role, plain)
-            if roles == ["Předseda komise", "Člen komise"]:
-                self.assertLess(plain.index("Předseda komise"), plain.index("Člen komise"))
+            if roles == ["Předseda/předsedkyně komise", "Člen(ka) komise"]:
+                self.assertLess(plain.index("Předseda/předsedkyně komise"), plain.index("Člen(ka) komise"))
 
 
 if __name__ == "__main__":

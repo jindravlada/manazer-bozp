@@ -37,6 +37,7 @@ from core.widgets.editor_dialog_controller import EditorDialogController
 from core.widgets.no_wheel_guards import NoWheelComboBox
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.testy.constants import (
+    EXAM_ROLE_CHAIR_LABEL,
     EXAMINER_MODE_COMMISSION,
     EXAMINER_MODE_LABELS,
     EXAMINER_MODE_NONE,
@@ -120,15 +121,15 @@ class PaperBatchDialog(QDialog):
         commission_layout = QVBoxLayout(self.commission_box)
         chair_form = QFormLayout()
         self.chair = ExamPersonCombo()
-        chair_form.addRow("Předseda:", self.chair)
+        chair_form.addRow(f"{EXAM_ROLE_CHAIR_LABEL}:", self.chair)
         member_row = QHBoxLayout()
         self.member = ExamPersonCombo()
-        self.add_member_btn = QPushButton("Přidat člena")
+        self.add_member_btn = QPushButton("Přidat člena/členku")
         member_row.addWidget(self.member, 1)
         member_row.addWidget(self.add_member_btn)
         self.members = QListWidget()
         self.members.setMaximumHeight(100)
-        self.remove_member_btn = QPushButton("Odebrat člena")
+        self.remove_member_btn = QPushButton("Odebrat člena/členku")
         commission_layout.addLayout(chair_form)
         commission_layout.addLayout(member_row)
         commission_layout.addWidget(self.members)
@@ -418,13 +419,13 @@ class PaperBatchDialog(QDialog):
     def _add_member(self) -> None:
         member_id = self.member.person_id()
         if member_id is None:
-            QMessageBox.warning(self, MODULE_NAME, "Vyberte člena komise.")
+            QMessageBox.warning(self, MODULE_NAME, "Vyberte člena/členku komise.")
             return
         if member_id == self.chair.person_id() or member_id in self._member_ids():
             QMessageBox.warning(
                 self,
                 MODULE_NAME,
-                "Předseda nemůže být současně členem komise."
+                "Předseda/předsedkyně komise nemůže být současně členem/členkou komise."
                 if member_id == self.chair.person_id()
                 else "Osoba je v komisi vícekrát.",
             )

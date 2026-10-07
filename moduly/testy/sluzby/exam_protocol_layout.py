@@ -10,8 +10,11 @@ from xml.sax.saxutils import escape as xml_escape
 
 from moduly.testy.constants import (
     EXAM_ROLE_CHAIR,
+    EXAM_ROLE_CHAIR_LABEL,
     EXAM_ROLE_EXAMINER,
+    EXAM_ROLE_EXAMINER_LABEL,
     EXAM_ROLE_MEMBER,
+    EXAM_ROLE_MEMBER_LABEL,
     EXAMINER_MODE_COMMISSION,
     EXAMINER_MODE_SINGLE,
 )
@@ -21,8 +24,8 @@ EXAMINEE_SIGNATURE_LABEL = "Zkoušený(á):"
 # Ruční datum. Plánované datum z databáze se na doklad netiskne.
 BLANK_EXAM_DATE_LINE = "Datum: ______________________"
 CHECKBOX = "\u2610"
-MANUAL_RESULT_LINE = f"{CHECKBOX} VYHOVĚL        {CHECKBOX} NEVYHOVĚL"
-WRITTEN_RESULT_LINE = "Výsledek písemné části: VYHOVĚL"
+MANUAL_RESULT_LINE = f"{CHECKBOX} VYHOVĚL(A)        {CHECKBOX} NEVYHOVĚL(A)"
+WRITTEN_RESULT_LINE = "Výsledek písemné části: VYHOVĚL(A)"
 ERROR_LIST_HEADING = "VÝPIS CHYBNĚ ZODPOVĚZENÝCH OTÁZEK"
 NO_WRITTEN_ERRORS_LINE = "Bez chyb."
 WRITTEN_CONFIRM_SENTENCE = (
@@ -116,14 +119,14 @@ def protocol_people(exam, examiners) -> list[tuple[str, str]]:
     if mode == EXAMINER_MODE_SINGLE:
         for person in ordered:
             if str(getattr(person, "role", "")) == EXAM_ROLE_EXAMINER:
-                people.append(("Zkoušející", _snapshot_name(person)))
+                people.append((EXAM_ROLE_EXAMINER_LABEL, _snapshot_name(person)))
     elif mode == EXAMINER_MODE_COMMISSION:
         for person in ordered:
             if str(getattr(person, "role", "")) == EXAM_ROLE_CHAIR:
-                people.append(("Předseda komise", _snapshot_name(person)))
+                people.append((EXAM_ROLE_CHAIR_LABEL, _snapshot_name(person)))
         for person in ordered:
             if str(getattr(person, "role", "")) == EXAM_ROLE_MEMBER:
-                people.append(("Člen komise", _snapshot_name(person)))
+                people.append((EXAM_ROLE_MEMBER_LABEL, _snapshot_name(person)))
     return people
 
 

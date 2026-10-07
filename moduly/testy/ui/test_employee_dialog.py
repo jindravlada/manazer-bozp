@@ -72,7 +72,7 @@ class TestEmployeeDialog(QDialog):
         self.roles = MultiResponsibilityRoleSelector(self)
         self.active_checkbox = QCheckBox("Aktivní")
         self.active_checkbox.setChecked(True)
-        self.may_examine = QCheckBox("Zkoušející / člen komise")
+        self.may_examine = QCheckBox("Zkoušející / člen(ka) komise")
 
         form.addRow("Osobní číslo:", self.personal_number)
         form.addRow("Titul před jménem:", self.title_before)

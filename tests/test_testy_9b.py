@@ -230,8 +230,8 @@ class OralFailureTestCase(unittest.TestCase):
         self.assertTrue(dialog.oral_failure_button.isVisible())
         self.assertNotIn("Ústní část", dialog.written_summary.text())
         self.assertNotIn("Nevyhodnoceno", dialog.written_summary.text())
-        self.assertIn("Výsledek písemné části: Vyhověl", dialog.written_summary.text())
-        self.assertIn("Výsledek zkoušky: Vyhověl", dialog.written_summary.text())
+        self.assertIn("Výsledek písemné části: Vyhověl(a)", dialog.written_summary.text())
+        self.assertIn("Výsledek zkoušky: Vyhověl(a)", dialog.written_summary.text())
 
         with patch(
             "moduly.testy.ui.test_exam_detail_dialog.QMessageBox.question",
@@ -261,10 +261,10 @@ class OralFailureTestCase(unittest.TestCase):
         self.assertIn(ORAL_PART_FAILED_LINE, dialog.written_summary.text())
         self.assertNotIn("Ústní část: Vyhověl", dialog.written_summary.text())
         self.assertNotIn("Nevyhodnoceno", dialog.written_summary.text())
-        self.assertIn("Výsledek písemné části: Vyhověl", dialog.written_summary.text())
-        self.assertIn("Výsledek zkoušky: Nevyhověl", dialog.written_summary.text())
+        self.assertIn("Výsledek písemné části: Vyhověl(a)", dialog.written_summary.text())
+        self.assertIn("Výsledek zkoušky: Nevyhověl(a)", dialog.written_summary.text())
         self.assertEqual(dialog.oral_failure_button.text(), EXAM_ACTION_CLEAR_ORAL_FAILURE)
-        self._assert_table(recorded, "Vyhověl", "Nevyhověl")
+        self._assert_table(recorded, "Vyhověl(a)", "Nevyhověl(a)")
         with self.assertRaises(TestExamError) as again:
             test_exam_service.record_oral_failure(exam.id, now=recorded_at)
         self.assertIn("už je zaznamenán", str(again.exception))
@@ -285,9 +285,9 @@ class OralFailureTestCase(unittest.TestCase):
         self.assertEqual(cleared.exam_result, WRITTEN_RESULT_PASSED)
         self.assertEqual(_written_fingerprint(exam.id), before)
         self.assertNotIn("Ústní část", dialog.written_summary.text())
-        self.assertIn("Výsledek zkoušky: Vyhověl", dialog.written_summary.text())
+        self.assertIn("Výsledek zkoušky: Vyhověl(a)", dialog.written_summary.text())
         self.assertEqual(dialog.oral_failure_button.text(), EXAM_ACTION_RECORD_ORAL_FAILURE)
-        self._assert_table(cleared, "Vyhověl", "Vyhověl")
+        self._assert_table(cleared, "Vyhověl(a)", "Vyhověl(a)")
 
     def test_ineligible_exams_hide_the_action_and_service_rejects_it(self) -> None:
         written_only = self._finish("92002", "Jen písemná", oral=False, correct=True)

@@ -205,7 +205,7 @@ class TestEmployeeTitlesTestCase(unittest.TestCase):
         )
         dialog = TestEmployeeDialog()
         self.assertFalse(dialog.may_examine.isChecked())
-        self.assertEqual(dialog.may_examine.text(), "Zkoušející / člen komise")
+        self.assertEqual(dialog.may_examine.text(), "Zkoušející / člen(ka) komise")
         dialog.personal_number.setText("2d-ui")
         dialog.title_before.setText("Ing.")
         dialog.first_name.setText("Jan")

@@ -190,8 +190,8 @@ EXAM_ROLE_EXAMINER = "examiner"
 EXAM_ROLE_CHAIR = "chair"
 EXAM_ROLE_MEMBER = "member"
 EXAM_ROLE_EXAMINER_LABEL = "Zkoušející"
-EXAM_ROLE_CHAIR_LABEL = "Předseda"
-EXAM_ROLE_MEMBER_LABEL = "Člen"
+EXAM_ROLE_CHAIR_LABEL = "Předseda/předsedkyně komise"
+EXAM_ROLE_MEMBER_LABEL = "Člen(ka) komise"
 EXAM_ROLE_LABELS = {
     EXAM_ROLE_EXAMINER: EXAM_ROLE_EXAMINER_LABEL,
     EXAM_ROLE_CHAIR: EXAM_ROLE_CHAIR_LABEL,
@@ -220,8 +220,8 @@ EXAM_COLUMN_HEADERS = [
 
 WRITTEN_RESULT_PASSED = "passed"
 WRITTEN_RESULT_FAILED = "failed"
-WRITTEN_RESULT_PASSED_LABEL = "Vyhověl"
-WRITTEN_RESULT_FAILED_LABEL = "Nevyhověl"
+WRITTEN_RESULT_PASSED_LABEL = "Vyhověl(a)"
+WRITTEN_RESULT_FAILED_LABEL = "Nevyhověl(a)"
 WRITTEN_RESULT_LABELS = {
     WRITTEN_RESULT_PASSED: WRITTEN_RESULT_PASSED_LABEL,
     WRITTEN_RESULT_FAILED: WRITTEN_RESULT_FAILED_LABEL,
@@ -248,15 +248,15 @@ def written_result_label(code: str | None) -> str:
 EXAM_ACTION_RECORD_ORAL_FAILURE = "Zaznamenat neúspěch u ústní části"
 EXAM_ACTION_CLEAR_ORAL_FAILURE = "Zrušit neúspěch u ústní části"
 ORAL_FAILURE_CONFIRM = (
-    "Opravdu chcete zaznamenat, že zaměstnanec u ústní části zkoušky nevyhověl? "
-    "Celkový výsledek zkoušky bude změněn na Nevyhověl."
+    "Opravdu chcete zaznamenat, že zaměstnanec u ústní části zkoušky nevyhověl(a)? "
+    "Celkový výsledek zkoušky bude změněn na Nevyhověl(a)."
 )
 ORAL_FAILURE_CLEAR_CONFIRM = (
     "Opravdu chcete zrušit evidovaný neúspěch u ústní části? "
     "Jde o opravu evidovaného údaje. "
     "Výsledek zkoušky se vrátí na uložený výsledek písemné části."
 )
-ORAL_PART_FAILED_LINE = "Ústní část: Nevyhověl"
+ORAL_PART_FAILED_LINE = "Ústní část: Nevyhověl(a)"
 
 EXAM_SNAPSHOT_ENTITY = "test_exam_snapshot"
 
