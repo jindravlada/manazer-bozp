@@ -1,4 +1,5 @@
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from core.database.session import SessionLocal
 from moduly.proverky.modely.bozp_inspection_verification_override import (
@@ -49,9 +50,12 @@ class BozpInspectionVerificationOverrideRepository:
         section_id: str,
         control_point_id: str,
         override_verification_type: str,
+        session: Session | None = None,
     ) -> BozpInspectionVerificationOverride:
-        with SessionLocal() as session:
-            row = session.scalars(
+        owns = session is None
+        current = SessionLocal() if owns else session
+        try:
+            row = current.scalars(
                 select(BozpInspectionVerificationOverride).where(
                     BozpInspectionVerificationOverride.inspection_id == inspection_id,
                     BozpInspectionVerificationOverride.source_area_id == area_id,
@@ -68,13 +72,22 @@ class BozpInspectionVerificationOverrideRepository:
                     source_control_point_id=control_point_id,
                     override_verification_type=override_verification_type,
                 )
-                session.add(row)
+                current.add(row)
             else:
                 row.override_verification_type = override_verification_type
-            session.commit()
-            session.refresh(row)
-            session.expunge(row)
+            current.flush()
+            if owns:
+                current.commit()
+                current.refresh(row)
+                current.expunge(row)
             return row
+        except Exception:
+            if owns:
+                current.rollback()
+            raise
+        finally:
+            if owns:
+                current.close()
 
     def delete(
         self,
@@ -83,9 +96,12 @@ class BozpInspectionVerificationOverrideRepository:
         area_id: str,
         section_id: str,
         control_point_id: str,
+        session: Session | None = None,
     ) -> bool:
-        with SessionLocal() as session:
-            row = session.scalars(
+        owns = session is None
+        current = SessionLocal() if owns else session
+        try:
+            row = current.scalars(
                 select(BozpInspectionVerificationOverride).where(
                     BozpInspectionVerificationOverride.inspection_id == inspection_id,
                     BozpInspectionVerificationOverride.source_area_id == area_id,
@@ -96,9 +112,18 @@ class BozpInspectionVerificationOverrideRepository:
             ).first()
             if row is None:
                 return False
-            session.delete(row)
-            session.commit()
+            current.delete(row)
+            current.flush()
+            if owns:
+                current.commit()
             return True
+        except Exception:
+            if owns:
+                current.rollback()
+            raise
+        finally:
+            if owns:
+                current.close()
 
     def delete_for_inspection(self, inspection_id: int) -> int:
         with SessionLocal() as session:

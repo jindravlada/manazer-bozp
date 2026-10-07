@@ -18,7 +18,13 @@ from core.shared.section_summary import (
     normalize_section_summary_text,
     section_summary_key,
 )
+from core.database.session import transaction
 from core.shared.sluzby.control_result_service import ControlPointContext, control_result_service
+from core.shared.sluzby.deferred_finding_task_flush import (
+    apply_staged_findings_and_tasks,
+    delete_retired_photos,
+    discard_staged_finding,
+)
 from core.shared.sluzby.finding_service import finding_service
 from core.shared.sluzby.finding_task_service import finding_task_service
 from moduly.proverky.sluzby.inspection_section_summary_service import (
@@ -352,12 +358,7 @@ class InspectionDeferredEdits:
         return temp_id
 
     def stage_finding_delete(self, finding_id: int) -> None:
-        if finding_id < 0:
-            self._finding_creates.pop(finding_id, None)
-            self._finding_deletes.discard(finding_id)
-            return
-        self._finding_updates.pop(finding_id, None)
-        self._finding_deletes.add(finding_id)
+        discard_staged_finding(self, finding_id)
 
     def get_finding(self, finding_id: int) -> Any | None:
         if finding_id in self._finding_deletes:
@@ -545,95 +546,70 @@ class InspectionDeferredEdits:
     # --- flush -------------------------------------------------------------
 
     def flush(self, *, entity_id: int | None = None) -> dict[int, int]:
-        """Zapíše všechny odložené změny. Vrací mapování temp_finding_id → reálné id."""
-        finding_id_map: dict[int, int] = {}
+        """Zapíše všechny odložené změny v jedné transakci.
 
-        for pending in list(self._control_results.values()):
-            control_result_service.set_result(
-                pending.entity_type,
-                pending.entity_id,
-                pending.context,
-                result=pending.result,
-                note=pending.note,
-                shared_experience=pending.shared_experience,
-            )
-
-        for pending in list(self._photos.values()):
-            if pending.action == "attach" and pending.source_path is not None:
-                control_result_service.attach_photo(
+        Fronta se čistí až po commitu. Při chybě se transakce vrátí a staged
+        stav zůstane pro další pokus.
+        """
+        retired_photos: list[str] = []
+        with transaction() as session:
+            for pending in list(self._control_results.values()):
+                control_result_service.set_result(
                     pending.entity_type,
                     pending.entity_id,
                     pending.context,
-                    pending.source_path,
-                )
-            elif pending.action == "remove":
-                control_result_service.remove_photo(
-                    pending.entity_type,
-                    pending.entity_id,
-                    pending.context,
+                    result=pending.result,
+                    note=pending.note,
+                    shared_experience=pending.shared_experience,
+                    session=session,
                 )
 
-        for pending in list(self._verification_overrides.values()):
-            inspection_verification_service.set_override(
-                pending.inspection_id,
-                area_id=pending.area_id,
-                section_id=pending.section_id,
-                control_point_id=pending.control_point_id,
-                verification_type=pending.verification_type,
-                methodology_type=pending.methodology_type,
-            )
+            for pending in list(self._photos.values()):
+                if pending.action == "attach" and pending.source_path is not None:
+                    control_result_service.attach_photo(
+                        pending.entity_type,
+                        pending.entity_id,
+                        pending.context,
+                        pending.source_path,
+                        session=session,
+                        retired_photos=retired_photos,
+                    )
+                elif pending.action == "remove":
+                    control_result_service.remove_photo(
+                        pending.entity_type,
+                        pending.entity_id,
+                        pending.context,
+                        session=session,
+                        retired_photos=retired_photos,
+                    )
 
-        for pending in list(self._section_summaries.values()):
-            target_id = pending.entity_id if pending.entity_id is not None else entity_id
-            if target_id is None:
-                continue
-            inspection_section_summary_service.set_text(
-                int(target_id),
-                area_id=pending.area_id,
-                section_id=pending.section_id,
-                summary_text=pending.summary_text,
-            )
+            for pending in list(self._verification_overrides.values()):
+                inspection_verification_service.set_override(
+                    pending.inspection_id,
+                    area_id=pending.area_id,
+                    section_id=pending.section_id,
+                    control_point_id=pending.control_point_id,
+                    verification_type=pending.verification_type,
+                    methodology_type=pending.methodology_type,
+                    session=session,
+                )
 
-        for finding_id, fields in list(self._finding_updates.items()):
-            if finding_id in self._finding_deletes or finding_id < 0:
-                continue
-            # temp task_id se nesmí zapsat dřív, než existuje reálný úkol
-            clean = {k: v for k, v in fields.items() if not (k == "task_id" and isinstance(v, int) and v < 0)}
-            if clean:
-                finding_service.update(finding_id, **clean)
+            for pending in list(self._section_summaries.values()):
+                target_id = pending.entity_id if pending.entity_id is not None else entity_id
+                if target_id is None:
+                    continue
+                inspection_section_summary_service.set_text(
+                    int(target_id),
+                    area_id=pending.area_id,
+                    section_id=pending.section_id,
+                    summary_text=pending.summary_text,
+                    session=session,
+                )
 
-        for temp_id, data in sorted(self._finding_creates.items(), key=lambda item: item[0], reverse=True):
-            if temp_id in self._finding_deletes:
-                continue
-            payload = dict(data)
-            entity_type = payload.pop("entity_type")
-            entity_id = int(payload.pop("entity_id"))
-            payload.pop("task_id", None)
-            created = finding_service.create(entity_type, entity_id, **payload)
-            finding_id_map[temp_id] = created.id
-
-        for finding_id in list(self._finding_deletes):
-            if finding_id > 0:
-                finding_service.delete(finding_id)
-
-        for temp_id, pending in sorted(self._task_creates.items(), key=lambda item: item[0], reverse=True):
-            finding_id = int(pending["finding_id"])
-            real_finding_id = finding_id_map.get(finding_id, finding_id)
-            if real_finding_id < 0:
-                continue
-            task = finding_task_service.create_task_from_finding(real_finding_id)
-            data = dict(pending["data"])
-            task_service.update_task(task_id=task.id, **data)
-
-        for task_id, fields in list(self._task_updates.items()):
-            if task_id < 0:
-                continue
-            task_service.update_task(task_id=task_id, **fields)
-            finding_task_service.resolve_finding_for_verified_task(
-                task_service.get_task_by_id(task_id)
-            )
+            finding_id_map = apply_staged_findings_and_tasks(self, session)
 
         self.clear()
+        delete_retired_photos(retired_photos)
         return finding_id_map
 
     # --- helpers -----------------------------------------------------------

@@ -15,8 +15,8 @@ class TaskService:
     def get_all_tasks(self):
         return self.repository.get_all()
 
-    def get_task_by_id(self, task_id: int):
-        return self.repository.get_by_id(task_id)
+    def get_task_by_id(self, task_id: int, session: Session | None = None):
+        return self.repository.get_by_id(task_id, session=session)
 
     def get_tasks_by_ids(self, task_ids: list[int] | tuple[int, ...]):
         return self.repository.get_by_ids(task_ids)
@@ -97,16 +97,18 @@ class TaskService:
             due_date=due_date,
             remind_from=remind_from,
             responsible_person_id=responsible_person_id,
-            responsible_person=self._person_name(responsible_person_id),
+            responsible_person=self._person_name(responsible_person_id, session=session),
             workplace_id=workplace_id,
-            workplace_name=self._workplace_name(workplace_id),
+            workplace_name=self._workplace_name(workplace_id, session=session),
             completed=completed,
             completed_date=completed_date,
             requires_verification=requires_verification,
             check_due_date=check_due_date if requires_verification else None,
             checked_date=checked_date if requires_verification else None,
             checked_by_id=checked_by_id if requires_verification else None,
-            checked_by_name=self._person_name(checked_by_id) if requires_verification else "",
+            checked_by_name=(
+                self._person_name(checked_by_id, session=session) if requires_verification else ""
+            ),
             canceled=canceled,
             note=note,
             source_module=source_module,
@@ -136,8 +138,9 @@ class TaskService:
         checked_by_id: int | None = None,
         canceled: bool = False,
         note: str = "",
+        session: Session | None = None,
     ) -> Task | None:
-        task = self.repository.get_by_id(task_id)
+        task = self.repository.get_by_id(task_id, session=session)
         if task is None:
             return None
 
@@ -155,22 +158,24 @@ class TaskService:
         task.due_date = due_date
         task.remind_from = remind_from
         task.responsible_person_id = responsible_person_id
-        task.responsible_person = self._person_name(responsible_person_id)
+        task.responsible_person = self._person_name(responsible_person_id, session=session)
         task.workplace_id = workplace_id
-        task.workplace_name = self._workplace_name(workplace_id)
+        task.workplace_name = self._workplace_name(workplace_id, session=session)
         task.completed = completed
         task.completed_date = completed_date if completed else None
         task.requires_verification = requires_verification
         task.check_due_date = check_due_date if requires_verification else None
         task.checked_date = checked_date if requires_verification else None
         task.checked_by_id = checked_by_id if requires_verification else None
-        task.checked_by_name = self._person_name(checked_by_id) if requires_verification else ""
+        task.checked_by_name = (
+            self._person_name(checked_by_id, session=session) if requires_verification else ""
+        )
         task.canceled = canceled
         task.note = note
         self._sync_legacy_status(task)
 
-        saved = self.repository.update(task)
-        self._resolve_linked_finding(saved)
+        saved = self.repository.update(task, session=session)
+        self._resolve_linked_finding(saved, session=session)
         return saved
 
     @staticmethod
@@ -244,13 +249,13 @@ class TaskService:
     def _sync_legacy_status(self, task: Task) -> None:
         task.status = task.computed_status
 
-    def _resolve_linked_finding(self, task: Task | None) -> None:
+    def _resolve_linked_finding(self, task: Task | None, session: Session | None = None) -> None:
         if task is None:
             return
 
         from core.shared.sluzby.finding_task_service import finding_task_service
 
-        finding_task_service.resolve_finding_for_verified_task(task)
+        finding_task_service.resolve_finding_for_verified_task(task, session=session)
 
     def _reopen_linked_finding(self, task: Task | None) -> None:
         if task is None:
@@ -260,18 +265,18 @@ class TaskService:
 
         finding_task_service.reopen_finding_for_task(task)
 
-    def _person_name(self, person_id: int | None) -> str:
+    def _person_name(self, person_id: int | None, session: Session | None = None) -> str:
         if not person_id:
             return ""
 
-        person = settings_service.get_worker_by_id(person_id)
+        person = settings_service.get_worker_by_id(person_id, session=session)
         return person.display_name if person else ""
 
-    def _workplace_name(self, workplace_id: int | None) -> str:
+    def _workplace_name(self, workplace_id: int | None, session: Session | None = None) -> str:
         if not workplace_id:
             return ""
 
-        workplace = settings_service.get_workplace_by_id(workplace_id)
+        workplace = settings_service.get_workplace_by_id(workplace_id, session=session)
         return workplace.name if workplace else ""
 
 

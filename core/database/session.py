@@ -1,5 +1,8 @@
+from collections.abc import Iterator
+from contextlib import contextmanager
+
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 from core.database.base import Base
 from core.services import storage_service as storage_module
@@ -58,6 +61,37 @@ def get_session():
     # Vždy čti aktuální singleton storage (po importlib.reload v testech).
     reconfigure_database_engine()
     return SessionLocal()
+
+
+@contextmanager
+def open_session(session: Session | None = None) -> Iterator[tuple[Session, bool]]:
+    """Vrátí (session, owns). Vlastní session se při chybě rollbackne a vždy zavře."""
+    owns = session is None
+    current = get_session() if owns else session
+    try:
+        yield current, owns
+    except Exception:
+        if owns:
+            current.rollback()
+        raise
+    finally:
+        if owns:
+            current.close()
+
+
+@contextmanager
+def transaction() -> Iterator[Session]:
+    """Jedna transakce. Commit až po úspěšném bloku, jinak rollback celého bloku."""
+    reconfigure_database_engine()
+    current = SessionLocal()
+    try:
+        yield current
+        current.commit()
+    except Exception:
+        current.rollback()
+        raise
+    finally:
+        current.close()
 
 
 def dispose_database_engine() -> None:

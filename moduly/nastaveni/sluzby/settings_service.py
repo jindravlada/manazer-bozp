@@ -70,10 +70,10 @@ class SettingsService:
     def get_workers_for_controls(self) -> list[ThpWorker]:
         return self.repository.get_workers_for_controls()
 
-    def get_worker_by_id(self, worker_id: int | None) -> ThpWorker | None:
+    def get_worker_by_id(self, worker_id: int | None, session=None) -> ThpWorker | None:
         if not worker_id:
             return None
-        return self.repository.get_worker_by_id(worker_id)
+        return self.repository.get_worker_by_id(worker_id, session=session)
 
     def save_worker(self, **data) -> ThpWorker:
         worker_id = data.pop("id", None)
@@ -114,10 +114,10 @@ class SettingsService:
         workplaces = self.repository.get_workplaces(include_inactive=include_inactive)
         return workplace_hierarchy_service.sort_for_tree(workplaces)
 
-    def get_workplace_by_id(self, workplace_id: int | None) -> Workplace | None:
+    def get_workplace_by_id(self, workplace_id: int | None, session=None) -> Workplace | None:
         if not workplace_id:
             return None
-        return self.repository.get_workplace_by_id(workplace_id)
+        return self.repository.get_workplace_by_id(workplace_id, session=session)
 
     def get_workplace_parent_candidates(
         self,

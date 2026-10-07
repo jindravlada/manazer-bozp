@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
+from sqlalchemy.orm import Session
+
 from core.shared.constants import (
     CONTROL_RESULT_NEKONTROLOVANO,
     CONTROL_RESULT_PARENT_ENTITY_TYPES,
@@ -35,6 +37,8 @@ class ControlResultService:
         entity_type: str,
         entity_id: int,
         context: ControlPointContext,
+        *,
+        session: Session | None = None,
     ) -> ControlResult | None:
         self._validate_entity(entity_type, entity_id)
         if not context.control_point_id:
@@ -46,6 +50,7 @@ class ControlResultService:
             area_label=context.area_label,
             section_label=context.section_label,
             control_point_id=context.control_point_id,
+            session=session,
         )
 
     def current_result(
@@ -70,12 +75,18 @@ class ControlResultService:
         recorded_by_name: str = "",
         shared_experience: bool | None = None,
         photo_path: str | None = None,
+        session: Session | None = None,
     ) -> ControlResult:
         self._validate_entity(entity_type, entity_id)
         if result not in VALID_CONTROL_RESULTS:
             raise ValueError(f"Neplatný výsledek kontroly: {result}")
 
-        existing = self.get_for_control_point(entity_type, entity_id, context)
+        existing = self.get_for_control_point(
+            entity_type,
+            entity_id,
+            context,
+            session=session,
+        )
         now = datetime.now()
 
         if existing is None:
@@ -106,7 +117,7 @@ class ControlResultService:
             control_result.recorded_by_name = recorded_by_name.strip() or control_result.recorded_by_name
             control_result.recorded_at = now
 
-        return self.repository.save(control_result)
+        return self.repository.save(control_result, session=session)
 
     def attach_photo(
         self,
@@ -114,12 +125,23 @@ class ControlResultService:
         entity_id: int,
         context: ControlPointContext,
         source_path: Path,
+        *,
+        session: Session | None = None,
+        retired_photos: list[str] | None = None,
     ) -> ControlResult:
         self._validate_entity(entity_type, entity_id)
 
-        existing = self.get_for_control_point(entity_type, entity_id, context)
-        if existing is not None and existing.photo_path:
-            control_result_photo_service.delete_photo(existing.photo_path)
+        existing = self.get_for_control_point(
+            entity_type,
+            entity_id,
+            context,
+            session=session,
+        )
+        previous = existing.photo_path if existing is not None and existing.photo_path else ""
+        if previous and session is None:
+            control_result_photo_service.delete_photo(previous)
+        elif previous and retired_photos is not None:
+            retired_photos.append(previous)
 
         relative_path = control_result_photo_service.save_optimized(
             source_path,
@@ -137,26 +159,39 @@ class ControlResultService:
                 context,
                 result=CONTROL_RESULT_NEKONTROLOVANO,
                 photo_path=relative_path,
+                session=session,
             )
 
         existing.photo_path = relative_path
-        return self.repository.save(existing)
+        return self.repository.save(existing, session=session)
 
     def remove_photo(
         self,
         entity_type: str,
         entity_id: int,
         context: ControlPointContext,
+        *,
+        session: Session | None = None,
+        retired_photos: list[str] | None = None,
     ) -> ControlResult | None:
         self._validate_entity(entity_type, entity_id)
 
-        existing = self.get_for_control_point(entity_type, entity_id, context)
+        existing = self.get_for_control_point(
+            entity_type,
+            entity_id,
+            context,
+            session=session,
+        )
         if existing is None or not existing.photo_path:
             return existing
 
-        control_result_photo_service.delete_photo(existing.photo_path)
+        previous = existing.photo_path
+        if session is None:
+            control_result_photo_service.delete_photo(previous)
+        elif retired_photos is not None:
+            retired_photos.append(previous)
         existing.photo_path = ""
-        return self.repository.save(existing)
+        return self.repository.save(existing, session=session)
 
     def resolve_photo_path(self, control_result: ControlResult | None) -> Path | None:
         if control_result is None or not control_result.photo_path:

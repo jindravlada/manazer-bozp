@@ -45,12 +45,14 @@ class AuditSectionSummaryService:
         process_id: str,
         section_id: str,
         summary_text: str,
+        session=None,
     ) -> AuditSectionSummary | None:
         return self.repository.upsert(
             int(audit_id),
             process_id=process_id,
             section_id=section_id,
             summary_text=summary_text,
+            session=session,
         )
 
     def delete_for_audit(self, audit_id: int) -> None:

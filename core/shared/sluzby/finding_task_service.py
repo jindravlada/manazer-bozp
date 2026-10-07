@@ -1,5 +1,7 @@
 from datetime import date
 
+from sqlalchemy.orm import Session
+
 from core.shared.constants import (
     ENTITY_AUDIT,
     ENTITY_AUDITY,
@@ -15,25 +17,35 @@ from moduly.ukoly.sluzby.task_service import task_service
 
 
 class FindingTaskService:
-    def get_linked_task(self, finding: Finding | None) -> Task | None:
+    def get_linked_task(
+        self,
+        finding: Finding | None,
+        *,
+        session: Session | None = None,
+    ) -> Task | None:
         if finding is None or not finding.task_id:
             return None
 
-        task = task_service.get_task_by_id(finding.task_id)
+        task = task_service.get_task_by_id(finding.task_id, session=session)
         if task is None:
             return None
         return task
 
-    def get_finding_for_task(self, task: Task | None) -> Finding | None:
+    def get_finding_for_task(
+        self,
+        task: Task | None,
+        *,
+        session: Session | None = None,
+    ) -> Finding | None:
         if task is None:
             return None
 
         if task.source_module == ENTITY_FINDING and task.source_record_id:
-            finding = finding_service.get_by_id(task.source_record_id)
+            finding = finding_service.get_by_id(task.source_record_id, session=session)
             if finding is not None:
                 return finding
 
-        return finding_service.get_by_task_id(task.id)
+        return finding_service.get_by_task_id(task.id, session=session)
 
     def is_audit_finding_corrective_task(self, task: Task | None) -> bool:
         """Úkol je nápravné opatření auditního zjištění (finding → task)."""
@@ -62,15 +74,24 @@ class FindingTaskService:
             return task.checked_date is not None
         return True
 
-    def create_task_from_finding(self, finding_id: int) -> Task:
-        finding = finding_service.get_by_id(finding_id)
+    def create_task_from_finding(
+        self,
+        finding_id: int,
+        *,
+        session: Session | None = None,
+    ) -> Task:
+        finding = finding_service.get_by_id(finding_id, session=session)
         if finding is None:
             raise ValueError("Zjištění nebylo nalezeno.")
 
-        existing_task = self.get_linked_task(finding)
+        existing_task = self.get_linked_task(finding, session=session)
         if existing_task is not None:
             if finding.status not in (FINDING_STATUS_V_PROCESU, FINDING_STATUS_VYPORADANO):
-                finding_service.update(finding_id, status=FINDING_STATUS_V_PROCESU)
+                finding_service.update(
+                    finding_id,
+                    session=session,
+                    status=FINDING_STATUS_V_PROCESU,
+                )
             return existing_task
 
         title = self._task_title(finding)
@@ -87,43 +108,57 @@ class FindingTaskService:
             requires_verification=True,
             source_module=ENTITY_FINDING,
             source_record_id=finding.id,
+            session=session,
         )
 
         if finding.responsible_person_name and not task.responsible_person:
             task.responsible_person = finding.responsible_person_name
-            task_service.repository.update(task)
+            task_service.repository.update(task, session=session)
 
         finding_service.update(
             finding_id,
+            session=session,
             task_id=task.id,
             status=FINDING_STATUS_V_PROCESU,
         )
         return task
 
-    def reopen_finding_for_task(self, task: Task | None) -> Finding | None:
+    def reopen_finding_for_task(
+        self,
+        task: Task | None,
+        *,
+        session: Session | None = None,
+    ) -> Finding | None:
         if task is None:
             return None
 
-        finding = self.get_finding_for_task(task)
+        finding = self.get_finding_for_task(task, session=session)
         if finding is None or finding.status != FINDING_STATUS_VYPORADANO:
             return finding
 
         return finding_service.update(
             finding.id,
+            session=session,
             status=FINDING_STATUS_V_PROCESU,
             resolved_at=None,
         )
 
-    def resolve_finding_for_verified_task(self, task: Task | None) -> Finding | None:
+    def resolve_finding_for_verified_task(
+        self,
+        task: Task | None,
+        *,
+        session: Session | None = None,
+    ) -> Finding | None:
         if task is None or not self.is_task_verified(task):
             return None
 
-        finding = self.get_finding_for_task(task)
+        finding = self.get_finding_for_task(task, session=session)
         if finding is None or finding.status == FINDING_STATUS_VYPORADANO:
             return None
 
         return finding_service.update(
             finding.id,
+            session=session,
             status=FINDING_STATUS_VYPORADANO,
             resolved_at=date.today(),
         )
