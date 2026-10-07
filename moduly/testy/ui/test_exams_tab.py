@@ -31,6 +31,7 @@ from moduly.testy.constants import (
     EXAM_ACTION_DETAIL,
     EXAM_ACTION_ENTER_PAPER,
     EXAM_ACTION_PREPARE,
+    EXAM_ACTION_PRINT_PROTOCOL,
     EXAM_ACTION_PRINT_WRITTEN,
     EXAM_ACTION_START_WRITTEN,
     EXAM_COL_EMPLOYEE,
@@ -39,6 +40,10 @@ from moduly.testy.constants import (
     EXAM_SEARCH_PLACEHOLDER,
     MODULE_NAME,
     WRITTEN_FINISH_EXPIRED,
+)
+from moduly.testy.sluzby.exam_protocol_export_service import (
+    exam_protocol_export_service,
+    protocol_filename,
 )
 from moduly.testy.sluzby.paper_test_export_service import paper_test_export_service
 from moduly.testy.sluzby.test_exam_service import TestExamError, test_exam_service
@@ -78,6 +83,10 @@ class TestExamsTab(QWidget):
         self.print_btn.setObjectName("exam-print-paper-button")
         configure_perform_action_button(self.print_btn)
         self.print_btn.setEnabled(False)
+        self.protocol_btn = QPushButton(EXAM_ACTION_PRINT_PROTOCOL)
+        self.protocol_btn.setObjectName("exam-print-protocol-button")
+        configure_perform_action_button(self.protocol_btn)
+        self.protocol_btn.setEnabled(False)
         self.paper_btn = QPushButton(EXAM_ACTION_ENTER_PAPER)
         self.paper_btn.setObjectName("exam-enter-paper-button")
         configure_perform_action_button(self.paper_btn)
@@ -87,6 +96,7 @@ class TestExamsTab(QWidget):
         toolbar.addWidget(self.detail_btn)
         toolbar.addWidget(self.start_btn)
         toolbar.addWidget(self.print_btn)
+        toolbar.addWidget(self.protocol_btn)
         toolbar.addWidget(self.paper_btn)
         toolbar.addStretch()
 
@@ -107,6 +117,7 @@ class TestExamsTab(QWidget):
         self.detail_btn.clicked.connect(self.open_selected)
         self.start_btn.clicked.connect(self.start_electronic_test)
         self.print_btn.clicked.connect(self.print_paper_test)
+        self.protocol_btn.clicked.connect(self.print_exam_protocol)
         self.paper_btn.clicked.connect(self.enter_paper_answers)
         self._written_exam_window: WrittenExamWindow | None = None
         self._handover = None
@@ -273,6 +284,32 @@ class TestExamsTab(QWidget):
             open_export_file(result.key_path, parent=self, title="Klíč správných odpovědí")
         self._update_action_buttons()
 
+    def print_exam_protocol(self) -> None:
+        exam_id = self.table.selected_exam_id()
+        if exam_id is None or not exam_protocol_export_service.can_export(exam_id):
+            self._update_action_buttons()
+            return
+        exam = test_exam_service.get_exam(exam_id)
+        if exam is None:
+            self.refresh()
+            return
+        default_path = storage_service.exports_dir / protocol_filename(exam)
+        chosen, _selected_filter = QFileDialog.getSaveFileName(
+            self,
+            "Protokol o zkoušce",
+            str(default_path),
+            "OpenDocument (*.odt)",
+        )
+        if not chosen:
+            return
+        try:
+            path = exam_protocol_export_service.export(exam_id, chosen)
+        except TestExamError as error:
+            QMessageBox.warning(self, MODULE_NAME, str(error))
+            return
+        open_export_file(path, parent=self, title="Protokol o zkoušce")
+        self._update_action_buttons()
+
     def enter_paper_answers(self) -> None:
         exam_id = self.table.selected_exam_id()
         if exam_id is None or not written_exam_service.can_enter_paper(exam_id):
@@ -297,6 +334,9 @@ class TestExamsTab(QWidget):
         )
         self.paper_btn.setEnabled(
             exam_id is not None and written_exam_service.can_enter_paper(exam_id)
+        )
+        self.protocol_btn.setEnabled(
+            exam_id is not None and exam_protocol_export_service.can_export(exam_id)
         )
         action = written_exam_service.electronic_action(exam_id) if exam_id else ""
         if action == "continue":

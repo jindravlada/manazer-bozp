@@ -31,6 +31,12 @@ from moduly.testy.constants import (
 from moduly.testy.modely.test_exam import TestExam
 from moduly.testy.modely.test_exam_written_answer import TestExamWrittenAnswer
 from moduly.testy.modely.test_exam_written_question import TestExamWrittenQuestion
+from moduly.testy.sluzby.exam_protocol_layout import (
+    BLANK_EXAM_DATE_LINE,
+    protocol_oral_items,
+    protocol_people,
+    render_paper_protocol_xml,
+)
 from moduly.testy.sluzby.test_definition_service import format_test_duration
 from moduly.testy.sluzby.test_exam_service import TestExamError, test_exam_service
 
@@ -150,12 +156,17 @@ class PaperTestExportService:
         with TemporaryDirectory(prefix="paper-test-") as temp_name:
             temp_dir = Path(temp_name)
             questions_xml, images = _questions_fragment(blocks, temp_dir)
+            oral_items = protocol_oral_items(test_exam_service.get_oral_questions(exam.id))
+            people = protocol_people(exam, test_exam_service.get_examiners(exam.id))
             self.engine.render(
                 template,
                 target,
                 {
                     "header": odt_rich(_header_paragraphs(exam, for_key=False)),
-                    "questions": OdtXmlFragment(xml=questions_xml, images=tuple(images)),
+                    "questions": OdtXmlFragment(
+                        xml=questions_xml + render_paper_protocol_xml(oral_items, people) + _DOCUMENT_END,
+                        images=tuple(images),
+                    ),
                     "variant": variant_label(exam),
                 },
             )
@@ -295,9 +306,7 @@ def _header_paragraphs(exam: TestExam, *, for_key: bool) -> list[OdtParagraph]:
     workplace = _labeled("Pracoviště", getattr(exam, "employee_workplace_name", None))
     if workplace:
         paragraphs.append(OdtParagraph.text(workplace, style="WrittenMeta"))
-    exam_day = _date_line(getattr(exam, "exam_date", None))
-    if exam_day:
-        paragraphs.append(OdtParagraph.text(exam_day, style="WrittenMeta"))
+    paragraphs.append(OdtParagraph.text(BLANK_EXAM_DATE_LINE, style="WrittenMeta"))
     paragraphs.append(OdtParagraph.text(PAPER_TEST_INSTRUCTION, style="WrittenInstruction"))
     duration = _duration_line(getattr(exam, "written_duration_seconds", None))
     if duration:
@@ -486,7 +495,6 @@ def _questions_fragment(
             "</table:table-cell></table:table-row></table:table>"
             f"{spacer}"
         )
-    parts.append(_DOCUMENT_END)
     return "".join(parts), images
 
 
