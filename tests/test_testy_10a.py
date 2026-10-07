@@ -77,9 +77,12 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.testy.sluzby.oral_question_service import oral_question_service
     from moduly.testy.sluzby.oral_question_topic_service import oral_question_topic_service
     from moduly.testy.sluzby.paper_test_export_service import (
+        ANSWER_KEY_BLOCK_SIZE,
         _header_paragraphs,
         paper_test_export_service,
         plain_export_text,
+        render_compact_answer_key_xml,
+        split_answer_key_rows,
         variant_label,
     )
     from moduly.testy.sluzby.test_definition_service import (
@@ -193,6 +196,31 @@ def _fingerprint(exam_id: int) -> tuple:
         exam.written_finished_at,
         tuple(questions),
     )
+
+
+def _key_grids(xml: str) -> list[tuple[list[str], list[str]]]:
+    root = ET.fromstring(xml)
+    table_tag = "{urn:oasis:names:tc:opendocument:xmlns:table:1.0}"
+    text_tag = "{urn:oasis:names:tc:opendocument:xmlns:text:1.0}"
+    grids: list[tuple[list[str], list[str]]] = []
+    for table in root.iter(f"{table_tag}table"):
+        style = table.attrib.get(f"{table_tag}style-name", "")
+        if not style.startswith("WrittenKeyTable"):
+            continue
+        rows: list[list[str]] = []
+        for row in table.findall(f"{table_tag}table-row"):
+            cells: list[str] = []
+            for cell in row.findall(f"{table_tag}table-cell"):
+                pieces = [
+                    "".join(node.itertext())
+                    for node in cell.findall(f"{text_tag}p")
+                ]
+                cells.append("".join(pieces).strip())
+            rows.append(cells)
+        numbers = rows[0] if rows else []
+        letters = rows[1] if len(rows) > 1 else []
+        grids.append((numbers, letters))
+    return grids
 
 
 def _correct_letters(exam_id: int) -> list[str]:
@@ -364,6 +392,19 @@ class PaperTestExportTestCase(unittest.TestCase):
         self.assertNotIn("TajnyOkruh", plain)
         self.assertNotIn("None", plain)
         self.assertNotIn("is_correct", content)
+        self.assertNotIn('fo:break-before="page"', content)
+        self.assertNotIn('fo:break-after="page"', content)
+        self.assertEqual(content.count('text:style-name="WrittenSpacer"'), len(questions) - 1)
+        tail = content[content.rfind("</table:table>") :]
+        self.assertNotIn("WrittenSpacer", tail)
+        self.assertIn('text:style-name="WrittenDocumentEnd"', tail)
+        end_style = content.split('style:name="WrittenDocumentEnd"', 1)[1][:400]
+        self.assertIn('fo:font-size="2pt"', end_style)
+        self.assertIn('fo:margin-bottom="0cm"', end_style)
+        self.assertIn('fo:keep-together="auto"', end_style)
+        self.assertNotIn('fo:keep-together="always"', end_style)
+        self.assertIn('fo:keep-together="always"', content)
+        self.assertIn('style:may-break-between-rows="false"', content)
         for line in letters:
             self.assertNotIn(line, plain)
         for question in questions:
@@ -601,13 +642,28 @@ class PaperTestExportTestCase(unittest.TestCase):
         letters = _correct_letters(exam.id)
         for line in letters:
             self.assertNotIn(line, test_plain)
-            self.assertIn(line, key_plain)
         self.assertIn(variant_label(exam), test_plain)
         self.assertIn(variant_label(exam), key_plain)
         self.assertIn(variant_label(exam), _odt_part(key_path, "styles.xml"))
         self.assertIn("Test ke klíči", key_plain)
         self.assertIn("Klíč správných odpovědí", key_plain)
         self.assertNotIn(PAPER_TEST_INSTRUCTION, key_plain)
+        self.assertNotIn("Petr Svoboda", key_plain)
+        self.assertNotIn("Osobní číslo", key_plain)
+        self.assertNotIn("Pracoviště", key_plain)
+        self.assertNotIn("Datum zkoušky", key_plain)
+        key_xml = _odt_part(key_path, "content.xml")
+        grids = _key_grids(key_xml)
+        self.assertEqual(len(grids), 1)
+        numbers, key_letters = grids[0]
+        questions = test_exam_service.get_written_questions(exam.id)
+        self.assertEqual(numbers, [str(question.position) for question in questions])
+        self.assertEqual(
+            key_letters,
+            [line.split(". ", 1)[1] for line in letters],
+        )
+        self.assertLessEqual(len(numbers), ANSWER_KEY_BLOCK_SIZE)
+        self.assertIn('fo:text-align="center"', key_xml)
 
         anonymous = SimpleNamespace(
             id=exam.id,
@@ -652,6 +708,104 @@ class PaperTestExportTestCase(unittest.TestCase):
         with self.assertRaises(Exception):
             paper_test_export_service.export(oral_exam.id, _TMP / "ustni.odt")
         self.assertFalse((_TMP / "ustni.odt").exists())
+
+    def test_compact_key_splits_blocks_without_redrawing(self) -> None:
+        self.assertEqual(
+            [len(block) for block in split_answer_key_rows([(index, "A") for index in range(1, 16)])],
+            [15],
+        )
+        thirty = [(index, "ABC"[(index - 1) % 3]) for index in range(1, 31)]
+        thirty_blocks = split_answer_key_rows(thirty)
+        self.assertEqual([len(block) for block in thirty_blocks], [15, 15])
+        self.assertEqual(thirty_blocks[0][0], (1, "A"))
+        self.assertEqual(thirty_blocks[0][-1], (15, "C"))
+        self.assertEqual(thirty_blocks[1][0], (16, "A"))
+        self.assertEqual(thirty_blocks[1][-1], (30, "C"))
+        longer = split_answer_key_rows([(index, "B") for index in range(1, 32)])
+        self.assertEqual([len(block) for block in longer], [15, 15, 1])
+        xml = render_compact_answer_key_xml(thirty)
+        self.assertEqual(xml.count("<table:table "), 2)
+        self.assertEqual(xml.count('table:number-columns-repeated="15"'), 2)
+        self.assertIn(">1</text:p>", xml)
+        self.assertIn(">15</text:p>", xml)
+        self.assertIn(">16</text:p>", xml)
+        self.assertIn(">30</text:p>", xml)
+        self.assertNotIn("WrittenDocumentEnd", xml)
+        self.assertEqual(xml.count("WrittenKeyGap"), 1)
+
+        employee = _employee(
+            "1010",
+            "Klara",
+            "Horak",
+            workplace="Dílna klíčů",
+        )
+        topic = written_question_topic_service.create_topic(name="Blok klice")
+        for index in range(6):
+            written_question_service.create_question(
+                topic_id=topic.id,
+                text=f"Otázka klíče {index}",
+                answer_kind=ANSWER_KIND_TEXT,
+                answers=_text_answers(),
+            )
+        definition = test_definition_service.create_test(
+            name="Šest otázek",
+            uses_written=True,
+            allowed_wrong_answers=1,
+            seconds_per_question=30,
+            examiner_mode=EXAMINER_MODE_NONE,
+            validity_value=1,
+            validity_unit=VALIDITY_UNIT_YEARS,
+            written_topics=[TestTopicQuota(topic.id, 6)],
+        )
+        exam = test_exam_service.prepare_exam(
+            employee_id=employee.id,
+            test_id=definition.id,
+            exam_date=date(2026, 10, 7),
+            rng=PrefixReverse(),
+        )
+        before = _fingerprint(exam.id)
+        target = _TMP / "kompakt" / "test.odt"
+        key_path = target.with_name("klic.odt")
+        patches = _forbid_redraw()
+        for item in patches:
+            item.start()
+        try:
+            paper_test_export_service.export(
+                exam.id,
+                target,
+                include_key=True,
+                key_path=key_path,
+            )
+        finally:
+            for item in reversed(patches):
+                item.stop()
+        self.assertEqual(_fingerprint(exam.id), before)
+        key_plain = _plain(_odt_part(key_path, "content.xml"))
+        self.assertIn("Šest otázek", key_plain)
+        self.assertIn(variant_label(exam), key_plain)
+        self.assertNotIn("Klara Horak", key_plain)
+        self.assertNotIn("1010", key_plain)
+        self.assertNotIn("Dílna klíčů", key_plain)
+        self.assertNotIn("Datum zkoušky", key_plain)
+        self.assertNotIn("Osobní číslo", key_plain)
+        self.assertNotIn("Pracoviště", key_plain)
+        grids = _key_grids(_odt_part(key_path, "content.xml"))
+        key_xml = _odt_part(key_path, "content.xml")
+        self.assertIn('text:style-name="WrittenDocumentEnd"', key_xml)
+        self.assertEqual(len(grids), 1)
+        numbers, key_letters = grids[0]
+        questions = test_exam_service.get_written_questions(exam.id)
+        self.assertEqual(numbers, [str(question.position) for question in questions])
+        expected = []
+        for question in questions:
+            letter = next(
+                answer.letter
+                for answer in test_exam_service.get_written_answers(question.id)
+                if answer.is_correct
+            )
+            expected.append(letter)
+        self.assertEqual(key_letters, expected)
+        self.assertEqual(len(numbers), 6)
 
     def test_print_action_is_available_only_for_written_snapshot(self) -> None:
         dialog = PaperTestOptionsDialog()

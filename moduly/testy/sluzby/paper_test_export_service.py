@@ -31,6 +31,11 @@ from moduly.testy.sluzby.test_exam_service import TestExamError, test_exam_servi
 _TEMPLATE_SUBDIR = "exporty"
 _TEST_TEMPLATE = "PisemnyTest.odt"
 _KEY_TEMPLATE = "KlicPisemnehoTestu.odt"
+# Budoucí souhrnný klíč složí stejné bloky pod sebe, jednu variantu po druhé.
+ANSWER_KEY_BLOCK_SIZE = 15
+# Dokument nesmí končit tabulkou: LibreOffice by za ni vložilo 14pt odstavec
+# a ten po zaplněné stránce založí další, na které je jen patička.
+_DOCUMENT_END = '<text:p text:style-name="WrittenDocumentEnd"/>'
 
 _QUESTION_MAX_W_CM = 16.4
 _QUESTION_MAX_H_CM = 9.0
@@ -149,7 +154,12 @@ class PaperTestExportService:
                 key_target,
                 {
                     "header": odt_rich(_header_paragraphs(exam, for_key=True)),
-                    "answers": _key_lines(blocks),
+                    "answers": OdtXmlFragment(
+                        xml=(
+                            render_compact_answer_key_xml(correct_answer_rows(blocks))
+                            + _DOCUMENT_END
+                        )
+                    ),
                     "variant": variant_label(exam),
                 },
             )
@@ -162,6 +172,11 @@ def _header_paragraphs(exam: TestExam, *, for_key: bool) -> list[OdtParagraph]:
     paragraphs: list[OdtParagraph] = [
         OdtParagraph.text(plain_export_text(exam.test_name), style="WrittenTitle"),
     ]
+    if for_key:
+        variant = variant_label(exam)
+        if variant:
+            paragraphs.append(OdtParagraph.text(variant, style="WrittenVariant"))
+        return paragraphs
     name = _employee_name(exam)
     if name:
         paragraphs.append(OdtParagraph.text(name, style="WrittenMeta"))
@@ -174,11 +189,10 @@ def _header_paragraphs(exam: TestExam, *, for_key: bool) -> list[OdtParagraph]:
     exam_day = _date_line(getattr(exam, "exam_date", None))
     if exam_day:
         paragraphs.append(OdtParagraph.text(exam_day, style="WrittenMeta"))
-    if not for_key:
-        paragraphs.append(OdtParagraph.text(PAPER_TEST_INSTRUCTION, style="WrittenInstruction"))
-        duration = _duration_line(getattr(exam, "written_duration_seconds", None))
-        if duration:
-            paragraphs.append(OdtParagraph.text(duration, style="WrittenMeta"))
+    paragraphs.append(OdtParagraph.text(PAPER_TEST_INSTRUCTION, style="WrittenInstruction"))
+    duration = _duration_line(getattr(exam, "written_duration_seconds", None))
+    if duration:
+        paragraphs.append(OdtParagraph.text(duration, style="WrittenMeta"))
     variant = variant_label(exam)
     if variant:
         paragraphs.append(OdtParagraph.text(variant, style="WrittenVariant"))
@@ -231,18 +245,72 @@ def _duration_line(value: object) -> str:
     return f"Čas na písemnou část: {format_test_duration(seconds)}"
 
 
-def _key_lines(
+def correct_answer_rows(
     blocks: list[tuple[TestExamWrittenQuestion, list[TestExamWrittenAnswer]]],
-) -> str:
-    lines: list[str] = []
+) -> list[tuple[int, str]]:
+    """Číslo otázky a správné písmeno v pořadí snapshotu. Nic se nelosuje."""
+    rows: list[tuple[int, str]] = []
     for question, answers in blocks:
         letter = ""
-        for answer in answers:
+        ordered = sorted(answers, key=lambda item: (int(item.position), int(item.id)))
+        for answer in ordered:
             if answer.is_correct:
                 letter = plain_export_text(answer.letter)
                 break
-        lines.append(f"{int(question.position)}. {letter or '—'}")
-    return "\n".join(lines)
+        rows.append((int(question.position), letter))
+    return rows
+
+
+def split_answer_key_rows(
+    rows: list[tuple[int, str]],
+    *,
+    block_size: int = ANSWER_KEY_BLOCK_SIZE,
+) -> list[list[tuple[int, str]]]:
+    """Rozdělí klíč na bloky. Jeden řádek A4 neunese třicet úzkých sloupců."""
+    size = max(1, int(block_size))
+    return [rows[start : start + size] for start in range(0, len(rows), size)]
+
+
+def render_compact_answer_key_xml(
+    rows: list[tuple[int, str]],
+    *,
+    block_size: int = ANSWER_KEY_BLOCK_SIZE,
+) -> str:
+    """Dvouřádková tabulka čísel a písmen, po blocích nejvýše ``block_size``.
+
+    Vrací jen tabulky a mezeru mezi bloky. Záhlaví varianty ani koncový
+    odstavec dokumentu sem nepatří, aby šel stejný blok později vložit
+    do společného klíče pro více zkoušek.
+    """
+    parts: list[str] = []
+    chunks = split_answer_key_rows(rows, block_size=block_size)
+    for index, chunk in enumerate(chunks):
+        count = len(chunk)
+        number_cells = "".join(_key_cell(str(position), "WrittenKeyNumber") for position, _letter in chunk)
+        letter_cells = "".join(
+            _key_cell(letter or "—", "WrittenKeyLetter") for _position, letter in chunk
+        )
+        parts.append(
+            f'<table:table table:style-name="WrittenKeyTable{count}">'
+            f'<table:table-column table:style-name="WrittenKeyCol{count}" '
+            f'table:number-columns-repeated="{count}"/>'
+            '<table:table-row table:style-name="WrittenKeyRow">'
+            f"{number_cells}</table:table-row>"
+            '<table:table-row table:style-name="WrittenKeyRow">'
+            f"{letter_cells}</table:table-row>"
+            "</table:table>"
+        )
+        if index != len(chunks) - 1:
+            parts.append('<text:p text:style-name="WrittenKeyGap"/>')
+    return "".join(parts)
+
+
+def _key_cell(text: str, style: str) -> str:
+    return (
+        '<table:table-cell table:style-name="WrittenKeyCell" office:value-type="string">'
+        f'<text:p text:style-name="{style}">{_odt_text(text)}</text:p>'
+        "</table:table-cell>"
+    )
 
 
 def _questions_fragment(
@@ -252,7 +320,8 @@ def _questions_fragment(
     parts: list[str] = []
     images: list[tuple[str, Path]] = []
     image_index = 1
-    for question, answers in blocks:
+    last_index = len(blocks) - 1
+    for index, (question, answers) in enumerate(blocks):
         image_answers = question.answer_kind == ANSWER_KIND_IMAGE
         prompt_path = test_exam_service.resolve_snapshot_image(question.image_stored_path)
         has_prompt = prompt_path is not None
@@ -296,6 +365,9 @@ def _questions_fragment(
                     f'<text:p text:style-name="WrittenAnswer">'
                     f"{_odt_text(answer.letter)})  {_odt_text(answer.text)}</text:p>"
                 )
+        # Mezera jen mezi otázkami. Za poslední tabulkou by 14pt odstavec
+        # s dolním odsazením přetekl na stránku, kde už je jen patička varianty.
+        spacer = "" if index == last_index else '<text:p text:style-name="WrittenSpacer"/>'
         parts.append(
             '<table:table table:style-name="WrittenBlock">'
             '<table:table-column table:style-name="WrittenBlockCol"/>'
@@ -303,8 +375,9 @@ def _questions_fragment(
             '<table:table-cell table:style-name="WrittenBlockCell" office:value-type="string">'
             f"{''.join(xml_bits)}"
             "</table:table-cell></table:table-row></table:table>"
-            '<text:p text:style-name="WrittenSpacer"/>'
+            f"{spacer}"
         )
+    parts.append(_DOCUMENT_END)
     return "".join(parts), images
 
 
