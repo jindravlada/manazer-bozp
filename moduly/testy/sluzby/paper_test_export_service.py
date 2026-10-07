@@ -16,7 +16,13 @@ from xml.sax.saxutils import escape as xml_escape
 
 from PIL import Image
 
-from core.export import OdtExportEngine, OdtParagraph, OdtXmlFragment, odt_rich
+from core.export import (
+    OdtExportEngine,
+    OdtExportError,
+    OdtParagraph,
+    OdtXmlFragment,
+    odt_rich,
+)
 from core.services.storage_service import storage_service
 from moduly.testy.constants import (
     ANSWER_KIND_IMAGE,
@@ -53,6 +59,21 @@ _EMBED_SUFFIXES = {".png", ".jpg", ".jpeg", ".gif"}
 class PaperTestExportResult:
     test_path: Path
     key_path: Path | None = None
+
+
+@dataclass(frozen=True)
+class BatchExportFailure:
+    employee_label: str
+    path: Path
+    message: str
+
+
+@dataclass(frozen=True)
+class BatchPaperExportResult:
+    test_paths: tuple[Path, ...]
+    key_path: Path | None
+    failures: tuple[BatchExportFailure, ...]
+    include_shared_key: bool
 
 
 def plain_export_text(value: object) -> str:
@@ -166,6 +187,94 @@ class PaperTestExportService:
             written_key = key_target.resolve()
 
         return PaperTestExportResult(test_path=target.resolve(), key_path=written_key)
+
+    def export_batch(
+        self,
+        exam_ids: list[int],
+        directory: str | Path,
+        *,
+        include_shared_key: bool = False,
+    ) -> BatchPaperExportResult:
+        """Zapíše test každé zkoušky a volitelně jeden společný klíč.
+
+        Selhání souboru nemaže zkoušky. Každý test čte jen svůj snapshot.
+        """
+        folder = Path(directory)
+        if not folder.is_dir():
+            raise TestExamError("Vyberte existující složku pro testy.")
+        exams = []
+        for exam_id in exam_ids:
+            exam = test_exam_service.get_exam(exam_id)
+            if exam is None or not self.can_export(exam_id):
+                raise TestExamError(
+                    "Písemný test lze vytvořit jen ze zkoušky s uloženým snapshotem otázek."
+                )
+            exams.append(exam)
+        paths = assign_batch_test_paths(folder, exams)
+        written: list[Path] = []
+        failures: list[BatchExportFailure] = []
+        for exam, path in zip(exams, paths, strict=True):
+            try:
+                self.export(exam.id, path, include_key=False)
+            except (TestExamError, OdtExportError, OSError) as error:
+                path.unlink(missing_ok=True)
+                failures.append(
+                    BatchExportFailure(
+                        employee_label=_batch_employee_label(exam),
+                        path=path,
+                        message=str(error),
+                    )
+                )
+                continue
+            written.append(path.resolve())
+
+        key_path: Path | None = None
+        if include_shared_key and exams:
+            key_target = assign_batch_key_path(folder, exams[0].exam_date)
+            try:
+                self._write_shared_key(exams, key_target)
+            except (TestExamError, OdtExportError, OSError) as error:
+                key_target.unlink(missing_ok=True)
+                failures.append(
+                    BatchExportFailure(
+                        employee_label="Společný klíč",
+                        path=key_target,
+                        message=str(error),
+                    )
+                )
+            else:
+                key_path = key_target.resolve()
+        return BatchPaperExportResult(
+            test_paths=tuple(written),
+            key_path=key_path,
+            failures=tuple(failures),
+            include_shared_key=include_shared_key,
+        )
+
+    def _write_shared_key(self, exams: list[TestExam], key_target: Path) -> None:
+        template = self.key_template_path()
+        if not template.is_file():
+            raise TestExamError("Šablona klíče písemného testu nebyla nalezena.")
+        first = exams[0]
+        variants = []
+        for exam in exams:
+            questions = test_exam_service.get_written_questions(exam.id)
+            blocks = [
+                (question, test_exam_service.get_written_answers(question.id))
+                for question in questions
+            ]
+            variants.append((exam, correct_answer_rows(blocks)))
+        self.engine.render(
+            template,
+            key_target,
+            {
+                "header": odt_rich(_batch_key_header(first)),
+                "answers": OdtXmlFragment(
+                    xml=render_batch_answer_key_xml(variants) + _DOCUMENT_END
+                ),
+                "variant": "",
+            },
+        )
 
 
 def _header_paragraphs(exam: TestExam, *, for_key: bool) -> list[OdtParagraph]:
@@ -533,6 +642,98 @@ def _odt_path(path: str | Path) -> Path:
     if target.suffix.lower() != ".odt":
         target = target.with_suffix(".odt")
     return target
+
+
+def assign_batch_test_paths(directory: Path, exams: list[TestExam]) -> list[Path]:
+    """Stejné jméno a datum dostanou v názvu osobní číslo, existující soubor se nepřepíše."""
+    used: set[str] = set()
+    paths: list[Path] = []
+    for exam in exams:
+        path = _free_test_path(directory, exam, used)
+        used.add(path.name.casefold())
+        paths.append(path)
+    return paths
+
+
+def assign_batch_key_path(directory: Path, exam_day: date | None) -> Path:
+    stamp = exam_day.isoformat() if isinstance(exam_day, date) else "bez-data"
+    candidate = directory / f"Klic_testu_{stamp}.odt"
+    index = 2
+    while candidate.exists():
+        candidate = directory / f"Klic_testu_{stamp}_{index}.odt"
+        index += 1
+    return candidate
+
+
+def _free_test_path(directory: Path, exam: TestExam, used: set[str]) -> Path:
+    primary = directory / _filename("Test", exam)
+    if not _name_taken(primary, used):
+        return primary
+    number = _safe_filename_part(getattr(exam, "employee_personal_number", "")) or str(int(exam.id))
+    numbered = directory / f"{primary.stem}_{number}.odt"
+    if not _name_taken(numbered, used):
+        return numbered
+    return directory / f"{primary.stem}_{number}_{int(exam.id)}.odt"
+
+
+def _name_taken(path: Path, used: set[str]) -> bool:
+    return path.name.casefold() in used or path.exists()
+
+
+def batch_variant_heading(exam: TestExam) -> str:
+    """Varianta, jméno a osobní číslo. Pracoviště ani komise se do klíče nepíšou."""
+    parts = [variant_label(exam)]
+    name = _employee_name(exam)
+    number = plain_export_text(getattr(exam, "employee_personal_number", None))
+    if name:
+        parts.append(name)
+    if number:
+        parts.append(number)
+    return " – ".join(part for part in parts if part)
+
+
+def render_batch_answer_key_xml(
+    variants: list[tuple[TestExam, list[tuple[int, str]]]],
+) -> str:
+    """Jedna varianta a její kompaktní tabulky jako jeden celek.
+
+    Tabulky skládá ``render_compact_answer_key_xml``. Mezi variantami není
+    konec stránky. Řádek s ``keep-together`` drží variantu pohromadě, dokud
+    se vejde na stránku.
+    """
+    parts: list[str] = []
+    for index, (exam, rows) in enumerate(variants):
+        tables = render_compact_answer_key_xml(rows)
+        parts.append(
+            '<table:table table:style-name="WrittenKeyBatch">'
+            '<table:table-column table:style-name="WrittenKeyBatchCol"/>'
+            '<table:table-row table:style-name="WrittenKeyBatchRow">'
+            '<table:table-cell table:style-name="WrittenKeyBatchCell" office:value-type="string">'
+            f'<text:p text:style-name="WrittenKeyVariant">{_odt_text(batch_variant_heading(exam))}</text:p>'
+            f"{tables}"
+            "</table:table-cell></table:table-row></table:table>"
+        )
+        if index != len(variants) - 1:
+            parts.append('<text:p text:style-name="WrittenKeyVariantGap"/>')
+    return "".join(parts)
+
+
+def _batch_key_header(exam: TestExam) -> list[OdtParagraph]:
+    paragraphs = [
+        OdtParagraph.text(plain_export_text(exam.test_name), style="WrittenTitle"),
+    ]
+    exam_day = _date_line(getattr(exam, "exam_date", None))
+    if exam_day:
+        paragraphs.append(OdtParagraph.text(exam_day, style="WrittenMeta"))
+    return paragraphs
+
+
+def _batch_employee_label(exam: TestExam) -> str:
+    name = _employee_name(exam) or plain_export_text(getattr(exam, "employee_display_name", ""))
+    number = plain_export_text(getattr(exam, "employee_personal_number", None))
+    if name and number:
+        return f"{name} ({number})"
+    return name or number or variant_label(exam)
 
 
 paper_test_export_service = PaperTestExportService()

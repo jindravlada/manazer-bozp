@@ -61,6 +61,23 @@ EXAMINEE_CANNOT_EXAMINE = (
 )
 
 
+def _batch_person_label(employee) -> str:
+    name = str(getattr(employee, "display_name", "") or "").strip()
+    if not name:
+        name = " ".join(
+            part
+            for part in (
+                str(getattr(employee, "last_name", "") or "").strip(),
+                str(getattr(employee, "first_name", "") or "").strip(),
+            )
+            if part
+        )
+    number = str(getattr(employee, "personal_number", "") or "").strip()
+    if number:
+        return f"{name} ({number})" if name else number
+    return name or "zaměstnanec"
+
+
 def add_calendar_months(value: date, months: int) -> date:
     """Přičte kalendářní měsíce. 31. 1. + 1 měsíc je poslední únor, ne 31 dní."""
     year = value.year
@@ -177,104 +194,18 @@ class TestExamService:
         session = get_session()
         session.expire_on_commit = False
         try:
-            exam = TestExam(
-                employee_id=employee.id,
-                test_definition_id=test.id,
-                exam_date=exam_day,
-                valid_until=valid_day,
-                status=EXAM_STATUS_PREPARED,
-                examiner_mode=test.examiner_mode,
-                employee_personal_number=employee.personal_number,
-                employee_first_name=employee.first_name,
-                employee_last_name=employee.last_name,
-                employee_title_before=employee.title_before or "",
-                employee_title_after=employee.title_after or "",
-                employee_display_name=employee.display_name,
-                employee_workplace_name=self._workplace_name(employee.workplace_id),
-                employee_roles_text=self._roles_text(employee.id),
-                test_name=test.name,
-                uses_written=bool(test.uses_written),
-                uses_oral=bool(test.uses_oral),
-                allowed_wrong_answers=int(test.allowed_wrong_answers),
-                seconds_per_question=int(test.seconds_per_question),
-                written_duration_seconds=duration,
-                validity_value=int(test.validity_value),
-                validity_unit=test.validity_unit,
+            exam = self._insert_prepared_exam(
+                session,
+                employee=employee,
+                test=test,
+                exam_day=exam_day,
+                valid_day=valid_day,
+                people=people,
+                written_plan=written_plan,
+                oral_plan=oral_plan,
+                duration=duration,
+                created_files=created_files,
             )
-            session.add(exam)
-            session.flush()
-
-            for position, person in enumerate(people, start=1):
-                session.add(
-                    TestExamExaminer(
-                        exam_id=exam.id,
-                        employee_id=person["employee"].id,
-                        display_name=person["employee"].display_name,
-                        role=person["role"],
-                        position=position,
-                    )
-                )
-
-            for position, item in enumerate(written_plan, start=1):
-                question = item["question"]
-                topic_name = item["topic_name"]
-                row = TestExamWrittenQuestion(
-                    exam_id=exam.id,
-                    source_question_id=question.id,
-                    topic_name=topic_name,
-                    text=question.text,
-                    answer_kind=question.answer_kind,
-                    position=position,
-                    image_stored_path="",
-                    image_sha256="",
-                )
-                session.add(row)
-                session.flush()
-                if question.image_attachment_id:
-                    path, digest = self._freeze_image(
-                        session,
-                        exam.id,
-                        question.image_attachment_id,
-                        f"q{position}-zadani",
-                        created_files,
-                    )
-                    row.image_stored_path = path
-                    row.image_sha256 = digest
-                for answer_position, answer in enumerate(item["answers"], start=1):
-                    letter = ANSWER_LETTERS[answer_position - 1]
-                    answer_row = TestExamWrittenAnswer(
-                        exam_question_id=row.id,
-                        letter=letter,
-                        position=answer_position,
-                        text=answer.text or "",
-                        is_correct=bool(answer.is_correct),
-                        image_stored_path="",
-                        image_sha256="",
-                    )
-                    session.add(answer_row)
-                    session.flush()
-                    if question.answer_kind == ANSWER_KIND_IMAGE:
-                        path, digest = self._freeze_image(
-                            session,
-                            exam.id,
-                            answer.image_attachment_id,
-                            f"q{position}-{letter.lower()}",
-                            created_files,
-                        )
-                        answer_row.image_stored_path = path
-                        answer_row.image_sha256 = digest
-
-            for position, item in enumerate(oral_plan, start=1):
-                session.add(
-                    TestExamOralQuestion(
-                        exam_id=exam.id,
-                        source_question_id=item["question"].id,
-                        topic_name=item["topic_name"],
-                        text=item["question"].text,
-                        position=position,
-                    )
-                )
-
             session.commit()
             committed = True
             session.refresh(exam)
@@ -290,6 +221,292 @@ class TestExamService:
             if not committed:
                 self._discard_files(created_files)
             session.close()
+
+    def prepare_paper_batch(
+        self,
+        *,
+        employee_ids: list[int],
+        test_id: int | None,
+        exam_date: date,
+        valid_until: date | None = None,
+        examiner_id: int | None = None,
+        chair_id: int | None = None,
+        member_ids: list[int] | None = None,
+        rng: random.Random | None = None,
+    ) -> list[TestExam]:
+        """Připraví samostatnou zkoušku každému zaměstnanci v jedné transakci.
+
+        Kontroly, které lze udělat předem, proběhnou dřív, než se cokoli zapíše.
+        Každá zkouška má vlastní snapshot a vlastní losování. Při chybě nezůstane
+        část dávky.
+        """
+        generator = rng if rng is not None else random.SystemRandom()
+        members = list(member_ids or [])
+        test = self._require_active_test(test_id)
+        if not test.uses_written:
+            raise TestExamError("Hromadně lze připravit jen test s písemnou částí.")
+        exam_day = self._as_date(exam_date, "Zvolte datum zkoušky.")
+        valid_day = (
+            self._as_date(valid_until, "Zvolte datum „Platí do“.")
+            if valid_until is not None
+            else calculate_valid_until(exam_day, test.validity_value, test.validity_unit)
+        )
+        if valid_day < exam_day:
+            raise TestExamError("Datum „Platí do“ nesmí být před datem zkoušky.")
+
+        employees = self._batch_employees(employee_ids)
+        self._reject_batch_conflicts(
+            test.examiner_mode,
+            employees,
+            examiner_id=examiner_id,
+            chair_id=chair_id,
+            member_ids=members,
+        )
+        try:
+            self._validate_people(
+                test.examiner_mode,
+                employee_id=int(employees[0].id),
+                examiner_id=examiner_id,
+                chair_id=chair_id,
+                member_ids=members,
+            )
+        except TestExamError as error:
+            raise TestExamError(f"{error}\nNevytvořila se žádná zkouška.") from error
+
+        try:
+            plans = []
+            for employee in employees:
+                people = self._validate_people(
+                    test.examiner_mode,
+                    employee_id=int(employee.id),
+                    examiner_id=examiner_id,
+                    chair_id=chair_id,
+                    member_ids=members,
+                )
+                written_plan = self._plan_written(test.id, generator) if test.uses_written else []
+                oral_plan = self._plan_oral(test.id, generator) if test.uses_oral else []
+                duration = (
+                    total_written_seconds(len(written_plan), test.seconds_per_question)
+                    if test.uses_written
+                    else 0
+                )
+                plans.append((employee, people, written_plan, oral_plan, duration))
+        except TestExamError as error:
+            raise TestExamError(f"{error}\nNevytvořila se žádná zkouška.") from error
+
+        created_files: list[Path] = []
+        committed = False
+        session = get_session()
+        session.expire_on_commit = False
+        created: list[TestExam] = []
+        try:
+            for employee, people, written_plan, oral_plan, duration in plans:
+                created.append(
+                    self._insert_prepared_exam(
+                        session,
+                        employee=employee,
+                        test=test,
+                        exam_day=exam_day,
+                        valid_day=valid_day,
+                        people=people,
+                        written_plan=written_plan,
+                        oral_plan=oral_plan,
+                        duration=duration,
+                        created_files=created_files,
+                    )
+                )
+            session.commit()
+            committed = True
+            for exam in created:
+                session.refresh(exam)
+                session.expunge(exam)
+            return created
+        except TestExamError as error:
+            session.rollback()
+            raise TestExamError(f"{error}\nNevytvořila se žádná zkouška.") from error
+        except Exception as error:
+            session.rollback()
+            raise TestExamError(
+                "Hromadnou přípravu se nepodařilo dokončit.\nNevytvořila se žádná zkouška."
+            ) from error
+        finally:
+            if not committed:
+                self._discard_files(created_files)
+            session.close()
+
+    def _insert_prepared_exam(
+        self,
+        session,
+        *,
+        employee,
+        test,
+        exam_day: date,
+        valid_day: date,
+        people: list[dict],
+        written_plan: list[dict],
+        oral_plan: list[dict],
+        duration: int,
+        created_files: list[Path],
+    ) -> TestExam:
+        exam = TestExam(
+            employee_id=employee.id,
+            test_definition_id=test.id,
+            exam_date=exam_day,
+            valid_until=valid_day,
+            status=EXAM_STATUS_PREPARED,
+            examiner_mode=test.examiner_mode,
+            employee_personal_number=employee.personal_number,
+            employee_first_name=employee.first_name,
+            employee_last_name=employee.last_name,
+            employee_title_before=employee.title_before or "",
+            employee_title_after=employee.title_after or "",
+            employee_display_name=employee.display_name,
+            employee_workplace_name=self._workplace_name(employee.workplace_id),
+            employee_roles_text=self._roles_text(employee.id),
+            test_name=test.name,
+            uses_written=bool(test.uses_written),
+            uses_oral=bool(test.uses_oral),
+            allowed_wrong_answers=int(test.allowed_wrong_answers),
+            seconds_per_question=int(test.seconds_per_question),
+            written_duration_seconds=duration,
+            validity_value=int(test.validity_value),
+            validity_unit=test.validity_unit,
+        )
+        session.add(exam)
+        session.flush()
+
+        for position, person in enumerate(people, start=1):
+            session.add(
+                TestExamExaminer(
+                    exam_id=exam.id,
+                    employee_id=person["employee"].id,
+                    display_name=person["employee"].display_name,
+                    role=person["role"],
+                    position=position,
+                )
+            )
+
+        for position, item in enumerate(written_plan, start=1):
+            question = item["question"]
+            row = TestExamWrittenQuestion(
+                exam_id=exam.id,
+                source_question_id=question.id,
+                topic_name=item["topic_name"],
+                text=question.text,
+                answer_kind=question.answer_kind,
+                position=position,
+                image_stored_path="",
+                image_sha256="",
+            )
+            session.add(row)
+            session.flush()
+            if question.image_attachment_id:
+                path, digest = self._freeze_image(
+                    session,
+                    exam.id,
+                    question.image_attachment_id,
+                    f"q{position}-zadani",
+                    created_files,
+                )
+                row.image_stored_path = path
+                row.image_sha256 = digest
+            for answer_position, answer in enumerate(item["answers"], start=1):
+                letter = ANSWER_LETTERS[answer_position - 1]
+                answer_row = TestExamWrittenAnswer(
+                    exam_question_id=row.id,
+                    letter=letter,
+                    position=answer_position,
+                    text=answer.text or "",
+                    is_correct=bool(answer.is_correct),
+                    image_stored_path="",
+                    image_sha256="",
+                )
+                session.add(answer_row)
+                session.flush()
+                if question.answer_kind == ANSWER_KIND_IMAGE:
+                    path, digest = self._freeze_image(
+                        session,
+                        exam.id,
+                        answer.image_attachment_id,
+                        f"q{position}-{letter.lower()}",
+                        created_files,
+                    )
+                    answer_row.image_stored_path = path
+                    answer_row.image_sha256 = digest
+
+        for position, item in enumerate(oral_plan, start=1):
+            session.add(
+                TestExamOralQuestion(
+                    exam_id=exam.id,
+                    source_question_id=item["question"].id,
+                    topic_name=item["topic_name"],
+                    text=item["question"].text,
+                    position=position,
+                )
+            )
+        return exam
+
+    def _batch_employees(self, employee_ids: list[int]) -> list:
+        if not employee_ids:
+            raise TestExamError("Vyberte alespoň jednoho zaměstnance.")
+        ordered = []
+        seen: set[int] = set()
+        missing: list[str] = []
+        inactive: list[str] = []
+        for raw in employee_ids:
+            try:
+                employee_id = int(raw)
+            except (TypeError, ValueError):
+                missing.append(str(raw))
+                continue
+            if employee_id in seen:
+                raise TestExamError("Zaměstnanec je ve výběru vícekrát.")
+            seen.add(employee_id)
+            employee = test_employee_service.get_employee(employee_id)
+            if employee is None:
+                missing.append(str(employee_id))
+                continue
+            if not employee.active:
+                inactive.append(_batch_person_label(employee))
+                continue
+            ordered.append(employee)
+        if missing or inactive:
+            lines = ["Hromadnou přípravu nelze provést."]
+            if missing:
+                lines.append("Zaměstnanec nebyl nalezen: " + ", ".join(missing) + ".")
+            if inactive:
+                lines.append("Zkoušku lze připravit jen pro aktivního zaměstnance:")
+                lines.extend(inactive)
+            lines.append("Nevytvořila se žádná zkouška.")
+            raise TestExamError("\n".join(lines))
+        return ordered
+
+    def _reject_batch_conflicts(
+        self,
+        mode: str,
+        employees: list,
+        *,
+        examiner_id: int | None,
+        chair_id: int | None,
+        member_ids: list[int],
+    ) -> None:
+        blocked: set[int] = set()
+        if mode == EXAMINER_MODE_SINGLE and examiner_id is not None:
+            blocked.add(int(examiner_id))
+        elif mode == EXAMINER_MODE_COMMISSION:
+            if chair_id is not None:
+                blocked.add(int(chair_id))
+            blocked.update(int(member_id) for member_id in member_ids)
+        conflicts = [employee for employee in employees if int(employee.id) in blocked]
+        if not conflicts:
+            return
+        lines = [
+            "Hromadnou přípravu nelze provést. "
+            "Tito zaměstnanci jsou současně vybraní ke zkoušce a jako zkoušející nebo člen komise:",
+        ]
+        lines.extend(_batch_person_label(employee) for employee in conflicts)
+        lines.append("Nevytvořila se žádná zkouška.")
+        raise TestExamError("\n".join(lines))
 
     def get_exam(self, exam_id: int | None) -> TestExam | None:
         if not exam_id:

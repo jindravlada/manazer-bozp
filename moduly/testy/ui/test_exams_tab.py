@@ -26,6 +26,7 @@ from core.widgets.table_row_actions import install_table_row_actions
 from core.widgets.table_selection import refresh_and_restore_selection
 from core.widgets.table_utils import configure_table_columns
 from moduly.testy.constants import (
+    EXAM_ACTION_BATCH_PAPER,
     EXAM_ACTION_CONTINUE_WRITTEN,
     EXAM_ACTION_DETAIL,
     EXAM_ACTION_ENTER_PAPER,
@@ -43,6 +44,7 @@ from moduly.testy.sluzby.paper_test_export_service import paper_test_export_serv
 from moduly.testy.sluzby.test_exam_service import TestExamError, test_exam_service
 from moduly.testy.sluzby.written_exam_service import written_exam_service
 from moduly.testy.ui.paper_answer_dialog import PaperAnswerDialog
+from moduly.testy.ui.paper_batch_dialog import PaperBatchDialog
 from moduly.testy.ui.paper_test_options_dialog import PaperTestOptionsDialog
 from moduly.testy.ui.test_exam_detail_dialog import TestExamDetailDialog
 from moduly.testy.ui.test_exam_prepare_dialog import TestExamPrepareDialog
@@ -63,6 +65,9 @@ class TestExamsTab(QWidget):
         toolbar = QHBoxLayout()
         self.prepare_btn = QPushButton(EXAM_ACTION_PREPARE)
         configure_new_action_button(self.prepare_btn)
+        self.batch_btn = QPushButton(EXAM_ACTION_BATCH_PAPER)
+        self.batch_btn.setObjectName("exam-batch-paper-button")
+        configure_new_action_button(self.batch_btn)
         self.detail_btn = QPushButton(EXAM_ACTION_DETAIL)
         configure_edit_action_button(self.detail_btn)
         self.detail_btn.setEnabled(False)
@@ -78,6 +83,7 @@ class TestExamsTab(QWidget):
         configure_perform_action_button(self.paper_btn)
         self.paper_btn.setEnabled(False)
         toolbar.addWidget(self.prepare_btn)
+        toolbar.addWidget(self.batch_btn)
         toolbar.addWidget(self.detail_btn)
         toolbar.addWidget(self.start_btn)
         toolbar.addWidget(self.print_btn)
@@ -97,6 +103,7 @@ class TestExamsTab(QWidget):
         layout.addWidget(self.table, 1)
 
         self.prepare_btn.clicked.connect(self.prepare_exam)
+        self.batch_btn.clicked.connect(self.prepare_paper_batch)
         self.detail_btn.clicked.connect(self.open_selected)
         self.start_btn.clicked.connect(self.start_electronic_test)
         self.print_btn.clicked.connect(self.print_paper_test)
@@ -125,6 +132,15 @@ class TestExamsTab(QWidget):
         if not dialog.exec():
             return
         self._reload(dialog.saved_exam_id)
+
+    def prepare_paper_batch(self) -> None:
+        dialog = PaperBatchDialog(self)
+        if not dialog.exec():
+            return
+        focus_id = None
+        if dialog.batch_result is not None and dialog.batch_result.exams:
+            focus_id = int(dialog.batch_result.exams[-1].id)
+        self._reload(focus_id)
 
     def open_selected(self) -> None:
         exam_id = self.table.selected_exam_id()

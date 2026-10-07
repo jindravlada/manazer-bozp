@@ -153,6 +153,7 @@ TEST_COLUMN_HEADERS = [
 
 AGENDA_EXAMS = "Zkoušky"
 EXAM_ACTION_PREPARE = "Připravit zkoušku"
+EXAM_ACTION_BATCH_PAPER = "Hromadná příprava papírových testů"
 EXAM_ACTION_DETAIL = "Detail"
 EXAM_ACTION_START_WRITTEN = "Zahájit elektronický test"
 EXAM_ACTION_CONTINUE_WRITTEN = "Pokračovat v elektronickém testu"
@@ -160,6 +161,8 @@ EXAM_ACTION_PRINT_WRITTEN = "Vytisknout písemný test"
 EXAM_ACTION_ENTER_PAPER = "Zadat odpovědi z papírového testu"
 EXAM_ACTION_EVALUATE_PAPER = "Vyhodnotit písemný test"
 PAPER_TEST_KEY_OPTION = "Vytvořit také klíč správných odpovědí"
+PAPER_BATCH_KEY_OPTION = "Vytvořit také společný klíč správných odpovědí"
+PAPER_BATCH_DIALOG_TITLE = "Hromadná příprava papírových testů"
 PAPER_TEST_INSTRUCTION = (
     "U každé otázky označte jednu správnou odpověď A, B nebo C."
 )
