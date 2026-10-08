@@ -100,7 +100,9 @@ def calculate_valid_until(exam_date: date, value: int, unit: str) -> date:
     raise TestExamError("Zvolte jednotku platnosti.")
 
 
-def format_exam_date(value: date) -> str:
+def format_exam_date(value: date | None) -> str:
+    if value is None:
+        return ""
     return f"{value.day}. {value.month}. {value.year}"
 
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
@@ -63,6 +63,8 @@ _ROLE_SEARCH = Qt.ItemDataRole.UserRole + 1
 
 
 class TestExamsTab(QWidget):
+    exams_changed = Signal()
+
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -137,6 +139,7 @@ class TestExamsTab(QWidget):
         refresh_and_restore_selection(self.table, selected_id, id_column=EXAM_COL_ID)
         self.text_filter.apply_filter()
         self._update_action_buttons()
+        self.exams_changed.emit()
 
     def prepare_exam(self) -> None:
         dialog = TestExamPrepareDialog(self)
@@ -227,6 +230,7 @@ class TestExamsTab(QWidget):
         refresh_and_restore_selection(self.table, exam_id, id_column=EXAM_COL_ID)
         self.text_filter.apply_filter()
         self._update_action_buttons()
+        self.exams_changed.emit()
 
     def _apply_search(self, text: str) -> tuple[int, int]:
         needle = text.casefold()

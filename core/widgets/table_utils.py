@@ -1544,6 +1544,47 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             EXAM_COL_EXAM_RESULT,
         ):
             header.setSectionResizeMode(column, QHeaderView.Interactive)
+    elif profile == "test_exam_validity":
+        from moduly.testy.constants import (
+            VALIDITY_COL_EMPLOYEE,
+            VALIDITY_COL_IN_PROGRESS,
+            VALIDITY_COL_LAST_SUCCESS,
+            VALIDITY_COL_PERSONAL_NUMBER,
+            VALIDITY_COL_PREPARED,
+            VALIDITY_COL_STATE,
+            VALIDITY_COL_TEST,
+            VALIDITY_COL_VALID_UNTIL,
+            VALIDITY_COL_WORKPLACE,
+        )
+
+        table.setWordWrap(False)
+        table.setTextElideMode(Qt.TextElideMode.ElideRight)
+        table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
+        widths = {
+            VALIDITY_COL_PERSONAL_NUMBER: 120,
+            VALIDITY_COL_EMPLOYEE: 220,
+            VALIDITY_COL_WORKPLACE: 170,
+            VALIDITY_COL_TEST: 180,
+            VALIDITY_COL_LAST_SUCCESS: 180,
+            VALIDITY_COL_VALID_UNTIL: 120,
+            VALIDITY_COL_STATE: 170,
+            VALIDITY_COL_PREPARED: 110,
+            VALIDITY_COL_IN_PROGRESS: 130,
+        }
+        for column, width in widths.items():
+            table.setColumnWidth(column, width)
+        header.setSectionResizeMode(VALIDITY_COL_EMPLOYEE, QHeaderView.Stretch)
+        header.setSectionResizeMode(VALIDITY_COL_TEST, QHeaderView.Stretch)
+        for column in (
+            VALIDITY_COL_PERSONAL_NUMBER,
+            VALIDITY_COL_WORKPLACE,
+            VALIDITY_COL_LAST_SUCCESS,
+            VALIDITY_COL_VALID_UNTIL,
+            VALIDITY_COL_STATE,
+            VALIDITY_COL_PREPARED,
+            VALIDITY_COL_IN_PROGRESS,
+        ):
+            header.setSectionResizeMode(column, QHeaderView.Interactive)
 
     table.verticalHeader().setVisible(False)
     if profile not in ("controls_year_matrix", "yearly_plan"):

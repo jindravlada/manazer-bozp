@@ -21,6 +21,7 @@ from moduly.testy.constants import (
     ACTION_EDIT,
     ACTION_NEW,
     AGENDA_EMPLOYEES,
+    AGENDA_EXAM_VALIDITY,
     AGENDA_EXAMS,
     AGENDA_ORAL_QUESTIONS,
     AGENDA_ORAL_TOPICS,
@@ -34,6 +35,7 @@ from moduly.testy.constants import (
     SHOW_INACTIVE_LABEL,
 )
 from moduly.testy.sluzby.test_employee_service import test_employee_service
+from moduly.testy.ui.exam_validity_tab import ExamValidityTab
 from moduly.testy.ui.oral_question_topics_tab import OralQuestionTopicsTab
 from moduly.testy.ui.test_exams_tab import TestExamsTab
 from moduly.testy.ui.test_definitions_tab import TestDefinitionsTab
@@ -66,6 +68,7 @@ class TestyPage(QWidget):
         self.oral_questions_tab = OralQuestionsTab()
         self.tests_tab = TestDefinitionsTab()
         self.exams_tab = TestExamsTab()
+        self.validity_tab = ExamValidityTab()
         self.tabs.addTab(self.employees_tab, AGENDA_EMPLOYEES)
         self.tabs.addTab(self.topics_tab, AGENDA_WRITTEN_TOPICS)
         self.tabs.addTab(self.questions_tab, AGENDA_QUESTIONS)
@@ -73,6 +76,9 @@ class TestyPage(QWidget):
         self.tabs.addTab(self.oral_questions_tab, AGENDA_ORAL_QUESTIONS)
         self.tabs.addTab(self.tests_tab, AGENDA_TESTS)
         self.tabs.addTab(self.exams_tab, AGENDA_EXAMS)
+        self.tabs.addTab(self.validity_tab, AGENDA_EXAM_VALIDITY)
+        self.exams_tab.exams_changed.connect(self.validity_tab.refresh)
+        self.tabs.currentChanged.connect(self._on_tab_changed)
 
         layout.addWidget(title)
         layout.addWidget(subtitle)
@@ -132,6 +138,11 @@ class TestyPage(QWidget):
         refresh_and_restore_selection(self.table, selected_id, id_column=COL_ID)
         self.text_filter.apply_filter()
         self._update_action_buttons()
+        self.validity_tab.refresh()
+
+    def _on_tab_changed(self, index: int) -> None:
+        if self.tabs.widget(index) is self.validity_tab:
+            self.validity_tab.refresh()
 
     def new_employee(self) -> None:
         dialog = TestEmployeeDialog(self)

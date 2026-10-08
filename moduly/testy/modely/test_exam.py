@@ -33,7 +33,9 @@ class TestExam(Base):
         nullable=False,
     )
     exam_date: Mapped[date] = mapped_column(Date, nullable=False)
-    valid_until: Mapped[date] = mapped_column(Date, nullable=False)
+    # Příprava zkoušky datum ukládá. Prázdná hodnota v přehledu platnosti
+    # znamená úspěšnou zkoušku bez data konce platnosti.
+    valid_until: Mapped[date | None] = mapped_column(Date, nullable=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False)
     examiner_mode: Mapped[str] = mapped_column(String(20), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
