@@ -28,7 +28,9 @@ from PySide6.QtWidgets import (
 from moduly.testy.constants import (
     MODULE_NAME,
     WRITTEN_FINISHED_TEXT,
+    WRITTEN_FINISH_TECHNICAL,
     WRITTEN_HANDOVER_TEXT,
+    WRITTEN_TECHNICAL_END_TEXT,
     WRITTEN_NEXT,
     WRITTEN_PREVIOUS,
     WRITTEN_SUBMIT,
@@ -36,6 +38,7 @@ from moduly.testy.constants import (
     WRITTEN_SUBMIT_INCOMPLETE,
 )
 from moduly.testy.sluzby.test_exam_service import (
+    SNAPSHOT_IMAGE_OK,
     TestExamError,
     snapshot_image_notice,
     test_exam_service,
@@ -43,6 +46,7 @@ from moduly.testy.sluzby.test_exam_service import (
 from moduly.testy.sluzby.written_exam_service import (
     WrittenExamClock,
     WrittenExamClosed,
+    WrittenExamTechnical,
     format_remaining_label,
     remaining_written_seconds,
     step_question_index,
@@ -85,6 +89,36 @@ class _HandoverDialog(QMessageBox):
 
 def present_written_handover(parent, on_accepted) -> _HandoverDialog:
     dialog = _HandoverDialog(parent)
+    dialog.accepted.connect(on_accepted)
+    dialog.open()
+    return dialog
+
+
+class _TechnicalEndDialog(QMessageBox):
+    """Ukončení bez výsledku. Bez cesty k souboru a bez vyhodnocení."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setObjectName("written-exam-technical-end")
+        self.setWindowTitle(MODULE_NAME)
+        self.setIcon(QMessageBox.Icon.Warning)
+        self.setText(WRITTEN_TECHNICAL_END_TEXT)
+        self.setStandardButtons(QMessageBox.StandardButton.Ok)
+        self.setWindowModality(Qt.WindowModality.ApplicationModal)
+        self.setEscapeButton(QMessageBox.StandardButton.NoButton)
+
+    def reject(self) -> None:  # noqa: N802
+        return
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:  # noqa: N802
+        if event.key() == Qt.Key.Key_Escape:
+            event.accept()
+            return
+        super().keyPressEvent(event)
+
+
+def present_technical_end(parent, on_accepted) -> _TechnicalEndDialog:
+    dialog = _TechnicalEndDialog(parent)
     dialog.accepted.connect(on_accepted)
     dialog.open()
     return dialog
@@ -135,6 +169,8 @@ class WrittenExamWindow(QDialog):
         self._close_allowed = False
         self._returned = False
         self._handover: _HandoverDialog | None = None
+        self._technical: _TechnicalEndDialog | None = None
+        self._snapshot_failed = False
         self._phase = "running"
         self._index = 0
         self._screen = written_exam_service.screen(self.exam_id)
@@ -178,6 +214,7 @@ class WrittenExamWindow(QDialog):
         """Interní cesta pro vývoj a testy. Není zabezpečení administrátora."""
         self._close_allowed = True
         self._dismiss_handover()
+        self._dismiss_technical()
         if self._timer.isActive():
             self._timer.stop()
         self._lock_host(False)
@@ -423,6 +460,7 @@ class WrittenExamWindow(QDialog):
         self.next_button.setEnabled(count > 0 and self._index < count - 1)
 
     def _show_question(self, index: int) -> None:
+        self._snapshot_failed = False
         count = len(self._screen.questions)
         self._index = step_question_index(index, count, 0)
         if count == 0:
@@ -532,6 +570,8 @@ class WrittenExamWindow(QDialog):
         layout.addWidget(answers_host)
 
         layout.addStretch()
+        if self._snapshot_failed and self._guard_images():
+            return
         previous = self._question_scroll.takeWidget()
         self._question_scroll.setWidget(host)
         if previous is not None:
@@ -547,6 +587,8 @@ class WrittenExamWindow(QDialog):
         radio: QRadioButton | None = None,
     ) -> QLabel | None:
         loaded = test_exam_service.load_snapshot_image(relative_path, expected_sha256)
+        if loaded.status != SNAPSHOT_IMAGE_OK and loaded.reason:
+            self._snapshot_failed = True
         notice = snapshot_image_notice(loaded.status)
         if notice:
             label = _SelectLabel(radio) if radio is not None else QLabel()
@@ -570,6 +612,8 @@ class WrittenExamWindow(QDialog):
     def _jump(self, index: int) -> None:
         if self._phase != "running":
             return
+        if self._guard_images():
+            return
         if self._deadline_reached(self._exam_now()):
             return
         self._screen = written_exam_service.screen(self.exam_id)
@@ -592,6 +636,9 @@ class WrittenExamWindow(QDialog):
                 exam_answer_id,
                 now=now,
             )
+        except WrittenExamTechnical:
+            self._abort_technical()
+            return
         except WrittenExamClosed:
             self._show_finished()
             return
@@ -608,6 +655,8 @@ class WrittenExamWindow(QDialog):
 
     def _on_tick(self) -> None:
         if self._phase != "running":
+            return
+        if self._guard_images():
             return
         written_exam_service.note_running_mark(self.exam_id, now=self.clock.now())
         self._deadline_reached(self._exam_now())
@@ -641,6 +690,9 @@ class WrittenExamWindow(QDialog):
         if left > 0:
             return False
         reason = written_exam_service.sync_deadline(self.exam_id, now=now)
+        if reason == WRITTEN_FINISH_TECHNICAL:
+            self._abort_technical()
+            return True
         if reason:
             self._show_finished()
             return True
@@ -660,11 +712,18 @@ class WrittenExamWindow(QDialog):
 
     def _commit_finish(self, now) -> None:
         try:
-            written_exam_service.submit(self.exam_id, now=now)
+            reason = written_exam_service.submit(self.exam_id, now=now)
+        except WrittenExamTechnical:
+            self._abort_technical()
+            return
         except WrittenExamClosed:
-            pass
+            self._show_finished()
+            return
         except TestExamError as error:
             QMessageBox.warning(self, self._screen.test_name, str(error))
+            return
+        if reason == WRITTEN_FINISH_TECHNICAL:
+            self._abort_technical()
             return
         self._show_finished()
 
@@ -677,6 +736,43 @@ class WrittenExamWindow(QDialog):
         self._stack.setCurrentIndex(1)
         if not already:
             self._present_handover()
+
+    def _guard_images(self) -> bool:
+        if self._phase != "running":
+            return self._phase == "finished"
+        try:
+            written_exam_service.ensure_snapshot_images(
+                self.exam_id,
+                now=self._exam_now(),
+            )
+        except WrittenExamTechnical:
+            self._abort_technical()
+            return True
+        return False
+
+    def _abort_technical(self) -> None:
+        already = self._phase == "finished"
+        self._phase = "finished"
+        if self._timer.isActive():
+            self._timer.stop()
+        self._finished.setText(WRITTEN_TECHNICAL_END_TEXT)
+        self._stack.setCurrentIndex(1)
+        if not already:
+            self._present_technical()
+
+    def _present_technical(self) -> None:
+        if self._technical is not None:
+            return
+        self._technical = present_technical_end(self, self._schedule_return)
+
+    def _dismiss_technical(self) -> None:
+        box = self._technical
+        self._technical = None
+        if box is None:
+            return
+        box.blockSignals(True)
+        box.hide()
+        box.deleteLater()
 
     def _present_handover(self) -> None:
         if self._handover is not None:

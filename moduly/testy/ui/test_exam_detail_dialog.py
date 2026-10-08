@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
@@ -34,17 +36,22 @@ from moduly.testy.constants import (
     EXAM_PROTOCOL_ATTACHED,
     EXAM_PROTOCOL_FILE_FILTER,
     EXAM_PROTOCOL_MISSING,
+    EXAM_PROTOCOL_NOT_APPLICABLE,
     EXAM_PROTOCOL_REMOVE_CONFIRM,
     EXAM_PROTOCOL_REPLACE_CONFIRM,
     EXAM_PROTOCOL_SECTION,
     EXAM_ROLE_LABELS,
     EXAM_STATUS_COMPLETED,
     EXAM_STATUS_LABELS,
+    EXAM_STATUS_TECHNICAL,
+    EXAM_STATUS_TECHNICAL_LABEL,
     EXAMINER_MODE_LABELS,
     MODULE_NAME,
     ORAL_FAILURE_CLEAR_CONFIRM,
     ORAL_FAILURE_CONFIRM,
     ORAL_PART_FAILED_LINE,
+    WRITTEN_RESULT_UNRATED,
+    WRITTEN_RESULT_UNRATED_LABEL,
     written_result_label,
 )
 
@@ -204,6 +211,23 @@ class TestExamDetailDialog(QDialog):
         )
 
     def _fill_written_summary(self, exam) -> None:
+        if (
+            exam.status == EXAM_STATUS_TECHNICAL
+            or exam.written_result == WRITTEN_RESULT_UNRATED
+        ):
+            lines = [
+                f"Stav: {EXAM_STATUS_TECHNICAL_LABEL}",
+                f"Výsledek: {WRITTEN_RESULT_UNRATED_LABEL}",
+            ]
+            finished = exam.written_finished_at
+            if isinstance(finished, datetime):
+                lines.append(f"Ukončeno: {finished.strftime('%d.%m.%Y %H:%M')}")
+            detail = str(exam.written_technical_detail or "").strip()
+            if detail:
+                lines.append(detail)
+            self.written_summary.setText("\n".join(lines))
+            self.written_summary.show()
+            return
         if not exam.written_result:
             self.written_summary.clear()
             self.written_summary.hide()
@@ -278,6 +302,10 @@ class TestExamDetailDialog(QDialog):
         return button
 
     def _sync_protocol(self, exam) -> None:
+        if exam.status == EXAM_STATUS_TECHNICAL:
+            self._show_protocol(completed=False, attached=False)
+            self.protocol_status.setText(EXAM_PROTOCOL_NOT_APPLICABLE)
+            return
         try:
             state = exam_signed_protocol_service.describe(int(exam.id))
         except ExamSignedProtocolError:

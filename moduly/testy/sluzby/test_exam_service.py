@@ -66,6 +66,18 @@ SNAPSHOT_IMAGE_INTEGRITY_NOTICE = (
 SNAPSHOT_IMAGE_UNVERIFIED_NOTICE = (
     "Obrázek ze starší zkoušky nelze ověřit, proto se nezobrazuje."
 )
+SNAPSHOT_REASON_MISSING = "missing"
+SNAPSHOT_REASON_UNREADABLE = "unreadable"
+SNAPSHOT_REASON_INVALID_PATH = "invalid_path"
+SNAPSHOT_REASON_MISMATCH = "mismatch"
+SNAPSHOT_REASON_UNVERIFIED = "unverified"
+SNAPSHOT_REASON_LABELS = {
+    SNAPSHOT_REASON_MISSING: "Soubor nebyl nalezen.",
+    SNAPSHOT_REASON_UNREADABLE: "Soubor nelze přečíst.",
+    SNAPSHOT_REASON_INVALID_PATH: "Neplatná cesta.",
+    SNAPSHOT_REASON_MISMATCH: "Nesouhlasí SHA-256.",
+    SNAPSHOT_REASON_UNVERIFIED: "Chybí kontrolní otisk SHA-256.",
+}
 
 
 @dataclass(frozen=True)
@@ -74,6 +86,18 @@ class SnapshotImage:
 
     status: str
     data: bytes | None = None
+    reason: str = ""
+
+
+@dataclass(frozen=True)
+class SnapshotImageProblem:
+    """Jeden vadný obrázek snapshotu. Cesta je uložená, neotevřená hodnota."""
+
+    question_position: int
+    role: str
+    letter: str
+    reason: str
+    relative_path: str
 
 
 def snapshot_image_notice(status: str) -> str:
@@ -83,6 +107,76 @@ def snapshot_image_notice(status: str) -> str:
     if status == SNAPSHOT_IMAGE_UNVERIFIED:
         return SNAPSHOT_IMAGE_UNVERIFIED_NOTICE
     return ""
+
+
+def snapshot_image_label(role: str, letter: str) -> str:
+    if role == "answer":
+        shown = str(letter or "").strip() or "?"
+        return f"obrázek odpovědi {shown}"
+    return "obrázek zadání"
+
+
+def snapshot_problem_full_path(relative_path: str) -> str:
+    """Úplná cesta uvnitř příloh. Únikovou cestu nevrací a soubor neotevírá."""
+    text = str(relative_path or "").strip()
+    if not text:
+        return ""
+    try:
+        return str(storage_service.attachment_absolute(text))
+    except ValueError:
+        return ""
+
+
+def snapshot_slot_problem(
+    *,
+    question_position: int,
+    role: str,
+    letter: str,
+    relative_path: str | None,
+    expected_sha256: str | None,
+) -> SnapshotImageProblem | None:
+    """Prázdný slot bez cesty a bez otisku není obrázek a nehlásí se."""
+    path_text = str(relative_path or "").strip()
+    digest_text = str(expected_sha256 or "").strip()
+    if not path_text and not digest_text:
+        return None
+    image = test_exam_service.load_snapshot_image(path_text, digest_text)
+    if image.status == SNAPSHOT_IMAGE_OK:
+        return None
+    reason = image.reason or SNAPSHOT_REASON_MISSING
+    return SnapshotImageProblem(
+        question_position=int(question_position),
+        role=role,
+        letter=str(letter or ""),
+        reason=reason,
+        relative_path=path_text,
+    )
+
+
+def format_snapshot_image_report(
+    problems: list[SnapshotImageProblem] | tuple[SnapshotImageProblem, ...],
+    *,
+    include_full_paths: bool = False,
+) -> str:
+    """Diagnostika všech problémů. Úplná cesta je jen volitelný řádek."""
+    blocks: list[str] = []
+    for problem in problems:
+        lines = [
+            (
+                f"Otázka {problem.question_position}, "
+                f"{snapshot_image_label(problem.role, problem.letter)}"
+            ),
+            f"Důvod: {SNAPSHOT_REASON_LABELS.get(problem.reason, problem.reason)}",
+            f"Soubor: {problem.relative_path or '—'}",
+        ]
+        if include_full_paths:
+            full = snapshot_problem_full_path(problem.relative_path)
+            if full:
+                lines.append(f"Úplná cesta: {full}")
+            else:
+                lines.append("Úplná cesta: nelze bezpečně zobrazit.")
+        blocks.append("\n".join(lines))
+    return "\n\n".join(blocks)
 
 
 def _sha256_matches(data: bytes, expected: str) -> bool:
@@ -98,7 +192,7 @@ def _read_snapshot_bytes(path: Path) -> bytes:
     try:
         info = os.fstat(fd)
         if not stat.S_ISREG(info.st_mode):
-            raise FileNotFoundError(path)
+            raise OSError(path)
         chunks: list[bytes] = []
         while True:
             block = os.read(fd, 1024 * 1024)
@@ -704,20 +798,43 @@ class TestExamService:
         Čte soubor jen jednou a jen z příloh. Zobrazení i export smí použít
         výhradně vrácené bajty. Chybějící otisk se do databáze nedoplňuje.
         """
-        path = self._confined_snapshot_path(relative_path)
-        if path is None:
+        path_text = str(relative_path or "").strip()
+        if not path_text:
+            if str(expected_sha256 or "").strip():
+                return SnapshotImage(
+                    SNAPSHOT_IMAGE_ABSENT,
+                    reason=SNAPSHOT_REASON_INVALID_PATH,
+                )
             return SnapshotImage(SNAPSHOT_IMAGE_ABSENT)
+        path = self._confined_snapshot_path(path_text)
+        if path is None:
+            return SnapshotImage(
+                SNAPSHOT_IMAGE_ABSENT,
+                reason=SNAPSHOT_REASON_INVALID_PATH,
+            )
         try:
             data = _read_snapshot_bytes(path)
         except FileNotFoundError:
-            return SnapshotImage(SNAPSHOT_IMAGE_ABSENT)
+            return SnapshotImage(
+                SNAPSHOT_IMAGE_ABSENT,
+                reason=SNAPSHOT_REASON_MISSING,
+            )
         except OSError:
-            return SnapshotImage(SNAPSHOT_IMAGE_ABSENT)
+            return SnapshotImage(
+                SNAPSHOT_IMAGE_ABSENT,
+                reason=SNAPSHOT_REASON_UNREADABLE,
+            )
         expected = str(expected_sha256 or "").strip().lower()
         if not expected:
-            return SnapshotImage(SNAPSHOT_IMAGE_UNVERIFIED)
+            return SnapshotImage(
+                SNAPSHOT_IMAGE_UNVERIFIED,
+                reason=SNAPSHOT_REASON_UNVERIFIED,
+            )
         if not _sha256_matches(data, expected):
-            return SnapshotImage(SNAPSHOT_IMAGE_MISMATCH)
+            return SnapshotImage(
+                SNAPSHOT_IMAGE_MISMATCH,
+                reason=SNAPSHOT_REASON_MISMATCH,
+            )
         return SnapshotImage(SNAPSHOT_IMAGE_OK, data)
 
     def _confined_snapshot_path(self, relative_path: str | None) -> Path | None:

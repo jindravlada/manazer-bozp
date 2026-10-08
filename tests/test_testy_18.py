@@ -57,10 +57,12 @@ with patch.object(Path, "home", return_value=_TMP):
         EXAM_STATUS_COMPLETED,
         EXAM_STATUS_PREPARED,
         EXAM_STATUS_STARTED,
+        EXAM_STATUS_TECHNICAL_LABEL,
         EXAMINER_MODE_NONE,
         VALIDITY_UNIT_YEARS,
         WRITTEN_RESULT_FAILED,
         WRITTEN_RESULT_PASSED,
+        WRITTEN_RESULT_UNRATED_LABEL,
     )
     from moduly.testy.modely.test_definition import TestDefinition
     from moduly.testy.modely.test_employee import TestEmployee
@@ -188,6 +190,7 @@ class ExamListFilterTests(unittest.TestCase):
                 "Připraveno",
                 EXAM_LIST_FILTER_STATUS_RUNNING,
                 "Dokončeno",
+                EXAM_STATUS_TECHNICAL_LABEL,
             ],
         )
         self.assertEqual(
@@ -196,6 +199,7 @@ class ExamListFilterTests(unittest.TestCase):
                 EXAM_LIST_FILTER_ALL,
                 "Vyhověl(a)",
                 "Nevyhověl(a)",
+                WRITTEN_RESULT_UNRATED_LABEL,
                 EXAM_LIST_FILTER_RESULT_NONE,
             ],
         )

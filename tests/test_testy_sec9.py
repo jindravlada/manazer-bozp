@@ -14,7 +14,7 @@ from unittest.mock import patch
 
 from PIL import Image
 from PySide6.QtGui import QPixmap
-from PySide6.QtWidgets import QApplication, QLabel, QRadioButton
+from PySide6.QtWidgets import QApplication, QLabel
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -288,31 +288,21 @@ class SnapshotImageIntegrityTests(unittest.TestCase):
         self._assert_hash_unchanged()
 
     def test_mismatch_keeps_exam_detail_and_documents_usable(self) -> None:
+        written_exam_service.start(self.exam.id, now=_STARTED)
+        answers = test_exam_service.get_written_answers(self.question.id)
+        wrong = next(item for item in answers if item.letter == "B")
+        written_exam_service.save_choice(
+            self.exam.id,
+            self.question.id,
+            wrong.id,
+            now=_STARTED,
+        )
+        self._complete()
         self.frozen.write_bytes(self._flipped(self.original))
         damaged = self.frozen.read_bytes()
-        written_exam_service.start(self.exam.id, now=_STARTED)
-        window = WrittenExamWindow(self.exam.id, clock=FixedWrittenExamClock(_STARTED))
-        self._windows.append(window)
-        window.show_at(1400, 900)
-        question = window.findChild(QLabel, "written-exam-question-text")
-        assert question is not None
-        self.assertEqual(question.text(), _QUESTION)
-        notice = window.findChild(QLabel, "written-exam-question-image-notice")
-        assert notice is not None
-        self.assertEqual(notice.text(), _INTEGRITY)
-        self.assertNotIn(str(self.frozen), notice.text())
-        self.assertIsNone(window.findChild(QLabel, "written-exam-question-image"))
-        radio = window.findChild(QRadioButton, "written-exam-answer-B")
-        assert radio is not None
-        radio.setChecked(True)
-        QApplication.processEvents()
-        stored_choice = written_exam_service.choices(self.exam.id)
-        self.assertEqual(stored_choice[0].selected_letter, "B")
         current = test_exam_service.get_exam(self.exam.id)
-        self.assertEqual(current.status, "started")
-        self.assertFalse(current.written_result)
-
-        self._complete()
+        self.assertEqual(current.status, EXAM_STATUS_COMPLETED)
+        self.assertEqual(current.written_result, WRITTEN_RESULT_PASSED)
         detail = TestExamDetailDialog(exam_id=self.exam.id)
         title = detail.findChild(QLabel, "written-text-1")
         assert title is not None

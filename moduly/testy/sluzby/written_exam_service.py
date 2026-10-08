@@ -22,11 +22,13 @@ from moduly.testy.constants import (
     EXAM_STATUS_COMPLETED,
     EXAM_STATUS_PREPARED,
     EXAM_STATUS_STARTED,
+    EXAM_STATUS_TECHNICAL,
     PAPER_BLOCKS_ELECTRONIC,
     PAPER_ENTRY_LOCKED,
     WRITTEN_FINISH_EXPIRED,
     WRITTEN_FINISH_PAPER,
     WRITTEN_FINISH_SUBMITTED,
+    WRITTEN_FINISH_TECHNICAL,
     WRITTEN_MODE_ELECTRONIC,
     WRITTEN_MODE_PAPER,
     WRITTEN_OUTCOME_CORRECT,
@@ -34,13 +36,19 @@ from moduly.testy.constants import (
     WRITTEN_OUTCOME_UNANSWERED,
     WRITTEN_RESULT_FAILED,
     WRITTEN_RESULT_PASSED,
+    WRITTEN_RESULT_UNRATED,
 )
 from moduly.testy.modely.test_exam import TestExam
 from moduly.testy.modely.test_exam_written_answer import TestExamWrittenAnswer
 from moduly.testy.modely.test_exam_written_choice import TestExamWrittenChoice
 from moduly.testy.modely.test_exam_written_question import TestExamWrittenQuestion
 from moduly.testy.repository.test_exam_repository import TestExamRepository
-from moduly.testy.sluzby.test_exam_service import TestExamError
+from moduly.testy.sluzby.test_exam_service import (
+    SnapshotImageProblem,
+    TestExamError,
+    format_snapshot_image_report,
+    snapshot_slot_problem,
+)
 
 # Není autorizace administrátora. Jen oddělená vývojová cesta ven ze zamčeného UI.
 WRITTEN_EXAM_DEV_EXIT_ENV = "MANAGER_BOZP_WRITTEN_EXAM_DEV_EXIT"
@@ -48,6 +56,30 @@ WRITTEN_EXAM_DEV_EXIT_ENV = "MANAGER_BOZP_WRITTEN_EXAM_DEV_EXIT"
 
 class WrittenExamClosed(TestExamError):
     """Písemná část už nejde měnit, protože byla ukončena nebo vypršel čas."""
+
+
+class WrittenExamImageBlocked(TestExamError):
+    """Elektronická zkouška se nespustila. Čas ani výsledek nevznikly."""
+
+    def __init__(self, problems: list[SnapshotImageProblem] | tuple[SnapshotImageProblem, ...]):
+        self.problems = tuple(problems)
+        super().__init__(
+            "Elektronickou zkoušku nelze zahájit. "
+            "Obrázky ve snapshotu nejsou v pořádku."
+        )
+
+
+class WrittenExamTechnical(WrittenExamClosed):
+    """Zahájená zkouška skončila technicky. Odpovědi se nevyhodnocují."""
+
+    def __init__(
+        self,
+        problems: list[SnapshotImageProblem] | tuple[SnapshotImageProblem, ...] = (),
+    ):
+        self.problems = tuple(problems)
+        super().__init__(
+            "Zkouška neproběhla – technická chyba.\nVýsledek: Nehodnoceno."
+        )
 
 
 @dataclass(frozen=True)
@@ -460,7 +492,7 @@ class WrittenExamService:
         after = self._loaded_exam(exam_id)
         if after.written_started_at != started_at:
             raise TestExamError("Čas písemné části se nesmí nastavit znovu.")
-        if reason == WRITTEN_FINISH_EXPIRED:
+        if reason in (WRITTEN_FINISH_EXPIRED, WRITTEN_FINISH_TECHNICAL):
             return reason
         if reason or not self.can_continue(exam_id):
             raise TestExamError("V elektronickém testu nelze pokračovat.")
@@ -481,6 +513,7 @@ class WrittenExamService:
         session = get_session()
         session.expire_on_commit = False
         try:
+            self._begin_immediate(session)
             exam = self._require(session, exam_id)
             questions = self._questions(session, exam.id)
             if (exam.written_mode or "") == WRITTEN_MODE_PAPER:
@@ -491,6 +524,9 @@ class WrittenExamService:
                 )
             if not exam.uses_written or not questions:
                 raise TestExamError("Zkouška nemá písemnou část.")
+            problems = self._collect_snapshot_problems(session, exam.id)
+            if problems:
+                raise WrittenExamImageBlocked(problems)
             exam.status = EXAM_STATUS_STARTED
             exam.written_mode = WRITTEN_MODE_ELECTRONIC
             exam.written_started_at = moment
@@ -740,6 +776,9 @@ class WrittenExamService:
             self._begin_immediate(session)
             exam = self._require(session, exam_id)
             moment = self._observed_now(exam, moment)
+            blocked = self._snapshot_blocks_exam(session, exam, moment)
+            if blocked is not None:
+                raise WrittenExamTechnical(blocked)
             self._ensure_open(session, exam, moment)
             question = session.get(TestExamWrittenQuestion, int(exam_question_id))
             if question is None or int(question.exam_id) != int(exam.id):
@@ -787,6 +826,10 @@ class WrittenExamService:
             self._begin_immediate(session)
             exam = self._require(session, exam_id)
             moment = self._observed_now(exam, moment)
+            blocked = self._snapshot_blocks_exam(session, exam, moment)
+            if blocked is not None:
+                session.commit()
+                return WRITTEN_FINISH_TECHNICAL
             if exam.written_finish_reason:
                 raise WrittenExamClosed("Písemná část už byla ukončena.")
             if exam.status != EXAM_STATUS_STARTED or exam.written_started_at is None:
@@ -813,6 +856,10 @@ class WrittenExamService:
             self._begin_immediate(session)
             exam = self._require(session, exam_id)
             moment = self._observed_now(exam, moment)
+            blocked = self._snapshot_blocks_exam(session, exam, moment)
+            if blocked is not None:
+                session.commit()
+                return WRITTEN_FINISH_TECHNICAL
             if exam.written_finish_reason:
                 reason = exam.written_finish_reason
                 session.rollback()
@@ -828,6 +875,29 @@ class WrittenExamService:
             self._mark_finished(session, exam, WRITTEN_FINISH_EXPIRED, moment)
             session.commit()
             return WRITTEN_FINISH_EXPIRED
+        except TestExamError:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    def ensure_snapshot_images(self, exam_id: int, *, now: datetime | None = None) -> None:
+        """Během zahájené zkoušky ověří všechny obrázky a při chybě ji ukončí."""
+        moment = self._moment(now)
+        session = get_session()
+        session.expire_on_commit = False
+        try:
+            self._begin_immediate(session)
+            exam = self._require(session, exam_id)
+            moment = self._observed_now(exam, moment)
+            blocked = self._snapshot_blocks_exam(session, exam, moment)
+            if blocked is None:
+                session.rollback()
+                return
+            session.commit()
+            raise WrittenExamTechnical(blocked)
+        except WrittenExamTechnical:
+            raise
         except TestExamError:
             session.rollback()
             raise
@@ -1030,6 +1100,79 @@ class WrittenExamService:
             )
             <= 0
         )
+
+    def _collect_snapshot_problems(
+        self,
+        session,
+        exam_id: int,
+    ) -> list[SnapshotImageProblem]:
+        problems: list[SnapshotImageProblem] = []
+        for question in self._questions(session, exam_id):
+            prompt = snapshot_slot_problem(
+                question_position=int(question.position),
+                role="prompt",
+                letter="",
+                relative_path=question.image_stored_path,
+                expected_sha256=question.image_sha256,
+            )
+            if prompt is not None:
+                problems.append(prompt)
+            for answer in self._answers(session, question.id):
+                item = snapshot_slot_problem(
+                    question_position=int(question.position),
+                    role="answer",
+                    letter=str(answer.letter or ""),
+                    relative_path=answer.image_stored_path,
+                    expected_sha256=answer.image_sha256,
+                )
+                if item is not None:
+                    problems.append(item)
+        return problems
+
+    def _snapshot_blocks_exam(
+        self,
+        session,
+        exam: TestExam,
+        moment: datetime,
+    ) -> tuple[SnapshotImageProblem, ...] | None:
+        """None znamená, že obrázky zkoušku neukončují.
+
+        Prázdná n-tice znamená, že technické ukončení už je uložené
+        a nesmí se přepsat běžným výsledkem.
+        """
+        if exam.status == EXAM_STATUS_TECHNICAL or (
+            exam.written_finish_reason == WRITTEN_FINISH_TECHNICAL
+        ):
+            return ()
+        if str(exam.written_finish_reason or "").strip():
+            return None
+        if exam.status != EXAM_STATUS_STARTED or exam.written_started_at is None:
+            return None
+        problems = tuple(self._collect_snapshot_problems(session, exam.id))
+        if not problems:
+            return None
+        self._apply_technical_end(session, exam, problems, moment)
+        return problems
+
+    def _apply_technical_end(
+        self,
+        session,
+        exam: TestExam,
+        problems: tuple[SnapshotImageProblem, ...] | list[SnapshotImageProblem],
+        now: datetime,
+    ) -> None:
+        if str(exam.written_finish_reason or "").strip():
+            return
+        if exam.written_started_at is not None and now < exam.written_started_at:
+            now = exam.written_started_at
+        exam.written_finished_at = now
+        exam.written_finish_reason = WRITTEN_FINISH_TECHNICAL
+        exam.written_technical_detail = format_snapshot_image_report(problems)
+        exam.written_result = WRITTEN_RESULT_UNRATED
+        exam.exam_result = WRITTEN_RESULT_UNRATED
+        exam.valid_until = None
+        exam.status = EXAM_STATUS_TECHNICAL
+        session.flush()
 
     def _ensure_open(self, session, exam: TestExam, now: datetime) -> None:
         if exam.written_finish_reason:

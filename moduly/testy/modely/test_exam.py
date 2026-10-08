@@ -90,3 +90,6 @@ class TestExam(Base):
         Integer,
         nullable=True,
     )
+    # Konkrétní důvod technického ukončení. Prázdné u běžné zkoušky.
+    # Rozpracované odpovědi se kvůli němu nemažou a do hodnocení nevstupují.
+    written_technical_detail: Mapped[str] = mapped_column(Text, default="", nullable=False)

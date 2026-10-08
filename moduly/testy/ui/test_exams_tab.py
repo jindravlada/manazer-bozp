@@ -53,12 +53,18 @@ from moduly.testy.constants import (
     EXAM_STATUS_PREPARED,
     EXAM_STATUS_PREPARED_LABEL,
     EXAM_STATUS_STARTED,
+    EXAM_STATUS_TECHNICAL,
+    EXAM_STATUS_TECHNICAL_LABEL,
     MODULE_NAME,
     WRITTEN_FINISH_EXPIRED,
+    WRITTEN_FINISH_TECHNICAL,
     WRITTEN_RESULT_FAILED,
     WRITTEN_RESULT_FAILED_LABEL,
     WRITTEN_RESULT_PASSED,
     WRITTEN_RESULT_PASSED_LABEL,
+    WRITTEN_RESULT_UNRATED,
+    WRITTEN_RESULT_UNRATED_LABEL,
+    WRITTEN_TECHNICAL_END_TEXT,
 )
 from moduly.testy.sluzby.test_definition_service import test_definition_service
 from moduly.testy.sluzby.exam_protocol_export_service import (
@@ -67,7 +73,13 @@ from moduly.testy.sluzby.exam_protocol_export_service import (
 )
 from moduly.testy.sluzby.paper_test_export_service import paper_test_export_service
 from moduly.testy.sluzby.test_exam_service import TestExamError, test_exam_service
-from moduly.testy.sluzby.written_exam_service import written_exam_service
+from moduly.testy.sluzby.written_exam_service import (
+    WrittenExamImageBlocked,
+    written_exam_service,
+)
+from moduly.testy.ui.snapshot_image_diagnostic_dialog import (
+    SnapshotImageDiagnosticDialog,
+)
 from moduly.testy.ui.paper_answer_dialog import PaperAnswerDialog
 from moduly.testy.ui.paper_batch_dialog import PaperBatchDialog
 from moduly.testy.ui.paper_test_options_dialog import PaperTestOptionsDialog
@@ -236,6 +248,10 @@ class TestExamsTab(QWidget):
             return
         try:
             written_exam_service.start(exam_id)
+        except WrittenExamImageBlocked as blocked:
+            SnapshotImageDiagnosticDialog(blocked.problems, self).exec()
+            self.refresh()
+            return
         except TestExamError as error:
             QMessageBox.warning(self, MODULE_NAME, str(error))
             self.refresh()
@@ -257,6 +273,10 @@ class TestExamsTab(QWidget):
                 self,
                 lambda: self.focus_exam(exam_id),
             )
+            return
+        if reason == WRITTEN_FINISH_TECHNICAL:
+            QMessageBox.warning(self, MODULE_NAME, WRITTEN_TECHNICAL_END_TEXT)
+            self.refresh()
             return
         window = WrittenExamWindow(exam_id, self)
         self._written_exam_window = window
@@ -364,6 +384,7 @@ class TestExamsTab(QWidget):
                 (EXAM_STATUS_PREPARED_LABEL, EXAM_STATUS_PREPARED),
                 (EXAM_LIST_FILTER_STATUS_RUNNING, EXAM_STATUS_STARTED),
                 (EXAM_STATUS_COMPLETED_LABEL, EXAM_STATUS_COMPLETED),
+                (EXAM_STATUS_TECHNICAL_LABEL, EXAM_STATUS_TECHNICAL),
             ],
             _FILTER_ALL,
         )
@@ -373,6 +394,7 @@ class TestExamsTab(QWidget):
                 (EXAM_LIST_FILTER_ALL, _FILTER_ALL),
                 (WRITTEN_RESULT_PASSED_LABEL, WRITTEN_RESULT_PASSED),
                 (WRITTEN_RESULT_FAILED_LABEL, WRITTEN_RESULT_FAILED),
+                (WRITTEN_RESULT_UNRATED_LABEL, WRITTEN_RESULT_UNRATED),
                 (EXAM_LIST_FILTER_RESULT_NONE, _FILTER_RESULT_NONE),
             ],
             _FILTER_ALL,
