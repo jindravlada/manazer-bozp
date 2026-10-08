@@ -733,6 +733,7 @@ class WrittenExamService:
         session = get_session()
         session.expire_on_commit = False
         try:
+            self._begin_immediate(session)
             exam = self._require(session, exam_id)
             moment = self._observed_now(exam, moment)
             self._ensure_open(session, exam, moment)
@@ -779,6 +780,7 @@ class WrittenExamService:
         session = get_session()
         session.expire_on_commit = False
         try:
+            self._begin_immediate(session)
             exam = self._require(session, exam_id)
             moment = self._observed_now(exam, moment)
             if exam.written_finish_reason:
@@ -804,6 +806,7 @@ class WrittenExamService:
         session = get_session()
         session.expire_on_commit = False
         try:
+            self._begin_immediate(session)
             exam = self._require(session, exam_id)
             moment = self._observed_now(exam, moment)
             if exam.written_finish_reason:
@@ -1074,6 +1077,14 @@ class WrittenExamService:
         exam.written_result = score.result
         exam.exam_result = score.result
         exam.written_evaluated_at = now
+
+    def _begin_immediate(self, session) -> None:
+        """Rezervuje zápis dřív, než se přečte stav zkoušky.
+
+        Odložená transakce by druhé relaci dovolila vyhodnotit zkoušku
+        bez odpovědi, která se ve stejnou chvíli ukládá.
+        """
+        session.connection().exec_driver_sql("BEGIN IMMEDIATE")
 
     def _moment(self, now: datetime | None) -> datetime:
         if now is None:
