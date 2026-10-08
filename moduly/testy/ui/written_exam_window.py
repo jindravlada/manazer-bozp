@@ -182,7 +182,7 @@ class WrittenExamWindow(QDialog):
     def submit_test(self) -> None:
         if self._phase != "running":
             return
-        now = self.clock.now()
+        now = self._exam_now()
         if self._deadline_reached(now):
             return
         if written_exam_service.unanswered_count(self.exam_id):
@@ -376,7 +376,7 @@ class WrittenExamWindow(QDialog):
             dev_exit.clicked.connect(self.release_testing_lock)
             root.addWidget(dev_exit, alignment=Qt.AlignmentFlag.AlignRight)
 
-        self._refresh_remaining(self.clock.now())
+        self._refresh_remaining(self._exam_now())
 
     def _rebuild_navigation(self) -> None:
         while self._nav_layout.count():
@@ -547,7 +547,7 @@ class WrittenExamWindow(QDialog):
     def _jump(self, index: int) -> None:
         if self._phase != "running":
             return
-        if self._deadline_reached(self.clock.now()):
+        if self._deadline_reached(self._exam_now()):
             return
         self._screen = written_exam_service.screen(self.exam_id)
         self._show_question(index)
@@ -561,7 +561,7 @@ class WrittenExamWindow(QDialog):
     def _on_answer(self, checked: bool, exam_question_id: int, exam_answer_id: int) -> None:
         if not checked or self._phase != "running":
             return
-        now = self.clock.now()
+        now = self._exam_now()
         try:
             written_exam_service.save_choice(
                 self.exam_id,
@@ -586,7 +586,11 @@ class WrittenExamWindow(QDialog):
     def _on_tick(self) -> None:
         if self._phase != "running":
             return
-        self._deadline_reached(self.clock.now())
+        self._deadline_reached(self._exam_now())
+
+    def _exam_now(self) -> datetime:
+        """Nástěnný čas zkoušky, který posun hodin zpět neprodlouží."""
+        return written_exam_service.observed_now(self.exam_id, self.clock.now())
 
     def _deadline_reached(self, now) -> bool:
         screen = self._screen

@@ -8,8 +8,9 @@ přepisu nepoužívá. Pokračování nemění snapshot ani pořadí otázek.
 from __future__ import annotations
 
 import os
+import time
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from sqlalchemy import select
 
@@ -107,6 +108,85 @@ def written_exam_dev_exit_enabled() -> bool:
     return os.environ.get(WRITTEN_EXAM_DEV_EXIT_ENV) == "1"
 
 
+@dataclass
+class _RunningExamClock:
+    """Kotva jedné zkoušky v tomto procesu. Nepřežije ukončení aplikace."""
+
+    started_at: datetime
+    wall_anchor: datetime
+    mono_anchor: float
+    issued: datetime
+    blocked: bool
+
+
+_running_clocks: dict[tuple[str, int, str, str], _RunningExamClock] = {}
+
+
+def _exam_clock_scope() -> str:
+    from core.services.storage_service import storage_service
+
+    return str(storage_service.database_path)
+
+
+def _instant_key(moment: datetime) -> str:
+    return moment.isoformat(sep=" ", timespec="microseconds")
+
+
+def effective_exam_now(
+    exam_id: int,
+    started_at: datetime,
+    wall_now: datetime,
+    *,
+    identity: str = "",
+    monotonic_time: float | None = None,
+) -> datetime:
+    """Čas pro limit během běžící instance.
+
+    Posun hodin zpět, který zůstane po zahájení, limit neprodlouží:
+    platí vyšší z nástěnného času a času od monotónní kotvy.
+    Čas starší než zahájení limit neobnoví. Vrátí se okamžik těsně
+    před startem, aby zbývající čas byl 0 a zkouška skončila vypršením.
+    Nový proces kotvu nemá. Tehdy čas starší než start také končí vypršením,
+    takže se nevrátí celý limit. ``identity`` oddělí záznamy se stejným
+    číslem, například po smazání řádku v testech.
+    """
+    mono = time.monotonic() if monotonic_time is None else float(monotonic_time)
+    key = (_exam_clock_scope(), int(exam_id), _instant_key(started_at), identity)
+    track = _running_clocks.get(key)
+    if wall_now < started_at:
+        if track is None:
+            _running_clocks[key] = _RunningExamClock(
+                started_at=started_at,
+                wall_anchor=started_at,
+                mono_anchor=mono,
+                issued=started_at,
+                blocked=True,
+            )
+        else:
+            track.blocked = True
+        return started_at - timedelta(microseconds=1)
+    if track is not None and track.blocked:
+        return started_at - timedelta(microseconds=1)
+    if track is None:
+        _running_clocks[key] = _RunningExamClock(
+            started_at=started_at,
+            wall_anchor=wall_now,
+            mono_anchor=mono,
+            issued=wall_now,
+            blocked=False,
+        )
+        return wall_now
+    elapsed = mono - track.mono_anchor
+    if elapsed < 0:
+        elapsed = 0.0
+    from_mono = track.wall_anchor + timedelta(seconds=elapsed)
+    candidate = wall_now if wall_now > from_mono else from_mono
+    if candidate < track.issued:
+        candidate = track.issued
+    track.issued = candidate
+    return candidate
+
+
 def remaining_written_seconds(
     started_at: datetime,
     duration_seconds: int,
@@ -114,15 +194,16 @@ def remaining_written_seconds(
 ) -> int:
     """Celé zbývající sekundy od uloženého zahájení.
 
-    Zpoždění aplikace čas nepřidá. Výsledek není nikdy větší než limit
-    a po vypršení je 0.
+    Čas starší než zahájení je vypršení, ne nový plný limit.
+    V okamžiku zahájení zbývá celý limit. Výsledek není nikdy větší
+    než limit a po vypršení je 0.
     """
     duration = int(duration_seconds)
     if duration <= 0:
         return 0
+    if now < started_at:
+        return 0
     elapsed = (now - started_at).total_seconds()
-    if elapsed <= 0:
-        return duration
     remaining = duration - elapsed
     if remaining <= 0:
         return 0
@@ -651,6 +732,7 @@ class WrittenExamService:
         session.expire_on_commit = False
         try:
             exam = self._require(session, exam_id)
+            moment = self._observed_now(exam, moment)
             self._ensure_open(session, exam, moment)
             question = session.get(TestExamWrittenQuestion, int(exam_question_id))
             if question is None or int(question.exam_id) != int(exam.id):
@@ -695,18 +777,12 @@ class WrittenExamService:
         session.expire_on_commit = False
         try:
             exam = self._require(session, exam_id)
+            moment = self._observed_now(exam, moment)
             if exam.written_finish_reason:
                 raise WrittenExamClosed("Písemná část už byla ukončena.")
             if exam.status != EXAM_STATUS_STARTED or exam.written_started_at is None:
                 raise TestExamError("Písemná část není zahájená.")
-            if (
-                remaining_written_seconds(
-                    exam.written_started_at,
-                    exam.written_duration_seconds,
-                    moment,
-                )
-                <= 0
-            ):
+            if self._limit_reached(exam, moment):
                 reason = WRITTEN_FINISH_EXPIRED
             else:
                 reason = WRITTEN_FINISH_SUBMITTED
@@ -726,6 +802,7 @@ class WrittenExamService:
         session.expire_on_commit = False
         try:
             exam = self._require(session, exam_id)
+            moment = self._observed_now(exam, moment)
             if exam.written_finish_reason:
                 reason = exam.written_finish_reason
                 session.rollback()
@@ -733,14 +810,7 @@ class WrittenExamService:
             if exam.status != EXAM_STATUS_STARTED or exam.written_started_at is None:
                 session.rollback()
                 return ""
-            if (
-                remaining_written_seconds(
-                    exam.written_started_at,
-                    exam.written_duration_seconds,
-                    moment,
-                )
-                > 0
-            ):
+            if not self._limit_reached(exam, moment):
                 session.rollback()
                 return ""
             self._mark_finished(session, exam, WRITTEN_FINISH_EXPIRED, moment)
@@ -771,23 +841,45 @@ class WrittenExamService:
         if not exam.uses_written or not questions:
             raise TestExamError("Zkouška nemá písemnou část.")
 
-    def _ensure_open(self, session, exam: TestExam, now: datetime) -> None:
-        if exam.written_finish_reason:
-            raise WrittenExamClosed("Písemná část už byla ukončena.")
-        if exam.status != EXAM_STATUS_STARTED or exam.written_started_at is None:
-            raise TestExamError("Písemná část není zahájená.")
-        if (
+    def observed_now(self, exam_id: int, wall_now: datetime) -> datetime:
+        """Stejný hlídaný čas, jaký použije uložení odpovědi a vypršení."""
+        return self._observed_now(self._loaded_exam(exam_id), wall_now)
+
+    def _observed_now(self, exam: TestExam, wall_now: datetime) -> datetime:
+        if exam.written_started_at is None:
+            return wall_now
+        created = exam.created_at or exam.written_started_at
+        return effective_exam_now(
+            int(exam.id),
+            exam.written_started_at,
+            wall_now,
+            identity=_instant_key(created),
+        )
+
+    def _limit_reached(self, exam: TestExam, now: datetime) -> bool:
+        if exam.written_started_at is None:
+            return False
+        return (
             remaining_written_seconds(
                 exam.written_started_at,
                 exam.written_duration_seconds,
                 now,
             )
             <= 0
-        ):
+        )
+
+    def _ensure_open(self, session, exam: TestExam, now: datetime) -> None:
+        if exam.written_finish_reason:
+            raise WrittenExamClosed("Písemná část už byla ukončena.")
+        if exam.status != EXAM_STATUS_STARTED or exam.written_started_at is None:
+            raise TestExamError("Písemná část není zahájená.")
+        if self._limit_reached(exam, now):
             self._mark_finished(session, exam, WRITTEN_FINISH_EXPIRED, now)
             raise WrittenExamClosed("Čas písemné části vypršel.")
 
     def _mark_finished(self, session, exam: TestExam, reason: str, now: datetime) -> None:
+        if exam.written_started_at is not None and now < exam.written_started_at:
+            now = exam.written_started_at
         exam.written_finished_at = now
         exam.written_finish_reason = reason
         self._record_written_result(session, exam, now)

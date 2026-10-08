@@ -97,6 +97,7 @@ with patch.object(Path, "home", return_value=_TMP):
         WrittenAnswerOption,
         WrittenQuestionCard,
         clamp_question_index,
+        effective_exam_now,
         format_remaining_clock,
         format_remaining_label,
         question_answer_marks,
@@ -104,6 +105,7 @@ with patch.object(Path, "home", return_value=_TMP):
         step_question_index,
         written_exam_service,
     )
+    from moduly.testy.sluzby.written_exam_service import _running_clocks
     from moduly.testy.sluzby.written_exam_service import WrittenExamClosed
     from moduly.testy.sluzby.written_question_service import (
         WrittenAnswerInput,
@@ -253,7 +255,7 @@ class WrittenExamRulesTestCase(unittest.TestCase):
         self.assertEqual(format_remaining_clock(572), "09:32")
         self.assertEqual(
             remaining_written_seconds(start, 900, start - timedelta(seconds=20)),
-            900,
+            0,
         )
         self.assertEqual(
             remaining_written_seconds(start, 900, start + timedelta(seconds=900)),
@@ -275,6 +277,40 @@ class WrittenExamRulesTestCase(unittest.TestCase):
             question_answer_marks([10, 11, 12], {10}, 1),
             [(True, False), (False, True), (False, False)],
         )
+
+    def test_backward_clock_does_not_restore_or_extend_limit(self) -> None:
+        start = datetime(2026, 4, 2, 8, 0, 0)
+        self.assertEqual(remaining_written_seconds(start, 900, start), 900)
+        self.assertEqual(remaining_written_seconds(start, 900, start - timedelta(seconds=1)), 0)
+        exam_id = 900001
+        mono = 5000.0
+        at_twenty = effective_exam_now(
+            exam_id,
+            start,
+            start + timedelta(seconds=20),
+            monotonic_time=mono,
+        )
+        self.assertEqual(at_twenty, start + timedelta(seconds=20))
+        self.assertEqual(remaining_written_seconds(start, 60, at_twenty), 40)
+        rolled = effective_exam_now(
+            exam_id,
+            start,
+            start + timedelta(seconds=12),
+            monotonic_time=mono,
+        )
+        self.assertGreaterEqual(rolled, at_twenty)
+        self.assertLessEqual(
+            remaining_written_seconds(start, 60, rolled),
+            remaining_written_seconds(start, 60, at_twenty),
+        )
+        before_start = effective_exam_now(
+            exam_id,
+            start,
+            start - timedelta(seconds=5),
+            monotonic_time=mono + 3,
+        )
+        self.assertLess(before_start, start)
+        self.assertEqual(remaining_written_seconds(start, 60, before_start), 0)
 
     def test_employee_screen_has_no_correctness_or_internal_fields(self) -> None:
         self.assertNotIn("is_correct", WrittenQuestionCard.__dataclass_fields__)
@@ -782,6 +818,117 @@ class ElectronicWrittenExamTestCase(unittest.TestCase):
             WRITTEN_FINISHED_TEXT,
         )
         self.assertFalse(window.findChild(QRadioButton, "written-exam-answer-A").isVisible())
+
+    def test_clock_before_start_expires_and_keeps_saved_choice(self) -> None:
+        employee = _employee("81011", "Rita", "Zpět")
+        _topic, test = _written_test("Před startem", ["První", "Druhá"], seconds=60)
+        exam = _prepare(employee.id, test.id)
+        written_exam_service.start(exam.id, now=_STARTED)
+        screen = written_exam_service.screen(exam.id)
+        first = screen.questions[0]
+        saved_at = _STARTED + timedelta(seconds=15)
+        written_exam_service.save_choice(
+            exam.id,
+            first.exam_question_id,
+            first.options[0].exam_answer_id,
+            now=saved_at,
+        )
+        with self.assertRaises(WrittenExamClosed):
+            written_exam_service.save_choice(
+                exam.id,
+                screen.questions[1].exam_question_id,
+                screen.questions[1].options[0].exam_answer_id,
+                now=_STARTED - timedelta(seconds=30),
+            )
+        finished = test_exam_service.get_exam(exam.id)
+        assert finished is not None
+        self.assertEqual(finished.written_finish_reason, "expired")
+        self.assertEqual(finished.written_started_at, _STARTED)
+        self.assertEqual(finished.written_finished_at, _STARTED)
+        self.assertEqual(finished.status, EXAM_STATUS_COMPLETED)
+        stored = written_exam_service.choices(exam.id)
+        self.assertEqual(len(stored), 1)
+        self.assertEqual(stored[0].exam_question_id, first.exam_question_id)
+        self.assertEqual(stored[0].exam_answer_id, first.options[0].exam_answer_id)
+        self.assertGreaterEqual(stored[0].saved_at, saved_at)
+
+    def test_small_clock_rollback_does_not_extend_limit(self) -> None:
+        employee = _employee("81012", "Sara", "Krok")
+        _topic, test = _written_test("Malý posun", ["Otázka"], seconds=60)
+        exam = _prepare(employee.id, test.id)
+        clock = FixedWrittenExamClock(_STARTED + timedelta(seconds=20))
+        written_exam_service.start(exam.id, now=_STARTED)
+        window = self._watch(WrittenExamWindow(exam.id, clock=clock))
+        window.show_at(1280, 800)
+        self.assertEqual(window.remaining_label.text(), "Zbývá: 00:40")
+        question = written_exam_service.screen(exam.id).questions[0]
+        window.findChild(QRadioButton, f"written-exam-answer-{question.options[0].letter}").click()
+        stored = written_exam_service.choices(exam.id)
+        self.assertEqual(len(stored), 1)
+        self.assertGreaterEqual(stored[0].saved_at, _STARTED + timedelta(seconds=20))
+        clock.set(_STARTED + timedelta(seconds=12))
+        window._on_tick()
+        self.assertNotEqual(window.remaining_label.text(), "Zbývá: 00:48")
+        minutes, seconds = window.remaining_label.text().removeprefix("Zbývá: ").split(":")
+        self.assertLessEqual(int(minutes) * 60 + int(seconds), 40)
+        fresh = test_exam_service.get_exam(exam.id)
+        assert fresh is not None
+        self.assertEqual(fresh.written_finish_reason, "")
+        self.assertEqual(fresh.written_started_at, _STARTED)
+        again = written_exam_service.choices(exam.id)
+        self.assertEqual(len(again), 1)
+        self.assertGreaterEqual(again[0].saved_at, stored[0].saved_at)
+
+    def test_resume_before_start_expires_without_new_limit(self) -> None:
+        employee = _employee("81013", "Tereza", "Obnova")
+        _topic, test = _written_test("Obnova", ["Jedna", "Dvě"], seconds=60)
+        exam = _prepare(employee.id, test.id)
+        written_exam_service.start(exam.id, now=_STARTED)
+        screen = written_exam_service.screen(exam.id)
+        first = screen.questions[0]
+        written_exam_service.save_choice(
+            exam.id,
+            first.exam_question_id,
+            first.options[0].exam_answer_id,
+            now=_STARTED + timedelta(seconds=10),
+        )
+        _running_clocks.clear()
+        reason = written_exam_service.resume(exam.id, now=_STARTED - timedelta(minutes=5))
+        self.assertEqual(reason, "expired")
+        finished = test_exam_service.get_exam(exam.id)
+        assert finished is not None
+        self.assertEqual(finished.written_started_at, _STARTED)
+        self.assertEqual(finished.written_finished_at, _STARTED)
+        self.assertEqual(finished.written_finish_reason, "expired")
+        self.assertEqual(len(written_exam_service.choices(exam.id)), 1)
+        with self.assertRaises(WrittenExamClosed):
+            written_exam_service.save_choice(
+                exam.id,
+                screen.questions[1].exam_question_id,
+                screen.questions[1].options[0].exam_answer_id,
+                now=_STARTED + timedelta(seconds=5),
+            )
+        self.assertEqual(len(written_exam_service.choices(exam.id)), 1)
+
+        employee_b = _employee("81014", "Uma", "Pokračuje")
+        _topic_b, test_b = _written_test("Pokračování", ["Otázka"], seconds=60)
+        open_exam = _prepare(employee_b.id, test_b.id)
+        written_exam_service.start(open_exam.id, now=_STARTED)
+        _running_clocks.clear()
+        continued_at = _STARTED + timedelta(seconds=8)
+        self.assertEqual(written_exam_service.resume(open_exam.id, now=continued_at), "")
+        self.assertEqual(
+            test_exam_service.get_exam(open_exam.id).written_started_at,
+            _STARTED,
+        )
+        self.assertEqual(
+            remaining_written_seconds(_STARTED, 60, continued_at),
+            52,
+        )
+        self.assertLess(
+            remaining_written_seconds(_STARTED, 60, continued_at),
+            60,
+        )
 
     def test_escape_and_close_do_not_leave_testing_mode(self) -> None:
         employee = _employee("81009", "Ota", "Zámek")
