@@ -3,7 +3,10 @@
 Stejná pravidla pro zadání i odpovědi A/B/C. Originální soubor uživatele
 se jen čte. Výsledek je nový soubor v předaném adresáři.
 
-Formáty odpovídají PhotoPickerDialog: jpg, jpeg, png, webp, heic, heif.
+Každý přijatý obrázek se dekóduje a znovu zakóduje. Do uloženého souboru
+se nedostanou původní bajty, EXIF, GPS, komentáře ani data za koncem
+obrázku. Formáty odpovídají PhotoPickerDialog: jpg, jpeg, png, webp,
+heic, heif.
 """
 
 from __future__ import annotations
@@ -97,14 +100,9 @@ def normalize_written_image(
     limit = max(1, int(max_stored_bytes))
     signature = _file_signature(file_path)
     suffix = file_path.suffix.lower()
-    image, copy_bytes = _load_for_storage(file_path, limit)
+    image = _decode_pixels(file_path)
     _assert_unchanged(file_path, signature)
-
-    if copy_bytes:
-        data, suffix = file_path.read_bytes(), suffix
-        _assert_unchanged(file_path, signature)
-    else:
-        data, suffix = _encode(image, suffix, limit)
+    data, suffix = _encode(image, suffix, limit)
     destination_dir = Path(destination_dir)
     destination_dir.mkdir(parents=True, exist_ok=True)
     target = destination_dir / f"written-{uuid.uuid4().hex}{suffix}"
@@ -134,50 +132,56 @@ def _assert_unchanged(path: Path, signature: tuple[int, int]) -> None:
         raise WrittenImageError(IMAGE_LOAD_FAILED)
 
 
-def _load_for_storage(path: Path, limit: int) -> tuple[Image.Image, bool]:
-    """Vrátí obraz a příznak, že stačí zkopírovat původní bajty."""
+def _decode_pixels(path: Path) -> Image.Image:
+    """Složí jen obrazové body. Metadata ani bajty za koncem souboru nevrací."""
     try:
         with Image.open(path) as opened:
-            orientation = _orientation_value(opened)
-            has_gps = _has_gps(opened)
             transposed = ImageOps.exif_transpose(opened) or opened
             transposed.load()
-            image = transposed.copy()
+            image = _pixels_only(transposed)
     except Exception as exc:
         raise WrittenImageError(IMAGE_LOAD_FAILED) from exc
     width, height = fit_within_box(image.width, image.height)
-    needs_resize = (width, height) != (image.width, image.height)
-    if needs_resize:
+    if (width, height) != (image.width, image.height):
         image = image.resize((width, height), Image.Resampling.LANCZOS)
-    suffix = path.suffix.lower()
-    copy_bytes = (
-        not needs_resize
-        and orientation in {None, 1}
-        and not has_gps
-        and suffix in {".jpg", ".jpeg", ".png", ".webp"}
-        and path.stat().st_size <= limit
-    )
-    return image, copy_bytes
+    return image
 
 
-def _orientation_value(image: Image.Image) -> int | None:
+def _pixels_only(image: Image.Image) -> Image.Image:
+    """Nový obrázek bez EXIF, komentářů, profilu a ostatních metadat."""
+    prepared = _apply_embedded_profile(image)
+    if _needs_alpha(prepared):
+        raster = prepared.convert("RGBA")
+    elif prepared.mode in {"RGB", "L"}:
+        raster = prepared
+    else:
+        raster = prepared.convert("RGB")
+    return Image.frombytes(raster.mode, raster.size, raster.tobytes())
+
+
+def _needs_alpha(image: Image.Image) -> bool:
+    return image.mode in {"RGBA", "LA", "PA", "RGBa"} or "transparency" in image.info
+
+
+def _apply_embedded_profile(image: Image.Image) -> Image.Image:
+    profile = image.info.get("icc_profile")
+    if not profile:
+        return image
     try:
-        value = image.getexif().get(274)
+        from PIL import ImageCms
+
+        source = ImageCms.ImageCmsProfile(io.BytesIO(profile))
+        target = ImageCms.createProfile("sRGB")
+        output_mode = "RGBA" if _needs_alpha(image) else "RGB"
+        converted = ImageCms.profileToProfile(
+            image,
+            source,
+            target,
+            outputMode=output_mode,
+        )
     except Exception:
-        return None
-    if value in {None, ""}:
-        return None
-    try:
-        return int(value)
-    except (TypeError, ValueError):
-        return None
-
-
-def _has_gps(image: Image.Image) -> bool:
-    try:
-        return bool(image.getexif().get_ifd(0x8825))
-    except Exception:
-        return False
+        return image
+    return converted or image
 
 
 def _encode(image: Image.Image, suffix: str, limit: int) -> tuple[bytes, str]:

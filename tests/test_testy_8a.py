@@ -291,8 +291,12 @@ class WrittenImageNormalizationTestCase(unittest.TestCase):
             self.assertLessEqual(result.byte_size, MAX_STORED_BYTES)
             self.assertEqual(path.read_bytes(), original)
             if source_size[0] <= 800 and source_size[1] <= 600:
-                self.assertEqual(result.path.read_bytes(), original)
                 self.assertEqual(result.path.suffix, ".png")
+                with Image.open(path) as source_image, Image.open(result.path) as stored_image:
+                    self.assertEqual(
+                        list(stored_image.get_flattened_data()),
+                        list(source_image.get_flattened_data()),
+                    )
 
     def test_wide_and_tall_ratios_survive_storage(self) -> None:
         wide = _save_image(self.images / "siroky.jpg", (1200, 600), "JPEG", quality=90)
