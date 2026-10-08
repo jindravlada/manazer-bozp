@@ -35,7 +35,11 @@ from moduly.testy.constants import (
     WRITTEN_SUBMIT_CONFIRM,
     WRITTEN_SUBMIT_INCOMPLETE,
 )
-from moduly.testy.sluzby.test_exam_service import TestExamError, test_exam_service
+from moduly.testy.sluzby.test_exam_service import (
+    TestExamError,
+    snapshot_image_notice,
+    test_exam_service,
+)
 from moduly.testy.sluzby.written_exam_service import (
     WrittenExamClock,
     WrittenExamClosed,
@@ -452,6 +456,7 @@ class WrittenExamWindow(QDialog):
         )
         picture = self._image_label(
             question.image_stored_path,
+            question.image_sha256,
             _QUESTION_IMAGE_WITH_ROW_MAX if image_row else _QUESTION_IMAGE_MAX,
             "written-exam-question-image",
         )
@@ -509,6 +514,7 @@ class WrittenExamWindow(QDialog):
                 detail.addWidget(caption)
             image = self._image_label(
                 option.image_stored_path,
+                option.image_sha256,
                 answer_max,
                 f"written-exam-answer-image-{option.letter}",
                 radio,
@@ -535,15 +541,24 @@ class WrittenExamWindow(QDialog):
     def _image_label(
         self,
         relative_path: str,
+        expected_sha256: str,
         max_size: tuple[int, int],
         object_name: str,
         radio: QRadioButton | None = None,
     ) -> QLabel | None:
-        path = test_exam_service.resolve_snapshot_image(relative_path)
-        if path is None:
+        loaded = test_exam_service.load_snapshot_image(relative_path, expected_sha256)
+        notice = snapshot_image_notice(loaded.status)
+        if notice:
+            label = _SelectLabel(radio) if radio is not None else QLabel()
+            label.setTextFormat(Qt.TextFormat.PlainText)
+            label.setWordWrap(True)
+            label.setText(notice)
+            label.setObjectName(f"{object_name}-notice")
+            return label
+        if not loaded.data:
             return None
-        pixmap = QPixmap(str(path))
-        if pixmap.isNull():
+        pixmap = QPixmap()
+        if not pixmap.loadFromData(loaded.data):
             return None
         label = _SelectLabel(radio) if radio is not None else QLabel()
         label.setObjectName(object_name)

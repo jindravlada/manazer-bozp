@@ -56,6 +56,7 @@ class WrittenAnswerOption:
     letter: str
     text: str
     image_stored_path: str
+    image_sha256: str
 
 
 @dataclass(frozen=True)
@@ -64,6 +65,7 @@ class WrittenQuestionCard:
     position: int
     text: str
     image_stored_path: str
+    image_sha256: str
     options: tuple[WrittenAnswerOption, ...]
     selected_exam_answer_id: int | None
 
@@ -522,6 +524,7 @@ class WrittenExamService:
                         letter=answer.letter,
                         text=answer.text or "",
                         image_stored_path=answer.image_stored_path or "",
+                        image_sha256=answer.image_sha256 or "",
                     )
                     for answer in self._answers(session, question.id)
                 )
@@ -532,6 +535,7 @@ class WrittenExamService:
                         position=int(question.position),
                         text=question.text,
                         image_stored_path=question.image_stored_path or "",
+                        image_sha256=question.image_sha256 or "",
                         options=options,
                         selected_exam_answer_id=(
                             int(choice.exam_answer_id) if choice is not None else None

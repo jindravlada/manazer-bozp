@@ -4,7 +4,11 @@ from __future__ import annotations
 
 import calendar
 import hashlib
+import hmac
+import os
 import random
+import stat
+from dataclasses import dataclass
 from datetime import date, datetime
 from pathlib import Path
 
@@ -50,6 +54,60 @@ from moduly.testy.sluzby.written_question_service import written_question_servic
 from moduly.testy.sluzby.written_question_topic_service import (
     written_question_topic_service,
 )
+
+
+SNAPSHOT_IMAGE_OK = "ok"
+SNAPSHOT_IMAGE_ABSENT = "absent"
+SNAPSHOT_IMAGE_MISMATCH = "mismatch"
+SNAPSHOT_IMAGE_UNVERIFIED = "unverified"
+SNAPSHOT_IMAGE_INTEGRITY_NOTICE = (
+    "Obrázek nebylo možné bezpečně zobrazit kvůli chybě integrity."
+)
+SNAPSHOT_IMAGE_UNVERIFIED_NOTICE = (
+    "Obrázek ze starší zkoušky nelze ověřit, proto se nezobrazuje."
+)
+
+
+@dataclass(frozen=True)
+class SnapshotImage:
+    """Bajty, jejichž otisk byl porovnán. Jinak se obrázek použít nesmí."""
+
+    status: str
+    data: bytes | None = None
+
+
+def snapshot_image_notice(status: str) -> str:
+    """Text pro uživatele. Bez cesty k souboru a bez technických detailů."""
+    if status == SNAPSHOT_IMAGE_MISMATCH:
+        return SNAPSHOT_IMAGE_INTEGRITY_NOTICE
+    if status == SNAPSHOT_IMAGE_UNVERIFIED:
+        return SNAPSHOT_IMAGE_UNVERIFIED_NOTICE
+    return ""
+
+
+def _sha256_matches(data: bytes, expected: str) -> bool:
+    if len(expected) != 64 or any(char not in "0123456789abcdef" for char in expected):
+        return False
+    actual = hashlib.sha256(data).hexdigest()
+    return hmac.compare_digest(actual, expected)
+
+
+def _read_snapshot_bytes(path: Path) -> bytes:
+    """Jedno čtení běžného souboru. Symbolický odkaz se nesleduje."""
+    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
+    try:
+        info = os.fstat(fd)
+        if not stat.S_ISREG(info.st_mode):
+            raise FileNotFoundError(path)
+        chunks: list[bytes] = []
+        while True:
+            block = os.read(fd, 1024 * 1024)
+            if not block:
+                break
+            chunks.append(block)
+        return b"".join(chunks)
+    finally:
+        os.close(fd)
 
 
 class TestExamError(ValueError):
@@ -626,12 +684,8 @@ class TestExamService:
         Poškozená, absolutní nebo úniková cesta zkoušku ani export neshodí.
         Soubor mimo spravované úložiště se neotevře.
         """
-        text = str(relative_path or "").strip()
-        if not text:
-            return None
-        try:
-            path = storage_service.attachment_absolute(text)
-        except ValueError:
+        path = self._confined_snapshot_path(relative_path)
+        if path is None:
             return None
         try:
             if not path.is_file():
@@ -639,6 +693,41 @@ class TestExamService:
         except OSError:
             return None
         return path
+
+    def load_snapshot_image(
+        self,
+        relative_path: str | None,
+        expected_sha256: str | None,
+    ) -> "SnapshotImage":
+        """Ověřené bajty zmrazeného obrázku.
+
+        Čte soubor jen jednou a jen z příloh. Zobrazení i export smí použít
+        výhradně vrácené bajty. Chybějící otisk se do databáze nedoplňuje.
+        """
+        path = self._confined_snapshot_path(relative_path)
+        if path is None:
+            return SnapshotImage(SNAPSHOT_IMAGE_ABSENT)
+        try:
+            data = _read_snapshot_bytes(path)
+        except FileNotFoundError:
+            return SnapshotImage(SNAPSHOT_IMAGE_ABSENT)
+        except OSError:
+            return SnapshotImage(SNAPSHOT_IMAGE_ABSENT)
+        expected = str(expected_sha256 or "").strip().lower()
+        if not expected:
+            return SnapshotImage(SNAPSHOT_IMAGE_UNVERIFIED)
+        if not _sha256_matches(data, expected):
+            return SnapshotImage(SNAPSHOT_IMAGE_MISMATCH)
+        return SnapshotImage(SNAPSHOT_IMAGE_OK, data)
+
+    def _confined_snapshot_path(self, relative_path: str | None) -> Path | None:
+        text = str(relative_path or "").strip()
+        if not text:
+            return None
+        try:
+            return storage_service.attachment_absolute(text)
+        except ValueError:
+            return None
 
     def _plan_written(self, test_id: int, rng) -> list[dict]:
         pools = []

@@ -38,8 +38,8 @@ from moduly.testy.sluzby.paper_test_export_service import (
     _QUESTION_MAX_W_CM,
     _QUESTION_MIN_W_CM,
     _filename,
-    _frame_for,
     _identity_line,
+    _snapshot_picture_xml,
     _labeled,
     _odt_path,
     _odt_text,
@@ -189,24 +189,22 @@ def render_written_error_listing(blocks, choices, temp_dir: Path) -> tuple[str, 
 
 def _error_question_block(question, answers, selected, temp_dir, images, image_index):
     image_answers = question.answer_kind == ANSWER_KIND_IMAGE
-    prompt_path = test_exam_service.resolve_snapshot_image(question.image_stored_path)
-    has_prompt = prompt_path is not None
+    prompt_xml, image_index, has_prompt = _snapshot_picture_xml(
+        question.image_stored_path,
+        question.image_sha256,
+        temp_dir,
+        images,
+        image_index,
+        max_w=_QUESTION_MAX_W_CM,
+        max_h=_QUESTION_MAX_H_WITH_CHOICES_CM if image_answers else _QUESTION_MAX_H_CM,
+        min_w=_QUESTION_MIN_W_CM,
+    )
     bits = [
         f'<text:p text:style-name="WrittenQuestion">'
         f"{int(question.position)}. {_odt_text(question.text)}</text:p>"
     ]
-    if has_prompt and prompt_path is not None:
-        frame, image_index = _frame_for(
-            prompt_path,
-            temp_dir,
-            images,
-            image_index,
-            max_w=_QUESTION_MAX_W_CM,
-            max_h=_QUESTION_MAX_H_WITH_CHOICES_CM if image_answers else _QUESTION_MAX_H_CM,
-            min_w=_QUESTION_MIN_W_CM,
-        )
-        if frame:
-            bits.append(f'<text:p text:style-name="WrittenImageLine">{frame}</text:p>')
+    if prompt_xml:
+        bits.append(prompt_xml)
     if selected is None:
         bits.append(_toned_paragraph("WrittenAnswer", UNANSWERED_ERROR, TONE_ERROR))
     if image_answers:
@@ -239,19 +237,16 @@ def _toned_choice_images(question, answers, selected, temp_dir, images, image_in
     cells = []
     for answer in answers:
         caption, tone = present_answer(question, answer, selected, evaluated=True)
-        frame = ""
-        path = test_exam_service.resolve_snapshot_image(answer.image_stored_path)
-        if path is not None:
-            frame, image_index = _frame_for(
-                path,
-                temp_dir,
-                images,
-                image_index,
-                max_w=_ANSWER_MAX_W_CM,
-                max_h=max_h,
-                min_w=_ANSWER_MIN_W_CM,
-            )
-        image_xml = f'<text:p text:style-name="WrittenImageLine">{frame}</text:p>' if frame else ""
+        image_xml, image_index, _embedded = _snapshot_picture_xml(
+            answer.image_stored_path,
+            answer.image_sha256,
+            temp_dir,
+            images,
+            image_index,
+            max_w=_ANSWER_MAX_W_CM,
+            max_h=max_h,
+            min_w=_ANSWER_MIN_W_CM,
+        )
         cells.append(
             '<table:table-cell table:style-name="WrittenBlockCell" office:value-type="string">'
             f"{_toned_paragraph('WrittenChoiceLabel', caption, tone)}"

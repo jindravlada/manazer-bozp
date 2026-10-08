@@ -37,7 +37,12 @@ from moduly.testy.sluzby.exam_protocol_layout import (
     protocol_people,
     render_paper_protocol_xml,
 )
-from moduly.testy.sluzby.test_exam_service import TestExamError, test_exam_service
+from moduly.testy.sluzby.test_exam_service import (
+    SNAPSHOT_IMAGE_OK,
+    TestExamError,
+    snapshot_image_notice,
+    test_exam_service,
+)
 
 _TEMPLATE_SUBDIR = "exporty"
 _TEST_TEMPLATE = "PisemnyTest.odt"
@@ -440,30 +445,26 @@ def _questions_fragment(
     last_index = len(blocks) - 1
     for index, (question, answers) in enumerate(blocks):
         image_answers = question.answer_kind == ANSWER_KIND_IMAGE
-        prompt_path = test_exam_service.resolve_snapshot_image(question.image_stored_path)
-        has_prompt = prompt_path is not None
+        prompt_xml, image_index, has_prompt = _snapshot_picture_xml(
+            question.image_stored_path,
+            question.image_sha256,
+            temp_dir,
+            images,
+            image_index,
+            max_w=_QUESTION_MAX_W_CM,
+            max_h=(
+                _QUESTION_MAX_H_WITH_CHOICES_CM
+                if image_answers
+                else _QUESTION_MAX_H_CM
+            ),
+            min_w=_QUESTION_MIN_W_CM,
+        )
         xml_bits: list[str] = [
             f'<text:p text:style-name="WrittenQuestion">'
             f"{int(question.position)}. {_odt_text(question.text)}</text:p>"
         ]
-        if has_prompt and prompt_path is not None:
-            frame, image_index = _frame_for(
-                prompt_path,
-                temp_dir,
-                images,
-                image_index,
-                max_w=_QUESTION_MAX_W_CM,
-                max_h=(
-                    _QUESTION_MAX_H_WITH_CHOICES_CM
-                    if image_answers
-                    else _QUESTION_MAX_H_CM
-                ),
-                min_w=_QUESTION_MIN_W_CM,
-            )
-            if frame:
-                xml_bits.append(
-                    f'<text:p text:style-name="WrittenImageLine">{frame}</text:p>'
-                )
+        if prompt_xml:
+            xml_bits.append(prompt_xml)
         if image_answers:
             choice_xml, image_index = _choice_images_table(
                 answers,
@@ -509,20 +510,15 @@ def _choice_images_table(
     cells: list[str] = []
     ordered = sorted(answers, key=lambda item: (item.position, item.id))
     for answer in ordered:
-        frame = ""
-        path = test_exam_service.resolve_snapshot_image(answer.image_stored_path)
-        if path is not None:
-            frame, image_index = _frame_for(
-                path,
-                temp_dir,
-                images,
-                image_index,
-                max_w=_ANSWER_MAX_W_CM,
-                max_h=max_h,
-                min_w=_ANSWER_MIN_W_CM,
-            )
-        image_xml = (
-            f'<text:p text:style-name="WrittenImageLine">{frame}</text:p>' if frame else ""
+        image_xml, image_index, _embedded = _snapshot_picture_xml(
+            answer.image_stored_path,
+            answer.image_sha256,
+            temp_dir,
+            images,
+            image_index,
+            max_w=_ANSWER_MAX_W_CM,
+            max_h=max_h,
+            min_w=_ANSWER_MIN_W_CM,
         )
         cells.append(
             '<table:table-cell table:style-name="WrittenBlockCell" office:value-type="string">'
@@ -538,6 +534,51 @@ def _choice_images_table(
         "</table:table-row></table:table>"
     )
     return xml, image_index
+
+
+def _snapshot_picture_xml(
+    relative_path: str | None,
+    expected_sha256: str | None,
+    temp_dir: Path,
+    images: list[tuple[str, Path]],
+    image_index: int,
+    *,
+    max_w: float,
+    max_h: float,
+    min_w: float,
+) -> tuple[str, int, bool]:
+    """Odstavec s ověřenými bajty, upozornění, nebo prázdný řetězec."""
+    loaded = test_exam_service.load_snapshot_image(relative_path, expected_sha256)
+    notice = snapshot_image_notice(loaded.status)
+    if notice:
+        return (
+            f'<text:p text:style-name="WrittenAnswer">{_odt_text(notice)}</text:p>',
+            image_index,
+            False,
+        )
+    if loaded.status != SNAPSHOT_IMAGE_OK or not loaded.data:
+        return "", image_index, False
+    suffix = Path(str(relative_path or "")).suffix.lower()
+    if suffix not in _EMBED_SUFFIXES:
+        suffix = ".png"
+    copy = temp_dir / f"verified_{image_index:03d}{suffix}"
+    copy.write_bytes(loaded.data)
+    frame, image_index = _frame_for(
+        copy,
+        temp_dir,
+        images,
+        image_index,
+        max_w=max_w,
+        max_h=max_h,
+        min_w=min_w,
+    )
+    if not frame:
+        return "", image_index, False
+    return (
+        f'<text:p text:style-name="WrittenImageLine">{frame}</text:p>',
+        image_index,
+        True,
+    )
 
 
 def _frame_for(

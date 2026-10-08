@@ -53,7 +53,12 @@ from moduly.testy.sluzby.exam_signed_protocol_service import (
     exam_signed_protocol_service,
 )
 from moduly.testy.sluzby.test_definition_service import format_test_duration
-from moduly.testy.sluzby.test_exam_service import TestExamError, format_exam_date, test_exam_service
+from moduly.testy.sluzby.test_exam_service import (
+    TestExamError,
+    format_exam_date,
+    snapshot_image_notice,
+    test_exam_service,
+)
 from moduly.testy.sluzby.written_answer_presentation import (
     UNANSWERED_ERROR,
     present_answer,
@@ -395,9 +400,13 @@ class TestExamDetailDialog(QDialog):
             title.setWordWrap(True)
             title.setObjectName(f"written-text-{question.position}")
             layout.addWidget(title)
-            image = self._image_label(question.image_stored_path, 280)
+            image = self._image_label(
+                question.image_stored_path,
+                question.image_sha256,
+                280,
+                f"written-image-{question.position}",
+            )
             if image is not None:
-                image.setObjectName(f"written-image-{question.position}")
                 layout.addWidget(image)
             answers = test_exam_service.get_written_answers(question.id)
             selected = None
@@ -425,11 +434,13 @@ class TestExamDetailDialog(QDialog):
                     text.setStyleSheet(style)
                 layout.addWidget(text)
                 if question.answer_kind == ANSWER_KIND_IMAGE:
-                    picture = self._image_label(answer.image_stored_path, 160)
+                    picture = self._image_label(
+                        answer.image_stored_path,
+                        answer.image_sha256,
+                        160,
+                        f"answer-image-{question.position}-{answer.letter}",
+                    )
                     if picture is not None:
-                        picture.setObjectName(
-                            f"answer-image-{question.position}-{answer.letter}"
-                        )
                         layout.addWidget(picture)
             self.written_layout.addWidget(block)
 
@@ -447,14 +458,27 @@ class TestExamDetailDialog(QDialog):
             label.setObjectName(f"oral-text-{question.position}")
             self.oral_layout.addWidget(label)
 
-    def _image_label(self, relative_path: str, width: int) -> QLabel | None:
-        path = test_exam_service.resolve_snapshot_image(relative_path)
-        if path is None:
-            return None
-        pixmap = QPixmap(str(path))
-        if pixmap.isNull():
-            return None
+    def _image_label(
+        self,
+        relative_path: str,
+        expected_sha256: str,
+        width: int,
+        object_name: str,
+    ) -> QLabel | None:
+        loaded = test_exam_service.load_snapshot_image(relative_path, expected_sha256)
+        notice = snapshot_image_notice(loaded.status)
         label = QLabel()
+        label.setObjectName(object_name if not notice else f"{object_name}-notice")
+        if notice:
+            label.setTextFormat(Qt.TextFormat.PlainText)
+            label.setWordWrap(True)
+            label.setText(notice)
+            return label
+        if not loaded.data:
+            return None
+        pixmap = QPixmap()
+        if not pixmap.loadFromData(loaded.data):
+            return None
         label.setPixmap(
             pixmap.scaledToWidth(width, Qt.TransformationMode.SmoothTransformation)
         )
