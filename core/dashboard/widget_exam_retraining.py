@@ -1,13 +1,13 @@
-"""Panel souhrnu přezkoušení na pracovní ploše."""
+"""Dlaždice souhrnu přezkoušení na pracovní ploše."""
 
 from __future__ import annotations
 
 from datetime import date, datetime, time, timedelta
 
 from PySide6.QtCore import QTimer, Qt
-from PySide6.QtWidgets import QHBoxLayout
+from PySide6.QtWidgets import QHBoxLayout, QSizePolicy, QWidget
 
-from core.dashboard.widget_base import DashboardCard, DashboardPanel
+from core.dashboard.widget_base import DashboardCard
 from core.theme.status_colors import (
     STATUS_DONE_TEXT,
     STATUS_MISSING_TEXT,
@@ -15,7 +15,6 @@ from core.theme.status_colors import (
 )
 from moduly.testy.constants import MODULE_KEY
 
-PANEL_TITLE = "Přezkoušení zaměstnanců"
 LABEL_VALID = "Platné"
 LABEL_EXPIRING = "Končí do 30 dnů"
 LABEL_EXPIRED = "Po platnosti"
@@ -40,7 +39,9 @@ class _IndicatorCard(DashboardCard):
         super().__init__(title, "0", "")
         self._on_click = on_click
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.title_label.setStyleSheet(f"color: {color}; font-weight: 700;")
+        self.title_label.setStyleSheet(
+            f"color: {color}; font-size: 11px; font-weight: 700;"
+        )
         self.value_label.setStyleSheet(
             f"color: {color}; font-size: 28px; font-weight: 800;"
         )
@@ -53,20 +54,20 @@ class _IndicatorCard(DashboardCard):
         super().mouseReleaseEvent(event)
 
 
-class ExamRetrainingWidget(DashboardPanel):
-    """Čtyři číselné ukazatele. Klik otevře Testy → Platnost zkoušek."""
+class ExamRetrainingWidget(QWidget):
+    """Čtyři dlaždice přezkoušení. Klik na dlaždici otevře Platnost zkoušek."""
 
     def __init__(self, open_callback=None) -> None:
-        super().__init__(PANEL_TITLE)
+        super().__init__()
         self.open_callback = open_callback
         self.today_override: date | None = None
         self._loaded_day: date | None = None
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.title_label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        self.setMinimumWidth(0)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
 
-        row = QHBoxLayout()
+        row = QHBoxLayout(self)
         row.setContentsMargins(0, 0, 0, 0)
-        row.setSpacing(12)
+        row.setSpacing(8)
         self.valid_card = _IndicatorCard(LABEL_VALID, STATUS_DONE_TEXT, self._open)
         self.expiring_card = _IndicatorCard(LABEL_EXPIRING, STATUS_ORANGE_TEXT, self._open)
         self.expired_card = _IndicatorCard(LABEL_EXPIRED, STATUS_MISSING_TEXT, self._open)
@@ -78,17 +79,11 @@ class ExamRetrainingWidget(DashboardPanel):
             self.unfinished_card,
         ):
             row.addWidget(card, 1)
-        self.layout.addLayout(row)
 
         self._day_timer = QTimer(self)
         self._day_timer.setSingleShot(True)
         self._day_timer.timeout.connect(self.refresh)
         self.refresh()
-
-    def mouseReleaseEvent(self, event) -> None:  # noqa: N802
-        if event.button() == Qt.MouseButton.LeftButton:
-            self._open()
-        super().mouseReleaseEvent(event)
 
     def showEvent(self, event) -> None:  # noqa: N802
         super().showEvent(event)

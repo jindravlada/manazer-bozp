@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QPushButton,
     QScrollArea,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -94,6 +95,10 @@ class DashboardPage(QWidget):
                 color: #174a8b;
             }
 
+            QLabel#DashboardCardTitle {
+                font-size: 11px;
+            }
+
             QLabel#DashboardCardValue {
                 font-size: 28px;
                 font-weight: 800;
@@ -101,6 +106,13 @@ class DashboardPage(QWidget):
 
             QLabel#DashboardCardSubtitle {
                 color: #666;
+                font-size: 11px;
+            }
+
+            QFrame#IndicatorSeparator {
+                background: #d6dce5;
+                border: none;
+                border-radius: 0px;
             }
 
             QPushButton#QuickButton {
@@ -138,12 +150,18 @@ class DashboardPage(QWidget):
         layout.addLayout(top_row)
 
         self.summary = SummaryWidget()
-        layout.addWidget(self.summary)
-
+        self.exam_separator = self._create_indicator_separator()
         self.exam_retraining = ExamRetrainingWidget(
             open_callback=self.open_exam_validity_callback,
         )
-        layout.addWidget(self.exam_retraining)
+        indicators = QHBoxLayout()
+        indicators.setContentsMargins(0, 0, 0, 0)
+        indicators.setSpacing(14)
+        indicators.addWidget(self.summary, 1)
+        indicators.addWidget(self.exam_separator, 0)
+        indicators.addWidget(self.exam_retraining, 1)
+        layout.addLayout(indicators)
+        self._sync_indicator_halves()
 
         grid = QGridLayout()
         grid.setSpacing(14)
@@ -250,6 +268,17 @@ class DashboardPage(QWidget):
         layout.addWidget(text_section, 1, Qt.AlignmentFlag.AlignTop)
 
         return header
+
+    def _create_indicator_separator(self) -> QFrame:
+        line = QFrame()
+        line.setObjectName("IndicatorSeparator")
+        line.setFixedWidth(1)
+        line.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
+        return line
+
+    def _sync_indicator_halves(self) -> None:
+        tests_visible = not self.exam_retraining.isHidden()
+        self.exam_separator.setVisible(tests_visible)
 
     def _create_vertical_separator(self) -> QFrame:
         line = QFrame()
@@ -365,3 +394,4 @@ class DashboardPage(QWidget):
         ]:
             if hasattr(widget, "refresh"):
                 widget.refresh()
+        self._sync_indicator_halves()

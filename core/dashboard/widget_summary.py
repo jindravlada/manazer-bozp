@@ -1,6 +1,6 @@
 from datetime import date
 
-from PySide6.QtWidgets import QHBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QSizePolicy, QWidget
 
 from core.dashboard.attention_service import count_overdue_attention_items
 from core.dashboard.widget_base import DashboardCard
@@ -13,19 +13,22 @@ class SummaryWidget(QWidget):
     def __init__(self):
         super().__init__()
 
+        self.setMinimumWidth(0)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(12)
+        layout.setSpacing(8)
 
         self.overdue = DashboardCard("🔴 Po termínu", "0", OVERDUE_CARD_SUBTITLE)
         self.today = DashboardCard("🔵 Dnes", "0", "úkoly na dnes")
         self.waiting = DashboardCard("🟡 Čeká kontrolu", "0", "splněno, čeká na ověření")
         self.open_total = DashboardCard("📋 Otevřeno", "0", "celkem otevřených úkolů")
 
-        layout.addWidget(self.overdue)
-        layout.addWidget(self.today)
-        layout.addWidget(self.waiting)
-        layout.addWidget(self.open_total)
+        layout.addWidget(self.overdue, 1)
+        layout.addWidget(self.today, 1)
+        layout.addWidget(self.waiting, 1)
+        layout.addWidget(self.open_total, 1)
 
         self.refresh()
 

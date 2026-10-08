@@ -11,7 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QShowEvent
+from PySide6.QtGui import QFontMetrics, QShowEvent
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication
 from sqlalchemy import delete
@@ -41,7 +41,6 @@ with patch.object(Path, "home", return_value=_TMP):
         LABEL_EXPIRING,
         LABEL_UNFINISHED,
         LABEL_VALID,
-        PANEL_TITLE,
         UNFINISHED_TEXT,
         ExamRetrainingWidget,
         is_testy_module_enabled,
@@ -256,20 +255,40 @@ class ExamRetrainingDashboardTests(_ExamData, unittest.TestCase):
     def setUpClass(cls) -> None:
         cls._app = QApplication.instance() or QApplication([])
 
-    def test_panel_shows_four_colored_indicators(self) -> None:
-        page = DashboardPage()
-        page.show()
-        QApplication.processEvents()
+    def test_eight_tiles_share_one_row(self) -> None:
+        page = self._shown_page(1100, 720)
         panel = page.exam_retraining
         panel.today_override = TODAY
         panel.refresh()
-        self.assertEqual(panel.title_label.text(), PANEL_TITLE)
-        self.assertTrue(panel.isVisible())
-        self.assertFalse(panel.isHidden())
-        self.assertEqual(panel.valid_card.title_label.text(), LABEL_VALID)
-        self.assertEqual(panel.expiring_card.title_label.text(), LABEL_EXPIRING)
-        self.assertEqual(panel.expired_card.title_label.text(), LABEL_EXPIRED)
-        self.assertEqual(panel.unfinished_card.title_label.text(), LABEL_UNFINISHED)
+        QApplication.processEvents()
+        cards = self._cards(page)
+        self.assertEqual(
+            [card.title_label.text() for card in cards],
+            [
+                "🔴 Po termínu",
+                "🔵 Dnes",
+                "🟡 Čeká kontrolu",
+                "📋 Otevřeno",
+                LABEL_VALID,
+                LABEL_EXPIRING,
+                LABEL_EXPIRED,
+                LABEL_UNFINISHED,
+            ],
+        )
+        self.assertTrue(page.exam_separator.isVisible())
+        self.assertEqual(page.exam_separator.width(), 1)
+        tops = [card.mapTo(page, card.rect().topLeft()).y() for card in cards]
+        self.assertLessEqual(max(tops) - min(tops), 2)
+        agenda_right = self._page_rect(page, cards[3]).right()
+        tests_left = self._page_rect(page, cards[4]).left()
+        separator = self._page_rect(page, page.exam_separator)
+        self.assertLess(agenda_right, separator.left())
+        self.assertGreater(tests_left, separator.right())
+        self.assertAlmostEqual(page.summary.width(), page.exam_retraining.width(), delta=8)
+        for group in (cards[:4], cards[4:]):
+            widths = [card.width() for card in group]
+            self.assertLessEqual(max(widths) - min(widths), 2)
+            self.assertGreater(min(widths), 40)
         self.assertEqual(panel.valid_card.value_label.text(), "3")
         self.assertEqual(panel.expiring_card.value_label.text(), "1")
         self.assertEqual(panel.expired_card.value_label.text(), "1")
@@ -278,7 +297,30 @@ class ExamRetrainingDashboardTests(_ExamData, unittest.TestCase):
         self.assertIn(STATUS_ORANGE_TEXT, panel.expiring_card.value_label.styleSheet())
         self.assertIn(STATUS_MISSING_TEXT, panel.expired_card.value_label.styleSheet())
         self.assertIn(UNFINISHED_TEXT, panel.unfinished_card.value_label.styleSheet())
-        self.assertEqual(panel.objectName(), "DashboardPanel")
+        self.assertEqual(page.summary.overdue.subtitle_label.text(), "položky po termínu")
+        self.assertEqual(page.summary.waiting.subtitle_label.text(), "čeká na kontrolu účinnosti")
+        self.assertLessEqual(abs(page.summary.height() - 104), 20)
+        self.assertEqual(page.summary.height(), page.exam_retraining.height())
+        self.assertEqual(page.scroll_area.horizontalScrollBar().maximum(), 0)
+        self.assertLess(page.summary.minimumSizeHint().width(), 80)
+        self.assertLess(page.exam_retraining.minimumSizeHint().width(), 80)
+        page.deleteLater()
+
+    def test_titles_stay_readable_when_window_shrinks(self) -> None:
+        page = self._shown_page(900, 640)
+        QApplication.processEvents()
+        self.assertLess(page.summary.minimumSizeHint().width(), 80)
+        self.assertLess(page.exam_retraining.minimumSizeHint().width(), 80)
+        for card in self._cards(page):
+            self._assert_label_fits(card.title_label)
+            if card.subtitle_label.isVisible():
+                self._assert_label_fits(card.subtitle_label)
+            self._assert_label_fits(card.value_label)
+        rects = [self._page_rect(page, card) for card in self._cards(page)]
+        rights = [rect.right() for rect in rects]
+        lefts = [rect.left() for rect in rects]
+        for previous, current in zip(rights, lefts[1:]):
+            self.assertLessEqual(previous, current)
         page.deleteLater()
 
     def test_show_event_recomputes_only_when_day_changes(self) -> None:
@@ -340,6 +382,8 @@ class ExamRetrainingDashboardTests(_ExamData, unittest.TestCase):
             QApplication.processEvents()
         self.assertTrue(page.exam_retraining.isHidden())
         self.assertFalse(page.exam_retraining.isVisible())
+        self.assertFalse(page.exam_separator.isVisible())
+        self.assertGreater(page.summary.width(), page.width() * 0.7)
         page.deleteLater()
 
     def test_click_opens_validity_tab_and_return_refreshes_counts(self) -> None:
@@ -369,12 +413,45 @@ class ExamRetrainingDashboardTests(_ExamData, unittest.TestCase):
             self.assertEqual(testy.tabs.tabText(testy.tabs.currentIndex()), AGENDA_EXAM_VALIDITY)
 
             window._show("dashboard")
-            QTest.mouseClick(panel, Qt.MouseButton.LeftButton)
+            QTest.mouseClick(panel.unfinished_card, Qt.MouseButton.LeftButton)
             QApplication.processEvents()
             self.assertIs(testy.tabs.currentWidget(), testy.validity_tab)
         finally:
             window.deleteLater()
             QApplication.processEvents()
+
+    def _shown_page(self, width: int, height: int) -> DashboardPage:
+        page = DashboardPage()
+        page.resize(width, height)
+        page.show()
+        QApplication.processEvents()
+        return page
+
+    def _cards(self, page: DashboardPage) -> list:
+        panel = page.exam_retraining
+        return [
+            page.summary.overdue,
+            page.summary.today,
+            page.summary.waiting,
+            page.summary.open_total,
+            panel.valid_card,
+            panel.expiring_card,
+            panel.expired_card,
+            panel.unfinished_card,
+        ]
+
+    def _page_rect(self, page, widget):
+        top_left = widget.mapTo(page, widget.rect().topLeft())
+        return widget.rect().translated(top_left)
+
+    def _assert_label_fits(self, label) -> None:
+        self.assertGreater(label.width(), 0)
+        self.assertGreater(label.height(), 0)
+        metrics = QFontMetrics(label.font())
+        flags = Qt.TextFlag.TextWordWrap if label.wordWrap() else Qt.TextFlag.TextSingleLine
+        bounds = metrics.boundingRect(0, 0, label.width(), 1000, int(flags), label.text())
+        self.assertLessEqual(bounds.height(), label.height() + 2)
+        self.assertLessEqual(bounds.width(), label.width() + 2)
 
 
 if __name__ == "__main__":
