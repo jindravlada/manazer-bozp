@@ -22,6 +22,10 @@ def initialize_database() -> None:
     from core.models.attachment import Attachment  # noqa: F401
     from core.shared.modely.finding import Finding  # noqa: F401
     from core.shared.modely.finding_status_event import FindingStatusEvent  # noqa: F401
+    from core.shared.modely.finding_settlement_overview import (  # noqa: F401
+        FindingSettlementOverview,
+        FindingSettlementOverviewItem,
+    )
     from moduly.audity.modely.audit import Audit  # noqa: F401
     from moduly.audity.modely.audit_commission_member import AuditCommissionMember  # noqa: F401
     from moduly.audity.modely.audit_program import (  # noqa: F401
@@ -271,6 +275,7 @@ def initialize_database() -> None:
     _ensure_mu_investigation_columns()
     _ensure_finding_columns()
     _ensure_finding_status_events_table()
+    _ensure_finding_settlement_overview_tables()
     _ensure_control_result_columns()
     _ensure_audit_commission_table()
     _ensure_bozp_inspection_commission_table()
@@ -832,6 +837,89 @@ def _ensure_finding_status_events_table() -> None:
             text(
                 "CREATE INDEX IF NOT EXISTS ix_finding_status_events_finding_id "
                 "ON finding_status_events (finding_id)"
+            )
+        )
+        connection.commit()
+
+
+def _ensure_finding_settlement_overview_tables() -> None:
+    """Doplní tabulky přehledů vypořádání. Existující přehledy ani zjištění nemění."""
+    from core.shared.modely.finding_settlement_overview import (
+        FindingSettlementOverview,
+        FindingSettlementOverviewItem,
+    )
+
+    overview_columns = _table_columns("finding_settlement_overviews")
+    if not overview_columns:
+        FindingSettlementOverview.__table__.create(bind=_db_engine(), checkfirst=True)
+    else:
+        overview_additions = {
+            "source_type": "source_type VARCHAR(30) DEFAULT ''",
+            "sequence_number": "sequence_number INTEGER DEFAULT 0",
+            "created_at": "created_at DATETIME",
+            "presented_at": "presented_at DATE",
+            "period_from": "period_from DATE",
+            "period_to": "period_to DATE",
+            "note": "note TEXT DEFAULT ''",
+            "total_count": "total_count INTEGER DEFAULT 0",
+            "settled_count": "settled_count INTEGER DEFAULT 0",
+            "in_process_count": "in_process_count INTEGER DEFAULT 0",
+            "open_count": "open_count INTEGER DEFAULT 0",
+            "type_counts_json": "type_counts_json TEXT DEFAULT '{}'",
+        }
+        for column_name, column_sql in overview_additions.items():
+            if column_name not in overview_columns:
+                _add_column("finding_settlement_overviews", column_sql)
+
+    item_columns = _table_columns("finding_settlement_overview_items")
+    if not item_columns:
+        FindingSettlementOverviewItem.__table__.create(bind=_db_engine(), checkfirst=True)
+    else:
+        item_additions = {
+            "overview_id": "overview_id INTEGER",
+            "finding_id": "finding_id INTEGER",
+            "audit_id": "audit_id INTEGER",
+            "audit_number": "audit_number VARCHAR(30) DEFAULT ''",
+            "audit_year": "audit_year INTEGER",
+            "workplace_name": "workplace_name VARCHAR(150) DEFAULT ''",
+            "finding_type": "finding_type VARCHAR(30) DEFAULT ''",
+            "process_label": "process_label VARCHAR(150) DEFAULT ''",
+            "verification_area_label": "verification_area_label VARCHAR(150) DEFAULT ''",
+            "description": "description TEXT DEFAULT ''",
+            "recommended_action": "recommended_action TEXT DEFAULT ''",
+            "status": "status VARCHAR(30) DEFAULT ''",
+            "resolved_at": "resolved_at DATE",
+            "task_id": "task_id INTEGER",
+            "task_title": "task_title VARCHAR(200) DEFAULT ''",
+            "task_status": "task_status VARCHAR(40) DEFAULT ''",
+            "settled_since_previous": "settled_since_previous BOOLEAN DEFAULT 0",
+            "still_unsettled": "still_unsettled BOOLEAN DEFAULT 0",
+            "is_new": "is_new BOOLEAN DEFAULT 0",
+            "reopened": "reopened BOOLEAN DEFAULT 0",
+            "resettled": "resettled BOOLEAN DEFAULT 0",
+        }
+        for column_name, column_sql in item_additions.items():
+            if column_name not in item_columns:
+                _add_column("finding_settlement_overview_items", column_sql)
+
+    with _db_engine().connect() as connection:
+        connection.execute(
+            text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS "
+                "uq_finding_settlement_overviews_source_sequence "
+                "ON finding_settlement_overviews (source_type, sequence_number)"
+            )
+        )
+        connection.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_finding_settlement_overview_items_overview "
+                "ON finding_settlement_overview_items (overview_id)"
+            )
+        )
+        connection.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_finding_settlement_overview_items_finding "
+                "ON finding_settlement_overview_items (finding_id)"
             )
         )
         connection.commit()
