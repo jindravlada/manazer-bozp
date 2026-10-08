@@ -125,6 +125,85 @@ class AudityPageTestCase(unittest.TestCase):
         self.assertTrue(hasattr(page, "report_btn"))
         self.assertFalse(hasattr(page, "plan_btn"))
 
+    def test_toolbar_two_rows_stay_inside_window(self) -> None:
+        from PySide6.QtCore import QPoint
+        from PySide6.QtWidgets import QApplication, QScrollArea
+
+        page = self._create_page()
+        actions = [
+            page.new_btn,
+            page.program_btn,
+            page.extraordinary_btn,
+            page.external_audits_btn,
+            page.edit_btn,
+            page.delete_btn,
+        ]
+        documents = [
+            page.protocol_btn,
+            page.detailed_report_btn,
+            page.knowledge_editor_btn,
+            page.report_btn,
+            page.settlement_btn,
+            page._status_label,
+            page.status_filter,
+            page._year_label,
+            page.year_filter,
+        ]
+        app_font = QApplication.font()
+        for button in actions + documents[:5]:
+            self.assertEqual(button.font().pointSize(), app_font.pointSize())
+
+        page.show()
+        sidebar = 250
+        for window_width in (1920, 1600, 1100):
+            content_width = window_width - sidebar
+            page.resize(content_width, 800)
+            QApplication.processEvents()
+            self.assertEqual(page.findChildren(QScrollArea), [])
+            self._assert_controls_inside(page, actions + documents, QPoint)
+            self._assert_reading_order(page, actions, QPoint)
+            self._assert_reading_order(page, documents, QPoint)
+
+        page.resize(1920 - sidebar, 800)
+        QApplication.processEvents()
+        self.assertLess(
+            actions[0].mapTo(page, QPoint(0, 0)).y(),
+            documents[0].mapTo(page, QPoint(0, 0)).y(),
+        )
+        self.assertEqual(
+            actions[0].mapTo(page, QPoint(0, 0)).y(),
+            actions[-1].mapTo(page, QPoint(0, 0)).y(),
+        )
+        self.assertEqual(
+            documents[0].mapTo(page, QPoint(0, 0)).y(),
+            documents[4].mapTo(page, QPoint(0, 0)).y(),
+        )
+        self.assertTrue(page.new_btn.isEnabled())
+        self.assertTrue(page.report_btn.isEnabled())
+        self.assertTrue(page.settlement_btn.isEnabled())
+        self.assertFalse(page.edit_btn.isEnabled())
+        self.assertFalse(page.delete_btn.isEnabled())
+        self.assertFalse(page.protocol_btn.isEnabled())
+        page.close()
+
+    def _assert_controls_inside(self, page, widgets, point_type) -> None:
+        for widget in widgets:
+            origin = widget.mapTo(page, point_type(0, 0))
+            self.assertGreaterEqual(origin.x(), 0, widget)
+            self.assertGreaterEqual(origin.y(), 0, widget)
+            self.assertGreater(widget.width(), 0, widget)
+            self.assertGreater(widget.height(), 0, widget)
+            self.assertLess(origin.x() + widget.width(), page.width() + 1, widget)
+            self.assertLess(origin.y() + widget.height(), page.height() + 1, widget)
+            self.assertEqual(widget.height(), widget.sizeHint().height(), widget)
+
+    def _assert_reading_order(self, page, widgets, point_type) -> None:
+        positions = [widget.mapTo(page, point_type(0, 0)) for widget in widgets]
+        for earlier, later in zip(positions, positions[1:]):
+            self.assertLessEqual(earlier.y(), later.y())
+            if earlier.y() == later.y():
+                self.assertLess(earlier.x(), later.x())
+
     def test_protocol_action_enabled_only_for_completed_audit(self) -> None:
         planned = audit_service.create_audit()
         in_progress = audit_service.create_audit(started_at=date(2026, 3, 1))

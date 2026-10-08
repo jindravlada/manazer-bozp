@@ -5,7 +5,6 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import (
     QComboBox,
-    QHBoxLayout,
     QLabel,
     QMenu,
     QMessageBox,
@@ -56,6 +55,7 @@ from moduly.audity.ui.audit_program_manager_dialog import AuditProgramManagerDia
 from moduly.audity.ui.audity_knowledge_editor_dialog import AudityKnowledgeEditorDialog
 from moduly.audity.ui.extraordinary_questions_dialog import ExtraordinaryQuestionsDialog
 from moduly.audity.ui.audit_table import AuditTable
+from moduly.audity.ui.wrapping_toolbar import WrappingToolbar
 from moduly.audity.ui.prehled_vyporadani_dialog import PrehledVyporadaniDialog
 from moduly.audity.ui.rocni_zprava_auditu_dialog import RocniZpravaAudituDialog
 from moduly.externi_audity.constants import EXTERNAL_AUDITS_BUTTON_LABEL
@@ -127,7 +127,8 @@ class AudityPage(QWidget):
 
         layout = QVBoxLayout(self)
 
-        toolbar = QHBoxLayout()
+        self._actions_toolbar = WrappingToolbar()
+        self._documents_toolbar = WrappingToolbar()
 
         self.new_btn = QPushButton("Nový audit")
         self.program_btn = QPushButton(AUDIT_PROGRAM_BUTTON_LABEL)
@@ -171,27 +172,36 @@ class AudityPage(QWidget):
         self.year_filter = QComboBox()
         self._populate_year_filter()
 
-        toolbar.addWidget(self.new_btn)
-        toolbar.addWidget(self.program_btn)
-        toolbar.addWidget(self.extraordinary_btn)
-        toolbar.addWidget(self.external_audits_btn)
-        toolbar.addWidget(self.edit_btn)
-        toolbar.addWidget(self.delete_btn)
-        toolbar.addWidget(self.protocol_btn)
-        toolbar.addWidget(self.detailed_report_btn)
-        toolbar.addWidget(self.knowledge_editor_btn)
-        toolbar.addWidget(self.report_btn)
-        toolbar.addWidget(self.settlement_btn)
-        toolbar.addStretch()
-        toolbar.addWidget(QLabel("Stav:"))
-        toolbar.addWidget(self.status_filter)
-        toolbar.addWidget(QLabel("Rok:"))
-        toolbar.addWidget(self.year_filter)
+        for button in (
+            self.new_btn,
+            self.program_btn,
+            self.extraordinary_btn,
+            self.external_audits_btn,
+            self.edit_btn,
+            self.delete_btn,
+        ):
+            self._actions_toolbar.add_widget(button)
+        for button in (
+            self.protocol_btn,
+            self.detailed_report_btn,
+            self.knowledge_editor_btn,
+            self.report_btn,
+            self.settlement_btn,
+        ):
+            self._documents_toolbar.add_widget(button)
+        self._documents_toolbar.add_stretch()
+        self._status_label = QLabel("Stav:")
+        self._year_label = QLabel("Rok:")
+        self._documents_toolbar.add_widget(self._status_label)
+        self._documents_toolbar.add_widget(self.status_filter)
+        self._documents_toolbar.add_widget(self._year_label)
+        self._documents_toolbar.add_widget(self.year_filter)
 
         self.table = AuditTable()
         configure_table_columns(self.table, "audity")
 
-        layout.addLayout(toolbar)
+        layout.addWidget(self._actions_toolbar)
+        layout.addWidget(self._documents_toolbar)
 
         self._program_manager_banner = AuditProgramManagerBannerWidget()
         layout.addWidget(self._program_manager_banner, 0)
