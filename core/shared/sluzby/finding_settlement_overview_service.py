@@ -1,8 +1,7 @@
 """Historické přehledy vypořádání zjištění pro představenstvo.
 
-Řada Auditů a řada Prověrek mají vlastní pořadová čísla. Tato etapa plní
-obě řady stejným výpočtem: jen záznamy ve stavu Dokončeno. Uživatelské
-rozhraní ani export zde nejsou.
+Řada Auditů a řada Prověrek mají vlastní pořadová čísla. Obě řady berou
+jen záznamy ve stavu Dokončeno. Rozhraní a export jsou zatím jen pro Audity.
 """
 
 from __future__ import annotations
@@ -37,6 +36,14 @@ from moduly.ukoly.modely.task import Task
 
 class FindingSettlementOverviewError(ValueError):
     """Přehled nelze uložit. Rozpracovaný zápis se při tom neponechá."""
+
+
+@dataclass(frozen=True)
+class FindingSettlementScope:
+    """Kolik dokončených záznamů a jejich zjištění by další přehled zahrnul."""
+
+    completed_record_count: int
+    finding_count: int
 
 
 _OPEN_STATUSES = frozenset(
@@ -154,6 +161,16 @@ class FindingSettlementOverviewService:
         if loaded is None:
             raise FindingSettlementOverviewError("Přehled se nepodařilo znovu načíst.")
         return loaded
+
+    def completed_scope(self, source_type: str) -> FindingSettlementScope:
+        """Spočítá rozsah dalšího přehledu. Do databáze nic nezapíše."""
+        source = self._require_source(source_type)
+        with transaction() as session:
+            parents = self._completed_parents(session, source)
+            return FindingSettlementScope(
+                completed_record_count=len(parents),
+                finding_count=len(self._collect(session, source)),
+            )
 
     def list_overviews(self, source_type: str) -> list[FindingSettlementOverview]:
         source = self._require_source(source_type)

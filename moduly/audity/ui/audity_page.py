@@ -39,6 +39,7 @@ from moduly.audity.constants import (
     AUDIT_PROGRAM_BUTTON_LABEL,
     AUDIT_PROTOCOL_BUTTON_LABEL,
     AUDIT_PROTOCOL_DIALOG_TITLE,
+    SETTLEMENT_OVERVIEW_BUTTON_LABEL,
     DEFAULT_AUDIT_STATUS_FILTER,
     EXTRAORDINARY_QUESTIONS_BUTTON_LABEL,
     KNOWLEDGE_EDITOR_BUTTON_LABEL,
@@ -55,6 +56,7 @@ from moduly.audity.ui.audit_program_manager_dialog import AuditProgramManagerDia
 from moduly.audity.ui.audity_knowledge_editor_dialog import AudityKnowledgeEditorDialog
 from moduly.audity.ui.extraordinary_questions_dialog import ExtraordinaryQuestionsDialog
 from moduly.audity.ui.audit_table import AuditTable
+from moduly.audity.ui.prehled_vyporadani_dialog import PrehledVyporadaniDialog
 from moduly.audity.ui.rocni_zprava_auditu_dialog import RocniZpravaAudituDialog
 from moduly.externi_audity.constants import EXTERNAL_AUDITS_BUTTON_LABEL
 from moduly.externi_audity.ui.external_audits_overview_dialog import (
@@ -146,6 +148,10 @@ class AudityPage(QWidget):
         self.report_btn.setToolTip(
             "Roční zpráva z interních auditů za vybraný kalendářní rok."
         )
+        self.settlement_btn = QPushButton(SETTLEMENT_OVERVIEW_BUTTON_LABEL)
+        self.settlement_btn.setToolTip(
+            "Historické přehledy vypořádání zjištění z dokončených interních auditů."
+        )
 
         self._single_record_buttons = (self.edit_btn, self.delete_btn)
         for button in self._single_record_buttons:
@@ -175,6 +181,7 @@ class AudityPage(QWidget):
         toolbar.addWidget(self.detailed_report_btn)
         toolbar.addWidget(self.knowledge_editor_btn)
         toolbar.addWidget(self.report_btn)
+        toolbar.addWidget(self.settlement_btn)
         toolbar.addStretch()
         toolbar.addWidget(QLabel("Stav:"))
         toolbar.addWidget(self.status_filter)
@@ -201,6 +208,7 @@ class AudityPage(QWidget):
         self.detailed_report_btn.clicked.connect(self.export_selected_detailed_report)
         self.knowledge_editor_btn.clicked.connect(self.open_knowledge_editor)
         self.report_btn.clicked.connect(self.open_annual_report)
+        self.settlement_btn.clicked.connect(self.open_settlement_overviews)
         self.table.doubleClicked.connect(self.open_selected_audit)
         self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.table.customContextMenuRequested.connect(self._show_table_context_menu)
@@ -425,6 +433,9 @@ class AudityPage(QWidget):
 
     def open_external_audits(self) -> None:
         exec_maximized(ExternalAuditsOverviewDialog(self))
+
+    def open_settlement_overviews(self) -> None:
+        exec_maximized(PrehledVyporadaniDialog(self))
 
     def open_annual_report(self) -> None:
         year_value = self.year_filter.currentData()
