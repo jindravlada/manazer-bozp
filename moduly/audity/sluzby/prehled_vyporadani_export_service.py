@@ -43,6 +43,13 @@ SECTION_NEW = "Nová zjištění"
 SECTION_REOPENED = "Znovuotevřená zjištění"
 EMPTY_SECTION = "Žádná zjištění."
 SUMMARY_HEADING = "Souhrnné vyhodnocení"
+CURRENT_STATE_HEADING = "AKTUÁLNÍ STAV"
+CHANGES_HEADING = "ZMĚNY OD PŘEDCHOZÍHO PŘEHLEDU"
+TABLES_SCOPE_NOTE = (
+    "Podrobné tabulky obsahují pouze změny "
+    "od předchozího přehledu a všechna dosud "
+    "nevypořádaná zjištění."
+)
 
 _OPEN_STATUSES = frozenset({FINDING_STATUS_OTEVRENE, FINDING_STATUS_V_PROCESU})
 
@@ -305,36 +312,76 @@ def placeholder_values(
             view.new_items,
             record_heading=record_heading,
         ),
-        "sekce_znovuotevrena": _optional_status_section(
-            view.shows_changes,
-            SECTION_REOPENED,
-            view.reopened_items,
-            record_heading=record_heading,
-        ),
+        "sekce_znovuotevrena": OdtRichContent(paragraphs=[], omit_when_empty=True),
     }
 
 
 def _summary(view: PrehledVyporadaniView) -> OdtRichContent:
-    paragraphs = [
-        OdtParagraph.text(SUMMARY_HEADING, style="H"),
-        OdtParagraph.text(f"Celkem zjištění: {view.total_count}", style="MgmtMeta"),
-        OdtParagraph.text(
-            f"Vypořádáno: {count_with_percent(view.settled_count, view.total_count)}",
-            style="MgmtMeta",
-        ),
-        OdtParagraph.text(
-            f"V procesu: {count_with_percent(view.in_process_count, view.total_count)}",
-            style="MgmtMeta",
-        ),
-        OdtParagraph.text(
-            f"Otevřeno: {count_with_percent(view.open_count, view.total_count)}",
-            style="MgmtMeta",
-        ),
-    ]
+    if view.sequence_number <= 0:
+        return OdtRichContent(paragraphs=_current_state_lines(view, baseline=True))
+    paragraphs = _current_state_lines(view, baseline=False)
+    paragraphs.extend(
+        [
+            OdtParagraph.text(CHANGES_HEADING, style="H"),
+            OdtParagraph.text(
+                f"Nově vypořádáno: {view.settled_since_count}",
+                style="MgmtMeta",
+            ),
+            OdtParagraph.text(
+                f"Nová zjištění: {view.new_count}",
+                style="MgmtMeta",
+            ),
+            OdtParagraph.text(
+                f"Znovuotevřeno: {view.reopened_count}",
+                style="MgmtMeta",
+            ),
+            OdtParagraph.text(TABLES_SCOPE_NOTE, style="MgmtMeta"),
+        ]
+    )
+    return OdtRichContent(paragraphs=paragraphs)
+
+
+def _current_state_lines(
+    view: PrehledVyporadaniView,
+    *,
+    baseline: bool,
+) -> list:
+    if baseline:
+        paragraphs = [
+            OdtParagraph.text(SUMMARY_HEADING, style="H"),
+            OdtParagraph.text(
+                f"Celkem zjištění: {view.total_count}",
+                style="MgmtMeta",
+            ),
+        ]
+    else:
+        paragraphs = [
+            OdtParagraph.text(CURRENT_STATE_HEADING, style="H"),
+            OdtParagraph.text(
+                f"Celkem evidovaných zjištění: {view.total_count}",
+                style="MgmtMeta",
+            ),
+        ]
+    paragraphs.extend(
+        [
+            OdtParagraph.text(
+                f"Vypořádáno: {count_with_percent(view.settled_count, view.total_count)}",
+                style="MgmtMeta",
+            ),
+            OdtParagraph.text(
+                f"V procesu: {count_with_percent(view.in_process_count, view.total_count)}",
+                style="MgmtMeta",
+            ),
+            OdtParagraph.text(
+                f"Otevřeno: {count_with_percent(view.open_count, view.total_count)}",
+                style="MgmtMeta",
+            ),
+        ]
+    )
     if view.type_counts:
         types = ", ".join(f"{label}: {count}" for label, count in view.type_counts)
         paragraphs.append(OdtParagraph.text(f"Typy zjištění: {types}", style="MgmtMeta"))
-    return OdtRichContent(paragraphs=paragraphs)
+    return paragraphs
 
 
 def _optional_status_section(

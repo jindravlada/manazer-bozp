@@ -148,8 +148,13 @@ class PrehledVyporadaniDialog(QDialog):
         self._overviews = finding_settlement_overview_service.list_overviews(
             self.profile.source_type
         )
-        self.table.setRowCount(len(self._overviews))
-        for index, overview in enumerate(self._overviews):
+        displayed = sorted(
+            self._overviews,
+            key=lambda overview: int(overview.sequence_number),
+            reverse=True,
+        )
+        self.table.setRowCount(len(displayed))
+        for index, overview in enumerate(displayed):
             values = (
                 str(overview.sequence_number),
                 format_overview_date(overview.presented_at),

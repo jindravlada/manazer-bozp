@@ -268,6 +268,11 @@ class PrehledVyporadaniUiTestCase(unittest.TestCase):
         self.assertEqual([row.sequence_number for row in rows], [0, 1])
         self.assertEqual(rows[1].period_from, date(2026, 10, 1))
         self.assertEqual(rows[1].period_to, date(2026, 11, 2))
+        listing.refresh()
+        self.assertEqual(
+            [listing.table.item(row, 0).text() for row in range(listing.table.rowCount())],
+            ["1", "0"],
+        )
         listing.close()
         create.close()
         second.close()
@@ -362,7 +367,11 @@ class PrehledVyporadaniUiTestCase(unittest.TestCase):
         self.assertIn("Z INTERNÍCH AUDITŮ", first_text)
         self.assertIn("Přehled č. 0 – výchozí stav", first_text)
         self.assertIn("Stav k: 01.06.2026", first_text)
+        self.assertIn("Souhrnné vyhodnocení", first_text)
         self.assertIn("Celkem zjištění: 3", first_text)
+        self.assertNotIn("AKTUÁLNÍ STAV", first_text)
+        self.assertNotIn("ZMĚNY OD PŘEDCHOZÍHO PŘEHLEDU", first_text)
+        self.assertNotIn("Podrobné tabulky obsahují pouze změny", first_text)
         self.assertIn("Vypořádáno: 1 (33 %)", first_text)
         self.assertIn(SECTION_SETTLED_BASELINE, first_text)
         self.assertIn(SECTION_UNSETTLED, first_text)
@@ -382,9 +391,23 @@ class PrehledVyporadaniUiTestCase(unittest.TestCase):
 
         self.assertIn("Přehled č. 1", second_text)
         self.assertIn("Období: 01.06.2026 – 01.09.2026", second_text)
+        self.assertIn("AKTUÁLNÍ STAV", second_text)
+        self.assertIn("Celkem evidovaných zjištění: 5", second_text)
+        self.assertIn("Vypořádáno: 1 (20 %)", second_text)
+        self.assertIn("ZMĚNY OD PŘEDCHOZÍHO PŘEHLEDU", second_text)
+        self.assertIn("Nově vypořádáno: 1", second_text)
+        self.assertIn("Nová zjištění: 2", second_text)
+        self.assertIn("Znovuotevřeno: 1", second_text)
+        self.assertIn(
+            "Podrobné tabulky obsahují pouze změny "
+            "od předchozího přehledu a všechna dosud "
+            "nevypořádaná zjištění.",
+            second_text,
+        )
+        self.assertNotIn("Souhrnné vyhodnocení", second_text)
         self.assertIn(SECTION_SETTLED_SINCE, second_text)
         self.assertIn(SECTION_NEW, second_text)
-        self.assertIn(SECTION_REOPENED, second_text)
+        self.assertNotIn(SECTION_REOPENED, second_text)
         self.assertLess(
             second_text.index("K vypořádání"),
             second_text.index(SECTION_UNSETTLED),
@@ -393,11 +416,13 @@ class PrehledVyporadaniUiTestCase(unittest.TestCase):
             second_text.index(SECTION_UNSETTLED),
             second_text.index("Upravený živý text"),
         )
+        self.assertLess(
+            second_text.index(SECTION_UNSETTLED),
+            second_text.index("K znovuotevření"),
+        )
+        self.assertEqual(second_text.count("K znovuotevření"), 1)
         self.assertIn("Nové po bodu 0", second_text)
         self.assertIn("Ještě ne", second_text)
-        self.assertIn("K znovuotevření", second_text)
-        self.assertIn("Celkem zjištění: 5", second_text)
-        self.assertIn("Vypořádáno: 1 (20 %)", second_text)
 
         finding_service.update(stays.id, description="Ještě novější text")
         repeated = self.export.generate(first.id, output_path=_TMP / "bod0-znovu.odt")

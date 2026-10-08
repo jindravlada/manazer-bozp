@@ -68,6 +68,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.audity.ui.prehled_vyporadani_dialog import (
         PrehledVyporadaniCreateDialog,
         PrehledVyporadaniDetailDialog,
+        PrehledVyporadaniDialog,
     )
     from moduly.proverky.constants import (
         INSPECTION_STATUS_DOKONCENO,
@@ -389,6 +390,9 @@ class PrehledVyporadaniProverkyTestCase(unittest.TestCase):
         self.assertIn("PŘEHLED VYPOŘÁDÁNÍ ZJIŠTĚNÍ", document)
         self.assertIn("Z PROVĚREK BOZP", document)
         self.assertIn("Přehled č. 0 – výchozí stav", document)
+        self.assertIn("Souhrnné vyhodnocení", document)
+        self.assertNotIn("AKTUÁLNÍ STAV", document)
+        self.assertNotIn("Podrobné tabulky obsahují pouze změny", document)
         self.assertIn("Datum předložení: 01.10.2026", document)
         self.assertIn("Období: výchozí stav k 01.10.2026", document)
         self.assertIn("Celkem zjištění: 4", document)
@@ -522,15 +526,32 @@ class PrehledVyporadaniProverkyTestCase(unittest.TestCase):
         self.assertIn("Přehled č. 1", second_text)
         self.assertIn("Datum předložení: 01.09.2026", second_text)
         self.assertIn("Období: 01.06.2026 – 01.09.2026", second_text)
+        self.assertIn("AKTUÁLNÍ STAV", second_text)
+        self.assertIn("Celkem evidovaných zjištění: 5", second_text)
+        self.assertIn("Vypořádáno: 1 (20 %)", second_text)
+        self.assertIn("ZMĚNY OD PŘEDCHOZÍHO PŘEHLEDU", second_text)
+        self.assertIn("Nově vypořádáno: 1", second_text)
+        self.assertIn("Nová zjištění: 2", second_text)
+        self.assertIn("Znovuotevřeno: 1", second_text)
         self.assertIn(SECTION_SETTLED_SINCE, second_text)
         self.assertIn(SECTION_NEW, second_text)
-        self.assertIn(SECTION_REOPENED, second_text)
+        self.assertNotIn(SECTION_REOPENED, second_text)
         self.assertIn("K vypořádání", second_text)
         self.assertIn("Nové po bodu 0", second_text)
         self.assertIn("Ještě ne", second_text)
         self.assertIn("K znovuotevření", second_text)
+        self.assertEqual(second_text.count("K znovuotevření"), 1)
+        self.assertLess(
+            second_text.index(SECTION_UNSETTLED),
+            second_text.index("K znovuotevření"),
+        )
         self.assertIn("Upravený živý text", second_text)
-        self.assertIn("Vypořádáno: 1 (20 %)", second_text)
+        listing = PrehledVyporadaniProverkyDialog()
+        self.assertEqual(
+            [listing.table.item(row, 0).text() for row in range(listing.table.rowCount())],
+            ["1", "0"],
+        )
+        listing.close()
 
         finding_service.update(stays.id, description="Ještě novější text")
         repeated = _odt_text(
@@ -543,6 +564,37 @@ class PrehledVyporadaniProverkyTestCase(unittest.TestCase):
         self.assertEqual(hidden.description, "Ještě ne")
         baseline.close()
         later.close()
+
+    def test_dialog_sorts_each_series_newest_first(self) -> None:
+        for presented in (date(2024, 1, 10), date(2025, 6, 1), date(2026, 3, 1)):
+            self.service.create_overview(
+                SETTLEMENT_SOURCE_PROVERKY,
+                presented_at=presented,
+            )
+        for presented in (date(2026, 1, 1), date(2026, 8, 1)):
+            self.service.create_overview(
+                SETTLEMENT_SOURCE_AUDITY,
+                presented_at=presented,
+            )
+
+        inspections = PrehledVyporadaniProverkyDialog()
+        audits = PrehledVyporadaniDialog()
+        self.assertEqual(
+            [inspections.table.item(row, 0).text() for row in range(3)],
+            ["2", "1", "0"],
+        )
+        self.assertEqual(inspections._overviews[-1].sequence_number, 2)
+        self.assertEqual(
+            [audits.table.item(row, 0).text() for row in range(2)],
+            ["1", "0"],
+        )
+        self.assertEqual(audits._overviews[-1].sequence_number, 1)
+        self.assertEqual(
+            [row.sequence_number for row in self.service.list_overviews(SETTLEMENT_SOURCE_PROVERKY)],
+            [0, 1, 2],
+        )
+        inspections.close()
+        audits.close()
 
     def test_empty_overview_and_error_states(self) -> None:
         from PySide6.QtCore import QDate
