@@ -81,6 +81,7 @@ class TestExamDetailDialog(QDialog):
         host = QWidget()
         form = QVBoxLayout(host)
         self.summary = QLabel()
+        self.summary.setTextFormat(Qt.TextFormat.PlainText)
         self.summary.setWordWrap(True)
         self.summary.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         form.addWidget(self.summary)
@@ -388,9 +389,9 @@ class TestExamDetailDialog(QDialog):
             block = QWidget()
             block.setObjectName(f"written-question-{question.position}")
             layout = QVBoxLayout(block)
-            title = QLabel(
-                f"{question.position}. {question.topic_name}\n{question.text}"
-            )
+            title = QLabel()
+            title.setTextFormat(Qt.TextFormat.PlainText)
+            title.setText(f"{question.position}. {question.topic_name}\n{question.text}")
             title.setWordWrap(True)
             title.setObjectName(f"written-text-{question.position}")
             layout.addWidget(title)
@@ -415,7 +416,9 @@ class TestExamDetailDialog(QDialog):
                     evaluated=bool(exam.written_result),
                 )
                 style = qt_answer_style(tone)
-                text = QLabel(caption)
+                text = QLabel()
+                text.setTextFormat(Qt.TextFormat.PlainText)
+                text.setText(caption)
                 text.setWordWrap(True)
                 text.setObjectName(f"answer-{question.position}-{answer.letter}")
                 if style:
@@ -437,7 +440,9 @@ class TestExamDetailDialog(QDialog):
             if widget is not None:
                 widget.deleteLater()
         for question in questions:
-            label = QLabel(f"{question.position}. {question.topic_name}\n{question.text}")
+            label = QLabel()
+            label.setTextFormat(Qt.TextFormat.PlainText)
+            label.setText(f"{question.position}. {question.topic_name}\n{question.text}")
             label.setWordWrap(True)
             label.setObjectName(f"oral-text-{question.position}")
             self.oral_layout.addWidget(label)
