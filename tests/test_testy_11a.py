@@ -81,6 +81,8 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.testy.sluzby.exam_protocol_layout import (
         BLANK_EXAM_DATE_LINE,
         MANUAL_RESULT_LINE,
+        PAPER_RESULT_OPTIONS,
+        paper_result_text,
         WRITTEN_RESULT_LINE,
     )
     from moduly.testy.sluzby.oral_question_service import oral_question_service
@@ -294,8 +296,8 @@ class ExamProtocolTestCase(unittest.TestCase):
         self.assertNotIn("Datum zkoušky", plain)
         self.assertNotIn("7. 10. 2026", plain)
         self.assertIn("PÍSEMNÁ ČÁST", plain)
-        self.assertIn("Výsledek písemné části:", plain)
-        self.assertIn(MANUAL_RESULT_LINE, plain)
+        self.assertIn(paper_result_text("Výsledek písemné části:"), plain)
+        self.assertNotIn(MANUAL_RESULT_LINE, plain)
         self.assertNotIn("\u2611", plain)
         self.assertNotIn("form:checkbox", xml)
         self.assertIn("ÚSTNÍ ČÁST", plain)
@@ -310,7 +312,8 @@ class ExamProtocolTestCase(unittest.TestCase):
         self.assertIn("Zkoušející", plain)
         self.assertIn("Bc. Adam Zkus", plain)
         self.assertNotIn("Předseda/předsedkyně komise", plain)
-        self.assertEqual(plain.count(MANUAL_RESULT_LINE), 3)
+        self.assertEqual(plain.count(PAPER_RESULT_OPTIONS), 3)
+        self.assertEqual(xml.count('text:style-name="ProtocolResultGap"'), 3)
         self.assertEqual(xml.count('text:style-name="WrittenSpacer"'), 1)
         tail = xml[xml.rfind("</table:table>") :]
         self.assertNotIn("WrittenSpacer", tail)
@@ -332,7 +335,11 @@ class ExamProtocolTestCase(unittest.TestCase):
         self.assertIn("CELKOVÝ VÝSLEDEK ZKOUŠKY", only_plain)
         self.assertIn("Zkoušený", only_plain)
         self.assertNotIn("Zkoušející", only_plain)
-        self.assertEqual(only_plain.count(MANUAL_RESULT_LINE), 2)
+        self.assertEqual(only_plain.count(PAPER_RESULT_OPTIONS), 2)
+        self.assertEqual(
+            _xml(only_path).count('text:style-name="ProtocolResultGap"'),
+            2,
+        )
 
         commission = _prepare(
             employee.id,

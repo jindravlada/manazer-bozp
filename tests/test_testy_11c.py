@@ -69,6 +69,7 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.testy.sluzby.exam_protocol_layout import (
         MANUAL_RESULT_LINE,
+        paper_result_text,
         render_electronic_protocol_xml,
         render_paper_protocol_xml,
     )
@@ -99,27 +100,42 @@ class PrefixReverse:
         items.reverse()
 
 
-def _expected(items: list[tuple[int, str]]) -> list[tuple[str, str]]:
+def _oral_questions(items: list[tuple[int, str]]) -> list[tuple[str, str]]:
     ordered = sorted(items, key=lambda item: int(item[0]))
     flow = [("ProtocolHeading", "ÚSTNÍ ČÁST")]
     last_index = len(ordered) - 1
     for index, (position, text) in enumerate(ordered):
         style = "ProtocolOralNext" if index == 0 or index == last_index else "ProtocolOralText"
         flow.append((style, f"{int(position)}. {text}"))
-    flow.append(("ProtocolHeading", "Výsledek ústní části:"))
-    flow.append(("ProtocolCheck", MANUAL_RESULT_LINE))
     return flow
+
+
+def _expected(items: list[tuple[int, str]]) -> list[tuple[str, str]]:
+    return _oral_questions(items) + [
+        ("ProtocolHeading", "Výsledek ústní části:"),
+        ("ProtocolCheck", MANUAL_RESULT_LINE),
+    ]
+
+
+def _paper_expected(items: list[tuple[int, str]]) -> list[tuple[str, str]]:
+    return _oral_questions(items) + [
+        ("ProtocolResult", paper_result_text("Výsledek ústní části:")),
+        ("ProtocolResultGap", "\xa0"),
+    ]
 
 
 def _oral_flow(xml: str) -> list[tuple[str, str]]:
     paragraphs = re.findall(r'<text:p text:style-name="([^"]+)">([^<]*)</text:p>', xml)
     start = next(index for index, (_style, text) in enumerate(paragraphs) if "ÚSTNÍ ČÁST" in text)
     flow: list[tuple[str, str]] = []
+    seen_result = False
     for style, text in paragraphs[start:]:
         flow.append((style, html.unescape(text)))
-        if style == "ProtocolCheck" and any(
-            item.startswith("Výsledek ústní části") for _item_style, item in flow
-        ):
+        if "Výsledek ústní části" in text:
+            seen_result = True
+        if seen_result and style == "ProtocolResultGap":
+            break
+        if style == "ProtocolCheck" and seen_result:
             break
     return flow
 
@@ -209,7 +225,7 @@ class OralPagingTestCase(unittest.TestCase):
             paper = render_paper_protocol_xml(items, people)
             electronic = render_electronic_protocol_xml(["Počet otázek: 1"], items, people)
             expected = _expected(items)
-            self.assertEqual(_oral_flow(paper), expected)
+            self.assertEqual(_oral_flow(paper), _paper_expected(items))
             self.assertEqual(_oral_flow(electronic), expected)
             oral_xml = paper[paper.index("ÚSTNÍ ČÁST") : paper.index("CELKOVÝ VÝSLEDEK")]
             self.assertNotIn("<table:table", oral_xml)
@@ -290,7 +306,7 @@ class OralPagingTestCase(unittest.TestCase):
             expected = _expected(_snapshot_items(exam.id))
             paper_xml = zipfile.ZipFile(paper_path).read("content.xml").decode("utf-8")
             protocol_xml = zipfile.ZipFile(protocol_path).read("content.xml").decode("utf-8")
-            self.assertEqual(_oral_flow(paper_xml), expected)
+            self.assertEqual(_oral_flow(paper_xml), _paper_expected(_snapshot_items(exam.id)))
             self.assertEqual(_oral_flow(protocol_xml), expected)
             for xml in (paper_xml, protocol_xml):
                 chained = _style_body(xml, "ProtocolOralNext")

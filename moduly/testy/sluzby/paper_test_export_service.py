@@ -296,20 +296,20 @@ class PaperTestExportService:
 
 
 def _header_paragraphs(exam: TestExam, *, for_key: bool) -> list[OdtParagraph]:
+    title = plain_export_text(exam.test_name)
+    if not for_key:
+        title = f"Test: {title}" if title else "Test:"
     paragraphs: list[OdtParagraph] = [
-        OdtParagraph.text(plain_export_text(exam.test_name), style="WrittenTitle"),
+        OdtParagraph.text(title, style="WrittenTitle"),
     ]
     if for_key:
         variant = variant_label(exam)
         if variant:
             paragraphs.append(OdtParagraph.text(variant, style="WrittenVariant"))
         return paragraphs
-    name = _employee_name(exam)
-    if name:
-        paragraphs.append(OdtParagraph.text(name, style="WrittenMeta"))
-    personal = _labeled("Osobní číslo", getattr(exam, "employee_personal_number", None))
-    if personal:
-        paragraphs.append(OdtParagraph.text(personal, style="WrittenMeta"))
+    identity = _identity_line(exam)
+    if identity:
+        paragraphs.append(OdtParagraph.text(identity, style="WrittenMeta"))
     workplace = _labeled("Pracoviště", getattr(exam, "employee_workplace_name", None))
     if workplace:
         paragraphs.append(OdtParagraph.text(workplace, style="WrittenMeta"))
@@ -318,10 +318,18 @@ def _header_paragraphs(exam: TestExam, *, for_key: bool) -> list[OdtParagraph]:
     duration = _duration_line(getattr(exam, "written_duration_seconds", None))
     if duration:
         paragraphs.append(OdtParagraph.text(duration, style="WrittenMeta"))
-    variant = variant_label(exam)
-    if variant:
-        paragraphs.append(OdtParagraph.text(variant, style="WrittenVariant"))
     return paragraphs
+
+
+def _identity_line(exam: TestExam) -> str:
+    """Jméno a osobní číslo na jednom řádku. Ostatní údaje hlavičky zůstávají zvlášť."""
+    name = _employee_name(exam)
+    number = plain_export_text(getattr(exam, "employee_personal_number", None))
+    if name and number:
+        return f"{name}; Osobní číslo: {number}"
+    if number:
+        return f"Osobní číslo: {number}"
+    return name
 
 
 def _employee_name(exam: TestExam) -> str:

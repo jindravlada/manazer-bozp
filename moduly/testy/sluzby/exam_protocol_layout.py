@@ -25,6 +25,7 @@ EXAMINEE_SIGNATURE_LABEL = "Zkoušený(á):"
 BLANK_EXAM_DATE_LINE = "Datum: ______________________"
 CHECKBOX = "\u2610"
 MANUAL_RESULT_LINE = f"{CHECKBOX} VYHOVĚL(A)        {CHECKBOX} NEVYHOVĚL(A)"
+PAPER_RESULT_OPTIONS = f"{CHECKBOX} VYHOVĚL(A) {CHECKBOX} NEVYHOVĚL(A)"
 WRITTEN_RESULT_LINE = "Výsledek písemné části: VYHOVĚL(A)"
 ERROR_LIST_HEADING = "VÝPIS CHYBNĚ ZODPOVĚZENÝCH OTÁZEK"
 NO_WRITTEN_ERRORS_LINE = "Bez chyb."
@@ -42,9 +43,9 @@ def render_paper_protocol_xml(
     parts = [
         '<text:p text:style-name="ProtocolDivider">&#160;</text:p>',
         '<text:p text:style-name="ProtocolHeading">PÍSEMNÁ ČÁST</text:p>',
-        _manual_outcome("Výsledek písemné části:"),
+        _paper_result_paragraph("Výsledek písemné části:"),
         render_written_confirmation_xml(),
-        render_protocol_closing_xml(oral_items, people),
+        render_protocol_closing_xml(oral_items, people, paper_results=True),
     ]
     return "".join(parts)
 
@@ -80,9 +81,16 @@ def render_written_confirmation_xml() -> str:
     )
 
 
+def paper_result_text(label: str) -> str:
+    """Jeden nezlomitelný řádek výsledku papírového testu."""
+    return f"{label} {PAPER_RESULT_OPTIONS}"
+
+
 def render_protocol_closing_xml(
     oral_items: list[tuple[int, str]],
     people: list[tuple[str, str]],
+    *,
+    paper_results: bool = False,
 ) -> str:
     """Ústní otázky, ruční výsledky a podpisy. Prázdný seznam ústních otázek sekci vynechá."""
     parts: list[str] = []
@@ -101,9 +109,15 @@ def render_protocol_closing_xml(
                     keep_with_next=index == 0 or index == last_index,
                 )
             )
-        parts.append(_manual_outcome("Výsledek ústní části:"))
-    parts.append('<text:p text:style-name="ProtocolHeading">CELKOVÝ VÝSLEDEK ZKOUŠKY</text:p>')
-    parts.append(f'<text:p text:style-name="ProtocolCheck">{_xml(MANUAL_RESULT_LINE)}</text:p>')
+        if paper_results:
+            parts.append(_paper_result_paragraph("Výsledek ústní části:"))
+        else:
+            parts.append(_manual_outcome("Výsledek ústní části:"))
+    if paper_results:
+        parts.append(_paper_result_paragraph("CELKOVÝ VÝSLEDEK ZKOUŠKY:"))
+    else:
+        parts.append('<text:p text:style-name="ProtocolHeading">CELKOVÝ VÝSLEDEK ZKOUŠKY</text:p>')
+        parts.append(f'<text:p text:style-name="ProtocolCheck">{_xml(MANUAL_RESULT_LINE)}</text:p>')
     parts.append(_signature_block(people))
     return "".join(parts)
 
@@ -135,6 +149,13 @@ def protocol_oral_items(questions) -> list[tuple[int, str]]:
         (int(question.position), str(question.text or ""))
         for question in questions or []
     ]
+
+
+def _paper_result_paragraph(label: str) -> str:
+    return (
+        f'<text:p text:style-name="ProtocolResult">{_xml(paper_result_text(label))}</text:p>'
+        '<text:p text:style-name="ProtocolResultGap">&#160;</text:p>'
+    )
 
 
 def _manual_outcome(label: str) -> str:

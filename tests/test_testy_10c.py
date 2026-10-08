@@ -396,7 +396,8 @@ class PaperBatchTestCase(unittest.TestCase):
         self.assertNotEqual(snapshots[0], snapshots[1])
         for exam, path in zip(result.exams, result.files.test_paths, strict=True):
             self.assertEqual(path.parent, self.folder)
-            self.assertIn(variant_label(exam), _plain(_odt_part(path, "content.xml")))
+            self.assertNotIn(variant_label(exam), _plain(_odt_part(path, "content.xml")))
+            self.assertIn(variant_label(exam), _odt_part(path, "styles.xml"))
             self.assertIn(exam.employee_last_name, _plain(_odt_part(path, "content.xml")))
 
     def test_name_collision_uses_personal_number_and_keeps_existing_file(self) -> None:
