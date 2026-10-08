@@ -223,6 +223,7 @@ class WrittenExamWindow(QDialog):
         if not self._close_allowed:
             event.ignore()
             return
+        self._flush_running_mark()
         event.accept()
         self.hide()
 
@@ -586,7 +587,20 @@ class WrittenExamWindow(QDialog):
     def _on_tick(self) -> None:
         if self._phase != "running":
             return
+        written_exam_service.note_running_mark(self.exam_id, now=self.clock.now())
         self._deadline_reached(self._exam_now())
+
+    def _flush_running_mark(self) -> None:
+        if self._phase != "running":
+            return
+        try:
+            written_exam_service.note_running_mark(
+                self.exam_id,
+                now=self.clock.now(),
+                force=True,
+            )
+        except TestExamError:
+            return
 
     def _exam_now(self) -> datetime:
         """Nástěnný čas zkoušky, který posun hodin zpět neprodlouží."""

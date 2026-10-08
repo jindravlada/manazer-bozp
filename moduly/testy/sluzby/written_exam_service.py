@@ -12,7 +12,8 @@ import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from sqlalchemy import select
+from sqlalchemy import func, or_, select, update
+from sqlalchemy.orm import object_session
 
 from core.database.session import get_session
 from moduly.testy.constants import (
@@ -491,6 +492,7 @@ class WrittenExamService:
             exam.status = EXAM_STATUS_STARTED
             exam.written_mode = WRITTEN_MODE_ELECTRONIC
             exam.written_started_at = moment
+            exam.written_time_mark = moment
             exam.written_finished_at = None
             exam.written_finish_reason = ""
             session.commit()
@@ -760,6 +762,7 @@ class WrittenExamService:
                 choice.exam_answer_id = int(answer.id)
                 choice.selected_letter = answer.letter
                 choice.saved_at = moment
+            self._apply_time_mark(session, exam, moment, minimum_step=None)
             session.commit()
         except WrittenExamClosed:
             session.commit()
@@ -811,7 +814,9 @@ class WrittenExamService:
                 session.rollback()
                 return ""
             if not self._limit_reached(exam, moment):
+                exam_key = int(exam.id)
                 session.rollback()
+                self._write_time_mark(exam_key, moment, minimum_step=None)
                 return ""
             self._mark_finished(session, exam, WRITTEN_FINISH_EXPIRED, moment)
             session.commit()
@@ -845,15 +850,166 @@ class WrittenExamService:
         """Stejný hlídaný čas, jaký použije uložení odpovědi a vypršení."""
         return self._observed_now(self._loaded_exam(exam_id), wall_now)
 
+    def note_running_mark(
+        self,
+        exam_id: int,
+        *,
+        now: datetime | None = None,
+        force: bool = False,
+    ) -> None:
+        """Zapíše efektivní čas běžící zkoušky. Dokončenou zkoušku nemění.
+
+        Průběžný zápis posune značku nejvýše jednou za sekundu.
+        ``force`` je pro uložení odpovědi a řádné zavření okna.
+        """
+        wall = self._moment(now)
+        session = get_session()
+        pending: tuple[int, datetime] | None = None
+        try:
+            exam = self._require(session, exam_id)
+            if not self._mark_is_open(exam):
+                return
+            moment = self._observed_now(exam, wall)
+            if exam.written_started_at is not None and moment < exam.written_started_at:
+                return
+            pending = (int(exam.id), moment)
+        finally:
+            session.close()
+        if pending is not None:
+            self._write_time_mark(
+                pending[0],
+                pending[1],
+                minimum_step=None if force else timedelta(seconds=1),
+            )
+
     def _observed_now(self, exam: TestExam, wall_now: datetime) -> datetime:
         if exam.written_started_at is None:
             return wall_now
         created = exam.created_at or exam.written_started_at
-        return effective_exam_now(
+        guarded = effective_exam_now(
             int(exam.id),
             exam.written_started_at,
             wall_now,
             identity=_instant_key(created),
+        )
+        if guarded < exam.written_started_at:
+            return guarded
+        floor = self._stored_time_floor(exam)
+        if floor is not None and guarded < floor:
+            return floor
+        return guarded
+
+    def _stored_time_floor(self, exam: TestExam) -> datetime | None:
+        """Nejpozdější už zaznamenaný čas. Značka se nižším časem nenahrazuje."""
+        if exam.written_time_mark is not None:
+            return exam.written_time_mark
+        latest_answer = self._latest_choice_saved_at(exam)
+        candidates = [
+            item
+            for item in (exam.written_started_at, latest_answer)
+            if item is not None
+        ]
+        if not candidates:
+            return None
+        return max(candidates)
+
+    def _latest_choice_saved_at(self, exam: TestExam) -> datetime | None:
+        session = object_session(exam)
+        if session is None:
+            return None
+        return session.scalar(
+            select(func.max(TestExamWrittenChoice.saved_at)).where(
+                TestExamWrittenChoice.exam_id == int(exam.id)
+            )
+        )
+
+    def _mark_is_open(self, exam: TestExam) -> bool:
+        if exam.status != EXAM_STATUS_STARTED or exam.written_started_at is None:
+            return False
+        return not written_part_finished(
+            status=exam.status,
+            written_finish_reason=exam.written_finish_reason,
+            written_finished_at=exam.written_finished_at,
+        )
+
+    def _apply_time_mark(
+        self,
+        session,
+        exam: TestExam,
+        moment: datetime,
+        *,
+        minimum_step: timedelta | None,
+    ) -> None:
+        """Podmíněný zápis ve stejné transakci. Starší čas novější značku nepřepíše."""
+        if not self._mark_is_open(exam):
+            return
+        if exam.written_started_at is not None and moment < exam.written_started_at:
+            return
+        current = exam.written_time_mark
+        if current is not None and moment <= current:
+            return
+        if (
+            minimum_step is not None
+            and current is not None
+            and moment < current + minimum_step
+        ):
+            return
+        self._conditional_mark_update(session, int(exam.id), moment)
+        session.expire(exam, ["written_time_mark"])
+
+    def _write_time_mark(
+        self,
+        exam_id: int,
+        moment: datetime,
+        *,
+        minimum_step: timedelta | None,
+    ) -> None:
+        """Samostatný zápis. Podmínka se vyhodnotí až nad posledním commitnutým řádkem."""
+        session = get_session()
+        try:
+            exam = session.get(TestExam, int(exam_id))
+            if exam is None or not self._mark_is_open(exam):
+                session.rollback()
+                return
+            current = exam.written_time_mark
+            if exam.written_started_at is not None and moment < exam.written_started_at:
+                session.rollback()
+                return
+            if current is not None and moment <= current:
+                session.rollback()
+                return
+            if (
+                minimum_step is not None
+                and current is not None
+                and moment < current + minimum_step
+            ):
+                session.rollback()
+                return
+            session.commit()
+            self._conditional_mark_update(session, int(exam_id), moment)
+            session.commit()
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    def _conditional_mark_update(self, session, exam_id: int, moment: datetime) -> None:
+        session.execute(
+            update(TestExam)
+            .where(
+                TestExam.id == int(exam_id),
+                TestExam.status == EXAM_STATUS_STARTED,
+                or_(
+                    TestExam.written_finish_reason.is_(None),
+                    TestExam.written_finish_reason == "",
+                ),
+                or_(
+                    TestExam.written_time_mark.is_(None),
+                    TestExam.written_time_mark < moment,
+                ),
+            )
+            .values(written_time_mark=moment)
         )
 
     def _limit_reached(self, exam: TestExam, now: datetime) -> bool:

@@ -3765,6 +3765,7 @@ def _ensure_test_exam_tables() -> None:
         TestExam.__table__.create(bind=_db_engine(), checkfirst=True)
     else:
         _add_column("test_exams", "written_started_at DATETIME")
+        _add_column("test_exams", "written_time_mark DATETIME")
         _add_column("test_exams", "written_finished_at DATETIME")
         _add_column(
             "test_exams",

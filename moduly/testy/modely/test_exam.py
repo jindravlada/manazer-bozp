@@ -62,6 +62,9 @@ class TestExam(Base):
     # Čísla a výsledek vzniknou až při definitivním ukončení, ze snapshotu
     # této zkoušky. Prázdné hodnoty neznamenají Vyhověl ani Nevyhověl.
     written_started_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    # Poslední zaznamenaný efektivní čas běžící elektronické zkoušky.
+    # Posouvá se jen dopředu. NULL u starších řádků a mimo elektronický průběh.
+    written_time_mark: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     written_finished_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     written_finish_reason: Mapped[str] = mapped_column(String(20), default="", nullable=False)
     written_question_count: Mapped[int | None] = mapped_column(Integer, nullable=True)

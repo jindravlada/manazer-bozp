@@ -358,6 +358,7 @@ class ElectronicWrittenExamTestCase(unittest.TestCase):
     def test_schema_keeps_written_progress(self) -> None:
         columns = {column["name"] for column in inspect(engine).get_columns("test_exams")}
         self.assertIn("written_started_at", columns)
+        self.assertIn("written_time_mark", columns)
         self.assertIn("written_finished_at", columns)
         self.assertIn("written_finish_reason", columns)
         self.assertTrue(inspect(engine).has_table("test_exam_written_choices"))
@@ -391,6 +392,7 @@ class ElectronicWrittenExamTestCase(unittest.TestCase):
         started = written_exam_service.start(exam.id, now=_STARTED)
         self.assertEqual(started.status, EXAM_STATUS_STARTED)
         self.assertEqual(started.written_started_at, _STARTED)
+        self.assertEqual(started.written_time_mark, _STARTED)
         self.assertEqual(started.written_finish_reason, "")
         self.assertIsNone(started.written_finished_at)
         self.assertFalse(written_exam_service.can_start(exam.id))
@@ -928,6 +930,268 @@ class ElectronicWrittenExamTestCase(unittest.TestCase):
         self.assertLess(
             remaining_written_seconds(_STARTED, 60, continued_at),
             60,
+        )
+
+    def test_running_mark_advances_at_most_once_per_second(self) -> None:
+        employee = _employee("81015", "Vera", "Značka")
+        _topic, test = _written_test("Značka", ["Otázka"], seconds=60)
+        exam = _prepare(employee.id, test.id)
+        written_exam_service.start(exam.id, now=_STARTED)
+        written_exam_service.note_running_mark(
+            exam.id,
+            now=_STARTED + timedelta(milliseconds=400),
+        )
+        early = test_exam_service.get_exam(exam.id)
+        assert early is not None
+        self.assertEqual(early.written_time_mark, _STARTED)
+        written_exam_service.note_running_mark(
+            exam.id,
+            now=_STARTED + timedelta(seconds=2),
+        )
+        marked = test_exam_service.get_exam(exam.id)
+        assert marked is not None
+        self.assertGreaterEqual(marked.written_time_mark, _STARTED + timedelta(seconds=2))
+        self.assertLessEqual(
+            remaining_written_seconds(_STARTED, 60, marked.written_time_mark),
+            58,
+        )
+
+    def test_close_flushes_mark_inside_the_one_second_gap(self) -> None:
+        employee = _employee("81016", "Wanda", "Zavření")
+        _topic, test = _written_test("Zavření", ["Otázka"], seconds=60)
+        exam = _prepare(employee.id, test.id)
+        moment = _STARTED + timedelta(milliseconds=400)
+        clock = FixedWrittenExamClock(moment)
+        written_exam_service.start(exam.id, now=_STARTED)
+        window = self._watch(WrittenExamWindow(exam.id, clock=clock))
+        window.show_at(1280, 800)
+        window._timer.stop()
+        window.release_testing_lock()
+        stored = test_exam_service.get_exam(exam.id)
+        assert stored is not None
+        self.assertGreaterEqual(stored.written_time_mark, moment)
+        self.assertLess(stored.written_time_mark, _STARTED + timedelta(seconds=1))
+        self.assertEqual(stored.written_finish_reason, "")
+
+    def test_restart_with_clock_rollback_keeps_consumed_time(self) -> None:
+        employee = _employee("81017", "Xenie", "Restart")
+        _topic, test = _written_test("Restart", ["Jedna", "Dvě"], seconds=60)
+        exam = _prepare(employee.id, test.id)
+        written_exam_service.start(exam.id, now=_STARTED)
+        screen = written_exam_service.screen(exam.id)
+        first = screen.questions[0]
+        consumed = _STARTED + timedelta(seconds=40)
+        written_exam_service.save_choice(
+            exam.id,
+            first.exam_question_id,
+            first.options[0].exam_answer_id,
+            now=consumed,
+        )
+        stored_choice = [
+            (choice.exam_answer_id, choice.selected_letter, choice.saved_at)
+            for choice in written_exam_service.choices(exam.id)
+        ]
+        self.assertGreaterEqual(
+            test_exam_service.get_exam(exam.id).written_time_mark,
+            consumed,
+        )
+
+        _running_clocks.clear()
+        honest = _STARTED + timedelta(seconds=50)
+        self.assertEqual(written_exam_service.resume(exam.id, now=honest), "")
+        honest_row = test_exam_service.get_exam(exam.id)
+        assert honest_row is not None
+        self.assertEqual(honest_row.status, EXAM_STATUS_STARTED)
+        self.assertEqual(honest_row.written_started_at, _STARTED)
+        self.assertGreaterEqual(honest_row.written_time_mark, honest)
+        self.assertEqual(remaining_written_seconds(_STARTED, 60, honest), 10)
+        self.assertEqual(
+            [
+                (choice.exam_answer_id, choice.selected_letter, choice.saved_at)
+                for choice in written_exam_service.choices(exam.id)
+            ],
+            stored_choice,
+        )
+
+        _running_clocks.clear()
+        rolled = _STARTED + timedelta(seconds=10)
+        self.assertEqual(written_exam_service.resume(exam.id, now=rolled), "")
+        rolled_row = test_exam_service.get_exam(exam.id)
+        assert rolled_row is not None
+        self.assertEqual(rolled_row.written_finish_reason, "")
+        self.assertGreaterEqual(rolled_row.written_time_mark, honest)
+        self.assertEqual(
+            remaining_written_seconds(_STARTED, 60, rolled_row.written_time_mark),
+            remaining_written_seconds(_STARTED, 60, honest_row.written_time_mark),
+        )
+        self.assertLess(
+            remaining_written_seconds(_STARTED, 60, rolled_row.written_time_mark),
+            remaining_written_seconds(_STARTED, 60, rolled),
+        )
+        self.assertEqual(
+            [
+                (choice.exam_answer_id, choice.selected_letter, choice.saved_at)
+                for choice in written_exam_service.choices(exam.id)
+            ],
+            stored_choice,
+        )
+
+    def test_kill_between_mark_writes_does_not_restore_the_gap(self) -> None:
+        employee = _employee("81018", "Yveta", "Přerušení")
+        _topic, test = _written_test("Přerušení", ["Otázka"], seconds=60)
+        exam = _prepare(employee.id, test.id)
+        written_exam_service.start(exam.id, now=_STARTED)
+        consumed = _STARTED + timedelta(seconds=20)
+        written_exam_service.note_running_mark(exam.id, now=consumed, force=True)
+        written_exam_service.note_running_mark(
+            exam.id,
+            now=consumed + timedelta(milliseconds=400),
+        )
+        self.assertEqual(test_exam_service.get_exam(exam.id).written_time_mark, consumed)
+        _running_clocks.clear()
+        self.assertEqual(
+            written_exam_service.resume(exam.id, now=_STARTED + timedelta(seconds=5)),
+            "",
+        )
+        resumed = test_exam_service.get_exam(exam.id)
+        assert resumed is not None
+        self.assertEqual(resumed.written_time_mark, consumed)
+        self.assertEqual(remaining_written_seconds(_STARTED, 60, resumed.written_time_mark), 40)
+        self.assertEqual(resumed.status, EXAM_STATUS_STARTED)
+
+    def test_legacy_exam_without_mark_uses_last_answer(self) -> None:
+        employee = _employee("81019", "Zora", "Starší")
+        _topic, test = _written_test("Starší", ["Jedna", "Dvě"], seconds=60)
+        exam = _prepare(employee.id, test.id)
+        written_exam_service.start(exam.id, now=_STARTED)
+        screen = written_exam_service.screen(exam.id)
+        first = screen.questions[0]
+        answered = _STARTED + timedelta(seconds=25)
+        written_exam_service.save_choice(
+            exam.id,
+            first.exam_question_id,
+            first.options[0].exam_answer_id,
+            now=answered,
+        )
+        with get_session() as session:
+            row = session.get(TestExam, exam.id)
+            assert row is not None
+            row.written_time_mark = None
+            session.commit()
+        self.assertIsNone(test_exam_service.get_exam(exam.id).written_time_mark)
+        _running_clocks.clear()
+        self.assertEqual(
+            written_exam_service.resume(exam.id, now=_STARTED + timedelta(seconds=5)),
+            "",
+        )
+        resumed = test_exam_service.get_exam(exam.id)
+        assert resumed is not None
+        self.assertGreaterEqual(resumed.written_time_mark, answered)
+        self.assertEqual(resumed.status, EXAM_STATUS_STARTED)
+        self.assertEqual(resumed.written_result, None)
+        stored = written_exam_service.choices(exam.id)
+        self.assertEqual(len(stored), 1)
+        self.assertEqual(stored[0].exam_answer_id, first.options[0].exam_answer_id)
+        self.assertGreaterEqual(stored[0].saved_at, answered)
+
+    def test_finished_exam_mark_and_result_stay_unchanged(self) -> None:
+        employee = _employee("81020", "Anna", "Hotovo")
+        _topic, test = _written_test("Hotovo", ["Otázka"], seconds=60)
+        exam = _prepare(employee.id, test.id)
+        written_exam_service.start(exam.id, now=_STARTED)
+        question = written_exam_service.screen(exam.id).questions[0]
+        written_exam_service.save_choice(
+            exam.id,
+            question.exam_question_id,
+            question.options[0].exam_answer_id,
+            now=_STARTED + timedelta(seconds=8),
+        )
+        written_exam_service.submit(exam.id, now=_STARTED + timedelta(seconds=15))
+        done = test_exam_service.get_exam(exam.id)
+        assert done is not None
+        snapshot = (
+            done.status,
+            done.written_finish_reason,
+            done.written_finished_at,
+            done.written_result,
+            done.written_time_mark,
+            done.written_started_at,
+            [
+                (choice.exam_answer_id, choice.selected_letter, choice.saved_at)
+                for choice in written_exam_service.choices(exam.id)
+            ],
+        )
+        _running_clocks.clear()
+        written_exam_service.note_running_mark(
+            exam.id,
+            now=_STARTED + timedelta(seconds=50),
+            force=True,
+        )
+        with self.assertRaises(WrittenExamClosed):
+            written_exam_service.save_choice(
+                exam.id,
+                question.exam_question_id,
+                question.options[1].exam_answer_id,
+                now=_STARTED + timedelta(seconds=4),
+            )
+        session = get_session()
+        try:
+            written_exam_service._conditional_mark_update(
+                session,
+                exam.id,
+                _STARTED + timedelta(seconds=55),
+            )
+            session.commit()
+        finally:
+            session.close()
+        fresh = test_exam_service.get_exam(exam.id)
+        assert fresh is not None
+        self.assertEqual(
+            (
+                fresh.status,
+                fresh.written_finish_reason,
+                fresh.written_finished_at,
+                fresh.written_result,
+                fresh.written_time_mark,
+                fresh.written_started_at,
+                [
+                    (choice.exam_answer_id, choice.selected_letter, choice.saved_at)
+                    for choice in written_exam_service.choices(exam.id)
+                ],
+            ),
+            snapshot,
+        )
+
+    def test_older_mark_write_cannot_replace_a_newer_one(self) -> None:
+        employee = _employee("81021", "Bela", "Souběh")
+        _topic, test = _written_test("Souběh", ["Otázka"], seconds=60)
+        exam = _prepare(employee.id, test.id)
+        written_exam_service.start(exam.id, now=_STARTED)
+        newer = _STARTED + timedelta(seconds=40)
+        written_exam_service.note_running_mark(exam.id, now=newer, force=True)
+        session = get_session()
+        try:
+            written_exam_service._conditional_mark_update(
+                session,
+                exam.id,
+                _STARTED + timedelta(seconds=10),
+            )
+            session.commit()
+        finally:
+            session.close()
+        self.assertGreaterEqual(
+            test_exam_service.get_exam(exam.id).written_time_mark,
+            newer,
+        )
+        _running_clocks.clear()
+        written_exam_service.note_running_mark(
+            exam.id,
+            now=_STARTED + timedelta(seconds=12),
+            force=True,
+        )
+        self.assertGreaterEqual(
+            test_exam_service.get_exam(exam.id).written_time_mark,
+            newer,
         )
 
     def test_escape_and_close_do_not_leave_testing_mode(self) -> None:
