@@ -23,6 +23,14 @@ ENTITY_TYPE = "test_exam_protocol"
 _PDF_HEADER = b"%PDF-"
 _PDF_EOF = b"%%EOF"
 _TAIL_BYTES = 8192
+_MAX_PROTOCOL_BYTES = 20 * 1024 * 1024
+_MAX_TRAILING_AFTER_EOF = 1024
+_PDF_WHITESPACE = b"\x00\t\n\f\r "
+_SIZE_MESSAGE = "Podepsaný protokol nesmí být větší než 20 MB."
+_INVALID_PDF_MESSAGE = (
+    "Soubor není platné PDF. Nestačí změnit příponu, "
+    "dokument musí mít platný formát PDF."
+)
 
 
 class ExamSignedProtocolError(Exception):
@@ -250,8 +258,10 @@ def _require_source_pdf(source_path: str | Path) -> Path:
         raise ExamSignedProtocolError("Vyberte soubor PDF, ne adresář.")
     if not stat.S_ISREG(info.st_mode):
         raise ExamSignedProtocolError("Vybraný soubor nelze přečíst.")
+    if info.st_size > _MAX_PROTOCOL_BYTES:
+        raise ExamSignedProtocolError(_SIZE_MESSAGE)
     try:
-        _assert_pdf(source)
+        _assert_new_pdf(source)
     except ExamSignedProtocolError:
         raise
     except OSError as exc:
@@ -260,6 +270,7 @@ def _require_source_pdf(source_path: str | Path) -> Path:
 
 
 def _assert_pdf(path: Path) -> None:
+    """Kontrola už uloženého protokolu. Nová přísnější pravidla se tu neaplikují."""
     try:
         with path.open("rb") as handle:
             header = handle.read(len(_PDF_HEADER))
@@ -270,10 +281,37 @@ def _assert_pdf(path: Path) -> None:
     except OSError as exc:
         raise ExamSignedProtocolError("Vybraný soubor nelze přečíst.") from exc
     if not header.startswith(_PDF_HEADER) or _PDF_EOF not in tail:
-        raise ExamSignedProtocolError(
-            "Soubor není platné PDF. Nestačí změnit příponu, "
-            "dokument musí mít platný formát PDF."
-        )
+        raise ExamSignedProtocolError(_INVALID_PDF_MESSAGE)
+
+
+def _assert_new_pdf(path: Path) -> None:
+    """Hlavička, konec a velikost nově připojovaného PDF. Obsah se nespouští."""
+    try:
+        with path.open("rb") as handle:
+            header = handle.read(len(_PDF_HEADER))
+            handle.seek(0, os.SEEK_END)
+            size = handle.tell()
+            if size > _MAX_PROTOCOL_BYTES:
+                raise ExamSignedProtocolError(_SIZE_MESSAGE)
+            window = len(_PDF_EOF) + _MAX_TRAILING_AFTER_EOF
+            handle.seek(max(0, size - window), os.SEEK_SET)
+            tail = handle.read(window)
+    except ExamSignedProtocolError:
+        raise
+    except OSError as exc:
+        raise ExamSignedProtocolError("Vybraný soubor nelze přečíst.") from exc
+    _require_strict_pdf(header, tail, size)
+
+
+def _require_strict_pdf(header: bytes, tail: bytes, size: int) -> None:
+    if size <= 0 or not header.startswith(_PDF_HEADER):
+        raise ExamSignedProtocolError(_INVALID_PDF_MESSAGE)
+    index = tail.rfind(_PDF_EOF)
+    if index < 0:
+        raise ExamSignedProtocolError(_INVALID_PDF_MESSAGE)
+    trailing = tail[index + len(_PDF_EOF) :]
+    if any(byte not in _PDF_WHITESPACE for byte in trailing):
+        raise ExamSignedProtocolError(_INVALID_PDF_MESSAGE)
 
 
 @dataclass
@@ -368,22 +406,40 @@ def _stream_regular_file(source: Path, destination_fd: int) -> None:
     except OSError as exc:
         raise ExamSignedProtocolError("Vybraný soubor nelze přečíst.") from exc
     try:
+        total = 0
         while True:
             chunk = os.read(src, 1024 * 1024)
             if not chunk:
-                return
+                break
+            total += len(chunk)
+            if total > _MAX_PROTOCOL_BYTES:
+                raise ExamSignedProtocolError(_SIZE_MESSAGE)
             view = memoryview(chunk)
             while view:
                 written = os.write(destination_fd, view)
                 if written <= 0:
                     raise ExamSignedProtocolError("Protokol se nepodařilo uložit.")
                 view = view[written:]
+        if total <= 0:
+            raise ExamSignedProtocolError(_INVALID_PDF_MESSAGE)
     except ExamSignedProtocolError:
         raise
     except OSError as exc:
         raise ExamSignedProtocolError("Protokol se nepodařilo uložit.") from exc
     finally:
         os.close(src)
+
+
+def _read_exact(fd: int, size: int) -> bytes:
+    chunks = []
+    remaining = size
+    while remaining > 0:
+        chunk = os.read(fd, remaining)
+        if not chunk:
+            break
+        chunks.append(chunk)
+        remaining -= len(chunk)
+    return b"".join(chunks)
 
 
 def _unlink_matching(dir_fd: int, name: str, dev: int, ino: int) -> None:
@@ -419,21 +475,19 @@ def _assert_stored_pdf(copied: _NewProtocolFile) -> None:
             or not stat.S_ISREG(info.st_mode)
         ):
             raise ExamSignedProtocolError("Protokol se nepodařilo uložit.")
+        if info.st_size > _MAX_PROTOCOL_BYTES:
+            raise ExamSignedProtocolError(_SIZE_MESSAGE)
         header = os.read(fd, len(_PDF_HEADER))
-        size = os.lseek(fd, 0, os.SEEK_END)
-        os.lseek(fd, max(0, size - _TAIL_BYTES), os.SEEK_SET)
-        tail = os.read(fd, _TAIL_BYTES)
+        window = len(_PDF_EOF) + _MAX_TRAILING_AFTER_EOF
+        os.lseek(fd, max(0, info.st_size - window), os.SEEK_SET)
+        tail = _read_exact(fd, min(info.st_size, window))
     except ExamSignedProtocolError:
         raise
     except OSError as exc:
         raise ExamSignedProtocolError("Protokol se nepodařilo uložit.") from exc
     finally:
         os.close(fd)
-    if not header.startswith(_PDF_HEADER) or _PDF_EOF not in tail:
-        raise ExamSignedProtocolError(
-            "Soubor není platné PDF. Nestačí změnit příponu, "
-            "dokument musí mít platný formát PDF."
-        )
+    _require_strict_pdf(header, tail, info.st_size)
 
 
 exam_signed_protocol_service = ExamSignedProtocolService()
