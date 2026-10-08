@@ -37,7 +37,9 @@ with patch.object(Path, "home", return_value=_TMP):
         AUDIT_PROGRAM_DASHBOARD_TAB_FINDINGS,
         AUDIT_PROGRAM_WINDOW_TITLE,
         AUDIT_PROTOCOL_BUTTON_LABEL,
+        AUDIT_PROTOCOL_BUTTON_SHORT,
         AUDIT_DETAILED_REPORT_BUTTON_LABEL,
+        AUDIT_DETAILED_REPORT_BUTTON_SHORT,
         AUDIT_STANDARD_ISO_45001,
         AUDIT_STANDARD_ISO_9001,
     )
@@ -330,10 +332,15 @@ class AuditProgramManagerDialogTestCase(unittest.TestCase):
         self.assertTrue(dialog._start_audit_btn.isEnabled())
         self.assertFalse(dialog._open_audit_btn.isEnabled())
         self.assertFalse(dialog._protocol_btn.isEnabled())
-        self.assertEqual(dialog._protocol_btn.text(), AUDIT_PROTOCOL_BUTTON_LABEL)
+        self.assertEqual(dialog._protocol_btn.text(), AUDIT_PROTOCOL_BUTTON_SHORT)
+        self.assertIn(AUDIT_PROTOCOL_BUTTON_LABEL, dialog._protocol_btn.toolTip())
         self.assertFalse(dialog._detailed_report_btn.isEnabled())
         self.assertEqual(
-            dialog._detailed_report_btn.text(), AUDIT_DETAILED_REPORT_BUTTON_LABEL
+            dialog._detailed_report_btn.text(), AUDIT_DETAILED_REPORT_BUTTON_SHORT
+        )
+        self.assertIn(
+            AUDIT_DETAILED_REPORT_BUTTON_LABEL,
+            dialog._detailed_report_btn.toolTip(),
         )
 
     def test_open_audit_action_after_visit_linked(self) -> None:

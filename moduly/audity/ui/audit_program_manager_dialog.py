@@ -27,16 +27,19 @@ from moduly.audity.constants import (
     AUDIT_PROGRAM_ADD_BUTTON,
     AUDIT_PROGRAM_BUTTON_LABEL,
     AUDIT_PROGRAM_ADD_VISIT_BUTTON,
+    AUDIT_PROGRAM_ADD_VISIT_BUTTON_SHORT,
     AUDIT_PROGRAM_CENTER_PANEL_TITLE,
     AUDIT_PROGRAM_DETAIL_ACTIONS_LABEL,
     AUDIT_PROGRAM_DETAIL_STANDARDS_LABEL,
-    AUDIT_PROGRAM_EXPORT_PLAN_BUTTON,
+    AUDIT_PROGRAM_EXPORT_PLAN_BUTTON_SHORT,
+    AUDIT_PROGRAM_EXPORT_PLAN_TOOLTIP,
     AUDIT_PROGRAM_EXPORT_PLAN_DIALOG_TITLE,
     AUDIT_PROGRAM_EXPORT_PLAN_OPEN_FAILED,
     AUDIT_PROGRAM_FINAL_REPORT_BUTTON,
     AUDIT_PROGRAM_PREVIOUS_PROGRAM_LABEL,
     audit_program_distribute_processes_button_label,
     AUDIT_PROGRAM_EDIT_VISIT_BUTTON,
+    AUDIT_PROGRAM_EDIT_VISIT_BUTTON_SHORT,
     AUDIT_PROGRAM_GENERATE_VISITS_BUTTON,
     AUDIT_PROGRAM_LEFT_PANEL_TITLE,
     AUDIT_PROGRAM_MOVE_PROCESS_BUTTON,
@@ -50,7 +53,9 @@ from moduly.audity.constants import (
     AUDIT_PROGRAM_REFRESH_OVERVIEW_BUTTON,
     AUDIT_PROGRAM_RIGHT_PANEL_TITLE,
     AUDIT_PROGRAM_SKIP_VISIT_BUTTON,
+    AUDIT_PROGRAM_SKIP_VISIT_BUTTON_SHORT,
     AUDIT_PROGRAM_START_AUDIT_BUTTON,
+    AUDIT_PROGRAM_START_AUDIT_BUTTON_SHORT,
     AUDIT_PROGRAM_STATUS_AUDIT_COMPLETED,
     AUDIT_PROGRAM_STATUS_AUDIT_CREATED,
     AUDIT_PROGRAM_STATUS_BADGE_ICONS,
@@ -69,8 +74,10 @@ from moduly.audity.constants import (
     AUDIT_PROGRAM_VISIT_STATUS_SKIPPED,
     AUDIT_PROGRAM_WINDOW_TITLE,
     AUDIT_DETAILED_REPORT_BUTTON_LABEL,
+    AUDIT_DETAILED_REPORT_BUTTON_SHORT,
     AUDIT_DETAILED_REPORT_DIALOG_TITLE,
     AUDIT_PROTOCOL_BUTTON_LABEL,
+    AUDIT_PROTOCOL_BUTTON_SHORT,
     AUDIT_PROTOCOL_DIALOG_TITLE,
     AUDIT_STATUS_DOKONCENO,
     PROCESS_PANEL_LEFT_WIDTH,
@@ -275,7 +282,8 @@ class AuditProgramManagerDialog(QDialog):
             audit_program_distribute_processes_button_label(False)
         )
         self._refresh_overview_btn = QPushButton(AUDIT_PROGRAM_REFRESH_OVERVIEW_BUTTON)
-        self._export_plan_btn = QPushButton(AUDIT_PROGRAM_EXPORT_PLAN_BUTTON)
+        self._export_plan_btn = QPushButton(AUDIT_PROGRAM_EXPORT_PLAN_BUTTON_SHORT)
+        self._export_plan_btn.setToolTip(AUDIT_PROGRAM_EXPORT_PLAN_TOOLTIP)
         self._final_report_btn = QPushButton(AUDIT_PROGRAM_FINAL_REPORT_BUTTON)
         self._generate_visits_btn.clicked.connect(self._generate_visits)
         self._supplement_workplaces_btn.clicked.connect(self._supplement_workplaces)
@@ -319,22 +327,28 @@ class AuditProgramManagerDialog(QDialog):
         layout.addWidget(title)
 
         tree_toolbar = QHBoxLayout()
-        self._add_visit_btn = QPushButton(AUDIT_PROGRAM_ADD_VISIT_BUTTON)
-        self._edit_visit_btn = QPushButton(AUDIT_PROGRAM_EDIT_VISIT_BUTTON)
-        self._skip_visit_btn = QPushButton(AUDIT_PROGRAM_SKIP_VISIT_BUTTON)
+        self._add_visit_btn = QPushButton(AUDIT_PROGRAM_ADD_VISIT_BUTTON_SHORT)
+        self._add_visit_btn.setToolTip(AUDIT_PROGRAM_ADD_VISIT_BUTTON)
+        self._edit_visit_btn = QPushButton(AUDIT_PROGRAM_EDIT_VISIT_BUTTON_SHORT)
+        self._edit_visit_btn.setToolTip(AUDIT_PROGRAM_EDIT_VISIT_BUTTON)
+        self._skip_visit_btn = QPushButton(AUDIT_PROGRAM_SKIP_VISIT_BUTTON_SHORT)
+        self._skip_visit_btn.setToolTip(AUDIT_PROGRAM_SKIP_VISIT_BUTTON)
         self._move_process_btn = QPushButton(AUDIT_PROGRAM_MOVE_PROCESS_BUTTON)
-        self._start_audit_btn = QPushButton(AUDIT_PROGRAM_START_AUDIT_BUTTON)
+        self._start_audit_btn = QPushButton(AUDIT_PROGRAM_START_AUDIT_BUTTON_SHORT)
+        self._start_audit_btn.setToolTip(AUDIT_PROGRAM_START_AUDIT_BUTTON)
         self._open_audit_btn = QPushButton(AUDIT_PROGRAM_OPEN_AUDIT_BUTTON)
         self._print_statements_btn = QPushButton(AUDIT_PROGRAM_PRINT_STATEMENTS_BUTTON)
-        self._protocol_btn = QPushButton(AUDIT_PROTOCOL_BUTTON_LABEL)
+        self._protocol_btn = QPushButton(AUDIT_PROTOCOL_BUTTON_SHORT)
         self._protocol_btn.setEnabled(False)
         self._protocol_btn.setToolTip(
-            "Export protokolu je dostupný pouze pro dokončené (uzavřené) audity."
+            AUDIT_PROTOCOL_BUTTON_LABEL
+            + "\nExport protokolu je dostupný pouze pro dokončené (uzavřené) audity."
         )
-        self._detailed_report_btn = QPushButton(AUDIT_DETAILED_REPORT_BUTTON_LABEL)
+        self._detailed_report_btn = QPushButton(AUDIT_DETAILED_REPORT_BUTTON_SHORT)
         self._detailed_report_btn.setEnabled(False)
         self._detailed_report_btn.setToolTip(
-            "Podrobná zpráva je dostupná pouze pro dokončené (uzavřené) audity."
+            AUDIT_DETAILED_REPORT_BUTTON_LABEL
+            + "\nPodrobná zpráva je dostupná pouze pro dokončené (uzavřené) audity."
         )
         self._add_visit_btn.clicked.connect(self._create_visit_for_selection)
         self._edit_visit_btn.clicked.connect(self._edit_selected_visit)

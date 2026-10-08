@@ -347,6 +347,8 @@ AUDIT_PROGRAM_SUPPLEMENT_PROCESSES_BUTTON = "Doplnit nové procesy"
 AUDIT_PROGRAM_USE_SUPPLEMENT_PROCESSES_LABEL = False
 AUDIT_PROGRAM_REFRESH_OVERVIEW_BUTTON = "Přepočítat přehled"
 AUDIT_PROGRAM_EXPORT_PLAN_BUTTON = "Exportovat plán"
+AUDIT_PROGRAM_EXPORT_PLAN_BUTTON_SHORT = "Tisk plánu"
+AUDIT_PROGRAM_EXPORT_PLAN_TOOLTIP = "Vytisknout auditní plán"
 AUDIT_PROGRAM_EXPORT_PLAN_DIALOG_TITLE = "Exportovat plán interních auditů"
 AUDIT_PROGRAM_EXPORT_PLAN_OPEN_FAILED = (
     "Plán byl exportován, ale nepodařilo se jej otevřít. Otevřete jej prosím ručně."
@@ -395,11 +397,15 @@ AUDIT_PROGRAM_STATUS_AUDIT_CREATED = "✓ Audit založen."
 AUDIT_PROGRAM_STATUS_AUDIT_COMPLETED = "✓ Audit dokončen."
 
 AUDIT_PROGRAM_START_AUDIT_BUTTON = "Založit plán auditu..."
+AUDIT_PROGRAM_START_AUDIT_BUTTON_SHORT = "Založit plán"
 AUDIT_PROGRAM_OPEN_AUDIT_BUTTON = "Otevřít audit"
 AUDIT_PROTOCOL_BUTTON_LABEL = "Protokol z interního auditu..."
+AUDIT_PROTOCOL_BUTTON_SHORT = "Protokol"
 AUDIT_PROTOCOL_DIALOG_TITLE = "Protokol z interního auditu"
 AUDIT_DETAILED_REPORT_BUTTON_LABEL = "Podrobná zpráva z interního auditu..."
+AUDIT_DETAILED_REPORT_BUTTON_SHORT = "Podrobná zpráva"
 AUDIT_DETAILED_REPORT_DIALOG_TITLE = "Podrobná zpráva z interního auditu"
+AUDITED_SYSTEM_LABEL = "Systém managementu BOZP a QMS"
 AUDIT_PROGRAM_VISIT_HAS_AUDIT = "Návštěva už má vytvořený audit."
 AUDIT_PROGRAM_VISIT_STARTED_ELSEWHERE = (
     "Tuto návštěvu mezitím zahájil jiný proces. Nový audit nevznikl."
@@ -452,9 +458,12 @@ AUDIT_PROGRAM_MANUAL_DISTRIBUTE_BLOCKED = (
 )
 
 AUDIT_PROGRAM_ADD_VISIT_BUTTON = "+ Nová návštěva"
+AUDIT_PROGRAM_ADD_VISIT_BUTTON_SHORT = "+ Návštěva"
 AUDIT_PROGRAM_MOVE_PROCESS_BUTTON = "Přesunout..."
 AUDIT_PROGRAM_EDIT_VISIT_BUTTON = "Upravit návštěvu"
+AUDIT_PROGRAM_EDIT_VISIT_BUTTON_SHORT = "Upravit"
 AUDIT_PROGRAM_SKIP_VISIT_BUTTON = "Zrušit návštěvu"
+AUDIT_PROGRAM_SKIP_VISIT_BUTTON_SHORT = "Zrušit"
 AUDIT_PROGRAM_NEW_VISIT_DIALOG_TITLE = "Nová návštěva"
 AUDIT_PROGRAM_EDIT_VISIT_DIALOG_TITLE = "Upravit návštěvu"
 AUDIT_PROGRAM_MOVE_PROCESS_DIALOG_TITLE = "Přesunout řídicí proces"

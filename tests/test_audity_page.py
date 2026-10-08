@@ -44,7 +44,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.audity.module import get_module_definition
     from moduly.audity.sluzby.audit_commission_service import audit_commission_service
     from moduly.audity.sluzby.audit_service import audit_service
-    from moduly.audity.ui.audit_table import COL_AUDIT_TYPE, COL_STATUS
+    from moduly.audity.ui.audit_table import COL_AUDIT_DATE, COL_AUDIT_TYPE, COL_STATUS
     from moduly.nastaveni.sluzby.person_service import person_service
     from moduly.nastaveni.sluzby.settings_service import settings_service
 
@@ -211,9 +211,9 @@ class AudityPageTestCase(unittest.TestCase):
                 "ID",
                 "Číslo auditu",
                 "Rok",
-                "Plánovaný měsíc",
+                "Plán měsíc",
+                "Plán datum",
                 "Auditovaný provoz",
-                "Plánované datum",
                 "Celkem",
                 "Závady",
                 "Nedostatky",
@@ -229,7 +229,7 @@ class AudityPageTestCase(unittest.TestCase):
         )
         header = page.table.horizontalHeader()
         self.assertEqual(
-            header.sectionResizeMode(4),
+            header.sectionResizeMode(5),
             QHeaderView.ResizeMode.Stretch,
         )
 
@@ -300,7 +300,7 @@ class AudityPageTestCase(unittest.TestCase):
         self.assertEqual(page.table.rowCount(), 1)
         self.assertEqual(page.table.item(0, 2).text(), "2026")
         self.assertEqual(page.table.item(0, 3).text(), "duben")
-        self.assertEqual(page.table.item(0, 5).text(), "15.04.2026")
+        self.assertEqual(page.table.item(0, COL_AUDIT_DATE).text(), "15.04.2026")
         self.assertEqual(page.table.item(0, COL_STATUS).text(), AUDIT_STATUS_PLANOVANO)
         self.assertEqual(page.table.item(0, COL_AUDIT_TYPE).text(), AUDIT_TYPE_RADNY)
 

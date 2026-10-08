@@ -387,11 +387,11 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
     elif profile == "audity":
         widths = {
             0: 0,    # ID
-            1: 90,   # Číslo auditu
+            1: 100,  # Číslo auditu
             2: 55,   # Rok
-            3: 110,  # Plánovaný měsíc
-            4: 220,  # Auditovaný provoz — výchozí, roztáhne se
-            5: 105,  # Datum auditu
+            3: 120,  # Plán měsíc
+            4: 120,  # Plán datum
+            5: 220,  # Auditovaný provoz — výchozí, roztáhne se
             6: 65,   # Celkem
             7: 55,   # Závady
             8: 85,   # Nedostatky
@@ -407,8 +407,8 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         for column, width in widths.items():
             table.setColumnWidth(column, width)
         table.setColumnHidden(0, True)
-        header.setSectionResizeMode(4, QHeaderView.ResizeMode.Stretch)
-        for column in (1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16):
+        header.setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)
+        for column in (1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16):
             header.setSectionResizeMode(column, QHeaderView.ResizeMode.Interactive)
 
     elif profile == "bozp_inspections":

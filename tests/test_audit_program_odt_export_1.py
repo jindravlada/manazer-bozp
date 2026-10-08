@@ -40,7 +40,8 @@ with patch.object(Path, "home", return_value=_TMP):
     importlib.reload(editable_catalog_module)
 
     from moduly.audity.constants import (
-        AUDIT_PROGRAM_EXPORT_PLAN_BUTTON,
+        AUDIT_PROGRAM_EXPORT_PLAN_BUTTON_SHORT,
+        AUDIT_PROGRAM_EXPORT_PLAN_TOOLTIP,
         DEFAULT_AUDIT_PROGRAM_STANDARDS,
     )
     from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
@@ -140,7 +141,12 @@ class AuditProgramOdtExportTestCase(unittest.TestCase):
 
     def test_button_disabled_without_program_or_visits(self) -> None:
         dialog = self._create_dialog()
-        self.assertEqual(dialog._export_plan_btn.text(), AUDIT_PROGRAM_EXPORT_PLAN_BUTTON)
+        self.assertEqual(
+            dialog._export_plan_btn.text(), AUDIT_PROGRAM_EXPORT_PLAN_BUTTON_SHORT
+        )
+        self.assertEqual(
+            dialog._export_plan_btn.toolTip(), AUDIT_PROGRAM_EXPORT_PLAN_TOOLTIP
+        )
         self.assertFalse(dialog._export_plan_btn.isEnabled())
 
         program = self._create_program()

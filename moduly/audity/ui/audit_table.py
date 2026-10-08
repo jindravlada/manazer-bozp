@@ -22,8 +22,8 @@ COL_ID = 0
 COL_NUMBER = 1
 COL_YEAR = 2
 COL_PLANNED_MONTH = 3
-COL_WORKPLACE = 4
-COL_AUDIT_DATE = 5
+COL_AUDIT_DATE = 4
+COL_WORKPLACE = 5
 COL_FINDINGS_TOTAL = 6
 COL_ZAVADY = 7
 COL_NEDOSTATKY = 8
@@ -79,9 +79,9 @@ class AuditTable(QTableWidget):
             "ID",
             "Číslo auditu",
             "Rok",
-            "Plánovaný měsíc",
+            "Plán měsíc",
+            "Plán datum",
             "Auditovaný provoz",
-            "Plánované datum",
             "Celkem",
             "Závady",
             "Nedostatky",
@@ -170,13 +170,13 @@ class AuditTable(QTableWidget):
                         stable_id=record_id,
                     ),
                     create_typed_item(
-                        workplace,
-                        typed_text(None if workplace == "—" else workplace),
+                        self._format_date(audit_date),
+                        typed_date(audit_date) if audit_date is not None else typed_empty(),
                         stable_id=record_id,
                     ),
                     create_typed_item(
-                        self._format_date(audit_date),
-                        typed_date(audit_date) if audit_date is not None else typed_empty(),
+                        workplace,
+                        typed_text(None if workplace == "—" else workplace),
                         stable_id=record_id,
                     ),
                     _count_item(total_count, record_id),

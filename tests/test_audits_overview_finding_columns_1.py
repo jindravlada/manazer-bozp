@@ -110,9 +110,9 @@ _COUNT_COLUMNS = (
 _VISIBLE_HEADERS = [
     "Číslo auditu",
     "Rok",
-    "Plánovaný měsíc",
+    "Plán měsíc",
+    "Plán datum",
     "Auditovaný provoz",
-    "Plánované datum",
     "Celkem",
     "Závady",
     "Nedostatky",
@@ -812,7 +812,7 @@ class AuditsOverviewFindingColumnsTest(unittest.TestCase):
             table.horizontalHeaderItem(i).text()
             for i in range(table.columnCount())
         ]
-        self.assertEqual(labels[COL_AUDIT_DATE], "Plánované datum")
+        self.assertEqual(labels[COL_AUDIT_DATE], "Plán datum")
         self.assertEqual(labels[COL_STATUS], "Stav")
         self.assertEqual(labels[COL_AUDIT_TYPE], "Typ auditu")
         self.assertIn("Zjištění", labels)

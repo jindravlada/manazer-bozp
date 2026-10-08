@@ -286,6 +286,6 @@ class AuditPlanningPrep1TestCase(unittest.TestCase):
             for col in range(table.columnCount())
             if table.horizontalHeaderItem(col) is not None
         ]
-        self.assertIn("Plánované datum", headers)
+        self.assertIn("Plán datum", headers)
         widget.close()
         table.close()

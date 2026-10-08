@@ -52,6 +52,7 @@ from core.shared.sluzby.control_report_task_deadlines import (
 from core.shared.sluzby.control_result_service import control_result_service
 from core.shared.sluzby.finding_service import finding_service
 from moduly.audity.constants import (
+    AUDITED_SYSTEM_LABEL,
     AUDIT_CONCLUSION_EXPORT_SECTION,
     AUDIT_FINDING_REPORT_TYPE_ORDER,
     AUDIT_INTRO_CHANGES_LABEL,
@@ -790,11 +791,7 @@ class AuditExportContext:
         return stats
 
     def audited_system_label(self) -> str:
-        program = self.program_name()
-        if program:
-            return program
-        audit_type = _text(self.audit.audit_type)
-        return audit_type or "Systém managementu BOZP"
+        return AUDITED_SYSTEM_LABEL
 
     def overall_rating_label(self) -> str:
         stats = self._activity_statistics()
