@@ -40,6 +40,7 @@ from moduly.proverky.ui.bozp_inspection_tasks_widget import BozpInspectionTasksW
 from moduly.proverky.ui.bozp_inspection_terrain_widget import BozpInspectionTerrainWidget
 
 _SAVE_CLOSE_LABEL = "Uložit a zavřít"
+_INSPECTION_SAVE_SUCCESS_MESSAGE = "Prověrka byla úspěšně uložena."
 
 
 class BozpInspectionDialog(QDialog):
@@ -184,7 +185,13 @@ class BozpInspectionDialog(QDialog):
         self.conclusion_widget.refresh()
 
     def _save_keep_open(self) -> None:
-        self._persist()
+        if not self._persist():
+            return
+        QMessageBox.information(
+            self,
+            self.windowTitle(),
+            _INSPECTION_SAVE_SUCCESS_MESSAGE,
+        )
 
     def _save_and_close(self) -> None:
         if self._persist():
