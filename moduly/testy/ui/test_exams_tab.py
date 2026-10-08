@@ -8,6 +8,7 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
+    QLabel,
     QMessageBox,
     QPushButton,
     QVBoxLayout,
@@ -16,12 +17,14 @@ from PySide6.QtWidgets import (
 
 from core.export import open_export_file
 from core.services.storage_service import storage_service
+from core.utils.czech_sort import czech_sort_key
 from core.widgets.dialog_utils import (
     configure_edit_action_button,
     configure_new_action_button,
     configure_perform_action_button,
 )
 from core.widgets.filter_bar import FilterBar
+from core.widgets.no_wheel_guards import NoWheelComboBox
 from core.widgets.table_row_actions import install_table_row_actions
 from core.widgets.table_selection import refresh_and_restore_selection
 from core.widgets.table_utils import configure_table_columns
@@ -37,10 +40,27 @@ from moduly.testy.constants import (
     EXAM_COL_EMPLOYEE,
     EXAM_COL_ID,
     EXAM_COL_TEST,
+    EXAM_LIST_FILTER_ALL,
+    EXAM_LIST_FILTER_ALL_TESTS,
+    EXAM_LIST_FILTER_ALL_YEARS,
+    EXAM_LIST_FILTER_RESULT_NONE,
+    EXAM_LIST_FILTER_STATUS_RUNNING,
+    EXAM_PROTOCOL_ATTACHED,
+    EXAM_PROTOCOL_MISSING,
     EXAM_SEARCH_PLACEHOLDER,
+    EXAM_STATUS_COMPLETED,
+    EXAM_STATUS_COMPLETED_LABEL,
+    EXAM_STATUS_PREPARED,
+    EXAM_STATUS_PREPARED_LABEL,
+    EXAM_STATUS_STARTED,
     MODULE_NAME,
     WRITTEN_FINISH_EXPIRED,
+    WRITTEN_RESULT_FAILED,
+    WRITTEN_RESULT_FAILED_LABEL,
+    WRITTEN_RESULT_PASSED,
+    WRITTEN_RESULT_PASSED_LABEL,
 )
+from moduly.testy.sluzby.test_definition_service import test_definition_service
 from moduly.testy.sluzby.exam_protocol_export_service import (
     exam_protocol_export_service,
     protocol_filename,
@@ -53,13 +73,20 @@ from moduly.testy.ui.paper_batch_dialog import PaperBatchDialog
 from moduly.testy.ui.paper_test_options_dialog import PaperTestOptionsDialog
 from moduly.testy.ui.test_exam_detail_dialog import TestExamDetailDialog
 from moduly.testy.ui.test_exam_prepare_dialog import TestExamPrepareDialog
-from moduly.testy.ui.test_exam_table import TestExamTable
+from moduly.testy.ui.test_exam_table import (
+    EXAM_FILTER_PROTOCOL_ATTACHED,
+    EXAM_FILTER_PROTOCOL_MISSING,
+    ROLE_EXAM_FILTER,
+    TestExamTable,
+)
 from moduly.testy.ui.written_exam_window import (
     WrittenExamWindow,
     present_written_handover,
 )
 
 _ROLE_SEARCH = Qt.ItemDataRole.UserRole + 1
+_FILTER_ALL = ""
+_FILTER_RESULT_NONE = "none"
 
 
 class TestExamsTab(QWidget):
@@ -67,6 +94,7 @@ class TestExamsTab(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self._reloading_filters = False
 
         layout = QVBoxLayout(self)
         toolbar = QHBoxLayout()
@@ -104,6 +132,22 @@ class TestExamsTab(QWidget):
 
         self.table = TestExamTable()
         configure_table_columns(self.table, "test_exams")
+        self.filter_row = QWidget()
+        self.filter_row.setObjectName("exam-filter-row")
+        filters = QHBoxLayout(self.filter_row)
+        filters.setContentsMargins(0, 0, 0, 0)
+        self.test_filter = self._filter_combo("exam-filter-test")
+        self.status_filter = self._filter_combo("exam-filter-status")
+        self.result_filter = self._filter_combo("exam-filter-result")
+        self.protocol_filter = self._filter_combo("exam-filter-protocol")
+        self.year_filter = self._filter_combo("exam-filter-year")
+        self._add_filter(filters, "Test:", self.test_filter)
+        self._add_filter(filters, "Stav zkoušky:", self.status_filter)
+        self._add_filter(filters, "Výsledek:", self.result_filter)
+        self._add_filter(filters, "Podepsaný protokol:", self.protocol_filter)
+        self._add_filter(filters, "Rok:", self.year_filter)
+        filters.addStretch()
+        self._fill_static_filters()
         self.text_filter = FilterBar(
             self.table,
             placeholder=EXAM_SEARCH_PLACEHOLDER,
@@ -112,6 +156,7 @@ class TestExamsTab(QWidget):
 
         layout.addLayout(toolbar)
         layout.addWidget(self.text_filter)
+        layout.addWidget(self.filter_row)
         layout.addWidget(self.table, 1)
 
         self.prepare_btn.clicked.connect(self.prepare_exam)
@@ -125,6 +170,11 @@ class TestExamsTab(QWidget):
         self._handover = None
         self.table.doubleClicked.connect(self.open_selected)
         self.table.itemSelectionChanged.connect(self._update_action_buttons)
+        self.test_filter.currentIndexChanged.connect(self._on_filter_changed)
+        self.status_filter.currentIndexChanged.connect(self._on_filter_changed)
+        self.result_filter.currentIndexChanged.connect(self._on_filter_changed)
+        self.protocol_filter.currentIndexChanged.connect(self._on_filter_changed)
+        self.year_filter.currentIndexChanged.connect(self._on_filter_changed)
         install_table_row_actions(
             self.table,
             on_edit=self.open_selected,
@@ -133,13 +183,7 @@ class TestExamsTab(QWidget):
         self.refresh()
 
     def refresh(self) -> None:
-        selected_id = self.table.selected_exam_id()
-        self.table.load_exams(test_exam_service.list_exams())
-        configure_table_columns(self.table, "test_exams")
-        refresh_and_restore_selection(self.table, selected_id, id_column=EXAM_COL_ID)
-        self.text_filter.apply_filter()
-        self._update_action_buttons()
-        self.exams_changed.emit()
+        self._reload(self.table.selected_exam_id())
 
     def prepare_exam(self) -> None:
         dialog = TestExamPrepareDialog(self)
@@ -225,15 +269,27 @@ class TestExamsTab(QWidget):
         self.focus_exam(exam_id)
 
     def _reload(self, exam_id: int | None) -> None:
-        self.table.load_exams(test_exam_service.list_exams())
+        exams = test_exam_service.list_exams()
+        self._reload_choice_filters(exams)
+        self.table.load_exams(exams)
         configure_table_columns(self.table, "test_exams")
         refresh_and_restore_selection(self.table, exam_id, id_column=EXAM_COL_ID)
         self.text_filter.apply_filter()
         self._update_action_buttons()
         self.exams_changed.emit()
 
+    def _on_filter_changed(self, _index: int = 0) -> None:
+        if self._reloading_filters:
+            return
+        self.text_filter.apply_filter()
+
     def _apply_search(self, text: str) -> tuple[int, int]:
         needle = text.casefold()
+        test_id = self._choice(self.test_filter)
+        status = self._choice(self.status_filter)
+        result = self._choice(self.result_filter)
+        protocol = self._choice(self.protocol_filter)
+        year = self._choice(self.year_filter)
         total = self.table.rowCount()
         visible = 0
         for row in range(total):
@@ -242,11 +298,160 @@ class TestExamsTab(QWidget):
             test_item = self.table.item(row, EXAM_COL_TEST)
             if test_item is not None:
                 haystack = f"{haystack} {test_item.text()}"
-            match = needle in haystack.casefold() if needle else True
+            text_match = needle in haystack.casefold() if needle else True
+            match = text_match and self._row_matches_filters(
+                row,
+                test_id=test_id,
+                status=status,
+                result=result,
+                protocol=protocol,
+                year=year,
+            )
             self.table.setRowHidden(row, not match)
             if match:
                 visible += 1
         return visible, total
+
+    def _row_matches_filters(
+        self,
+        row: int,
+        *,
+        test_id: object,
+        status: object,
+        result: object,
+        protocol: object,
+        year: object,
+    ) -> bool:
+        payload = self._filter_payload(row)
+        if payload is None:
+            return False
+        row_test, row_status, row_result, row_protocol, row_year = payload
+        if test_id != _FILTER_ALL and row_test != test_id:
+            return False
+        if status != _FILTER_ALL and row_status != status:
+            return False
+        if result == _FILTER_RESULT_NONE:
+            if row_result:
+                return False
+        elif result != _FILTER_ALL and row_result != result:
+            return False
+        if protocol != _FILTER_ALL and row_protocol != protocol:
+            return False
+        if year != _FILTER_ALL and row_year != year:
+            return False
+        return True
+
+    def _filter_payload(self, row: int) -> tuple | None:
+        item = self.table.item(row, EXAM_COL_ID)
+        if item is None:
+            return None
+        payload = item.data(ROLE_EXAM_FILTER)
+        if payload is None:
+            return None
+        try:
+            values = tuple(payload)
+        except TypeError:
+            return None
+        if len(values) != 5:
+            return None
+        return values
+
+    def _fill_static_filters(self) -> None:
+        self._replace_items(
+            self.status_filter,
+            [
+                (EXAM_LIST_FILTER_ALL, _FILTER_ALL),
+                (EXAM_STATUS_PREPARED_LABEL, EXAM_STATUS_PREPARED),
+                (EXAM_LIST_FILTER_STATUS_RUNNING, EXAM_STATUS_STARTED),
+                (EXAM_STATUS_COMPLETED_LABEL, EXAM_STATUS_COMPLETED),
+            ],
+            _FILTER_ALL,
+        )
+        self._replace_items(
+            self.result_filter,
+            [
+                (EXAM_LIST_FILTER_ALL, _FILTER_ALL),
+                (WRITTEN_RESULT_PASSED_LABEL, WRITTEN_RESULT_PASSED),
+                (WRITTEN_RESULT_FAILED_LABEL, WRITTEN_RESULT_FAILED),
+                (EXAM_LIST_FILTER_RESULT_NONE, _FILTER_RESULT_NONE),
+            ],
+            _FILTER_ALL,
+        )
+        self._replace_items(
+            self.protocol_filter,
+            [
+                (EXAM_LIST_FILTER_ALL, _FILTER_ALL),
+                (EXAM_PROTOCOL_ATTACHED, EXAM_FILTER_PROTOCOL_ATTACHED),
+                (EXAM_PROTOCOL_MISSING, EXAM_FILTER_PROTOCOL_MISSING),
+            ],
+            _FILTER_ALL,
+        )
+        self._replace_items(
+            self.test_filter,
+            [(EXAM_LIST_FILTER_ALL_TESTS, _FILTER_ALL)],
+            _FILTER_ALL,
+        )
+        self._replace_items(
+            self.year_filter,
+            [(EXAM_LIST_FILTER_ALL_YEARS, _FILTER_ALL)],
+            _FILTER_ALL,
+        )
+
+    def _reload_choice_filters(self, exams) -> None:
+        self._reloading_filters = True
+        try:
+            used_ids = {int(exam.test_definition_id) for exam in exams}
+            tests = [
+                test
+                for test in test_definition_service.list_tests(include_inactive=True)
+                if test.active or int(test.id) in used_ids
+            ]
+            tests.sort(key=lambda test: czech_sort_key(test.name))
+            self._replace_items(
+                self.test_filter,
+                [(EXAM_LIST_FILTER_ALL_TESTS, _FILTER_ALL)]
+                + [(test.name, int(test.id)) for test in tests],
+                self._choice(self.test_filter),
+            )
+            years = sorted(
+                {exam.exam_date.year for exam in exams if exam.exam_date is not None},
+                reverse=True,
+            )
+            self._replace_items(
+                self.year_filter,
+                [(EXAM_LIST_FILTER_ALL_YEARS, _FILTER_ALL)]
+                + [(str(year), year) for year in years],
+                self._choice(self.year_filter),
+            )
+        finally:
+            self._reloading_filters = False
+
+    def _replace_items(self, combo: NoWheelComboBox, items: list[tuple[str, object]], current) -> None:
+        combo.blockSignals(True)
+        combo.clear()
+        for label, data in items:
+            combo.addItem(label, data)
+        index = combo.findData(current if current is not None else _FILTER_ALL)
+        combo.setCurrentIndex(index if index >= 0 else 0)
+        combo.blockSignals(False)
+
+    def _choice(self, combo: NoWheelComboBox) -> object:
+        if combo.count() == 0:
+            return _FILTER_ALL
+        data = combo.currentData()
+        return _FILTER_ALL if data is None else data
+
+    @staticmethod
+    def _filter_combo(object_name: str) -> NoWheelComboBox:
+        combo = NoWheelComboBox()
+        combo.setObjectName(object_name)
+        combo.setMinimumContentsLength(14)
+        return combo
+
+    @staticmethod
+    def _add_filter(layout: QHBoxLayout, label: str, combo: NoWheelComboBox) -> None:
+        layout.addWidget(QLabel(label))
+        layout.addWidget(combo)
 
     def print_paper_test(self) -> None:
         exam_id = self.table.selected_exam_id()

@@ -38,6 +38,10 @@ from moduly.testy.sluzby.test_exam_service import format_exam_date
 
 _ROLE_ID = Qt.ItemDataRole.UserRole
 _ROLE_SEARCH = Qt.ItemDataRole.UserRole + 1
+ROLE_EXAM_FILTER = Qt.ItemDataRole.UserRole + 2
+EXAM_FILTER_PROTOCOL_ATTACHED = "attached"
+EXAM_FILTER_PROTOCOL_MISSING = "missing"
+EXAM_FILTER_PROTOCOL_NONE = "na"
 
 
 class TestExamTable(QTableWidget):
@@ -102,11 +106,30 @@ class TestExamTable(QTableWidget):
                 for column, (text, sort_value) in values.items():
                     item = create_typed_item(text, sort_value, stable_id=exam.id)
                     item.setData(_ROLE_ID, exam.id)
+                    if column == EXAM_COL_ID:
+                        item.setData(ROLE_EXAM_FILTER, _filter_values(exam))
                     if column == EXAM_COL_EMPLOYEE:
                         item.setData(_ROLE_SEARCH, search)
                     if column == EXAM_COL_PROTOCOL:
                         _paint_protocol(item, text)
                     self.setItem(row, column, item)
+
+
+def _filter_values(exam: TestExam) -> tuple:
+    if exam.status != EXAM_STATUS_COMPLETED:
+        protocol = EXAM_FILTER_PROTOCOL_NONE
+    elif exam.signed_protocol_attachment_id:
+        protocol = EXAM_FILTER_PROTOCOL_ATTACHED
+    else:
+        protocol = EXAM_FILTER_PROTOCOL_MISSING
+    year = exam.exam_date.year if exam.exam_date is not None else None
+    return (
+        int(exam.test_definition_id),
+        str(exam.status or ""),
+        str(exam.exam_result or ""),
+        protocol,
+        year,
+    )
 
 
 def _protocol_label(exam: TestExam) -> str:
