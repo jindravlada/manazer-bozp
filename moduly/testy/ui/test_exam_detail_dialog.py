@@ -68,6 +68,7 @@ class TestExamDetailDialog(QDialog):
         self.setWindowTitle(EXAM_DETAIL_TITLE)
         self.exam_id = exam_id
         self.results_changed = False
+        self.protocol_changed = False
         configure_resizable_form_dialog(
             self,
             width=860,
@@ -333,6 +334,7 @@ class TestExamDetailDialog(QDialog):
         except ExamSignedProtocolError as error:
             QMessageBox.warning(self, MODULE_NAME, str(error))
             return
+        self.protocol_changed = True
         self.load_exam(int(self.exam_id))
 
     def _open_protocol(self) -> None:
@@ -367,6 +369,7 @@ class TestExamDetailDialog(QDialog):
         except ExamSignedProtocolError as error:
             QMessageBox.warning(self, MODULE_NAME, str(error))
             return
+        self.protocol_changed = True
         self.load_exam(int(self.exam_id))
 
     def _fill_written(self, exam, questions) -> None:

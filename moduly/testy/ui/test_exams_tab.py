@@ -167,7 +167,7 @@ class TestExamsTab(QWidget):
             return
         dialog = TestExamDetailDialog(self, exam_id=exam.id)
         dialog.exec()
-        if dialog.results_changed:
+        if dialog.results_changed or dialog.protocol_changed:
             self.refresh()
         else:
             self._update_action_buttons()

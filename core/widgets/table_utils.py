@@ -1513,6 +1513,7 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             EXAM_COL_EMPLOYEE,
             EXAM_COL_EXAM_RESULT,
             EXAM_COL_ID,
+            EXAM_COL_PROTOCOL,
             EXAM_COL_STATUS,
             EXAM_COL_TEST,
             EXAM_COL_VALID_UNTIL,
@@ -1523,13 +1524,14 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         table.setTextElideMode(Qt.TextElideMode.ElideRight)
         widths = {
             EXAM_COL_ID: 0,
-            EXAM_COL_DATE: 120,
-            EXAM_COL_EMPLOYEE: 240,
-            EXAM_COL_TEST: 200,
-            EXAM_COL_VALID_UNTIL: 120,
-            EXAM_COL_STATUS: 120,
-            EXAM_COL_WRITTEN_RESULT: 140,
-            EXAM_COL_EXAM_RESULT: 150,
+            EXAM_COL_DATE: 108,
+            EXAM_COL_EMPLOYEE: 200,
+            EXAM_COL_TEST: 180,
+            EXAM_COL_VALID_UNTIL: 108,
+            EXAM_COL_STATUS: 108,
+            EXAM_COL_WRITTEN_RESULT: 128,
+            EXAM_COL_EXAM_RESULT: 148,
+            EXAM_COL_PROTOCOL: 164,
         }
         for column, width in widths.items():
             table.setColumnWidth(column, width)
@@ -1542,6 +1544,7 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             EXAM_COL_STATUS,
             EXAM_COL_WRITTEN_RESULT,
             EXAM_COL_EXAM_RESULT,
+            EXAM_COL_PROTOCOL,
         ):
             header.setSectionResizeMode(column, QHeaderView.Interactive)
     elif profile == "test_exam_validity":

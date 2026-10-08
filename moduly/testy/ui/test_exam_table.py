@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import QAbstractItemView, QTableWidget
+
+from core.theme.status_colors import STATUS_DONE_BG, STATUS_DONE_TEXT, STATUS_NEUTRAL_BG
 
 from core.widgets.typed_table_sort import (
     create_typed_item,
@@ -17,11 +20,16 @@ from moduly.testy.constants import (
     EXAM_COL_EMPLOYEE,
     EXAM_COL_EXAM_RESULT,
     EXAM_COL_ID,
+    EXAM_COL_PROTOCOL,
     EXAM_COL_STATUS,
     EXAM_COL_TEST,
     EXAM_COL_VALID_UNTIL,
     EXAM_COL_WRITTEN_RESULT,
     EXAM_COLUMN_HEADERS,
+    EXAM_PROTOCOL_ATTACHED,
+    EXAM_PROTOCOL_MISSING,
+    EXAM_PROTOCOL_NOT_APPLICABLE,
+    EXAM_STATUS_COMPLETED,
     EXAM_STATUS_LABELS,
     written_result_label,
 )
@@ -64,6 +72,7 @@ class TestExamTable(QTableWidget):
                 status = EXAM_STATUS_LABELS.get(exam.status, exam.status)
                 written_result = written_result_label(exam.written_result)
                 exam_result = written_result_label(exam.exam_result)
+                protocol = _protocol_label(exam)
                 values = {
                     EXAM_COL_ID: (str(exam.id), typed_text(str(exam.id))),
                     EXAM_COL_DATE: (format_exam_date(exam.exam_date), typed_date(exam.exam_date)),
@@ -79,6 +88,7 @@ class TestExamTable(QTableWidget):
                     EXAM_COL_STATUS: (status, typed_text(status)),
                     EXAM_COL_WRITTEN_RESULT: (written_result, typed_text(written_result)),
                     EXAM_COL_EXAM_RESULT: (exam_result, typed_text(exam_result)),
+                    EXAM_COL_PROTOCOL: (protocol, typed_text(protocol)),
                 }
                 search = " ".join(
                     [
@@ -94,4 +104,22 @@ class TestExamTable(QTableWidget):
                     item.setData(_ROLE_ID, exam.id)
                     if column == EXAM_COL_EMPLOYEE:
                         item.setData(_ROLE_SEARCH, search)
+                    if column == EXAM_COL_PROTOCOL:
+                        _paint_protocol(item, text)
                     self.setItem(row, column, item)
+
+
+def _protocol_label(exam: TestExam) -> str:
+    if exam.status != EXAM_STATUS_COMPLETED:
+        return EXAM_PROTOCOL_NOT_APPLICABLE
+    if exam.signed_protocol_attachment_id:
+        return EXAM_PROTOCOL_ATTACHED
+    return EXAM_PROTOCOL_MISSING
+
+
+def _paint_protocol(item, text: str) -> None:
+    if text == EXAM_PROTOCOL_ATTACHED:
+        item.setBackground(QBrush(QColor(STATUS_DONE_BG)))
+        item.setForeground(QBrush(QColor(STATUS_DONE_TEXT)))
+        return
+    item.setBackground(QBrush(QColor(STATUS_NEUTRAL_BG)))
