@@ -12,7 +12,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from PIL import Image
-from PySide6.QtWidgets import QApplication, QLabel, QRadioButton
+from PySide6.QtWidgets import QApplication, QLabel, QPlainTextEdit
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -48,6 +48,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.testy.constants import (
         ANSWER_KIND_TEXT,
         EXAMINER_MODE_NONE,
+        EXAM_STATUS_PREPARED,
         VALIDITY_UNIT_YEARS,
     )
     from moduly.testy.modely.test_definition import TestDefinition
@@ -74,7 +75,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.testy.sluzby.test_employee_service import test_employee_service
     from moduly.testy.sluzby.test_exam_service import test_exam_service
     from moduly.testy.sluzby.written_exam_service import (
-        FixedWrittenExamClock,
+        WrittenExamImageBlocked,
         written_exam_service,
     )
     from moduly.testy.sluzby.written_question_service import (
@@ -83,6 +84,9 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.testy.sluzby.written_question_topic_service import (
         written_question_topic_service,
+    )
+    from moduly.testy.ui.snapshot_image_diagnostic_dialog import (
+        SnapshotImageDiagnosticDialog,
     )
     from moduly.testy.ui.test_exam_detail_dialog import TestExamDetailDialog
     from moduly.testy.ui.written_exam_window import WrittenExamWindow
@@ -207,30 +211,30 @@ class SnapshotImagePathTests(unittest.TestCase):
     def test_written_exam_opens_and_accepts_answer_without_image(self) -> None:
         exam = self._prepared_exam()
         self._corrupt_image_paths(exam.id)
-        written_exam_service.start(exam.id, now=_STARTED)
-        window = WrittenExamWindow(exam.id, clock=FixedWrittenExamClock(_STARTED))
-        self._windows.append(window)
         with self._watch_opens():
-            window.show_at(1400, 900)
-        question = window.findChild(QLabel, "written-exam-question-text")
-        assert question is not None
-        self.assertEqual(question.text(), _QUESTION)
-        self.assertIsNone(window.findChild(QLabel, "written-exam-question-image"))
-        for letter, text in (("A", "první odpověď"), ("B", "druhá odpověď"), ("C", "třetí odpověď")):
-            label = window.findChild(QLabel, f"written-exam-answer-text-{letter}")
-            assert label is not None
-            self.assertEqual(label.text(), text)
-            self.assertIsNone(window.findChild(QLabel, f"written-exam-answer-image-{letter}"))
-        radio = window.findChild(QRadioButton, "written-exam-answer-A")
-        assert radio is not None
-        radio.setChecked(True)
-        QApplication.processEvents()
-        stored = written_exam_service.choices(exam.id)
-        self.assertEqual(len(stored), 1)
-        self.assertEqual(stored[0].selected_letter, "A")
+            with self.assertRaises(WrittenExamImageBlocked) as caught:
+                written_exam_service.start(exam.id, now=_STARTED)
+        self.assertIn("nelze zahájit", str(caught.exception))
+        self.assertGreaterEqual(len(caught.exception.problems), 1)
+        dialog = SnapshotImageDiagnosticDialog(caught.exception.problems)
+        dialog.show()
+        intro = dialog.findChild(QLabel, "snapshot-image-diagnostic-intro")
+        detail = dialog.findChild(QPlainTextEdit, "snapshot-image-diagnostic-text")
+        assert intro is not None and detail is not None
+        self.assertIn("nelze zahájit", intro.text())
+        self.assertIn("Časový limit nebyl spuštěn", intro.text())
+        shown = detail.toPlainText()
+        self.assertIn("Soubor:", shown)
+        self.assertIn("../mimo-uloziste/secret-sec7.png", shown)
+        dialog.close()
         current = test_exam_service.get_exam(exam.id)
-        self.assertEqual(current.status, "started")
+        self.assertEqual(current.status, EXAM_STATUS_PREPARED)
+        self.assertIsNone(current.written_started_at)
+        self.assertIsNone(current.written_finished_at)
         self.assertFalse(current.written_result)
+        self.assertFalse(current.exam_result)
+        self.assertEqual(current.written_finish_reason or "", "")
+        self.assertEqual(written_exam_service.choices(exam.id), [])
         self.assertEqual(self.opened, [])
         self.assertEqual(self.secret.read_bytes(), _SECRET_MARK)
 

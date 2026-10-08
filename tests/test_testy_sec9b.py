@@ -12,6 +12,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from PIL import Image
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QCheckBox, QLabel, QPlainTextEdit, QPushButton
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -339,6 +340,8 @@ class TechnicalExamEndTests(unittest.TestCase):
         detail = TestExamDetailDialog(exam_id=self.exam.id)
         summary = detail.findChild(QLabel, "exam-written-summary")
         assert summary is not None
+        self.assertEqual(summary.textFormat(), Qt.TextFormat.PlainText)
+        self.assertIn(self.question.image_stored_path, summary.text())
         self.assertIn(EXAM_STATUS_TECHNICAL_LABEL, summary.text())
         self.assertIn(WRITTEN_RESULT_UNRATED_LABEL, summary.text())
         self.assertIn("Nesouhlasí SHA-256.", summary.text())

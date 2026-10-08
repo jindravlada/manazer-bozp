@@ -99,6 +99,7 @@ class TestExamDetailDialog(QDialog):
         form.addWidget(self.summary)
         self.written_summary = QLabel()
         self.written_summary.setObjectName("exam-written-summary")
+        self.written_summary.setTextFormat(Qt.TextFormat.PlainText)
         self.written_summary.setWordWrap(True)
         self.written_summary.setTextInteractionFlags(
             Qt.TextInteractionFlag.TextSelectableByMouse
