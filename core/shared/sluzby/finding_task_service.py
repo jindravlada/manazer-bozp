@@ -1,11 +1,10 @@
-from datetime import date
-
 from sqlalchemy.orm import Session
 
 from core.shared.constants import (
     ENTITY_AUDIT,
     ENTITY_AUDITY,
     ENTITY_FINDING,
+    FINDING_STATUS_ORIGIN_TASK,
     FINDING_STATUS_V_PROCESU,
     FINDING_STATUS_VYPORADANO,
 )
@@ -91,6 +90,7 @@ class FindingTaskService:
                     finding_id,
                     session=session,
                     status=FINDING_STATUS_V_PROCESU,
+                    status_origin=FINDING_STATUS_ORIGIN_TASK,
                 )
             return existing_task
 
@@ -120,6 +120,7 @@ class FindingTaskService:
             session=session,
             task_id=task.id,
             status=FINDING_STATUS_V_PROCESU,
+            status_origin=FINDING_STATUS_ORIGIN_TASK,
         )
         return task
 
@@ -140,7 +141,7 @@ class FindingTaskService:
             finding.id,
             session=session,
             status=FINDING_STATUS_V_PROCESU,
-            resolved_at=None,
+            status_origin=FINDING_STATUS_ORIGIN_TASK,
         )
 
     def resolve_finding_for_verified_task(
@@ -160,7 +161,7 @@ class FindingTaskService:
             finding.id,
             session=session,
             status=FINDING_STATUS_VYPORADANO,
-            resolved_at=date.today(),
+            status_origin=FINDING_STATUS_ORIGIN_TASK,
         )
 
     def _task_title(self, finding: Finding) -> str:

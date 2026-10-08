@@ -3,17 +3,19 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from datetime import date
+from datetime import date, datetime
 from typing import Any
 
 from sqlalchemy.orm import Session
 
 from core.shared.constants import (
+    FINDING_STATUS_ORIGIN_MANUAL,
     FINDING_STATUS_VYPORADANO,
     VALID_FINDING_STATUSES,
 )
 from core.shared.modely.finding import Finding
 from core.shared.repository.finding_repository import FindingRepository
+from core.shared.sluzby.finding_status_history import finding_status_history_service
 from moduly.statni_dozor.constants import (
     ENTITY_STATE_SUPERVISION,
     is_state_supervision_finding_type,
@@ -216,16 +218,35 @@ class StateSupervisionFindingService:
                     )
                 )
             prepared: list[Finding] = []
+            status_changes: list[tuple[str, date | None, Finding]] = []
             for order, draft, existing in resolved:
-                prepared.append(
-                    self._record_from_draft(
-                        supervision_id=int(supervision_id),
-                        draft=draft,
-                        existing=existing,
-                        display_order=order,
-                    )
+                old_status = existing.status if existing is not None else None
+                old_resolved_at = existing.resolved_at if existing is not None else None
+                record = self._record_from_draft(
+                    supervision_id=int(supervision_id),
+                    draft=draft,
+                    existing=existing,
+                    display_order=order,
                 )
+                prepared.append(record)
+                if (
+                    existing is not None
+                    and old_status is not None
+                    and old_status != record.status
+                ):
+                    status_changes.append((old_status, old_resolved_at, record))
             stored = self.repository.save_all(prepared, session=sess)
+            for old_status, old_resolved_at, record in status_changes:
+                finding_status_history_service.record(
+                    session=sess,
+                    finding_id=int(record.id),
+                    old_status=old_status,
+                    new_status=record.status,
+                    resolved_at_before=old_resolved_at,
+                    resolved_at_after=record.resolved_at,
+                    origin=FINDING_STATUS_ORIGIN_MANUAL,
+                    changed_at=datetime.now(),
+                )
             if owns:
                 sess.commit()
                 detached: list[Finding] = []

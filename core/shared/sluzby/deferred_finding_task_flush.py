@@ -12,6 +12,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from core.services.control_result_photo_service import control_result_photo_service
+from core.shared.constants import FINDING_STATUS_ORIGIN_TASK
 from core.shared.sluzby.finding_service import finding_service
 from core.shared.sluzby.finding_task_service import finding_task_service
 from moduly.ukoly.sluzby.task_service import task_service
@@ -47,13 +48,19 @@ def apply_staged_findings_and_tasks(edits: Any, session: Session) -> dict[int, i
     for finding_id, fields in list(edits._finding_updates.items()):
         if finding_id in edits._finding_deletes or finding_id < 0:
             continue
+        pending_task_link = isinstance(fields.get("task_id"), int) and int(fields["task_id"]) < 0
         clean = {
             key: value
             for key, value in fields.items()
             if not (key == "task_id" and isinstance(value, int) and value < 0)
         }
         if clean:
-            finding_service.update(finding_id, session=session, **clean)
+            origin = (
+                {"status_origin": FINDING_STATUS_ORIGIN_TASK}
+                if pending_task_link
+                else {}
+            )
+            finding_service.update(finding_id, session=session, **origin, **clean)
 
     for temp_id, data in sorted(edits._finding_creates.items(), key=lambda item: item[0], reverse=True):
         if temp_id in edits._finding_deletes:

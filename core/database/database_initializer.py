@@ -21,6 +21,7 @@ LAST_EXISTING_MEASURE_RELEVANCE_BACKFILL = {
 def initialize_database() -> None:
     from core.models.attachment import Attachment  # noqa: F401
     from core.shared.modely.finding import Finding  # noqa: F401
+    from core.shared.modely.finding_status_event import FindingStatusEvent  # noqa: F401
     from moduly.audity.modely.audit import Audit  # noqa: F401
     from moduly.audity.modely.audit_commission_member import AuditCommissionMember  # noqa: F401
     from moduly.audity.modely.audit_program import (  # noqa: F401
@@ -269,6 +270,7 @@ def initialize_database() -> None:
     _ensure_person_columns()
     _ensure_mu_investigation_columns()
     _ensure_finding_columns()
+    _ensure_finding_status_events_table()
     _ensure_control_result_columns()
     _ensure_audit_commission_table()
     _ensure_bozp_inspection_commission_table()
@@ -801,6 +803,38 @@ def _ensure_finding_columns() -> None:
     for column_name, column_sql in additions.items():
         if column_name not in columns:
             _add_column("findings", column_sql)
+
+
+def _ensure_finding_status_events_table() -> None:
+    """Doplní tabulku historie stavů. Existující zjištění ani jejich data nemění."""
+    from core.shared.modely.finding_status_event import FindingStatusEvent
+
+    columns = _table_columns("finding_status_events")
+    if not columns:
+        FindingStatusEvent.__table__.create(bind=_db_engine(), checkfirst=True)
+        return
+
+    additions = {
+        "finding_id": "finding_id INTEGER",
+        "old_status": "old_status VARCHAR(30) DEFAULT ''",
+        "new_status": "new_status VARCHAR(30) DEFAULT ''",
+        "changed_at": "changed_at DATETIME",
+        "origin": "origin VARCHAR(30) DEFAULT '' NOT NULL",
+        "resolved_at_before": "resolved_at_before DATE",
+        "resolved_at_after": "resolved_at_after DATE",
+    }
+    for column_name, column_sql in additions.items():
+        if column_name not in columns:
+            _add_column("finding_status_events", column_sql)
+
+    with _db_engine().connect() as connection:
+        connection.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_finding_status_events_finding_id "
+                "ON finding_status_events (finding_id)"
+            )
+        )
+        connection.commit()
 
 
 def _ensure_control_result_columns() -> None:

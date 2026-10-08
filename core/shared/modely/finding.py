@@ -13,7 +13,8 @@ class Finding(Base):
 
     Budoucí rozšíření:
     - přílohy/fotografie: Attachment(entity_type=ENTITY_FINDING, entity_id=id)
-    - komentáře a historie: samostatné entity s vazbou na ENTITY_FINDING
+    - komentáře: samostatná entita s vazbou na ENTITY_FINDING
+    Historie stavů je v tabulce finding_status_events.
     - úkol: task_id + modul Úkoly (fáze 2)
     """
 

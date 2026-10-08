@@ -9,8 +9,7 @@ from typing import Any
 from core.shared.constants import (
     ENTITY_FINDING,
     ENTITY_STATE_SUPERVISION,
-    FINDING_STATUS_V_PROCESU,
-    FINDING_STATUS_VYPORADANO,
+    FINDING_STATUS_ORIGIN_TASK,
 )
 from core.shared.modely.finding import Finding
 from core.shared.sluzby.finding_service import finding_service
@@ -77,10 +76,12 @@ class StateSupervisionFindingTaskService:
             task = task_service.create_task(**payload, session=sess)
             if finding.responsible_person_name and not task.responsible_person:
                 task.responsible_person = finding.responsible_person_name
-            finding.task_id = task.id
-            if finding.status != FINDING_STATUS_VYPORADANO:
-                finding.status = FINDING_STATUS_V_PROCESU
-            finding_service.repository.save(finding, session=sess)
+            finding_service.update(
+                int(finding.id),
+                session=sess,
+                task_id=task.id,
+                status_origin=FINDING_STATUS_ORIGIN_TASK,
+            )
             if owns:
                 sess.commit()
                 sess.refresh(task)
