@@ -77,6 +77,7 @@ from moduly.audity.sluzby.audit_extraordinary_question_service import (
     AuditExtraordinaryError,
 )
 _SAVE_CLOSE_LABEL = "Uložit a zavřít"
+_AUDIT_SAVE_SUCCESS_MESSAGE = "Audit byl úspěšně uložen."
 
 
 class AuditDialog(QDialog):
@@ -287,7 +288,13 @@ class AuditDialog(QDialog):
         return True
 
     def _save_keep_open(self) -> None:
-        self._persist()
+        if not self._persist():
+            return
+        QMessageBox.information(
+            self,
+            self.windowTitle(),
+            _AUDIT_SAVE_SUCCESS_MESSAGE,
+        )
 
     def _save_and_close(self) -> None:
         if self._persist():
