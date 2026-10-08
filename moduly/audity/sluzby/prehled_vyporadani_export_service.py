@@ -251,8 +251,26 @@ def build_view(
     )
 
 
-def placeholder_values(view: PrehledVyporadaniView) -> dict[str, object]:
-    if view.sequence_number == 0:
+def placeholder_values(
+    view: PrehledVyporadaniView,
+    *,
+    record_heading: str = "Audit / provoz",
+    include_presented_date: bool = False,
+) -> dict[str, object]:
+    if include_presented_date:
+        if view.sequence_number == 0:
+            title = "Přehled č. 0 – výchozí stav"
+        else:
+            title = f"Přehled č. {view.sequence_number}"
+        header = [
+            OdtParagraph.text(title, style="MgmtMeta"),
+            OdtParagraph.text(
+                f"Datum předložení: {view.presented_label}",
+                style="MgmtMeta",
+            ),
+            OdtParagraph.text(f"Období: {view.period_label}", style="MgmtMeta"),
+        ]
+    elif view.sequence_number == 0:
         header = [
             OdtParagraph.text("Přehled č. 0 – výchozí stav", style="MgmtMeta"),
             OdtParagraph.text(f"Stav k: {view.presented_label}", style="MgmtMeta"),
@@ -271,17 +289,27 @@ def placeholder_values(view: PrehledVyporadaniView) -> dict[str, object]:
     return {
         "hlavicka": OdtRichContent(paragraphs=header),
         "souhrn": _summary(view),
-        "sekce_vyporadana": _settled_section(settled_title, view.settled_items),
-        "sekce_nevyporadana": _status_section(SECTION_UNSETTLED, view.unsettled_items),
+        "sekce_vyporadana": _settled_section(
+            settled_title,
+            view.settled_items,
+            record_heading=record_heading,
+        ),
+        "sekce_nevyporadana": _status_section(
+            SECTION_UNSETTLED,
+            view.unsettled_items,
+            record_heading=record_heading,
+        ),
         "sekce_nova": _optional_status_section(
             view.shows_changes,
             SECTION_NEW,
             view.new_items,
+            record_heading=record_heading,
         ),
         "sekce_znovuotevrena": _optional_status_section(
             view.shows_changes,
             SECTION_REOPENED,
             view.reopened_items,
+            record_heading=record_heading,
         ),
     }
 
@@ -313,15 +341,19 @@ def _optional_status_section(
     enabled: bool,
     title: str,
     items: tuple[PrehledVyporadaniItemView, ...],
+    *,
+    record_heading: str,
 ) -> OdtXmlFragment | OdtRichContent:
     if not enabled:
         return OdtRichContent(paragraphs=[], omit_when_empty=True)
-    return _status_section(title, items)
+    return _status_section(title, items, record_heading=record_heading)
 
 
 def _settled_section(
     title: str,
     items: tuple[PrehledVyporadaniItemView, ...],
+    *,
+    record_heading: str,
 ) -> OdtXmlFragment:
     if not items:
         return _empty_section(title)
@@ -337,7 +369,7 @@ def _settled_section(
         title,
         table_name="TabulkaVyporadana",
         column_styles=("MgmtColAudit", "MgmtColFindingWide", "MgmtColDate"),
-        headers=("Audit / provoz", "Zjištění", "Datum vypořádání"),
+        headers=(record_heading, "Zjištění", "Datum vypořádání"),
         rows=rows,
     )
 
@@ -345,6 +377,8 @@ def _settled_section(
 def _status_section(
     title: str,
     items: tuple[PrehledVyporadaniItemView, ...],
+    *,
+    record_heading: str,
 ) -> OdtXmlFragment:
     if not items:
         return _empty_section(title)
@@ -366,7 +400,7 @@ def _status_section(
             "MgmtColStatus",
             "MgmtColTask",
         ),
-        headers=("Audit / provoz", "Zjištění", "Stav", "Úkol"),
+        headers=(record_heading, "Zjištění", "Stav", "Úkol"),
         rows=rows,
     )
 

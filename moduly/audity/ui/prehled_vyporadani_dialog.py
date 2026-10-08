@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import date
 
 from PySide6.QtCore import QDate, Qt
@@ -34,7 +36,9 @@ from moduly.audity.constants import (
 )
 from moduly.audity.sluzby.prehled_vyporadani_export_service import (
     PrehledVyporadaniExportError,
+    PrehledVyporadaniItemView,
     PrehledVyporadaniView,
+    format_audit_reference,
     format_overview_date,
     period_label_for,
     prehled_vyporadani_export_service,
@@ -47,11 +51,40 @@ _IMMUTABLE_CONFIRMATION = (
     "Pozdější úpravy zjištění, úkolů ani auditů tento přehled nezmění."
 )
 
+DOCUMENT_EXPORT_TITLE = "Přehled vypořádání"
+
+
+@dataclass(frozen=True)
+class SettlementOverviewProfile:
+    """Odlišnosti řady Auditů a řady Prověrek nad stejnými dialogy."""
+
+    source_type: str
+    module_name: str
+    dialog_title: str
+    record_column: str
+    confirmation: str
+    scope_warning: Callable[[int, int], str]
+    export_service: object
+    plain_reference: bool = False
+    document_export_title: str = DOCUMENT_EXPORT_TITLE
+
+
+AUDIT_SETTLEMENT_PROFILE = SettlementOverviewProfile(
+    source_type=SETTLEMENT_SOURCE_AUDITY,
+    module_name=MODULE_NAME,
+    dialog_title=SETTLEMENT_OVERVIEW_DIALOG_TITLE,
+    record_column="Audit",
+    confirmation=_IMMUTABLE_CONFIRMATION,
+    scope_warning=scope_warning,
+    export_service=prehled_vyporadani_export_service,
+)
+
 
 class PrehledVyporadaniDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, *, profile: SettlementOverviewProfile | None = None):
         super().__init__(parent)
-        self.setWindowTitle(SETTLEMENT_OVERVIEW_DIALOG_TITLE)
+        self.profile = profile or AUDIT_SETTLEMENT_PROFILE
+        self.setWindowTitle(self.profile.dialog_title)
         self.resize(980, 520)
 
         layout = QVBoxLayout(self)
@@ -113,7 +146,7 @@ class PrehledVyporadaniDialog(QDialog):
 
     def refresh(self) -> None:
         self._overviews = finding_settlement_overview_service.list_overviews(
-            SETTLEMENT_SOURCE_AUDITY
+            self.profile.source_type
         )
         self.table.setRowCount(len(self._overviews))
         for index, overview in enumerate(self._overviews):
@@ -145,7 +178,11 @@ class PrehledVyporadaniDialog(QDialog):
 
     def open_create(self) -> None:
         previous = self._overviews[-1] if self._overviews else None
-        dialog = PrehledVyporadaniCreateDialog(self, previous=previous)
+        dialog = PrehledVyporadaniCreateDialog(
+            self,
+            previous=previous,
+            profile=self.profile,
+        )
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self.refresh()
 
@@ -153,9 +190,13 @@ class PrehledVyporadaniDialog(QDialog):
         overview_id = self.selected_overview_id()
         if overview_id is None:
             return
-        dialog = PrehledVyporadaniDetailDialog(self, overview_id)
+        dialog = PrehledVyporadaniDetailDialog(
+            self,
+            overview_id,
+            profile=self.profile,
+        )
         if dialog.load_error:
-            QMessageBox.warning(self, MODULE_NAME, dialog.load_error)
+            QMessageBox.warning(self, self.profile.module_name, dialog.load_error)
             return
         dialog.exec()
 
@@ -164,14 +205,14 @@ class PrehledVyporadaniDialog(QDialog):
         if overview_id is None:
             return
         try:
-            path = prehled_vyporadani_export_service.generate(overview_id)
-            open_export_file(path, title=DOCUMENT_EXPORT_TITLE)
+            path = self.profile.export_service.generate(overview_id)
+            open_export_file(path, title=self.profile.document_export_title)
         except PrehledVyporadaniExportError as exc:
-            QMessageBox.warning(self, MODULE_NAME, str(exc))
+            QMessageBox.warning(self, self.profile.module_name, str(exc))
         except Exception as exc:
             QMessageBox.warning(
                 self,
-                MODULE_NAME,
+                self.profile.module_name,
                 f"Přehled se nepodařilo exportovat.\n\n{exc}",
             )
 
@@ -181,12 +222,16 @@ class PrehledVyporadaniDialog(QDialog):
         self.export_btn.setEnabled(single)
 
 
-DOCUMENT_EXPORT_TITLE = "Přehled vypořádání"
-
-
 class PrehledVyporadaniCreateDialog(QDialog):
-    def __init__(self, parent=None, *, previous: FindingSettlementOverview | None = None):
+    def __init__(
+        self,
+        parent=None,
+        *,
+        previous: FindingSettlementOverview | None = None,
+        profile: SettlementOverviewProfile | None = None,
+    ):
         super().__init__(parent)
+        self.profile = profile or AUDIT_SETTLEMENT_PROFILE
         self.previous = previous
         self.created_id: int | None = None
         sequence = 0 if previous is None else int(previous.sequence_number) + 1
@@ -256,9 +301,12 @@ class PrehledVyporadaniCreateDialog(QDialog):
 
     def refresh_scope_warning(self) -> str:
         scope = finding_settlement_overview_service.completed_scope(
-            SETTLEMENT_SOURCE_AUDITY
+            self.profile.source_type
         )
-        text = scope_warning(scope.completed_record_count, scope.finding_count)
+        text = self.profile.scope_warning(
+            scope.completed_record_count,
+            scope.finding_count,
+        )
         self.warning_label.setText(text)
         self.warning_label.setVisible(bool(text))
         return text
@@ -266,8 +314,8 @@ class PrehledVyporadaniCreateDialog(QDialog):
     def confirmation_message(self) -> str:
         warning = self.warning_label.text().strip()
         if warning:
-            return f"{_IMMUTABLE_CONFIRMATION}\n\n{warning}"
-        return _IMMUTABLE_CONFIRMATION
+            return f"{self.profile.confirmation}\n\n{warning}"
+        return self.profile.confirmation
 
     def _update_period(self) -> None:
         presented = self.presented_date()
@@ -287,12 +335,12 @@ class PrehledVyporadaniCreateDialog(QDialog):
             None if self.previous is None else self.previous.presented_at,
         )
         if problem:
-            QMessageBox.warning(self, MODULE_NAME, problem)
+            QMessageBox.warning(self, self.profile.module_name, problem)
             return
         self.refresh_scope_warning()
         answer = QMessageBox.question(
             self,
-            MODULE_NAME,
+            self.profile.module_name,
             self.confirmation_message(),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No,
@@ -301,17 +349,17 @@ class PrehledVyporadaniCreateDialog(QDialog):
             return
         try:
             created = finding_settlement_overview_service.create_overview(
-                SETTLEMENT_SOURCE_AUDITY,
+                self.profile.source_type,
                 presented_at=self.presented_date(),
                 note=self.note_text(),
             )
         except FindingSettlementOverviewError as exc:
-            QMessageBox.warning(self, MODULE_NAME, str(exc))
+            QMessageBox.warning(self, self.profile.module_name, str(exc))
             return
         except Exception as exc:
             QMessageBox.warning(
                 self,
-                MODULE_NAME,
+                self.profile.module_name,
                 "Přehled se nepodařilo vytvořit. Uložený seznam přehledů zůstal beze změny."
                 f"\n\n{exc}",
             )
@@ -321,15 +369,22 @@ class PrehledVyporadaniCreateDialog(QDialog):
 
 
 class PrehledVyporadaniDetailDialog(QDialog):
-    def __init__(self, parent=None, overview_id: int = 0):
+    def __init__(
+        self,
+        parent=None,
+        overview_id: int = 0,
+        *,
+        profile: SettlementOverviewProfile | None = None,
+    ):
         super().__init__(parent)
+        self.profile = profile or AUDIT_SETTLEMENT_PROFILE
         self.load_error = ""
         self.view: PrehledVyporadaniView | None = None
         try:
-            self.view = prehled_vyporadani_export_service.load_view(int(overview_id))
+            self.view = self.profile.export_service.load_view(int(overview_id))
         except PrehledVyporadaniExportError as exc:
             self.load_error = str(exc)
-            self.setWindowTitle(SETTLEMENT_OVERVIEW_DIALOG_TITLE)
+            self.setWindowTitle(self.profile.dialog_title)
             return
 
         view = self.view
@@ -377,7 +432,7 @@ class PrehledVyporadaniDetailDialog(QDialog):
         self.table = QTableWidget(len(view.items), 8)
         self.table.setHorizontalHeaderLabels(
             [
-                "Audit",
+                self.profile.record_column,
                 "Provoz",
                 "Typ",
                 "Stav",
@@ -393,7 +448,7 @@ class PrehledVyporadaniDetailDialog(QDialog):
         self.table.horizontalHeader().setStretchLastSection(True)
         for row, item in enumerate(view.items):
             values = (
-                item.audit_label,
+                _record_reference(item, self.profile),
                 item.workplace_name,
                 item.finding_type_label,
                 item.status_label,
@@ -413,6 +468,15 @@ class PrehledVyporadaniDetailDialog(QDialog):
         close_btn.clicked.connect(self.accept)
         footer.addWidget(close_btn)
         layout.addLayout(footer)
+
+
+def _record_reference(
+    item: PrehledVyporadaniItemView,
+    profile: SettlementOverviewProfile,
+) -> str:
+    if profile.plain_reference:
+        return format_audit_reference(item.source_number, item.source_year)
+    return item.audit_label
 
 
 def _type_summary(view: PrehledVyporadaniView) -> str:

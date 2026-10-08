@@ -204,6 +204,11 @@ CONTROL_POINT_HISTORY_WORKPLACE_NO_WORKPLACE = "Pro zobrazení historie vyberte 
 CONTROL_POINT_SHARED_EXPERIENCES_EMPTY = "Zatím bez sdílených zkušeností."
 
 KNOWLEDGE_EDITOR_BUTTON_LABEL = "Editor znalostí"
+SETTLEMENT_OVERVIEW_BUTTON_LABEL = "Přehled vypořádání"
+SETTLEMENT_OVERVIEW_DIALOG_TITLE = "Přehledy vypořádání zjištění z prověrek BOZP"
+SETTLEMENT_OVERVIEW_BUTTON_TOOLTIP = (
+    "Historické přehledy vypořádání zjištění z dokončených prověrek BOZP."
+)
 KNOWLEDGE_EDITOR_WINDOW_TITLE = "Editor znalostí prověrek"
 KNOWLEDGE_EDITOR_USER_COPY_HINT = (
     "Upravujete uživatelskou kopii metodiky v "

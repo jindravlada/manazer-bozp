@@ -4,7 +4,6 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QShowEvent
 from PySide6.QtWidgets import (
     QComboBox,
-    QHBoxLayout,
     QLabel,
     QMenu,
     QMessageBox,
@@ -27,6 +26,7 @@ from core.shared.constants import (
     FINDING_TYPE_ZAVADA,
 )
 from core.shared.sluzby.finding_service import finding_service
+from moduly.audity.ui.wrapping_toolbar import WrappingToolbar
 from moduly.proverky.constants import (
     DEFAULT_INSPECTION_STATUS_FILTER,
     INSPECTION_DETAILED_REPORT_BUTTON_LABEL,
@@ -45,6 +45,8 @@ from moduly.proverky.constants import (
     INSPECTION_STATUS_FILTER_VSE,
     KNOWLEDGE_EDITOR_BUTTON_LABEL,
     MODULE_NAME,
+    SETTLEMENT_OVERVIEW_BUTTON_LABEL,
+    SETTLEMENT_OVERVIEW_BUTTON_TOOLTIP,
     YEAR_FILTER_VSE,
 )
 from moduly.proverky.ui.proverky_knowledge_editor_dialog import ProverkyKnowledgeEditorDialog
@@ -56,6 +58,7 @@ from moduly.proverky.sluzby.protokol_proverky_service import protokol_proverky_s
 from moduly.proverky.ui.bozp_inspection_dialog import BozpInspectionDialog
 from moduly.proverky.ui.bozp_inspection_table import BozpInspectionTable
 from moduly.proverky.ui.generate_inspections_dialog import GenerateInspectionsDialog
+from moduly.proverky.ui.prehled_vyporadani_dialog import PrehledVyporadaniProverkyDialog
 from moduly.proverky.ui.rocni_plan_dialog import RocniPlanDialog
 from moduly.proverky.ui.rocni_zprava_dialog import RocniZpravaDialog
 
@@ -86,7 +89,7 @@ class ProverkyPage(QWidget):
 
         layout = QVBoxLayout(self)
 
-        toolbar = QHBoxLayout()
+        toolbar = WrappingToolbar()
 
         self.new_btn = QPushButton("Nová prověrka")
         self.edit_btn = QPushButton("Upravit")
@@ -99,6 +102,8 @@ class ProverkyPage(QWidget):
         self.detailed_report_btn.setToolTip(INSPECTION_DETAILED_REPORT_TOOLTIP)
         self.report_btn = QPushButton("Roční zpráva")
         self.report_btn.setToolTip("Roční zpráva o stavu BOZP za vybraný kalendářní rok.")
+        self.settlement_btn = QPushButton(SETTLEMENT_OVERVIEW_BUTTON_LABEL)
+        self.settlement_btn.setToolTip(SETTLEMENT_OVERVIEW_BUTTON_TOOLTIP)
         self.knowledge_editor_btn = QPushButton(KNOWLEDGE_EDITOR_BUTTON_LABEL)
 
         self._single_record_buttons = (self.edit_btn, self.delete_btn)
@@ -119,27 +124,31 @@ class ProverkyPage(QWidget):
         self.year_filter = QComboBox()
         self._populate_year_filter()
 
-        toolbar.addWidget(self.new_btn)
-        toolbar.addWidget(self.edit_btn)
-        toolbar.addWidget(self.delete_btn)
-        toolbar.addWidget(self.plan_btn)
-        toolbar.addWidget(self.generate_btn)
-        toolbar.addWidget(self.protocol_btn)
-        toolbar.addWidget(self.detailed_report_btn)
-        toolbar.addWidget(self.report_btn)
-        toolbar.addWidget(self.knowledge_editor_btn)
-        toolbar.addStretch()
-        toolbar.addWidget(QLabel("Stav:"))
-        toolbar.addWidget(self.status_filter)
-        toolbar.addWidget(QLabel("Rok:"))
-        toolbar.addWidget(self.year_filter)
+        for widget in (
+            self.new_btn,
+            self.edit_btn,
+            self.delete_btn,
+            self.plan_btn,
+            self.generate_btn,
+            self.protocol_btn,
+            self.detailed_report_btn,
+            self.report_btn,
+            self.settlement_btn,
+            self.knowledge_editor_btn,
+        ):
+            toolbar.add_widget(widget)
+        toolbar.add_stretch()
+        toolbar.add_widget(QLabel("Stav:"))
+        toolbar.add_widget(self.status_filter)
+        toolbar.add_widget(QLabel("Rok:"))
+        toolbar.add_widget(self.year_filter)
 
         self.table = BozpInspectionTable()
         configure_table_columns(self.table, "bozp_inspections")
         self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.text_filter = FilterBar(self.table, placeholder="🔍 Hledat prověrku...")
 
-        layout.addLayout(toolbar)
+        layout.addWidget(toolbar)
         layout.addWidget(self.text_filter)
         layout.addWidget(self.table)
 
@@ -151,6 +160,7 @@ class ProverkyPage(QWidget):
         self.protocol_btn.clicked.connect(self.export_selected_protocol)
         self.detailed_report_btn.clicked.connect(self.export_selected_detailed_report)
         self.report_btn.clicked.connect(self.show_annual_report)
+        self.settlement_btn.clicked.connect(self.open_settlement_overviews)
         self.knowledge_editor_btn.clicked.connect(self.open_knowledge_editor)
         self.table.doubleClicked.connect(self.open_selected_inspection)
         self.table.customContextMenuRequested.connect(self._show_table_context_menu)
@@ -454,6 +464,10 @@ class ProverkyPage(QWidget):
 
     def open_knowledge_editor(self) -> None:
         exec_maximized(ProverkyKnowledgeEditorDialog(self))
+
+    def open_settlement_overviews(self) -> None:
+        dialog = PrehledVyporadaniProverkyDialog(self)
+        dialog.exec()
 
     def show_annual_report(self) -> None:
         year_value = self.year_filter.currentData()

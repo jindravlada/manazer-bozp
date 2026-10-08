@@ -1,7 +1,7 @@
 """Historické přehledy vypořádání zjištění pro představenstvo.
 
 Řada Auditů a řada Prověrek mají vlastní pořadová čísla. Obě řady berou
-jen záznamy ve stavu Dokončeno. Rozhraní a export jsou zatím jen pro Audity.
+jen záznamy ve stavu Dokončeno. Rozhraní a export používají tutéž evidenci.
 """
 
 from __future__ import annotations
