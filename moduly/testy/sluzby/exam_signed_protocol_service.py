@@ -6,7 +6,7 @@ aktuální vazba. Starší soubory se při výměně ani odebrání nemažou.
 
 from __future__ import annotations
 
-import shutil
+import os
 import stat
 import uuid
 from dataclasses import dataclass
@@ -110,44 +110,66 @@ class ExamSignedProtocolService:
                 "K této zkoušce je už podepsaný protokol připojen."
             )
         source = _require_source_pdf(source_path)
-        target = self._copy_into_storage(int(exam.id), source)
+        copied = self._copy_into_storage(int(exam.id), source)
         try:
-            _assert_pdf(target)
-            return self._link(int(exam.id), source, target, replace=replace)
+            _assert_stored_pdf(copied)
+            attachment_id = self._link(int(exam.id), source, copied, replace=replace)
         except ExamSignedProtocolError:
-            _discard_unlinked_copy(target)
+            copied.discard()
             raise
         except Exception:
-            _discard_unlinked_copy(target)
+            copied.discard()
             if replace and previous_id is not None:
                 raise ExamSignedProtocolError(
                     "Nový protokol se nepodařilo přiřadit. "
                     "Původní protokol zůstal dostupný."
                 ) from None
             raise ExamSignedProtocolError("Protokol se nepodařilo uložit.") from None
+        copied.close()
+        return attachment_id
 
-    def _copy_into_storage(self, exam_id: int, source: Path) -> Path:
-        directory = storage_service.attachment_dir(ENTITY_TYPE, exam_id)
-        target = directory / f"protokol-{uuid.uuid4().hex}.pdf"
+    def _copy_into_storage(self, exam_id: int, source: Path) -> "_NewProtocolFile":
+        """Uloží PDF do příloh, aniž by sledovalo symbolický odkaz."""
+        filename = _safe_component(f"protokol-{uuid.uuid4().hex}.pdf")
+        entity = _safe_component(ENTITY_TYPE)
+        exam_part = _safe_component(str(int(exam_id)))
+        relative = f"{entity}/{exam_part}/{filename}"
+        root_fd = _open_directory(storage_service.attachments_dir)
+        entity_fd = None
+        exam_fd = None
         try:
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(source, target)
+            entity_fd = _open_or_make_directory(root_fd, entity)
+            exam_fd = _open_or_make_directory(entity_fd, exam_part)
+            dev, ino = _create_protocol_file(exam_fd, filename, source)
+            stored = _NewProtocolFile(
+                relative=relative,
+                name=filename,
+                dir_fd=exam_fd,
+                dev=dev,
+                ino=ino,
+            )
+            exam_fd = None
+            return stored
+        except ExamSignedProtocolError:
+            raise
         except OSError as exc:
-            _discard_unlinked_copy(target)
             raise ExamSignedProtocolError("Protokol se nepodařilo uložit.") from exc
-        return target
+        finally:
+            if exam_fd is not None:
+                os.close(exam_fd)
+            if entity_fd is not None:
+                os.close(entity_fd)
+            os.close(root_fd)
 
     def _link(
         self,
         exam_id: int,
         source: Path,
-        target: Path,
+        copied: "_NewProtocolFile",
         *,
         replace: bool,
     ) -> int:
-        relative = target.resolve().relative_to(
-            storage_service.attachments_dir.resolve()
-        ).as_posix()
+        relative = copied.relative
         require_confined_path(
             storage_service.attachments_dir,
             relative,
@@ -178,7 +200,7 @@ class ExamSignedProtocolService:
                 entity_id=exam_id,
                 original_path=original,
                 stored_path=relative,
-                filename=target.name,
+                filename=copied.name,
             )
             session.add(attachment)
             session.flush()
@@ -254,17 +276,164 @@ def _assert_pdf(path: Path) -> None:
         )
 
 
-def _discard_unlinked_copy(path: Path) -> None:
+@dataclass
+class _NewProtocolFile:
+    """Nový soubor držený popisovačem adresáře, ve kterém vznikl."""
+
+    relative: str
+    name: str
+    dir_fd: int
+    dev: int
+    ino: int
+    closed: bool = False
+
+    def discard(self) -> None:
+        """Smaže jen tento inode. Symbolický odkaz ani cizí soubor ne."""
+        try:
+            if not self.closed:
+                _unlink_matching(self.dir_fd, self.name, self.dev, self.ino)
+        finally:
+            self.close()
+
+    def close(self) -> None:
+        if self.closed:
+            return
+        self.closed = True
+        try:
+            os.close(self.dir_fd)
+        except OSError:
+            return
+
+
+_DIR_FLAGS = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC
+
+
+def _safe_component(name: str) -> str:
+    if (
+        not name
+        or name in {".", ".."}
+        or "/" in name
+        or "\\" in name
+        or "\x00" in name
+    ):
+        raise ExamSignedProtocolError("Protokol se nepodařilo uložit.")
+    return name
+
+
+def _open_directory(path: Path) -> int:
     try:
-        resolved = path.resolve()
-        resolved.relative_to(storage_service.attachments_dir.resolve())
-    except (OSError, ValueError):
-        return
+        return os.open(path, _DIR_FLAGS)
+    except OSError as exc:
+        raise ExamSignedProtocolError("Protokol se nepodařilo uložit.") from exc
+
+
+def _open_or_make_directory(parent_fd: int, name: str) -> int:
     try:
-        if resolved.is_file():
-            resolved.unlink()
+        os.mkdir(name, dir_fd=parent_fd)
+    except FileExistsError:
+        pass
+    try:
+        return os.open(name, _DIR_FLAGS, dir_fd=parent_fd)
+    except OSError as exc:
+        raise ExamSignedProtocolError("Protokol se nepodařilo uložit.") from exc
+
+
+def _create_protocol_file(dir_fd: int, name: str, source: Path) -> tuple[int, int]:
+    flags = os.O_CREAT | os.O_EXCL | os.O_WRONLY | os.O_NOFOLLOW | os.O_CLOEXEC
+    try:
+        fd = os.open(name, flags, 0o644, dir_fd=dir_fd)
+    except OSError as exc:
+        raise ExamSignedProtocolError("Protokol se nepodařilo uložit.") from exc
+    info = None
+    try:
+        info = os.fstat(fd)
+        _stream_regular_file(source, fd)
+    except ExamSignedProtocolError:
+        os.close(fd)
+        if info is not None:
+            _unlink_matching(dir_fd, name, info.st_dev, info.st_ino)
+        raise
+    except OSError as exc:
+        os.close(fd)
+        if info is not None:
+            _unlink_matching(dir_fd, name, info.st_dev, info.st_ino)
+        raise ExamSignedProtocolError("Protokol se nepodařilo uložit.") from exc
+    os.close(fd)
+    return info.st_dev, info.st_ino
+
+
+def _stream_regular_file(source: Path, destination_fd: int) -> None:
+    try:
+        src = os.open(source, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
+    except OSError as exc:
+        raise ExamSignedProtocolError("Vybraný soubor nelze přečíst.") from exc
+    try:
+        while True:
+            chunk = os.read(src, 1024 * 1024)
+            if not chunk:
+                return
+            view = memoryview(chunk)
+            while view:
+                written = os.write(destination_fd, view)
+                if written <= 0:
+                    raise ExamSignedProtocolError("Protokol se nepodařilo uložit.")
+                view = view[written:]
+    except ExamSignedProtocolError:
+        raise
+    except OSError as exc:
+        raise ExamSignedProtocolError("Protokol se nepodařilo uložit.") from exc
+    finally:
+        os.close(src)
+
+
+def _unlink_matching(dir_fd: int, name: str, dev: int, ino: int) -> None:
+    """Smaže název jen tehdy, když je to běžný soubor se stejným inode."""
+    try:
+        fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC, dir_fd=dir_fd)
     except OSError:
         return
+    try:
+        info = os.fstat(fd)
+        if stat.S_ISREG(info.st_mode) and info.st_dev == dev and info.st_ino == ino:
+            os.unlink(name, dir_fd=dir_fd)
+    except OSError:
+        return
+    finally:
+        os.close(fd)
+
+
+def _assert_stored_pdf(copied: _NewProtocolFile) -> None:
+    try:
+        fd = os.open(
+            copied.name,
+            os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC,
+            dir_fd=copied.dir_fd,
+        )
+    except OSError as exc:
+        raise ExamSignedProtocolError("Protokol se nepodařilo uložit.") from exc
+    try:
+        info = os.fstat(fd)
+        if (
+            info.st_dev != copied.dev
+            or info.st_ino != copied.ino
+            or not stat.S_ISREG(info.st_mode)
+        ):
+            raise ExamSignedProtocolError("Protokol se nepodařilo uložit.")
+        header = os.read(fd, len(_PDF_HEADER))
+        size = os.lseek(fd, 0, os.SEEK_END)
+        os.lseek(fd, max(0, size - _TAIL_BYTES), os.SEEK_SET)
+        tail = os.read(fd, _TAIL_BYTES)
+    except ExamSignedProtocolError:
+        raise
+    except OSError as exc:
+        raise ExamSignedProtocolError("Protokol se nepodařilo uložit.") from exc
+    finally:
+        os.close(fd)
+    if not header.startswith(_PDF_HEADER) or _PDF_EOF not in tail:
+        raise ExamSignedProtocolError(
+            "Soubor není platné PDF. Nestačí změnit příponu, "
+            "dokument musí mít platný formát PDF."
+        )
 
 
 exam_signed_protocol_service = ExamSignedProtocolService()
