@@ -367,21 +367,26 @@ class PrehledVyporadaniUiTestCase(unittest.TestCase):
         self.assertIn("Z INTERNÍCH AUDITŮ", first_text)
         self.assertIn("Přehled č. 0 – výchozí stav", first_text)
         self.assertIn("Stav k: 01.06.2026", first_text)
-        self.assertIn("Souhrnné vyhodnocení", first_text)
-        self.assertIn("Celkem zjištění: 3", first_text)
+        self.assertIn("VÝCHOZÍ STAV", first_text)
+        self.assertIn("Dosud nevypořádaná zjištění: 2", first_text)
+        self.assertIn("- V procesu: 1", first_text)
+        self.assertIn("- Otevřená: 1", first_text)
+        self.assertNotIn("Celkem zjištění", first_text)
+        self.assertNotIn("Celkem evidovaných", first_text)
+        self.assertNotIn("Typy zjištění", first_text)
+        self.assertNotIn("%", first_text)
         self.assertNotIn("AKTUÁLNÍ STAV", first_text)
         self.assertNotIn("ZMĚNY OD PŘEDCHOZÍHO PŘEHLEDU", first_text)
-        self.assertNotIn("Podrobné tabulky obsahují pouze změny", first_text)
-        self.assertIn("Vypořádáno: 1 (33 %)", first_text)
-        self.assertIn(SECTION_SETTLED_BASELINE, first_text)
+        self.assertNotIn(SECTION_SETTLED_BASELINE, first_text)
         self.assertIn(SECTION_UNSETTLED, first_text)
         self.assertNotIn(SECTION_NEW, first_text)
         self.assertNotIn(SECTION_REOPENED, first_text)
         self.assertIn("10/2020", first_text)
         self.assertNotIn("10/2020/2020", first_text)
         self.assertIn("Halda", first_text)
-        self.assertIn("K znovuotevření", first_text)
-        self.assertIn("15.01.2026", first_text)
+        self.assertNotIn("K znovuotevření", first_text)
+        self.assertNotIn("15.01.2026", first_text)
+        self.assertIn("K vypořádání", first_text)
         self.assertIn("Zůstává v procesu", first_text)
         self.assertNotIn("Řídicí proces:", first_text)
         self.assertNotIn("Oblast ověřování:", first_text)
@@ -391,35 +396,35 @@ class PrehledVyporadaniUiTestCase(unittest.TestCase):
 
         self.assertIn("Přehled č. 1", second_text)
         self.assertIn("Období: 01.06.2026 – 01.09.2026", second_text)
-        self.assertIn("AKTUÁLNÍ STAV", second_text)
-        self.assertIn("Celkem evidovaných zjištění: 5", second_text)
-        self.assertIn("Vypořádáno: 1 (20 %)", second_text)
-        self.assertIn("ZMĚNY OD PŘEDCHOZÍHO PŘEHLEDU", second_text)
-        self.assertIn("Nově vypořádáno: 1", second_text)
-        self.assertIn("Nová zjištění: 2", second_text)
-        self.assertIn("Znovuotevřeno: 1", second_text)
-        self.assertIn(
-            "Podrobné tabulky obsahují pouze změny "
-            "od předchozího přehledu a všechna dosud "
-            "nevypořádaná zjištění.",
-            second_text,
+        self.assertLess(
+            second_text.index("ZMĚNY OD PŘEDCHOZÍHO PŘEHLEDU"),
+            second_text.index("AKTUÁLNÍ STAV"),
         )
-        self.assertNotIn("Souhrnné vyhodnocení", second_text)
+        self.assertIn("Nová zjištění: 2", second_text)
+        self.assertIn("Vypořádaná od posledního přehledu: 1", second_text)
+        self.assertIn("Znovuotevřená zjištění: 1", second_text)
+        self.assertEqual(second_text.count("Znovuotevřená zjištění"), 1)
+        self.assertIn("Dosud nevypořádaná zjištění: 4", second_text)
+        self.assertIn("- V procesu: 1", second_text)
+        self.assertIn("- Otevřená: 3", second_text)
+        self.assertNotIn("Celkem zjištění", second_text)
+        self.assertNotIn("Celkem evidovaných", second_text)
+        self.assertNotIn("Typy zjištění", second_text)
+        self.assertNotIn("%", second_text)
         self.assertIn(SECTION_SETTLED_SINCE, second_text)
         self.assertIn(SECTION_NEW, second_text)
-        self.assertNotIn(SECTION_REOPENED, second_text)
-        self.assertLess(
-            second_text.index("K vypořádání"),
-            second_text.index(SECTION_UNSETTLED),
+        unsettled_table = second_text.index(
+            SECTION_UNSETTLED,
+            second_text.index(SECTION_UNSETTLED) + len(SECTION_UNSETTLED),
         )
-        self.assertLess(
-            second_text.index(SECTION_UNSETTLED),
-            second_text.index("Upravený živý text"),
+        new_table = second_text.index(
+            SECTION_NEW,
+            second_text.index(SECTION_NEW) + len(SECTION_NEW),
         )
-        self.assertLess(
-            second_text.index(SECTION_UNSETTLED),
-            second_text.index("K znovuotevření"),
-        )
+        self.assertLess(second_text.index("K vypořádání"), unsettled_table)
+        self.assertLess(unsettled_table, second_text.index("Upravený živý text"))
+        self.assertLess(unsettled_table, second_text.index("K znovuotevření"))
+        self.assertLess(second_text.index("K znovuotevření"), new_table)
         self.assertEqual(second_text.count("K znovuotevření"), 1)
         self.assertIn("Nové po bodu 0", second_text)
         self.assertIn("Ještě ne", second_text)
