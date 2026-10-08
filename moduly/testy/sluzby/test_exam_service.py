@@ -621,11 +621,24 @@ class TestExamService:
         return now
 
     def resolve_snapshot_image(self, relative_path: str | None) -> Path | None:
+        """Cesta ke zmrazenému obrázku uvnitř příloh, jinak ``None``.
+
+        Poškozená, absolutní nebo úniková cesta zkoušku ani export neshodí.
+        Soubor mimo spravované úložiště se neotevře.
+        """
         text = str(relative_path or "").strip()
         if not text:
             return None
-        path = storage_service.attachment_absolute(text)
-        return path if path.is_file() else None
+        try:
+            path = storage_service.attachment_absolute(text)
+        except ValueError:
+            return None
+        try:
+            if not path.is_file():
+                return None
+        except OSError:
+            return None
+        return path
 
     def _plan_written(self, test_id: int, rng) -> list[dict]:
         pools = []
