@@ -7,7 +7,7 @@ kombinace zaměstnanec × test.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, datetime
 
 from core.utils.czech_sort import czech_sort_key
@@ -22,10 +22,15 @@ from moduly.testy.constants import (
     EXAM_VALIDITY_STATE_NO_SUCCESS,
     EXAM_VALIDITY_STATE_UNLIMITED,
     EXAM_VALIDITY_STATE_VALID,
+    EXAM_VALIDITY_TRACKING_FILTER_TRACKED,
+    EXAM_VALIDITY_TRACKING_FILTER_UNTRACKED,
     EXAM_VALIDITY_WARNING_DAYS,
     WRITTEN_RESULT_PASSED,
 )
 from moduly.testy.modely.test_exam import TestExam
+from moduly.testy.repository.test_exam_validity_tracking_repository import (
+    TestExamValidityTrackingRepository,
+)
 from moduly.testy.sluzby.test_definition_service import test_definition_service
 from moduly.testy.sluzby.test_employee_service import test_employee_service
 from moduly.testy.sluzby.test_exam_service import test_exam_service
@@ -52,6 +57,7 @@ class ExamValidityRow:
     prepared_count: int
     in_progress_count: int
     last_success_exam_id: int | None
+    tracked: bool = True
 
 
 def as_local_day(value: date | None) -> date:
@@ -156,17 +162,32 @@ def build_exam_validity_rows(
     return rows
 
 
+def validity_rows_for_summary(rows: list[ExamValidityRow]) -> list[ExamValidityRow]:
+    """Řádky pro budoucí souhrn platnosti. Nesledované kombinace vynechá."""
+    return [row for row in rows if row.tracked]
+
+
+def unfinished_exam_counts(rows: list[ExamValidityRow]) -> tuple[int, int]:
+    """Připravené a rozpracované zkoušky včetně nesledovaných kombinací."""
+    return (
+        sum(row.prepared_count for row in rows),
+        sum(row.in_progress_count for row in rows),
+    )
+
+
 def filter_exam_validity_rows(
     rows: list[ExamValidityRow],
     *,
     workplace_id: int | None = None,
     test_definition_id: int | None = None,
     state: str | None = None,
+    tracking: str | None = None,
     search: str = "",
 ) -> list[ExamValidityRow]:
     selected_workplace = None if workplace_id in (None, "") else int(workplace_id)
     selected_test = None if test_definition_id in (None, "") else int(test_definition_id)
     selected_state = str(state or "").strip() or None
+    tracking_mode = str(tracking or "").strip()
     needle = " ".join(str(search or "").casefold().split())
     filtered: list[ExamValidityRow] = []
     for row in rows:
@@ -175,6 +196,10 @@ def filter_exam_validity_rows(
         if selected_test is not None and row.test_definition_id != selected_test:
             continue
         if selected_state is not None and row.state != selected_state:
+            continue
+        if tracking_mode == EXAM_VALIDITY_TRACKING_FILTER_TRACKED and not row.tracked:
+            continue
+        if tracking_mode == EXAM_VALIDITY_TRACKING_FILTER_UNTRACKED and row.tracked:
             continue
         if needle:
             haystack = " ".join(exam_validity_search_text(row).casefold().split())
@@ -185,6 +210,17 @@ def filter_exam_validity_rows(
 
 
 class ExamValidityService:
+    def __init__(self) -> None:
+        self.tracking = TestExamValidityTrackingRepository()
+
+    def stop_tracking(self, employee_id: int, test_definition_id: int) -> None:
+        """Vypne sledování. Zkoušky ani jejich údaje nemění."""
+        self.tracking.stop(employee_id, test_definition_id)
+
+    def resume_tracking(self, employee_id: int, test_definition_id: int) -> None:
+        """Ručně obnoví sledování bez založení nové zkoušky."""
+        self.tracking.resume(employee_id, test_definition_id)
+
     def list_rows(
         self,
         *,
@@ -212,6 +248,14 @@ class ExamValidityService:
             tests_by_id=tests,
             workplace_names=workplace_names,
         )
+        untracked = self.tracking.untracked_pairs()
+        if untracked:
+            rows = [
+                replace(row, tracked=False)
+                if (row.employee_id, row.test_definition_id) in untracked
+                else row
+                for row in rows
+            ]
         if include_inactive_employees:
             return rows
         return [row for row in rows if row.employee_active]

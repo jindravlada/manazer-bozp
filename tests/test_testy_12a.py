@@ -11,7 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import QAbstractItemView, QApplication, QPushButton
+from PySide6.QtWidgets import QAbstractItemView, QApplication
 from sqlalchemy import delete
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -54,10 +54,13 @@ with patch.object(Path, "home", return_value=_TMP):
         EXAM_STATUS_COMPLETED,
         EXAM_STATUS_PREPARED,
         EXAM_STATUS_STARTED,
+        EXAM_VALIDITY_ACTION_RESUME,
+        EXAM_VALIDITY_ACTION_STOP,
         EXAM_VALIDITY_FILTER_ALL_STATES,
         EXAM_VALIDITY_FILTER_ALL_TESTS,
         EXAM_VALIDITY_FILTER_ALL_WORKPLACES,
         EXAM_VALIDITY_SHOW_INACTIVE,
+        EXAM_VALIDITY_TRACKING_FILTER_TRACKED_LABEL,
         EXAM_VALIDITY_STATE_EXPIRED,
         EXAM_VALIDITY_STATE_EXPIRING,
         EXAM_VALIDITY_STATE_LABELS,
@@ -596,7 +599,11 @@ class ExamValidityTabTests(unittest.TestCase):
         self.assertIsNone(tab.workplace_filter.currentData())
         self.assertIsNone(tab.test_filter.currentData())
         self.assertIsNone(tab.state_filter.currentData())
-        self.assertEqual(tab.findChildren(QPushButton), [])
+        self.assertEqual(tab.tracking_filter.currentText(), EXAM_VALIDITY_TRACKING_FILTER_TRACKED_LABEL)
+        self.assertEqual(tab.stop_btn.text(), EXAM_VALIDITY_ACTION_STOP)
+        self.assertEqual(tab.resume_btn.text(), EXAM_VALIDITY_ACTION_RESUME)
+        self.assertFalse(tab.stop_btn.isEnabled())
+        self.assertFalse(tab.resume_btn.isEnabled())
         self.assertEqual(
             tab.table.editTriggers(),
             QAbstractItemView.EditTrigger.NoEditTriggers,

@@ -1,16 +1,26 @@
-"""Záložka evidenčního přehledu platnosti zkoušek. Jen pro čtení."""
+"""Záložka evidenčního přehledu platnosti zkoušek."""
 
 from __future__ import annotations
 
 from datetime import date
 
-from PySide6.QtWidgets import QCheckBox, QHBoxLayout, QLabel, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QHBoxLayout,
+    QLabel,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from core.utils.czech_sort import czech_sort_key
 from core.widgets.filter_bar import FilterBar
 from core.widgets.no_wheel_guards import NoWheelComboBox
 from core.widgets.table_utils import configure_table_columns
 from moduly.testy.constants import (
+    EXAM_VALIDITY_ACTION_RESUME,
+    EXAM_VALIDITY_ACTION_STOP,
     EXAM_VALIDITY_FILTER_ALL_STATES,
     EXAM_VALIDITY_FILTER_ALL_TESTS,
     EXAM_VALIDITY_FILTER_ALL_WORKPLACES,
@@ -18,6 +28,14 @@ from moduly.testy.constants import (
     EXAM_VALIDITY_SHOW_INACTIVE,
     EXAM_VALIDITY_STATE_LABELS,
     EXAM_VALIDITY_STATE_ORDER,
+    EXAM_VALIDITY_STOP_CONFIRM,
+    EXAM_VALIDITY_TRACKING_FILTER_ALL,
+    EXAM_VALIDITY_TRACKING_FILTER_ALL_LABEL,
+    EXAM_VALIDITY_TRACKING_FILTER_TRACKED,
+    EXAM_VALIDITY_TRACKING_FILTER_TRACKED_LABEL,
+    EXAM_VALIDITY_TRACKING_FILTER_UNTRACKED,
+    EXAM_VALIDITY_TRACKING_FILTER_UNTRACKED_LABEL,
+    MODULE_NAME,
     VALIDITY_COL_EMPLOYEE,
 )
 from moduly.testy.sluzby.exam_validity_service import (
@@ -37,19 +55,29 @@ class ExamValidityTab(QWidget):
 
         layout = QVBoxLayout(self)
         toolbar = QHBoxLayout()
+        self.stop_btn = QPushButton(EXAM_VALIDITY_ACTION_STOP)
+        self.stop_btn.setEnabled(False)
+        self.resume_btn = QPushButton(EXAM_VALIDITY_ACTION_RESUME)
+        self.resume_btn.setEnabled(False)
         self.workplace_filter = NoWheelComboBox()
-        self.workplace_filter.setMinimumWidth(180)
+        self.workplace_filter.setMinimumWidth(160)
         self.test_filter = NoWheelComboBox()
-        self.test_filter.setMinimumWidth(180)
+        self.test_filter.setMinimumWidth(160)
         self.state_filter = NoWheelComboBox()
-        self.state_filter.setMinimumWidth(180)
+        self.state_filter.setMinimumWidth(160)
+        self.tracking_filter = NoWheelComboBox()
+        self.tracking_filter.setMinimumWidth(140)
         self.show_inactive = QCheckBox(EXAM_VALIDITY_SHOW_INACTIVE)
+        toolbar.addWidget(self.stop_btn)
+        toolbar.addWidget(self.resume_btn)
         toolbar.addWidget(QLabel("Pracoviště:"))
         toolbar.addWidget(self.workplace_filter)
         toolbar.addWidget(QLabel("Test:"))
         toolbar.addWidget(self.test_filter)
         toolbar.addWidget(QLabel("Stav platnosti:"))
         toolbar.addWidget(self.state_filter)
+        toolbar.addWidget(QLabel("Sledování:"))
+        toolbar.addWidget(self.tracking_filter)
         toolbar.addStretch()
         toolbar.addWidget(self.show_inactive)
 
@@ -66,10 +94,15 @@ class ExamValidityTab(QWidget):
         layout.addWidget(self.table, 1)
 
         self._fill_state_filter()
+        self._fill_tracking_filter()
         self.workplace_filter.currentIndexChanged.connect(self._on_filter_changed)
         self.test_filter.currentIndexChanged.connect(self._on_filter_changed)
         self.state_filter.currentIndexChanged.connect(self._on_filter_changed)
+        self.tracking_filter.currentIndexChanged.connect(self._on_filter_changed)
         self.show_inactive.toggled.connect(self.refresh)
+        self.stop_btn.clicked.connect(self.stop_tracking)
+        self.resume_btn.clicked.connect(self.resume_tracking)
+        self.table.itemSelectionChanged.connect(self._update_action_buttons)
         self.refresh()
 
     def current_day(self) -> date:
@@ -87,6 +120,41 @@ class ExamValidityTab(QWidget):
         self._reload_choice_filters(self._base_rows)
         self._apply_current_filters()
 
+    def stop_tracking(self) -> None:
+        target = self.table.selected_validity_target()
+        if target is None or not target[2]:
+            self._update_action_buttons()
+            return
+        answer = QMessageBox.question(
+            self,
+            MODULE_NAME,
+            EXAM_VALIDITY_STOP_CONFIRM,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+        exam_validity_service.stop_tracking(target[0], target[1])
+        self.refresh()
+
+    def resume_tracking(self) -> None:
+        target = self.table.selected_validity_target()
+        if target is None or target[2]:
+            self._update_action_buttons()
+            return
+        exam_validity_service.resume_tracking(target[0], target[1])
+        self.refresh()
+
+    def _update_action_buttons(self) -> None:
+        target = self.table.selected_validity_target()
+        if target is None:
+            self.stop_btn.setEnabled(False)
+            self.resume_btn.setEnabled(False)
+            return
+        tracked = bool(target[2])
+        self.stop_btn.setEnabled(tracked)
+        self.resume_btn.setEnabled(not tracked)
+
     def _on_filter_changed(self) -> None:
         if self._reloading_filters:
             return
@@ -98,10 +166,12 @@ class ExamValidityTab(QWidget):
             workplace_id=self._selected_id(self.workplace_filter),
             test_definition_id=self._selected_id(self.test_filter),
             state=self._selected_state(),
+            tracking=self._selected_tracking(),
         )
         self.table.load_rows(rows)
         configure_table_columns(self.table, "test_exam_validity")
         self.text_filter.apply_filter()
+        self._update_action_buttons()
 
     def _apply_search(self, text: str) -> tuple[int, int]:
         needle = " ".join(text.casefold().split())
@@ -123,6 +193,23 @@ class ExamValidityTab(QWidget):
         self.state_filter.addItem(EXAM_VALIDITY_FILTER_ALL_STATES, None)
         for code in EXAM_VALIDITY_STATE_ORDER:
             self.state_filter.addItem(EXAM_VALIDITY_STATE_LABELS[code], code)
+
+    def _fill_tracking_filter(self) -> None:
+        self.tracking_filter.clear()
+        self.tracking_filter.addItem(
+            EXAM_VALIDITY_TRACKING_FILTER_ALL_LABEL,
+            EXAM_VALIDITY_TRACKING_FILTER_ALL,
+        )
+        self.tracking_filter.addItem(
+            EXAM_VALIDITY_TRACKING_FILTER_TRACKED_LABEL,
+            EXAM_VALIDITY_TRACKING_FILTER_TRACKED,
+        )
+        self.tracking_filter.addItem(
+            EXAM_VALIDITY_TRACKING_FILTER_UNTRACKED_LABEL,
+            EXAM_VALIDITY_TRACKING_FILTER_UNTRACKED,
+        )
+        index = self.tracking_filter.findData(EXAM_VALIDITY_TRACKING_FILTER_TRACKED)
+        self.tracking_filter.setCurrentIndex(index if index >= 0 else 0)
 
     def _reload_choice_filters(self, rows: list[ExamValidityRow]) -> None:
         workplace_id = self._selected_id(self.workplace_filter)
@@ -166,5 +253,11 @@ class ExamValidityTab(QWidget):
     def _selected_state(self) -> str | None:
         data = self.state_filter.currentData()
         if not data:
+            return None
+        return str(data)
+
+    def _selected_tracking(self) -> str | None:
+        data = self.tracking_filter.currentData()
+        if not data or data == EXAM_VALIDITY_TRACKING_FILTER_ALL:
             return None
         return str(data)

@@ -376,6 +376,11 @@ class TestExamService:
         )
         session.add(exam)
         session.flush()
+        from moduly.testy.repository.test_exam_validity_tracking_repository import (
+            resume_validity_tracking,
+        )
+
+        resume_validity_tracking(session, int(employee.id), int(test.id))
 
         for position, person in enumerate(people, start=1):
             session.add(

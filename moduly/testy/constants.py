@@ -225,6 +225,21 @@ EXAM_VALIDITY_FILTER_ALL_WORKPLACES = "Všechna pracoviště"
 EXAM_VALIDITY_FILTER_ALL_TESTS = "Všechny testy"
 EXAM_VALIDITY_FILTER_ALL_STATES = "Všechny stavy platnosti"
 EXAM_VALIDITY_WARNING_DAYS = 30
+EXAM_VALIDITY_ACTION_STOP = "Nesledovat platnost"
+EXAM_VALIDITY_ACTION_RESUME = "Obnovit sledování"
+EXAM_VALIDITY_STOP_CONFIRM = (
+    "Opravdu chcete přestat sledovat platnost vybrané kombinace "
+    "zaměstnanec a test?\n\n"
+    "Zkoušky, jejich výsledky ani datum platnosti se nezmění a data se nesmažou."
+)
+EXAM_VALIDITY_TRACKING_ON_LABEL = "Sledovat"
+EXAM_VALIDITY_TRACKING_OFF_LABEL = "Nesledovat"
+EXAM_VALIDITY_TRACKING_FILTER_ALL = "all"
+EXAM_VALIDITY_TRACKING_FILTER_TRACKED = "tracked"
+EXAM_VALIDITY_TRACKING_FILTER_UNTRACKED = "untracked"
+EXAM_VALIDITY_TRACKING_FILTER_ALL_LABEL = "Vše"
+EXAM_VALIDITY_TRACKING_FILTER_TRACKED_LABEL = "Sledované"
+EXAM_VALIDITY_TRACKING_FILTER_UNTRACKED_LABEL = "Nesledované"
 
 EXAM_VALIDITY_STATE_VALID = "valid"
 EXAM_VALIDITY_STATE_EXPIRING = "expiring"
@@ -260,6 +275,7 @@ VALIDITY_COL_VALID_UNTIL = 5
 VALIDITY_COL_STATE = 6
 VALIDITY_COL_PREPARED = 7
 VALIDITY_COL_IN_PROGRESS = 8
+VALIDITY_COL_TRACKING = 9
 
 VALIDITY_COLUMN_HEADERS = [
     "Osobní číslo",
@@ -271,6 +287,7 @@ VALIDITY_COLUMN_HEADERS = [
     "Stav platnosti",
     "Připravené",
     "Rozpracované",
+    "Sledování",
 ]
 
 WRITTEN_RESULT_PASSED = "passed"

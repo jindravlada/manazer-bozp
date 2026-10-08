@@ -30,6 +30,8 @@ from moduly.testy.constants import (
     EXAM_VALIDITY_STATE_NO_SUCCESS,
     EXAM_VALIDITY_STATE_UNLIMITED,
     EXAM_VALIDITY_STATE_VALID,
+    EXAM_VALIDITY_TRACKING_OFF_LABEL,
+    EXAM_VALIDITY_TRACKING_ON_LABEL,
     VALIDITY_COL_EMPLOYEE,
     VALIDITY_COL_IN_PROGRESS,
     VALIDITY_COL_LAST_SUCCESS,
@@ -37,6 +39,7 @@ from moduly.testy.constants import (
     VALIDITY_COL_PREPARED,
     VALIDITY_COL_STATE,
     VALIDITY_COL_TEST,
+    VALIDITY_COL_TRACKING,
     VALIDITY_COL_VALID_UNTIL,
     VALIDITY_COL_WORKPLACE,
     VALIDITY_COLUMN_HEADERS,
@@ -48,6 +51,9 @@ from moduly.testy.sluzby.exam_validity_service import (
 from moduly.testy.sluzby.test_exam_service import format_exam_date
 
 ROLE_SEARCH = Qt.ItemDataRole.UserRole + 1
+ROLE_EMPLOYEE_ID = Qt.ItemDataRole.UserRole + 2
+ROLE_TEST_ID = Qt.ItemDataRole.UserRole + 3
+ROLE_TRACKED = Qt.ItemDataRole.UserRole + 4
 
 _STATE_BACKGROUNDS = {
     EXAM_VALIDITY_STATE_VALID: STATUS_DONE_BG,
@@ -80,6 +86,21 @@ class ExamValidityTable(QTableWidget):
         self._has_sort = False
         enable_typed_sorting(self)
 
+    def selected_validity_target(self) -> tuple[int, int, bool] | None:
+        """Právě jeden řádek: zaměstnanec, test a zda se platnost sleduje."""
+        selected = self.selectionModel().selectedRows() if self.selectionModel() else []
+        if len(selected) != 1:
+            return None
+        item = self.item(selected[0].row(), VALIDITY_COL_PERSONAL_NUMBER)
+        if item is None:
+            return None
+        employee_id = item.data(ROLE_EMPLOYEE_ID)
+        test_id = item.data(ROLE_TEST_ID)
+        tracked = item.data(ROLE_TRACKED)
+        if employee_id is None or test_id is None or tracked is None:
+            return None
+        return int(employee_id), int(test_id), bool(tracked)
+
     def load_rows(self, rows: list[ExamValidityRow]) -> None:
         header = self.horizontalHeader()
         if not self._has_sort:
@@ -92,6 +113,11 @@ class ExamValidityTable(QTableWidget):
             self.setRowCount(len(rows))
             for index, row in enumerate(rows):
                 state_label = EXAM_VALIDITY_STATE_LABELS.get(row.state, row.state)
+                tracking_label = (
+                    EXAM_VALIDITY_TRACKING_ON_LABEL
+                    if row.tracked
+                    else EXAM_VALIDITY_TRACKING_OFF_LABEL
+                )
                 last_success = format_exam_date(row.last_success_on)
                 valid_until = format_exam_date(row.valid_until)
                 stable_id = int(row.employee_id) * 1_000_003 + int(row.test_definition_id)
@@ -111,10 +137,15 @@ class ExamValidityTable(QTableWidget):
                         str(row.in_progress_count),
                         typed_int(row.in_progress_count),
                     ),
+                    VALIDITY_COL_TRACKING: (tracking_label, typed_text(tracking_label)),
                 }
                 search = exam_validity_search_text(row)
                 for column, (text, sort_value) in values.items():
                     item = create_typed_item(text, sort_value, stable_id=stable_id)
+                    if column == VALIDITY_COL_PERSONAL_NUMBER:
+                        item.setData(ROLE_EMPLOYEE_ID, row.employee_id)
+                        item.setData(ROLE_TEST_ID, row.test_definition_id)
+                        item.setData(ROLE_TRACKED, row.tracked)
                     if column == VALIDITY_COL_EMPLOYEE:
                         item.setData(ROLE_SEARCH, search)
                     if column == VALIDITY_COL_STATE:

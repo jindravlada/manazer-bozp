@@ -84,6 +84,9 @@ def initialize_database() -> None:
     from moduly.testy.modely.test_exam_written_choice import (  # noqa: F401
         TestExamWrittenChoice,
     )
+    from moduly.testy.modely.test_exam_validity_tracking import (  # noqa: F401
+        TestExamValidityTracking,
+    )
     from moduly.nastaveni.modely.exposed_group import ExposedGroup  # noqa: F401
     from moduly.kniha_urazu.modely.accident import Accident  # noqa: F401
     from moduly.kniha_urazu.modely.investigation import AccidentInvestigation  # noqa: F401
@@ -3787,6 +3790,12 @@ def _ensure_test_exam_tables() -> None:
         TestExamOralQuestion.__table__.create(bind=_db_engine(), checkfirst=True)
     if not _table_columns("test_exam_written_choices"):
         TestExamWrittenChoice.__table__.create(bind=_db_engine(), checkfirst=True)
+    if not _table_columns("test_exam_validity_tracking"):
+        from moduly.testy.modely.test_exam_validity_tracking import (
+            TestExamValidityTracking,
+        )
+
+        TestExamValidityTracking.__table__.create(bind=_db_engine(), checkfirst=True)
 
 
 def _ensure_responsibility_roles_table() -> None:

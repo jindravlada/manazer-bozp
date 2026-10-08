@@ -1553,6 +1553,7 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             VALIDITY_COL_PREPARED,
             VALIDITY_COL_STATE,
             VALIDITY_COL_TEST,
+            VALIDITY_COL_TRACKING,
             VALIDITY_COL_VALID_UNTIL,
             VALIDITY_COL_WORKPLACE,
         )
@@ -1570,6 +1571,7 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             VALIDITY_COL_STATE: 170,
             VALIDITY_COL_PREPARED: 110,
             VALIDITY_COL_IN_PROGRESS: 130,
+            VALIDITY_COL_TRACKING: 130,
         }
         for column, width in widths.items():
             table.setColumnWidth(column, width)
@@ -1583,6 +1585,7 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
             VALIDITY_COL_STATE,
             VALIDITY_COL_PREPARED,
             VALIDITY_COL_IN_PROGRESS,
+            VALIDITY_COL_TRACKING,
         ):
             header.setSectionResizeMode(column, QHeaderView.Interactive)
 
