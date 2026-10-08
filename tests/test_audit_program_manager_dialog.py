@@ -44,6 +44,9 @@ with patch.object(Path, "home", return_value=_TMP):
         AUDIT_STANDARD_ISO_9001,
     )
     from moduly.audity.sluzby.audit_knowledge_service import audit_knowledge_service
+    from moduly.audity.sluzby.audit_lead_recommendation_service import (
+        confirmed_recommendation_fields,
+    )
     from moduly.audity.sluzby.audit_program_service import audit_program_service
     from moduly.audity.sluzby.audit_service import audit_service
     from moduly.audity.sluzby.system_audit_workplace_service import (
@@ -397,6 +400,8 @@ class AuditProgramManagerDialogTestCase(unittest.TestCase):
             audit.id,
             started_at=date(2026, 4, 10),
             finished_at=date(2026, 4, 20),
+            conclusion_text="Závěr auditu.",
+            **confirmed_recommendation_fields(audit.id),
         )
 
         dialog = self._create_dialog()
@@ -435,6 +440,8 @@ class AuditProgramManagerDialogTestCase(unittest.TestCase):
             audit.id,
             started_at=date(2026, 4, 10),
             finished_at=date(2026, 4, 20),
+            conclusion_text="Závěr auditu.",
+            **confirmed_recommendation_fields(audit.id),
         )
 
         dialog = self._create_dialog()

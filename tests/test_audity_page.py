@@ -283,6 +283,15 @@ class AudityPageTestCase(unittest.TestCase):
         page = self._create_page()
 
         def _accept_dialog(dialog):
+            workplace = settings_service.save_workplace(
+                name=f"Auditovaný provoz {uuid.uuid4().hex[:6]}",
+                active=True,
+                audit_enabled=True,
+            )
+            dialog.spis_widget.workplace_selector.set_workplace(
+                workplace.id,
+                workplace.name,
+            )
             dialog.spis_widget._set_year(2026)
             dialog.spis_widget.planned_month_combo.setCurrentIndex(4)
             dialog.spis_widget.audit_date_edit.set_date_value(date(2026, 4, 15))
