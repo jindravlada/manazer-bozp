@@ -37,7 +37,6 @@ from moduly.testy.sluzby.exam_protocol_layout import (
     protocol_people,
     render_paper_protocol_xml,
 )
-from moduly.testy.sluzby.test_definition_service import format_test_duration
 from moduly.testy.sluzby.test_exam_service import TestExamError, test_exam_service
 
 _TEMPLATE_SUBDIR = "exporty"
@@ -315,9 +314,6 @@ def _header_paragraphs(exam: TestExam, *, for_key: bool) -> list[OdtParagraph]:
         paragraphs.append(OdtParagraph.text(workplace, style="WrittenMeta"))
     paragraphs.append(OdtParagraph.text(BLANK_EXAM_DATE_LINE, style="WrittenMeta"))
     paragraphs.append(OdtParagraph.text(PAPER_TEST_INSTRUCTION, style="WrittenInstruction"))
-    duration = _duration_line(getattr(exam, "written_duration_seconds", None))
-    if duration:
-        paragraphs.append(OdtParagraph.text(duration, style="WrittenMeta"))
     return paragraphs
 
 
@@ -364,18 +360,6 @@ def _date_line(value: object) -> str:
     if not text:
         return ""
     return f"Datum zkoušky: {text}"
-
-
-def _duration_line(value: object) -> str:
-    if value is None or isinstance(value, bool):
-        return ""
-    try:
-        seconds = int(value)
-    except (TypeError, ValueError):
-        return ""
-    if seconds <= 0:
-        return ""
-    return f"Čas na písemnou část: {format_test_duration(seconds)}"
 
 
 def correct_answer_rows(

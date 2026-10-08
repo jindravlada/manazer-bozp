@@ -120,7 +120,8 @@ class PaperTestAppearanceTestCase(unittest.TestCase):
         self.assertIn("Pracoviště: Hala", texts)
         self.assertIn(BLANK_EXAM_DATE_LINE, texts)
         self.assertIn(PAPER_TEST_INSTRUCTION, texts)
-        self.assertIn("Čas na písemnou část: 2 min", texts)
+        self.assertNotIn("Čas na písemnou část", "\n".join(texts))
+        self.assertEqual(exam.written_duration_seconds, 120)
         self.assertNotIn(variant_label(exam), texts)
 
     def test_printed_test_matches_the_layout(self) -> None:
@@ -221,7 +222,12 @@ class PaperTestAppearanceTestCase(unittest.TestCase):
         self.assertIn("Pracoviště: Hala", plain)
         self.assertIn(BLANK_EXAM_DATE_LINE, plain)
         self.assertIn(PAPER_TEST_INSTRUCTION, plain)
-        self.assertIn("Čas na písemnou část:", plain)
+        self.assertNotIn("Čas na písemnou část", plain)
+        self.assertEqual(fresh.written_duration_seconds, 60)
+        self.assertEqual(
+            test_definition_service.get_test(definition.id).seconds_per_question,
+            60,
+        )
         self.assertNotIn(variant_label(fresh), plain)
         self.assertIn(variant_label(fresh), styles)
         self.assertIn(f'<style:footer><text:p text:style-name="WrittenVariant">{variant_label(fresh)}</text:p>', styles)

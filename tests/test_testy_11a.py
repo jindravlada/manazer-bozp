@@ -194,6 +194,14 @@ def _xml(path: Path) -> str:
         return archive.read("content.xml").decode("utf-8")
 
 
+def _style_body(xml: str, name: str) -> str:
+    start = xml.find(f'style:name="{name}"')
+    if start < 0:
+        raise AssertionError(name)
+    end = xml.find("</style:style>", start)
+    return xml[start:end]
+
+
 def _state(exam_id: int) -> tuple:
     exam = test_exam_service.get_exam(exam_id)
     assert exam is not None
@@ -450,9 +458,8 @@ class ExamProtocolTestCase(unittest.TestCase):
         self.assertEqual(test_exam_service.get_exam(passed.id).status, EXAM_STATUS_COMPLETED)
         plain = _plain(path)
         self.assertIn("PROTOKOL O ZKOUŠCE", plain)
-        self.assertIn("Elektronický test", plain)
-        self.assertIn("Mgr. Petra Elektronicka", plain)
-        self.assertIn("Osobní číslo: 1201", plain)
+        self.assertIn("Test: Elektronický test", plain)
+        self.assertIn("Mgr. Petra Elektronicka; Osobní číslo: 1201", plain)
         self.assertIn("Pracoviště: Laboratoř", plain)
         self.assertIn("Funkce: Laborant", plain)
         self.assertIn(BLANK_EXAM_DATE_LINE, plain)
@@ -479,9 +486,46 @@ class ExamProtocolTestCase(unittest.TestCase):
             plain.index(f"{oral_rows[1].position}. {oral_rows[1].text}"),
         )
         self.assertIn("CELKOVÝ VÝSLEDEK ZKOUŠKY", plain)
-        self.assertIn(MANUAL_RESULT_LINE, plain)
+        self.assertIn(paper_result_text("Výsledek ústní části:"), plain)
+        self.assertIn(paper_result_text("CELKOVÝ VÝSLEDEK ZKOUŠKY:"), plain)
+        self.assertNotIn(MANUAL_RESULT_LINE, plain)
         self.assertNotIn("\u2611", plain)
-        self.assertEqual(plain.count(MANUAL_RESULT_LINE), 2)
+        self.assertEqual(plain.count(PAPER_RESULT_OPTIONS), 2)
+        protocol_xml = _xml(path)
+        from xml.etree import ElementTree
+
+        ElementTree.fromstring(protocol_xml)
+        with zipfile.ZipFile(path) as archive:
+            ElementTree.fromstring(archive.read("styles.xml"))
+        title = _style_body(protocol_xml, "WrittenTitle")
+        test_name = _style_body(protocol_xml, "ProtocolTestName")
+        meta = _style_body(protocol_xml, "WrittenMeta")
+        body = _style_body(protocol_xml, "ProtocolText")
+        question = _style_body(protocol_xml, "WrittenQuestion")
+        answer = _style_body(protocol_xml, "WrittenAnswer")
+        heading = _style_body(protocol_xml, "ProtocolHeading")
+        self.assertIn('fo:font-size="16pt"', title)
+        self.assertIn('fo:font-weight="bold"', title)
+        self.assertIn('fo:text-align="center"', title)
+        self.assertIn('fo:font-size="14pt"', test_name)
+        self.assertIn('fo:text-align="center"', test_name)
+        self.assertNotIn("font-weight", test_name)
+        self.assertIn('fo:font-size="12pt"', meta)
+        self.assertIn('fo:font-size="12pt"', body)
+        self.assertIn('fo:font-weight="bold"', heading)
+        self.assertIn('fo:font-size="12pt"', question)
+        self.assertIn('fo:font-weight="bold"', question)
+        self.assertIn('fo:margin-top="0.10cm"', question)
+        self.assertIn('fo:margin-bottom="0.10cm"', question)
+        self.assertIn('fo:line-height="100%"', question)
+        self.assertIn('fo:margin-left="0cm"', question)
+        self.assertIn('fo:text-indent="0cm"', question)
+        self.assertIn('fo:font-size="12pt"', answer)
+        self.assertNotIn("font-weight", answer)
+        self.assertIn('fo:margin-top="0.10cm"', answer)
+        self.assertIn('fo:margin-left="0cm"', answer)
+        self.assertIn('fo:padding-bottom="0.4cm"', _style_body(protocol_xml, "ProtocolSignLine"))
+        self.assertIn('style:may-break-between-rows="false"', protocol_xml)
         self.assertIn("Zkoušený", plain)
         self.assertIn("Zkoušející", plain)
         self.assertIn("Ing. David Zkusici", plain)

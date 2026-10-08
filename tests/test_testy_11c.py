@@ -68,7 +68,6 @@ with patch.object(Path, "home", return_value=_TMP):
         exam_protocol_export_service,
     )
     from moduly.testy.sluzby.exam_protocol_layout import (
-        MANUAL_RESULT_LINE,
         paper_result_text,
         render_electronic_protocol_xml,
         render_paper_protocol_xml,
@@ -112,8 +111,8 @@ def _oral_questions(items: list[tuple[int, str]]) -> list[tuple[str, str]]:
 
 def _expected(items: list[tuple[int, str]]) -> list[tuple[str, str]]:
     return _oral_questions(items) + [
-        ("ProtocolHeading", "Výsledek ústní části:"),
-        ("ProtocolCheck", MANUAL_RESULT_LINE),
+        ("ProtocolResult", paper_result_text("Výsledek ústní části:")),
+        ("ProtocolResultGap", "\xa0"),
     ]
 
 

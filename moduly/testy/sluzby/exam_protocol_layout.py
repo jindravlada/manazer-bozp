@@ -68,7 +68,7 @@ def render_electronic_protocol_xml(
     parts.append(f'<text:p text:style-name="ProtocolText">{_xml(WRITTEN_RESULT_LINE)}</text:p>')
     parts.append(listing)
     parts.append(render_written_confirmation_xml())
-    parts.append(render_protocol_closing_xml(oral_items, people))
+    parts.append(render_protocol_closing_xml(oral_items, people, paper_results=True))
     return "".join(parts)
 
 

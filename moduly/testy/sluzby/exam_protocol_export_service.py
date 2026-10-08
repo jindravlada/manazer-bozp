@@ -37,9 +37,9 @@ from moduly.testy.sluzby.paper_test_export_service import (
     _QUESTION_MAX_H_WITH_CHOICES_CM,
     _QUESTION_MAX_W_CM,
     _QUESTION_MIN_W_CM,
-    _employee_name,
     _filename,
     _frame_for,
+    _identity_line,
     _labeled,
     _odt_path,
     _odt_text,
@@ -286,15 +286,13 @@ def _count(value: int | None) -> str:
 
 
 def _header(exam: TestExam) -> list[OdtParagraph]:
+    title = plain_export_text(exam.test_name)
     paragraphs = [
-        OdtParagraph.text(plain_export_text(exam.test_name), style="WrittenTitle"),
+        OdtParagraph.text(f"Test: {title}" if title else "Test:", style="ProtocolTestName"),
     ]
-    name = _employee_name(exam)
-    if name:
-        paragraphs.append(OdtParagraph.text(name, style="WrittenMeta"))
-    personal = _labeled("Osobní číslo", exam.employee_personal_number)
-    if personal:
-        paragraphs.append(OdtParagraph.text(personal, style="WrittenMeta"))
+    identity = _identity_line(exam)
+    if identity:
+        paragraphs.append(OdtParagraph.text(identity, style="WrittenMeta"))
     workplace = _labeled("Pracoviště", exam.employee_workplace_name)
     if workplace:
         paragraphs.append(OdtParagraph.text(workplace, style="WrittenMeta"))
