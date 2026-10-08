@@ -169,6 +169,23 @@ PAPER_TEST_INSTRUCTION = (
 )
 EXAM_DIALOG_TITLE = "Připravit zkoušku"
 EXAM_DETAIL_TITLE = "Zkouška"
+EXAM_PROTOCOL_SECTION = "Podepsaný protokol"
+EXAM_PROTOCOL_ATTACHED = "Připojen"
+EXAM_PROTOCOL_MISSING = "Nepřipojen"
+EXAM_PROTOCOL_ACTION_ATTACH = "Připojit PDF"
+EXAM_PROTOCOL_ACTION_OPEN = "Otevřít PDF"
+EXAM_PROTOCOL_ACTION_REPLACE = "Nahradit PDF"
+EXAM_PROTOCOL_ACTION_REMOVE = "Odebrat PDF"
+EXAM_PROTOCOL_REPLACE_CONFIRM = (
+    "Opravdu chcete nahradit připojený podepsaný protokol jiným PDF?\n\n"
+    "Nový dokument se nejprve uloží. Původní soubor zůstane v úložišti, "
+    "ke zkoušce se ale přiřadí až ověřená nová kopie."
+)
+EXAM_PROTOCOL_REMOVE_CONFIRM = (
+    "Opravdu chcete odebrat vazbu na podepsaný protokol?\n\n"
+    "Zkouška, její výsledek ani uložený soubor se nesmažou."
+)
+EXAM_PROTOCOL_FILE_FILTER = "PDF (*.pdf)"
 EXAM_SEARCH_PLACEHOLDER = "🔍 Hledat zkoušku..."
 
 EXAM_STATUS_PREPARED = "prepared"

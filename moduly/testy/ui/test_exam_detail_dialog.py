@@ -7,7 +7,9 @@ from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
+    QFileDialog,
     QGroupBox,
+    QHBoxLayout,
     QLabel,
     QMessageBox,
     QPushButton,
@@ -15,6 +17,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.export.open_export import open_local_file
 from core.widgets.dialog_utils import (
     configure_resizable_form_dialog,
     wrap_in_scroll_area,
@@ -24,7 +27,18 @@ from moduly.testy.constants import (
     EXAM_ACTION_CLEAR_ORAL_FAILURE,
     EXAM_ACTION_RECORD_ORAL_FAILURE,
     EXAM_DETAIL_TITLE,
+    EXAM_PROTOCOL_ACTION_ATTACH,
+    EXAM_PROTOCOL_ACTION_OPEN,
+    EXAM_PROTOCOL_ACTION_REMOVE,
+    EXAM_PROTOCOL_ACTION_REPLACE,
+    EXAM_PROTOCOL_ATTACHED,
+    EXAM_PROTOCOL_FILE_FILTER,
+    EXAM_PROTOCOL_MISSING,
+    EXAM_PROTOCOL_REMOVE_CONFIRM,
+    EXAM_PROTOCOL_REPLACE_CONFIRM,
+    EXAM_PROTOCOL_SECTION,
     EXAM_ROLE_LABELS,
+    EXAM_STATUS_COMPLETED,
     EXAM_STATUS_LABELS,
     EXAMINER_MODE_LABELS,
     MODULE_NAME,
@@ -34,6 +48,10 @@ from moduly.testy.constants import (
     written_result_label,
 )
 
+from moduly.testy.sluzby.exam_signed_protocol_service import (
+    ExamSignedProtocolError,
+    exam_signed_protocol_service,
+)
 from moduly.testy.sluzby.test_definition_service import format_test_duration
 from moduly.testy.sluzby.test_exam_service import TestExamError, format_exam_date, test_exam_service
 from moduly.testy.sluzby.written_answer_presentation import (
@@ -81,6 +99,43 @@ class TestExamDetailDialog(QDialog):
         self.oral_failure_button.clicked.connect(self._change_oral_failure)
         form.addWidget(self.oral_failure_button, alignment=Qt.AlignmentFlag.AlignLeft)
 
+        self.protocol_box = QGroupBox(EXAM_PROTOCOL_SECTION)
+        protocol_layout = QVBoxLayout(self.protocol_box)
+        self.protocol_status = QLabel(EXAM_PROTOCOL_MISSING)
+        self.protocol_status.setObjectName("exam-protocol-status")
+        protocol_layout.addWidget(self.protocol_status)
+        protocol_actions = QHBoxLayout()
+        self.protocol_attach_btn = self._protocol_button(
+            EXAM_PROTOCOL_ACTION_ATTACH,
+            "exam-protocol-attach",
+            self._attach_protocol,
+        )
+        self.protocol_open_btn = self._protocol_button(
+            EXAM_PROTOCOL_ACTION_OPEN,
+            "exam-protocol-open",
+            self._open_protocol,
+        )
+        self.protocol_replace_btn = self._protocol_button(
+            EXAM_PROTOCOL_ACTION_REPLACE,
+            "exam-protocol-replace",
+            self._replace_protocol,
+        )
+        self.protocol_remove_btn = self._protocol_button(
+            EXAM_PROTOCOL_ACTION_REMOVE,
+            "exam-protocol-remove",
+            self._remove_protocol,
+        )
+        for button in (
+            self.protocol_attach_btn,
+            self.protocol_open_btn,
+            self.protocol_replace_btn,
+            self.protocol_remove_btn,
+        ):
+            protocol_actions.addWidget(button)
+        protocol_actions.addStretch()
+        protocol_layout.addLayout(protocol_actions)
+        form.addWidget(self.protocol_box)
+
         self.written_box = QGroupBox("Písemné otázky")
         self.written_layout = QVBoxLayout(self.written_box)
         self.oral_box = QGroupBox("Ústní otázky")
@@ -102,6 +157,7 @@ class TestExamDetailDialog(QDialog):
         if exam is None:
             self.summary.setText("Zkouška nebyla nalezena.")
             self.oral_failure_button.hide()
+            self._show_protocol(completed=False, attached=False)
             return
         self.exam_id = int(exam.id)
         people = test_exam_service.get_examiners(exam.id)
@@ -114,6 +170,7 @@ class TestExamDetailDialog(QDialog):
         self._fill_summary(exam, commission, written)
         self._fill_written_summary(exam)
         self._sync_oral_failure_button(exam)
+        self._sync_protocol(exam)
         self._fill_written(exam, written)
         self._fill_oral(oral)
         self.written_box.setVisible(bool(exam.uses_written))
@@ -203,6 +260,114 @@ class TestExamDetailDialog(QDialog):
             return
         self.results_changed = True
         self.load_exam(self.exam_id)
+
+    def _protocol_button(self, text: str, object_name: str, handler) -> QPushButton:
+        button = QPushButton(text)
+        button.setObjectName(object_name)
+        button.setAutoDefault(False)
+        button.setDefault(False)
+        button.setEnabled(False)
+        button.clicked.connect(handler)
+        return button
+
+    def _sync_protocol(self, exam) -> None:
+        try:
+            state = exam_signed_protocol_service.describe(int(exam.id))
+        except ExamSignedProtocolError:
+            state = None
+        attached = bool(state and state.attached)
+        self._show_protocol(
+            completed=exam.status == EXAM_STATUS_COMPLETED,
+            attached=attached,
+        )
+
+    def _show_protocol(self, *, completed: bool, attached: bool) -> None:
+        self.protocol_status.setText(
+            EXAM_PROTOCOL_ATTACHED if attached else EXAM_PROTOCOL_MISSING
+        )
+        self.protocol_attach_btn.setEnabled(completed and not attached)
+        self.protocol_open_btn.setEnabled(attached)
+        self.protocol_replace_btn.setEnabled(completed and attached)
+        self.protocol_remove_btn.setEnabled(attached)
+
+    def _choose_pdf(self, title: str) -> str:
+        chosen, _selected_filter = QFileDialog.getOpenFileName(
+            self,
+            title,
+            "",
+            EXAM_PROTOCOL_FILE_FILTER,
+        )
+        return str(chosen or "")
+
+    def _attach_protocol(self) -> None:
+        if self.exam_id is None:
+            return
+        chosen = self._choose_pdf(EXAM_PROTOCOL_ACTION_ATTACH)
+        if not chosen:
+            return
+        self._store_protocol(chosen, replace=False)
+
+    def _replace_protocol(self) -> None:
+        if self.exam_id is None:
+            return
+        answer = QMessageBox.question(
+            self,
+            EXAM_PROTOCOL_ACTION_REPLACE,
+            EXAM_PROTOCOL_REPLACE_CONFIRM,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+        chosen = self._choose_pdf(EXAM_PROTOCOL_ACTION_REPLACE)
+        if not chosen:
+            return
+        self._store_protocol(chosen, replace=True)
+
+    def _store_protocol(self, chosen: str, *, replace: bool) -> None:
+        try:
+            if replace:
+                exam_signed_protocol_service.replace(int(self.exam_id), chosen)
+            else:
+                exam_signed_protocol_service.attach(int(self.exam_id), chosen)
+        except ExamSignedProtocolError as error:
+            QMessageBox.warning(self, MODULE_NAME, str(error))
+            return
+        self.load_exam(int(self.exam_id))
+
+    def _open_protocol(self) -> None:
+        if self.exam_id is None:
+            return
+        try:
+            path = exam_signed_protocol_service.validated_copy_path(int(self.exam_id))
+        except ExamSignedProtocolError as error:
+            QMessageBox.warning(self, MODULE_NAME, str(error))
+            return
+        open_local_file(
+            path,
+            parent=self,
+            title=EXAM_PROTOCOL_SECTION,
+            show_error=True,
+        )
+
+    def _remove_protocol(self) -> None:
+        if self.exam_id is None:
+            return
+        answer = QMessageBox.question(
+            self,
+            EXAM_PROTOCOL_ACTION_REMOVE,
+            EXAM_PROTOCOL_REMOVE_CONFIRM,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+        try:
+            exam_signed_protocol_service.detach(int(self.exam_id))
+        except ExamSignedProtocolError as error:
+            QMessageBox.warning(self, MODULE_NAME, str(error))
+            return
+        self.load_exam(int(self.exam_id))
 
     def _fill_written(self, exam, questions) -> None:
         while self.written_layout.count():

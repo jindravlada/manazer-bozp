@@ -81,3 +81,9 @@ class TestExam(Base):
         nullable=True,
         default="",
     )
+    # Aktuální podepsaný protokol. Prázdné znamená nepřipojeno.
+    # Starší kopie v přílohách se při výměně ani odebrání nemažou.
+    signed_protocol_attachment_id: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+    )
