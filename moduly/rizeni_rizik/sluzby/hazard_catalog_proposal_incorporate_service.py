@@ -1006,10 +1006,6 @@ class HazardCatalogProposalIncorporateService:
             )
             session.add(assessment)
             session.flush()
-            from moduly.rizeni_rizik.modely.hazard_library_template_assessment_exposed_group import (
-                HazardLibraryTemplateAssessmentExposedGroup,
-            )
-
             group_ids = [int(proposal.exposed_group_id)]
             for extra_id in getattr(payload, "exposed_group_ids", None) or ():
                 gid = int(extra_id)
