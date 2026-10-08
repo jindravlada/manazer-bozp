@@ -30,6 +30,7 @@ from core.dashboard import (
     CalendarPlaceholderWidget,
     ControlsWidget,
     DaysWithoutAccidentWidget,
+    ExamRetrainingWidget,
     RecentActivityWidget,
     StatisticsPlaceholderWidget,
     SummaryWidget,
@@ -53,6 +54,7 @@ class DashboardPage(QWidget):
         open_agenda_callback=None,
         open_sprava_dat_callback=None,
         refresh_sprava_dat_callback=None,
+        open_exam_validity_callback=None,
     ) -> None:
         super().__init__()
         self.open_tasks_callback = open_tasks_callback
@@ -65,6 +67,7 @@ class DashboardPage(QWidget):
         self.open_agenda_callback = open_agenda_callback
         self.open_sprava_dat_callback = open_sprava_dat_callback
         self.refresh_sprava_dat_callback = refresh_sprava_dat_callback
+        self.open_exam_validity_callback = open_exam_validity_callback
 
         self.setStyleSheet("""
             QFrame#HeaderCard,
@@ -136,6 +139,11 @@ class DashboardPage(QWidget):
 
         self.summary = SummaryWidget()
         layout.addWidget(self.summary)
+
+        self.exam_retraining = ExamRetrainingWidget(
+            open_callback=self.open_exam_validity_callback,
+        )
+        layout.addWidget(self.exam_retraining)
 
         grid = QGridLayout()
         grid.setSpacing(14)
@@ -353,6 +361,7 @@ class DashboardPage(QWidget):
             self.controls,
             self.accidents,
             self.days_without_accident,
+            self.exam_retraining,
         ]:
             if hasattr(widget, "refresh"):
                 widget.refresh()

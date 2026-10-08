@@ -175,6 +175,33 @@ def unfinished_exam_counts(rows: list[ExamValidityRow]) -> tuple[int, int]:
     )
 
 
+@dataclass(frozen=True)
+class ExamRetrainingSummary:
+    """Čtyři ukazatele panelu Přezkoušení zaměstnanců."""
+
+    valid_count: int
+    expiring_count: int
+    expired_count: int
+    unfinished_count: int
+
+
+def exam_retraining_summary(rows: list[ExamValidityRow]) -> ExamRetrainingSummary:
+    """Platné, končící a neplatné jen ze sledovaných kombinací.
+
+    Nedokončené jsou jednotlivé připravené a rozpracované zkoušky,
+    včetně kombinací s vypnutým sledováním. Řádky už musí odpovídat
+    výběru zaměstnanců (dashboard bere jen aktivní).
+    """
+    tracked = validity_rows_for_summary(rows)
+    prepared, in_progress = unfinished_exam_counts(rows)
+    return ExamRetrainingSummary(
+        valid_count=sum(row.state == EXAM_VALIDITY_STATE_VALID for row in tracked),
+        expiring_count=sum(row.state == EXAM_VALIDITY_STATE_EXPIRING for row in tracked),
+        expired_count=sum(row.state == EXAM_VALIDITY_STATE_EXPIRED for row in tracked),
+        unfinished_count=prepared + in_progress,
+    )
+
+
 def filter_exam_validity_rows(
     rows: list[ExamValidityRow],
     *,
@@ -220,6 +247,11 @@ class ExamValidityService:
     def resume_tracking(self, employee_id: int, test_definition_id: int) -> None:
         """Ručně obnoví sledování bez založení nové zkoušky."""
         self.tracking.resume(employee_id, test_definition_id)
+
+    def retraining_summary(self, *, today: date | None = None) -> ExamRetrainingSummary:
+        """Souhrn pro dashboard. Stejná platnost jako přehled, jen aktivní zaměstnanci."""
+        rows = self.list_rows(today=today, include_inactive_employees=False)
+        return exam_retraining_summary(rows)
 
     def list_rows(
         self,

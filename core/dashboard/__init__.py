@@ -7,3 +7,4 @@ from .widget_statistics_placeholder import StatisticsPlaceholderWidget
 from .widget_days_without_accident import DaysWithoutAccidentWidget
 from .widget_controls import ControlsWidget
 from .widget_accidents import AccidentsWidget
+from .widget_exam_retraining import ExamRetrainingWidget

@@ -92,6 +92,11 @@ class TestyPage(QWidget):
             self.tabs.setCurrentIndex(index)
         self.exams_tab.focus_exam(exam_id)
 
+    def show_validity_tab(self) -> None:
+        index = self.tabs.indexOf(self.validity_tab)
+        if index >= 0:
+            self.tabs.setCurrentIndex(index)
+
     def _build_employees_tab(self) -> QWidget:
         tab = QWidget()
         layout = QVBoxLayout(tab)

@@ -193,6 +193,7 @@ class MainWindow(QMainWindow):
                 open_agenda_callback=self._open_agenda_from_dashboard,
                 open_sprava_dat_callback=self._open_sprava_dat,
                 refresh_sprava_dat_callback=self._refresh_sprava_dat_status,
+                open_exam_validity_callback=self._open_exam_validity_from_dashboard,
             )
 
         if module.key == "kniha_urazu":
@@ -238,6 +239,19 @@ class MainWindow(QMainWindow):
         if page is not None and hasattr(page, "apply_workspace_filters"):
             page.apply_workspace_filters()
         self._show("agenda")
+
+    def _open_exam_validity_from_dashboard(self) -> None:
+        module = next(
+            (item for item in self.module_manager.get_modules() if item.key == "testy"),
+            None,
+        )
+        if module is None or not module.enabled:
+            return
+        self._show("testy")
+        page = self._page_widgets.get("testy")
+        show_validity = getattr(page, "show_validity_tab", None)
+        if callable(show_validity):
+            show_validity()
 
     def _sidebar(self):
         frame = QFrame()
