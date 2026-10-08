@@ -100,6 +100,13 @@ ORAL_QUESTION_COLUMN_HEADERS = [
 
 AGENDA_TESTS = "Testy"
 TEST_ACTION_NEW = "Nový test"
+STUDY_QUESTIONS_ACTION = "Vytisknout studijní otázky"
+STUDY_QUESTIONS_TITLE = "Studijní otázky k přezkoušení"
+STUDY_WRITTEN_HEADING = "PÍSEMNÁ ČÁST"
+STUDY_ORAL_HEADING = "Ústní otázky"
+STUDY_QUESTIONS_EMPTY = (
+    "K vybranému testu nejsou dostupné žádné aktivní studijní otázky."
+)
 TEST_DIALOG_TITLE_NEW = "Nový test"
 TEST_DIALOG_TITLE_EDIT = "Test"
 TEST_SEARCH_PLACEHOLDER = "🔍 Hledat test..."

@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QCheckBox,
+    QFileDialog,
     QHBoxLayout,
     QMessageBox,
     QPushButton,
@@ -12,9 +15,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.export import open_export_file
+from core.services.storage_service import storage_service
 from core.widgets.dialog_utils import (
     configure_edit_action_button,
     configure_new_action_button,
+    configure_perform_action_button,
     exec_maximized,
 )
 from core.widgets.filter_bar import FilterBar
@@ -25,10 +31,17 @@ from moduly.testy.constants import (
     ACTION_EDIT,
     MODULE_NAME,
     SHOW_INACTIVE_LABEL,
+    STUDY_QUESTIONS_ACTION,
+    STUDY_QUESTIONS_EMPTY,
+    STUDY_QUESTIONS_TITLE,
     TEST_ACTION_NEW,
     TEST_COL_ID,
     TEST_COL_NAME,
     TEST_SEARCH_PLACEHOLDER,
+)
+from moduly.testy.sluzby.study_questions_export_service import (
+    StudyQuestionsError,
+    study_questions_export_service,
 )
 from moduly.testy.sluzby.test_definition_service import test_definition_service
 from moduly.testy.ui.test_definition_dialog import TestDefinitionDialog
@@ -48,9 +61,14 @@ class TestDefinitionsTab(QWidget):
         self.edit_btn = QPushButton(ACTION_EDIT)
         configure_edit_action_button(self.edit_btn)
         self.edit_btn.setEnabled(False)
+        self.study_btn = QPushButton(STUDY_QUESTIONS_ACTION)
+        self.study_btn.setObjectName("study-questions-button")
+        configure_perform_action_button(self.study_btn)
+        self.study_btn.setEnabled(False)
         self.show_inactive = QCheckBox(SHOW_INACTIVE_LABEL)
         toolbar.addWidget(self.new_btn)
         toolbar.addWidget(self.edit_btn)
+        toolbar.addWidget(self.study_btn)
         toolbar.addStretch()
         toolbar.addWidget(self.show_inactive)
 
@@ -68,6 +86,7 @@ class TestDefinitionsTab(QWidget):
 
         self.new_btn.clicked.connect(self.new_test)
         self.edit_btn.clicked.connect(self.edit_selected)
+        self.study_btn.clicked.connect(self.print_study_questions)
         self.show_inactive.toggled.connect(self.refresh)
         self.table.doubleClicked.connect(self.edit_selected)
         self.table.itemSelectionChanged.connect(self._update_action_buttons)
@@ -135,5 +154,44 @@ class TestDefinitionsTab(QWidget):
                 visible += 1
         return visible, total
 
+    def print_study_questions(self) -> None:
+        test_id = self.table.selected_test_id()
+        if test_id is None:
+            self._update_action_buttons()
+            return
+        test = test_definition_service.get_test(test_id)
+        if test is None:
+            QMessageBox.warning(self, MODULE_NAME, "Test nebyl nalezen.")
+            self.refresh()
+            return
+        try:
+            material = study_questions_export_service.collect(test.id)
+        except StudyQuestionsError as error:
+            QMessageBox.warning(self, MODULE_NAME, str(error))
+            return
+        if not material.has_questions:
+            QMessageBox.warning(self, MODULE_NAME, STUDY_QUESTIONS_EMPTY)
+            return
+        default_path = storage_service.exports_dir / study_questions_export_service.filename(
+            test.name
+        )
+        chosen, _selected_filter = QFileDialog.getSaveFileName(
+            self,
+            STUDY_QUESTIONS_TITLE,
+            str(default_path),
+            "OpenDocument (*.odt)",
+        )
+        if not chosen:
+            return
+        try:
+            path = study_questions_export_service.export(test.id, Path(chosen))
+        except StudyQuestionsError as error:
+            QMessageBox.warning(self, MODULE_NAME, str(error))
+            return
+        open_export_file(path, parent=self, title=STUDY_QUESTIONS_TITLE)
+        self._update_action_buttons()
+
     def _update_action_buttons(self) -> None:
-        self.edit_btn.setEnabled(self.table.selected_test_id() is not None)
+        selected = self.table.selected_test_id() is not None
+        self.edit_btn.setEnabled(selected)
+        self.study_btn.setEnabled(selected)
