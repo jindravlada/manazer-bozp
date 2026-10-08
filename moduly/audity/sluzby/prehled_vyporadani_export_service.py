@@ -7,11 +7,19 @@ společný ODT engine Manažera BOZP.
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from datetime import date, datetime
 from pathlib import Path
+from xml.sax.saxutils import escape
 
-from core.export import OdtExportEngine, OdtExportError, OdtParagraph, OdtRichContent
+from core.export import (
+    OdtExportEngine,
+    OdtExportError,
+    OdtParagraph,
+    OdtRichContent,
+    OdtXmlFragment,
+)
 from core.services.storage_service import storage_service
 from core.shared.constants import (
     FINDING_STATUS_OTEVRENE,
@@ -33,7 +41,8 @@ SECTION_SETTLED_SINCE = "Vypořádaná od posledního přehledu"
 SECTION_UNSETTLED = "Dosud nevypořádaná zjištění"
 SECTION_NEW = "Nová zjištění"
 SECTION_REOPENED = "Znovuotevřená zjištění"
-EMPTY_SECTION = "Žádné zjištění."
+EMPTY_SECTION = "Žádná zjištění."
+SUMMARY_HEADING = "Souhrnné vyhodnocení"
 
 _OPEN_STATUSES = frozenset({FINDING_STATUS_OTEVRENE, FINDING_STATUS_V_PROCESU})
 
@@ -56,6 +65,8 @@ class PrehledVyporadaniItemView:
     task_label: str
     categories: str
     description_snapshot: str
+    source_number: str
+    source_year: int | None
 
 
 @dataclass(frozen=True)
@@ -83,6 +94,29 @@ class PrehledVyporadaniView:
     @property
     def shows_changes(self) -> bool:
         return self.sequence_number > 0
+
+
+def format_audit_reference(number: str, year: int | None) -> str:
+    """Číslo auditu pro dokument. Rok přidá jen tehdy, když v čísle ještě není."""
+    text = str(number or "").strip()
+    if year is None:
+        return text or "—"
+    year_text = str(int(year))
+    if not text:
+        return year_text
+    if re.search(rf"(^|[^\d]){re.escape(year_text)}([^\d]|$)", text):
+        return text
+    return f"{text}/{year_text}"
+
+
+def count_with_percent(count: int, total: int) -> str:
+    """Podíl z uloženého počtu. Při nule nepočítá procenta."""
+    value = int(count)
+    whole = int(total)
+    if whole <= 0:
+        return str(value)
+    share = (100 * value + whole // 2) // whole
+    return f"{value} ({share} %)"
 
 
 def format_overview_date(value: date | None) -> str:
@@ -218,27 +252,33 @@ def build_view(
 
 
 def placeholder_values(view: PrehledVyporadaniView) -> dict[str, object]:
-    number = f"Přehled č. {view.sequence_number}"
     if view.sequence_number == 0:
-        number = "Přehled č. 0 – výchozí stav"
-    note = OdtRichContent(paragraphs=[], omit_when_empty=True)
-    if view.note:
-        note = OdtRichContent(
-            paragraphs=[OdtParagraph.text(f"Poznámka: {view.note}")]
-        )
+        header = [
+            OdtParagraph.text("Přehled č. 0 – výchozí stav", style="MgmtMeta"),
+            OdtParagraph.text(f"Stav k: {view.presented_label}", style="MgmtMeta"),
+        ]
+    else:
+        header = [
+            OdtParagraph.text(
+                f"Přehled č. {view.sequence_number}",
+                style="MgmtMeta",
+            ),
+            OdtParagraph.text(f"Období: {view.period_label}", style="MgmtMeta"),
+        ]
     settled_title = (
         SECTION_SETTLED_BASELINE if view.sequence_number == 0 else SECTION_SETTLED_SINCE
     )
     return {
-        "cislo_prehledu": number,
-        "datum_predlozeni": view.presented_label,
-        "obdobi": view.period_label,
-        "poznamka": note,
+        "hlavicka": OdtRichContent(paragraphs=header),
         "souhrn": _summary(view),
-        "sekce_vyporadana": _section(settled_title, view.settled_items),
-        "sekce_nevyporadana": _section(SECTION_UNSETTLED, view.unsettled_items),
-        "sekce_nova": _optional_section(view.shows_changes, SECTION_NEW, view.new_items),
-        "sekce_znovuotevrena": _optional_section(
+        "sekce_vyporadana": _settled_section(settled_title, view.settled_items),
+        "sekce_nevyporadana": _status_section(SECTION_UNSETTLED, view.unsettled_items),
+        "sekce_nova": _optional_status_section(
+            view.shows_changes,
+            SECTION_NEW,
+            view.new_items,
+        ),
+        "sekce_znovuotevrena": _optional_status_section(
             view.shows_changes,
             SECTION_REOPENED,
             view.reopened_items,
@@ -248,72 +288,172 @@ def placeholder_values(view: PrehledVyporadaniView) -> dict[str, object]:
 
 def _summary(view: PrehledVyporadaniView) -> OdtRichContent:
     paragraphs = [
-        OdtParagraph.text(f"Celkový počet zjištění: {view.total_count}"),
-        OdtParagraph.text(f"Vypořádaná: {view.settled_count}"),
-        OdtParagraph.text(f"V procesu: {view.in_process_count}"),
-        OdtParagraph.text(f"Otevřená: {view.open_count}"),
-        OdtParagraph.text("Počty podle typů zjištění:", bold=True),
+        OdtParagraph.text(SUMMARY_HEADING, style="H"),
+        OdtParagraph.text(f"Celkem zjištění: {view.total_count}", style="MgmtMeta"),
+        OdtParagraph.text(
+            f"Vypořádáno: {count_with_percent(view.settled_count, view.total_count)}",
+            style="MgmtMeta",
+        ),
+        OdtParagraph.text(
+            f"V procesu: {count_with_percent(view.in_process_count, view.total_count)}",
+            style="MgmtMeta",
+        ),
+        OdtParagraph.text(
+            f"Otevřeno: {count_with_percent(view.open_count, view.total_count)}",
+            style="MgmtMeta",
+        ),
     ]
     if view.type_counts:
-        paragraphs.extend(
-            OdtParagraph.text(f"{label}: {count}")
-            for label, count in view.type_counts
-        )
-    else:
-        paragraphs.append(OdtParagraph.text(EMPTY_SECTION))
-    if view.shows_changes:
-        paragraphs.extend(
-            [
-                OdtParagraph.blank_line(),
-                OdtParagraph.text(
-                    f"Vypořádaná od posledního přehledu: {view.settled_since_count}"
-                ),
-                OdtParagraph.text(f"Dosud nevypořádaná: {view.unsettled_count}"),
-                OdtParagraph.text(f"Nová zjištění: {view.new_count}"),
-                OdtParagraph.text(f"Znovuotevřená zjištění: {view.reopened_count}"),
-            ]
-        )
+        types = ", ".join(f"{label}: {count}" for label, count in view.type_counts)
+        paragraphs.append(OdtParagraph.text(f"Typy zjištění: {types}", style="MgmtMeta"))
     return OdtRichContent(paragraphs=paragraphs)
 
 
-def _optional_section(
+def _optional_status_section(
     enabled: bool,
     title: str,
     items: tuple[PrehledVyporadaniItemView, ...],
-) -> OdtRichContent:
+) -> OdtXmlFragment | OdtRichContent:
     if not enabled:
         return OdtRichContent(paragraphs=[], omit_when_empty=True)
-    return _section(title, items)
+    return _status_section(title, items)
 
 
-def _section(
+def _settled_section(
     title: str,
     items: tuple[PrehledVyporadaniItemView, ...],
-) -> OdtRichContent:
-    paragraphs: list[OdtParagraph] = [OdtParagraph.text(title, style="H")]
+) -> OdtXmlFragment:
     if not items:
-        paragraphs.append(OdtParagraph.text(EMPTY_SECTION))
-        return OdtRichContent(paragraphs=paragraphs)
-    for index, item in enumerate(items):
-        if index:
-            paragraphs.append(OdtParagraph.blank_line())
-        paragraphs.extend(_item_paragraphs(item))
-    return OdtRichContent(paragraphs=paragraphs)
+        return _empty_section(title)
+    rows = tuple(
+        (
+            _audit_workplace(item),
+            _finding_text(item),
+            item.resolved_at_label,
+        )
+        for item in items
+    )
+    return _section_with_table(
+        title,
+        table_name="TabulkaVyporadana",
+        column_styles=("MgmtColAudit", "MgmtColFindingWide", "MgmtColDate"),
+        headers=("Audit / provoz", "Zjištění", "Datum vypořádání"),
+        rows=rows,
+    )
 
 
-def _item_paragraphs(item: PrehledVyporadaniItemView) -> list[OdtParagraph]:
-    return [
-        OdtParagraph.text(f"Audit {item.audit_label}", bold=True),
-        OdtParagraph.text(f"Auditovaný provoz: {_dash(item.workplace_name)}"),
-        OdtParagraph.text(f"Typ zjištění: {_dash(item.finding_type_label)}"),
-        OdtParagraph.text(f"Řídicí proces: {_dash(item.process_label)}"),
-        OdtParagraph.text(f"Oblast ověřování: {_dash(item.verification_area_label)}"),
-        OdtParagraph.text(f"Popis zjištění: {_dash(item.description)}"),
-        OdtParagraph.text(f"Doporučené opatření: {_dash(item.recommended_action)}"),
-        OdtParagraph.text(f"Stav zjištění: {_dash(item.status_label)}"),
-        OdtParagraph.text(f"Datum vypořádání: {item.resolved_at_label}"),
-        OdtParagraph.text(f"Navazující úkol: {item.task_label}"),
-    ]
+def _status_section(
+    title: str,
+    items: tuple[PrehledVyporadaniItemView, ...],
+) -> OdtXmlFragment:
+    if not items:
+        return _empty_section(title)
+    rows = tuple(
+        (
+            _audit_workplace(item),
+            _finding_text(item),
+            item.status_label or "—",
+            item.task_label or "—",
+        )
+        for item in items
+    )
+    return _section_with_table(
+        title,
+        table_name=_table_name(title),
+        column_styles=(
+            "MgmtColAudit",
+            "MgmtColFinding",
+            "MgmtColStatus",
+            "MgmtColTask",
+        ),
+        headers=("Audit / provoz", "Zjištění", "Stav", "Úkol"),
+        rows=rows,
+    )
+
+
+def _empty_section(title: str) -> OdtXmlFragment:
+    return OdtXmlFragment(
+        xml=(
+            _heading(title)
+            + f'<text:p text:style-name="MgmtMeta">{escape(EMPTY_SECTION)}</text:p>'
+        )
+    )
+
+
+def _section_with_table(
+    title: str,
+    *,
+    table_name: str,
+    column_styles: tuple[str, ...],
+    headers: tuple[str, ...],
+    rows: tuple[tuple[str, ...], ...],
+) -> OdtXmlFragment:
+    columns = "".join(
+        f'<table:table-column table:style-name="{style}"/>'
+        for style in column_styles
+    )
+    header = (
+        "<table:table-header-rows>"
+        '<table:table-row table:style-name="MgmtRow">'
+        + "".join(_cell(value, header=True) for value in headers)
+        + "</table:table-row></table:table-header-rows>"
+    )
+    body = "".join(
+        '<table:table-row table:style-name="MgmtRow">'
+        + "".join(_cell(value) for value in row)
+        + "</table:table-row>"
+        for row in rows
+    )
+    table = (
+        f'<table:table table:name="{escape(table_name)}" table:style-name="MgmtTable">'
+        f"{columns}{header}{body}</table:table>"
+    )
+    return OdtXmlFragment(xml=_heading(title) + table)
+
+
+def _heading(title: str) -> str:
+    return f'<text:p text:style-name="H">{escape(title)}</text:p>'
+
+
+def _cell(value: str, *, header: bool = False) -> str:
+    style = "MgmtHeaderCell" if header else "MgmtCell"
+    paragraph = "MgmtHeader" if header else "MgmtText"
+    return (
+        f'<table:table-cell table:style-name="{style}" office:value-type="string">'
+        f'<text:p text:style-name="{paragraph}">{_odt_text(value)}</text:p>'
+        "</table:table-cell>"
+    )
+
+
+def _audit_workplace(item: PrehledVyporadaniItemView) -> str:
+    reference = format_audit_reference(item.source_number, item.source_year)
+    workplace = str(item.workplace_name or "").strip() or "—"
+    return f"{reference}\n{workplace}"
+
+
+def _finding_text(item: PrehledVyporadaniItemView) -> str:
+    text = str(item.description_snapshot or "")
+    if text.strip():
+        return text
+    return "—"
+
+
+def _table_name(title: str) -> str:
+    if title == SECTION_NEW:
+        return "TabulkaNova"
+    if title == SECTION_REOPENED:
+        return "TabulkaZnovu"
+    return "TabulkaNevyporadana"
+
+
+def _odt_text(value: str) -> str:
+    text = "" if value is None else str(value)
+    escaped = escape(text)
+    return (
+        escaped.replace("\r\n", "\n")
+        .replace("\r", "\n")
+        .replace("\n", "<text:line-break/>")
+    )
 
 
 def _item_view(
@@ -344,6 +484,8 @@ def _item_view(
         task_label=task_label,
         categories=_categories(item, sequence),
         description_snapshot=str(item.description or ""),
+        source_number=str(item.audit_number or ""),
+        source_year=None if item.audit_year is None else int(item.audit_year),
     )
 
 
@@ -398,11 +540,6 @@ def _type_counts(
         counts.append((finding_type_label(str(key)), count))
     counts.sort(key=lambda row: row[0])
     return tuple(counts)
-
-
-def _dash(value: str) -> str:
-    text = str(value or "").strip()
-    return text or "—"
 
 
 prehled_vyporadani_export_service = PrehledVyporadaniExportService()
