@@ -186,20 +186,72 @@ def _sha256_matches(data: bytes, expected: str) -> bool:
     return hmac.compare_digest(actual, expected)
 
 
+def _nofollow_available() -> bool:
+    return hasattr(os, "O_NOFOLLOW")
+
+
+def _snapshot_read_flags() -> int:
+    flags = os.O_RDONLY
+    flags |= getattr(os, "O_CLOEXEC", 0) or getattr(os, "O_NOINHERIT", 0)
+    flags |= getattr(os, "O_BINARY", 0)
+    if _nofollow_available():
+        flags |= os.O_NOFOLLOW
+    return flags
+
+
+def _is_reparse_point(info: os.stat_result) -> bool:
+    """Symbolický odkaz i windowsový junction / mount point."""
+    if stat.S_ISLNK(getattr(info, "st_mode", 0)):
+        return True
+    attributes = getattr(info, "st_file_attributes", 0) or 0
+    marker = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
+    return bool(int(attributes) & int(marker))
+
+
 def _read_snapshot_bytes(path: Path) -> bytes:
     """Jedno čtení běžného souboru. Symbolický odkaz se nesleduje."""
-    fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
+    if not _nofollow_available():
+        return _read_snapshot_bytes_checked(path)
+    fd = os.open(path, _snapshot_read_flags())
+    try:
+        return _read_regular_fd(fd, path)
+    finally:
+        os.close(fd)
+
+
+def _read_regular_fd(fd: int, path: Path) -> bytes:
+    info = os.fstat(fd)
+    if not stat.S_ISREG(info.st_mode):
+        raise OSError(path)
+    chunks: list[bytes] = []
+    while True:
+        block = os.read(fd, 1024 * 1024)
+        if not block:
+            break
+        chunks.append(block)
+    return b"".join(chunks)
+
+
+def _read_snapshot_bytes_checked(path: Path) -> bytes:
+    """Windows: O_NOFOLLOW chybí, identita souboru se ověří před čtením i po něm."""
+    before = os.lstat(path)
+    if _is_reparse_point(before) or not stat.S_ISREG(before.st_mode) or before.st_ino == 0:
+        raise OSError(path)
+    fd = os.open(path, _snapshot_read_flags())
     try:
         info = os.fstat(fd)
-        if not stat.S_ISREG(info.st_mode):
+        after = os.lstat(path)
+        if (
+            _is_reparse_point(after)
+            or not stat.S_ISREG(info.st_mode)
+            or info.st_ino == 0
+            or info.st_dev != before.st_dev
+            or info.st_ino != before.st_ino
+            or after.st_dev != before.st_dev
+            or after.st_ino != before.st_ino
+        ):
             raise OSError(path)
-        chunks: list[bytes] = []
-        while True:
-            block = os.read(fd, 1024 * 1024)
-            if not block:
-                break
-            chunks.append(block)
-        return b"".join(chunks)
+        return _read_regular_fd(fd, path)
     finally:
         os.close(fd)
 
