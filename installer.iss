@@ -1,5 +1,5 @@
 #define MyAppName "Manažer BOZP"
-#define MyAppVersion "4.0.10"
+#define MyAppVersion "4.1.0"
 #define MyAppPublisher "Ing. Vladimír Jindra"
 #define MyAppExeName "ManazerBOZP.exe"
 
@@ -14,7 +14,7 @@ AppUpdatesURL=https://github.com/jindravlada/manazer-bozp
 DefaultDirName={autopf}\Manazer BOZP
 DefaultGroupName={#MyAppName}
 OutputDir=installer
-OutputBaseFilename=Manazer_BOZP_4_0_10_Setup
+OutputBaseFilename=Manazer_BOZP_4_1_0_Setup
 SetupIconFile=core\resources\manager_bozp.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
 Compression=lzma

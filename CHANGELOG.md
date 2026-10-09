@@ -14,6 +14,36 @@
 
 ---
 
+# Verze 4.1.0
+
+Datum vydání:
+
+9. 10. 2026
+
+Nové funkce
+
+- Modul Testy: evidence zkoušených a oprávnění ke zkoušení, banka písemných otázek, ústní okruhy, definice testů, příprava zkoušky s neměnným zadáním, elektronické i papírové provedení, vyhodnocení, protokol, příloha podepsaného protokolu, sledování platnosti, souhrn na nástěnce a tisk studijních otázek se správnými odpověďmi.
+- Přehledy vypořádání zjištění z auditů, včetně historie stavů, uložených snímků a exportu do ODT.
+- Přehled vypořádání zjištění z dokončených prověrek.
+- Tisk změn od posledního auditu v podrobné zprávě i v protokolu.
+
+Vylepšení
+
+- Horní lišta Auditů je dvouřádková.
+- Přehled vypořádání má srozumitelnější souhrn, novější přehled je první a neobsahuje kumulativní statistiky.
+- Uložení auditu a prověrky se potvrdí.
+- Přehled auditů má upravené sloupce a krátké popisky. Oba tiskové dokumenty auditu ponechávají název programu. V dialogu úkolu je pracoviště za odpovědným.
+- Elektronický test, ústní část, tištěný test a protokol jsou čitelnější. Evidence pohlaví v protokolu není.
+
+Opravy
+
+- Zapracování návrhu katalogu rizik už neselže, když se opatření přiřazuje k hodnocení.
+- Uložení zjištění a úkolů auditu a prověrky proběhne celé, nebo se neuloží vůbec.
+- Opravený tisk papírového testu, zadání papírových odpovědí a zobrazení vyhodnocení.
+- U zkoušek je chráněný časový limit, ukládání protokolů, velikost PDF, cesty a integrita obrázků a vyhodnocení se ukládá v jedné transakci. Zkoušku lze zablokovat a technicky ukončit.
+
+---
+
 # Verze 4.0.10
 
 Datum vydání:
