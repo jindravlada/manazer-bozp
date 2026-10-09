@@ -14,6 +14,18 @@
 
 ---
 
+# Verze 4.1.1
+
+Datum vydání:
+
+9. 10. 2026
+
+Opravy
+
+- Oprava kompatibility modulu Testy s Windows. Aplikace při spuštění už nespadne.
+
+---
+
 # Verze 4.1.0
 
 Datum vydání:
