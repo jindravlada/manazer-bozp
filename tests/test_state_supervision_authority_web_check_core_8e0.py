@@ -22,6 +22,7 @@ from moduly.statni_dozor.constants import (
     DU_OFFICE_EXTERNAL_KEYS,
     DU_OFFICES_SOURCE_URL,
     HZS_AUTHORITY_CODE,
+    HZS_CONTACTS_SOURCE_URL,
     HZS_OFFICE_EXTERNAL_KEYS,
     HZS_OFFICES_SOURCE_URL,
     KHS_AUTHORITY_CODE,
@@ -127,7 +128,10 @@ def _official_pages(code: str) -> dict[str, str]:
     if code == KHS_AUTHORITY_CODE:
         return {KHS_OFFICES_SOURCE_URL: _fixture("khs_mzd.html")}
     if code == HZS_AUTHORITY_CODE:
-        return {HZS_OFFICES_SOURCE_URL: _fixture("hzs_kraju.html")}
+        return {
+            HZS_OFFICES_SOURCE_URL: _fixture("hzs_kraju.html"),
+            HZS_CONTACTS_SOURCE_URL: _fixture("hzs_zakladni_kontakty.html"),
+        }
     if code == SUIP_AUTHORITY_CODE:
         pages = {SUIP_HUB_SOURCE_URL: _fixture("suip_kontakty_hub.html")}
         for oip in SUIP_OIP_CODES:

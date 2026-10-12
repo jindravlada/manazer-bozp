@@ -14,6 +14,7 @@ from moduly.statni_dozor.constants import (
     AUTHORITY_CATALOG_SEED_RELATIVE_PATH,
     AUTHORITY_ORIGIN_BUNDLED,
     HZS_AUTHORITY_CODE,
+    HZS_CONTACTS_SOURCE_URL,
     HZS_OFFICE_EXTERNAL_KEYS,
     HZS_OFFICES_SOURCE_URL,
     HZS_REGION_SLUGS,
@@ -39,7 +40,6 @@ from moduly.statni_dozor.sluzby.control_authority_web.http_client import (
 from moduly.statni_dozor.sluzby.control_authority_web.hzs_adapter import (
     HZS_ALLOWED_HOSTS,
     fetch_hzs_offices,
-    hzs_office_website,
     parse_hzs_offices_html,
 )
 from moduly.statni_dozor.sluzby.control_authority_web.models import (
@@ -49,6 +49,39 @@ from moduly.statni_dozor.sluzby.control_authority_web.models import (
 
 _REPO = Path(__file__).resolve().parents[1]
 _FIXTURE = _REPO / "tests" / "fixtures" / "statni_dozor" / "hzs_kraju.html"
+_CONTACTS = _REPO / "tests" / "fixtures" / "statni_dozor" / "hzs_zakladni_kontakty.html"
+_EXPECTED_WEBSITES = {
+    "hzs:praha": "https://hzscr.gov.cz/hlavni-mesto-praha/kontakty-hzs-hlavniho-mesta-prahy",
+    "hzs:stredocesky-kraj": "https://hzscr.gov.cz/stredocesky-kraj/kontakty-2",
+    "hzs:jihocesky-kraj": "https://hzscr.gov.cz/jihocesky-kraj/kontakty-2",
+    "hzs:plzensky-kraj": "https://hzscr.gov.cz/plzensky-kraj/kontakty-2",
+    "hzs:karlovarsky-kraj": "https://hzscr.gov.cz/karlovarsky-kraj/uzemni-odbory",
+    "hzs:ustecky-kraj": "https://hzscr.gov.cz/ustecky-kraj/kontakty-2",
+    "hzs:liberecky-kraj": "https://hzscr.gov.cz/liberecky-kraj/kontakty-2",
+    "hzs:kralovehradecky-kraj": "https://hzscr.gov.cz/kralovehradecky-kraj/kontakty-2",
+    "hzs:pardubicky-kraj": "https://hzscr.gov.cz/pardubicky-kraj/seznam-kontaktu",
+    "hzs:kraj-vysocina": "https://hzscr.gov.cz/vysocina-kraj/kontakty-vys",
+    "hzs:jihomoravsky-kraj": "https://hzscr.gov.cz/jihomoravsky-kraj/kontakty-3",
+    "hzs:olomoucky-kraj": "https://hzscr.gov.cz/olomoucky-kraj/kontakty---krajske-reditelstvi-hzs-olomouckeho-kraje",
+    "hzs:moravskoslezsky-kraj": "https://hzscr.gov.cz/moravskoslezsky-kraj/kontakty",
+    "hzs:zlinsky-kraj": "https://hzscr.gov.cz/zlinsky-kraj/kontakty-hzs-zlinskeho-kraje",
+}
+_REGION_NAMES = {
+    "Hlavní město Praha",
+    "Středočeský kraj",
+    "Jihočeský kraj",
+    "Plzeňský kraj",
+    "Karlovarský kraj",
+    "Ústecký kraj",
+    "Liberecký kraj",
+    "Královéhradecký kraj",
+    "Pardubický kraj",
+    "Kraj Vysočina",
+    "Jihomoravský kraj",
+    "Olomoucký kraj",
+    "Moravskoslezský kraj",
+    "Zlínský kraj",
+}
 _ADAPTER = (
     _REPO / "moduly" / "statni_dozor" / "sluzby" / "control_authority_web" / "hzs_adapter.py"
 )
@@ -70,6 +103,19 @@ _PRAHA_CARD = """    <div>
 
 def _fixture_html() -> str:
     return _FIXTURE.read_text(encoding="utf-8")
+
+
+def _contacts_html() -> str:
+    return _CONTACTS.read_text(encoding="utf-8")
+
+
+def _parse(hub: str | None = None, contacts: str | None = None):
+    return parse_hzs_offices_html(
+        _fixture_html() if hub is None else hub,
+        source_url=HZS_OFFICES_SOURCE_URL,
+        contacts_html=_contacts_html() if contacts is None else contacts,
+        contacts_source_url=HZS_CONTACTS_SOURCE_URL,
+    )
 
 
 def _html_response(html: str, url: str = HZS_OFFICES_SOURCE_URL) -> ControlAuthorityHttpResponse:
@@ -100,7 +146,7 @@ class _FakeRawResponse:
 
 
 def _parse_fixture():
-    return parse_hzs_offices_html(_fixture_html(), source_url=HZS_OFFICES_SOURCE_URL)
+    return _parse()
 
 
 def _seed_hzs_snapshots() -> tuple[ControlAuthorityOfficeCatalogSnapshot, ...]:
@@ -139,17 +185,22 @@ class StateSupervisionAuthorityWebHzs8d5TestCase(unittest.TestCase):
             tuple(item.external_key for item in records),
             HZS_OFFICE_EXTERNAL_KEYS,
         )
-        self.assertEqual(records[0].name, "Hlavní město Praha")
-        self.assertEqual(records[1].name, "Středočeský kraj")
-        self.assertEqual(records[-1].name, "Zlínský kraj")
-        self.assertEqual(records[9].name, "Kraj Vysočina")
-        self.assertEqual(records[0].website, hzs_office_website("hlavni-mesto-praha"))
-        self.assertEqual(records[9].website, hzs_office_website("vysocina-kraj"))
+        self.assertEqual(records[0].name, "Hasičský záchranný sbor hlavního města Prahy")
+        self.assertEqual(records[1].name, "Hasičský záchranný sbor Středočeského kraje")
+        self.assertEqual(records[-1].name, "Hasičský záchranný sbor Zlínského kraje")
+        self.assertEqual(records[9].name, "Hasičský záchranný sbor Kraje Vysočina")
+        self.assertEqual(records[0].website, _EXPECTED_WEBSITES["hzs:praha"])
+        self.assertEqual(records[9].website, _EXPECTED_WEBSITES["hzs:kraj-vysocina"])
         for record, slug in zip(records, HZS_REGION_SLUGS, strict=True):
             self.assertEqual(record.authority_code, HZS_AUTHORITY_CODE)
             self.assertEqual(record.office_kind, OFFICE_KIND_REGIONAL)
-            self.assertEqual(record.source_url, HZS_OFFICES_SOURCE_URL)
-            self.assertEqual(record.website, hzs_office_website(slug))
+            self.assertEqual(record.website, _EXPECTED_WEBSITES[record.external_key])
+            self.assertEqual(record.source_url, record.website)
+            self.assertNotEqual(record.source_url, HZS_OFFICES_SOURCE_URL)
+            self.assertNotEqual(record.source_url, HZS_CONTACTS_SOURCE_URL)
+            self.assertTrue(record.website.startswith(f"https://hzscr.gov.cz/{slug}/"))
+            self.assertNotIn(record.name, _REGION_NAMES)
+            self.assertTrue(record.name.startswith("Hasičský záchranný sbor "))
             self.assertEqual(
                 record.observed_fields,
                 frozenset({"name", "website", "office_kind", "source_url"}),
@@ -171,8 +222,10 @@ class StateSupervisionAuthorityWebHzs8d5TestCase(unittest.TestCase):
         self.assertEqual(stc.external_key, "hzs:stredocesky-kraj")
         self.assertNotEqual(praha.name, stc.name)
         self.assertNotEqual(praha.website, stc.website)
-        self.assertEqual(praha.website, "https://hzscr.gov.cz/hlavni-mesto-praha")
-        self.assertEqual(stc.website, "https://hzscr.gov.cz/stredocesky-kraj")
+        self.assertEqual(praha.website, _EXPECTED_WEBSITES["hzs:praha"])
+        self.assertEqual(stc.website, _EXPECTED_WEBSITES["hzs:stredocesky-kraj"])
+        self.assertNotEqual(praha.name, "Hlavní město Praha")
+        self.assertNotEqual(praha.name, "HZS hl. m. Prahy")
 
     def test_03_external_keys_match_seed(self) -> None:
         payload = json.loads(_SEED.read_text(encoding="utf-8"))
@@ -181,6 +234,9 @@ class StateSupervisionAuthorityWebHzs8d5TestCase(unittest.TestCase):
         self.assertEqual(seed_keys, HZS_OFFICE_EXTERNAL_KEYS)
         self.assertEqual(len(seed_keys), 14)
         self.assertEqual(tuple(item.external_key for item in _parse_fixture()), seed_keys)
+        by_key = {office["external_key"]: office["name"] for office in hzs["offices"]}
+        for record in _parse_fixture():
+            self.assertEqual(record.name, by_key[record.external_key])
 
     def test_04_output_order_follows_seed_not_html(self) -> None:
         html = _fixture_html()
@@ -222,7 +278,15 @@ class StateSupervisionAuthorityWebHzs8d5TestCase(unittest.TestCase):
         self.assertNotIn("stanice", names.casefold())
         self.assertNotIn("územní odbor", names.casefold())
         websites = {item.website for item in records}
-        self.assertNotIn("https://hzscr.gov.cz/karlovarsky-kraj/uzemni-odbory", websites)
+        self.assertEqual(
+            websites,
+            set(_EXPECTED_WEBSITES.values()),
+        )
+        self.assertEqual(
+            next(item.website for item in records if item.external_key == "hzs:karlovarsky-kraj"),
+            "https://hzscr.gov.cz/karlovarsky-kraj/uzemni-odbory",
+        )
+        self.assertEqual(len(websites), 14)
 
     def test_07_director_contact_is_not_office_contact(self) -> None:
         html = _fixture_html()
@@ -239,7 +303,7 @@ class StateSupervisionAuthorityWebHzs8d5TestCase(unittest.TestCase):
         html = _fixture_html().replace(_ZLINSKY_CARD, "")
         self.assertNotIn("Zlínský kraj", html)
         with self.assertRaises(ControlAuthorityWebAdapterError) as ctx:
-            parse_hzs_offices_html(html, source_url=HZS_OFFICES_SOURCE_URL)
+            _parse(html)
         self.assertEqual(ctx.exception.code, WEB_ADAPTER_ERROR_INCOMPLETE)
 
     def test_09_duplicate_region_fails(self) -> None:
@@ -248,7 +312,7 @@ class StateSupervisionAuthorityWebHzs8d5TestCase(unittest.TestCase):
             _ZLINSKY_CARD + _PRAHA_CARD,
         )
         with self.assertRaises(ControlAuthorityWebAdapterError) as ctx:
-            parse_hzs_offices_html(html, source_url=HZS_OFFICES_SOURCE_URL)
+            _parse(html)
         self.assertEqual(ctx.exception.code, WEB_ADAPTER_ERROR_DUPLICATE_KEY)
 
     def test_10_unexpected_fifteenth_region_fails(self) -> None:
@@ -261,15 +325,12 @@ class StateSupervisionAuthorityWebHzs8d5TestCase(unittest.TestCase):
 """
         html = _fixture_html().replace("</div>\n  </div>\n  <section>", extra + "</div>\n  </div>\n  <section>")
         with self.assertRaises(ControlAuthorityWebAdapterError) as ctx:
-            parse_hzs_offices_html(html, source_url=HZS_OFFICES_SOURCE_URL)
+            _parse(html)
         self.assertEqual(ctx.exception.code, WEB_ADAPTER_ERROR_INCOMPLETE)
 
     def test_11_unreadable_structure_fails(self) -> None:
         with self.assertRaises(ControlAuthorityWebAdapterError) as ctx:
-            parse_hzs_offices_html(
-                "<html><body><h1>HZS krajů</h1><p>Seznam</p></body></html>",
-                source_url=HZS_OFFICES_SOURCE_URL,
-            )
+            _parse("<html><body><h1>HZS krajů</h1><p>Seznam</p></body></html>")
         self.assertEqual(ctx.exception.code, WEB_ADAPTER_ERROR_UNREADABLE_HTML)
 
     def test_12_observed_fields_contain_only_documented_values(self) -> None:
@@ -342,15 +403,25 @@ class StateSupervisionAuthorityWebHzs8d5TestCase(unittest.TestCase):
             if fields:
                 changed_fields[item.external_key] = fields
         self.assertEqual(result.count(WEB_DIFF_STATUS_CHANGED), 14)
-        for fields in changed_fields.values():
-            self.assertIn("name", fields)
-            self.assertIn("website", fields)
-            self.assertIn("source_url", fields)
+        self.assertEqual(set(changed_fields), set(HZS_OFFICE_EXTERNAL_KEYS))
+        for item in result.items:
+            fields = {change.field for change in item.field_changes}
+            self.assertEqual(fields, {"website", "source_url"})
+            self.assertNotIn("name", fields)
             self.assertNotIn("address", fields)
             self.assertNotIn("phone", fields)
             self.assertNotIn("email", fields)
             self.assertNotIn("office_kind", fields)
             self.assertNotIn("territorial_scope", fields)
+            by_field = {change.field: change for change in item.field_changes}
+            self.assertEqual(by_field["website"].new_value, _EXPECTED_WEBSITES[item.external_key])
+            self.assertEqual(by_field["source_url"].new_value, _EXPECTED_WEBSITES[item.external_key])
+            self.assertNotEqual(
+                by_field["website"].new_value,
+                f"https://hzscr.gov.cz/{_EXPECTED_WEBSITES[item.external_key].split('/')[3]}",
+            )
+            self.assertNotIn(item.remote.name, _REGION_NAMES)
+            self.assertTrue(item.remote.name.startswith("Hasičský záchranný sbor "))
 
     def test_16_no_db_write_and_no_network_in_regular_tests(self) -> None:
         source = _ADAPTER.read_text(encoding="utf-8")
@@ -366,6 +437,8 @@ class StateSupervisionAuthorityWebHzs8d5TestCase(unittest.TestCase):
 
         def fake_get(url: str) -> ControlAuthorityHttpResponse:
             called.append(url)
+            if url == HZS_CONTACTS_SOURCE_URL:
+                return _html_response(_contacts_html(), url)
             return _html_response(_fixture_html(), url)
 
         result = fetch_hzs_offices(http_get=fake_get, clock=lambda: _FIXED_AT)
@@ -373,8 +446,10 @@ class StateSupervisionAuthorityWebHzs8d5TestCase(unittest.TestCase):
         self.assertTrue(result.is_complete)
         self.assertEqual(result.fetched_at, _FIXED_AT)
         self.assertEqual(result.source_url, HZS_OFFICES_SOURCE_URL)
-        self.assertEqual(called, [HZS_OFFICES_SOURCE_URL])
-        self.assertEqual(len(called), 1)
+        self.assertEqual(called, [HZS_OFFICES_SOURCE_URL, HZS_CONTACTS_SOURCE_URL])
+        self.assertEqual(len(called), 2)
+        self.assertEqual(result.records[0].name, "Hasičský záchranný sbor hlavního města Prahy")
+        self.assertEqual(result.records[0].website, _EXPECTED_WEBSITES["hzs:praha"])
         self.assertEqual(_SEED.read_bytes(), seed_before)
         test_source = inspect.getsource(self.test_01_fixture_has_exactly_fourteen_regional_hzs)
         self.assertNotIn("requests.get", test_source)
@@ -407,7 +482,58 @@ class StateSupervisionAuthorityWebHzs8d5TestCase(unittest.TestCase):
             1,
         )
         with self.assertRaises(ControlAuthorityWebAdapterError) as ctx:
-            parse_hzs_offices_html(html, source_url=HZS_OFFICES_SOURCE_URL)
+            _parse(html)
+        self.assertEqual(ctx.exception.code, WEB_ADAPTER_ERROR_INCOMPLETE)
+
+    def test_20_missing_contact_fails_the_batch(self) -> None:
+        html = _contacts_html().replace(
+            'href="https://hzscr.gov.cz/zlinsky-kraj/kontakty-hzs-zlinskeho-kraje"',
+            'href="https://example.com/mimo"',
+        )
+        with self.assertRaises(ControlAuthorityWebAdapterError) as ctx:
+            _parse(contacts=html)
+        self.assertEqual(ctx.exception.code, WEB_ADAPTER_ERROR_INCOMPLETE)
+
+    def test_21_duplicate_contact_fails(self) -> None:
+        html = _contacts_html().replace(
+            "HZS Zlínského kraje",
+            "HZS hl. m. Prahy",
+        ).replace(
+            "https://hzscr.gov.cz/zlinsky-kraj/kontakty-hzs-zlinskeho-kraje",
+            "https://hzscr.gov.cz/hlavni-mesto-praha/kontakty-hzs-hlavniho-mesta-prahy",
+        )
+        with self.assertRaises(ControlAuthorityWebAdapterError) as ctx:
+            _parse(contacts=html)
+        self.assertEqual(ctx.exception.code, WEB_ADAPTER_ERROR_DUPLICATE_KEY)
+
+    def test_22_region_landing_page_is_not_a_contact(self) -> None:
+        html = _contacts_html().replace(
+            "https://hzscr.gov.cz/hlavni-mesto-praha/kontakty-hzs-hlavniho-mesta-prahy",
+            "https://hzscr.gov.cz/hlavni-mesto-praha",
+        )
+        with self.assertRaises(ControlAuthorityWebAdapterError) as ctx:
+            _parse(contacts=html)
+        self.assertEqual(ctx.exception.code, WEB_ADAPTER_ERROR_INCOMPLETE)
+
+    def test_23_contact_label_and_link_mismatch_fails(self) -> None:
+        html = _contacts_html().replace(
+            "https://hzscr.gov.cz/hlavni-mesto-praha/kontakty-hzs-hlavniho-mesta-prahy",
+            "https://hzscr.gov.cz/stredocesky-kraj/kontakty-2",
+            1,
+        )
+        with self.assertRaises(ControlAuthorityWebAdapterError) as ctx:
+            _parse(contacts=html)
+        self.assertEqual(ctx.exception.code, WEB_ADAPTER_ERROR_INCOMPLETE)
+
+    def test_24_unreadable_contacts_fail(self) -> None:
+        with self.assertRaises(ControlAuthorityWebAdapterError) as ctx:
+            _parse(contacts="<html><body><h1>Základní kontakty</h1></body></html>")
+        self.assertEqual(ctx.exception.code, WEB_ADAPTER_ERROR_UNREADABLE_HTML)
+
+    def test_25_region_names_on_contacts_do_not_replace_hzs_names(self) -> None:
+        html = _contacts_html().replace("HZS hl. m. Prahy", "Hlavní město Praha")
+        with self.assertRaises(ControlAuthorityWebAdapterError) as ctx:
+            _parse(contacts=html)
         self.assertEqual(ctx.exception.code, WEB_ADAPTER_ERROR_INCOMPLETE)
 
     @unittest.skipUnless(
@@ -423,7 +549,14 @@ class StateSupervisionAuthorityWebHzs8d5TestCase(unittest.TestCase):
         )
         self.assertEqual(result.records[0].external_key, "hzs:praha")
         self.assertEqual(result.records[1].external_key, "hzs:stredocesky-kraj")
+        self.assertEqual(
+            result.records[0].name,
+            "Hasičský záchranný sbor hlavního města Prahy",
+        )
+        self.assertNotEqual(result.records[0].name, "Hlavní město Praha")
         self.assertNotEqual(result.records[0].website, result.records[1].website)
+        self.assertNotEqual(result.records[0].website, "https://hzscr.gov.cz/hlavni-mesto-praha")
+        self.assertNotEqual(result.records[0].source_url, HZS_OFFICES_SOURCE_URL)
 
 
 if __name__ == "__main__":

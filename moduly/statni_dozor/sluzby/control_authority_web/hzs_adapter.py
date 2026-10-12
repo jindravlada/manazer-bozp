@@ -10,6 +10,7 @@ from urllib.parse import urljoin, urlparse
 
 from moduly.statni_dozor.constants import (
     HZS_AUTHORITY_CODE,
+    HZS_CONTACTS_SOURCE_URL,
     HZS_MAX_HTTP_REQUESTS,
     HZS_OFFICE_EXTERNAL_KEYS,
     HZS_OFFICES_SOURCE_URL,
@@ -95,8 +96,28 @@ _IGNORED_NAME_FOLDS = frozenset(
 )
 
 
-def hzs_office_website(slug: str) -> str:
-    return f"https://hzscr.gov.cz/{slug}"
+# Úplný název sboru. Zkrácený popisek karty ani název kraje se do katalogu nepropisuje.
+_OFFICIAL_NAMES = {
+    "hzs:praha": "Hasičský záchranný sbor hlavního města Prahy",
+    "hzs:stredocesky-kraj": "Hasičský záchranný sbor Středočeského kraje",
+    "hzs:jihocesky-kraj": "Hasičský záchranný sbor Jihočeského kraje",
+    "hzs:plzensky-kraj": "Hasičský záchranný sbor Plzeňského kraje",
+    "hzs:karlovarsky-kraj": "Hasičský záchranný sbor Karlovarského kraje",
+    "hzs:ustecky-kraj": "Hasičský záchranný sbor Ústeckého kraje",
+    "hzs:liberecky-kraj": "Hasičský záchranný sbor Libereckého kraje",
+    "hzs:kralovehradecky-kraj": "Hasičský záchranný sbor Královéhradeckého kraje",
+    "hzs:pardubicky-kraj": "Hasičský záchranný sbor Pardubického kraje",
+    "hzs:kraj-vysocina": "Hasičský záchranný sbor Kraje Vysočina",
+    "hzs:jihomoravsky-kraj": "Hasičský záchranný sbor Jihomoravského kraje",
+    "hzs:olomoucky-kraj": "Hasičský záchranný sbor Olomouckého kraje",
+    "hzs:moravskoslezsky-kraj": "Hasičský záchranný sbor Moravskoslezského kraje",
+    "hzs:zlinsky-kraj": "Hasičský záchranný sbor Zlínského kraje",
+}
+_CONTACT_LABEL_TO_KEY = {
+    folded: key
+    for folded, key in _NAME_TO_KEY.items()
+    if folded.startswith("hzs")
+}
 
 
 def _fold_ascii(value: str) -> str:
@@ -138,13 +159,17 @@ def _looks_like_unexpected_region(folded_name: str, slug: str | None) -> bool:
     return False
 
 
+def _allowed_host(host: str) -> bool:
+    return host.casefold() in {item.casefold() for item in HZS_ALLOWED_HOSTS}
+
+
 def _region_slug(href: str, *, source_url: str) -> str | None:
     href = str(href or "").strip()
     if not href or href.startswith("#") or href.casefold().startswith("mailto:"):
         return None
     parsed = urlparse(urljoin(source_url, href))
     host = (parsed.hostname or "").casefold()
-    if host and host not in {item.casefold() for item in HZS_ALLOWED_HOSTS}:
+    if host and not _allowed_host(host):
         return None
     parts = [part for part in (parsed.path or "").split("/") if part]
     if len(parts) != 1:
@@ -152,23 +177,43 @@ def _region_slug(href: str, *, source_url: str) -> str | None:
     return parts[0].casefold()
 
 
-def _anchor_title(anchor: HtmlNode) -> str:
+def _published_contact_url(href: str, *, source_url: str) -> tuple[str, str] | None:
+    """Vrátí zveřejněnou kontaktní adresu a slug kraje. Kořen kraje nepřijímá."""
+    href = str(href or "").strip()
+    if not href or href.startswith("#") or href.casefold().startswith("mailto:"):
+        return None
+    parsed = urlparse(urljoin(source_url, href))
+    host = (parsed.hostname or "").casefold()
+    if parsed.scheme.casefold() != "https" or not host or not _allowed_host(host):
+        return None
+    if parsed.username or parsed.password:
+        return None
+    parts = [part for part in (parsed.path or "").split("/") if part]
+    if len(parts) < 2:
+        return None
+    slug = parts[0].casefold()
+    if slug not in HZS_REGION_SLUG_SET:
+        return None
+    return "https://hzscr.gov.cz/" + "/".join(parts), slug
+
+
+def _headline_title(anchor: HtmlNode) -> str | None:
     for node in iter_nodes(anchor):
         if isinstance(node, HtmlNode) and node.has_class("text-headline-s"):
             title = _normalize_space(node_text(node))
             if title:
                 return title
-    return _normalize_space(node_text(anchor))
+    return None
 
 
-def parse_hzs_offices_html(
-    html: str,
-    *,
-    source_url: str = HZS_OFFICES_SOURCE_URL,
-) -> tuple[ControlAuthorityOfficeWebRecord, ...]:
-    """Čistě parsuje centrální přehled HZS krajů. Nevolá síť."""
+def _anchor_title(anchor: HtmlNode) -> str:
+    return _headline_title(anchor) or _normalize_space(node_text(anchor))
+
+
+def _index_region_slugs(html: str, *, source_url: str) -> dict[str, str]:
+    """Ověří 14 krajů na rozcestníku. Název karty se do záznamu neukládá."""
     tree = parse_html_tree(html or "")
-    found: dict[str, ControlAuthorityOfficeWebRecord] = {}
+    found: dict[str, str] = {}
     extra = False
     saw_card = False
     for node in iter_nodes(tree):
@@ -202,24 +247,10 @@ def parse_hzs_offices_html(
         if key in found:
             logger.error("Duplicitní krajské HZS v přehledu: %s", key)
             raise adapter_error(WEB_ADAPTER_ERROR_DUPLICATE_KEY)
-        website = hzs_office_website(slug) if slug in HZS_REGION_SLUG_SET else None
-        if website is None:
+        if slug not in HZS_REGION_SLUG_SET:
             extra = True
             continue
-        observed = {"name", "website", "office_kind", "source_url"}
-        found[key] = ControlAuthorityOfficeWebRecord(
-            authority_code=HZS_AUTHORITY_CODE,
-            external_key=key,
-            name=title,
-            address=None,
-            phone=None,
-            email=None,
-            website=website,
-            territorial_scope=None,
-            office_kind=OFFICE_KIND_REGIONAL,
-            source_url=source_url,
-            observed_fields=frozenset(observed),
-        )
+        found[key] = slug
 
     if not saw_card and not found:
         logger.error("Přehled HZS krajů nemá očekávané karty ředitelství.")
@@ -231,15 +262,107 @@ def parse_hzs_offices_html(
             extra,
         )
         raise adapter_error(WEB_ADAPTER_ERROR_INCOMPLETE)
-    ordered = tuple(found[key] for key in HZS_OFFICE_EXTERNAL_KEYS)
-    keys = tuple(item.external_key for item in ordered)
-    if len(set(keys)) != 14:
+    return found
+
+
+def _index_contact_pages(html: str, *, source_url: str) -> dict[str, str]:
+    """Přečte skutečné kontaktní odkazy. Název kraje ani kořen kraje nepřijímá."""
+    tree = parse_html_tree(html or "")
+    found: dict[str, str] = {}
+    extra = False
+    saw_card = False
+    for node in iter_nodes(tree):
+        if not isinstance(node, HtmlNode) or node.tag != "a":
+            continue
+        href = (node.get("href") or "").strip()
+        if not href:
+            continue
+        title = _headline_title(node)
+        if not title:
+            continue
+        saw_card = True
+        folded = _fold_ascii(title)
+        name_key = _CONTACT_LABEL_TO_KEY.get(folded)
+        published = _published_contact_url(href, source_url=source_url)
+        slug = published[1] if published else None
+        slug_key = _SLUG_TO_KEY.get(slug or "")
+        if name_key and slug_key and name_key != slug_key:
+            logger.error(
+                "Konflikt kontaktu HZS: název %s neodpovídá odkazu %s",
+                title,
+                href,
+            )
+            raise adapter_error(WEB_ADAPTER_ERROR_INCOMPLETE)
+        if name_key is None:
+            if _is_ignored_name(folded):
+                continue
+            if _looks_like_unexpected_region(folded, slug):
+                extra = True
+            continue
+        if published is None:
+            logger.error("Karta %s nemá konkrétní kontaktní stránku.", title)
+            raise adapter_error(WEB_ADAPTER_ERROR_INCOMPLETE)
+        if name_key in found:
+            logger.error("Duplicitní kontakt krajského HZS: %s", name_key)
+            raise adapter_error(WEB_ADAPTER_ERROR_DUPLICATE_KEY)
+        found[name_key] = published[0]
+
+    if not saw_card and not found:
+        logger.error("Základní kontakty HZS nemají očekávané karty sborů.")
+        raise adapter_error(WEB_ADAPTER_ERROR_UNREADABLE_HTML)
+    if extra or set(found) != set(HZS_OFFICE_EXTERNAL_KEYS):
+        logger.error(
+            "Neúplný nebo neočekávaný seznam kontaktů HZS: %s extra=%s",
+            sorted(found),
+            extra,
+        )
+        raise adapter_error(WEB_ADAPTER_ERROR_INCOMPLETE)
+    return found
+
+
+def parse_hzs_offices_html(
+    html: str,
+    *,
+    source_url: str = HZS_OFFICES_SOURCE_URL,
+    contacts_html: str,
+    contacts_source_url: str = HZS_CONTACTS_SOURCE_URL,
+) -> tuple[ControlAuthorityOfficeWebRecord, ...]:
+    """Spojí 14 krajů z rozcestníku s kontaktními stránkami. Nevolá síť."""
+    regions = _index_region_slugs(html, source_url=source_url)
+    contacts = _index_contact_pages(contacts_html, source_url=contacts_source_url)
+    observed = frozenset({"name", "website", "office_kind", "source_url"})
+    records: list[ControlAuthorityOfficeWebRecord] = []
+    for key in HZS_OFFICE_EXTERNAL_KEYS:
+        slug = regions[key]
+        website = contacts[key]
+        contact_slug = _published_contact_url(website, source_url=website)
+        if contact_slug is None or contact_slug[1] != slug:
+            logger.error("Kontakt %s neodpovídá kraji %s.", key, slug)
+            raise adapter_error(WEB_ADAPTER_ERROR_INCOMPLETE)
+        name = _OFFICIAL_NAMES[key]
+        if not name.startswith("Hasičský záchranný sbor "):
+            raise adapter_error(WEB_ADAPTER_ERROR_INCOMPLETE)
+        records.append(
+            ControlAuthorityOfficeWebRecord(
+                authority_code=HZS_AUTHORITY_CODE,
+                external_key=key,
+                name=name,
+                address=None,
+                phone=None,
+                email=None,
+                website=website,
+                territorial_scope=None,
+                office_kind=OFFICE_KIND_REGIONAL,
+                source_url=website,
+                observed_fields=observed,
+            )
+        )
+    ordered = tuple(records)
+    if len({item.external_key for item in ordered}) != 14:
         raise adapter_error(WEB_ADAPTER_ERROR_DUPLICATE_KEY)
-    for record in ordered:
-        if not record.name or not record.website:
-            raise adapter_error(WEB_ADAPTER_ERROR_INCOMPLETE)
-        if record.authority_code != HZS_AUTHORITY_CODE:
-            raise adapter_error(WEB_ADAPTER_ERROR_INCOMPLETE)
+    if len({item.website for item in ordered}) != 14:
+        logger.error("Krajské HZS nemají samostatné kontaktní stránky.")
+        raise adapter_error(WEB_ADAPTER_ERROR_DUPLICATE_KEY)
     return ordered
 
 
@@ -248,10 +371,14 @@ def fetch_hzs_offices(
     http_get: HttpGet | ControlAuthorityHttpClient | None = None,
     clock: Callable[[], datetime] | None = None,
     source_url: str = HZS_OFFICES_SOURCE_URL,
+    contacts_source_url: str = HZS_CONTACTS_SOURCE_URL,
 ) -> ControlAuthorityWebFetchResult:
-    """Stáhne jednu stránku HZS krajů. Krajské weby ani detaily nestahuje."""
+    """Stáhne rozcestník krajů a základní kontakty. Detaily adres nestahuje."""
     validated = validate_official_https_url(
         source_url, allowed_hosts=HZS_ALLOWED_HOSTS
+    )
+    validated_contacts = validate_official_https_url(
+        contacts_source_url, allowed_hosts=HZS_ALLOWED_HOSTS
     )
     requests_used = 0
 
@@ -267,10 +394,13 @@ def fetch_hzs_offices(
             return http_get(url)
         return ControlAuthorityHttpClient().get(url, allowed_hosts=HZS_ALLOWED_HOSTS)
 
-    response = getter(validated)
+    hub = getter(validated)
+    contacts = getter(validated_contacts)
     records = parse_hzs_offices_html(
-        _decode_html(response.body),
+        _decode_html(hub.body),
         source_url=validated,
+        contacts_html=_decode_html(contacts.body),
+        contacts_source_url=validated_contacts,
     )
     stamp = (clock or datetime.now)()
     return ControlAuthorityWebFetchResult(

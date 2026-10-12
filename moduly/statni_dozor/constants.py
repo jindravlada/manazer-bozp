@@ -817,6 +817,7 @@ KHS_OFFICE_EXTERNAL_KEYS: tuple[str, ...] = (
 KHS_MAX_HTTP_REQUESTS = 1
 HZS_AUTHORITY_CODE = "hzs"
 HZS_OFFICES_SOURCE_URL = "https://hzscr.gov.cz/hzs-kraju"
+HZS_CONTACTS_SOURCE_URL = "https://hzscr.gov.cz/zakladni-kontakty-hzs-cr"
 HZS_REGION_SLUGS: tuple[str, ...] = (
     "hlavni-mesto-praha",
     "stredocesky-kraj",
@@ -849,7 +850,7 @@ HZS_OFFICE_EXTERNAL_KEYS: tuple[str, ...] = (
     "hzs:moravskoslezsky-kraj",
     "hzs:zlinsky-kraj",
 )
-HZS_MAX_HTTP_REQUESTS = 1
+HZS_MAX_HTTP_REQUESTS = 2
 WEB_ADAPTER_ERROR_NETWORK = "network"
 WEB_ADAPTER_ERROR_TIMEOUT = "timeout"
 WEB_ADAPTER_ERROR_HTTP = "http"
