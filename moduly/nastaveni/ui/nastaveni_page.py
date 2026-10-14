@@ -43,6 +43,25 @@ from moduly.nastaveni.ui.workplace_dialog import WorkplaceDialog
 from moduly.statni_dozor.constants import TAB_STATE_SUPERVISION
 from moduly.statni_dozor.ui.control_authority_catalog_tab import ControlAuthorityCatalogTab
 
+_SAVE_CONFIRMATION_TITLE = "Nastavení"
+_SAVE_CONFIRMATION_TEXT = "Změny byly úspěšně uloženy."
+
+
+def _exec_message_box(box: QMessageBox) -> int:
+    return int(box.exec())
+
+
+def _show_employer_save_confirmation(parent: QWidget) -> None:
+    box = QMessageBox(parent)
+    box.setIcon(QMessageBox.Icon.Information)
+    box.setWindowTitle(_SAVE_CONFIRMATION_TITLE)
+    box.setText(_SAVE_CONFIRMATION_TEXT)
+    box.setStandardButtons(QMessageBox.StandardButton.Ok)
+    ok_button = box.button(QMessageBox.StandardButton.Ok)
+    if ok_button is not None:
+        ok_button.setText("OK")
+    _exec_message_box(box)
+
 
 class NastaveniPage(QWidget):
     def __init__(self):
@@ -107,7 +126,7 @@ class NastaveniPage(QWidget):
         self.load_ares_button.clicked.connect(self.load_from_ares)
 
         self.save_employer_button = QPushButton("Uložit zaměstnavatele")
-        self.save_employer_button.clicked.connect(self.save_employer)
+        self.save_employer_button.clicked.connect(self._save_employer_from_button)
 
         buttons.addWidget(self.load_ares_button)
         buttons.addWidget(self.save_employer_button)
@@ -614,6 +633,14 @@ class NastaveniPage(QWidget):
         self._update_employer_abbreviation_placeholder()
         self._capture_employer_baseline()
 
+    def _save_employer_from_button(self) -> None:
+        """Uložení z tlačítka; potvrzení jen po skutečné změně."""
+        had_changes = self.employer_has_unsaved_changes()
+        if not self.save_employer():
+            return
+        if had_changes:
+            _show_employer_save_confirmation(self)
+
     def save_employer(self) -> bool:
         try:
             settings_service.save_employer(
@@ -627,11 +654,6 @@ class NastaveniPage(QWidget):
             QMessageBox.warning(self, "Zaměstnavatel", str(exc))
             return False
         self.refresh()
-        QMessageBox.information(
-            self,
-            "Zaměstnavatel",
-            "Údaje zaměstnavatele byly uloženy.",
-        )
         return True
 
     def add_worker(self):

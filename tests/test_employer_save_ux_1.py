@@ -129,13 +129,38 @@ class EmployerSaveUx1TestCase(unittest.TestCase):
 
     def test_05_successful_save_shows_confirmation(self) -> None:
         self.page.employer_name.setText("Dopravce")
+        self.page.employer_ico.setText("12345678")
+        shown: list[QMessageBox] = []
+
+        def _exec(box: QMessageBox) -> int:
+            shown.append(box)
+            return int(QMessageBox.StandardButton.Ok)
+
         with patch.object(QMessageBox, "warning") as warning:
-            with patch.object(QMessageBox, "information") as info:
-                self.assertTrue(self.page.save_employer())
+            with patch(
+                "moduly.nastaveni.ui.nastaveni_page._exec_message_box",
+                side_effect=_exec,
+            ):
+                self.page.save_employer_button.click()
         warning.assert_not_called()
-        info.assert_called_once()
-        self.assertEqual(info.call_args.args[1], "Zaměstnavatel")
-        self.assertEqual(info.call_args.args[2], "Údaje zaměstnavatele byly uloženy.")
+        self.assertEqual(len(shown), 1)
+        self.assertEqual(shown[0].windowTitle(), "Nastavení")
+        self.assertEqual(shown[0].text(), "Změny byly úspěšně uloženy.")
+        ok_button = shown[0].button(QMessageBox.StandardButton.Ok)
+        assert ok_button is not None
+        self.assertEqual(ok_button.text(), "OK")
+        self.assertFalse(self.page.employer_has_unsaved_changes())
+
+        with patch("moduly.nastaveni.ui.nastaveni_page._exec_message_box") as again:
+            self.page.save_employer_button.click()
+        again.assert_not_called()
+        employer = settings_service.get_employer()
+        assert employer is not None
+        self.assertEqual(employer.name, "Dopravce")
+
+        self.page.refresh()
+        self.assertEqual(self.page.employer_name.text(), "Dopravce")
+        self.assertEqual(self.page.employer_ico.text(), "12345678")
 
     def test_06_clean_leave_does_not_ask(self) -> None:
         self._open_employer_tab()
@@ -149,12 +174,12 @@ class EmployerSaveUx1TestCase(unittest.TestCase):
         self.page.employer_name.setText("Uložit při odchodu")
         self.page.employer_ico.setText("12345678")
         with patch(_PROMPT, return_value="save") as prompt:
-            with patch.object(QMessageBox, "information") as info:
+            with patch("moduly.nastaveni.ui.nastaveni_page._exec_message_box") as confirm:
                 with patch.object(QMessageBox, "warning"):
                     self.page.tabs.setCurrentIndex(0)
         prompt.assert_called_once()
         self.assertEqual(prompt.call_args.kwargs["title"], "Zaměstnavatel")
-        info.assert_called_once()
+        confirm.assert_not_called()
         self.assertEqual(self.page.tabs.currentIndex(), 0)
         employer = settings_service.get_employer()
         assert employer is not None
@@ -283,6 +308,38 @@ class EmployerSaveUx1TestCase(unittest.TestCase):
             with patch.object(page, "confirm_leave_employer_edit", return_value=True):
                 window._show("dashboard")
             self.assertIs(window.current_page_widget(), window._page_widgets["dashboard"])
+        finally:
+            page._capture_employer_baseline()
+            window.close()
+            window.deleteLater()
+
+    def test_direct_save_and_window_close_do_not_confirm(self) -> None:
+        self.page.employer_name.setText("Bez tlačítka")
+        self.page.employer_ico.setText("12345678")
+        with patch("moduly.nastaveni.ui.nastaveni_page._exec_message_box") as confirm:
+            self.assertTrue(self.page.save_employer())
+        confirm.assert_not_called()
+        employer = settings_service.get_employer()
+        assert employer is not None
+        self.assertEqual(employer.name, "Bez tlačítka")
+
+        self.page.employer_name.setText("Při zavření")
+        window = MainWindow()
+        page = window._page_widgets["nastaveni"]
+        try:
+            window._show("nastaveni")
+            page.employer_name.setText("Při zavření")
+            page.employer_ico.setText("87654321")
+            with patch(_PROMPT, return_value="save"):
+                with patch("moduly.nastaveni.ui.nastaveni_page._exec_message_box") as confirm:
+                    event = QCloseEvent()
+                    window.closeEvent(event)
+            confirm.assert_not_called()
+            self.assertTrue(event.isAccepted())
+            stored = settings_service.get_employer()
+            assert stored is not None
+            self.assertEqual(stored.name, "Při zavření")
+            self.assertEqual(stored.ico, "87654321")
         finally:
             page._capture_employer_baseline()
             window.close()
