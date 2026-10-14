@@ -54,6 +54,25 @@ from moduly.koordinace_bozp.ui.coordination_tab_edit_policy import (
     CoordinationTabEditPolicyMixin,
 )
 
+_SAVE_CONFIRMATION_TITLE = "Koordinační schůzka BOZP"
+_SAVE_CONFIRMATION_TEXT = "Změny byly úspěšně uloženy."
+
+
+def _exec_message_box(box: QMessageBox) -> int:
+    return int(box.exec())
+
+
+def _show_submission_save_confirmation(parent: QWidget) -> None:
+    box = QMessageBox(parent)
+    box.setIcon(QMessageBox.Icon.Information)
+    box.setWindowTitle(_SAVE_CONFIRMATION_TITLE)
+    box.setText(_SAVE_CONFIRMATION_TEXT)
+    box.setStandardButtons(QMessageBox.StandardButton.Ok)
+    ok_button = box.button(QMessageBox.StandardButton.Ok)
+    if ok_button is not None:
+        ok_button.setText("OK")
+    _exec_message_box(box)
+
 
 class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
     """Záložka předání rizik dodavatelů (COORD-006 / UX-COORD-13)."""
@@ -369,10 +388,13 @@ class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
         employer_id = self.employer_combo.currentData()
         if not isinstance(employer_id, int):
             return
+        had_changes = self._form_dirty
         self._edited_employer_id = employer_id
         if not self.persist_current_submission(force=True):
             return
         self.load_selected_employer(preserve_scroll=True)
+        if had_changes:
+            _show_submission_save_confirmation(self)
 
     def add_attachment(self) -> None:
         if not self.allow_mutate():
