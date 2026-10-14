@@ -94,6 +94,10 @@ from moduly.koordinace_bozp.ui.coordination_workplaces_tab import (
 )
 
 
+def _exec_message_box(box: QMessageBox) -> int:
+    return int(box.exec())
+
+
 def _qdate_from_date(value: date) -> QDate:
     return QDate(value.year, value.month, value.day)
 
@@ -229,7 +233,7 @@ class BozpCoordinationDialog(QDialog):
             QDialogButtonBox.ButtonRole.ActionRole,
         )
         if self.save_button is not None:
-            self.save_button.clicked.connect(self._save)
+            self.save_button.clicked.connect(self._save_from_main_button)
         self.buttons.rejected.connect(self.reject)
         add_work_dialog_footer(
             layout,
@@ -326,6 +330,32 @@ class BozpCoordinationDialog(QDialog):
         self._set_detail_tabs_enabled(True)
         configure_editor_close_button(self.close_button, is_new=False)
         self._refresh_status_ui(coordination.status)
+
+    def _has_unsaved_changes(self) -> bool:
+        if self.is_dirty():
+            return True
+        if self.measures_tab.agreement_is_dirty():
+            return True
+        return self.risk_submissions_tab.submission_is_dirty()
+
+    def _save_from_main_button(self) -> None:
+        """Uložení z hlavního tlačítka Uložit, s potvrzením jen po skutečné změně."""
+        had_changes = self._has_unsaved_changes()
+        if not self._save():
+            return
+        if had_changes:
+            self._show_save_confirmation()
+
+    def _show_save_confirmation(self) -> None:
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Information)
+        box.setWindowTitle("Koordinační schůzka BOZP")
+        box.setText("Změny byly úspěšně uloženy.")
+        box.setStandardButtons(QMessageBox.StandardButton.Ok)
+        ok_button = box.button(QMessageBox.StandardButton.Ok)
+        if ok_button is not None:
+            ok_button.setText("OK")
+        _exec_message_box(box)
 
     def _save(self) -> bool:
         """Uloží rozpracovanou koordinaci bez validačních podmínek uzavření."""
