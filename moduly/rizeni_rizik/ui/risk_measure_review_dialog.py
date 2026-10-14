@@ -15,7 +15,9 @@ from PySide6.QtWidgets import (
 
 from core.widgets.date_edit import DateEdit
 from core.widgets.dialog_utils import create_save_cancel_box, configure_resizable_form_dialog
-from core.widgets.editor_dialog_controller import EditorDialogController
+from moduly.rizeni_rizik.ui.risk_measure_review_save_confirmation import (
+    ConfirmingSaveController,
+)
 from core.widgets.thp_worker_selector import ThpWorkerSelector
 from moduly.rizeni_rizik.constants import (
     RISK_MEASURE_REVIEW_DIALOG_TITLE,
@@ -75,7 +77,7 @@ class RiskMeasureReviewDialog(QDialog):
 
         buttons = create_save_cancel_box(self, is_new=review is None)
         layout.addWidget(buttons)
-        self._editor = EditorDialogController(
+        self._editor = ConfirmingSaveController(
             self,
             buttons,
             is_new=review is None,
