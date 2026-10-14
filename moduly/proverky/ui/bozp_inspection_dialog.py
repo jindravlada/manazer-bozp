@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QSizePolicy,
     QTabWidget,
     QVBoxLayout,
+    QWidget,
 )
 
 from core.shared.section_summary import NOTES_MODE_SECTION_SUMMARY_V1
@@ -40,7 +41,24 @@ from moduly.proverky.ui.bozp_inspection_tasks_widget import BozpInspectionTasksW
 from moduly.proverky.ui.bozp_inspection_terrain_widget import BozpInspectionTerrainWidget
 
 _SAVE_CLOSE_LABEL = "Uložit a zavřít"
-_INSPECTION_SAVE_SUCCESS_MESSAGE = "Prověrka byla úspěšně uložena."
+_SAVE_CONFIRMATION_TITLE = "Prověrky BOZP"
+_SAVE_CONFIRMATION_TEXT = "Změny byly úspěšně uloženy."
+
+
+def _exec_message_box(box: QMessageBox) -> int:
+    return int(box.exec())
+
+
+def _show_inspection_save_confirmation(parent: QWidget) -> None:
+    box = QMessageBox(parent)
+    box.setIcon(QMessageBox.Icon.Information)
+    box.setWindowTitle(_SAVE_CONFIRMATION_TITLE)
+    box.setText(_SAVE_CONFIRMATION_TEXT)
+    box.setStandardButtons(QMessageBox.StandardButton.Ok)
+    ok_button = box.button(QMessageBox.StandardButton.Ok)
+    if ok_button is not None:
+        ok_button.setText("OK")
+    _exec_message_box(box)
 
 
 class BozpInspectionDialog(QDialog):
@@ -185,13 +203,12 @@ class BozpInspectionDialog(QDialog):
         self.conclusion_widget.refresh()
 
     def _save_keep_open(self) -> None:
+        """Uložení z tlačítka Uložit; potvrzení jen po skutečné změně."""
+        had_changes = self._is_dirty()
         if not self._persist():
             return
-        QMessageBox.information(
-            self,
-            self.windowTitle(),
-            _INSPECTION_SAVE_SUCCESS_MESSAGE,
-        )
+        if had_changes:
+            _show_inspection_save_confirmation(self)
 
     def _save_and_close(self) -> None:
         if self._persist():

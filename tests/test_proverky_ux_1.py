@@ -51,10 +51,7 @@ with patch.object(Path, "home", return_value=_TMP):
         bozp_inspection_commission_service,
     )
     from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
-    from moduly.proverky.ui.bozp_inspection_dialog import (
-        BozpInspectionDialog,
-        _INSPECTION_SAVE_SUCCESS_MESSAGE,
-    )
+    from moduly.proverky.ui.bozp_inspection_dialog import BozpInspectionDialog
 
 
 def _read_silne(inspection_id: int) -> str:
@@ -179,27 +176,32 @@ class ProverkyUx1SaveConfirmationTestCase(unittest.TestCase):
             order.append("flush")
             return real_flush(*args, **kwargs)
 
-        def _info(*args, **kwargs):
+        shown: list[QMessageBox] = []
+
+        def _exec(box: QMessageBox) -> int:
             order.append("info")
+            shown.append(box)
             self.assertEqual(_read_silne(inspection.id), "Uloženo")
             self.assertEqual(_read_finding_description(finding.id), "Uložené zjištění")
             self.assertFalse(dialog._is_dirty())
-            return QMessageBox.StandardButton.Ok
+            return int(QMessageBox.StandardButton.Ok)
 
         with (
             patch.object(bozp_inspection_service, "update_inspection", _update),
             patch.object(dialog._deferred, "flush", _flush),
             patch(
-                "moduly.proverky.ui.bozp_inspection_dialog.QMessageBox.information",
-                side_effect=_info,
-            ) as info,
+                "moduly.proverky.ui.bozp_inspection_dialog._exec_message_box",
+                side_effect=_exec,
+            ),
         ):
             dialog._save_btn.click()
 
-        info.assert_called_once()
-        self.assertEqual(info.call_args.args[1], dialog.windowTitle())
-        self.assertEqual(info.call_args.args[2], _INSPECTION_SAVE_SUCCESS_MESSAGE)
-        self.assertEqual(info.call_args.args[2], "Prověrka byla úspěšně uložena.")
+        self.assertEqual(len(shown), 1)
+        self.assertEqual(shown[0].windowTitle(), "Prověrky BOZP")
+        self.assertEqual(shown[0].text(), "Změny byly úspěšně uloženy.")
+        ok_button = shown[0].button(QMessageBox.StandardButton.Ok)
+        assert ok_button is not None
+        self.assertEqual(ok_button.text(), "OK")
         self.assertEqual(order, ["update", "flush", "info"])
         self.assertFalse(dialog._closing)
         self.assertNotEqual(dialog.result(), QDialog.DialogCode.Accepted)
@@ -218,7 +220,7 @@ class ProverkyUx1SaveConfirmationTestCase(unittest.TestCase):
             ),
             patch.object(bozp_inspection_service, "update_inspection") as update,
             patch(
-                "moduly.proverky.ui.bozp_inspection_dialog.QMessageBox.information"
+                "moduly.proverky.ui.bozp_inspection_dialog._exec_message_box"
             ) as info,
             patch(
                 "moduly.proverky.ui.bozp_inspection_dialog.QMessageBox.warning"
@@ -257,7 +259,7 @@ class ProverkyUx1SaveConfirmationTestCase(unittest.TestCase):
                 side_effect=RuntimeError("flush selhal"),
             ),
             patch(
-                "moduly.proverky.ui.bozp_inspection_dialog.QMessageBox.information"
+                "moduly.proverky.ui.bozp_inspection_dialog._exec_message_box"
             ) as info,
             patch(
                 "moduly.proverky.ui.bozp_inspection_dialog.QMessageBox.warning"
@@ -285,7 +287,7 @@ class ProverkyUx1SaveConfirmationTestCase(unittest.TestCase):
                 return_value=None,
             ),
             patch(
-                "moduly.proverky.ui.bozp_inspection_dialog.QMessageBox.information"
+                "moduly.proverky.ui.bozp_inspection_dialog._exec_message_box"
             ) as info,
         ):
             dialog._save_btn.click()
@@ -317,7 +319,7 @@ class ProverkyUx1SaveConfirmationTestCase(unittest.TestCase):
                 side_effect=_update,
             ) as update_spy,
             patch(
-                "moduly.proverky.ui.bozp_inspection_dialog.QMessageBox.information",
+                "moduly.proverky.ui.bozp_inspection_dialog._exec_message_box",
                 side_effect=_info,
             ),
         ):
@@ -344,7 +346,7 @@ class ProverkyUx1SaveConfirmationTestCase(unittest.TestCase):
 
         with (
             patch(
-                "moduly.proverky.ui.bozp_inspection_dialog.QMessageBox.information"
+                "moduly.proverky.ui.bozp_inspection_dialog._exec_message_box"
             ) as info,
             patch.object(dialog, "_done_accept") as accept,
         ):
@@ -353,6 +355,80 @@ class ProverkyUx1SaveConfirmationTestCase(unittest.TestCase):
         info.assert_not_called()
         accept.assert_called_once()
         self.assertEqual(_read_silne(inspection.id), "Zavřeno")
+
+    def test_save_without_changes_does_not_confirm(self) -> None:
+        inspection = self._create_inspection(silne="Beze změny")
+        dialog = self._open_dialog(inspection)
+        with patch("moduly.proverky.ui.bozp_inspection_dialog._exec_message_box") as confirm:
+            dialog._save_btn.click()
+            self.assertFalse(dialog._is_dirty())
+            dialog._save_keep_open()
+        confirm.assert_not_called()
+        self.assertEqual(_read_silne(inspection.id), "Beze změny")
+        self.assertTrue(dialog._save_btn.isEnabled())
+
+    def test_reopen_keeps_saved_changes(self) -> None:
+        inspection = self._create_inspection(silne="Původní")
+        dialog = self._open_dialog(inspection)
+        dialog.conclusion_widget.silne_stranky_edit.setPlainText("Po uložení")
+        with patch(
+            "moduly.proverky.ui.bozp_inspection_dialog._exec_message_box",
+            return_value=int(QMessageBox.StandardButton.Ok),
+        ):
+            dialog._save_btn.click()
+        dialog._closing = True
+        dialog.close()
+
+        reopened = self._open_dialog(bozp_inspection_service.get_by_id(inspection.id))
+        self.assertEqual(
+            reopened.conclusion_widget.silne_stranky_edit.toPlainText(),
+            "Po uložení",
+        )
+        reopened._closing = True
+        reopened.close()
+
+    def test_deferred_change_confirms_and_other_actions_do_not(self) -> None:
+        inspection = self._create_inspection(silne="Beze změny textu")
+        finding = finding_service.create(
+            ENTITY_PROVERKY,
+            inspection.id,
+            finding_type=FINDING_TYPE_ZJISTENI,
+            description="Původní zjištění",
+            status=FINDING_STATUS_OTEVRENE,
+        )
+        dialog = self._open_dialog(inspection)
+        self.assertFalse(dialog._is_dirty())
+        dialog._deferred.stage_finding_update(
+            finding.id,
+            self._finding_payload("Odložená změna"),
+        )
+        self.assertTrue(dialog._is_dirty())
+        with patch(
+            "moduly.proverky.ui.bozp_inspection_dialog._exec_message_box",
+            return_value=int(QMessageBox.StandardButton.Ok),
+        ) as confirm:
+            dialog._save_btn.click()
+        confirm.assert_called_once()
+        self.assertEqual(_read_finding_description(finding.id), "Odložená změna")
+        self.assertEqual(_read_silne(inspection.id), "Beze změny textu")
+        self.assertFalse(dialog._is_dirty())
+
+        with patch("moduly.proverky.ui.bozp_inspection_dialog._exec_message_box") as confirm:
+            dialog.tabs.setCurrentIndex(1)
+            dialog._save_btn.click()
+        confirm.assert_not_called()
+
+        dialog.conclusion_widget.silne_stranky_edit.setPlainText("Při zavření")
+        with (
+            patch(
+                "moduly.proverky.ui.bozp_inspection_dialog.confirm_unsaved_editor_close",
+                return_value="save",
+            ),
+            patch("moduly.proverky.ui.bozp_inspection_dialog._exec_message_box") as confirm,
+        ):
+            dialog._request_close()
+        confirm.assert_not_called()
+        self.assertEqual(_read_silne(inspection.id), "Při zavření")
 
 
 if __name__ == "__main__":
