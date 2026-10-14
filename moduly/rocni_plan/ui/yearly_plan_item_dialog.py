@@ -26,7 +26,7 @@ from core.widgets.dialog_utils import (
     create_save_cancel_box,
     wrap_in_scroll_area,
 )
-from core.widgets.editor_dialog_controller import EditorDialogController
+from moduly.rocni_plan.ui.save_confirmation import ConfirmingSaveController
 from core.widgets.typed_table_sort import (
     create_typed_item,
     enable_typed_sorting,
@@ -87,7 +87,7 @@ class YearlyPlanItemDialog(QDialog):
 
         buttons = create_save_cancel_box(self, is_new=item is None)
         layout.addWidget(buttons)
-        self._editor = EditorDialogController(
+        self._editor = ConfirmingSaveController(
             self,
             buttons,
             is_new=item is None,
