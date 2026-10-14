@@ -64,6 +64,9 @@ from moduly.rizeni_rizik.ui.hazard_library_template_revision_history_widget impo
 from moduly.rizeni_rizik.ui.hazard_source_category_combo import (
     populate_hazard_source_category_combo,
 )
+from moduly.rizeni_rizik.ui.save_confirmation import (
+    show_risk_management_save_confirmation,
+)
 
 
 class HazardLibraryTemplateDialog(QDialog):
@@ -81,6 +84,7 @@ class HazardLibraryTemplateDialog(QDialog):
         self._editor_session: CatalogEditorSession | None = None
         self._basics_dirty = False
         self._closing = False
+        self._last_save_wrote = False
         self._on_template_persisted = on_template_persisted
         self._allow_duplicate_name = False
         self._default_category = default_category
@@ -167,7 +171,7 @@ class HazardLibraryTemplateDialog(QDialog):
             button.setDefault(False)
             button.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.save_button.setDefault(True)
-        self.save_button.clicked.connect(self._save_all)
+        self.save_button.clicked.connect(self._save_keep_open)
         self.save_close_button.clicked.connect(self._save_and_close)
         self.cancel_button.clicked.connect(self._on_cancel_clicked)
 
@@ -268,7 +272,16 @@ class HazardLibraryTemplateDialog(QDialog):
     def _on_content_changed(self) -> None:
         self._update_save_enabled()
 
+    def _save_keep_open(self) -> None:
+        """Uložení z tlačítka Uložit; potvrzení jen po skutečném zápisu."""
+        had_changes = self.template is None or self.is_dirty()
+        if not self._save_all():
+            return
+        if had_changes and self._last_save_wrote:
+            show_risk_management_save_confirmation(self)
+
     def _save_all(self) -> bool:
+        self._last_save_wrote = False
         data = self.get_data()
         try:
             if self.template is None:
@@ -304,6 +317,7 @@ class HazardLibraryTemplateDialog(QDialog):
                     **data,
                     allow_duplicate_name=self._allow_duplicate_name,
                 )
+                self._last_save_wrote = True
                 self._editor_session = CatalogEditorSession.load(self.template.id)
                 self.ai_peer_review_widget.set_package_session(self._editor_session)
                 self._basics_dirty = False
@@ -318,6 +332,7 @@ class HazardLibraryTemplateDialog(QDialog):
                         bump_revision=True,
                     )
                     self.template = updated
+                    self._last_save_wrote = True
                 elif self._basics_dirty:
                     updated = hazard_library_template_service.update_template(
                         self.template.id,
@@ -325,6 +340,7 @@ class HazardLibraryTemplateDialog(QDialog):
                     )
                     if updated is not None:
                         self.template = updated
+                        self._last_save_wrote = True
                 self._basics_dirty = False
         except HazardLibraryTemplateError as error:
             QMessageBox.warning(self, HAZARD_LIBRARY_DIALOG_TITLE, str(error))

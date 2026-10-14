@@ -32,6 +32,9 @@ from moduly.rizeni_rizik.sluzby.hazard_source_category_service import (
     normalize_category_name,
 )
 from moduly.rizeni_rizik.ui.hazard_source_category_dialog import HazardSourceCategoryDialog
+from moduly.rizeni_rizik.ui.save_confirmation import (
+    show_risk_management_save_confirmation,
+)
 
 DIALOG_TITLE = "Kategorie zdrojů rizik"
 
@@ -130,7 +133,7 @@ class HazardSourceCategoriesManagementDialog(QDialog):
             QApplication.style().standardIcon(QStyle.StandardPixmap.SP_DialogSaveButton),
         )
         self.save_button.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        self.save_button.clicked.connect(self._save_all)
+        self.save_button.clicked.connect(self._save_keep_open)
         footer.addWidget(self.close_button)
         footer.addWidget(self.save_button)
         layout.addLayout(footer)
@@ -348,6 +351,14 @@ class HazardSourceCategoriesManagementDialog(QDialog):
             original = original_by_id.get(item.key)
             if original is not None and original.active and not item.active:
                 self._ensure_can_deactivate(item)
+
+    def _save_keep_open(self) -> None:
+        """Uložení z tlačítka Uložit; potvrzení jen po skutečném zápisu."""
+        had_changes = self.is_dirty()
+        if not self._save_all():
+            return
+        if had_changes:
+            show_risk_management_save_confirmation(self)
 
     def _save_all(self) -> bool:
         if not self.is_dirty():
