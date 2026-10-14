@@ -45,10 +45,8 @@ from core.widgets.dialog_utils import (
     create_save_cancel_box,
     wrap_in_scroll_area,
 )
-from core.widgets.editor_dialog_controller import (
-    EditorDialogController,
-    configure_editor_save_button,
-)
+from core.widgets.editor_dialog_controller import configure_editor_save_button
+from moduly.statni_dozor.ui.save_confirmation import ConfirmingSaveController
 from core.widgets.info_tooltip import set_widget_tooltip
 from core.widgets.nullable_datetime_edit import NullableDateTimeEdit
 from core.widgets.search_combo_box import SearchComboBox
@@ -277,7 +275,7 @@ _EDITOR_FIELDS = (
 )
 
 
-class _SupervisionEditorController(EditorDialogController):
+class _SupervisionEditorController(ConfirmingSaveController):
     """Stejná aktivace Uložit i pro tlačítko Uložit a zavřít."""
 
     def __init__(self, *args, extra_save_buttons=(), **kwargs):

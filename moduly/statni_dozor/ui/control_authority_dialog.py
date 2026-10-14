@@ -26,7 +26,7 @@ from core.widgets.dialog_utils import (
     create_save_cancel_box,
     wrap_in_scroll_area,
 )
-from core.widgets.editor_dialog_controller import EditorDialogController
+from moduly.statni_dozor.ui.save_confirmation import ConfirmingSaveController
 from moduly.statni_dozor.constants import (
     AUTHORITY_NAME_REQUIRED_MESSAGE,
     AUTHORITY_ORIGIN_LABELS,
@@ -103,7 +103,7 @@ class ControlAuthorityDialog(QDialog):
 
         buttons = create_save_cancel_box(self, is_new=authority is None)
         layout.addWidget(buttons)
-        self._editor = EditorDialogController(
+        self._editor = ConfirmingSaveController(
             self,
             buttons,
             is_new=authority is None,
