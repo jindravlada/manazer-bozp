@@ -53,6 +53,13 @@ from moduly.audity.sluzby.audit_extraordinary_question_service import (
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from core.shared.verification_type import VERIFICATION_TYPE_OPTIONS
 
+_SAVE_CONFIRMATION_TITLE = "Interní audity"
+_SAVE_CONFIRMATION_TEXT = "Změny byly úspěšně uloženy."
+
+
+def _exec_message_box(box: QMessageBox) -> int:
+    return int(box.exec())
+
 
 class ExtraordinaryQuestionEditorDialog(QDialog):
     """Nová / úprava mimořádné otázky s odloženým uložením."""
@@ -397,7 +404,23 @@ class ExtraordinaryQuestionEditorDialog(QDialog):
             return False
 
     def _save_keep_open(self) -> None:
-        self._persist()
+        """Uložení z tlačítka Uložit, s potvrzením jen po skutečné změně."""
+        had_changes = self._is_dirty()
+        if not self._persist():
+            return
+        if had_changes:
+            self._show_save_confirmation()
+
+    def _show_save_confirmation(self) -> None:
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Information)
+        box.setWindowTitle(_SAVE_CONFIRMATION_TITLE)
+        box.setText(_SAVE_CONFIRMATION_TEXT)
+        box.setStandardButtons(QMessageBox.StandardButton.Ok)
+        ok_button = box.button(QMessageBox.StandardButton.Ok)
+        if ok_button is not None:
+            ok_button.setText("OK")
+        _exec_message_box(box)
 
     def _save_and_close(self) -> None:
         if self._persist():
