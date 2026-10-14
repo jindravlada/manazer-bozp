@@ -20,7 +20,7 @@ from core.widgets.dialog_utils import (
     create_save_cancel_box,
     wrap_in_scroll_area,
 )
-from core.widgets.editor_dialog_controller import EditorDialogController
+from moduly.smlouvy_ozo.ui.save_confirmation import ConfirmingSaveController
 from core.widgets.nullable_date_edit import NullableDateEdit
 from moduly.smlouvy_ozo.constants import (
     DIALOG_TITLE_OZO_HISTORICAL,
@@ -47,7 +47,7 @@ class OzoHistoricalPeriodDialog(QDialog):
 
         buttons = create_save_cancel_box(self, is_new=True)
         layout.addWidget(buttons)
-        self._editor = EditorDialogController(
+        self._editor = ConfirmingSaveController(
             self,
             buttons,
             is_new=True,
