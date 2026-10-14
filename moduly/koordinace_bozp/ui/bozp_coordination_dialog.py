@@ -192,6 +192,7 @@ class BozpCoordinationDialog(QDialog):
             self,
             coordination_id=coordination_id,
         )
+        self.measures_tab.set_dirty_callback(self.mark_dirty)
         self.tabs.addTab(self.measures_tab, TAB_MEASURES)
 
         self.contacts_tab = CoordinationContactsTab(
@@ -204,6 +205,7 @@ class BozpCoordinationDialog(QDialog):
             self,
             coordination_id=coordination_id,
         )
+        self.risk_submissions_tab.set_dirty_callback(self.mark_dirty)
         self.tabs.addTab(self.risk_submissions_tab, TAB_RISK_SUBMISSIONS)
 
         self.pbp_attachment_tab = CoordinationPbpAttachmentTab(
@@ -345,8 +347,11 @@ class BozpCoordinationDialog(QDialog):
         except BozpCoordinationError as error:
             QMessageBox.warning(self, DIALOG_WINDOW_TITLE, str(error))
             return False
+        self.measures_tab.clear_agreement_dirty()
         # Soft persist: neúplný koordinátor neblokuje uložení (COORDINATION-UX-2).
         if not self.coordinator_tab.persist_coordinator(require_complete=False):
+            return False
+        if not self.risk_submissions_tab.persist_current_submission():
             return False
         self.mark_clean()
         return True
@@ -414,7 +419,10 @@ class BozpCoordinationDialog(QDialog):
             return False
         if updated is not None:
             self.coordination = updated
+        self.measures_tab.clear_agreement_dirty()
         if not self.coordinator_tab.persist_coordinator(require_complete=False):
+            return False
+        if not self.risk_submissions_tab.persist_current_submission():
             return False
         self.mark_clean()
         return True

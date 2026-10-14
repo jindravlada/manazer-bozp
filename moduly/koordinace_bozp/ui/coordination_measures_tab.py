@@ -54,6 +54,9 @@ class CoordinationMeasuresTab(CoordinationTabEditPolicyMixin, QWidget):
         self.coordination_id = coordination_id
         self._content_editable = True
         self._before_mutate = None
+        self._loading = False
+        self._agreement_dirty = False
+        self._dirty_callback = None
 
         layout = QVBoxLayout(self)
         self.unavailable_label = QLabel(
@@ -141,11 +144,31 @@ class CoordinationMeasuresTab(CoordinationTabEditPolicyMixin, QWidget):
             can_deactivate=lambda: self.deactivate_btn.isEnabled(),
         )
         self.table.itemSelectionChanged.connect(self._update_action_buttons)
+        for editor in self._agreement_editors():
+            editor.textChanged.connect(self._notify_agreement_dirty)
 
         self.set_coordination_id(coordination_id)
 
+    def set_dirty_callback(self, callback) -> None:
+        self._dirty_callback = callback
+
+    def agreement_is_dirty(self) -> bool:
+        return self._agreement_dirty
+
+    def clear_agreement_dirty(self) -> None:
+        """Po úspěšném uložení nadřazeným dialogem – text ve widgetech zůstává."""
+        self._agreement_dirty = False
+
+    def _notify_agreement_dirty(self, *_args) -> None:
+        if self._loading:
+            return
+        self._agreement_dirty = True
+        if self._dirty_callback is not None:
+            self._dirty_callback()
+
     def set_coordination_id(self, coordination_id: int | None) -> None:
         self.coordination_id = coordination_id
+        self._agreement_dirty = False
         available = coordination_id is not None
         self.unavailable_label.setVisible(not available)
         self.content.setVisible(available)
@@ -304,23 +327,30 @@ class CoordinationMeasuresTab(CoordinationTabEditPolicyMixin, QWidget):
             )
 
     def _load_agreement_fields(self) -> None:
-        if self.coordination_id is None:
-            self._clear_agreement_fields()
+        """Načte uložené texty. Rozpracovaný text ve formuláři nepřepisuje."""
+        if self._agreement_dirty:
             return
-        coordination = bozp_coordination_service.get_by_id(self.coordination_id)
-        if coordination is None:
-            self._clear_agreement_fields()
-            return
-        self.work_intent_information_text.setPlainText(
-            coordination.work_intent_information_text or ""
-        )
-        self.ppe_text.setPlainText(coordination.ppe_text or "")
-        self.workplace_handover_text.setPlainText(
-            coordination.workplace_handover_text or ""
-        )
-        self.final_provisions_text.setPlainText(
-            coordination.final_provisions_text or ""
-        )
+        self._loading = True
+        try:
+            if self.coordination_id is None:
+                self._clear_agreement_fields()
+                return
+            coordination = bozp_coordination_service.get_by_id(self.coordination_id)
+            if coordination is None:
+                self._clear_agreement_fields()
+                return
+            self.work_intent_information_text.setPlainText(
+                coordination.work_intent_information_text or ""
+            )
+            self.ppe_text.setPlainText(coordination.ppe_text or "")
+            self.workplace_handover_text.setPlainText(
+                coordination.workplace_handover_text or ""
+            )
+            self.final_provisions_text.setPlainText(
+                coordination.final_provisions_text or ""
+            )
+        finally:
+            self._loading = False
 
     def _clear_agreement_fields(self) -> None:
         self.work_intent_information_text.clear()

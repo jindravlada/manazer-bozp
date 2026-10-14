@@ -7,6 +7,7 @@ from dataclasses import asdict, dataclass, field
 from typing import Any, Mapping
 
 from moduly.koordinace_bozp.constants import (
+    AGREEMENT_PART_WORKPLACE_HANDOVER,
     ATTACHMENT_TYPE_OTHER,
     PROTOCOL_AGREEMENT_CLOSING,
     PROTOCOL_APPENDIX_A,
@@ -519,6 +520,17 @@ def _main_employer(protocol_data: Mapping[str, Any]) -> dict[str, Any] | None:
     return employers[0] if employers else None
 
 
+def _append_risk_submission_details(out: _BlockList, row: Mapping[str, Any]) -> None:
+    """Do protokolu doplní text rizik a poznámku konkrétního dodavatele."""
+    submission = row.get("submission") or {}
+    risks_text = (submission.get("risks_text") or "").strip()
+    note = (submission.get("note") or "").strip()
+    if risks_text:
+        out.paragraph(risks_text)
+    if note:
+        out.paragraph(f"Poznámka: {note}")
+
+
 def _append_risk_status(out: _BlockList, protocol_data: Mapping[str, Any]) -> None:
     wrote = False
     for row in protocol_data.get("risk_handovers") or []:
@@ -534,6 +546,7 @@ def _append_risk_status(out: _BlockList, protocol_data: Mapping[str, Any]) -> No
             out.blank()
         out.paragraph(label, bold=True, style=BLOCK_STYLE_EMPLOYER_ABBR)
         out.paragraph(status)
+        _append_risk_submission_details(out, row)
         wrote = True
     if not wrote:
         out.paragraph("—")
@@ -691,6 +704,10 @@ def build_protocol_document(protocol_data: Mapping[str, Any]) -> dict[str, Any]:
             out.bullet(item.get("label") or "—")
     else:
         out.paragraph("—")
+    handover = (agreement.get("workplace_handover_text") or "").strip()
+    if handover:
+        out.paragraph(f"{AGREEMENT_PART_WORKPLACE_HANDOVER}:")
+        out.paragraph(handover)
 
     out.blank()
     out.heading(PROTOCOL_SECTION_ACTIVITIES)
@@ -812,6 +829,7 @@ def build_protocol_document(protocol_data: Mapping[str, Any]) -> dict[str, Any]:
             )
             out.paragraph(str(label), bold=True, style=BLOCK_STYLE_EMPLOYER_ABBR)
             out.paragraph(str(status))
+            _append_risk_submission_details(out, row)
     else:
         out.paragraph("—")
 

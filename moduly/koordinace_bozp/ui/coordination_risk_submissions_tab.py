@@ -64,6 +64,9 @@ class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
         self._content_editable = True
         self._before_mutate = None
         self._loading = False
+        self._form_dirty = False
+        self._edited_employer_id: int | None = None
+        self._dirty_callback = None
 
         layout = QVBoxLayout(self)
         self.unavailable_label = QLabel(
@@ -148,6 +151,11 @@ class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
 
         self.employer_combo.currentIndexChanged.connect(self._on_employer_changed)
         self.submission_method.currentIndexChanged.connect(self._on_status_changed)
+        self.submission_date.dateChanged.connect(self._notify_dirty)
+        self.document_reference.textEdited.connect(self._notify_dirty)
+        self.expected_email.textEdited.connect(self._notify_dirty)
+        self.risks_text.textChanged.connect(self._notify_dirty)
+        self.note.textChanged.connect(self._notify_dirty)
         self.save_btn.clicked.connect(self.save_submission)
         self.add_attachment_btn.clicked.connect(self.add_attachment)
         self.open_attachment_btn.clicked.connect(self.open_attachment)
@@ -165,6 +173,19 @@ class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
         self.set_coordination_id(coordination_id)
         self._update_field_visibility()
 
+    def set_dirty_callback(self, callback) -> None:
+        self._dirty_callback = callback
+
+    def submission_is_dirty(self) -> bool:
+        return self._form_dirty
+
+    def _notify_dirty(self, *_args) -> None:
+        if self._loading:
+            return
+        self._form_dirty = True
+        if self._dirty_callback is not None:
+            self._dirty_callback()
+
     def set_coordination_id(self, coordination_id: int | None) -> None:
         self.coordination_id = coordination_id
         available = coordination_id is not None
@@ -179,7 +200,12 @@ class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
     def refresh_employers(self) -> None:
         if self.coordination_id is None:
             return
-        previous = self.employer_combo.currentData()
+        preserve_form = self._form_dirty
+        previous = (
+            self._edited_employer_id
+            if preserve_form
+            else self.employer_combo.currentData()
+        )
         coordination_employer_service.ensure_main_employer(self.coordination_id)
         employers = [
             item
@@ -198,11 +224,13 @@ class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
             if not employer.active:
                 label = f"{label} (neaktivní)"
             self.employer_combo.addItem(label, employer.id)
-        self._loading = False
         if previous is not None:
             index = self.employer_combo.findData(previous)
             if index >= 0:
                 self.employer_combo.setCurrentIndex(index)
+        self._loading = False
+        if preserve_form:
+            return
         self.load_selected_employer()
 
     def load_selected_employer(
@@ -228,6 +256,8 @@ class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
             self.expected_email.clear()
             self.risks_text.clear()
             self.note.clear()
+            self._edited_employer_id = None
+            self._form_dirty = False
             self._loading = False
             self.status_label.setText("")
             self.attachments_table.setRowCount(0)
@@ -272,6 +302,8 @@ class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
             self.expected_email.setText(submission.expected_email or "")
             self.risks_text.setPlainText(submission.risks_text or "")
             self.note.setPlainText(submission.note or "")
+        self._edited_employer_id = employer_id
+        self._form_dirty = False
         self._loading = False
         self._update_field_visibility()
 
@@ -295,12 +327,22 @@ class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
         )
         self._update_attachment_buttons()
 
-    def save_submission(self) -> None:
-        if not self.allow_mutate():
-            return
-        employer_id = self.employer_combo.currentData()
+    def persist_current_submission(self, *, force: bool = False) -> bool:
+        """Uloží rozpracované předání aktuálního dodavatele.
+
+        Při chybě ponechá zadaný text ve formuláři a nic nepřepíše.
+        Bez úpravy formuláře záznam nezakládá (dialogové Uložit).
+        Tlačítko „Uložit předání“ ukládá i beze změny (``force``).
+        """
+        if not getattr(self, "_content_editable", True):
+            return True
+        if not self._form_dirty and not force:
+            return True
+        employer_id = self._edited_employer_id
         if not isinstance(employer_id, int):
-            return
+            employer_id = self.employer_combo.currentData()
+        if not isinstance(employer_id, int):
+            return True
         try:
             coordination_risk_submission_service.save_submission(
                 employer_id,
@@ -313,6 +355,22 @@ class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
             )
         except CoordinationRiskSubmissionError as error:
             QMessageBox.warning(self, TAB_RISK_SUBMISSIONS, str(error))
+            self._form_dirty = True
+            if self._dirty_callback is not None:
+                self._dirty_callback()
+            return False
+        self._edited_employer_id = employer_id
+        self._form_dirty = False
+        return True
+
+    def save_submission(self) -> None:
+        if not self.allow_mutate():
+            return
+        employer_id = self.employer_combo.currentData()
+        if not isinstance(employer_id, int):
+            return
+        self._edited_employer_id = employer_id
+        if not self.persist_current_submission(force=True):
             return
         self.load_selected_employer(preserve_scroll=True)
 
@@ -388,12 +446,24 @@ class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
     def _on_employer_changed(self) -> None:
         if self._loading:
             return
+        new_id = self.employer_combo.currentData()
+        if new_id == self._edited_employer_id:
+            return
+        if self._form_dirty:
+            if not self.persist_current_submission():
+                self._loading = True
+                index = self.employer_combo.findData(self._edited_employer_id)
+                if index >= 0:
+                    self.employer_combo.setCurrentIndex(index)
+                self._loading = False
+                return
         self.load_selected_employer()
 
     def _on_status_changed(self) -> None:
         if self._loading:
             return
         self._update_field_visibility()
+        self._notify_dirty()
 
     def _update_field_visibility(self) -> None:
         status = self.submission_method.currentData()

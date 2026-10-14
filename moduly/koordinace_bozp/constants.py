@@ -253,7 +253,7 @@ PROTOCOL_FINAL_PROVISIONS_CONTINUATION = (
     "o této skutečnosti koordinátora BOZP, který informuje ostatní "
     "zúčastněné zaměstnavatele a dále budou všichni zúčastnění "
     "zaměstnavatelé obratem postupovat dle ustanovení § 101 odst. 3 "
-    "zakoníku práce (dle pokynů koordinátora BOZP)."
+    "zákoníku práce (dle pokynů koordinátora BOZP)."
 )
 # Zpětná kompatibilita: starý konstantní text (bez dynamického počtu).
 PROTOCOL_FINAL_PROVISIONS = (
