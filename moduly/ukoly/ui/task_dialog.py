@@ -54,6 +54,12 @@ from core.widgets.workplace_selector import WorkplaceSelector
 
 _SAVE_CLOSE_LABEL = "Uložit a zavřít"
 _ATTACHMENTS_INFO = "Přílohy lze přidat až po prvním uložení opatření."
+_SAVE_CONFIRMATION_TITLE = "Úkoly"
+_SAVE_CONFIRMATION_TEXT = "Změny byly úspěšně uloženy."
+
+
+def _exec_message_box(box: QMessageBox) -> int:
+    return int(box.exec())
 
 TASK_EDITOR_TITLE = "Úkol"
 TASK_EDITOR_TITLE_FINDING = "Nápravné opatření"
@@ -263,7 +269,23 @@ class TaskDialog(QDialog):
         return self.get_data() != self._baseline
 
     def _save_keep_open(self) -> None:
-        self._persist()
+        """Uložení z tlačítka Uložit, s potvrzením jen po skutečné změně."""
+        had_changes = self._is_dirty()
+        if not self._persist():
+            return
+        if had_changes:
+            self._show_save_confirmation()
+
+    def _show_save_confirmation(self) -> None:
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Information)
+        box.setWindowTitle(_SAVE_CONFIRMATION_TITLE)
+        box.setText(_SAVE_CONFIRMATION_TEXT)
+        box.setStandardButtons(QMessageBox.StandardButton.Ok)
+        ok_button = box.button(QMessageBox.StandardButton.Ok)
+        if ok_button is not None:
+            ok_button.setText("OK")
+        _exec_message_box(box)
 
     def _save_and_close(self) -> None:
         if self._persist():
