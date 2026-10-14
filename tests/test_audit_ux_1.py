@@ -39,7 +39,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.audity.modely.audit import Audit
     from moduly.audity.sluzby.audit_commission_service import audit_commission_service
     from moduly.audity.sluzby.audit_service import audit_service
-    from moduly.audity.ui.audit_dialog import AuditDialog, _AUDIT_SAVE_SUCCESS_MESSAGE
+    from moduly.audity.ui.audit_dialog import AuditDialog
     from moduly.nastaveni.sluzby.person_service import person_service
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from core.database.session import get_session
@@ -134,26 +134,31 @@ class AuditUx1SaveConfirmationTestCase(unittest.TestCase):
             order.append("update")
             return real_update(*args, **kwargs)
 
-        def _info(*args, **kwargs):
+        shown: list[QMessageBox] = []
+
+        def _exec(box: QMessageBox) -> int:
             order.append("info")
+            shown.append(box)
             self.assertEqual(_read_changes(audit.id), "Uložená změna")
             self.assertFalse(dialog._is_dirty())
-            return QMessageBox.StandardButton.Ok
+            return int(QMessageBox.StandardButton.Ok)
 
         with (
             patch.object(dialog._deferred, "flush", _flush),
             patch.object(audit_service, "update_audit", _update),
             patch(
-                "moduly.audity.ui.audit_dialog.QMessageBox.information",
-                side_effect=_info,
-            ) as info,
+                "moduly.audity.ui.audit_dialog._exec_message_box",
+                side_effect=_exec,
+            ),
         ):
             dialog._save_btn.click()
 
-        info.assert_called_once()
-        self.assertEqual(info.call_args.args[1], dialog.windowTitle())
-        self.assertEqual(info.call_args.args[2], _AUDIT_SAVE_SUCCESS_MESSAGE)
-        self.assertEqual(info.call_args.args[2], "Audit byl úspěšně uložen.")
+        self.assertEqual(len(shown), 1)
+        self.assertEqual(shown[0].windowTitle(), "Interní audity")
+        self.assertEqual(shown[0].text(), "Změny byly úspěšně uloženy.")
+        ok_button = shown[0].button(QMessageBox.StandardButton.Ok)
+        assert ok_button is not None
+        self.assertEqual(ok_button.text(), "OK")
         self.assertEqual(order, ["flush", "update", "info"])
         self.assertFalse(dialog._closing)
         self.assertNotEqual(dialog.result(), QDialog.DialogCode.Accepted)
@@ -170,9 +175,7 @@ class AuditUx1SaveConfirmationTestCase(unittest.TestCase):
                 "update_audit",
                 side_effect=ValueError("uložení selhalo"),
             ),
-            patch(
-                "moduly.audity.ui.audit_dialog.QMessageBox.information"
-            ) as info,
+            patch("moduly.audity.ui.audit_dialog._exec_message_box") as info,
             patch("moduly.audity.ui.audit_dialog.QMessageBox.warning") as warning,
         ):
             dialog._save_btn.click()
@@ -197,9 +200,7 @@ class AuditUx1SaveConfirmationTestCase(unittest.TestCase):
                 side_effect=RuntimeError("flush selhal"),
             ),
             patch.object(audit_service, "update_audit") as update,
-            patch(
-                "moduly.audity.ui.audit_dialog.QMessageBox.information"
-            ) as info,
+            patch("moduly.audity.ui.audit_dialog._exec_message_box") as info,
             patch("moduly.audity.ui.audit_dialog.QMessageBox.warning") as warning,
         ):
             dialog._save_btn.click()
@@ -225,9 +226,7 @@ class AuditUx1SaveConfirmationTestCase(unittest.TestCase):
                 return_value=(False, "Chybí vedoucí auditor."),
             ),
             patch.object(audit_service, "update_audit") as update,
-            patch(
-                "moduly.audity.ui.audit_dialog.QMessageBox.information"
-            ) as info,
+            patch("moduly.audity.ui.audit_dialog._exec_message_box") as info,
             patch("moduly.audity.ui.audit_dialog.QMessageBox.warning") as warning,
         ):
             dialog._save_btn.click()
@@ -249,15 +248,15 @@ class AuditUx1SaveConfirmationTestCase(unittest.TestCase):
         def _update(*args, **kwargs):
             return real_update(*args, **kwargs)
 
-        def _info(*args, **kwargs):
+        def _exec(box: QMessageBox) -> int:
             during_dialog.append(update_spy.call_count)
-            return QMessageBox.StandardButton.Ok
+            return int(QMessageBox.StandardButton.Ok)
 
         with (
             patch.object(audit_service, "update_audit", side_effect=_update) as update_spy,
             patch(
-                "moduly.audity.ui.audit_dialog.QMessageBox.information",
-                side_effect=_info,
+                "moduly.audity.ui.audit_dialog._exec_message_box",
+                side_effect=_exec,
             ),
         ):
             dialog._save_btn.click()
@@ -282,7 +281,7 @@ class AuditUx1SaveConfirmationTestCase(unittest.TestCase):
         dialog.history_widget._changes_edit.setPlainText("Zavřeno")
 
         with (
-            patch("moduly.audity.ui.audit_dialog.QMessageBox.information") as info,
+            patch("moduly.audity.ui.audit_dialog._exec_message_box") as info,
             patch.object(dialog, "_done_accept") as accept,
         ):
             dialog._save_and_close()
@@ -290,6 +289,55 @@ class AuditUx1SaveConfirmationTestCase(unittest.TestCase):
         info.assert_not_called()
         accept.assert_called_once()
         self.assertEqual(_read_changes(audit.id), "Zavřeno")
+
+    def test_save_without_changes_does_not_confirm(self) -> None:
+        audit = self._create_audit(changes="Beze změny")
+        dialog = self._open_dialog(audit)
+        with patch("moduly.audity.ui.audit_dialog._exec_message_box") as confirm:
+            dialog._save_btn.click()
+            self.assertFalse(dialog._is_dirty())
+            dialog._save_keep_open()
+        confirm.assert_not_called()
+        self.assertEqual(_read_changes(audit.id), "Beze změny")
+        self.assertTrue(dialog._save_btn.isEnabled())
+
+    def test_reopen_keeps_saved_changes(self) -> None:
+        audit = self._create_audit(changes="Původní")
+        dialog = self._open_dialog(audit)
+        dialog.history_widget._changes_edit.setPlainText("Po uložení")
+        with patch(
+            "moduly.audity.ui.audit_dialog._exec_message_box",
+            return_value=int(QMessageBox.StandardButton.Ok),
+        ):
+            dialog._save_btn.click()
+        dialog._closing = True
+        dialog.close()
+
+        reopened = self._open_dialog(audit_service.get_by_id(audit.id))
+        self.assertEqual(reopened.history_widget._changes_edit.toPlainText(), "Po uložení")
+        reopened._closing = True
+        reopened.close()
+
+    def test_other_actions_do_not_confirm(self) -> None:
+        audit = self._create_audit(changes="Před záložkou")
+        dialog = self._open_dialog(audit)
+        dialog.history_widget._changes_edit.setPlainText("Jen ve formuláři")
+        with patch("moduly.audity.ui.audit_dialog._exec_message_box") as confirm:
+            dialog.tabs.setCurrentIndex(1)
+        confirm.assert_not_called()
+        self.assertEqual(_read_changes(audit.id), "Před záložkou")
+        self.assertEqual(dialog.history_widget._changes_edit.toPlainText(), "Jen ve formuláři")
+
+        with (
+            patch(
+                "moduly.audity.ui.audit_dialog.confirm_unsaved_editor_close",
+                return_value="save",
+            ),
+            patch("moduly.audity.ui.audit_dialog._exec_message_box") as confirm,
+        ):
+            dialog._request_close()
+        confirm.assert_not_called()
+        self.assertEqual(_read_changes(audit.id), "Jen ve formuláři")
 
 
 if __name__ == "__main__":

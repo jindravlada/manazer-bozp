@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QSizePolicy,
     QTabWidget,
     QVBoxLayout,
+    QWidget,
 )
 
 from core.shared.section_summary import NOTES_MODE_SECTION_SUMMARY_V1
@@ -77,7 +78,24 @@ from moduly.audity.sluzby.audit_extraordinary_question_service import (
     AuditExtraordinaryError,
 )
 _SAVE_CLOSE_LABEL = "Uložit a zavřít"
-_AUDIT_SAVE_SUCCESS_MESSAGE = "Audit byl úspěšně uložen."
+_SAVE_CONFIRMATION_TITLE = "Interní audity"
+_SAVE_CONFIRMATION_TEXT = "Změny byly úspěšně uloženy."
+
+
+def _exec_message_box(box: QMessageBox) -> int:
+    return int(box.exec())
+
+
+def _show_audit_save_confirmation(parent: QWidget) -> None:
+    box = QMessageBox(parent)
+    box.setIcon(QMessageBox.Icon.Information)
+    box.setWindowTitle(_SAVE_CONFIRMATION_TITLE)
+    box.setText(_SAVE_CONFIRMATION_TEXT)
+    box.setStandardButtons(QMessageBox.StandardButton.Ok)
+    ok_button = box.button(QMessageBox.StandardButton.Ok)
+    if ok_button is not None:
+        ok_button.setText("OK")
+    _exec_message_box(box)
 
 
 class AuditDialog(QDialog):
@@ -288,13 +306,12 @@ class AuditDialog(QDialog):
         return True
 
     def _save_keep_open(self) -> None:
+        """Uložení z tlačítka Uložit; potvrzení jen po skutečné změně."""
+        had_changes = self._is_dirty()
         if not self._persist():
             return
-        QMessageBox.information(
-            self,
-            self.windowTitle(),
-            _AUDIT_SAVE_SUCCESS_MESSAGE,
-        )
+        if had_changes:
+            _show_audit_save_confirmation(self)
 
     def _save_and_close(self) -> None:
         if self._persist():
