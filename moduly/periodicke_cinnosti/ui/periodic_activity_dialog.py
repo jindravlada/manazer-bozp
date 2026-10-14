@@ -29,7 +29,7 @@ from core.widgets.dialog_utils import (
     create_save_cancel_box,
     wrap_in_scroll_area,
 )
-from core.widgets.editor_dialog_controller import EditorDialogController
+from moduly.periodicke_cinnosti.ui.save_confirmation import ConfirmingSaveController
 from core.widgets.nullable_date_edit import NullableDateEdit
 from core.widgets.thp_worker_selector import ThpWorkerSelector
 from core.widgets.typed_table_sort import (
@@ -88,7 +88,7 @@ class PeriodicActivityDialog(QDialog):
 
         buttons = create_save_cancel_box(self, is_new=activity is None)
         layout.addWidget(buttons)
-        self._editor = EditorDialogController(
+        self._editor = ConfirmingSaveController(
             self,
             buttons,
             is_new=activity is None,

@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (
 from core.widgets.attachment_widget import AttachmentWidget
 from core.widgets.date_edit import DateEdit
 from core.widgets.dialog_utils import configure_resizable_form_dialog, create_save_cancel_box
-from core.widgets.editor_dialog_controller import EditorDialogController
+from moduly.periodicke_cinnosti.ui.save_confirmation import ConfirmingSaveController
 from core.widgets.person_selector import PersonSelector
 from core.widgets.thp_worker_selector import ThpWorkerSelector
 from moduly.periodicke_cinnosti.constants import (
@@ -90,7 +90,7 @@ class PeriodicPerformanceDialog(QDialog):
 
         buttons = create_save_cancel_box(self, is_new=True)
         layout.addWidget(buttons)
-        self._editor = EditorDialogController(
+        self._editor = ConfirmingSaveController(
             self,
             buttons,
             is_new=True,
