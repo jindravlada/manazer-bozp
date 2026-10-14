@@ -7,6 +7,25 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+_SAVE_CONFIRMATION_TITLE = "Právní požadavky"
+_SAVE_CONFIRMATION_TEXT = "Změny byly úspěšně uloženy."
+
+
+def _exec_message_box(box: QMessageBox) -> int:
+    return int(box.exec())
+
+
+def _show_save_confirmation(parent: QWidget) -> None:
+    box = QMessageBox(parent)
+    box.setIcon(QMessageBox.Icon.Information)
+    box.setWindowTitle(_SAVE_CONFIRMATION_TITLE)
+    box.setText(_SAVE_CONFIRMATION_TEXT)
+    box.setStandardButtons(QMessageBox.StandardButton.Ok)
+    ok_button = box.button(QMessageBox.StandardButton.Ok)
+    if ok_button is not None:
+        ok_button.setText("OK")
+    _exec_message_box(box)
+
 from moduly.pravni_pozadavky.constants import SECTION_ATTACHMENT, legal_section_display_label
 from moduly.pravni_pozadavky.sluzby.legal_requirement_creation_service import (
     legal_requirement_creation_service,
@@ -71,7 +90,7 @@ class LegalDocumentWorkbenchTab(QWidget):
         layout.addWidget(splitter)
 
         self.tree.itemSelectionChanged.connect(self._on_section_selected)
-        self.editor.save_btn.clicked.connect(self.save_current)
+        self.editor.save_btn.clicked.connect(self._save_from_button)
         self.editor.next_btn.clicked.connect(self.save_and_next)
 
         self.refresh()
@@ -205,6 +224,15 @@ class LegalDocumentWorkbenchTab(QWidget):
             context_label=context_label,
         )
 
+    def _save_from_button(self) -> None:
+        """Uložení z tlačítka Uložit; potvrzení jen po skutečném zápisu změny."""
+        if self.editor is None:
+            return
+        had_changes = self.editor.has_changes()
+        if self.save_current() is None or not had_changes:
+            return
+        _show_save_confirmation(self)
+
     def save_current(self) -> int | None:
         if self.editor is None:
             return None
@@ -258,8 +286,15 @@ class LegalDocumentWorkbenchTab(QWidget):
             update_data = {
                 key: value
                 for key, value in data.items()
-                if key not in {"source_section_id", "source_section_ids"}
+                if key not in {"source_section_id", "source_section_ids", "id"}
             }
+            # Formulář pracovní plochy tato pole needituje; při uložení zůstanou.
+            update_data["source_section_id"] = existing.source_section_id
+            update_data["process_inputs"] = existing.process_inputs or ""
+            update_data["process_outputs"] = existing.process_outputs or ""
+            update_data["last_verification_date"] = existing.last_verification_date
+            update_data["next_verification_date"] = existing.next_verification_date
+            update_data["compliance_status"] = existing.compliance_status or ""
             updated = legal_requirement_service.update_requirement(existing.id, **update_data)
             if updated is None:
                 raise ValueError("Požadavek nebyl nalezen.")

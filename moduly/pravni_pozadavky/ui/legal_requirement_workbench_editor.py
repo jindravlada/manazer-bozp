@@ -31,6 +31,7 @@ class LegalRequirementWorkbenchEditor(QWidget):
         self._document_regulation_name = ""
         self._processing_status: str | None = None
         self._organization_impact = ""
+        self._baseline: dict | None = None
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 12, 12, 12)
@@ -83,6 +84,7 @@ class LegalRequirementWorkbenchEditor(QWidget):
         layout.addLayout(buttons)
 
         self._set_enabled(False)
+        self._capture_baseline()
 
     def clear_form(self) -> None:
         self._requirement_id = None
@@ -104,6 +106,7 @@ class LegalRequirementWorkbenchEditor(QWidget):
         self.periodicity.setCurrentIndex(0)
         self.note.clear()
         self._set_enabled(False)
+        self._capture_baseline()
 
     def load_attachment_preview(self, *, section_text: str = "", context_label: str = "") -> None:
         self._requirement_id = None
@@ -126,6 +129,7 @@ class LegalRequirementWorkbenchEditor(QWidget):
         self.periodicity.setCurrentIndex(0)
         self.note.clear()
         self._set_enabled(False)
+        self._capture_baseline()
 
     def load_requirement(
         self,
@@ -160,6 +164,7 @@ class LegalRequirementWorkbenchEditor(QWidget):
         self._set_combo_value(self.periodicity, requirement.verification_periodicity)
         self.note.setPlainText(requirement.note)
         self._set_enabled(True)
+        self._capture_baseline()
 
     def load_draft(self, draft, *, section_text: str = "", context_label: str = "") -> None:
         self._requirement_id = None
@@ -182,6 +187,7 @@ class LegalRequirementWorkbenchEditor(QWidget):
         self.periodicity.setCurrentIndex(0)
         self.note.clear()
         self._set_enabled(True)
+        self._capture_baseline()
 
     def current_section_id(self) -> int | None:
         return self._source_section_id
@@ -211,10 +217,21 @@ class LegalRequirementWorkbenchEditor(QWidget):
             "note": self.note.toPlainText().strip(),
             "active": True,
         }
-        if self._requirement_id is None and self._source_section_id is not None:
+        if self._source_section_id is not None:
             data["source_section_id"] = self._source_section_id
+        if self._requirement_id is None and self._source_section_id is not None:
             data["source_section_ids"] = [self._source_section_id]
+        if self._requirement_id is not None:
+            data["id"] = self._requirement_id
         return data
+
+    def has_changes(self) -> bool:
+        if self._baseline is None:
+            return False
+        return self.get_data() != self._baseline
+
+    def _capture_baseline(self) -> None:
+        self._baseline = self.get_data()
 
     def _set_enabled(self, enabled: bool) -> None:
         for widget in (
