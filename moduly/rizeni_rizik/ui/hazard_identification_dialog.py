@@ -15,7 +15,6 @@ from core.widgets.editor_dialog_controller import (
 from moduly.rizeni_rizik.constants import (
     DIALOG_WINDOW_TITLE,
     HAZARD_IDENTIFICATION_CANCEL_CONFIRM,
-    HAZARD_IDENTIFICATION_SAVE_SUCCESS,
     TAB_BASICS,
     TAB_INVENTORY,
     TAB_PHOTOS,
@@ -38,7 +37,10 @@ from moduly.rizeni_rizik.ui.hazard_identification_photos_widget import (
     HazardIdentificationPhotosWidget,
 )
 from moduly.rizeni_rizik.ui.hazard_inventory_widget import HazardInventoryWidget
-from moduly.rizeni_rizik.ui.hazard_risk_assessments_widget import HazardRiskAssessmentsWidget
+from moduly.rizeni_rizik.ui.hazard_risk_assessments_widget import (
+    HazardRiskAssessmentsWidget,
+)
+from moduly.rizeni_rizik.ui.save_confirmation import show_risk_management_save_confirmation
 
 
 class HazardIdentificationDialog(QDialog):
@@ -80,7 +82,7 @@ class HazardIdentificationDialog(QDialog):
         self.save_button = self.buttons.button(QDialogButtonBox.StandardButton.Save)
         self.cancel_button = self.buttons.button(QDialogButtonBox.StandardButton.Cancel)
         if self.save_button is not None:
-            self.save_button.clicked.connect(self._save_all)
+            self.save_button.clicked.connect(self._save_from_button)
         if self.cancel_button is not None:
             self.cancel_button.clicked.connect(self._on_cancel_clicked)
         layout.addWidget(self.buttons)
@@ -226,6 +228,14 @@ class HazardIdentificationDialog(QDialog):
             self.risk_assessments_widget.refresh()
         self._update_save_enabled()
 
+    def _save_from_button(self) -> None:
+        """Uložení z tlačítka Uložit; potvrzení jen po skutečné změně."""
+        had_changes = self.is_dirty()
+        if not self._save_all():
+            return
+        if had_changes:
+            show_risk_management_save_confirmation(self)
+
     def _save_all(self) -> bool:
         data = self.get_data()
         try:
@@ -260,7 +270,6 @@ class HazardIdentificationDialog(QDialog):
         self._refresh_child_widgets()
         configure_editor_close_button(self.cancel_button, is_new=False)
         self._update_save_enabled()
-        QMessageBox.information(self, DIALOG_WINDOW_TITLE, HAZARD_IDENTIFICATION_SAVE_SUCCESS)
         return True
 
     def _discard_working_copy(self) -> None:
