@@ -1,6 +1,6 @@
-# Manažer BOZP 4.1.1
+# Manažer BOZP 4.1.2
 
-Aktuální verze: 4.1.1
+Aktuální verze: 4.1.2
 
 ## 📥 Stažení aplikace
 
@@ -8,17 +8,17 @@ Hotovou aplikaci není nutné sestavovat ze zdrojových kódů.
 
 ### Linux
 
-**Manažer BOZP 4.1.1 – AppImage**
+**Manažer BOZP 4.1.2 – AppImage**
 
-[⬇️ Stáhnout Manažer BOZP pro Linux](https://github.com/jindravlada/manazer-bozp/releases/download/v4.1.1/Manazer-BOZP-4.1.1-x86_64.AppImage)
+[⬇️ Stáhnout Manažer BOZP pro Linux](https://github.com/jindravlada/manazer-bozp/releases/download/v4.1.2/Manazer-BOZP-4.1.2-x86_64.AppImage)
 
 Po stažení nastavte soubor jako spustitelný a spusťte jej.
 
 ### Windows
 
-**Manažer BOZP 4.1.1 – instalační program**
+**Manažer BOZP 4.1.2 – instalační program**
 
-[⬇️ Stáhnout Manažer BOZP pro Windows](https://github.com/jindravlada/manazer-bozp/releases/download/v4.1.1/Manazer_BOZP_4_1_1_Setup.exe)
+[⬇️ Stáhnout Manažer BOZP pro Windows](https://github.com/jindravlada/manazer-bozp/releases/download/v4.1.2/Manazer_BOZP_4_1_2_Setup.exe)
 
 Určeno pro Windows 10/11.
 
@@ -50,7 +50,7 @@ Samotné používání aplikace nezajišťuje splnění právních povinností.
 
 ## Stav projektu
 
-Jde o aktivně vyvíjený projekt. Současná veřejná verze je 4.1.1.
+Jde o aktivně vyvíjený projekt. Současná veřejná verze je 4.1.2.
 
 ## Spuštění ze zdrojových kódů – Linux
 

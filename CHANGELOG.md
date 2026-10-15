@@ -14,6 +14,21 @@
 
 ---
 
+# Verze 4.1.2
+
+Datum vydání:
+
+15. 10. 2026
+
+Opravy
+
+- Uložení se potvrdí jen po skutečné změně a úspěšném zápisu. Týká se zaměstnavatele, úkolů, auditů včetně mimořádné otázky, externího auditu, prověrek, právních požadavků, katalogu rizik, identifikace nebezpečí, revize opatření, ročního plánu, periodických činností, smluv OZO, státního dozoru, koordinační schůzky a předání rizik. Když se uložení nepodaří, dialog zůstane otevřený a rozepsané údaje zůstanou.
+- Úprava právního požadavku už nezaloží druhý záznam a nesmaže needitovaná pole: vstupy a výstupy procesu, termíny ověření, stav plnění a vazbu na ustanovení.
+- U koordinační schůzky se text dohody a předání rizik ukládají spolu s rozpracovanou schůzkou. Přepnutí záložky rozepsaný text nepřepíše. V závěrečných ustanoveních protokolu je opravený tvar „zákoníku práce“.
+- Kontrola kontaktů HZS čte stránku Základní kontakty a nenahrazuje název sboru názvem kraje.
+
+---
+
 # Verze 4.1.1
 
 Datum vydání:
