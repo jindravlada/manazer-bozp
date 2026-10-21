@@ -1,6 +1,8 @@
+from collections.abc import Callable
 from datetime import date
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
@@ -23,6 +25,7 @@ from core.widgets.dialog_utils import (
     wrap_in_scroll_area,
 )
 
+from core.widgets.editor_dialog_controller import confirm_unsaved_editor_close
 from core.widgets.date_edit import DateEdit
 from core.widgets.nullable_date_edit import NullableDateEdit
 from core.widgets.workplace_selector import WorkplaceSelector
@@ -72,13 +75,37 @@ ACCIDENT_DATE_CHANGE_MESSAGE = (
 )
 ACCIDENT_DATE_CHANGE_CONFIRM_LABEL = "Změnit datum úrazu"
 ACCIDENT_DATE_CHANGE_CANCEL_LABEL = "Zrušit"
+UNSAVED_CHANGES_PROMPT = (
+    "V záznamu pracovního úrazu jsou neuložené změny. Chcete je uložit?"
+)
+SAVE_CONFIRMATION_TITLE = "Pracovní úraz"
+SAVE_CONFIRMATION_TEXT = "Změny byly úspěšně uloženy."
+
+
+def _exec_message_box(box: QMessageBox) -> int:
+    return box.exec()
+
+
+def _normalize_snapshot(value):
+    """Stejná normalizace, jakou při uložení dělá ``get_data`` (ořez textu, vnořené struktury)."""
+    if isinstance(value, str):
+        return value.strip()
+    if isinstance(value, dict):
+        return {key: _normalize_snapshot(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_normalize_snapshot(item) for item in value]
+    return value
 
 
 class AccidentDialog(QDialog):
-    def __init__(self, parent=None, accident=None, focus_tab=None):
+    def __init__(self, parent=None, accident=None, focus_tab=None, *, on_persist=None):
         super().__init__(parent)
 
         self.accident = accident
+        self._on_persist: Callable[[dict], object] | None = on_persist
+        self._baseline: dict | None = None
+        self._closing = False
+        self._baseline_after_show = False
         self.setWindowTitle("Pracovní úraz")
         configure_resizable_form_dialog(self, width=860, height=680, min_width=640, min_height=480)
 
@@ -121,6 +148,68 @@ class AccidentDialog(QDialog):
         self._refresh_logic()
         configure_form_tab_navigation(self)
         self._apply_focus_tab(focus_tab)
+        self._capture_baseline()
+
+    def showEvent(self, event) -> None:  # noqa: N802
+        super().showEvent(event)
+        # Widgety (číselníky, zaměstnavatel ze nastavení) se mohou dopočítat až při zobrazení.
+        if not self._baseline_after_show:
+            self._baseline_after_show = True
+            self._capture_baseline()
+
+    def _capture_baseline(self) -> None:
+        self._baseline = _normalize_snapshot(self.get_data())
+
+    def _is_dirty(self) -> bool:
+        return _normalize_snapshot(self.get_data()) != self._baseline
+
+    def _show_save_confirmation(self) -> None:
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Information)
+        box.setWindowTitle(SAVE_CONFIRMATION_TITLE)
+        box.setText(SAVE_CONFIRMATION_TEXT)
+        box.setStandardButtons(QMessageBox.StandardButton.Ok)
+        ok_button = box.button(QMessageBox.StandardButton.Ok)
+        if ok_button is not None:
+            ok_button.setText("OK")
+        _exec_message_box(box)
+
+    def _confirm_close(self) -> bool:
+        if self._closing or not self.isVisible() or not self._is_dirty():
+            return True
+        decision = confirm_unsaved_editor_close(
+            self,
+            title=self.windowTitle(),
+            text=UNSAVED_CHANGES_PROMPT,
+        )
+        if decision == "cancel":
+            return False
+        if decision == "save":
+            self.accept()
+            return self.result() == QDialog.DialogCode.Accepted
+        return True
+
+    def closeEvent(self, event: QCloseEvent) -> None:  # noqa: N802
+        if self._closing:
+            event.accept()
+            return
+        if not self._confirm_close():
+            event.ignore()
+            return
+        if self.result() == QDialog.DialogCode.Accepted:
+            self._closing = True
+            event.accept()
+            return
+        self._closing = True
+        event.accept()
+
+    def reject(self) -> None:  # noqa: N802
+        if not self._confirm_close():
+            return
+        if self.result() == QDialog.DialogCode.Accepted:
+            return
+        self._closing = True
+        super().reject()
 
     def _apply_focus_tab(self, focus_tab: str | None) -> None:
         title = (focus_tab or "").strip()
@@ -182,7 +271,14 @@ class AccidentDialog(QDialog):
         if not self._confirm_injury_date_change():
             return
 
+        if self._on_persist is not None:
+            if not self._on_persist(self.get_data()):
+                return
+            self._show_save_confirmation()
+
         self.tab_uraz_widget.commit_injury_date_baseline()
+        self._capture_baseline()
+        self._closing = True
         super().accept()
 
     def _confirm_extreme_breath_alcohol(self) -> bool:

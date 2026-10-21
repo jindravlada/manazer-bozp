@@ -152,12 +152,14 @@ class KnihaUrazuPage(QWidget):
         dialog.exec()
 
     def new_accident(self):
-        dialog = AccidentDialog(self)
+        dialog = AccidentDialog(self, on_persist=self._persist_new_accident)
         if exec_maximized(dialog):
-            data = dialog.get_data()
-            if data["jmeno_prijmeni"] or data["popis_urazoveho_deje"]:
-                accident_service.create_accident(**data)
-                self.refresh()
+            self.refresh()
+
+    def _persist_new_accident(self, data: dict) -> bool:
+        if not (data.get("jmeno_prijmeni") or data.get("popis_urazoveho_deje")):
+            return True
+        return accident_service.create_accident(**data) is not None
 
     def edit_selected_accident(self):
         accident_id = self._selected_accident_id()
@@ -189,10 +191,16 @@ class KnihaUrazuPage(QWidget):
             self.refresh()
             return
 
-        dialog = AccidentDialog(self, accident=accident, focus_tab=focus_tab)
+        def persist(data: dict) -> bool:
+            return accident_service.update_accident(accident_id, **data) is not None
+
+        dialog = AccidentDialog(
+            self,
+            accident=accident,
+            focus_tab=focus_tab,
+            on_persist=persist,
+        )
         if exec_maximized(dialog):
-            data = dialog.get_data()
-            accident_service.update_accident(accident_id, **data)
             self.refresh()
 
     def generate_accident_report(self):

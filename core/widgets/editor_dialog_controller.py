@@ -40,15 +40,21 @@ def _standard_icon(pixmap: QStyle.StandardPixmap) -> QIcon:
     return QApplication.style().standardIcon(pixmap)
 
 
-def confirm_unsaved_editor_close(parent: QWidget | None, *, title: str) -> UnsavedCloseDecision:
+def confirm_unsaved_editor_close(
+    parent: QWidget | None,
+    *,
+    title: str,
+    text: str | None = None,
+) -> UnsavedCloseDecision:
     """Standardní dialog neuložených změn. Vrací ``save`` / ``discard`` / ``cancel``.
 
     Všechny tři akce mají ``ActionRole``, aby Enter / Accept / Escape
     neaktivovaly omylem „Uložit“ (dříve AcceptRole).
+    ``text`` ponechává společná tlačítka a mění jen znění dotazu.
     """
     message = QMessageBox(parent)
     message.setWindowTitle(title)
-    message.setText(EDITOR_UNSAVED_PROMPT)
+    message.setText(EDITOR_UNSAVED_PROMPT if text is None else text)
     message.setIcon(QMessageBox.Icon.Question)
 
     save_btn = message.addButton(
