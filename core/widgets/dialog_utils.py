@@ -202,7 +202,17 @@ def prepare_work_dialog_maximized(dialog: QDialog) -> None:
 
 def exec_maximized(dialog: QDialog) -> int:
     prepare_work_dialog_maximized(dialog)
+    # WA_ShowModal se uplatní jen při přechodu do viditelného stavu. Když už
+    # běží jiný modální dialog (úkol) a tohle okno je z prepare() viditelné,
+    # exec() ho na vrchol zásobníku nedostane: zůstane vidět, ale bez vstupu.
+    if _other_modal_dialog_is_active(dialog):
+        dialog.hide()
     return dialog.exec()
+
+
+def _other_modal_dialog_is_active(dialog: QDialog) -> bool:
+    active = QApplication.activeModalWidget()
+    return active is not None and active is not dialog
 
 
 # Zpětná kompatibilita
