@@ -82,6 +82,9 @@ with patch.object(Path, "home", return_value=_TMP):
         TestTopicQuota,
         test_definition_service,
     )
+    from tests.historical_test_employee import (
+        seed_historical_test_employee,
+    )
     from moduly.testy.sluzby.test_employee_service import test_employee_service
     from moduly.testy.sluzby.test_exam_service import (
         SNAPSHOT_IMAGE_ABSENT,
@@ -396,7 +399,7 @@ class SnapshotImageIntegrityTests(unittest.TestCase):
     def _prepared_exam(self):
         workplace = settings_service.save_workplace(name="Provoz SEC9")
         role = responsibility_role_service.create_role(name="Mistr SEC9")
-        employee = test_employee_service.create_employee(
+        employee = seed_historical_test_employee(
             personal_number="89001",
             first_name="Jan",
             last_name="Otisk",

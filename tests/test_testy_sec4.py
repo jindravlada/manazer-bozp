@@ -62,6 +62,9 @@ with patch.object(Path, "home", return_value=_TMP):
         ExamSignedProtocolError,
         exam_signed_protocol_service,
     )
+    from tests.historical_test_employee import (
+        seed_historical_test_employee,
+    )
     from moduly.testy.sluzby.test_employee_service import test_employee_service
 
 
@@ -380,7 +383,7 @@ class SignedProtocolStorageTests(unittest.TestCase):
         return path
 
     def _employee(self, number: str, first: str, last: str):
-        return test_employee_service.create_employee(
+        return seed_historical_test_employee(
             personal_number=number,
             first_name=first,
             last_name=last,

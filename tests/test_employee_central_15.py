@@ -79,6 +79,9 @@ with patch.object(Path, "home", return_value=_TMP):
         TestTopicQuota,
         test_definition_service,
     )
+    from tests.historical_test_employee import (
+        seed_historical_test_employee,
+    )
     from moduly.testy.sluzby.test_employee_service import test_employee_service
     from moduly.testy.sluzby.test_exam_service import (
         TestExamError,
@@ -352,7 +355,7 @@ class EmployeeCentral15TestCase(unittest.TestCase):
         )
 
     def test_linked_person_keeps_one_validity_row(self) -> None:
-        historical_employee = test_employee_service.create_employee(
+        historical_employee = seed_historical_test_employee(
             personal_number=f"h{self.marker}",
             first_name="Jan",
             last_name="Historický",

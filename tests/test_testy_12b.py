@@ -93,6 +93,9 @@ with patch.object(Path, "home", return_value=_TMP):
         TestTopicQuota,
         test_definition_service,
     )
+    from tests.historical_test_employee import (
+        seed_historical_test_employee,
+    )
     from moduly.testy.sluzby.test_employee_service import test_employee_service
     from moduly.testy.sluzby.test_exam_service import TestExamError, test_exam_service
     from moduly.testy.sluzby.written_question_service import (
@@ -394,7 +397,7 @@ class ExamValidityTrackingTests(unittest.TestCase):
         )
 
     def _employee(self, number, first, last):
-        return test_employee_service.create_employee(
+        return seed_historical_test_employee(
             personal_number=number,
             first_name=first,
             last_name=last,
@@ -608,7 +611,7 @@ class ExamValidityTrackingTabTests(unittest.TestCase):
         tab.table.selectionModel().select(tab.table.model().index(1, 0), flags)
 
     def _employee(self, number, first, last):
-        return test_employee_service.create_employee(
+        return seed_historical_test_employee(
             personal_number=number,
             first_name=first,
             last_name=last,

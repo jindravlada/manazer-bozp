@@ -83,6 +83,11 @@ with patch.object(Path, "home", return_value=_TMP):
         TestTopicQuota,
         test_definition_service,
     )
+    from tests.historical_test_employee import (
+        seed_historical_test_employee,
+        set_historical_test_employee_active,
+        update_historical_test_employee,
+    )
     from moduly.testy.sluzby.test_employee_service import test_employee_service
     from moduly.testy.sluzby.test_exam_service import (
         TestExamError,
@@ -157,7 +162,7 @@ def _employee(
 ):
     workplace = settings_service.save_workplace(name=f"Provoz {number}")
     role = responsibility_role_service.create_role(name=f"{role_name} {number}")
-    employee = test_employee_service.create_employee(
+    employee = seed_historical_test_employee(
         personal_number=number,
         first_name=first,
         last_name=last,
@@ -607,7 +612,7 @@ class ExamSnapshotTestCase(unittest.TestCase):
                 examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
             )
         self.assertIn("zkoušet", str(not_examiner.exception))
-        test_employee_service.deactivate(examiner.id)
+        set_historical_test_employee_active(examiner.id, active=False)
         with self.assertRaises(TestExamError):
             test_exam_service.prepare_exam(
                 employee_id=candidate.id,
@@ -618,7 +623,7 @@ class ExamSnapshotTestCase(unittest.TestCase):
                 employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
                 examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
             )
-        test_employee_service.activate(examiner.id)
+        set_historical_test_employee_active(examiner.id, active=True)
         self.assertEqual(_count(TestExam), 0)
 
         exam = test_exam_service.prepare_exam(
@@ -707,7 +712,7 @@ class ExamSnapshotTestCase(unittest.TestCase):
             ],
         )
 
-        test_employee_service.update_employee_details(
+        update_historical_test_employee(
             candidate.id,
             personal_number="71004",
             first_name="Honza",
@@ -752,7 +757,7 @@ class ExamSnapshotTestCase(unittest.TestCase):
             topic_id=oral_topic.id,
             text="Jiný postup",
         )
-        test_employee_service.update_employee_details(
+        update_historical_test_employee(
             examiner.id,
             personal_number="71005",
             first_name="Karla",
@@ -872,7 +877,7 @@ class ExamSnapshotTestCase(unittest.TestCase):
         self.page.exams_tab.text_filter.search_edit.clear()
         table.selectRow(0)
         self.assertTrue(self.page.exams_tab.detail_btn.isEnabled())
-        self.assertEqual(self.page.tabs.tabText(6), AGENDA_EXAMS)
+        self.assertEqual(self.page.tabs.tabText(5), AGENDA_EXAMS)
         self.assertEqual(self.page.exams_tab.prepare_btn.text(), "Připravit zkoušku")
 
         detail = TestExamDetailDialog(exam_id=exam_id)

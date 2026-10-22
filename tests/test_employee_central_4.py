@@ -48,6 +48,9 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.testy.modely.test_exam_validity_tracking import (
         TestExamValidityTracking,
     )
+    from tests.historical_test_employee import (
+        seed_historical_test_employee,
+    )
     from moduly.testy.sluzby.test_employee_service import test_employee_service
 
 
@@ -180,7 +183,7 @@ class EmployeeCentral4TestCase(unittest.TestCase):
             "active": True,
         }
         data.update(overrides)
-        return test_employee_service.create_employee(**data)
+        return seed_historical_test_employee(**data)
 
     def test_known_schema_matches_models_without_transfer_columns(self) -> None:
         models = {

@@ -94,6 +94,9 @@ with patch.object(Path, "home", return_value=_TMP):
         TestTopicQuota,
         test_definition_service,
     )
+    from tests.historical_test_employee import (
+        seed_historical_test_employee,
+    )
     from moduly.testy.sluzby.test_employee_service import test_employee_service
     from moduly.testy.sluzby.test_exam_service import test_exam_service
     from moduly.testy.sluzby.written_question_service import (
@@ -103,9 +106,6 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.testy.sluzby.written_question_topic_service import (
         written_question_topic_service,
     )
-    from moduly.testy.ui.test_employee_dialog import TestEmployeeDialog
-
-
 class PrefixReverse:
     def sample(self, population, k):
         return list(population)[:k]
@@ -117,7 +117,7 @@ class PrefixReverse:
 def _employee(number: str, first: str, last: str, **kwargs):
     workplace = settings_service.save_workplace(name=kwargs.get("workplace", f"Provoz {number}"))
     role = responsibility_role_service.create_role(name=kwargs.get("role_name", f"Mistr {number}"))
-    return test_employee_service.create_employee(
+    return seed_historical_test_employee(
         personal_number=number,
         first_name=first,
         last_name=last,
@@ -294,68 +294,6 @@ class GenderAndProtocolTestCase(unittest.TestCase):
             self.assertIn('fo:margin-top="0.04cm"', style)
             self.assertIn('fo:margin-bottom="0.04cm"', style)
             self.assertIn('fo:keep-together="always"', style)
-
-    def test_employee_is_saved_without_gender(self) -> None:
-        self.assertNotIn("gender", _table_columns("test_employees"))
-        created = _employee("11b-new", "Eva", "Nova", title_before="Ing.", may_examine=True)
-        self.assertFalse(hasattr(created, "gender"))
-        loaded = test_employee_service.get_employee(created.id)
-        assert loaded is not None
-        self.assertEqual(loaded.first_name, "Eva")
-        self.assertEqual(loaded.title_before, "Ing.")
-        self.assertTrue(loaded.may_examine)
-
-        updated = test_employee_service.update_employee_details(
-            created.id,
-            personal_number=loaded.personal_number,
-            first_name="Eliška",
-            last_name=loaded.last_name,
-            title_before=loaded.title_before,
-            workplace_id=loaded.workplace_id,
-            responsibility_role_ids=test_employee_service.get_role_ids(created.id),
-            active=True,
-            may_examine=False,
-        )
-        self.assertEqual(updated.first_name, "Eliška")
-        self.assertFalse(updated.may_examine)
-        self.assertFalse(hasattr(updated, "gender"))
-
-    def test_editor_saves_without_gender(self) -> None:
-        workplace = settings_service.save_workplace(name="Provoz editor")
-        role = responsibility_role_service.create_role(name="Role editor")
-        dialog = TestEmployeeDialog()
-        self.addCleanup(dialog.close)
-        self.assertFalse(hasattr(dialog, "gender"))
-        dialog.personal_number.setText("11b-ui")
-        dialog.title_before.setText("Bc.")
-        dialog.first_name.setText("Eva")
-        dialog.last_name.setText("Nova")
-        dialog.workplace.set_workplace_id(workplace.id)
-        dialog.roles.set_role_ids([role.id])
-        dialog.may_examine.setChecked(True)
-        dialog.accept()
-
-        created = test_employee_service.get_employee(dialog.saved_employee_id)
-        assert created is not None
-        self.assertEqual(created.display_name, "Bc. Eva Nova")
-        self.assertTrue(created.may_examine)
-        self.assertFalse(hasattr(created, "gender"))
-
-        edit = TestEmployeeDialog(
-            employee=created,
-            role_ids=test_employee_service.get_role_ids(created.id),
-        )
-        self.addCleanup(edit.close)
-        self.assertFalse(hasattr(edit, "gender"))
-        self.assertEqual(edit.title_before.text(), "Bc.")
-        self.assertTrue(edit.may_examine.isChecked())
-        edit.last_name.setText("Nová")
-        edit.accept()
-        saved = test_employee_service.get_employee(created.id)
-        assert saved is not None
-        self.assertEqual(saved.last_name, "Nová")
-        self.assertEqual(saved.title_before, "Bc.")
-        self.assertTrue(saved.may_examine)
 
     def test_new_exam_and_both_protocols_use_one_label(self) -> None:
         self.assertEqual(examinee_role_label(), _EXAMINEE_LABEL)

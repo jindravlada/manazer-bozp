@@ -93,6 +93,9 @@ with patch.object(Path, "home", return_value=_TMP):
         TestTopicQuota,
         test_definition_service,
     )
+    from tests.historical_test_employee import (
+        seed_historical_test_employee,
+    )
     from moduly.testy.sluzby.test_employee_service import test_employee_service
     from moduly.testy.sluzby.test_exam_service import test_exam_service
     from moduly.testy.sluzby.written_answer_presentation import answer_caption
@@ -198,7 +201,7 @@ class ExamTextRenderingTests(unittest.TestCase):
             session.commit()
         workplace = settings_service.save_workplace(name=_WORKPLACE)
         role = responsibility_role_service.create_role(name=_ROLE)
-        self.employee = test_employee_service.create_employee(
+        self.employee = seed_historical_test_employee(
             personal_number="85001",
             first_name="Jan",
             last_name=_LAST_NAME,

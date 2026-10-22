@@ -40,11 +40,10 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from core.database.session import get_session
-    from moduly.testy.constants import COLUMN_HEADERS
     from moduly.testy.modely.test_employee import TestEmployee
     from moduly.testy.modely.test_employee_role import TestEmployeeRole
     from moduly.testy.sluzby.test_employee_service import test_employee_service
-    from moduly.testy.ui.test_employee_dialog import TestEmployeeDialog
+    from tests.historical_test_employee import seed_historical_test_employee
 
 
 class TestEmployeeTitlesTestCase(unittest.TestCase):
@@ -69,7 +68,7 @@ class TestEmployeeTitlesTestCase(unittest.TestCase):
             "responsibility_role_ids": [self.role.id],
         }
         data.update(overrides)
-        return test_employee_service.create_employee(**data)
+        return seed_historical_test_employee(**data)
 
     def test_employee_without_titles_stays_plain(self) -> None:
         created = self._create()
@@ -79,47 +78,6 @@ class TestEmployeeTitlesTestCase(unittest.TestCase):
         self.assertEqual(loaded.title_after, "")
         self.assertFalse(loaded.may_examine)
         self.assertEqual(loaded.display_name, "Jan Novák")
-
-    def test_save_and_load_both_titles(self) -> None:
-        created = self._create(title_before=" Ing. ", title_after=" Ph.D. ")
-        loaded = test_employee_service.get_employee(created.id)
-        assert loaded is not None
-        self.assertEqual(loaded.title_before, "Ing.")
-        self.assertEqual(loaded.title_after, "Ph.D.")
-        self.assertEqual(loaded.first_name, "Jan")
-        self.assertEqual(loaded.last_name, "Novák")
-
-        updated = test_employee_service.update_employee_details(
-            created.id,
-            personal_number=loaded.personal_number,
-            first_name=loaded.first_name,
-            last_name=loaded.last_name,
-            title_before="Mgr.",
-            title_after="MBA",
-            workplace_id=loaded.workplace_id,
-            responsibility_role_ids=[self.role.id],
-            active=True,
-        )
-        self.assertEqual(updated.title_before, "Mgr.")
-        self.assertEqual(updated.title_after, "MBA")
-
-    def test_save_examiner_flag(self) -> None:
-        created = self._create(may_examine=True)
-        loaded = test_employee_service.get_employee(created.id)
-        assert loaded is not None
-        self.assertTrue(loaded.may_examine)
-
-        cleared = test_employee_service.update_employee_details(
-            created.id,
-            personal_number=loaded.personal_number,
-            first_name=loaded.first_name,
-            last_name=loaded.last_name,
-            workplace_id=loaded.workplace_id,
-            responsibility_role_ids=[self.role.id],
-            may_examine=False,
-            active=True,
-        )
-        self.assertFalse(cleared.may_examine)
 
     def test_display_name_composition(self) -> None:
         plain = self._create(personal_number="2d-plain")
@@ -189,49 +147,6 @@ class TestEmployeeTitlesTestCase(unittest.TestCase):
         again = test_employee_service.get_employee(created.id)
         assert again is not None
         self.assertEqual(again.personal_number, "2d-old")
-
-    def test_dialog_edits_titles_and_examiner_flag(self) -> None:
-        self.assertEqual(
-            COLUMN_HEADERS,
-            [
-                "ID",
-                "Osobní číslo",
-                "Příjmení",
-                "Jméno",
-                "Funkce / role",
-                "Provoz (pracoviště)",
-                "Stav",
-            ],
-        )
-        dialog = TestEmployeeDialog()
-        self.assertFalse(dialog.may_examine.isChecked())
-        self.assertEqual(dialog.may_examine.text(), "Zkoušející / člen(ka) komise")
-        dialog.personal_number.setText("2d-ui")
-        dialog.title_before.setText("Ing.")
-        dialog.first_name.setText("Jan")
-        dialog.last_name.setText("Novák")
-        dialog.title_after.setText("Ph.D.")
-        dialog.workplace.set_workplace_id(self.workplace.id)
-        dialog.roles.set_role_ids([self.role.id])
-        dialog.may_examine.setChecked(True)
-        dialog.accept()
-
-        saved = test_employee_service.get_employee(dialog.saved_employee_id)
-        assert saved is not None
-        self.assertEqual(saved.display_name, "Ing. Jan Novák, Ph.D.")
-        self.assertTrue(saved.may_examine)
-
-        edit = TestEmployeeDialog(
-            employee=saved,
-            role_ids=test_employee_service.get_role_ids(saved.id),
-        )
-        try:
-            self.assertEqual(edit.title_before.text(), "Ing.")
-            self.assertEqual(edit.title_after.text(), "Ph.D.")
-            self.assertTrue(edit.may_examine.isChecked())
-        finally:
-            edit.close()
-            dialog.close()
 
     def test_initialize_database_is_repeatable(self) -> None:
         before = set(_table_columns("test_employees"))

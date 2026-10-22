@@ -86,6 +86,10 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.testy.modely.test_exam_written_question import TestExamWrittenQuestion
     from moduly.testy.sluzby.exam_validity_service import exam_validity_service
     from moduly.testy.sluzby.test_definition_service import test_definition_service
+    from tests.historical_test_employee import (
+        seed_historical_test_employee,
+        set_historical_test_employee_active,
+    )
     from moduly.testy.sluzby.test_employee_service import test_employee_service
 
 
@@ -152,11 +156,11 @@ class _ExamData:
         )
         self._success(self.inactive_employee, self.active_test, date(2027, 1, 1))
         self._exam(self.inactive_employee, self.active_test, status=EXAM_STATUS_PREPARED)
-        test_employee_service.deactivate(self.inactive_employee.id)
+        set_historical_test_employee_active(self.inactive_employee.id, active=False)
         self._exam(self.cancelled_only, self.active_test, status=EXAM_STATUS_CANCELLED)
 
     def _employee(self, number, first, last):
-        return test_employee_service.create_employee(
+        return seed_historical_test_employee(
             personal_number=number,
             first_name=first,
             last_name=last,

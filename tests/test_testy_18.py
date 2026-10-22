@@ -69,6 +69,9 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.testy.modely.test_employee_role import TestEmployeeRole
     from moduly.testy.modely.test_exam import TestExam
     from moduly.testy.sluzby.exam_signed_protocol_service import ENTITY_TYPE
+    from tests.historical_test_employee import (
+        seed_historical_test_employee,
+    )
     from moduly.testy.sluzby.test_employee_service import test_employee_service
     from moduly.testy.ui.test_exam_detail_dialog import TestExamDetailDialog
     from moduly.testy.ui.test_exams_tab import TestExamsTab
@@ -417,7 +420,7 @@ class ExamListFilterTests(unittest.TestCase):
         status: str,
         result: str | None,
     ) -> TestExam:
-        employee = test_employee_service.create_employee(
+        employee = seed_historical_test_employee(
             personal_number=number,
             first_name=first,
             last_name=last,

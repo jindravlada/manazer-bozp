@@ -83,6 +83,9 @@ with patch.object(Path, "home", return_value=_TMP):
         ENTITY_TYPE,
         exam_signed_protocol_service,
     )
+    from tests.historical_test_employee import (
+        seed_historical_test_employee,
+    )
     from moduly.testy.sluzby.test_employee_service import test_employee_service
     from moduly.testy.sluzby.test_exam_service import format_exam_date, test_exam_service
     from moduly.testy.ui.test_exam_detail_dialog import TestExamDetailDialog
@@ -127,7 +130,7 @@ class SignedProtocolColumnTests(unittest.TestCase):
         self.files = Path(tempfile.mkdtemp(prefix="testy-14a-src-"))
         self.workplace = settings_service.save_workplace(name="Hala seznamu")
         self.role = responsibility_role_service.create_role(name="Mistr seznamu")
-        self.employee = test_employee_service.create_employee(
+        self.employee = seed_historical_test_employee(
             personal_number="00100",
             first_name="Jan",
             last_name="Novák",

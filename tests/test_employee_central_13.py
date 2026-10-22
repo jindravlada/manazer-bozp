@@ -54,6 +54,9 @@ with patch.object(Path, "home", return_value=_TMP):
         TestTopicQuota,
         test_definition_service,
     )
+    from tests.historical_test_employee import (
+        seed_historical_test_employee,
+    )
     from moduly.testy.sluzby.test_employee_service import test_employee_service
     from moduly.testy.sluzby.test_exam_service import (
         TestExamError,
@@ -135,7 +138,7 @@ class EmployeeCentral13TestCase(unittest.TestCase):
         raise AssertionError(text)
 
     def test_prepare_keeps_optional_personal_number_and_refuses_gaps(self) -> None:
-        historical = test_employee_service.create_employee(
+        historical = seed_historical_test_employee(
             personal_number=f"H-{self.marker}",
             first_name="Jana",
             last_name=f"Historie{self.marker}",

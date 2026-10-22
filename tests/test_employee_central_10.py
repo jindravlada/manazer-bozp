@@ -62,6 +62,9 @@ with patch.object(Path, "home", return_value=_TMP):
         TestTopicQuota,
         test_definition_service,
     )
+    from tests.historical_test_employee import (
+        seed_historical_test_employee,
+    )
     from moduly.testy.sluzby.test_employee_service import test_employee_service
     from moduly.testy.sluzby.test_exam_service import TestExamError, test_exam_service
     from moduly.testy.ui.exam_person_combo import exam_person_choice_label
@@ -166,7 +169,7 @@ class EmployeeCentral10TestCase(unittest.TestCase):
             f"Člen{self.marker}",
             may_examine=True,
         )
-        historical = test_employee_service.create_employee(
+        historical = seed_historical_test_employee(
             personal_number=f"H-{self.marker}",
             first_name="Jana",
             last_name=f"Historie{self.marker}",
@@ -176,7 +179,7 @@ class EmployeeCentral10TestCase(unittest.TestCase):
             may_examine=False,
             active=True,
         )
-        historical_examiner = test_employee_service.create_employee(
+        historical_examiner = seed_historical_test_employee(
             personal_number=f"HE-{self.marker}",
             first_name="Petr",
             last_name=f"Zkouší{self.marker}",

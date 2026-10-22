@@ -33,6 +33,9 @@ with patch.object(Path, "home", return_value=_TMP):
         responsibility_role_service,
     )
     from moduly.nastaveni.sluzby.settings_service import settings_service
+    from tests.historical_test_employee import (
+        seed_historical_test_employee,
+    )
     from moduly.testy.sluzby.test_employee_service import test_employee_service
 
 
@@ -319,7 +322,7 @@ class EmployeeCentral1TestCase(unittest.TestCase):
             item_type=WORKPLACE_ITEM_TYPE_OPERATION,
         )
         role = responsibility_role_service.get_all()[0]
-        employee = test_employee_service.create_employee(
+        employee = seed_historical_test_employee(
             personal_number=f"TE-{marker}",
             first_name="Jana",
             last_name="Malá",

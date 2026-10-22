@@ -51,6 +51,9 @@ with patch.object(Path, "home", return_value=_TMP):
         TestTopicQuota,
         test_definition_service,
     )
+    from tests.historical_test_employee import (
+        seed_historical_test_employee,
+    )
     from moduly.testy.sluzby.test_employee_service import test_employee_service
     from moduly.testy.sluzby.test_exam_service import test_exam_service
 
@@ -113,7 +116,7 @@ class EmployeeCentral11TestCase(unittest.TestCase):
         self.extra_role = responsibility_role_service.create_role(
             name=f"Zámečník {self.marker}"
         )
-        self.employee = test_employee_service.create_employee(
+        self.employee = seed_historical_test_employee(
             personal_number=f"T-{self.marker}",
             first_name="Jana",
             last_name=f"Testová{self.marker}",
@@ -308,7 +311,7 @@ class EmployeeCentral11TestCase(unittest.TestCase):
             performs_controls=True,
             position=f"Svářeč {self.marker}",
         )
-        quiet = test_employee_service.create_employee(
+        quiet = seed_historical_test_employee(
             personal_number=f"Q-{self.marker}",
             first_name="Adam",
             last_name=f"Jiný{self.marker}",
@@ -390,7 +393,7 @@ class EmployeeCentral11TestCase(unittest.TestCase):
             may_examine=False,
             performs_controls=False,
         )
-        duplicate_employee = test_employee_service.create_employee(
+        duplicate_employee = seed_historical_test_employee(
             personal_number=f"D-{self.marker}",
             first_name="Lea",
             last_name=f"Stejná{self.marker}",

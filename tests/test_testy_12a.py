@@ -87,6 +87,9 @@ with patch.object(Path, "home", return_value=_TMP):
         filter_exam_validity_rows,
     )
     from moduly.testy.sluzby.test_definition_service import test_definition_service
+    from tests.historical_test_employee import (
+        seed_historical_test_employee,
+    )
     from moduly.testy.sluzby.test_employee_service import test_employee_service
     from moduly.testy.sluzby.test_exam_service import format_exam_date
     from moduly.testy.ui.exam_validity_tab import ExamValidityTab
@@ -486,7 +489,7 @@ class ExamValidityOverviewTests(unittest.TestCase):
         return rows[0]
 
     def _employee(self, number, first, last, *, workplace=None, active=True):
-        return test_employee_service.create_employee(
+        return seed_historical_test_employee(
             personal_number=number,
             first_name=first,
             last_name=last,
@@ -713,7 +716,7 @@ class ExamValidityTabTests(unittest.TestCase):
         page.exams_tab.refresh()
         prepared = page.validity_tab.table.item(0, VALIDITY_COL_PREPARED).text()
         self.assertEqual(prepared, "2")
-        page.tabs.setCurrentWidget(page.employees_tab)
+        page.tabs.setCurrentWidget(page.topics_tab)
         self._exam(employee, test, status=EXAM_STATUS_PREPARED, exam_date=TODAY)
         page.refresh()
         page.tabs.setCurrentWidget(page.validity_tab)
@@ -749,7 +752,7 @@ class ExamValidityTabTests(unittest.TestCase):
         return numbers
 
     def _employee(self, number, first, last, *, workplace=None):
-        return test_employee_service.create_employee(
+        return seed_historical_test_employee(
             personal_number=number,
             first_name=first,
             last_name=last,

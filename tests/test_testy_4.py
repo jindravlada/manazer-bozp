@@ -314,7 +314,7 @@ class WrittenQuestionBankTestCase(unittest.TestCase):
             STATUS_INACTIVE_LABEL,
         )
 
-        self.assertEqual(self.page.tabs.tabText(2), AGENDA_QUESTIONS)
+        self.assertEqual(self.page.tabs.tabText(1), AGENDA_QUESTIONS)
         self.assertFalse(self.questions.edit_btn.isEnabled())
         self.questions.table.selectRow(0)
         self.assertTrue(self.questions.edit_btn.isEnabled())

@@ -90,6 +90,9 @@ with patch.object(Path, "home", return_value=_TMP):
         TestTopicQuota,
         test_definition_service,
     )
+    from tests.historical_test_employee import (
+        seed_historical_test_employee,
+    )
     from moduly.testy.sluzby.test_employee_service import test_employee_service
     from moduly.testy.sluzby.test_exam_service import test_exam_service
     from moduly.testy.sluzby.written_question_service import (
@@ -174,9 +177,8 @@ class EmployeeCentral16TestCase(unittest.TestCase):
         self.assertNotIn(AGENDA_EMPLOYEES, visible)
         self.assertIn(AGENDA_EXAMS, visible)
         self.assertIn(AGENDA_EXAM_VALIDITY, visible)
-        self.assertFalse(
-            page.tabs.isTabVisible(page.tabs.indexOf(page.employees_tab))
-        )
+        self.assertFalse(hasattr(page, "employees_tab"))
+        self.assertEqual(page.tabs.count(), len(visible))
         self.assertEqual(page.tabs.tabText(page.tabs.currentIndex()), visible[0])
         visible_buttons = []
         for button in page.findChildren(QPushButton):
@@ -378,7 +380,7 @@ class EmployeeCentral16TestCase(unittest.TestCase):
         return widget
 
     def _historical_employee(self, number: str, first: str, last: str):
-        return test_employee_service.create_employee(
+        return seed_historical_test_employee(
             personal_number=number,
             first_name=first,
             last_name=last,

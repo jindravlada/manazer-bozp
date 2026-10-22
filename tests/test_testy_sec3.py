@@ -49,6 +49,9 @@ with patch.object(Path, "home", return_value=_TMP):
         TestTopicQuota,
         test_definition_service,
     )
+    from tests.historical_test_employee import (
+        seed_historical_test_employee,
+    )
     from moduly.testy.sluzby.test_employee_service import test_employee_service
     from moduly.testy.sluzby.test_exam_service import test_exam_service
     from moduly.testy.sluzby.written_exam_service import (
@@ -88,7 +91,7 @@ class WrittenExamTransactionTestCase(unittest.TestCase):
     def setUpClass(cls) -> None:
         workplace = settings_service.save_workplace(name="PROVOZ_SEC3")
         role = responsibility_role_service.create_role(name="Mistr SEC3")
-        cls.employee = test_employee_service.create_employee(
+        cls.employee = seed_historical_test_employee(
             personal_number="sec3",
             first_name="Eva",
             last_name="Souběžná",

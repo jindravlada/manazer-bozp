@@ -70,6 +70,9 @@ with patch.object(Path, "home", return_value=_TMP):
         ExamSignedProtocolError,
         exam_signed_protocol_service,
     )
+    from tests.historical_test_employee import (
+        seed_historical_test_employee,
+    )
     from moduly.testy.sluzby.test_employee_service import test_employee_service
 
 
@@ -238,7 +241,7 @@ class WindowsStyleStorageTests(unittest.TestCase):
         self.canary_inode = canary.lstat().st_ino
         self.workplace = settings_service.save_workplace(name="Hala WIN")
         self.role = responsibility_role_service.create_role(name="Mistr WIN")
-        self.employee = test_employee_service.create_employee(
+        self.employee = seed_historical_test_employee(
             personal_number="00191",
             first_name="Jana",
             last_name="Malá",

@@ -41,6 +41,9 @@ with patch.object(Path, "home", return_value=_TMP):
         responsibility_role_service,
     )
     from moduly.nastaveni.sluzby.settings_service import settings_service
+    from tests.historical_test_employee import (
+        seed_historical_test_employee,
+    )
     from moduly.testy.sluzby.test_employee_service import test_employee_service
 
 
@@ -184,7 +187,7 @@ class EmployeeCentral3TestCase(unittest.TestCase):
             "active": True,
         }
         data.update(overrides)
-        return test_employee_service.create_employee(**data)
+        return seed_historical_test_employee(**data)
 
     def test_migration_creates_empty_map_and_repeat_keeps_data(self) -> None:
         source = inspect.getsource(_ensure_test_employee_central_links)

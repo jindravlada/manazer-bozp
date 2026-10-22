@@ -71,6 +71,9 @@ with patch.object(Path, "home", return_value=_TMP):
         TestTopicQuota,
         test_definition_service,
     )
+    from tests.historical_test_employee import (
+        seed_historical_test_employee,
+    )
     from moduly.testy.sluzby.test_employee_service import test_employee_service
     from moduly.testy.sluzby.test_exam_service import (
         SNAPSHOT_REASON_INVALID_PATH,
@@ -120,7 +123,7 @@ class TechnicalExamEndTests(unittest.TestCase):
         cls._app = QApplication.instance() or QApplication([])
         workplace = settings_service.save_workplace(name="Provoz SEC9b")
         role = responsibility_role_service.create_role(name="Mistr SEC9b")
-        cls.employee = test_employee_service.create_employee(
+        cls.employee = seed_historical_test_employee(
             personal_number="89002",
             first_name="Eva",
             last_name="Kontrola",

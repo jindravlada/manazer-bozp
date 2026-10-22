@@ -61,6 +61,9 @@ with patch.object(Path, "home", return_value=_TMP):
         TestTopicQuota,
         test_definition_service,
     )
+    from tests.historical_test_employee import (
+        seed_historical_test_employee,
+    )
     from moduly.testy.sluzby.test_employee_service import test_employee_service
     from moduly.testy.sluzby.test_exam_service import test_exam_service
     from moduly.testy.sluzby.written_question_service import (
@@ -128,14 +131,14 @@ class PaperTestAppearanceTestCase(unittest.TestCase):
     def test_printed_test_matches_the_layout(self) -> None:
         workplace = settings_service.save_workplace(name="Hala")
         role = responsibility_role_service.create_role(name="Svářeč 16")
-        employee = test_employee_service.create_employee(
+        employee = seed_historical_test_employee(
             personal_number="60070071",
             first_name="Jiří",
             last_name="Šebek",
             workplace_id=workplace.id,
             responsibility_role_ids=[role.id],
         )
-        examiner = test_employee_service.create_employee(
+        examiner = seed_historical_test_employee(
             personal_number="60070072",
             first_name="Adam",
             last_name="Zkušební",

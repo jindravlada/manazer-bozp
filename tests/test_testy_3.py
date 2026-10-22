@@ -32,12 +32,7 @@ with patch.object(Path, "home", return_value=_TMP):
     initialize_database()
 
     from core.database.session import get_session
-    from moduly.nastaveni.sluzby.responsibility_role_service import (
-        responsibility_role_service,
-    )
-    from moduly.nastaveni.sluzby.settings_service import settings_service
     from moduly.testy.constants import (
-        AGENDA_EMPLOYEES,
         AGENDA_EXAM_VALIDITY,
         AGENDA_EXAMS,
         AGENDA_ORAL_QUESTIONS,
@@ -45,8 +40,6 @@ with patch.object(Path, "home", return_value=_TMP):
         AGENDA_QUESTIONS,
         AGENDA_TESTS,
         AGENDA_WRITTEN_TOPICS,
-        COL_FIRST_NAME,
-        COL_PERSONAL_NUMBER,
         MODULE_NAME,
         PAGE_SUBTITLE,
         STATUS_ACTIVE_LABEL,
@@ -59,7 +52,6 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.testy.modely.test_employee import TestEmployee
     from moduly.testy.modely.test_employee_role import TestEmployeeRole
     from moduly.testy.modely.written_question_topic import WrittenQuestionTopic
-    from moduly.testy.sluzby.test_employee_service import test_employee_service
     from moduly.testy.sluzby.written_question_topic_service import (
         WrittenQuestionTopicError,
         written_question_topic_service,
@@ -251,43 +243,34 @@ class WrittenQuestionTopicTestCase(unittest.TestCase):
             names = {item.name for item in other}
             self.assertIn("OOPP upraveno", names)
 
-    def test_switch_agendas_keeps_employees(self) -> None:
+    def test_switch_agendas_keeps_topics(self) -> None:
         labels = {label.objectName(): label.text() for label in self.page.findChildren(QLabel)}
         self.assertEqual(labels.get("PageTitle"), MODULE_NAME)
         self.assertEqual(labels.get("InfoText"), PAGE_SUBTITLE)
-        self.assertEqual(self.page.tabs.count(), 8)
-        self.assertEqual(self.page.tabs.tabText(0), AGENDA_EMPLOYEES)
-        self.assertEqual(self.page.tabs.tabText(1), AGENDA_WRITTEN_TOPICS)
-        self.assertEqual(self.page.tabs.tabText(2), AGENDA_QUESTIONS)
-        self.assertEqual(self.page.tabs.tabText(3), AGENDA_ORAL_TOPICS)
-        self.assertEqual(self.page.tabs.tabText(4), AGENDA_ORAL_QUESTIONS)
-        self.assertEqual(self.page.tabs.tabText(5), AGENDA_TESTS)
-        self.assertEqual(self.page.tabs.tabText(6), AGENDA_EXAMS)
-        self.assertEqual(self.page.tabs.tabText(7), AGENDA_EXAM_VALIDITY)
-
-        workplace = settings_service.save_workplace(name="Provoz 3")
-        role = responsibility_role_service.create_role(name="Mistr 3")
-        test_employee_service.create_employee(
-            personal_number="00300",
-            first_name="Eva",
-            last_name="Malá",
-            workplace_id=workplace.id,
-            responsibility_role_ids=[role.id],
+        self.assertEqual(
+            [self.page.tabs.tabText(index) for index in range(self.page.tabs.count())],
+            [
+                AGENDA_WRITTEN_TOPICS,
+                AGENDA_QUESTIONS,
+                AGENDA_ORAL_TOPICS,
+                AGENDA_ORAL_QUESTIONS,
+                AGENDA_TESTS,
+                AGENDA_EXAMS,
+                AGENDA_EXAM_VALIDITY,
+            ],
         )
-        self.page.refresh()
-        self.assertEqual(self.page.table.item(0, COL_PERSONAL_NUMBER).text(), "00300")
 
         self.page.tabs.setCurrentWidget(self.topics)
         written_question_topic_service.create_topic(name="BOZP")
         self.topics.refresh()
         self.assertEqual(self.topics.table.rowCount(), 1)
 
-        self.page.tabs.setCurrentWidget(self.page.employees_tab)
-        self.assertEqual(self.page.tabs.tabText(self.page.tabs.currentIndex()), AGENDA_EMPLOYEES)
-        self.assertEqual(self.page.table.rowCount(), 1)
-        self.assertEqual(self.page.table.item(0, COL_PERSONAL_NUMBER).text(), "00300")
-        self.assertEqual(self.page.table.item(0, COL_FIRST_NAME).text(), "Eva")
-        self.assertTrue(self.page.new_btn.isEnabled())
+        self.page.tabs.setCurrentWidget(self.page.exams_tab)
+        self.page.tabs.setCurrentWidget(self.topics)
+        self.assertEqual(self.page.tabs.tabText(self.page.tabs.currentIndex()), AGENDA_WRITTEN_TOPICS)
+        self.assertEqual(self.topics.table.rowCount(), 1)
+        self.assertEqual(self.topics.table.item(0, TOPIC_COL_NAME).text(), "BOZP")
+        self.assertTrue(self.topics.new_btn.isEnabled())
 
 
 if __name__ == "__main__":

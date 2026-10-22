@@ -73,6 +73,10 @@ with patch.object(Path, "home", return_value=_TMP):
         TestTopicQuota,
         test_definition_service,
     )
+    from tests.historical_test_employee import (
+        seed_historical_test_employee,
+        set_historical_test_employee_active,
+    )
     from moduly.testy.sluzby.test_employee_service import test_employee_service
     from moduly.testy.sluzby.test_exam_service import (
         EXAMINEE_CANNOT_EXAMINE,
@@ -103,7 +107,7 @@ def _count(model) -> int:
 def _employee(number: str, first: str, last: str, *, may_examine: bool = False):
     workplace = settings_service.save_workplace(name=f"Provoz {number}")
     role = responsibility_role_service.create_role(name=f"Role {number}")
-    return test_employee_service.create_employee(
+    return seed_historical_test_employee(
         personal_number=number,
         first_name=first,
         last_name=last,
@@ -194,7 +198,7 @@ class ExamineeExcludedFromExaminersTestCase(unittest.TestCase):
         self.beta = _employee("83003", "Adam", "Komise", may_examine=True)
         self.gama = _employee("83004", "Iva", "Bezpráva", may_examine=False)
         self.delta = _employee("83005", "Petr", "Neaktivní", may_examine=True)
-        test_employee_service.deactivate(self.delta.id)
+        set_historical_test_employee_active(self.delta.id, active=False)
         self.w_examinee = _worker("C83001", "Jan", "Testovaný", may_examine=True)
         self.w_alfa = _worker("C83002", "Klára", "Zkoušející", may_examine=True)
         self.w_beta = _worker("C83003", "Adam", "Komise", may_examine=True)

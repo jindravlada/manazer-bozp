@@ -65,6 +65,9 @@ with patch.object(Path, "home", return_value=_TMP):
         TestTopicQuota,
         test_definition_service,
     )
+    from tests.historical_test_employee import (
+        seed_historical_test_employee,
+    )
     from moduly.testy.sluzby.test_employee_service import test_employee_service
     from moduly.testy.sluzby.test_exam_service import test_exam_service
     from moduly.testy.ui.test_exam_detail_dialog import TestExamDetailDialog
@@ -171,7 +174,7 @@ class EmployeeCentral6TestCase(unittest.TestCase):
             item_type=WORKPLACE_ITEM_TYPE_OPERATION,
         )
         self.role = responsibility_role_service.create_role(name=f"Mistr {self.marker}")
-        self.employee = test_employee_service.create_employee(
+        self.employee = seed_historical_test_employee(
             personal_number=f"HIST-{self.marker}",
             first_name="Jana",
             last_name=f"Malá{self.marker}",
@@ -182,7 +185,7 @@ class EmployeeCentral6TestCase(unittest.TestCase):
             may_examine=False,
             active=True,
         )
-        self.examiner = test_employee_service.create_employee(
+        self.examiner = seed_historical_test_employee(
             personal_number=f"EX-{self.marker}",
             first_name="Petr",
             last_name=f"Zkouší{self.marker}",
