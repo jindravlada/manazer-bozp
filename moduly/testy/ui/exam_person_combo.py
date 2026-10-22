@@ -6,7 +6,21 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QStandardItemModel
 from PySide6.QtWidgets import QCompleter
 
+from core.utils.czech_sort import czech_sorted, worker_sort_key
 from core.widgets.search_combo_box import SearchComboBox
+
+
+def exam_person_choice_label(person) -> str:
+    """Příjmení | Jméno | Tituly | Osobní číslo. Prázdné části se vynechají."""
+    last_name = str(getattr(person, "last_name", "") or "").strip()
+    first_name = str(getattr(person, "first_name", "") or "").strip()
+    before = str(getattr(person, "title_before", "") or "").strip().strip(",")
+    after = str(getattr(person, "title_after", "") or "").strip()
+    if after.startswith(","):
+        after = after.lstrip(",").strip()
+    titles = ", ".join(part for part in (before, after) if part)
+    number = str(getattr(person, "personal_number", "") or "").strip()
+    return " | ".join(part for part in (last_name, first_name, titles, number) if part)
 
 
 class ExamPersonCombo(SearchComboBox):
@@ -22,9 +36,8 @@ class ExamPersonCombo(SearchComboBox):
         labels: list[str] = []
         selectable: list[str] = []
         seen: set[str] = set()
-        for person in people:
-            number = str(person.personal_number or "").strip()
-            label = f"{number} – {person.display_name}" if number else person.display_name
+        for person in czech_sorted(list(people), key=worker_sort_key):
+            label = exam_person_choice_label(person) or person.display_name
             reason = str(reasons.get(int(person.id)) or "").strip()
             if reason:
                 label = f"{label} ({reason})"

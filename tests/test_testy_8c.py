@@ -78,6 +78,7 @@ with patch.object(Path, "home", return_value=_TMP):
         TestExamError,
         test_exam_service,
     )
+    from moduly.testy.ui.exam_person_combo import exam_person_choice_label
     from moduly.testy.ui.test_exam_prepare_dialog import TestExamPrepareDialog
 
 
@@ -128,7 +129,7 @@ def _worker(number: str, first: str, last: str, *, may_examine: bool = False, ac
 
 
 def _label(employee) -> str:
-    return f"{employee.personal_number} – {employee.display_name}"
+    return exam_person_choice_label(employee)
 
 
 def _ids(combo) -> set[int]:

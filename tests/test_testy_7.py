@@ -98,6 +98,7 @@ with patch.object(Path, "home", return_value=_TMP):
         written_question_topic_service,
     )
     from moduly.testy.ui.test_exam_detail_dialog import TestExamDetailDialog
+    from moduly.testy.ui.exam_person_combo import exam_person_choice_label
     from moduly.testy.ui.test_exam_prepare_dialog import TestExamPrepareDialog
     from moduly.testy.ui.testy_page import TestyPage
 
@@ -803,7 +804,7 @@ class ExamSnapshotTestCase(unittest.TestCase):
             self.assertGreater(completer.completionCount(), 0)
             completer.setCompletionPrefix("novák")
             self.assertGreater(completer.completionCount(), 0)
-            label = f"{employee.personal_number} – {employee.display_name}"
+            label = exam_person_choice_label(employee)
             dialog.employee.setCurrentText(label)
             self.assertEqual(dialog.employee.person_id(), employee.id)
             dialog.exam_date.setDate(QDate(2026, 12, 15))

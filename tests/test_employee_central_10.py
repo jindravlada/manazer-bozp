@@ -64,6 +64,7 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.testy.sluzby.test_employee_service import test_employee_service
     from moduly.testy.sluzby.test_exam_service import TestExamError, test_exam_service
+    from moduly.testy.ui.exam_person_combo import exam_person_choice_label
     from moduly.testy.ui.test_exam_prepare_dialog import TestExamPrepareDialog
 
 
@@ -126,7 +127,7 @@ class EmployeeCentral10TestCase(unittest.TestCase):
         return settings_service.save_worker(**data)
 
     def _label(self, person) -> str:
-        return f"{person.personal_number} – {person.display_name}"
+        return exam_person_choice_label(person)
 
     def _ids(self, combo) -> set[int]:
         return set(combo._ids.values())
