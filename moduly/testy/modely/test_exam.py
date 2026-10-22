@@ -38,12 +38,9 @@ class TestExam(Base):
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    employee_id: Mapped[int] = mapped_column(
-        Integer,
-        ForeignKey("test_employees.id"),
-        nullable=False,
-    )
-    # Historické zkoušky mají test_employee. Centrální zdroj se zatím nezapisuje.
+    # Číslo patří do evidence podle employee_source. Cizí klíč na jednu
+    # tabulku by druhé evidenci přiřadil cizí řádek.
+    employee_id: Mapped[int] = mapped_column(Integer, nullable=False)
     employee_source: Mapped[str] = mapped_column(
         String(20),
         nullable=False,

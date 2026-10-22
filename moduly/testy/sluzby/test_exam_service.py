@@ -28,6 +28,8 @@ from moduly.testy.constants import (
     EXAM_SNAPSHOT_ENTITY,
     EXAM_STATUS_COMPLETED,
     EXAM_STATUS_PREPARED,
+    EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+    EMPLOYEE_SOURCE_THP_WORKER,
     EXAMINER_MODE_COMMISSION,
     EXAMINER_MODE_NONE,
     EXAMINER_MODE_SINGLE,
@@ -43,6 +45,10 @@ from moduly.testy.modely.test_exam_written_answer import TestExamWrittenAnswer
 from moduly.testy.modely.test_exam_written_choice import TestExamWrittenChoice
 from moduly.testy.modely.test_exam_written_question import TestExamWrittenQuestion
 from moduly.testy.repository.test_exam_repository import TestExamRepository
+from moduly.testy.repository.test_exam_validity_tracking_repository import (
+    load_employee_link_map,
+    tracking_identities,
+)
 from moduly.testy.sluzby.oral_question_service import oral_question_service
 from moduly.testy.sluzby.oral_question_topic_service import oral_question_topic_service
 from moduly.testy.sluzby.test_definition_service import (
@@ -265,6 +271,22 @@ EXAMINEE_CANNOT_EXAMINE = (
 )
 
 
+def _known_employee_source(employee_source: str) -> str:
+    if employee_source not in (
+        EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+        EMPLOYEE_SOURCE_THP_WORKER,
+    ):
+        raise TestExamError("Neznámý zdroj zaměstnance.")
+    return employee_source
+
+
+def _same_exam_person(link_map, source_a: str, id_a: int, source_b: str, id_b: int) -> bool:
+    """Stejná osoba podle zdroje a id, nebo podle potvrzeného propojení."""
+    left = set(tracking_identities(link_map, source_a, id_a))
+    right = set(tracking_identities(link_map, source_b, id_b))
+    return bool(left & right)
+
+
 def _batch_person_label(employee) -> str:
     name = str(getattr(employee, "display_name", "") or "").strip()
     if not name:
@@ -358,6 +380,8 @@ class TestExamService:
         examiner_id: int | None = None,
         chair_id: int | None = None,
         member_ids: list[int] | None = None,
+        employee_source: str = EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+        examiner_source: str = EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         rng: random.Random | None = None,
     ) -> TestExam:
         """Vytvoří celou zkoušku v jednom zápisu, nebo neuloží nic.
@@ -365,7 +389,9 @@ class TestExamService:
         ``rng`` je jen pro testy. Bez něj se použije systémový generátor.
         """
         generator = rng if rng is not None else random.SystemRandom()
-        employee = self._require_active_employee(employee_id)
+        examinee_source = _known_employee_source(employee_source)
+        commission_source = _known_employee_source(examiner_source)
+        employee = self._require_exam_employee(employee_id, examinee_source)
         test = self._require_active_test(test_id)
         exam_day = self._as_date(exam_date, "Zvolte datum zkoušky.")
         valid_day = (
@@ -379,6 +405,8 @@ class TestExamService:
         people = self._validate_people(
             test.examiner_mode,
             employee_id=int(employee.id),
+            employee_source=examinee_source,
+            examiner_source=commission_source,
             examiner_id=examiner_id,
             chair_id=chair_id,
             member_ids=list(member_ids or []),
@@ -411,6 +439,7 @@ class TestExamService:
                 oral_plan=oral_plan,
                 duration=duration,
                 created_files=created_files,
+                employee_source=examinee_source,
             )
             session.commit()
             committed = True
@@ -553,9 +582,11 @@ class TestExamService:
         oral_plan: list[dict],
         duration: int,
         created_files: list[Path],
+        employee_source: str = EMPLOYEE_SOURCE_TEST_EMPLOYEE,
     ) -> TestExam:
         exam = TestExam(
             employee_id=employee.id,
+            employee_source=employee_source,
             test_definition_id=test.id,
             exam_date=exam_day,
             valid_until=valid_day,
@@ -568,7 +599,7 @@ class TestExamService:
             employee_title_after=employee.title_after or "",
             employee_display_name=employee.display_name,
             employee_workplace_name=self._workplace_name(employee.workplace_id),
-            employee_roles_text=self._roles_text(employee.id),
+            employee_roles_text=self._roles_text(employee.id, employee_source),
             test_name=test.name,
             uses_written=bool(test.uses_written),
             uses_oral=bool(test.uses_oral),
@@ -584,13 +615,19 @@ class TestExamService:
             resume_validity_tracking,
         )
 
-        resume_validity_tracking(session, int(employee.id), int(test.id))
+        resume_validity_tracking(
+            session,
+            int(employee.id),
+            int(test.id),
+            employee_source=employee_source,
+        )
 
         for position, person in enumerate(people, start=1):
             session.add(
                 TestExamExaminer(
                     exam_id=exam.id,
                     employee_id=person["employee"].id,
+                    employee_source=person["source"],
                     display_name=person["employee"].display_name,
                     role=person["role"],
                     position=position,
@@ -965,7 +1002,10 @@ class TestExamService:
         examiner_id: int | None,
         chair_id: int | None,
         member_ids: list[int],
+        employee_source: str = EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+        examiner_source: str = EMPLOYEE_SOURCE_TEST_EMPLOYEE,
     ) -> list[dict]:
+        link_map = self._employee_link_map()
         if mode == EXAMINER_MODE_NONE:
             if examiner_id or chair_id or member_ids:
                 raise TestExamError("Tento test nevyžaduje zkoušejícího.")
@@ -977,8 +1017,17 @@ class TestExamService:
                 examiner_id,
                 employee_id,
                 "Zkoušejícího",
+                employee_source=employee_source,
+                examiner_source=examiner_source,
+                link_map=link_map,
             )
-            return [{"employee": examiner, "role": EXAM_ROLE_EXAMINER}]
+            return [
+                {
+                    "employee": examiner,
+                    "role": EXAM_ROLE_EXAMINER,
+                    "source": examiner_source,
+                }
+            ]
         if mode == EXAMINER_MODE_COMMISSION:
             if examiner_id:
                 raise TestExamError(
@@ -988,16 +1037,28 @@ class TestExamService:
                 chair_id,
                 employee_id,
                 "Předsedu/předsedkyni komise",
+                employee_source=employee_source,
+                examiner_source=examiner_source,
+                link_map=link_map,
             )
             if not member_ids:
                 raise TestExamError("Přidejte alespoň člena/členku komise.")
-            people = [{"employee": chair, "role": EXAM_ROLE_CHAIR}]
+            people = [
+                {
+                    "employee": chair,
+                    "role": EXAM_ROLE_CHAIR,
+                    "source": examiner_source,
+                }
+            ]
             seen = {int(chair.id)}
             for member_id in member_ids:
                 member = self._require_other_examiner(
                     member_id,
                     employee_id,
                     "Člena/členku komise",
+                    employee_source=employee_source,
+                    examiner_source=examiner_source,
+                    link_map=link_map,
                 )
                 if int(member.id) in seen:
                     if int(member.id) == int(chair.id):
@@ -1006,7 +1067,13 @@ class TestExamService:
                         )
                     raise TestExamError("Osoba je v komisi vícekrát.")
                 seen.add(int(member.id))
-                people.append({"employee": member, "role": EXAM_ROLE_MEMBER})
+                people.append(
+                    {
+                        "employee": member,
+                        "role": EXAM_ROLE_MEMBER,
+                        "source": examiner_source,
+                    }
+                )
             return people
         raise TestExamError("Zvolte režim zkoušejících.")
 
@@ -1015,18 +1082,69 @@ class TestExamService:
         selected_id: int | None,
         employee_id: int,
         label: str,
+        *,
+        employee_source: str,
+        examiner_source: str,
+        link_map,
     ):
-        if selected_id is not None and int(selected_id) == int(employee_id):
+        if selected_id is not None and _same_exam_person(
+            link_map,
+            employee_source,
+            employee_id,
+            examiner_source,
+            int(selected_id),
+        ):
             raise TestExamError(EXAMINEE_CANNOT_EXAMINE)
-        return self._require_eligible(selected_id, label)
+        return self._require_eligible(selected_id, label, examiner_source)
 
-    def _require_eligible(self, employee_id: int | None, label: str):
-        employee = test_employee_service.get_employee(employee_id)
-        if employee is None or not employee.active or not employee.may_examine:
+    def _require_eligible(self, employee_id: int | None, label: str, employee_source: str):
+        if employee_source == EMPLOYEE_SOURCE_THP_WORKER:
+            person = (
+                settings_service.get_worker_by_id(int(employee_id))
+                if employee_id
+                else None
+            )
+        else:
+            person = test_employee_service.get_employee(employee_id)
+        if person is None or not person.active or not person.may_examine:
             raise TestExamError(
                 f"{label} lze vybrat jen z aktivních zaměstnanců, kteří mohou zkoušet."
             )
-        return employee
+        return person
+
+    def _require_exam_employee(self, employee_id: int | None, employee_source: str):
+        if employee_source == EMPLOYEE_SOURCE_THP_WORKER:
+            return self._require_central_employee(employee_id)
+        return self._require_active_employee(employee_id)
+
+    def _require_central_employee(self, employee_id: int | None):
+        if not employee_id:
+            raise TestExamError("Zvolte zaměstnance.")
+        worker = settings_service.get_worker_by_id(int(employee_id))
+        if worker is None:
+            raise TestExamError("Zaměstnanec nebyl nalezen.")
+        if not worker.active:
+            raise TestExamError("Zkoušku lze připravit jen pro aktivního zaměstnance.")
+        if not str(worker.personal_number or "").strip():
+            raise TestExamError("Zaměstnanec nemá vyplněné osobní číslo.")
+        if not worker.workplace_id:
+            raise TestExamError("Zaměstnanec nemá přiřazený provoz.")
+        if settings_service.get_workplace_by_id(worker.workplace_id) is None:
+            raise TestExamError("Vybraný provoz neexistuje.")
+        role_ids = settings_service.list_worker_role_ids(worker.id)
+        if not role_ids:
+            raise TestExamError("Zaměstnanec nemá žádnou funkci / roli.")
+        for role_id in role_ids:
+            if responsibility_role_service.get_by_id(role_id) is None:
+                raise TestExamError("Vybraná funkce / role neexistuje.")
+        return worker
+
+    def _employee_link_map(self):
+        session = get_session()
+        try:
+            return load_employee_link_map(session)
+        finally:
+            session.close()
 
     def _require_active_employee(self, employee_id: int | None):
         if not employee_id:
@@ -1065,9 +1183,17 @@ class TestExamService:
         workplace = settings_service.get_workplace_by_id(workplace_id)
         return workplace.name if workplace is not None else ""
 
-    def _roles_text(self, employee_id: int) -> str:
+    def _roles_text(
+        self,
+        employee_id: int,
+        employee_source: str = EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+    ) -> str:
+        if employee_source == EMPLOYEE_SOURCE_THP_WORKER:
+            role_ids = settings_service.list_worker_role_ids(employee_id)
+        else:
+            role_ids = test_employee_service.get_role_ids(employee_id)
         names = []
-        for role_id in test_employee_service.get_role_ids(employee_id):
+        for role_id in role_ids:
             role = responsibility_role_service.get_by_id(role_id)
             if role is not None and role.name:
                 names.append(role.name)

@@ -4021,6 +4021,7 @@ def _ensure_test_exam_tables() -> None:
     else:
         _add_employee_source_column("test_exam_validity_tracking")
     _ensure_test_exam_validity_identity()
+    _release_exam_employee_foreign_keys()
 
 
 def _add_employee_source_column(table_name: str) -> None:
@@ -4040,6 +4041,107 @@ def _add_employee_source_column(table_name: str) -> None:
         "employee_source VARCHAR(20) NOT NULL DEFAULT 'test_employee' "
         "CHECK (employee_source IN ('test_employee', 'thp_worker'))",
     )
+
+
+_EXAM_EMPLOYEE_INDEXES = {
+    "test_exams": (
+        "CREATE INDEX IF NOT EXISTS ix_test_exams_employee_id "
+        "ON test_exams (employee_id)",
+        "CREATE INDEX IF NOT EXISTS ix_test_exams_test_definition_id "
+        "ON test_exams (test_definition_id)",
+    ),
+    "test_exam_examiners": (
+        "CREATE INDEX IF NOT EXISTS ix_test_exam_examiners_exam_id "
+        "ON test_exam_examiners (exam_id)",
+    ),
+}
+
+
+def _release_exam_employee_foreign_keys() -> None:
+    """EMPLOYEE-CENTRAL-9: employee_id už nepatří jen do test_employees.
+
+    Historické hodnoty se kopírují beze změny. Ostatní vazby a indexy zůstávají.
+    """
+    for table_name in ("test_exams", "test_exam_examiners"):
+        _release_employee_foreign_key(table_name)
+
+
+def _release_employee_foreign_key(table_name: str) -> None:
+    import re
+
+    with _db_engine().connect() as connection:
+        if not _employee_fk_targets_test_employees(connection, table_name):
+            return
+        create_sql = connection.execute(
+            text(
+                "SELECT sql FROM sqlite_master "
+                "WHERE type = 'table' AND name = :table_name"
+            ),
+            {"table_name": table_name},
+        ).scalar()
+        index_sqls = [
+            str(row[0])
+            for row in connection.execute(
+                text(
+                    "SELECT sql FROM sqlite_master "
+                    "WHERE type = 'index' AND tbl_name = :table_name "
+                    "AND sql IS NOT NULL"
+                ),
+                {"table_name": table_name},
+            )
+        ]
+    if not create_sql:
+        return
+    rebuilt = _without_test_employee_fk(str(create_sql), re)
+    if rebuilt == str(create_sql):
+        return
+    kept = f"{table_name}__kept"
+    with _db_engine().begin() as connection:
+        if not _employee_fk_targets_test_employees(connection, table_name):
+            return
+        connection.execute(text(f'ALTER TABLE "{table_name}" RENAME TO "{kept}"'))
+        connection.execute(text(rebuilt))
+        connection.execute(text(f'INSERT INTO "{table_name}" SELECT * FROM "{kept}"'))
+        connection.execute(text(f'DROP TABLE "{kept}"'))
+        for index_sql in index_sqls:
+            connection.execute(text(index_sql))
+        for index_sql in _EXAM_EMPLOYEE_INDEXES.get(table_name, ()):
+            connection.execute(text(index_sql))
+
+
+def _employee_fk_targets_test_employees(connection, table_name: str) -> bool:
+    exists = connection.execute(
+        text(
+            "SELECT 1 FROM sqlite_master "
+            "WHERE type = 'table' AND name = :table_name"
+        ),
+        {"table_name": table_name},
+    ).first()
+    if exists is None:
+        return False
+    foreign_keys = connection.execute(
+        text(f'PRAGMA foreign_key_list("{table_name}")')
+    ).fetchall()
+    return any(
+        str(row[3]) == "employee_id" and str(row[2]) == "test_employees"
+        for row in foreign_keys
+    )
+
+
+def _without_test_employee_fk(create_sql: str, re_module) -> str:
+    updated = re_module.sub(
+        r",?\s*FOREIGN KEY\s*\(\s*employee_id\s*\)\s*REFERENCES\s+test_employees\s*\(\s*id\s*\)",
+        "",
+        create_sql,
+        flags=re_module.IGNORECASE,
+    )
+    updated = re_module.sub(
+        r"\s+REFERENCES\s+test_employees\s*\(\s*id\s*\)",
+        "",
+        updated,
+        flags=re_module.IGNORECASE,
+    )
+    return re_module.sub(r",(\s*)\)", r"\1)", updated)
 
 
 _VALIDITY_IDENTITY_COLUMNS = (

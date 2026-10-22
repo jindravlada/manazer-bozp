@@ -28,11 +28,7 @@ class TestExamExaminer(Base):
         ForeignKey("test_exams.id"),
         nullable=False,
     )
-    employee_id: Mapped[int] = mapped_column(
-        Integer,
-        ForeignKey("test_employees.id"),
-        nullable=False,
-    )
+    employee_id: Mapped[int] = mapped_column(Integer, nullable=False)
     employee_source: Mapped[str] = mapped_column(
         String(20),
         nullable=False,
