@@ -18,20 +18,38 @@ rmdir /s /q build 2>nul
 rmdir /s /q dist 2>nul
 rmdir /s /q installer 2>nul
 del ManazerBOZP.spec 2>nul
+mkdir build
+
+python -m core.packaging.windows_qt_bundle --argfile build\qt-binaries.args
+if errorlevel 1 (
+    echo.
+    echo CHYBI KNIHOVNY QT PRO CISTY WINDOWS.
+    pause
+    exit /b 1
+)
 
 pyinstaller --clean --onedir --windowed ^
   --icon core\resources\manager_bozp.ico ^
   --version-file version_info.txt ^
   --name ManazerBOZP ^
+  --runtime-hook packaging\pyi_rth_windows_qt_dlls.py ^
   --add-data "moduly;moduly" ^
   --add-data "core;core" ^
   --add-data "ciselniky;ciselniky" ^
-  --add-data "zdroje;zdroje" ^
+  --add-data "zdroje;zdroje" @build\qt-binaries.args ^
   main.py
 
 if errorlevel 1 (
     echo.
     echo BUILD EXE SELHAL.
+    pause
+    exit /b 1
+)
+
+python -m core.packaging.windows_qt_bundle --check dist\ManazerBOZP
+if errorlevel 1 (
+    echo.
+    echo BALICEK NEOBSAHUJE KNIHOVNY QT.
     pause
     exit /b 1
 )
