@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import re
 import subprocess
 import sys
@@ -132,9 +133,16 @@ class SecHardeningBuild1TestCase(unittest.TestCase):
                 self.assertIn(f'--add-data "{folder}:{folder}"', content)
 
     def test_g_windows_add_data_includes_the_same_app_data(self) -> None:
-        content = (PROJECT_ROOT / "build_windows.bat").read_text(encoding="utf-8")
+        from core.packaging.windows_qt_bundle import pyinstaller_arguments
+
+        command = pyinstaller_arguments([])
+        pairs = [
+            command[index + 1]
+            for index, item in enumerate(command)
+            if item == "--add-data"
+        ]
         for folder in _APP_DATAS:
-            self.assertIn(f'--add-data "{folder};{folder}"', content)
+            self.assertIn(f"{folder}{os.pathsep}{folder}", pairs)
 
     def test_g2_windows_build_does_not_depend_on_a_user_profile(self) -> None:
         icon = "core\\resources\\manager_bozp.ico"
@@ -150,11 +158,16 @@ class SecHardeningBuild1TestCase(unittest.TestCase):
         self.assertIn("%ProgramFiles(x86)%\\Inno Setup 6\\ISCC.exe", bat)
         self.assertIn("%LOCALAPPDATA%\\Programs\\Inno Setup 6\\ISCC.exe", bat)
         self.assertIn("Inno Setup 6 nebyl nalezen", bat)
-        self.assertIn(f"--icon {icon}", bat)
+        from core.packaging.windows_qt_bundle import pyinstaller_arguments
+
+        command = pyinstaller_arguments([])
+        self.assertEqual(command[command.index("--icon") + 1], icon)
         self.assertIn(f"SetupIconFile={icon}", installer)
         self.assertIn("SetupIconFile=core\\\\resources\\\\manager_bozp.ico", generator)
         self.assertTrue((PROJECT_ROOT / "core" / "resources" / "manager_bozp.ico").is_file())
-        self.assertIn('APP_VERSION = "4.0.10"', version)
+        from core.version import APP_VERSION
+
+        self.assertIn(f'APP_VERSION = "{APP_VERSION}"', version)
 
     def test_h_existing_packaging_assertions_still_hold(self) -> None:
         release = (PROJECT_ROOT / "build_release.sh").read_text(encoding="utf-8")

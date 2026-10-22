@@ -54,31 +54,12 @@ if errorlevel 1 (
     exit /b 1
 )
 
-if exist build rmdir /s /q build
-mkdir build
-"%VENV_PY%" -m core.packaging.windows_qt_bundle --argfile build\qt-binaries.args
-if errorlevel 1 (
-    echo.
-    echo CHYBI KNIHOVNY QT PRO CISTY WINDOWS. Instalator nebyl vytvoren.
-    pause
-    exit /b 1
-)
-
 rmdir /s /q dist 2>nul
 rmdir /s /q installer 2>nul
+if exist build rmdir /s /q build
 del ManazerBOZP.spec 2>nul
 
-"%VENV_PY%" -m PyInstaller --clean --onedir --windowed ^
-  --icon core\resources\manager_bozp.ico ^
-  --version-file version_info.txt ^
-  --name ManazerBOZP ^
-  --runtime-hook packaging\pyi_rth_windows_qt_dlls.py ^
-  --add-data "moduly;moduly" ^
-  --add-data "core;core" ^
-  --add-data "ciselniky;ciselniky" ^
-  --add-data "zdroje;zdroje" @build\qt-binaries.args ^
-  main.py
-
+"%VENV_PY%" -m core.packaging.windows_qt_bundle --build
 if errorlevel 1 (
     echo.
     echo BUILD EXE SELHAL. Instalator nebyl vytvoren.

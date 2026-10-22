@@ -11,6 +11,7 @@ když v balíčku chybí ``vcruntime140_1.dll`` a ``msvcp140.dll``.
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -122,13 +123,36 @@ def bundle_entries(pyside_dir: Path, shiboken_dir: Path) -> list[tuple[Path, str
     return entries
 
 
-def write_argfile(path: Path, entries: list[tuple[Path, str]]) -> None:
-    lines: list[str] = []
+def pyinstaller_arguments(entries: list[tuple[Path, str]]) -> list[str]:
+    """Argumenty pro ``PyInstaller.__main__.run``.
+
+    Verze 6.22.3 nečte ``@soubor``. Takový token bere jako skript a sestavení
+    skončí dřív, než se knihovny Qt předají.
+    """
+    separator = os.pathsep
+    arguments = [
+        "--clean",
+        "--onedir",
+        "--windowed",
+        "--icon", r"core\resources\manager_bozp.ico",
+        "--version-file", "version_info.txt",
+        "--name", "ManazerBOZP",
+        "--runtime-hook", r"packaging\pyi_rth_windows_qt_dlls.py",
+        "--add-data", f"moduly{separator}moduly",
+        "--add-data", f"core{separator}core",
+        "--add-data", f"ciselniky{separator}ciselniky",
+        "--add-data", f"zdroje{separator}zdroje",
+    ]
     for source, destination in entries:
-        lines.append("--add-binary")
-        lines.append(f"{source};{destination}")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("\n".join(lines) + ("\n" if lines else ""), encoding="utf-8")
+        arguments.extend(("--add-binary", f"{source}{separator}{destination}"))
+    arguments.append("main.py")
+    return arguments
+
+
+def run_pyinstaller(entries: list[tuple[Path, str]]) -> None:
+    from PyInstaller.__main__ import run
+
+    run(pyinstaller_arguments(entries))
 
 
 def installed_bundle_entries() -> list[tuple[Path, str]]:
@@ -170,14 +194,18 @@ def missing_runtime_files(dist_dir: Path) -> list[str]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Kontrola a seznam Qt knihoven pro Windows.")
-    parser.add_argument("--argfile", type=Path, help="Zapíše argumenty --add-binary pro PyInstaller.")
+    parser.add_argument("--build", action="store_true", help="Spustí PyInstaller s knihovnami Qt.")
     parser.add_argument("--check", type=Path, help="Složka dist/ManazerBOZP po sestavení.")
     args = parser.parse_args(argv)
-    if args.argfile is None and args.check is None:
-        parser.error("Zadejte --argfile nebo --check.")
+    if not args.build and args.check is None:
+        parser.error("Zadejte --build nebo --check.")
     try:
-        if args.argfile is not None:
-            write_argfile(args.argfile, installed_bundle_entries())
+        if args.build:
+            try:
+                run_pyinstaller(installed_bundle_entries())
+            except SystemExit as exc:
+                code = exc.code
+                return code if isinstance(code, int) else 1
         if args.check is not None:
             missing = missing_runtime_files(args.check)
             if missing:

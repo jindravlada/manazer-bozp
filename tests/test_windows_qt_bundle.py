@@ -14,7 +14,7 @@ from core.packaging.windows_qt_bundle import (
     WindowsQtBundleError,
     bundle_entries,
     missing_runtime_files,
-    write_argfile,
+    pyinstaller_arguments,
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -72,15 +72,39 @@ class WindowsQtBundleTestCase(unittest.TestCase):
             bundle_entries(pyside, shiboken)
         self.assertIn("vcruntime140_1.dll", str(caught.exception))
 
-    def test_argfile_uses_one_argument_per_line(self) -> None:
-        root = self._tmp()
-        pyside, shiboken = _populate_wheel(root)
-        target = root / "qt.args"
-        write_argfile(target, bundle_entries(pyside, shiboken))
-        lines = target.read_text(encoding="utf-8").splitlines()
-        self.assertEqual(lines[0], "--add-binary")
-        self.assertIn(";PySide6", lines[1])
-        self.assertNotIn("\n", lines[1])
+    def test_pyinstaller_parser_accepts_binaries_and_rejects_at_file(self) -> None:
+        from PyInstaller.__main__ import generate_parser, run
+
+        parser = generate_parser()
+        self.assertNotEqual(parser.fromfile_prefix_chars, "@")
+        rejected = parser.parse_args(
+            ["--onedir", r"@build\qt-binaries.args", "main.py"]
+        )
+        self.assertEqual(
+            rejected.filenames,
+            [r"@build\qt-binaries.args", "main.py"],
+        )
+        with self.assertRaises(SystemExit) as caught:
+            run(["--onedir", "--noconfirm", r"@build\qt-binaries.args"])
+        self.assertIn("Script file", str(caught.exception))
+        self.assertIn("qt-binaries.args", str(caught.exception))
+
+        pyside, shiboken = _populate_wheel(self._tmp())
+        argv = pyinstaller_arguments(bundle_entries(pyside, shiboken))
+        self.assertNotIn("@build\\qt-binaries.args", argv)
+        parsed = parser.parse_args(argv)
+        self.assertEqual(parsed.filenames, ["main.py"])
+        self.assertIs(parsed.console, False)
+        binaries = {Path(source).name: destination for source, destination in parsed.binaries}
+        self.assertEqual(binaries["Qt6Widgets.dll"], "PySide6")
+        self.assertEqual(binaries["vcruntime140_1.dll"], "PySide6")
+        self.assertEqual(binaries["qwindows.dll"], "PySide6/plugins/platforms")
+        self.assertEqual(binaries["shiboken6.abi3.dll"], "shiboken6")
+        data_dirs = {Path(source).name for source, _destination in parsed.datas}
+        self.assertTrue({"moduly", "core", "ciselniky", "zdroje"} <= data_dirs)
+        self.assertTrue(
+            any(hook.endswith("pyi_rth_windows_qt_dlls.py") for hook in parsed.runtime_hooks)
+        )
 
     def test_complete_dist_passes_and_missing_plugin_fails(self) -> None:
         dist = self._tmp() / "ManazerBOZP"
@@ -117,8 +141,13 @@ class WindowsQtBundleTestCase(unittest.TestCase):
         hook = HOOK.read_text(encoding="utf-8")
         installer = (PROJECT_ROOT / "installer.iss").read_text(encoding="utf-8")
         generator = (PROJECT_ROOT / "generate_installer_iss.py").read_text(encoding="utf-8")
-        self.assertIn("--runtime-hook packaging\\pyi_rth_windows_qt_dlls.py", bat)
-        self.assertIn("windows_qt_bundle --argfile", bat)
+        command = pyinstaller_arguments([])
+        self.assertEqual(
+            command[command.index("--runtime-hook") + 1],
+            r"packaging\pyi_rth_windows_qt_dlls.py",
+        )
+        self.assertIn("windows_qt_bundle --build", bat)
+        self.assertNotIn("@build\\qt-binaries.args", bat)
         self.assertIn("windows_qt_bundle --check dist\\ManazerBOZP", bat)
         self.assertIn("os.add_dll_directory", hook)
         self.assertIn("PySide6", hook)
@@ -139,11 +168,11 @@ class WindowsQtBundleTestCase(unittest.TestCase):
         self.assertIn("import PySide6, PyInstaller", bat)
         self.assertLess(
             bat.index(".venv\\Scripts\\python.exe"),
-            bat.index("-m PyInstaller"),
+            bat.index("windows_qt_bundle --build"),
         )
         self.assertLess(
             bat.index("import PySide6, PyInstaller"),
-            bat.index("windows_qt_bundle --argfile"),
+            bat.index("windows_qt_bundle --build"),
         )
         self.assertLess(
             bat.index("windows_qt_bundle --check"),
