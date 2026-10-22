@@ -13,7 +13,9 @@ class ThpWorker(Base):
     jedinečnost neobsazují, aby šlo později přenést čísla z test_employees,
     aniž by se prázdné řádky THP navzájem blokovaly. Sám převod tato tabulka nedělá.
     Textová funkce ``position`` a číselníkové role v ``thp_worker_roles`` jsou
-    dva nezávislé údaje.
+    dva nezávislé údaje. Výslovné propojení s ``test_employees`` je v tabulce
+    ``test_employee_central_links``. Podle jména ani osobního čísla se
+    záznamy samy nespojují.
     """
 
     __tablename__ = "thp_workers"

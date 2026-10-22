@@ -61,6 +61,9 @@ def initialize_database() -> None:
     from moduly.nastaveni.modely.employer import Employer  # noqa: F401
     from moduly.nastaveni.modely.thp_worker import ThpWorker  # noqa: F401
     from moduly.nastaveni.modely.thp_worker_role import ThpWorkerRole  # noqa: F401
+    from moduly.nastaveni.modely.test_employee_central_link import (  # noqa: F401
+        TestEmployeeCentralLink,
+    )
     from moduly.nastaveni.modely.person import Person  # noqa: F401
     from moduly.nastaveni.modely.workplace import Workplace  # noqa: F401
     from moduly.nastaveni.modely.responsibility_role import ResponsibilityRole  # noqa: F401
@@ -265,6 +268,7 @@ def initialize_database() -> None:
     create_database()
     _ensure_thp_worker_title_columns()
     _ensure_thp_worker_central_columns()
+    _ensure_test_employee_central_links()
     _ensure_ozo_person_title_columns()
     _ensure_ozo_person_period_notify_columns()
     _migrate_ozo_person_periods()
@@ -660,6 +664,37 @@ def _ensure_thp_worker_central_columns() -> None:
         from moduly.nastaveni.modely.thp_worker_role import ThpWorkerRole
 
         ThpWorkerRole.__table__.create(bind=_db_engine(), checkfirst=True)
+
+
+def _ensure_test_employee_central_links() -> None:
+    """EMPLOYEE-CENTRAL-3: prázdná mapa propojení test_employees → thp_workers.
+
+    Zakládá jen tabulku a jedinečné indexy. Žádné řádky nevkládá a existující
+    propojení, zaměstnance ani zkoušky nemění. Opakované spuštění je bezpečné.
+    """
+    if not _table_exists("test_employee_central_links"):
+        from moduly.nastaveni.modely.test_employee_central_link import (
+            TestEmployeeCentralLink,
+        )
+
+        TestEmployeeCentralLink.__table__.create(bind=_db_engine(), checkfirst=True)
+
+    with _db_engine().connect() as connection:
+        connection.execute(
+            text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS "
+                "uq_test_employee_central_links_employee "
+                "ON test_employee_central_links (test_employee_id)"
+            )
+        )
+        connection.execute(
+            text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS "
+                "uq_test_employee_central_links_worker "
+                "ON test_employee_central_links (thp_worker_id)"
+            )
+        )
+        connection.commit()
 
 
 def _ensure_ozo_person_title_columns() -> None:
