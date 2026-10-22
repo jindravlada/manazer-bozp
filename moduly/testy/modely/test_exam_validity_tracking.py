@@ -12,11 +12,15 @@ class TestExamValidityTracking(Base):
 
     Chybějící kombinace se sleduje. Řádek nemění zkoušky, jejich výsledky
     ani datum platnosti. Nová zkouška stejné kombinace záznam smaže.
+
+    Identita je zdroj, zaměstnanec a test. ``employee_id`` proto nemá cizí
+    klíč: stejné číslo může patřit zaměstnanci z Testů i z centrální evidence.
     """
 
     __tablename__ = "test_exam_validity_tracking"
     __table_args__ = (
         UniqueConstraint(
+            "employee_source",
             "employee_id",
             "test_definition_id",
             name="uq_test_exam_validity_tracking_pair",
@@ -28,11 +32,7 @@ class TestExamValidityTracking(Base):
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    employee_id: Mapped[int] = mapped_column(
-        Integer,
-        ForeignKey("test_employees.id"),
-        nullable=False,
-    )
+    employee_id: Mapped[int] = mapped_column(Integer, nullable=False)
     employee_source: Mapped[str] = mapped_column(
         String(20),
         nullable=False,

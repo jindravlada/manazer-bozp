@@ -4020,6 +4020,7 @@ def _ensure_test_exam_tables() -> None:
         TestExamValidityTracking.__table__.create(bind=_db_engine(), checkfirst=True)
     else:
         _add_employee_source_column("test_exam_validity_tracking")
+    _ensure_test_exam_validity_identity()
 
 
 def _add_employee_source_column(table_name: str) -> None:
@@ -4039,6 +4040,114 @@ def _add_employee_source_column(table_name: str) -> None:
         "employee_source VARCHAR(20) NOT NULL DEFAULT 'test_employee' "
         "CHECK (employee_source IN ('test_employee', 'thp_worker'))",
     )
+
+
+_VALIDITY_IDENTITY_COLUMNS = (
+    "employee_source",
+    "employee_id",
+    "test_definition_id",
+)
+
+
+def _ensure_test_exam_validity_identity() -> None:
+    """EMPLOYEE-CENTRAL-7: jedinečnost zdroje, zaměstnance a testu.
+
+    Stejné employee_id smí patřit oběma evidencím. Cizí klíč na
+    test_employees by centrální číslo odkázal na cizí tabulku, proto
+    na employee_id nezůstává. Historické řádky se při přestavbě jen
+    zkopírují.
+    """
+    columns = _table_columns("test_exam_validity_tracking")
+    if not columns or "employee_source" not in columns:
+        return
+    with _db_engine().connect() as connection:
+        if _validity_identity_is_current(connection):
+            return
+    with _db_engine().begin() as connection:
+        if _validity_identity_is_current(connection):
+            return
+        connection.execute(
+            text("DROP TABLE IF EXISTS test_exam_validity_tracking_new")
+        )
+        connection.execute(
+            text(
+                """
+                CREATE TABLE test_exam_validity_tracking_new (
+                    id INTEGER NOT NULL PRIMARY KEY,
+                    employee_id INTEGER NOT NULL,
+                    employee_source VARCHAR(20) NOT NULL DEFAULT 'test_employee',
+                    test_definition_id INTEGER NOT NULL,
+                    CONSTRAINT uq_test_exam_validity_tracking_pair
+                        UNIQUE (
+                            employee_source,
+                            employee_id,
+                            test_definition_id
+                        ),
+                    CONSTRAINT ck_test_exam_validity_tracking_employee_source
+                        CHECK (
+                            employee_source IN ('test_employee', 'thp_worker')
+                        ),
+                    FOREIGN KEY(test_definition_id)
+                        REFERENCES test_definitions (id)
+                )
+                """
+            )
+        )
+        connection.execute(
+            text(
+                """
+                INSERT INTO test_exam_validity_tracking_new (
+                    id,
+                    employee_id,
+                    employee_source,
+                    test_definition_id
+                )
+                SELECT
+                    id,
+                    employee_id,
+                    employee_source,
+                    test_definition_id
+                FROM test_exam_validity_tracking
+                """
+            )
+        )
+        connection.execute(text("DROP TABLE test_exam_validity_tracking"))
+        connection.execute(
+            text(
+                "ALTER TABLE test_exam_validity_tracking_new "
+                "RENAME TO test_exam_validity_tracking"
+            )
+        )
+
+
+def _validity_identity_is_current(connection) -> bool:
+    indexes = connection.execute(
+        text('PRAGMA index_list("test_exam_validity_tracking")')
+    ).fetchall()
+    unique_keys: list[tuple[str, ...]] = []
+    for index in indexes:
+        if int(index[2]) != 1:
+            continue
+        info = connection.execute(
+            text(f'PRAGMA index_info("{index[1]}")')
+        ).fetchall()
+        columns = tuple(str(row[2]) for row in info)
+        if columns == ("id",):
+            continue
+        unique_keys.append(columns)
+    if unique_keys != [_VALIDITY_IDENTITY_COLUMNS]:
+        return False
+    foreign_keys = connection.execute(
+        text('PRAGMA foreign_key_list("test_exam_validity_tracking")')
+    ).fetchall()
+    if any(str(row[3]) == "employee_id" for row in foreign_keys):
+        return False
+    definition_keys = [
+        row
+        for row in foreign_keys
+        if str(row[3]) == "test_definition_id" and str(row[2]) == "test_definitions"
+    ]
+    return len(definition_keys) == 1
 
 
 def _ensure_responsibility_roles_table() -> None:
