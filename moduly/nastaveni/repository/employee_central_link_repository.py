@@ -1,5 +1,7 @@
 """Úložiště výslovného propojení zaměstnanců z Testů a centrální evidence."""
 
+import hashlib
+import json
 from dataclasses import dataclass
 
 from sqlalchemy import delete, select, text
@@ -111,6 +113,61 @@ _EXAM_SOURCE_TABLES = (
     "test_exam_examiners",
     "test_exam_validity_tracking",
 )
+
+TAKEOVER_PERSONAL_NUMBER = "personal_number"
+TAKEOVER_WORKPLACE = "workplace"
+TAKEOVER_ROLES = "roles"
+TAKEOVER_MAY_EXAMINE = "may_examine"
+TAKEOVER_FIELDS = (
+    TAKEOVER_PERSONAL_NUMBER,
+    TAKEOVER_WORKPLACE,
+    TAKEOVER_ROLES,
+    TAKEOVER_MAY_EXAMINE,
+)
+_TAKEOVER_LABELS = {
+    TAKEOVER_PERSONAL_NUMBER: "Osobní číslo",
+    TAKEOVER_WORKPLACE: "Provoz",
+    TAKEOVER_ROLES: "Funkce / role",
+    TAKEOVER_MAY_EXAMINE: "Zkoušející / člen komise",
+}
+_TAKEOVER_UNCHANGED = "Beze změny"
+_TAKEOVER_CONFLICT = (
+    "Údaje se od přípravy návrhu změnily. Připravte nový návrh."
+)
+
+
+@dataclass(frozen=True)
+class TakeoverFieldProposal:
+    """Jedna porovnávaná položka. ``will_change`` je návrh, ne provedený zápis."""
+
+    field: str
+    label: str
+    test_value: str
+    central_value: str
+    proposed_change: str
+    will_change: bool
+
+
+@dataclass(frozen=True)
+class EmployeeTakeoverProposal:
+    """Návrh doplnění údajů. Sám o sobě do databáze nic nezapisuje."""
+
+    test_employee_id: int
+    thp_worker_id: int
+    already_linked: bool
+    fields: tuple[TakeoverFieldProposal, ...]
+    revision: str
+
+
+@dataclass(frozen=True)
+class EmployeeTakeoverResult:
+    """Výsledek potvrzeného převzetí. ``linked_now`` je ano jen u nové vazby."""
+
+    link_id: int
+    test_employee_id: int
+    thp_worker_id: int
+    linked_now: bool
+    applied_fields: tuple[str, ...]
 
 
 class EmployeeCentralLinkRepository:
@@ -299,6 +356,393 @@ class EmployeeCentralLinkRepository:
                 removed=True,
                 message="Propojení bylo zrušeno.",
             )
+
+    def propose_takeover(
+        self,
+        *,
+        test_employee_id: int,
+        thp_worker_id: int,
+    ) -> EmployeeTakeoverProposal:
+        """Porovná vybranou dvojici. Osobní číslo ani jméno nikoho nespáruje."""
+        with get_session() as session:
+            employee = self._require_employee(session, test_employee_id)
+            worker = self._require_worker(session, thp_worker_id)
+            snapshot = self._takeover_snapshot(session, employee, worker)
+            return self._proposal_from_snapshot(
+                session,
+                employee=employee,
+                worker=worker,
+                snapshot=snapshot,
+            )
+
+    def apply_confirmed_takeover(
+        self,
+        *,
+        test_employee_id: int,
+        thp_worker_id: int,
+        revision: str,
+        confirm_fields: list[str],
+    ) -> EmployeeTakeoverResult:
+        """Propojí dvojici a zapíše jen potvrzené doplnění, v jedné transakci.
+
+        Před zápisem znovu sestaví návrh. Když se porovnávané údaje mezitím
+        změnily, nic neuloží a vyžádá nový návrh. Existující vazbu této
+        dvojice znovu nezakládá.
+        """
+        confirmed = self._confirmed_fields(confirm_fields)
+        with transaction() as session:
+            employee = self._require_employee(session, test_employee_id)
+            worker = self._require_worker(session, thp_worker_id)
+            snapshot = self._takeover_snapshot(session, employee, worker)
+            if self._revision(snapshot) != revision:
+                raise EmployeeLinkError(_TAKEOVER_CONFLICT)
+            link, linked_now = self._ensure_pair_link(
+                session,
+                test_employee_id=test_employee_id,
+                thp_worker_id=thp_worker_id,
+            )
+            applied = self._apply_confirmed_fields(
+                session,
+                worker=worker,
+                snapshot=snapshot,
+                confirmed=confirmed,
+            )
+            self._after_takeover_writes(session)
+            session.flush()
+            return EmployeeTakeoverResult(
+                link_id=int(link.id),
+                test_employee_id=int(link.test_employee_id),
+                thp_worker_id=int(link.thp_worker_id),
+                linked_now=linked_now,
+                applied_fields=tuple(applied),
+            )
+
+    def _after_takeover_writes(self, session: Session) -> None:
+        """Poslední krok transakce. Test jím ověří návrat při chybě."""
+        return None
+
+    def _confirmed_fields(self, confirm_fields: list[str]) -> list[str]:
+        unknown = [field for field in confirm_fields if field not in TAKEOVER_FIELDS]
+        if unknown:
+            raise EmployeeLinkError("Neznámá položka návrhu.")
+        ordered = []
+        for field in TAKEOVER_FIELDS:
+            if field in confirm_fields and field not in ordered:
+                ordered.append(field)
+        return ordered
+
+    def _ensure_pair_link(
+        self,
+        session: Session,
+        *,
+        test_employee_id: int,
+        thp_worker_id: int,
+    ) -> tuple[TestEmployeeCentralLink, bool]:
+        by_employee = self._link_for_employee(session, test_employee_id)
+        by_worker = self._link_for_worker(session, thp_worker_id)
+        if (
+            by_employee is not None
+            and by_worker is not None
+            and by_employee.id == by_worker.id
+        ):
+            return by_employee, False
+        if by_employee is not None:
+            raise EmployeeLinkError(
+                "Zaměstnanec z Testů je již propojen s jiným zaměstnancem."
+            )
+        if by_worker is not None:
+            raise EmployeeLinkError(
+                "Centrální zaměstnanec je již propojen s jiným zaměstnancem z Testů."
+            )
+        link = TestEmployeeCentralLink(
+            test_employee_id=test_employee_id,
+            thp_worker_id=thp_worker_id,
+        )
+        self._add_link(session, link)
+        session.flush()
+        return link, True
+
+    def _apply_confirmed_fields(
+        self,
+        session: Session,
+        *,
+        worker: ThpWorker,
+        snapshot: dict,
+        confirmed: list[str],
+    ) -> list[str]:
+        applied: list[str] = []
+        if TAKEOVER_PERSONAL_NUMBER in confirmed and self._number_can_copy(snapshot):
+            number = str(snapshot["test"]["personal_number"])
+            clash = session.scalar(
+                select(ThpWorker).where(
+                    ThpWorker.personal_number == number,
+                    ThpWorker.id != worker.id,
+                )
+            )
+            if clash is not None:
+                raise EmployeeLinkError(
+                    "Zaměstnanec s osobním číslem "
+                    f"„{number}“ již existuje v centrální evidenci. "
+                    "Připravte nový návrh."
+                )
+            worker.personal_number = number
+            applied.append(TAKEOVER_PERSONAL_NUMBER)
+        if TAKEOVER_WORKPLACE in confirmed and snapshot["central"]["workplace_id"] is None:
+            workplace_id = snapshot["test"]["workplace_id"]
+            if workplace_id is not None:
+                if session.get(Workplace, workplace_id) is None:
+                    raise EmployeeLinkError(
+                        "Zvolený provoz nebo pracoviště neexistuje."
+                    )
+                worker.workplace_id = int(workplace_id)
+                applied.append(TAKEOVER_WORKPLACE)
+        if TAKEOVER_ROLES in confirmed:
+            added = self._add_missing_roles(
+                session,
+                worker_id=int(worker.id),
+                test_roles=snapshot["test"]["roles"],
+                central_roles=snapshot["central"]["roles"],
+            )
+            if added:
+                applied.append(TAKEOVER_ROLES)
+        if (
+            TAKEOVER_MAY_EXAMINE in confirmed
+            and snapshot["test"]["may_examine"]
+            and not snapshot["central"]["may_examine"]
+        ):
+            worker.may_examine = True
+            applied.append(TAKEOVER_MAY_EXAMINE)
+        return applied
+
+    def _add_missing_roles(
+        self,
+        session: Session,
+        *,
+        worker_id: int,
+        test_roles: list[dict],
+        central_roles: list[dict],
+    ) -> bool:
+        present = {int(row["role_id"]) for row in central_roles}
+        orders = [int(row["sort_order"]) for row in central_roles]
+        next_order = max(orders) + 1 if orders else 0
+        added = False
+        for row in test_roles:
+            role_id = int(row["role_id"])
+            if role_id in present:
+                continue
+            if session.get(ResponsibilityRole, role_id) is None:
+                raise EmployeeLinkError("Zvolená funkce nebo role neexistuje.")
+            session.add(
+                ThpWorkerRole(
+                    thp_worker_id=worker_id,
+                    responsibility_role_id=role_id,
+                    sort_order=next_order,
+                )
+            )
+            present.add(role_id)
+            next_order += 1
+            added = True
+        return added
+
+    def _takeover_snapshot(
+        self,
+        session: Session,
+        employee: TestEmployee,
+        worker: ThpWorker,
+    ) -> dict:
+        employee_link = self._link_for_employee(session, int(employee.id))
+        worker_link = self._link_for_worker(session, int(worker.id))
+        return {
+            "test": {
+                "personal_number": str(employee.personal_number or "").strip(),
+                "workplace_id": (
+                    int(employee.workplace_id)
+                    if employee.workplace_id is not None
+                    else None
+                ),
+                "roles": self._role_snapshot(
+                    session,
+                    TestEmployeeRole,
+                    TestEmployeeRole.employee_id == employee.id,
+                    TestEmployeeRole.sort_order,
+                    TestEmployeeRole.id,
+                ),
+                "may_examine": bool(employee.may_examine),
+            },
+            "central": {
+                "personal_number": str(worker.personal_number or "").strip(),
+                "workplace_id": (
+                    int(worker.workplace_id)
+                    if worker.workplace_id is not None
+                    else None
+                ),
+                "roles": self._role_snapshot(
+                    session,
+                    ThpWorkerRole,
+                    ThpWorkerRole.thp_worker_id == worker.id,
+                    ThpWorkerRole.sort_order,
+                    ThpWorkerRole.id,
+                ),
+                "may_examine": bool(worker.may_examine),
+            },
+            "employee_link_worker_id": (
+                int(employee_link.thp_worker_id) if employee_link is not None else None
+            ),
+            "worker_link_employee_id": (
+                int(worker_link.test_employee_id) if worker_link is not None else None
+            ),
+        }
+
+    def _role_snapshot(self, session: Session, model, criterion, sort_column, id_column):
+        rows = session.scalars(
+            select(model).where(criterion).order_by(sort_column, id_column)
+        )
+        return [
+            {
+                "role_id": int(row.responsibility_role_id),
+                "sort_order": int(row.sort_order),
+            }
+            for row in rows
+        ]
+
+    def _proposal_from_snapshot(
+        self,
+        session: Session,
+        *,
+        employee: TestEmployee,
+        worker: ThpWorker,
+        snapshot: dict,
+    ) -> EmployeeTakeoverProposal:
+        same_link = (
+            snapshot["employee_link_worker_id"] == int(worker.id)
+            and snapshot["worker_link_employee_id"] == int(employee.id)
+        )
+        fields = (
+            self._number_proposal(snapshot),
+            self._workplace_proposal(session, snapshot),
+            self._roles_proposal(session, snapshot),
+            self._examiner_proposal(snapshot),
+        )
+        return EmployeeTakeoverProposal(
+            test_employee_id=int(employee.id),
+            thp_worker_id=int(worker.id),
+            already_linked=same_link,
+            fields=fields,
+            revision=self._revision(snapshot),
+        )
+
+    def _number_proposal(self, snapshot: dict) -> TakeoverFieldProposal:
+        test_number = snapshot["test"]["personal_number"]
+        central_number = snapshot["central"]["personal_number"]
+        will_change = bool(test_number) and not central_number
+        return self._field_proposal(
+            TAKEOVER_PERSONAL_NUMBER,
+            self._text_or_dash(test_number),
+            self._text_or_dash(central_number),
+            f"Doplnit {test_number}" if will_change else _TAKEOVER_UNCHANGED,
+            will_change,
+        )
+
+    def _workplace_proposal(self, session: Session, snapshot: dict) -> TakeoverFieldProposal:
+        test_id = snapshot["test"]["workplace_id"]
+        central_id = snapshot["central"]["workplace_id"]
+        will_change = central_id is None and test_id is not None
+        test_name = self._workplace_name(session, test_id)
+        central_name = self._workplace_name(session, central_id)
+        change = (
+            f"Přiřadit {test_name}" if will_change and test_name else _TAKEOVER_UNCHANGED
+        )
+        if will_change and not test_name:
+            will_change = False
+        return self._field_proposal(
+            TAKEOVER_WORKPLACE,
+            test_name or "—",
+            central_name or "—",
+            change,
+            will_change,
+        )
+
+    def _roles_proposal(self, session: Session, snapshot: dict) -> TakeoverFieldProposal:
+        test_roles = snapshot["test"]["roles"]
+        central_ids = {int(row["role_id"]) for row in snapshot["central"]["roles"]}
+        missing = [row for row in test_roles if int(row["role_id"]) not in central_ids]
+        missing_names = [
+            name
+            for row in missing
+            if (name := self._role_name(session, int(row["role_id"])))
+        ]
+        will_change = bool(missing_names)
+        return self._field_proposal(
+            TAKEOVER_ROLES,
+            self._role_list_text(session, test_roles),
+            self._role_list_text(session, snapshot["central"]["roles"]),
+            "Doplnit " + ", ".join(missing_names) if will_change else _TAKEOVER_UNCHANGED,
+            will_change,
+        )
+
+    def _examiner_proposal(self, snapshot: dict) -> TakeoverFieldProposal:
+        test_flag = bool(snapshot["test"]["may_examine"])
+        central_flag = bool(snapshot["central"]["may_examine"])
+        will_change = test_flag and not central_flag
+        return self._field_proposal(
+            TAKEOVER_MAY_EXAMINE,
+            "Ano" if test_flag else "Ne",
+            "Ano" if central_flag else "Ne",
+            "Zapnout" if will_change else _TAKEOVER_UNCHANGED,
+            will_change,
+        )
+
+    def _field_proposal(
+        self,
+        field: str,
+        test_value: str,
+        central_value: str,
+        proposed_change: str,
+        will_change: bool,
+    ) -> TakeoverFieldProposal:
+        return TakeoverFieldProposal(
+            field=field,
+            label=_TAKEOVER_LABELS[field],
+            test_value=test_value,
+            central_value=central_value,
+            proposed_change=proposed_change,
+            will_change=will_change,
+        )
+
+    def _workplace_name(self, session: Session, workplace_id: int | None) -> str:
+        if workplace_id is None:
+            return ""
+        workplace = session.get(Workplace, int(workplace_id))
+        if workplace is None:
+            return ""
+        return str(workplace.name or "").strip()
+
+    def _role_name(self, session: Session, role_id: int) -> str:
+        role = session.get(ResponsibilityRole, role_id)
+        if role is None:
+            return ""
+        return str(role.name or "").strip()
+
+    def _role_list_text(self, session: Session, roles: list[dict]) -> str:
+        names = [
+            name
+            for row in roles
+            if (name := self._role_name(session, int(row["role_id"])))
+        ]
+        return ", ".join(names) if names else "—"
+
+    def _text_or_dash(self, value: str) -> str:
+        text_value = str(value or "").strip()
+        return text_value or "—"
+
+    def _number_can_copy(self, snapshot: dict) -> bool:
+        return bool(snapshot["test"]["personal_number"]) and not snapshot["central"][
+            "personal_number"
+        ]
+
+    def _revision(self, snapshot: dict) -> str:
+        payload = json.dumps(snapshot, ensure_ascii=False, sort_keys=True)
+        return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
     def _delete_link(
         self,

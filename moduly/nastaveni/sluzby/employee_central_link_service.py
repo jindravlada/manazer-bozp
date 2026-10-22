@@ -3,20 +3,37 @@
 Služba nikdy nespojuje záznamy podle jména, příjmení ani podobnosti údajů.
 Osobní číslo vrací jen jako nápovědu. Propojení vznikne až voláním
 ``link_existing`` nebo ``create_and_link``. ``unlink`` maže jen řádek mapy
-požadované dvojice.
+požadované dvojice. Chybějící údaje se doplní jen po ``propose_takeover``
+a výslovném ``apply_confirmed_takeover``.
 """
 
 from moduly.nastaveni.modely.test_employee_central_link import TestEmployeeCentralLink
 from moduly.nastaveni.modely.thp_worker import ThpWorker
 from moduly.nastaveni.repository.employee_central_link_repository import (
+    TAKEOVER_FIELDS,
+    TAKEOVER_MAY_EXAMINE,
+    TAKEOVER_PERSONAL_NUMBER,
+    TAKEOVER_ROLES,
+    TAKEOVER_WORKPLACE,
     EmployeeCentralLinkRepository,
     EmployeeLinkError,
+    EmployeeTakeoverProposal,
+    EmployeeTakeoverResult,
     EmployeeUnlinkResult,
+    TakeoverFieldProposal,
 )
 
 __all__ = [
+    "TAKEOVER_FIELDS",
+    "TAKEOVER_MAY_EXAMINE",
+    "TAKEOVER_PERSONAL_NUMBER",
+    "TAKEOVER_ROLES",
+    "TAKEOVER_WORKPLACE",
     "EmployeeLinkError",
+    "EmployeeTakeoverProposal",
+    "EmployeeTakeoverResult",
     "EmployeeUnlinkResult",
+    "TakeoverFieldProposal",
     "EmployeeCentralLinkService",
     "employee_central_link_service",
 ]
@@ -80,6 +97,42 @@ class EmployeeCentralLinkService:
         return self.repository.unlink(
             test_employee_id=int(test_employee_id),
             thp_worker_id=int(thp_worker_id),
+        )
+
+    def propose_takeover(
+        self,
+        *,
+        test_employee_id: int,
+        thp_worker_id: int,
+    ) -> EmployeeTakeoverProposal:
+        """Ukáže rozdíly zvolené dvojice a nic nezapíše.
+
+        Dvojici je třeba předat výslovně. Shoda jména nebo osobního čísla
+        propojení ani návrh nezaloží.
+        """
+        return self.repository.propose_takeover(
+            test_employee_id=int(test_employee_id),
+            thp_worker_id=int(thp_worker_id),
+        )
+
+    def apply_confirmed_takeover(
+        self,
+        *,
+        test_employee_id: int,
+        thp_worker_id: int,
+        revision: str,
+        confirm_fields: list[str],
+    ) -> EmployeeTakeoverResult:
+        """Zapíše jen potvrzené doplnění a v téže transakci zajistí vazbu 1:1.
+
+        ``revision`` je otisk návrhu. Když se údaje mezitím změnily, zápis
+        se odmítne. Už existující vazba této dvojice se znovu nevytváří.
+        """
+        return self.repository.apply_confirmed_takeover(
+            test_employee_id=int(test_employee_id),
+            thp_worker_id=int(thp_worker_id),
+            revision=str(revision),
+            confirm_fields=list(confirm_fields),
         )
 
 
