@@ -179,6 +179,11 @@ class WindowsQtBundleTestCase(unittest.TestCase):
             bat.index('"%ISCC%"'),
         )
         self.assertLess(bat.index("BUILD EXE SELHAL"), bat.index('"%ISCC%"'))
+        finished = bat[bat.index("HOTOVO"):]
+        self.assertNotIn("for /f", finished)
+        self.assertIn("installer_output_basename", finished)
+        self.assertIn("windows_qt_bundle --build", bat[:bat.index("HOTOVO")])
+        self.assertIn('"%ISCC%" installer.iss', bat[:bat.index("HOTOVO")])
 
     def _tmp(self) -> Path:
         directory = Path(tempfile.mkdtemp(prefix="windows-qt-"))

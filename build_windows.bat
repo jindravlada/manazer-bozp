@@ -113,8 +113,7 @@ echo EXE:
 echo dist\ManazerBOZP\ManazerBOZP.exe
 echo.
 echo INSTALATOR:
-echo installer\
-for /f "delims=" %%F in ('"%VENV_PY%" -c "from core.version import installer_output_basename; print(installer_output_basename())"') do echo %%F.exe
+"%VENV_PY%" -c "from core.version import installer_output_basename; print('installer\\' + installer_output_basename() + '.exe')"
 echo.
 
 pause

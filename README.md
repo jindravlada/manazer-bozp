@@ -16,11 +16,9 @@ Po stažení nastavte soubor jako spustitelný a spusťte jej.
 
 ### Windows
 
-**Poslední dostupná verze: Manažer BOZP 4.1.2 – instalační program**
+**Manažer BOZP 4.1.3 – instalační program**
 
-Instalátor verze 4.1.3 zatím není dostupný.
-
-[⬇️ Stáhnout Manažer BOZP 4.1.2 pro Windows](https://github.com/jindravlada/manazer-bozp/releases/download/v4.1.2/Manazer_BOZP_4_1_2_Setup.exe)
+[⬇️ Stáhnout Manažer BOZP 4.1.3 pro Windows](https://github.com/jindravlada/manazer-bozp/releases/download/v4.1.3/Manazer_BOZP_4_1_3_Setup.exe)
 
 Určeno pro Windows 10/11.
 

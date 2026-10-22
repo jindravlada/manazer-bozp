@@ -16,7 +16,7 @@ OFFICIAL_GPL3_SHA256 = (
 _MARKDOWN_LINK = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 _RELEASE_PREFIX = "https://github.com/jindravlada/manazer-bozp/releases"
 # Linuxové stažení sleduje APP_VERSION. Tuto konstantu měň jen při novém Windows instalátoru.
-LAST_PUBLISHED_WINDOWS_VERSION = "4.1.2"
+LAST_PUBLISHED_WINDOWS_VERSION = "4.1.3"
 
 
 def _release_asset_url(version: str, filename: str) -> str:
