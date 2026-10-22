@@ -60,6 +60,7 @@ def initialize_database() -> None:
     from moduly.kontroly.modely.thp_yearly_kl_usage import ThpYearlyKlUsage  # noqa: F401
     from moduly.nastaveni.modely.employer import Employer  # noqa: F401
     from moduly.nastaveni.modely.thp_worker import ThpWorker  # noqa: F401
+    from moduly.nastaveni.modely.thp_worker_role import ThpWorkerRole  # noqa: F401
     from moduly.nastaveni.modely.person import Person  # noqa: F401
     from moduly.nastaveni.modely.workplace import Workplace  # noqa: F401
     from moduly.nastaveni.modely.responsibility_role import ResponsibilityRole  # noqa: F401
@@ -263,6 +264,7 @@ def initialize_database() -> None:
 
     create_database()
     _ensure_thp_worker_title_columns()
+    _ensure_thp_worker_central_columns()
     _ensure_ozo_person_title_columns()
     _ensure_ozo_person_period_notify_columns()
     _migrate_ozo_person_periods()
@@ -604,6 +606,60 @@ def _ensure_thp_worker_title_columns() -> None:
         _add_column("thp_workers", "title_after VARCHAR(50) DEFAULT ''")
     if "performs_controls" not in columns:
         _add_column("thp_workers", "performs_controls BOOLEAN DEFAULT 0")
+
+
+def _ensure_thp_worker_central_columns() -> None:
+    """EMPLOYEE-CENTRAL-1: sloupce centrální evidence a vazba na role.
+
+    Doplní chybějící sloupce a prázdnou tabulku rolí. U existujících řádků
+    nastaví jen výchozí hodnoty nových sloupců. Původní sloupce, osobní čísla
+    zadaná později a příznaky is_thp / may_examine při dalším spuštění nemění.
+    Zaměstnance z test_employees nepřenáší.
+    """
+    columns = _table_columns("thp_workers")
+    if not columns:
+        return
+    if "personal_number" not in columns:
+        _add_column("thp_workers", "personal_number VARCHAR(50)")
+    if "workplace_id" not in columns:
+        _add_column(
+            "thp_workers",
+            "workplace_id INTEGER REFERENCES workplaces(id)",
+        )
+    if "is_thp" not in columns:
+        _add_column("thp_workers", "is_thp BOOLEAN NOT NULL DEFAULT 1")
+    if "may_examine" not in columns:
+        _add_column("thp_workers", "may_examine BOOLEAN NOT NULL DEFAULT 0")
+    if "updated_at" not in columns:
+        _add_column("thp_workers", "updated_at DATETIME")
+
+    with _db_engine().connect() as connection:
+        connection.execute(
+            text(
+                "UPDATE thp_workers "
+                "SET updated_at = created_at "
+                "WHERE updated_at IS NULL AND created_at IS NOT NULL"
+            )
+        )
+        connection.execute(
+            text(
+                "UPDATE thp_workers SET updated_at = :now WHERE updated_at IS NULL"
+            ),
+            {"now": datetime.now()},
+        )
+        connection.execute(
+            text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS uq_thp_workers_personal_number "
+                "ON thp_workers (personal_number) "
+                "WHERE personal_number IS NOT NULL AND personal_number <> ''"
+            )
+        )
+        connection.commit()
+
+    if not _table_columns("thp_worker_roles"):
+        from moduly.nastaveni.modely.thp_worker_role import ThpWorkerRole
+
+        ThpWorkerRole.__table__.create(bind=_db_engine(), checkfirst=True)
 
 
 def _ensure_ozo_person_title_columns() -> None:
