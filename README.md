@@ -1,6 +1,6 @@
-# Manažer BOZP 4.1.2
+# Manažer BOZP 4.1.3
 
-Aktuální verze: 4.1.2
+Aktuální verze: 4.1.3
 
 ## 📥 Stažení aplikace
 
@@ -50,7 +50,7 @@ Samotné používání aplikace nezajišťuje splnění právních povinností.
 
 ## Stav projektu
 
-Jde o aktivně vyvíjený projekt. Současná veřejná verze je 4.1.2.
+Jde o aktivně vyvíjený projekt. Současná veřejná verze je 4.1.3.
 
 ## Spuštění ze zdrojových kódů – Linux
 

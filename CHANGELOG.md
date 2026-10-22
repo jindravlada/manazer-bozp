@@ -14,6 +14,35 @@
 
 ---
 
+# Verze 4.1.3
+
+Datum vydání:
+
+22. 10. 2026
+
+Nové funkce
+
+- Zaměstnanci se sjednocují do centrální evidence v Nastavení. Formulář navazuje na dosavadní evidenci THP a údaje zaměstnance se ukládají na jednom místě.
+- Zkoušku lze připravit pro zaměstnance z centrální evidence, a to i jako hromadné papírové testy.
+- Zaměstnance z modulu Testy lze s centrální evidencí propojit ručně. Propojení vznikne jen po výslovném potvrzení a chybějící údaje se převezmou až po schválení návrhu.
+
+Změny funkcí
+
+- Modul Testy už zaměstnance nezakládá ani neupravuje. Příprava zkoušky vyžaduje zaměstnance z centrální evidence a jeho zdroj se určí výslovně.
+- Historie zkoušek zůstává. Dosavadní zkoušky se samy nepřenášejí a dál patří k původní evidenci modulu Testy. Zrušit lze jen přesně potvrzené propojení.
+- Sledování platnosti rozlišuje zdroj zaměstnance. U propojeného zaměstnance je platnost v jednom přehledu.
+- Výběr zaměstnance se řadí příjmením, jménem, tituly a číslem. Osobní číslo není povinné a v seznamu jsou vidět i neúplné záznamy.
+- Dosavadní výběry vedoucích zaměstnanců dál nabízejí jen THP.
+
+Opravy chyb
+
+- Oprava databázových vazeb tabulek zkoušek. Po přejmenování tabulek cizí klíče znovu ukazují na platné tabulky a historie zkoušek zůstává.
+- Zavření pracovního úrazu se zeptá na neuložené změny.
+- Záznam otevřený z úkolu už nezůstane viset bez možnosti ovládání. Při otevřeném úkolu zůstane zdrojový záznam vidět a aktivní je dialog úkolu.
+- Hláška o chybějících údajích zaměstnance je v prvním pádu.
+
+---
+
 # Verze 4.1.2
 
 Datum vydání:
