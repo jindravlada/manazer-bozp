@@ -30,7 +30,7 @@ with patch.object(Path, "home", return_value=_TMP):
 
     initialize_database()
 
-    from PySide6.QtCore import QDate
+    from PySide6.QtCore import QDate, Qt
     from PySide6.QtWidgets import QApplication, QMessageBox
 
     from moduly.nastaveni.constants.workplace_hierarchy_constants import (
@@ -298,17 +298,30 @@ class EmployeeCentral10TestCase(unittest.TestCase):
             f"X-{self.marker}",
             "Eva",
             f"Neúplná{self.marker}",
-            personal_number="",
+            workplace_id=None,
+            responsibility_role_ids=[],
         )
         employees_before = self._employee_count()
         dialog = self._dialog()
-        dialog.employee.setCurrentText(incomplete.display_name)
+        blocked_index = next(
+            index
+            for index in range(dialog.employee.count())
+            if f"Neúplná{self.marker}" in dialog.employee.itemText(index)
+        )
+        blocked_label = dialog.employee.itemText(blocked_index)
+        self.assertIn("Chybí provoz a funkci / roli.", blocked_label)
+        blocked_item = dialog.employee.model().item(blocked_index)
+        assert blocked_item is not None
+        self.assertFalse(blocked_item.flags() & Qt.ItemFlag.ItemIsEnabled)
+        dialog.employee.setCurrentText(blocked_label)
+        self.assertIsNone(dialog.employee.person_id())
+        self.assertEqual(dialog.employee_hint.text(), "Chybí provoz a funkci / roli.")
         dialog.examiner.setCurrentText(self._label(examiner))
         dialog.test.setCurrentIndex(dialog.test.findData(self.single_test.id))
         with patch.object(QMessageBox, "warning") as warning:
             dialog.accept()
         warning.assert_called()
-        self.assertIn("osobní číslo", warning.call_args.args[2])
+        self.assertIn("Chybí provoz", warning.call_args.args[2])
         self.assertIsNone(dialog.saved_exam_id)
         self.assertEqual(self._employee_count(), employees_before)
 

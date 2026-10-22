@@ -263,7 +263,6 @@ class EmployeeCentral9TestCase(unittest.TestCase):
         )
         cases = [
             ({"active": False}, "aktivního zaměstnance"),
-            ({"personal_number": ""}, "osobní číslo"),
             ({"workplace_id": None}, "přiřazený provoz"),
             ({"responsibility_role_ids": []}, "funkci / roli"),
         ]

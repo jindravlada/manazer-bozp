@@ -44,6 +44,7 @@ from moduly.testy.sluzby.test_exam_service import (
     EXAMINEE_CANNOT_EXAMINE,
     TestExamError,
     calculate_valid_until,
+    describe_central_employee_gaps,
     test_exam_service,
 )
 from moduly.testy.ui.exam_person_combo import ExamPersonCombo
@@ -72,6 +73,9 @@ class TestExamPrepareDialog(QDialog):
         basics = QGroupBox("Zkouška")
         basics_form = QFormLayout(basics)
         self.employee = ExamPersonCombo()
+        self.employee_hint = QLabel("")
+        self.employee_hint.setWordWrap(True)
+        self.employee_hint.setVisible(False)
         self.test = NoWheelComboBox()
         self.exam_date = QDateEdit()
         self.exam_date.setCalendarPopup(True)
@@ -85,6 +89,7 @@ class TestExamPrepareDialog(QDialog):
         self.mode_label = QLabel("")
         self.mode_label.setWordWrap(True)
         basics_form.addRow("Zaměstnanec:", self.employee)
+        basics_form.addRow("", self.employee_hint)
         basics_form.addRow("Test:", self.test)
         basics_form.addRow("Datum zkoušky:", self.exam_date)
         basics_form.addRow("Platí do:", self.valid_until)
@@ -130,7 +135,12 @@ class TestExamPrepareDialog(QDialog):
         self._editor.install_auto_dirty_tracking()
 
         active_workers = settings_service.get_workers(include_inactive=False)
-        self.employee.set_people(active_workers)
+        blocked = {
+            int(worker.id): reason
+            for worker in active_workers
+            if (reason := describe_central_employee_gaps(worker))
+        }
+        self.employee.set_people(active_workers, blocked=blocked)
         self._eligible_examiners = [
             worker for worker in active_workers if worker.may_examine
         ]
@@ -147,6 +157,10 @@ class TestExamPrepareDialog(QDialog):
         configure_form_tab_navigation(self)
 
     def accept(self) -> None:
+        reason = self.employee.blocked_reason()
+        if reason:
+            QMessageBox.warning(self, MODULE_NAME, reason)
+            return
         try:
             created = test_exam_service.prepare_exam(**self.get_data())
         except TestExamError as error:
@@ -228,6 +242,9 @@ class TestExamPrepareDialog(QDialog):
         self.commission_box.setVisible(mode == EXAMINER_MODE_COMMISSION)
 
     def _on_examinee_changed(self) -> None:
+        reason = self.employee.blocked_reason() or ""
+        self.employee_hint.setText(reason)
+        self.employee_hint.setVisible(bool(reason))
         examinee_id = self.employee.person_id()
         removed = False
         if examinee_id is not None:

@@ -304,6 +304,31 @@ def _batch_person_label(employee) -> str:
     return name or "zaměstnanec"
 
 
+def central_employee_gaps(worker) -> list[str]:
+    """Povinné údaje zkoušeného z centrální evidence. Osobní číslo mezi ně nepatří."""
+    gaps: list[str] = []
+    if not str(worker.first_name or "").strip() or not str(worker.last_name or "").strip():
+        gaps.append("jméno a příjmení")
+    workplace_id = getattr(worker, "workplace_id", None)
+    if not workplace_id or settings_service.get_workplace_by_id(workplace_id) is None:
+        gaps.append("provoz")
+    role_ids = settings_service.list_worker_role_ids(int(worker.id))
+    if not role_ids or any(
+        responsibility_role_service.get_by_id(role_id) is None for role_id in role_ids
+    ):
+        gaps.append("funkci / roli")
+    return gaps
+
+
+def describe_central_employee_gaps(worker) -> str:
+    gaps = central_employee_gaps(worker)
+    if not gaps:
+        return ""
+    if len(gaps) == 1:
+        return f"Chybí {gaps[0]}."
+    return "Chybí " + ", ".join(gaps[:-1]) + " a " + gaps[-1] + "."
+
+
 def add_calendar_months(value: date, months: int) -> date:
     """Přičte kalendářní měsíce. 31. 1. + 1 měsíc je poslední únor, ne 31 dní."""
     year = value.year
@@ -592,7 +617,7 @@ class TestExamService:
             valid_until=valid_day,
             status=EXAM_STATUS_PREPARED,
             examiner_mode=test.examiner_mode,
-            employee_personal_number=employee.personal_number,
+            employee_personal_number=str(employee.personal_number or "").strip(),
             employee_first_name=employee.first_name,
             employee_last_name=employee.last_name,
             employee_title_before=employee.title_before or "",
@@ -1125,8 +1150,8 @@ class TestExamService:
             raise TestExamError("Zaměstnanec nebyl nalezen.")
         if not worker.active:
             raise TestExamError("Zkoušku lze připravit jen pro aktivního zaměstnance.")
-        if not str(worker.personal_number or "").strip():
-            raise TestExamError("Zaměstnanec nemá vyplněné osobní číslo.")
+        if not str(worker.first_name or "").strip() or not str(worker.last_name or "").strip():
+            raise TestExamError("Zaměstnanec nemá vyplněné jméno a příjmení.")
         if not worker.workplace_id:
             raise TestExamError("Zaměstnanec nemá přiřazený provoz.")
         if settings_service.get_workplace_by_id(worker.workplace_id) is None:
