@@ -2,7 +2,8 @@
 
 Služba nikdy nespojuje záznamy podle jména, příjmení ani podobnosti údajů.
 Osobní číslo vrací jen jako nápovědu. Propojení vznikne až voláním
-``link_existing`` nebo ``create_and_link``.
+``link_existing`` nebo ``create_and_link``. ``unlink`` maže jen řádek mapy
+požadované dvojice.
 """
 
 from moduly.nastaveni.modely.test_employee_central_link import TestEmployeeCentralLink
@@ -10,10 +11,12 @@ from moduly.nastaveni.modely.thp_worker import ThpWorker
 from moduly.nastaveni.repository.employee_central_link_repository import (
     EmployeeCentralLinkRepository,
     EmployeeLinkError,
+    EmployeeUnlinkResult,
 )
 
 __all__ = [
     "EmployeeLinkError",
+    "EmployeeUnlinkResult",
     "EmployeeCentralLinkService",
     "employee_central_link_service",
 ]
@@ -62,6 +65,22 @@ class EmployeeCentralLinkService:
         kontrol jsou u nového záznamu ne. Původní zaměstnanec v Testech zůstává.
         """
         return self.repository.create_and_link(int(test_employee_id))
+
+    def unlink(
+        self,
+        *,
+        test_employee_id: int,
+        thp_worker_id: int,
+    ) -> EmployeeUnlinkResult:
+        """Zruší propojení jen tehdy, když uložená vazba je přesně tato dvojice.
+
+        Odstraní pouze řádek mapy. Zaměstnance, role a zkoušky nemění.
+        Chybějící dvojice nic nemaže a vrátí srozumitelný výsledek.
+        """
+        return self.repository.unlink(
+            test_employee_id=int(test_employee_id),
+            thp_worker_id=int(thp_worker_id),
+        )
 
 
 employee_central_link_service = EmployeeCentralLinkService()

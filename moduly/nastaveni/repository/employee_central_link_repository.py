@@ -1,6 +1,8 @@
 """Úložiště výslovného propojení zaměstnanců z Testů a centrální evidence."""
 
-from sqlalchemy import select
+from dataclasses import dataclass
+
+from sqlalchemy import delete, select, text
 from sqlalchemy.orm import Session
 
 from core.database.session import get_session, transaction
@@ -15,6 +17,79 @@ from moduly.testy.modely.test_employee_role import TestEmployeeRole
 
 class EmployeeLinkError(ValueError):
     pass
+
+
+@dataclass(frozen=True)
+class EmployeeUnlinkResult:
+    """Výsledek zrušení propojení. ``removed`` je ne, když dvojice v mapě není."""
+
+    removed: bool
+    message: str
+
+
+# Sloupce, které dnes nenesou převod zkoušek na centrálního zaměstnance.
+# Cokoli navíc může být dokončený převod nebo nová závislost, kterou tento
+# kód neumí vyhodnotit. Pak se propojení nesmí zrušit.
+_UNLINK_KNOWN_COLUMNS: dict[str, frozenset[str]] = {
+    "test_employee_central_links": frozenset(
+        {"id", "test_employee_id", "thp_worker_id", "created_at"}
+    ),
+    "test_exams": frozenset(
+        {
+            "id",
+            "employee_id",
+            "test_definition_id",
+            "exam_date",
+            "valid_until",
+            "status",
+            "examiner_mode",
+            "created_at",
+            "employee_personal_number",
+            "employee_first_name",
+            "employee_last_name",
+            "employee_title_before",
+            "employee_title_after",
+            "employee_display_name",
+            "employee_workplace_name",
+            "employee_roles_text",
+            "test_name",
+            "uses_written",
+            "uses_oral",
+            "allowed_wrong_answers",
+            "seconds_per_question",
+            "written_duration_seconds",
+            "validity_value",
+            "validity_unit",
+            "written_started_at",
+            "written_time_mark",
+            "written_finished_at",
+            "written_finish_reason",
+            "written_question_count",
+            "written_correct_count",
+            "written_incorrect_count",
+            "written_unanswered_count",
+            "written_allowed_wrong_answers",
+            "written_result",
+            "exam_result",
+            "written_evaluated_at",
+            "oral_failed_at",
+            "written_mode",
+            "signed_protocol_attachment_id",
+            "written_technical_detail",
+        }
+    ),
+    "test_exam_examiners": frozenset(
+        {"id", "exam_id", "employee_id", "display_name", "role", "position"}
+    ),
+    "test_exam_validity_tracking": frozenset(
+        {"id", "employee_id", "test_definition_id"}
+    ),
+}
+
+_UNLINK_DEPENDENCY_MESSAGE = (
+    "Propojení nelze zrušit, protože závislost převodu historických vazeb "
+    "nebo nových zkoušek nelze spolehlivě ověřit."
+)
 
 
 class EmployeeCentralLinkRepository:
@@ -165,6 +240,85 @@ class EmployeeCentralLinkRepository:
             session.refresh(link)
             session.expunge(link)
             return link
+
+    def unlink(
+        self,
+        *,
+        test_employee_id: int,
+        thp_worker_id: int,
+    ) -> EmployeeUnlinkResult:
+        with transaction() as session:
+            by_employee = self._link_for_employee(session, test_employee_id)
+            by_worker = self._link_for_worker(session, thp_worker_id)
+            if by_employee is None and by_worker is None:
+                return EmployeeUnlinkResult(
+                    removed=False,
+                    message="Propojení mezi těmito zaměstnanci neexistuje.",
+                )
+            if (
+                by_employee is None
+                or by_worker is None
+                or by_employee.id != by_worker.id
+            ):
+                raise EmployeeLinkError(
+                    "Požadovaná dvojice neodpovídá uloženému propojení."
+                )
+            self._assert_unlink_has_no_unknown_dependency(session)
+            self._delete_link(
+                session,
+                by_employee,
+                test_employee_id=test_employee_id,
+                thp_worker_id=thp_worker_id,
+            )
+            return EmployeeUnlinkResult(
+                removed=True,
+                message="Propojení bylo zrušeno.",
+            )
+
+    def _delete_link(
+        self,
+        session: Session,
+        link: TestEmployeeCentralLink,
+        *,
+        test_employee_id: int,
+        thp_worker_id: int,
+    ) -> None:
+        result = session.execute(
+            delete(TestEmployeeCentralLink).where(
+                TestEmployeeCentralLink.id == link.id,
+                TestEmployeeCentralLink.test_employee_id == test_employee_id,
+                TestEmployeeCentralLink.thp_worker_id == thp_worker_id,
+            )
+        )
+        if result.rowcount != 1:
+            raise EmployeeLinkError(
+                "Propojení mezi těmito zaměstnanci neexistuje."
+            )
+
+    def _assert_unlink_has_no_unknown_dependency(self, session: Session) -> None:
+        """Zrušení projde jen u známého schématu bez sloupců převodu zkoušek.
+
+        Historické zkoušky dál ukazují na ``test_employees`` a mapa na ně
+        neodkazuje. Nový sloupec v mapě nebo ve zkouškách by mohl znamenat
+        dokončený převod. Ten tento kód nečte, proto zrušení odmítne.
+        """
+        for table_name, known in _UNLINK_KNOWN_COLUMNS.items():
+            live = self._live_columns(session, table_name)
+            if live is None or live != known:
+                raise EmployeeLinkError(_UNLINK_DEPENDENCY_MESSAGE)
+
+    def _live_columns(self, session: Session, table_name: str) -> set[str] | None:
+        exists = session.execute(
+            text(
+                "SELECT 1 FROM sqlite_master "
+                "WHERE type = 'table' AND name = :table_name"
+            ),
+            {"table_name": table_name},
+        ).first()
+        if exists is None:
+            return None
+        info = session.execute(text(f'PRAGMA table_info("{table_name}")')).fetchall()
+        return {str(column[1]) for column in info}
 
     def _add_link(self, session: Session, link: TestEmployeeCentralLink) -> None:
         session.add(link)
