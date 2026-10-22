@@ -316,17 +316,21 @@ def central_employee_gaps(worker) -> list[str]:
     if not role_ids or any(
         responsibility_role_service.get_by_id(role_id) is None for role_id in role_ids
     ):
-        gaps.append("funkci / roli")
+        gaps.append("funkce / role")
     return gaps
 
 
-def describe_central_employee_gaps(worker) -> str:
-    gaps = central_employee_gaps(worker)
+def format_central_employee_gaps(gaps: list[str]) -> str:
+    """Hláška „Chybí …“ v prvním pádě, včetně výčtu více údajů."""
     if not gaps:
         return ""
     if len(gaps) == 1:
         return f"Chybí {gaps[0]}."
     return "Chybí " + ", ".join(gaps[:-1]) + " a " + gaps[-1] + "."
+
+
+def describe_central_employee_gaps(worker) -> str:
+    return format_central_employee_gaps(central_employee_gaps(worker))
 
 
 def add_calendar_months(value: date, months: int) -> date:

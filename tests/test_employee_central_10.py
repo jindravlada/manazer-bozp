@@ -309,13 +309,13 @@ class EmployeeCentral10TestCase(unittest.TestCase):
             if f"Neúplná{self.marker}" in dialog.employee.itemText(index)
         )
         blocked_label = dialog.employee.itemText(blocked_index)
-        self.assertIn("Chybí provoz a funkci / roli.", blocked_label)
+        self.assertIn("Chybí provoz a funkce / role.", blocked_label)
         blocked_item = dialog.employee.model().item(blocked_index)
         assert blocked_item is not None
         self.assertFalse(blocked_item.flags() & Qt.ItemFlag.ItemIsEnabled)
         dialog.employee.setCurrentText(blocked_label)
         self.assertIsNone(dialog.employee.person_id())
-        self.assertEqual(dialog.employee_hint.text(), "Chybí provoz a funkci / roli.")
+        self.assertEqual(dialog.employee_hint.text(), "Chybí provoz a funkce / role.")
         dialog.examiner.setCurrentText(self._label(examiner))
         dialog.test.setCurrentIndex(dialog.test.findData(self.single_test.id))
         with patch.object(QMessageBox, "warning") as warning:

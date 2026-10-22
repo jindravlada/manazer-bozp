@@ -55,7 +55,11 @@ with patch.object(Path, "home", return_value=_TMP):
         test_definition_service,
     )
     from moduly.testy.sluzby.test_employee_service import test_employee_service
-    from moduly.testy.sluzby.test_exam_service import TestExamError, test_exam_service
+    from moduly.testy.sluzby.test_exam_service import (
+        TestExamError,
+        format_central_employee_gaps,
+        test_exam_service,
+    )
     from moduly.testy.ui.test_exam_prepare_dialog import TestExamPrepareDialog
 
 
@@ -221,6 +225,31 @@ class EmployeeCentral13TestCase(unittest.TestCase):
         )
         self.assertEqual(kept.employee_source, EMPLOYEE_SOURCE_TEST_EMPLOYEE)
 
+    def test_gap_notice_uses_nominative_for_every_combination(self) -> None:
+        name = "jméno a příjmení"
+        workplace = "provoz"
+        role = "funkce / role"
+        self.assertEqual(format_central_employee_gaps([]), "")
+        self.assertEqual(format_central_employee_gaps([name]), "Chybí jméno a příjmení.")
+        self.assertEqual(format_central_employee_gaps([workplace]), "Chybí provoz.")
+        self.assertEqual(format_central_employee_gaps([role]), "Chybí funkce / role.")
+        self.assertEqual(
+            format_central_employee_gaps([name, workplace]),
+            "Chybí jméno a příjmení a provoz.",
+        )
+        self.assertEqual(
+            format_central_employee_gaps([name, role]),
+            "Chybí jméno a příjmení a funkce / role.",
+        )
+        self.assertEqual(
+            format_central_employee_gaps([workplace, role]),
+            "Chybí provoz a funkce / role.",
+        )
+        self.assertEqual(
+            format_central_employee_gaps([name, workplace, role]),
+            "Chybí jméno a příjmení, provoz a funkce / role.",
+        )
+
     def test_dialog_shows_incomplete_workers_and_hides_inactive(self) -> None:
         ready = self._worker("Eva", f"Hotová{self.marker}")
         incomplete = self._worker(
@@ -236,7 +265,7 @@ class EmployeeCentral13TestCase(unittest.TestCase):
         self.assertFalse(any(f"Neaktivní{self.marker}" in text for text in texts))
         index = self._combo_index(dialog, f"Neúplná{self.marker}")
         label = dialog.employee.itemText(index)
-        self.assertIn("Chybí provoz a funkci / roli.", label)
+        self.assertIn("Chybí provoz a funkce / role.", label)
         item = dialog.employee.model().item(index)
         assert item is not None
         self.assertFalse(item.flags() & Qt.ItemFlag.ItemIsEnabled)
@@ -244,7 +273,7 @@ class EmployeeCentral13TestCase(unittest.TestCase):
         self.assertNotIn(incomplete.id, dialog.employee._ids.values())
         self.assertNotIn(inactive.id, dialog.employee._ids.values())
         dialog.employee.setCurrentText(label)
-        self.assertEqual(dialog.employee_hint.text(), "Chybí provoz a funkci / roli.")
+        self.assertEqual(dialog.employee_hint.text(), "Chybí provoz a funkce / role.")
         self.assertFalse(dialog.employee_hint.isHidden())
 
         ready_label = dialog.employee.itemText(self._combo_index(dialog, f"Hotová{self.marker}"))
