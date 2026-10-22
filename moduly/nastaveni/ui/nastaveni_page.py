@@ -34,6 +34,7 @@ from moduly.nastaveni.sluzby.settings_service import (
     settings_service,
 )
 from moduly.nastaveni.sluzby.workplace_hierarchy_service import WorkplaceHierarchyError
+from moduly.nastaveni.ui.employee_link_dialog import EmployeeLinkDialog
 from moduly.nastaveni.ui.employer_nace_choice_dialog import EmployerNaceChoiceDialog
 from moduly.nastaveni.ui.person_dialog import PersonDialog
 from moduly.nastaveni.ui.exposed_group_dialog import ExposedGroupDialog
@@ -225,6 +226,10 @@ class NastaveniPage(QWidget):
         self.worker_deactivate_button.clicked.connect(self.deactivate_selected_worker)
         self.worker_deactivate_button.setEnabled(False)
 
+        self.worker_link_button = QPushButton("Propojit s Testy")
+        self.worker_link_button.clicked.connect(self.link_selected_worker)
+        self.worker_link_button.setEnabled(False)
+
         self.worker_filter = QComboBox()
         self.worker_filter.addItems(["Aktivní", "Všichni"])
         self.worker_filter.currentIndexChanged.connect(self.refresh_workers)
@@ -233,6 +238,7 @@ class NastaveniPage(QWidget):
         toolbar.addWidget(self.worker_edit_button)
         toolbar.addWidget(self.worker_activate_button)
         toolbar.addWidget(self.worker_deactivate_button)
+        toolbar.addWidget(self.worker_link_button)
         toolbar.addStretch()
         toolbar.addWidget(QLabel("Zobrazit:"))
         toolbar.addWidget(self.worker_filter)
@@ -862,6 +868,27 @@ class NastaveniPage(QWidget):
             settings_service.deactivate_worker(worker_id)
             self.refresh_workers()
 
+    def link_selected_worker(self) -> None:
+        worker_id = self._selected_worker_id()
+        if worker_id is None:
+            return
+        if settings_service.get_worker_by_id(worker_id) is None:
+            QMessageBox.warning(self, "Zaměstnanci", "Zaměstnanec nebyl nalezen.")
+            self.refresh_workers()
+            return
+        dialog = EmployeeLinkDialog(self, worker_id=worker_id)
+        if dialog.exec():
+            self.refresh_workers()
+            self._select_worker_row(worker_id)
+
+    def _select_worker_row(self, worker_id: int) -> None:
+        for row in range(self.worker_table.rowCount()):
+            item = self.worker_table.item(row, 0)
+            if item is not None and item.text() == str(worker_id):
+                self.worker_table.selectRow(row)
+                break
+        self.update_worker_buttons()
+
     def update_worker_buttons(self):
         worker_id = self._selected_worker_id()
         worker = settings_service.get_worker_by_id(worker_id) if worker_id is not None else None
@@ -869,6 +896,7 @@ class NastaveniPage(QWidget):
         self.worker_edit_button.setEnabled(single)
         self.worker_activate_button.setEnabled(single and not worker.active)
         self.worker_deactivate_button.setEnabled(single and worker.active)
+        self.worker_link_button.setEnabled(single)
 
     def _show_worker_context_menu(self, position) -> None:
         index = self.worker_table.indexAt(position)
@@ -888,6 +916,8 @@ class NastaveniPage(QWidget):
         activate_action.setEnabled(self.worker_activate_button.isEnabled())
         deactivate_action = menu.addAction("Deaktivovat", self.deactivate_selected_worker)
         deactivate_action.setEnabled(self.worker_deactivate_button.isEnabled())
+        link_action = menu.addAction("Propojit s Testy", self.link_selected_worker)
+        link_action.setEnabled(self.worker_link_button.isEnabled())
         menu.exec(self.worker_table.viewport().mapToGlobal(position))
 
     def add_workplace_operation(self):
