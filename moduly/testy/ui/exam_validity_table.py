@@ -24,6 +24,7 @@ from core.widgets.typed_table_sort import (
     typed_text,
 )
 from moduly.testy.constants import (
+    EMPLOYEE_SOURCE_THP_WORKER,
     EXAM_VALIDITY_STATE_EXPIRED,
     EXAM_VALIDITY_STATE_EXPIRING,
     EXAM_VALIDITY_STATE_LABELS,
@@ -54,6 +55,7 @@ ROLE_SEARCH = Qt.ItemDataRole.UserRole + 1
 ROLE_EMPLOYEE_ID = Qt.ItemDataRole.UserRole + 2
 ROLE_TEST_ID = Qt.ItemDataRole.UserRole + 3
 ROLE_TRACKED = Qt.ItemDataRole.UserRole + 4
+ROLE_EMPLOYEE_SOURCE = Qt.ItemDataRole.UserRole + 5
 
 _STATE_BACKGROUNDS = {
     EXAM_VALIDITY_STATE_VALID: STATUS_DONE_BG,
@@ -86,8 +88,8 @@ class ExamValidityTable(QTableWidget):
         self._has_sort = False
         enable_typed_sorting(self)
 
-    def selected_validity_target(self) -> tuple[int, int, bool] | None:
-        """Právě jeden řádek: zaměstnanec, test a zda se platnost sleduje."""
+    def selected_validity_target(self) -> tuple[int, int, bool, str] | None:
+        """Právě jeden řádek: zaměstnanec, test, sledování a zdroj osoby."""
         selected = self.selectionModel().selectedRows() if self.selectionModel() else []
         if len(selected) != 1:
             return None
@@ -97,9 +99,10 @@ class ExamValidityTable(QTableWidget):
         employee_id = item.data(ROLE_EMPLOYEE_ID)
         test_id = item.data(ROLE_TEST_ID)
         tracked = item.data(ROLE_TRACKED)
+        source = item.data(ROLE_EMPLOYEE_SOURCE)
         if employee_id is None or test_id is None or tracked is None:
             return None
-        return int(employee_id), int(test_id), bool(tracked)
+        return int(employee_id), int(test_id), bool(tracked), str(source or "")
 
     def load_rows(self, rows: list[ExamValidityRow]) -> None:
         header = self.horizontalHeader()
@@ -120,7 +123,12 @@ class ExamValidityTable(QTableWidget):
                 )
                 last_success = format_exam_date(row.last_success_on)
                 valid_until = format_exam_date(row.valid_until)
-                stable_id = int(row.employee_id) * 1_000_003 + int(row.test_definition_id)
+                source_rank = 1 if row.employee_source == EMPLOYEE_SOURCE_THP_WORKER else 0
+                stable_id = (
+                    source_rank * 1_000_000_007
+                    + int(row.employee_id) * 1_000_003
+                    + int(row.test_definition_id)
+                )
                 values = {
                     VALIDITY_COL_PERSONAL_NUMBER: (
                         row.personal_number,
@@ -146,6 +154,7 @@ class ExamValidityTable(QTableWidget):
                         item.setData(ROLE_EMPLOYEE_ID, row.employee_id)
                         item.setData(ROLE_TEST_ID, row.test_definition_id)
                         item.setData(ROLE_TRACKED, row.tracked)
+                        item.setData(ROLE_EMPLOYEE_SOURCE, row.employee_source)
                     if column == VALIDITY_COL_EMPLOYEE:
                         item.setData(ROLE_SEARCH, search)
                     if column == VALIDITY_COL_STATE:

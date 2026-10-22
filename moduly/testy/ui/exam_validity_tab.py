@@ -134,7 +134,11 @@ class ExamValidityTab(QWidget):
         )
         if answer != QMessageBox.StandardButton.Yes:
             return
-        exam_validity_service.stop_tracking(target[0], target[1])
+        exam_validity_service.stop_tracking(
+            target[0],
+            target[1],
+            employee_source=target[3],
+        )
         self.refresh()
 
     def resume_tracking(self) -> None:
@@ -142,7 +146,11 @@ class ExamValidityTab(QWidget):
         if target is None or target[2]:
             self._update_action_buttons()
             return
-        exam_validity_service.resume_tracking(target[0], target[1])
+        exam_validity_service.resume_tracking(
+            target[0],
+            target[1],
+            employee_source=target[3],
+        )
         self.refresh()
 
     def _update_action_buttons(self) -> None:

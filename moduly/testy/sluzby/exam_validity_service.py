@@ -2,7 +2,8 @@
 
 Nevytváří povinné testy ani nemění uložený výsledek zkoušky.
 Platnost se odvozuje z poslední úspěšně dokončené zkoušky dané
-kombinace zaměstnanec × test.
+kombinace zaměstnanec × test. Zaměstnanec je zdroj a id. Propojená
+osoba z mapy má pro jeden test jeden řádek.
 """
 
 from __future__ import annotations
@@ -24,12 +25,16 @@ from moduly.testy.constants import (
     EXAM_VALIDITY_STATE_VALID,
     EXAM_VALIDITY_TRACKING_FILTER_TRACKED,
     EXAM_VALIDITY_TRACKING_FILTER_UNTRACKED,
+    EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+    EMPLOYEE_SOURCE_THP_WORKER,
     EXAM_VALIDITY_WARNING_DAYS,
     WRITTEN_RESULT_PASSED,
 )
 from moduly.testy.modely.test_exam import TestExam
 from moduly.testy.repository.test_exam_validity_tracking_repository import (
+    EmployeeLinkMap,
     TestExamValidityTrackingRepository,
+    tracking_identities,
 )
 from moduly.testy.sluzby.test_definition_service import test_definition_service
 from moduly.testy.sluzby.test_employee_service import test_employee_service
@@ -58,6 +63,7 @@ class ExamValidityRow:
     in_progress_count: int
     last_success_exam_id: int | None
     tracked: bool = True
+    employee_source: str = EMPLOYEE_SOURCE_TEST_EMPLOYEE
 
 
 def as_local_day(value: date | None) -> date:
@@ -135,31 +141,66 @@ def build_exam_validity_rows(
     employees_by_id: dict,
     tests_by_id: dict,
     workplace_names: dict[int, str],
+    workers_by_id: dict | None = None,
+    link_map: EmployeeLinkMap | None = None,
 ) -> list[ExamValidityRow]:
-    """Sestaví řádky bez filtrů. Zrušená zkouška sama řádek nezaloží."""
-    grouped: dict[tuple[int, int], list[TestExam]] = {}
+    """Sestaví řádky bez filtrů. Zrušená zkouška sama řádek nezaloží.
+
+    Propojené identity se pro stejný test sejdou v jednom řádku.
+    Bez řádku v mapě zůstávají i při stejném čísle oddělené.
+    """
+    links = link_map or EmployeeLinkMap({}, {})
+    workers = workers_by_id or {}
+    grouped: dict[tuple, list[TestExam]] = {}
     for exam in exams:
         if exam.status == EXAM_STATUS_CANCELLED:
             continue
-        key = (int(exam.employee_id), int(exam.test_definition_id))
-        grouped.setdefault(key, []).append(exam)
+        source = getattr(exam, "employee_source", None) or EMPLOYEE_SOURCE_TEST_EMPLOYEE
+        person = _person_token(links, source, int(exam.employee_id))
+        grouped.setdefault((person, int(exam.test_definition_id)), []).append(exam)
 
     day = as_local_day(today)
     rows: list[ExamValidityRow] = []
-    for (employee_id, test_id), group in grouped.items():
+    for (person, test_id), group in grouped.items():
+        source, employee_id = _display_identity(person)
         rows.append(
             _row_for_group(
                 employee_id,
                 test_id,
                 group,
+                employee_source=source,
                 today=day,
                 employees_by_id=employees_by_id,
+                workers_by_id=workers,
                 tests_by_id=tests_by_id,
                 workplace_names=workplace_names,
             )
         )
     rows.sort(key=_row_sort_key)
     return rows
+
+
+def _person_token(
+    link_map: EmployeeLinkMap,
+    employee_source: str,
+    employee_id: int,
+) -> tuple:
+    identities = tracking_identities(link_map, employee_source, employee_id)
+    if len(identities) == 2:
+        by_source = dict(identities)
+        return (
+            "linked",
+            by_source[EMPLOYEE_SOURCE_TEST_EMPLOYEE],
+            by_source[EMPLOYEE_SOURCE_THP_WORKER],
+        )
+    return identities[0]
+
+
+def _display_identity(person: tuple) -> tuple[str, int]:
+    """Propojený řádek ukazuje centrálního zaměstnance."""
+    if person[0] == "linked":
+        return EMPLOYEE_SOURCE_THP_WORKER, int(person[2])
+    return str(person[0]), int(person[1])
 
 
 def validity_rows_for_summary(rows: list[ExamValidityRow]) -> list[ExamValidityRow]:
@@ -240,13 +281,36 @@ class ExamValidityService:
     def __init__(self) -> None:
         self.tracking = TestExamValidityTrackingRepository()
 
-    def stop_tracking(self, employee_id: int, test_definition_id: int) -> None:
-        """Vypne sledování. Zkoušky ani jejich údaje nemění."""
-        self.tracking.stop(employee_id, test_definition_id)
+    def stop_tracking(
+        self,
+        employee_id: int,
+        test_definition_id: int,
+        *,
+        employee_source: str = EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+    ) -> None:
+        """Vypne sledování. Zkoušky ani jejich údaje nemění.
 
-    def resume_tracking(self, employee_id: int, test_definition_id: int) -> None:
+        U propojené osoby zapíše značku pro obě identity.
+        """
+        self.tracking.stop(
+            employee_id,
+            test_definition_id,
+            employee_source=employee_source,
+        )
+
+    def resume_tracking(
+        self,
+        employee_id: int,
+        test_definition_id: int,
+        *,
+        employee_source: str = EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+    ) -> None:
         """Ručně obnoví sledování bez založení nové zkoušky."""
-        self.tracking.resume(employee_id, test_definition_id)
+        self.tracking.resume(
+            employee_id,
+            test_definition_id,
+            employee_source=employee_source,
+        )
 
     def retraining_summary(self, *, today: date | None = None) -> ExamRetrainingSummary:
         """Souhrn pro dashboard. Stejná platnost jako přehled, jen aktivní zaměstnanci."""
@@ -273,18 +337,25 @@ class ExamValidityService:
             int(workplace.id): workplace.name
             for workplace in settings_service.get_workplaces(include_inactive=True)
         }
+        workers = {
+            int(worker.id): worker
+            for worker in settings_service.get_workers(include_inactive=True)
+        }
+        link_map = self.tracking.link_map()
         rows = build_exam_validity_rows(
             test_exam_service.list_exams(),
             today=day,
             employees_by_id=employees,
             tests_by_id=tests,
             workplace_names=workplace_names,
+            workers_by_id=workers,
+            link_map=link_map,
         )
         untracked = self.tracking.untracked_pairs()
         if untracked:
             rows = [
                 replace(row, tracked=False)
-                if (row.employee_id, row.test_definition_id) in untracked
+                if _row_is_untracked(row, link_map, untracked)
                 else row
                 for row in rows
             ]
@@ -293,13 +364,31 @@ class ExamValidityService:
         return [row for row in rows if row.employee_active]
 
 
+def _row_is_untracked(
+    row: ExamValidityRow,
+    link_map: EmployeeLinkMap,
+    untracked: set[tuple[str, int, int]],
+) -> bool:
+    """Stačí značka u jedné z propojených identit."""
+    return any(
+        (source, person_id, row.test_definition_id) in untracked
+        for source, person_id in tracking_identities(
+            link_map,
+            row.employee_source,
+            row.employee_id,
+        )
+    )
+
+
 def _row_for_group(
     employee_id: int,
     test_id: int,
     group: list[TestExam],
     *,
+    employee_source: str,
     today: date,
     employees_by_id: dict,
+    workers_by_id: dict,
     tests_by_id: dict,
     workplace_names: dict[int, str],
 ) -> ExamValidityRow:
@@ -320,16 +409,19 @@ def _row_for_group(
         last_success_on = None
         last_success_exam_id = None
 
-    employee = employees_by_id.get(employee_id)
     test = tests_by_id.get(test_id)
     snapshot = max(group, key=lambda exam: int(exam.id or 0))
-    if employee is not None:
-        workplace_id = int(employee.workplace_id) if employee.workplace_id else None
-        personal_number = employee.personal_number
-        first_name = employee.first_name
-        last_name = employee.last_name
-        employee_name = employee.display_name
-        employee_active = bool(employee.active)
+    if employee_source == EMPLOYEE_SOURCE_THP_WORKER:
+        person = workers_by_id.get(employee_id)
+    else:
+        person = employees_by_id.get(employee_id)
+    if person is not None:
+        workplace_id = int(person.workplace_id) if person.workplace_id else None
+        personal_number = person.personal_number or ""
+        first_name = person.first_name
+        last_name = person.last_name
+        employee_name = person.display_name
+        employee_active = bool(person.active)
         workplace_name = workplace_names.get(workplace_id or -1, "")
     else:
         workplace_id = None
@@ -363,6 +455,7 @@ def _row_for_group(
         prepared_count=prepared_count,
         in_progress_count=in_progress_count,
         last_success_exam_id=last_success_exam_id,
+        employee_source=employee_source,
     )
 
 
@@ -372,6 +465,7 @@ def _row_sort_key(row: ExamValidityRow) -> tuple:
         czech_sort_key(row.first_name),
         czech_sort_key(row.personal_number),
         czech_sort_key(row.test_name),
+        row.employee_source,
         row.employee_id,
         row.test_definition_id,
     )
