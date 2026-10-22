@@ -128,6 +128,29 @@ class WindowsQtBundleTestCase(unittest.TestCase):
             self.assertIn("MinVersion=10.0", text)
             self.assertIn("ArchitecturesInstallIn64BitMode=x64compatible", text)
 
+    def test_windows_build_prepares_its_own_virtualenv_before_the_installer(self) -> None:
+        bat = (PROJECT_ROOT / "build_windows.bat").read_text(encoding="utf-8")
+        self.assertNotIn("call .venv\\Scripts\\activate", bat)
+        self.assertIn('.venv\\Scripts\\python.exe', bat)
+        self.assertIn("py -3.14 -m venv", bat)
+        self.assertIn("python -m venv", bat)
+        self.assertIn("sys.version_info[:2] == (3, 14)", bat)
+        self.assertIn("-r requirements.txt -r requirements-build.txt", bat)
+        self.assertIn("import PySide6, PyInstaller", bat)
+        self.assertLess(
+            bat.index(".venv\\Scripts\\python.exe"),
+            bat.index("-m PyInstaller"),
+        )
+        self.assertLess(
+            bat.index("import PySide6, PyInstaller"),
+            bat.index("windows_qt_bundle --argfile"),
+        )
+        self.assertLess(
+            bat.index("windows_qt_bundle --check"),
+            bat.index('"%ISCC%"'),
+        )
+        self.assertLess(bat.index("BUILD EXE SELHAL"), bat.index('"%ISCC%"'))
+
     def _tmp(self) -> Path:
         directory = Path(tempfile.mkdtemp(prefix="windows-qt-"))
         self.addCleanup(lambda: shutil.rmtree(directory, ignore_errors=True))
