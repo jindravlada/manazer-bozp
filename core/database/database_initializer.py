@@ -4276,7 +4276,7 @@ def _create_table_named(create_sql: str, table_name: str) -> str:
 
     updated, count = re.subn(
         r"^(\s*CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?)"
-        r'(?:"[^"]+"|\'[^\']+\'|[A-Za-z_][A-Za-z0-9_]*)',
+        r'(?:"[^"]+"|`[^`]+`|\[[^\]]+\]|\'[^\']+\'|[A-Za-z_][A-Za-z0-9_]*)',
         lambda match: f'{match.group(1)}"{table_name}"',
         create_sql,
         count=1,
@@ -4328,20 +4328,151 @@ def _employee_fk_targets_test_employees(connection, table_name: str) -> bool:
     )
 
 
+def _sqlite_identifier(name: str, re_module) -> str:
+    """Platný zápis identifikátoru: holý, uvozovky, zpětné uvozovky i hranaté závorky."""
+    escaped = re_module.escape(name)
+    return rf'(?:"{escaped}"|`{escaped}`|\[{escaped}\]|{escaped})'
+
+
+def _split_sql_list(body: str) -> list[str]:
+    """Rozdělí seznam definic podle čárek mimo závorky a mimo uvozené názvy."""
+    parts: list[str] = []
+    buf: list[str] = []
+    depth = 0
+    quote: str | None = None
+    index = 0
+    while index < len(body):
+        char = body[index]
+        if quote is not None:
+            buf.append(char)
+            if char == quote:
+                if quote == '"' and index + 1 < len(body) and body[index + 1] == '"':
+                    buf.append(body[index + 1])
+                    index += 2
+                    continue
+                quote = None
+            index += 1
+            continue
+        if char in {'"', "'", "`"}:
+            quote = char
+            buf.append(char)
+        elif char == "[":
+            quote = "]"
+            buf.append(char)
+        elif char == "(":
+            depth += 1
+            buf.append(char)
+        elif char == ")":
+            depth -= 1
+            buf.append(char)
+        elif char == "," and depth == 0:
+            parts.append("".join(buf).strip())
+            buf = []
+        else:
+            buf.append(char)
+        index += 1
+    tail = "".join(buf).strip()
+    if tail:
+        parts.append(tail)
+    return [part for part in parts if part]
+
+
+def _sql_list_span(create_sql: str) -> tuple[int, int] | None:
+    """Vrátí rozsah závorek se seznamem sloupců a omezení."""
+    depth = 0
+    quote: str | None = None
+    start: int | None = None
+    index = 0
+    while index < len(create_sql):
+        char = create_sql[index]
+        if quote is not None:
+            if char == quote:
+                if (
+                    quote == '"'
+                    and index + 1 < len(create_sql)
+                    and create_sql[index + 1] == '"'
+                ):
+                    index += 2
+                    continue
+                quote = None
+            index += 1
+            continue
+        if char in {'"', "'", "`"}:
+            quote = char
+        elif char == "[":
+            quote = "]"
+        elif char == "(":
+            if depth == 0:
+                start = index
+            depth += 1
+        elif char == ")" and depth:
+            depth -= 1
+            if depth == 0 and start is not None:
+                return start, index
+        index += 1
+    return None
+
+
 def _without_test_employee_fk(create_sql: str, re_module) -> str:
-    updated = re_module.sub(
-        r",?\s*FOREIGN KEY\s*\(\s*employee_id\s*\)\s*REFERENCES\s+test_employees\s*\(\s*id\s*\)",
-        "",
-        create_sql,
-        flags=re_module.IGNORECASE,
+    """Odebere cizí klíč employee_id → test_employees a ostatní definici nechá.
+
+    Názvy mohou být holé i uvozené. Omezení se odstraňuje celé. Ořez samotné
+    části REFERENCES by z ``FOREIGN KEY("employee_id")`` nechal neplatný
+    fragment a CREATE dočasné tabulky by spadl na čárce.
+    """
+    span = _sql_list_span(create_sql)
+    if span is None:
+        return create_sql
+    start, end = span
+    employee_id = _sqlite_identifier("employee_id", re_module)
+    test_employees = _sqlite_identifier("test_employees", re_module)
+    identifier = _sqlite_identifier("id", re_module)
+    constraint_name = (
+        r'(?:"[^"]+"|`[^`]+`|\[[^\]]+\]|[A-Za-z_][A-Za-z0-9_]*)'
     )
-    updated = re_module.sub(
-        r"\s+REFERENCES\s+test_employees\s*\(\s*id\s*\)",
-        "",
-        updated,
-        flags=re_module.IGNORECASE,
+    action = (
+        r"(?:ON\s+(?:DELETE|UPDATE)\s+(?:CASCADE|RESTRICT|SET\s+NULL|"
+        r"SET\s+DEFAULT|NO\s+ACTION)|MATCH\s+\w+|"
+        r"NOT\s+DEFERRABLE|DEFERRABLE(?:\s+INITIALLY\s+(?:DEFERRED|IMMEDIATE))?)"
     )
-    return re_module.sub(r",(\s*)\)", r"\1)", updated)
+    table_fk = re_module.compile(
+        rf"^(?:CONSTRAINT\s+{constraint_name}\s+)?"
+        rf"FOREIGN\s+KEY\s*\(\s*{employee_id}\s*\)\s+"
+        rf"REFERENCES\s+{test_employees}\s*\(\s*{identifier}\s*\)"
+        rf"(?:\s+{action})*\s*$",
+        re_module.IGNORECASE,
+    )
+    inline_references = re_module.compile(
+        rf"\s+REFERENCES\s+{test_employees}\s*\(\s*{identifier}\s*\)"
+        rf"(?:\s+{action})*",
+        re_module.IGNORECASE,
+    )
+    employee_column = re_module.compile(
+        rf"^\s*{employee_id}(?=\s|$)",
+        re_module.IGNORECASE,
+    )
+    changed = False
+    kept: list[str] = []
+    for part in _split_sql_list(create_sql[start + 1 : end]):
+        if table_fk.match(part):
+            changed = True
+            continue
+        if employee_column.match(part):
+            stripped = inline_references.sub("", part, count=1)
+            if stripped != part:
+                changed = True
+            kept.append(stripped)
+            continue
+        kept.append(part)
+    if not changed:
+        return create_sql
+    return (
+        create_sql[: start + 1]
+        + "\n    "
+        + ",\n    ".join(kept)
+        + "\n"
+        + create_sql[end:]
+    )
 
 
 _VALIDITY_IDENTITY_COLUMNS = (
