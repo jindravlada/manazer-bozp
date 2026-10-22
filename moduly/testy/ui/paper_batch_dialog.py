@@ -27,6 +27,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.utils.czech_sort import czech_sort_key, czech_sorted, worker_sort_key
 from core.widgets.dialog_utils import (
     configure_form_tab_navigation,
     configure_resizable_form_dialog,
@@ -51,9 +52,12 @@ from moduly.testy.sluzby.paper_batch_service import (
     prepare_and_export_paper_batch,
 )
 from moduly.testy.sluzby.test_definition_service import test_definition_service
-from moduly.testy.sluzby.test_employee_service import test_employee_service
-from moduly.testy.sluzby.test_exam_service import TestExamError, calculate_valid_until
-from moduly.testy.ui.exam_person_combo import ExamPersonCombo
+from moduly.testy.sluzby.test_exam_service import (
+    TestExamError,
+    calculate_valid_until,
+    describe_central_employee_gaps,
+)
+from moduly.testy.ui.exam_person_combo import ExamPersonCombo, exam_person_choice_label
 
 _ROLE_ID = Qt.ItemDataRole.UserRole
 _ROLE_WORKPLACE = Qt.ItemDataRole.UserRole + 1
@@ -155,18 +159,17 @@ class PaperBatchDialog(QDialog):
         actions.addStretch()
         self.employees = QTableWidget()
         self.employees.setObjectName("batch-employee-table")
-        self.employees.setColumnCount(4)
+        self.employees.setColumnCount(3)
         self.employees.setHorizontalHeaderLabels(
-            ["", "Osobní číslo", "Příjmení a jméno", "Pracoviště"]
+            ["", "Příjmení | Jméno | Tituly | Osobní číslo", "Pracoviště"]
         )
         self.employees.verticalHeader().setVisible(False)
         self.employees.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.employees.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         header = self.employees.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
         self.employees.setMinimumHeight(220)
         people_layout.addLayout(filters)
         people_layout.addLayout(actions)
@@ -188,7 +191,8 @@ class PaperBatchDialog(QDialog):
         )
         self._editor.install_auto_dirty_tracking()
 
-        self._eligible_examiners = test_employee_service.list_eligible_examiners()
+        active_workers = settings_service.get_workers(include_inactive=False)
+        self._eligible_examiners = [worker for worker in active_workers if worker.may_examine]
         self.examiner.set_people(self._eligible_examiners)
         self.chair.set_people(self._eligible_examiners)
         self.member.set_people(self._eligible_examiners)
@@ -258,56 +262,67 @@ class PaperBatchDialog(QDialog):
             self.test.addItem(item.name, int(item.id))
 
     def _load_employees(self) -> None:
-        employees = [
-            employee
-            for employee in test_employee_service.list_employees(include_inactive=False)
-            if employee.active
-        ]
-        employees.sort(
-            key=lambda employee: (
-                employee.last_name.casefold(),
-                employee.first_name.casefold(),
-                employee.personal_number.casefold(),
-            )
+        workers = czech_sorted(
+            [
+                worker
+                for worker in settings_service.get_workers(include_inactive=False)
+                if worker.active
+            ],
+            key=worker_sort_key,
         )
         workplaces = {
             workplace.id: workplace.name
             for workplace in settings_service.get_workplaces(include_inactive=True)
         }
-        self.employees.setRowCount(len(employees))
+        self.employees.setRowCount(len(workers))
         seen_workplaces: dict[int, str] = {}
-        for row, employee in enumerate(employees):
-            workplace_name = workplaces.get(employee.workplace_id, "")
-            seen_workplaces[int(employee.workplace_id)] = workplace_name
+        for row, worker in enumerate(workers):
+            workplace_name = workplaces.get(worker.workplace_id, "") if worker.workplace_id else ""
+            if worker.workplace_id:
+                seen_workplaces[int(worker.workplace_id)] = workplace_name
+            reason = describe_central_employee_gaps(worker)
+            label = exam_person_choice_label(worker)
+            if reason:
+                label = f"{label} ({reason})" if label else reason
             check = QTableWidgetItem()
-            check.setFlags(
-                Qt.ItemFlag.ItemIsEnabled
-                | Qt.ItemFlag.ItemIsUserCheckable
-                | Qt.ItemFlag.ItemIsSelectable
+            flags = Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+            if not reason:
+                flags |= Qt.ItemFlag.ItemIsUserCheckable
+            check.setFlags(flags)
+            if not reason:
+                check.setCheckState(Qt.CheckState.Unchecked)
+            check.setData(_ROLE_ID, int(worker.id))
+            check.setData(_ROLE_WORKPLACE, int(worker.workplace_id) if worker.workplace_id else None)
+            check.setData(
+                _ROLE_SEARCH,
+                " ".join(
+                    part
+                    for part in (
+                        worker.personal_number or "",
+                        worker.last_name or "",
+                        worker.first_name or "",
+                        worker.title_before or "",
+                        worker.title_after or "",
+                        reason,
+                    )
+                    if str(part).strip()
+                ).casefold(),
             )
-            check.setCheckState(Qt.CheckState.Unchecked)
-            check.setData(_ROLE_ID, int(employee.id))
-            check.setData(_ROLE_WORKPLACE, int(employee.workplace_id))
-            needle = " ".join(
-                (
-                    employee.personal_number,
-                    employee.last_name,
-                    employee.first_name,
-                )
-            )
-            check.setData(_ROLE_SEARCH, needle.casefold())
+            if reason:
+                check.setToolTip(reason)
             self.employees.setItem(row, 0, check)
-            self.employees.setItem(row, 1, QTableWidgetItem(employee.personal_number))
-            self.employees.setItem(
-                row,
-                2,
-                QTableWidgetItem(f"{employee.last_name} {employee.first_name}"),
-            )
-            self.employees.setItem(row, 3, QTableWidgetItem(workplace_name))
+            name_item = QTableWidgetItem(label)
+            if reason:
+                name_item.setToolTip(reason)
+            self.employees.setItem(row, 1, name_item)
+            self.employees.setItem(row, 2, QTableWidgetItem(workplace_name))
         self.workplace.blockSignals(True)
         self.workplace.clear()
         self.workplace.addItem("Všechna pracoviště", None)
-        for workplace_id, name in sorted(seen_workplaces.items(), key=lambda item: item[1].casefold()):
+        for workplace_id, name in sorted(
+            seen_workplaces.items(),
+            key=lambda item: czech_sort_key(item[1]),
+        ):
             self.workplace.addItem(name or "Bez pracoviště", workplace_id)
         self.workplace.blockSignals(False)
         self._apply_employee_filter()
@@ -338,8 +353,9 @@ class PaperBatchDialog(QDialog):
             if self.employees.isRowHidden(row):
                 continue
             item = self.employees.item(row, 0)
-            if item is not None:
-                item.setCheckState(state)
+            if item is None or not (item.flags() & Qt.ItemFlag.ItemIsUserCheckable):
+                continue
+            item.setCheckState(state)
 
     def _browse_folder(self) -> None:
         current = self.folder.text().strip()

@@ -40,6 +40,8 @@ with patch.object(Path, "home", return_value=_TMP):
 
     from core.database.session import get_session
     from core.models.attachment import Attachment
+    from moduly.nastaveni.modely.thp_worker import ThpWorker
+    from moduly.nastaveni.modely.thp_worker_role import ThpWorkerRole
     from moduly.nastaveni.sluzby.responsibility_role_service import (
         responsibility_role_service,
     )
@@ -91,7 +93,6 @@ with patch.object(Path, "home", return_value=_TMP):
         TestTopicQuota,
         test_definition_service,
     )
-    from moduly.testy.sluzby.test_employee_service import test_employee_service
     from moduly.testy.sluzby.test_exam_service import (
         TestExamError,
         TestExamService,
@@ -134,7 +135,7 @@ class Alternate:
 def _employee(number: str, first: str, last: str, **kwargs):
     workplace = settings_service.save_workplace(name=kwargs.get("workplace", f"Provoz {number}"))
     role = responsibility_role_service.create_role(name=kwargs.get("role_name", f"Mistr {number}"))
-    return test_employee_service.create_employee(
+    return settings_service.save_worker(
         personal_number=number,
         first_name=first,
         last_name=last,
@@ -144,6 +145,8 @@ def _employee(number: str, first: str, last: str, **kwargs):
         title_after=kwargs.get("title_after", ""),
         may_examine=kwargs.get("may_examine", False),
         active=kwargs.get("active", True),
+        is_thp=False,
+        performs_controls=False,
     )
 
 
@@ -278,6 +281,8 @@ class PaperBatchTestCase(unittest.TestCase):
             session.execute(delete(OralQuestionTopic))
             session.execute(delete(TestEmployeeRole))
             session.execute(delete(TestEmployee))
+            session.execute(delete(ThpWorkerRole))
+            session.execute(delete(ThpWorker))
             session.execute(delete(Attachment))
             session.commit()
         self.folder = _TMP / "vystup" / self._testMethodName
@@ -316,9 +321,10 @@ class PaperBatchTestCase(unittest.TestCase):
             dialog.employees.item(row, 1).text()
             for row in range(dialog.employees.rowCount())
         ]
-        self.assertIn(active_a.personal_number, numbers)
-        self.assertIn(active_b.personal_number, numbers)
-        self.assertNotIn(inactive.personal_number, numbers)
+        joined = "\n".join(numbers)
+        self.assertIn(active_a.personal_number, joined)
+        self.assertIn(active_b.personal_number, joined)
+        self.assertNotIn(inactive.personal_number, joined)
         offered = [dialog.test.itemText(index) for index in range(dialog.test.count())]
         self.assertIn(written.name, offered)
         self.assertNotIn("Jen ústní", offered)
@@ -703,7 +709,7 @@ class PaperBatchTestCase(unittest.TestCase):
     def _row(self, dialog: PaperBatchDialog, number: str) -> int:
         for row in range(dialog.employees.rowCount()):
             item = dialog.employees.item(row, 1)
-            if item is not None and item.text() == number:
+            if item is not None and number in {part.strip() for part in item.text().split("|")}:
                 return row
         raise AssertionError(number)
 

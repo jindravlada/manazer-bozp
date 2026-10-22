@@ -533,6 +533,8 @@ class TestExamService:
                 examiner_id=examiner_id,
                 chair_id=chair_id,
                 member_ids=members,
+                employee_source=EMPLOYEE_SOURCE_THP_WORKER,
+                examiner_source=EMPLOYEE_SOURCE_THP_WORKER,
             )
         except TestExamError as error:
             raise TestExamError(f"{error}\nNevytvořila se žádná zkouška.") from error
@@ -546,6 +548,8 @@ class TestExamService:
                     examiner_id=examiner_id,
                     chair_id=chair_id,
                     member_ids=members,
+                    employee_source=EMPLOYEE_SOURCE_THP_WORKER,
+                    examiner_source=EMPLOYEE_SOURCE_THP_WORKER,
                 )
                 written_plan = self._plan_written(test.id, generator) if test.uses_written else []
                 oral_plan = self._plan_oral(test.id, generator) if test.uses_oral else []
@@ -577,6 +581,7 @@ class TestExamService:
                         oral_plan=oral_plan,
                         duration=duration,
                         created_files=created_files,
+                        employee_source=EMPLOYEE_SOURCE_THP_WORKER,
                     )
                 )
             session.commit()
@@ -730,6 +735,7 @@ class TestExamService:
         seen: set[int] = set()
         missing: list[str] = []
         inactive: list[str] = []
+        incomplete: list[str] = []
         for raw in employee_ids:
             try:
                 employee_id = int(raw)
@@ -739,21 +745,30 @@ class TestExamService:
             if employee_id in seen:
                 raise TestExamError("Zaměstnanec je ve výběru vícekrát.")
             seen.add(employee_id)
-            employee = test_employee_service.get_employee(employee_id)
+            employee = settings_service.get_worker_by_id(employee_id)
             if employee is None:
                 missing.append(str(employee_id))
                 continue
             if not employee.active:
                 inactive.append(_batch_person_label(employee))
                 continue
+            if central_employee_gaps(employee):
+                incomplete.append(
+                    f"{_batch_person_label(employee)}: "
+                    f"{describe_central_employee_gaps(employee)}"
+                )
+                continue
             ordered.append(employee)
-        if missing or inactive:
+        if missing or inactive or incomplete:
             lines = ["Hromadnou přípravu nelze provést."]
             if missing:
                 lines.append("Zaměstnanec nebyl nalezen: " + ", ".join(missing) + ".")
             if inactive:
                 lines.append("Zkoušku lze připravit jen pro aktivního zaměstnance:")
                 lines.extend(inactive)
+            if incomplete:
+                lines.append("Zaměstnanci nemají povinné údaje pro zkoušku:")
+                lines.extend(incomplete)
             lines.append("Nevytvořila se žádná zkouška.")
             raise TestExamError("\n".join(lines))
         return ordered

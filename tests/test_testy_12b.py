@@ -56,6 +56,7 @@ with patch.object(Path, "home", return_value=_TMP):
         EXAM_VALIDITY_TRACKING_FILTER_UNTRACKED,
         EXAM_VALIDITY_TRACKING_OFF_LABEL,
         EXAM_VALIDITY_TRACKING_ON_LABEL,
+        EMPLOYEE_SOURCE_THP_WORKER,
         EXAMINER_MODE_NONE,
         VALIDITY_COL_IN_PROGRESS,
         VALIDITY_COL_PERSONAL_NUMBER,
@@ -246,13 +247,22 @@ class ExamValidityTrackingTests(unittest.TestCase):
         self.assertEqual(self._exam_count(), 3)
 
     def test_paper_batch_restores_only_prepared_employees(self) -> None:
-        first = self._employee("00100", "Jan", "Novák")
-        second = self._employee("00200", "Eva", "Malá")
-        outside = self._employee("00300", "Petr", "Svoboda")
+        first = self._worker("00100", "Jan", "Novák")
+        second = self._worker("00200", "Eva", "Malá")
+        outside = self._worker("00300", "Petr", "Svoboda")
         test = self._written_definition("BOZP")
         for employee in (first, second, outside):
-            self._exam(employee, test, status=EXAM_STATUS_PREPARED)
-            exam_validity_service.stop_tracking(employee.id, test.id)
+            self._exam(
+                employee,
+                test,
+                status=EXAM_STATUS_PREPARED,
+                employee_source=EMPLOYEE_SOURCE_THP_WORKER,
+            )
+            exam_validity_service.stop_tracking(
+                employee.id,
+                test.id,
+                employee_source=EMPLOYEE_SOURCE_THP_WORKER,
+            )
         created = test_exam_service.prepare_paper_batch(
             employee_ids=[first.id, second.id],
             test_id=test.id,
@@ -361,6 +371,19 @@ class ExamValidityTrackingTests(unittest.TestCase):
                 session.scalar(select(func.count()).select_from(TestExamValidityTracking)) or 0
             )
 
+    def _worker(self, number, first, last):
+        return settings_service.save_worker(
+            personal_number=number,
+            first_name=first,
+            last_name=last,
+            workplace_id=self.workplace.id,
+            responsibility_role_ids=[self.role.id],
+            active=True,
+            is_thp=False,
+            may_examine=False,
+            performs_controls=False,
+        )
+
     def _employee(self, number, first, last):
         return test_employee_service.create_employee(
             personal_number=number,
@@ -423,10 +446,12 @@ class ExamValidityTrackingTests(unittest.TestCase):
         finished_at: datetime | None = None,
         started_at: datetime | None = None,
         result: str | None = None,
+        employee_source: str = "test_employee",
     ) -> TestExam:
         exam_day = finished_at.date() if finished_at is not None else TODAY
         exam = TestExam(
             employee_id=employee.id,
+            employee_source=employee_source,
             test_definition_id=test.id,
             exam_date=exam_day,
             valid_until=valid_until if valid_until is not None else exam_day,
