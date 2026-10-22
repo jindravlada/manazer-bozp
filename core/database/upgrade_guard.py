@@ -591,9 +591,19 @@ def prepare_database_for_startup(
 
     result: PrepareDatabaseResult
 
-    # Čistá instalace / už migrovaná DB – jen idempotentní initialize.
+    # Čistá instalace / už migrovaná DB. Schéma 4.1.3 se u existující
+    # databáze zálohuje ještě před initialize_database.
     if not needs_legacy_upgrade_to_risk_registry(database_path):
-        init()
+        from moduly.nastaveni.sluzby.employee_central_413_schema_migration import (
+            guard_employee_central_413_migration,
+        )
+
+        guard_employee_central_413_migration(
+            workspace_root=workspace_root,
+            database_path=database_path,
+            settings_path=settings_path,
+            migrate=init,
+        )
         if (
             database_path.is_file()
             and sqlite_table_exists(database_path, LEGACY_MISSING_TABLE)
