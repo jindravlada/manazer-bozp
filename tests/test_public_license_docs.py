@@ -7,11 +7,26 @@ import re
 import unittest
 from pathlib import Path
 
+from core.version import APP_VERSION
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 OFFICIAL_GPL3_SHA256 = (
     "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
 )
 _MARKDOWN_LINK = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
+_RELEASE_PREFIX = "https://github.com/jindravlada/manazer-bozp/releases"
+# Linuxové stažení sleduje APP_VERSION. Tuto konstantu měň jen při novém Windows instalátoru.
+LAST_PUBLISHED_WINDOWS_VERSION = "4.1.2"
+
+
+def _release_asset_url(version: str, filename: str) -> str:
+    return f"{_RELEASE_PREFIX}/download/v{version}/{filename}"
+
+
+def _between(text: str, start: str, end: str) -> str:
+    start_at = text.index(start)
+    end_at = text.index(end, start_at + len(start))
+    return text[start_at:end_at]
 
 
 class PublicLicenseDocsTestCase(unittest.TestCase):
@@ -44,25 +59,46 @@ class PublicLicenseDocsTestCase(unittest.TestCase):
     def test_readme_links_and_paths(self) -> None:
         readme_path = PROJECT_ROOT / "README.md"
         readme = readme_path.read_text(encoding="utf-8")
-        self.assertTrue(readme.startswith("# Manažer BOZP 4.0.10"))
+        self.assertTrue(readme.startswith(f"# Manažer BOZP {APP_VERSION}"))
+        self.assertIn(f"Aktuální verze: {APP_VERSION}", readme)
         self.assertIn("GPL-3.0-or-later", readme)
         self.assertIn("Copyright © 2026 Ing. Vladimír Jindra", readme)
         self.assertNotIn("/home/", readme)
         self.assertNotIn("C:\\Users\\", readme)
         self.assertNotIn("DOKUMENTACE.md", readme)
-        release_prefix = "https://github.com/jindravlada/manazer-bozp/releases"
-        self.assertIn(
-            f"{release_prefix}/download/v4.0.10/Manazer-BOZP-4.0.10-x86_64.AppImage",
-            readme,
+        linux_url = _release_asset_url(
+            APP_VERSION,
+            f"Manazer-BOZP-{APP_VERSION}-x86_64.AppImage",
         )
-        self.assertIn(
-            f"{release_prefix}/download/v4.0.10/Manazer_BOZP_4_0_10_Setup.exe",
-            readme,
+        windows_filename = (
+            "Manazer_BOZP_"
+            f"{LAST_PUBLISHED_WINDOWS_VERSION.replace('.', '_')}_Setup.exe"
         )
+        windows_url = _release_asset_url(
+            LAST_PUBLISHED_WINDOWS_VERSION,
+            windows_filename,
+        )
+        linux_section = _between(readme, "### Linux", "### Windows")
+        windows_section = _between(readme, "### Windows", "## O aplikaci")
+        self.assertIn(linux_url, linux_section)
+        self.assertNotIn(windows_url, linux_section)
+        self.assertIn(windows_url, windows_section)
+        self.assertNotIn(linux_url, windows_section)
+        self.assertNotIn("4.0.10", linux_section)
+        self.assertNotIn("4.0.10", windows_section)
+        if LAST_PUBLISHED_WINDOWS_VERSION != APP_VERSION:
+            self.assertIn("Poslední dostupná verze", windows_section)
+            self.assertIn(LAST_PUBLISHED_WINDOWS_VERSION, windows_section)
+            self.assertIn(
+                f"Instalátor verze {APP_VERSION} zatím není dostupný.",
+                windows_section,
+            )
+        else:
+            self.assertNotIn("zatím není dostupný", windows_section)
 
         for match in _MARKDOWN_LINK.finditer(readme):
             target = match.group(1).strip()
-            if target.startswith(release_prefix):
+            if target.startswith(_RELEASE_PREFIX):
                 continue
             self.assertFalse(target.startswith(("http://", "https://")), target)
             self.assertTrue((readme_path.parent / target).is_file(), target)
