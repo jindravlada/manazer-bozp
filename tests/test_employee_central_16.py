@@ -219,6 +219,7 @@ class EmployeeCentral16TestCase(unittest.TestCase):
             employee_source=EMPLOYEE_SOURCE_THP_WORKER,
             test_id=definition.id,
             exam_date=_TODAY,
+            examiner_source=EMPLOYEE_SOURCE_THP_WORKER,
         )
         batch = test_exam_service.prepare_paper_batch(
             employee_ids=[worker.id],
@@ -258,6 +259,8 @@ class EmployeeCentral16TestCase(unittest.TestCase):
             employee_id=historical.id,
             test_id=definition.id,
             exam_date=_TODAY,
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         self._complete(historical_exam.id)
         stored = test_exam_service.get_exam(historical_exam.id)
@@ -282,6 +285,8 @@ class EmployeeCentral16TestCase(unittest.TestCase):
             employee_id=unlinked.id,
             test_id=definition.id,
             exam_date=_TODAY,
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         employee_central_link_service.link_existing(
             test_employee_id=historical.id,
@@ -292,6 +297,7 @@ class EmployeeCentral16TestCase(unittest.TestCase):
             employee_source=EMPLOYEE_SOURCE_THP_WORKER,
             test_id=definition.id,
             exam_date=_TODAY,
+            examiner_source=EMPLOYEE_SOURCE_THP_WORKER,
         )
 
         detail = self._keep(TestExamDetailDialog(exam_id=stored.id))

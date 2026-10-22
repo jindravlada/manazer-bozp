@@ -303,6 +303,8 @@ class EmployeeCentral15TestCase(unittest.TestCase):
             employee_id=worker.id,
             test_id=definition.id,
             exam_date=_EXAM_DAY,
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         historical_snapshot = (
             historical.employee_source,
@@ -362,6 +364,8 @@ class EmployeeCentral15TestCase(unittest.TestCase):
             employee_id=historical_employee.id,
             test_id=definition.id,
             exam_date=_EXAM_DAY,
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         snapshot = (
             historical.employee_source,

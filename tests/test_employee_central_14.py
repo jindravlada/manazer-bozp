@@ -40,6 +40,7 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from moduly.testy.constants import (
+        EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         EXAMINER_MODE_NONE,
         EXAMINER_MODE_SINGLE,
         VALIDITY_UNIT_YEARS,
@@ -193,6 +194,8 @@ class EmployeeCentral14TestCase(unittest.TestCase):
             employee_id=historical.id,
             test_id=plain.id,
             exam_date=date(2024, 6, 1),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         before = (
             old.employee_display_name,

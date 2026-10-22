@@ -49,6 +49,7 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from moduly.testy.constants import (
+        EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         ANSWER_KIND_IMAGE,
         ANSWER_KIND_TEXT,
         EXAMINER_MODE_NONE,
@@ -474,6 +475,8 @@ class WrittenImageNormalizationTestCase(unittest.TestCase):
             test_id=test.id,
             exam_date=_STARTED.date(),
             rng=PrefixReverse(),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         row = test_exam_service.get_written_questions(exam.id)[0]
         snapshot = test_exam_service.resolve_snapshot_image(row.image_stored_path)
@@ -527,6 +530,8 @@ class WrittenImageNormalizationTestCase(unittest.TestCase):
             test_id=test.id,
             exam_date=_STARTED.date(),
             rng=PrefixReverse(),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         written_exam_service.start(exam.id, now=_STARTED)
         row = test_exam_service.get_written_questions(exam.id)[0]
@@ -597,6 +602,8 @@ class WrittenImageNormalizationTestCase(unittest.TestCase):
             test_id=text_test.id,
             exam_date=_STARTED.date(),
             rng=PrefixReverse(),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         written_exam_service.start(text_exam.id, now=_STARTED)
         text_window = WrittenExamWindow(text_exam.id, clock=FixedWrittenExamClock(_STARTED))

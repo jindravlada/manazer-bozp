@@ -243,6 +243,8 @@ class EmployeeCentral8TestCase(unittest.TestCase):
             test_id=self.test.id,
             exam_date=date(2024, 6, 1),
             examiner_id=examiner.id,
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
 
     def _rows_for_test(self, *, today: date, include_inactive: bool = True):

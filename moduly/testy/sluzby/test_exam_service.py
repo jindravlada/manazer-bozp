@@ -409,13 +409,15 @@ class TestExamService:
         examiner_id: int | None = None,
         chair_id: int | None = None,
         member_ids: list[int] | None = None,
-        employee_source: str = EMPLOYEE_SOURCE_TEST_EMPLOYEE,
-        examiner_source: str = EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+        employee_source: str,
+        examiner_source: str,
         rng: random.Random | None = None,
     ) -> TestExam:
         """Vytvoří celou zkoušku v jednom zápisu, nebo neuloží nic.
 
-        ``rng`` je jen pro testy. Bez něj se použije systémový generátor.
+        Zdroj zkoušeného i zkoušejících je povinný. Bez něj se původní
+        evidence nepoužije. ``rng`` je jen pro testy. Bez něj se použije
+        systémový generátor.
         """
         generator = rng if rng is not None else random.SystemRandom()
         examinee_source = _known_employee_source(employee_source)
@@ -616,7 +618,7 @@ class TestExamService:
         oral_plan: list[dict],
         duration: int,
         created_files: list[Path],
-        employee_source: str = EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+        employee_source: str,
     ) -> TestExam:
         exam = TestExam(
             employee_id=employee.id,
@@ -1046,8 +1048,8 @@ class TestExamService:
         examiner_id: int | None,
         chair_id: int | None,
         member_ids: list[int],
-        employee_source: str = EMPLOYEE_SOURCE_TEST_EMPLOYEE,
-        examiner_source: str = EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+        employee_source: str,
+        examiner_source: str,
     ) -> list[dict]:
         link_map = self._employee_link_map()
         if mode == EXAMINER_MODE_NONE:
@@ -1227,11 +1229,7 @@ class TestExamService:
         workplace = settings_service.get_workplace_by_id(workplace_id)
         return workplace.name if workplace is not None else ""
 
-    def _roles_text(
-        self,
-        employee_id: int,
-        employee_source: str = EMPLOYEE_SOURCE_TEST_EMPLOYEE,
-    ) -> str:
+    def _roles_text(self, employee_id: int, employee_source: str) -> str:
         if employee_source == EMPLOYEE_SOURCE_THP_WORKER:
             role_ids = settings_service.list_worker_role_ids(employee_id)
         else:

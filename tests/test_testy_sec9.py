@@ -49,6 +49,7 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from moduly.testy.constants import (
+        EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         ANSWER_KIND_IMAGE,
         EXAM_STATUS_COMPLETED,
         EXAMINER_MODE_NONE,
@@ -438,6 +439,8 @@ class SnapshotImageIntegrityTests(unittest.TestCase):
             test_id=test.id,
             exam_date=date(2026, 10, 8),
             rng=_Rng(),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
 
     def _wipe(self) -> None:

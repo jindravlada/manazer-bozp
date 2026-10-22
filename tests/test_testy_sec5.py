@@ -61,6 +61,7 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from moduly.testy.constants import (
+        EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         ANSWER_KIND_IMAGE,
         ANSWER_KIND_TEXT,
         EXAMINER_MODE_NONE,
@@ -256,6 +257,8 @@ class ExamTextRenderingTests(unittest.TestCase):
             test_id=test.id,
             exam_date=_STARTED.date(),
             rng=_Rng(),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
 
     def tearDown(self) -> None:

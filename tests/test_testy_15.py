@@ -46,6 +46,7 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from moduly.testy.constants import (
+        EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         ANSWER_KIND_IMAGE,
         ANSWER_KIND_TEXT,
         EXAMINER_MODE_NONE,
@@ -318,6 +319,8 @@ class StudyQuestionsTests(unittest.TestCase):
             test_id=definition.id,
             exam_date=date(2026, 10, 8),
             rng=random.Random(4),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         drawn = test_exam_service.get_written_questions(exam.id)
         self.assertEqual(len(drawn), 1)

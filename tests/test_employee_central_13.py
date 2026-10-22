@@ -120,6 +120,7 @@ class EmployeeCentral13TestCase(unittest.TestCase):
             employee_source=EMPLOYEE_SOURCE_THP_WORKER,
             test_id=self.test.id,
             exam_date=date(2026, 5, 4),
+            examiner_source=EMPLOYEE_SOURCE_THP_WORKER,
         )
 
     def _dialog(self) -> TestExamPrepareDialog:
@@ -146,6 +147,8 @@ class EmployeeCentral13TestCase(unittest.TestCase):
             employee_id=historical.id,
             test_id=self.test.id,
             exam_date=date(2024, 6, 1),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         before = (
             old.employee_id,

@@ -45,7 +45,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from moduly.nastaveni.ui.employee_link_dialog import EmployeeLinkDialog
     from moduly.nastaveni.ui.nastaveni_page import NastaveniPage
-    from moduly.testy.constants import EXAMINER_MODE_NONE, VALIDITY_UNIT_YEARS
+    from moduly.testy.constants import EXAMINER_MODE_NONE, VALIDITY_UNIT_YEARS, EMPLOYEE_SOURCE_TEST_EMPLOYEE
     from moduly.testy.sluzby.oral_question_service import oral_question_service
     from moduly.testy.sluzby.oral_question_topic_service import (
         oral_question_topic_service,
@@ -250,6 +250,8 @@ class EmployeeCentral12TestCase(unittest.TestCase):
             employee_id=employee.id,
             test_id=test.id,
             exam_date=date(2024, 6, 1),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         exams_before = _rows("test_exams")
         page = NastaveniPage()

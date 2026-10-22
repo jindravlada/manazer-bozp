@@ -38,6 +38,7 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from moduly.testy.constants import (
+        EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         EXAM_ROLE_CHAIR,
         EXAM_ROLE_EXAMINER,
         EXAM_ROLE_MEMBER,
@@ -212,7 +213,12 @@ class ExamineeExcludedFromExaminersTestCase(unittest.TestCase):
     def _reject(self, **kwargs) -> TestExamError:
         before = _count(TestExam)
         with self.assertRaises(TestExamError) as caught:
-            test_exam_service.prepare_exam(rng=PrefixReverse(), **kwargs)
+            test_exam_service.prepare_exam(
+                employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+                examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+                rng=PrefixReverse(),
+                **kwargs,
+            )
         self.assertEqual(_count(TestExam), before)
         return caught.exception
 
@@ -320,6 +326,8 @@ class ExamineeExcludedFromExaminersTestCase(unittest.TestCase):
             test_id=plain.id,
             exam_date=_DAY,
             rng=PrefixReverse(),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         self.assertEqual(exam.status, EXAM_STATUS_PREPARED)
         self.assertEqual(test_exam_service.get_examiners(exam.id), [])
@@ -330,6 +338,8 @@ class ExamineeExcludedFromExaminersTestCase(unittest.TestCase):
             exam_date=_DAY,
             examiner_id=self.alfa.id,
             rng=PrefixReverse(),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         self.assertEqual(
             [(person.role, person.employee_id) for person in test_exam_service.get_examiners(kept.id)],
@@ -342,6 +352,8 @@ class ExamineeExcludedFromExaminersTestCase(unittest.TestCase):
             chair_id=self.alfa.id,
             member_ids=[self.beta.id],
             rng=PrefixReverse(),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         self.assertEqual(
             [(person.role, person.employee_id) for person in test_exam_service.get_examiners(board.id)],
@@ -359,6 +371,8 @@ class ExamineeExcludedFromExaminersTestCase(unittest.TestCase):
             exam_date=_DAY,
             examiner_id=self.alfa.id,
             rng=PrefixReverse(),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         before = _snapshot(exam.id)
         self._reject(

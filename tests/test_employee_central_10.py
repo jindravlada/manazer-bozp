@@ -191,6 +191,8 @@ class EmployeeCentral10TestCase(unittest.TestCase):
             test_id=self.single_test.id,
             exam_date=date(2024, 6, 1),
             examiner_id=historical_examiner.id,
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         before = (
             old_exam.employee_id,

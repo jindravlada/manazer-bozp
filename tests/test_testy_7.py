@@ -42,6 +42,7 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from moduly.testy.constants import (
+        EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         AGENDA_EXAMS,
         ANSWER_KIND_IMAGE,
         ANSWER_KIND_TEXT,
@@ -246,6 +247,8 @@ class ExamSnapshotTestCase(unittest.TestCase):
             test_id=test.id,
             exam_date=date(2026, 12, 15),
             rng=PrefixReverse(),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         self.assertEqual(computed.valid_until, date(2028, 12, 15))
         self.assertEqual(computed.validity_value, 2)
@@ -264,6 +267,8 @@ class ExamSnapshotTestCase(unittest.TestCase):
             test_id=months.id,
             exam_date=date(2026, 12, 15),
             rng=PrefixReverse(),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         self.assertEqual(by_months.valid_until, date(2027, 6, 15))
         self.assertEqual(by_months.validity_unit, VALIDITY_UNIT_MONTHS)
@@ -275,6 +280,8 @@ class ExamSnapshotTestCase(unittest.TestCase):
                 exam_date=date(2026, 12, 15),
                 valid_until=date(2026, 12, 14),
                 rng=PrefixReverse(),
+                employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+                examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
             )
         self.assertIn("před", str(too_early.exception))
 
@@ -284,6 +291,8 @@ class ExamSnapshotTestCase(unittest.TestCase):
             exam_date=date(2026, 12, 15),
             valid_until=date(2028, 12, 31),
             rng=PrefixReverse(),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         self.assertEqual(overridden.valid_until, date(2028, 12, 31))
         self.assertEqual(overridden.validity_value, 2)
@@ -331,6 +340,8 @@ class ExamSnapshotTestCase(unittest.TestCase):
             test_id=test.id,
             exam_date=date(2026, 5, 1),
             rng=PrefixReverse(),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         rows = test_exam_service.get_written_questions(exam.id)
         self.assertEqual([row.text for row in rows], ["B1", "A2", "A1"])
@@ -361,6 +372,8 @@ class ExamSnapshotTestCase(unittest.TestCase):
                 test_id=enough_test.id,
                 exam_date=date(2026, 5, 1),
                 rng=PrefixReverse(),
+                employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+                examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
             )
         self.assertIn("Dost", str(shortage.exception))
         self.assertIn("1", str(shortage.exception))
@@ -375,6 +388,8 @@ class ExamSnapshotTestCase(unittest.TestCase):
                 test_id=test.id,
                 exam_date=date(2026, 5, 2),
                 rng=PrefixReverse(),
+                employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+                examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
             )
         self.assertIn("Okruh B", str(inactive_topic.exception))
         self.assertIn("0", str(inactive_topic.exception))
@@ -397,6 +412,8 @@ class ExamSnapshotTestCase(unittest.TestCase):
             test_id=picture_test.id,
             exam_date=date(2026, 6, 1),
             rng=PrefixReverse(),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         row = test_exam_service.get_written_questions(exam.id)[0]
         self.assertEqual(row.text, "Zadání s obrázkem")
@@ -454,6 +471,8 @@ class ExamSnapshotTestCase(unittest.TestCase):
             test_id=image_test.id,
             exam_date=date(2026, 6, 2),
             rng=PrefixReverse(),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         image_row = test_exam_service.get_written_questions(image_exam.id)[0]
         answers = test_exam_service.get_written_answers(image_row.id)
@@ -516,6 +535,8 @@ class ExamSnapshotTestCase(unittest.TestCase):
                 test_id=lost_test.id,
                 exam_date=date(2026, 6, 3),
                 rng=PrefixReverse(),
+                employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+                examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
             )
         self.assertEqual(_count(TestExam), before)
 
@@ -582,6 +603,8 @@ class ExamSnapshotTestCase(unittest.TestCase):
                 exam_date=date(2026, 7, 1),
                 examiner_id=blocked.id,
                 rng=PrefixReverse(),
+                employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+                examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
             )
         self.assertIn("zkoušet", str(not_examiner.exception))
         test_employee_service.deactivate(examiner.id)
@@ -592,6 +615,8 @@ class ExamSnapshotTestCase(unittest.TestCase):
                 exam_date=date(2026, 7, 1),
                 examiner_id=examiner.id,
                 rng=PrefixReverse(),
+                employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+                examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
             )
         test_employee_service.activate(examiner.id)
         self.assertEqual(_count(TestExam), 0)
@@ -602,6 +627,8 @@ class ExamSnapshotTestCase(unittest.TestCase):
             exam_date=date(2026, 7, 1),
             examiner_id=examiner.id,
             rng=PrefixReverse(),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         self.assertEqual(exam.status, EXAM_STATUS_PREPARED)
         self.assertEqual(exam.employee_personal_number, "71004")
@@ -641,6 +668,8 @@ class ExamSnapshotTestCase(unittest.TestCase):
                 chair_id=chair.id,
                 member_ids=[chair.id],
                 rng=PrefixReverse(),
+                employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+                examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
             )
         self.assertIn(
             "Předseda/předsedkyně komise nemůže být současně členem/členkou komise.",
@@ -654,6 +683,8 @@ class ExamSnapshotTestCase(unittest.TestCase):
                 chair_id=chair.id,
                 member_ids=[member.id, member.id],
                 rng=PrefixReverse(),
+                employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+                examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
             )
         self.assertIn("vícekrát", str(repeated.exception))
         board = test_exam_service.prepare_exam(
@@ -663,6 +694,8 @@ class ExamSnapshotTestCase(unittest.TestCase):
             chair_id=chair.id,
             member_ids=[member.id, examiner.id],
             rng=PrefixReverse(),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         board_people = test_exam_service.get_examiners(board.id)
         self.assertEqual(

@@ -180,6 +180,8 @@ class EmployeeCentral9TestCase(unittest.TestCase):
             test_id=self.single_test.id,
             exam_date=date(2024, 6, 1),
             examiner_id=historical_examiner.id,
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         before = tuple(_exam_row(historical.id))
         self.assertEqual(historical.employee_source, EMPLOYEE_SOURCE_TEST_EMPLOYEE)
@@ -362,6 +364,8 @@ class EmployeeCentral9TestCase(unittest.TestCase):
             test_id=self.single_test.id,
             exam_date=date(2024, 6, 1),
             examiner_id=historical_examiner.id,
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         before_historical = tuple(_exam_row(historical.id))
         worker = self._worker(f"C-{self.marker}", "Eva", f"Centrum{self.marker}")
@@ -467,6 +471,8 @@ class EmployeeCentral9TestCase(unittest.TestCase):
             test_id=self.single_test.id,
             exam_date=date(2024, 6, 1),
             examiner_id=examiner.id,
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         before_exam = tuple(_exam_row(historical.id))
         connection = _connect()

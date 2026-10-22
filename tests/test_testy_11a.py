@@ -43,6 +43,7 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from moduly.testy.constants import (
+        EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         ANSWER_KIND_TEXT,
         EXAM_ACTION_PRINT_PROTOCOL,
         EXAM_COL_ID,
@@ -171,6 +172,8 @@ def _prepare(employee_id: int, **kwargs):
         chair_id=kwargs.get("chair_id"),
         member_ids=kwargs.get("member_ids"),
         rng=PrefixReverse(),
+        employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+        examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
     )
 
 

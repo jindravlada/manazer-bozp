@@ -42,7 +42,7 @@ with patch.object(Path, "home", return_value=_TMP):
         responsibility_role_service,
     )
     from moduly.nastaveni.sluzby.settings_service import settings_service
-    from moduly.testy.constants import EXAMINER_MODE_NONE, VALIDITY_UNIT_YEARS
+    from moduly.testy.constants import EXAMINER_MODE_NONE, VALIDITY_UNIT_YEARS, EMPLOYEE_SOURCE_TEST_EMPLOYEE
     from moduly.testy.sluzby.oral_question_service import oral_question_service
     from moduly.testy.sluzby.oral_question_topic_service import (
         oral_question_topic_service,
@@ -210,6 +210,8 @@ class EmployeeCentral11TestCase(unittest.TestCase):
             employee_id=self.employee.id,
             test_id=test.id,
             exam_date=date(2024, 6, 1),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         exams_before = _rows("test_exams")
         answers_before = _rows("test_exam_oral_questions")

@@ -46,6 +46,7 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from moduly.testy.constants import (
+        EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         ANSWER_KIND_IMAGE,
         ANSWER_KIND_TEXT,
         EXAM_ACTION_PRINT_WRITTEN,
@@ -323,6 +324,8 @@ class PaperTestExportTestCase(unittest.TestCase):
             test_id=definition.id,
             exam_date=date(2026, 10, 6),
             rng=PrefixReverse(),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         self.assertEqual(
             paper_test_export_service.test_filename(exam),
@@ -449,6 +452,8 @@ class PaperTestExportTestCase(unittest.TestCase):
             test_id=definition.id,
             exam_date=date(2026, 10, 6),
             rng=PrefixReverse(),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         row = test_exam_service.get_written_questions(exam.id)[0]
         snapshot = test_exam_service.resolve_snapshot_image(row.image_stored_path)
@@ -495,6 +500,8 @@ class PaperTestExportTestCase(unittest.TestCase):
             test_id=image_test.id,
             exam_date=date(2026, 10, 6),
             rng=PrefixReverse(),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         image_row = test_exam_service.get_written_questions(image_exam.id)[0]
         frozen_answers = []
@@ -612,6 +619,8 @@ class PaperTestExportTestCase(unittest.TestCase):
             test_id=definition.id,
             exam_date=date(2026, 10, 6),
             rng=PrefixReverse(),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         with get_session() as session:
             row = session.get(TestExam, exam.id)
@@ -709,6 +718,8 @@ class PaperTestExportTestCase(unittest.TestCase):
             test_id=oral_test.id,
             exam_date=date(2026, 10, 6),
             rng=PrefixReverse(),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         self.assertFalse(paper_test_export_service.can_export(oral_exam.id))
         with self.assertRaises(Exception):
@@ -768,6 +779,8 @@ class PaperTestExportTestCase(unittest.TestCase):
             test_id=definition.id,
             exam_date=date(2026, 10, 7),
             rng=PrefixReverse(),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         before = _fingerprint(exam.id)
         target = _TMP / "kompakt" / "test.odt"
@@ -842,12 +855,16 @@ class PaperTestExportTestCase(unittest.TestCase):
             test_id=definition.id,
             exam_date=date(2026, 10, 6),
             rng=PrefixReverse(),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         second = test_exam_service.prepare_exam(
             employee_id=employee.id,
             test_id=definition.id,
             exam_date=date(2026, 10, 7),
             rng=PrefixReverse(),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         oral_topic = oral_question_topic_service.create_topic(name="Ustni tisk")
         oral_question_service.create_question(topic_id=oral_topic.id, text="Ústní otázka")
@@ -865,6 +882,8 @@ class PaperTestExportTestCase(unittest.TestCase):
             test_id=oral_test.id,
             exam_date=date(2026, 10, 8),
             rng=PrefixReverse(),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         tab = self.page.exams_tab
         tab.refresh()

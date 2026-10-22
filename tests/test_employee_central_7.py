@@ -206,6 +206,8 @@ class EmployeeCentral7TestCase(unittest.TestCase):
             test_id=self.test.id,
             exam_date=date(2024, 6, 1),
             examiner_id=examiner.id,
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         exam_validity_service.stop_tracking(self.employee.id, self.test.id)
 

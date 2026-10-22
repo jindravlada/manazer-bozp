@@ -209,6 +209,8 @@ class EmployeeCentral6TestCase(unittest.TestCase):
             test_id=self.test.id,
             exam_date=date(2024, 6, 1),
             examiner_id=self.examiner.id,
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         exam_validity_service.stop_tracking(self.employee.id, self.test.id)
         connection = _connect()
@@ -354,6 +356,8 @@ class EmployeeCentral6TestCase(unittest.TestCase):
             test_id=self.test.id,
             exam_date=date(2025, 1, 15),
             examiner_id=self.examiner.id,
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         stored = test_exam_service.get_exam(fresh.id)
         assert stored is not None

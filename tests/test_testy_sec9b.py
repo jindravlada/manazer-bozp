@@ -42,6 +42,7 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from moduly.testy.constants import (
+        EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         ANSWER_KIND_IMAGE,
         EXAM_PROTOCOL_NOT_APPLICABLE,
         EXAM_STATUS_COMPLETED,
@@ -168,6 +169,8 @@ class TechnicalExamEndTests(unittest.TestCase):
             test_id=self.test.id,
             exam_date=date(2026, 10, 8),
             rng=_Rng(),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         self.question = test_exam_service.get_written_questions(self.exam.id)[0]
         self.answers = test_exam_service.get_written_answers(self.question.id)
@@ -634,6 +637,8 @@ class TechnicalExamEndTests(unittest.TestCase):
             test_id=self.test.id,
             exam_date=date(2026, 10, 8),
             rng=_Rng(),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
 
     def _race(self, first, second) -> dict:

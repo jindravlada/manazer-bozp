@@ -39,6 +39,7 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from moduly.testy.constants import (
+        EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         ANSWER_KIND_TEXT,
         EXAMINER_MODE_SINGLE,
         PAPER_TEST_INSTRUCTION,
@@ -174,6 +175,8 @@ class PaperTestAppearanceTestCase(unittest.TestCase):
             exam_date=_EXAM_DAY,
             examiner_id=examiner.id,
             rng=PrefixReverse(),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         before = (
             exam.status,

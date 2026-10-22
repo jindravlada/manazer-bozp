@@ -44,6 +44,7 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from moduly.testy.constants import (
+        EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         ANSWER_KIND_TEXT,
         EXAM_STATUS_COMPLETED,
         EXAM_STATUS_PREPARED,
@@ -224,12 +225,16 @@ class ExamValidityTrackingTests(unittest.TestCase):
             test_id=test.id,
             exam_date=date(2026, 1, 10),
             rng=PrefixReverse(),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         test_exam_service.prepare_exam(
             employee_id=other.id,
             test_id=test.id,
             exam_date=date(2026, 1, 10),
             rng=PrefixReverse(),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         before = self._signature(first.id)
         exam_validity_service.stop_tracking(employee.id, test.id)
@@ -239,6 +244,8 @@ class ExamValidityTrackingTests(unittest.TestCase):
             test_id=test.id,
             exam_date=TODAY,
             rng=PrefixReverse(),
+            employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+            examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
         )
         self.assertNotEqual(created.id, first.id)
         self.assertTrue(self._one_for(employee.id).tracked)
@@ -311,6 +318,8 @@ class ExamValidityTrackingTests(unittest.TestCase):
                 test_id=test.id,
                 exam_date=TODAY,
                 valid_until=date(2026, 1, 1),
+                employee_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+                examiner_source=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
             )
         self.assertFalse(self._one_for(employee.id).tracked)
         self.assertEqual(self._exam_count(), 1)
