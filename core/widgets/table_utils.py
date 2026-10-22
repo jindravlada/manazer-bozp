@@ -94,21 +94,24 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
     if profile == "thp_workers":
         widths = {
             0: 0,
-            1: 80,
-            2: 170,
-            3: 150,
-            4: 120,
-            5: 240,
-            6: 130,
-            7: 260,
-            8: 55,
-            9: 80,
+            1: 110,
+            2: 150,
+            3: 130,
+            4: 90,
+            5: 90,
+            6: 200,
+            7: 180,
+            8: 120,
+            9: 200,
+            10: 110,
+            11: 55,
+            12: 80,
         }
         for column, width in widths.items():
             table.setColumnWidth(column, width)
         table.setColumnHidden(0, True)
-        header.setSectionResizeMode(5, QHeaderView.Stretch)
-        header.setSectionResizeMode(7, QHeaderView.Stretch)
+        header.setSectionResizeMode(6, QHeaderView.Stretch)
+        header.setSectionResizeMode(9, QHeaderView.Stretch)
 
     elif profile == "workplaces":
         widths = {

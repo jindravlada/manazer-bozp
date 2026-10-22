@@ -8,10 +8,13 @@ from moduly.nastaveni.sluzby.settings_service import settings_service
 
 class ThpWorkerSelector(SearchComboBox):
     """
-    Výběr THP pracovníka z nastavení.
+    Výběr vedoucího zaměstnance / THP z evidence zaměstnanců.
+
+    Nabídka obsahuje jen aktivní zaměstnance s příznakem vedoucí / THP.
+    Uložené ID mimo tuto nabídku zůstane zobrazené.
 
     Chování:
-    - rozbalovací šipka se seznamem THP pracovníků,
+    - rozbalovací šipka se seznamem vedoucích zaměstnanců / THP,
     - možnost psát ručně,
     - našeptávání podle části textu bez ohledu na velikost písmen,
     - zachování interního ID pracovníka při výběru ze seznamu.
@@ -33,7 +36,10 @@ class ThpWorkerSelector(SearchComboBox):
         if self.include_empty:
             self.addItem("", None)
 
-        workers = settings_service.get_workers(include_inactive=False)
+        workers = settings_service.get_workers(
+            include_inactive=False,
+            leading_only=True,
+        )
         workers = czech_sorted(workers, key=worker_sort_key)
 
         names = []

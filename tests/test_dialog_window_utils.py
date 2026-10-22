@@ -81,7 +81,17 @@ class DialogWindowUtilsTestCase(unittest.TestCase):
         mock_show.assert_called_once()
 
     def test_small_dialog_is_not_maximized_by_default(self) -> None:
-        dialog = ThpWorkerDialog()
+        with (
+            patch(
+                "core.widgets.workplace_selector.settings_service.get_workplaces",
+                return_value=[],
+            ),
+            patch(
+                "core.widgets.search_responsibility_role_selector.responsibility_role_service.get_all",
+                return_value=[],
+            ),
+        ):
+            dialog = ThpWorkerDialog()
         with patch.object(QDialog, "exec", return_value=QDialog.DialogCode.Rejected):
             with patch.object(dialog, "showMaximized") as mock_show:
                 dialog.exec()

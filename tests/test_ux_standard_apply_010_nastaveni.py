@@ -208,9 +208,15 @@ class UxStandardApply010TestCase(unittest.TestCase):
             QAbstractItemView.SelectionMode.ExtendedSelection,
         )
 
+        active_column = next(
+            column
+            for column in range(page.worker_table.columnCount())
+            if page.worker_table.horizontalHeaderItem(column).text() == "Aktivní"
+        )
+
         # Najdi aktivní řádek
         for row in range(page.worker_table.rowCount()):
-            if page.worker_table.item(row, 9).text() == "Ano":
+            if page.worker_table.item(row, active_column).text() == "Ano":
                 self._select_rows(page.worker_table, [row], page.update_worker_buttons)
                 break
         self.assertTrue(page.worker_edit_button.isEnabled())
@@ -218,7 +224,7 @@ class UxStandardApply010TestCase(unittest.TestCase):
         self.assertTrue(page.worker_deactivate_button.isEnabled())
 
         for row in range(page.worker_table.rowCount()):
-            if page.worker_table.item(row, 9).text() == "Ne":
+            if page.worker_table.item(row, active_column).text() == "Ne":
                 self._select_rows(page.worker_table, [row], page.update_worker_buttons)
                 break
         self.assertTrue(page.worker_activate_button.isEnabled())

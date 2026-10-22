@@ -77,7 +77,7 @@ class CodebookCatalogService:
 
     _GLOBAL_DB_CODEBOOKS: tuple[tuple[str, str, str], ...] = (
         ("db:workplaces", "Provozy a pracoviště", "workplaces"),
-        ("db:thp_workers", "THP pracovníci", "thp_workers"),
+        ("db:thp_workers", "Zaměstnanci", "thp_workers"),
         ("db:employer", "Zaměstnavatel", "employers"),
         ("db:responsibility_roles", "Funkce / role", "responsibility_roles"),
         ("db:exposed_groups", "Ohrožené skupiny osob", "exposed_groups"),

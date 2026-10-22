@@ -741,7 +741,7 @@ class StateSupervisionAuthorityCatalogSeed8a1ImportTestCase(unittest.TestCase):
         self.assertEqual(
             titles,
             [
-                "THP pracovníci",
+                "Zaměstnanci",
                 "Osoby",
                 "Provozy a pracoviště",
                 "Státní dozor",

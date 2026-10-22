@@ -107,7 +107,10 @@ class TabSvedci(QWidget):
         self._refresh_visibility()
 
     def _setup_svedek_completer(self):
-        workers = settings_service.get_workers(include_inactive=False)
+        workers = settings_service.get_workers(
+            include_inactive=False,
+            leading_only=True,
+        )
         values = [worker.display_name for worker in workers]
         completer = QCompleter(values, self)
         completer.setCaseSensitivity(Qt.CaseInsensitive)

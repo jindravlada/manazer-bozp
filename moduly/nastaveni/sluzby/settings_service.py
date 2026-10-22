@@ -1,5 +1,10 @@
+from sqlalchemy.exc import IntegrityError
+
 from moduly.nastaveni.constants.workplace_hierarchy_constants import (
     WORKPLACE_ITEM_TYPE_OPERATION,
+)
+from moduly.nastaveni.sluzby.responsibility_role_service import (
+    responsibility_role_service,
 )
 from moduly.nastaveni.modely.employer import Employer
 from moduly.nastaveni.modely.thp_worker import ThpWorker
@@ -14,6 +19,21 @@ from moduly.nastaveni.sluzby.workplace_hierarchy_service import (
 
 class SettingsEmployerError(ValueError):
     pass
+
+
+class SettingsWorkerError(ValueError):
+    pass
+
+
+_WORKER_TEXT_FIELDS = (
+    "title_before",
+    "first_name",
+    "last_name",
+    "title_after",
+    "position",
+    "phone",
+    "email",
+)
 
 
 class SettingsService:
@@ -63,9 +83,17 @@ class SettingsService:
                 )
         return stored
 
-    # THP pracovníci
-    def get_workers(self, include_inactive: bool = False) -> list[ThpWorker]:
-        return self.repository.get_workers(include_inactive=include_inactive)
+    # Evidence zaměstnanců (tabulka thp_workers).
+    def get_workers(
+        self,
+        include_inactive: bool = False,
+        *,
+        leading_only: bool = False,
+    ) -> list[ThpWorker]:
+        return self.repository.get_workers(
+            include_inactive=include_inactive,
+            leading_only=leading_only,
+        )
 
     def get_workers_for_controls(self) -> list[ThpWorker]:
         return self.repository.get_workers_for_controls()
@@ -75,8 +103,15 @@ class SettingsService:
             return None
         return self.repository.get_worker_by_id(worker_id, session=session)
 
+    def list_worker_role_ids(self, worker_id: int) -> list[int]:
+        return self.repository.list_worker_role_ids(worker_id)
+
     def save_worker(self, **data) -> ThpWorker:
         worker_id = data.pop("id", None)
+        role_ids = data.pop("responsibility_role_ids", None)
+        data = self._normalize_worker_data(data, worker_id=worker_id)
+        if role_ids is not None:
+            role_ids = self._validate_role_ids(role_ids)
 
         if worker_id:
             worker = self.repository.get_worker_by_id(worker_id)
@@ -89,7 +124,111 @@ class SettingsService:
         else:
             worker = ThpWorker(**data)
 
-        return self.repository.save_worker(worker)
+        try:
+            return self.repository.save_worker(worker, role_ids=role_ids)
+        except IntegrityError as error:
+            number = data.get("personal_number") or ""
+            detail = str(getattr(error, "orig", error)).casefold()
+            if "personal_number" in detail or "uq_thp_workers_personal_number" in detail:
+                raise SettingsWorkerError(
+                    f"Zaměstnanec s osobním číslem „{number}“ již existuje."
+                ) from error
+            raise
+
+    def _normalize_worker_data(
+        self,
+        data: dict,
+        *,
+        worker_id: int | None,
+    ) -> dict:
+        normalized = dict(data)
+        for key in _WORKER_TEXT_FIELDS:
+            if key in normalized and normalized[key] is not None:
+                normalized[key] = str(normalized[key]).strip()
+
+        if worker_id is None:
+            normalized["first_name"] = self._require_name(
+                normalized.get("first_name"),
+                "Vyplňte jméno.",
+            )
+            normalized["last_name"] = self._require_name(
+                normalized.get("last_name"),
+                "Vyplňte příjmení.",
+            )
+        else:
+            if "first_name" in normalized:
+                normalized["first_name"] = self._require_name(
+                    normalized.get("first_name"),
+                    "Vyplňte jméno.",
+                )
+            if "last_name" in normalized:
+                normalized["last_name"] = self._require_name(
+                    normalized.get("last_name"),
+                    "Vyplňte příjmení.",
+                )
+
+        if "personal_number" in normalized:
+            number = str(normalized.get("personal_number") or "").strip()
+            normalized["personal_number"] = number or None
+            if number:
+                self._ensure_unique_personal_number(number, exclude_worker_id=worker_id)
+
+        if "workplace_id" in normalized:
+            normalized["workplace_id"] = self._optional_workplace_id(
+                normalized.get("workplace_id")
+            )
+        return normalized
+
+    @staticmethod
+    def _require_name(value: object, message: str) -> str:
+        normalized = str(value or "").strip()
+        if not normalized:
+            raise SettingsWorkerError(message)
+        return normalized
+
+    def _ensure_unique_personal_number(
+        self,
+        personal_number: str,
+        *,
+        exclude_worker_id: int | None,
+    ) -> None:
+        existing = self.repository.get_worker_by_personal_number(personal_number)
+        if existing is None or existing.id == exclude_worker_id:
+            return
+        raise SettingsWorkerError(
+            f"Zaměstnanec s osobním číslem „{personal_number}“ již existuje."
+        )
+
+    def _optional_workplace_id(self, workplace_id: object) -> int | None:
+        if workplace_id in (None, "", 0):
+            return None
+        try:
+            parsed = int(workplace_id)  # type: ignore[arg-type]
+        except (TypeError, ValueError) as error:
+            raise SettingsWorkerError(
+                "Zvolený provoz nebo pracoviště neexistuje."
+            ) from error
+        if self.get_workplace_by_id(parsed) is None:
+            raise SettingsWorkerError("Zvolený provoz nebo pracoviště neexistuje.")
+        return parsed
+
+    def _validate_role_ids(self, role_ids: list[int]) -> list[int]:
+        unique: list[int] = []
+        seen: set[int] = set()
+        for raw in role_ids:
+            try:
+                role_id = int(raw)
+            except (TypeError, ValueError) as error:
+                raise SettingsWorkerError(
+                    "Zvolená funkce nebo role neexistuje."
+                ) from error
+            if role_id in seen:
+                continue
+            seen.add(role_id)
+            if responsibility_role_service.get_by_id(role_id) is None:
+                raise SettingsWorkerError("Zvolená funkce nebo role neexistuje.")
+            unique.append(role_id)
+        return unique
 
     def deactivate_worker(self, worker_id: int) -> bool:
         worker = self.repository.get_worker_by_id(worker_id)

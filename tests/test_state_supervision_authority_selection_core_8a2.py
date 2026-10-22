@@ -681,7 +681,7 @@ class StateSupervisionAuthoritySelectionCore8a2ServiceTestCase(unittest.TestCase
         self.assertEqual(
             titles,
             [
-                "THP pracovníci",
+                "Zaměstnanci",
                 "Osoby",
                 "Provozy a pracoviště",
                 "Státní dozor",

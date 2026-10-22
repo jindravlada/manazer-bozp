@@ -61,7 +61,10 @@ class MeetingPersonTypeahead(SearchComboBox):
 
         candidates: list[tuple[str, dict]] = []
 
-        for worker in settings_service.get_workers(include_inactive=False):
+        for worker in settings_service.get_workers(
+            include_inactive=False,
+            leading_only=True,
+        ):
             ref = {
                 "source_type": MEETING_SOURCE_THP_WORKER,
                 "source_id": int(worker.id),

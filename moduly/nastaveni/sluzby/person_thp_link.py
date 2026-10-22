@@ -65,7 +65,10 @@ def find_thp_worker_for_person(person: Person | None) -> ThpWorker | None:
         return None
 
     matches: list[ThpWorker] = []
-    for worker in settings_service.get_workers(include_inactive=True):
+    for worker in settings_service.get_workers(
+        include_inactive=True,
+        leading_only=True,
+    ):
         if _norm(worker.first_name) != first or _norm(worker.last_name) != last:
             continue
         if email and _norm(worker.email) and _norm(worker.email) != email:

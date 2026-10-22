@@ -64,7 +64,10 @@ def resolve_current_thp_worker_id() -> int | None:
         return None
 
     matches: list[int] = []
-    for worker in settings_service.get_workers(include_inactive=False):
+    for worker in settings_service.get_workers(
+        include_inactive=False,
+        leading_only=True,
+    ):
         email = (getattr(worker, "email", None) or "").strip()
         local = email.split("@", 1)[0].casefold() if email else ""
         first = (worker.first_name or "").strip().casefold()

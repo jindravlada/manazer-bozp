@@ -45,7 +45,10 @@ class AuditProgramFinalReportService:
         if not name:
             return None
 
-        for worker in settings_service.get_workers(include_inactive=True):
+        for worker in settings_service.get_workers(
+            include_inactive=True,
+            leading_only=True,
+        ):
             if _text(worker.display_name) == name:
                 return worker.id
         return None

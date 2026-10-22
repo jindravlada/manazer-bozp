@@ -78,7 +78,7 @@ class NastaveniPage(QWidget):
         self.exposed_groups_tab = self._exposed_groups_tab()
         self.employer_tab = self._employer_tab()
 
-        self.tabs.addTab(self.workers_tab, "THP pracovníci")
+        self.tabs.addTab(self.workers_tab, "Zaměstnanci")
         self.tabs.addTab(self.persons_tab, "Osoby")
         self.tabs.addTab(self.workplaces_tab, "Provozy a pracoviště")
         self.tabs.addTab(self.state_supervision_catalog_tab, TAB_STATE_SUPERVISION)
@@ -210,7 +210,7 @@ class NastaveniPage(QWidget):
 
         toolbar = QHBoxLayout()
 
-        add_button = QPushButton("Přidat THP pracovníka")
+        add_button = QPushButton("Přidat zaměstnance")
         add_button.clicked.connect(self.add_worker)
 
         self.worker_edit_button = QPushButton("Upravit")
@@ -238,10 +238,23 @@ class NastaveniPage(QWidget):
         toolbar.addWidget(self.worker_filter)
 
         self.worker_table = QTableWidget()
-        self.worker_table.setColumnCount(10)
-        self.worker_table.setHorizontalHeaderLabels(
-            ["ID", "Titul před", "Příjmení", "Jméno", "Titul za", "Funkce", "Telefon", "E-mail", "Kont.", "Aktivní"]
-        )
+        worker_headers = [
+            "ID",
+            "Osobní číslo",
+            "Příjmení",
+            "Jméno",
+            "Titul před",
+            "Titul za",
+            "Funkce",
+            "Provoz",
+            "Telefon",
+            "E-mail",
+            "Vedoucí / THP",
+            "Kont.",
+            "Aktivní",
+        ]
+        self.worker_table.setColumnCount(len(worker_headers))
+        self.worker_table.setHorizontalHeaderLabels(worker_headers)
         self.worker_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.worker_table.setSelectionMode(QTableWidget.ExtendedSelection)
         self.worker_table.setEditTriggers(QTableWidget.NoEditTriggers)
@@ -266,7 +279,7 @@ class NastaveniPage(QWidget):
 
         info = QLabel(
             "Společný seznam osob pro audity, prověrky, úkoly a další moduly. "
-            "Není to evidence zaměstnanců ani THP pracovníků."
+            "Není to evidence zaměstnanců."
         )
         info.setWordWrap(True)
 
@@ -659,10 +672,7 @@ class NastaveniPage(QWidget):
     def add_worker(self):
         dialog = ThpWorkerDialog(self)
         if dialog.exec():
-            data = dialog.get_data()
-            if data["first_name"] and data["last_name"]:
-                settings_service.save_worker(**data)
-                self.refresh_workers()
+            self.refresh_workers()
 
     def add_person(self):
         dialog = PersonDialog(self)
@@ -796,16 +806,13 @@ class NastaveniPage(QWidget):
 
         worker = settings_service.get_worker_by_id(worker_id)
         if worker is None:
-            QMessageBox.warning(self, "THP pracovníci", "Pracovník nebyl nalezen.")
+            QMessageBox.warning(self, "Zaměstnanci", "Zaměstnanec nebyl nalezen.")
             self.refresh_workers()
             return
 
         dialog = ThpWorkerDialog(self, worker=worker)
         if dialog.exec():
-            data = dialog.get_data()
-            if data["first_name"] and data["last_name"]:
-                settings_service.save_worker(id=worker_id, **data)
-                self.refresh_workers()
+            self.refresh_workers()
 
     def activate_selected_worker(self):
         worker_id = self._selected_worker_id()
@@ -814,7 +821,7 @@ class NastaveniPage(QWidget):
 
         worker = settings_service.get_worker_by_id(worker_id)
         if worker is None:
-            QMessageBox.warning(self, "THP pracovníci", "Pracovník nebyl nalezen.")
+            QMessageBox.warning(self, "Zaměstnanci", "Zaměstnanec nebyl nalezen.")
             self.refresh_workers()
             return
         if worker.active:
@@ -822,8 +829,8 @@ class NastaveniPage(QWidget):
 
         answer = QMessageBox.question(
             self,
-            "Aktivovat pracovníka",
-            f"Opravdu znovu aktivovat pracovníka {worker.full_name}?",
+            "Aktivovat zaměstnance",
+            f"Opravdu znovu aktivovat zaměstnance {worker.full_name}?",
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No,
         )
@@ -838,7 +845,7 @@ class NastaveniPage(QWidget):
 
         worker = settings_service.get_worker_by_id(worker_id)
         if worker is None:
-            QMessageBox.warning(self, "THP pracovníci", "Pracovník nebyl nalezen.")
+            QMessageBox.warning(self, "Zaměstnanci", "Zaměstnanec nebyl nalezen.")
             self.refresh_workers()
             return
         if not worker.active:
@@ -846,8 +853,8 @@ class NastaveniPage(QWidget):
 
         answer = QMessageBox.question(
             self,
-            "Deaktivovat pracovníka",
-            f"Opravdu deaktivovat pracovníka {worker.full_name}?",
+            "Deaktivovat zaměstnance",
+            f"Opravdu deaktivovat zaměstnance {worker.full_name}?",
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No,
         )
@@ -1192,14 +1199,25 @@ class NastaveniPage(QWidget):
         include_inactive = self.worker_filter.currentText() == "Všichni"
         workers = settings_service.get_workers(include_inactive=include_inactive)
 
+        workplace_names = {
+            workplace.id: workplace.name
+            for workplace in settings_service.get_workplaces(include_inactive=True)
+        }
+
         with sorting_paused(self.worker_table):
             self.worker_table.setRowCount(len(workers))
             for row, worker in enumerate(workers):
+                personal_number = worker.personal_number or ""
+                workplace_name = (
+                    workplace_names.get(worker.workplace_id, "")
+                    if worker.workplace_id
+                    else ""
+                )
                 self.worker_table.setItem(
                     row, 0, create_typed_item(str(worker.id), typed_int(worker.id), stable_id=worker.id)
                 )
                 self.worker_table.setItem(
-                    row, 1, create_typed_item(worker.title_before, typed_text(worker.title_before), stable_id=worker.id)
+                    row, 1, create_typed_item(personal_number, typed_text(personal_number), stable_id=worker.id)
                 )
                 self.worker_table.setItem(
                     row, 2, create_typed_item(worker.last_name, typed_text(worker.last_name), stable_id=worker.id)
@@ -1208,20 +1226,35 @@ class NastaveniPage(QWidget):
                     row, 3, create_typed_item(worker.first_name, typed_text(worker.first_name), stable_id=worker.id)
                 )
                 self.worker_table.setItem(
-                    row, 4, create_typed_item(worker.title_after, typed_text(worker.title_after), stable_id=worker.id)
+                    row, 4, create_typed_item(worker.title_before, typed_text(worker.title_before), stable_id=worker.id)
                 )
                 self.worker_table.setItem(
-                    row, 5, create_typed_item(worker.position, typed_text(worker.position), stable_id=worker.id)
+                    row, 5, create_typed_item(worker.title_after, typed_text(worker.title_after), stable_id=worker.id)
                 )
                 self.worker_table.setItem(
-                    row, 6, create_typed_item(worker.phone, typed_text(worker.phone), stable_id=worker.id)
+                    row, 6, create_typed_item(worker.position, typed_text(worker.position), stable_id=worker.id)
                 )
                 self.worker_table.setItem(
-                    row, 7, create_typed_item(worker.email, typed_text(worker.email), stable_id=worker.id)
+                    row, 7, create_typed_item(workplace_name, typed_text(workplace_name), stable_id=worker.id)
+                )
+                self.worker_table.setItem(
+                    row, 8, create_typed_item(worker.phone, typed_text(worker.phone), stable_id=worker.id)
+                )
+                self.worker_table.setItem(
+                    row, 9, create_typed_item(worker.email, typed_text(worker.email), stable_id=worker.id)
                 )
                 self.worker_table.setItem(
                     row,
-                    8,
+                    10,
+                    create_typed_item(
+                        "Ano" if worker.is_thp else "Ne",
+                        typed_bool(worker.is_thp),
+                        stable_id=worker.id,
+                    ),
+                )
+                self.worker_table.setItem(
+                    row,
+                    11,
                     create_typed_item(
                         "Ano" if worker.performs_controls else "Ne",
                         typed_bool(worker.performs_controls),
@@ -1230,7 +1263,7 @@ class NastaveniPage(QWidget):
                 )
                 self.worker_table.setItem(
                     row,
-                    9,
+                    12,
                     create_typed_item(
                         "Ano" if worker.active else "Ne", typed_bool(worker.active), stable_id=worker.id
                     ),

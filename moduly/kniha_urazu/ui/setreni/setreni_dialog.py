@@ -1356,7 +1356,14 @@ class SetreniDialog(QDialog):
 
     def _thp_names(self):
         try:
-            return [w.display_name for w in settings_service.get_workers(include_inactive=False) if getattr(w, "display_name", "")]
+            return [
+                w.display_name
+                for w in settings_service.get_workers(
+                    include_inactive=False,
+                    leading_only=True,
+                )
+                if getattr(w, "display_name", "")
+            ]
         except Exception:
             return []
 
@@ -2831,7 +2838,10 @@ class SetreniDialog(QDialog):
         if worker is None:
             selected_name = self.admin_setreni_jmeno.currentText().strip()
             try:
-                for item in settings_service.get_workers(include_inactive=False):
+                for item in settings_service.get_workers(
+                    include_inactive=False,
+                    leading_only=True,
+                ):
                     if getattr(item, "display_name", "").strip() == selected_name:
                         worker = item
                         break

@@ -69,7 +69,7 @@ class CodebookCatalogServiceTestCase(unittest.TestCase):
 
         global_names = {entry.name for entry in grouped[MODULE_GLOBAL]}
         self.assertIn("Provozy a pracoviště", global_names)
-        self.assertIn("THP pracovníci", global_names)
+        self.assertIn("Zaměstnanci", global_names)
 
         kniha_names = {entry.name for entry in grouped[MODULE_KNIHA_URAZU]}
         self.assertIn("Druhy zranění", kniha_names)
@@ -220,7 +220,7 @@ class CodebooksTabTestCase(unittest.TestCase):
         self.assertIsNotNone(entry)
         assert entry is not None
         self.tab._show_entry_details(entry)
-        self.assertIn("THP pracovníci", self.tab.detail_name.text())
+        self.assertIn("Zaměstnanci", self.tab.detail_name.text())
         self.assertIn(MODULE_GLOBAL, self.tab.detail_module.text())
 
 

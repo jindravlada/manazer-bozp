@@ -1,10 +1,11 @@
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from core.database.session import get_session, open_session
 from core.utils.czech_sort import czech_sorted, worker_sort_key
 from moduly.nastaveni.modely.employer import Employer
 from moduly.nastaveni.modely.thp_worker import ThpWorker
+from moduly.nastaveni.modely.thp_worker_role import ThpWorkerRole
 from moduly.nastaveni.modely.workplace import Workplace
 
 
@@ -25,11 +26,18 @@ class SettingsRepository:
             session.refresh(employer)
             return employer
 
-    def get_workers(self, include_inactive: bool = False) -> list[ThpWorker]:
+    def get_workers(
+        self,
+        include_inactive: bool = False,
+        *,
+        leading_only: bool = False,
+    ) -> list[ThpWorker]:
         with get_session() as session:
             stmt = select(ThpWorker)
             if not include_inactive:
                 stmt = stmt.where(ThpWorker.active == True)  # noqa: E712
+            if leading_only:
+                stmt = stmt.where(ThpWorker.is_thp == True)  # noqa: E712
 
             workers = list(session.scalars(stmt))
 
@@ -57,9 +65,46 @@ class SettingsRepository:
                 current.expunge(worker)
             return worker
 
-    def save_worker(self, worker: ThpWorker) -> ThpWorker:
+    def get_worker_by_personal_number(self, personal_number: str) -> ThpWorker | None:
+        with get_session() as session:
+            stmt = select(ThpWorker).where(ThpWorker.personal_number == personal_number)
+            worker = session.scalars(stmt).first()
+            if worker is not None:
+                session.expunge(worker)
+            return worker
+
+    def list_worker_role_ids(self, worker_id: int) -> list[int]:
+        with get_session() as session:
+            stmt = (
+                select(ThpWorkerRole.responsibility_role_id)
+                .where(ThpWorkerRole.thp_worker_id == worker_id)
+                .order_by(ThpWorkerRole.sort_order, ThpWorkerRole.id)
+            )
+            return [int(value) for value in session.scalars(stmt)]
+
+    def save_worker(
+        self,
+        worker: ThpWorker,
+        *,
+        role_ids: list[int] | None = None,
+    ) -> ThpWorker:
         with get_session() as session:
             worker = session.merge(worker)
+            session.flush()
+            if role_ids is not None:
+                session.execute(
+                    delete(ThpWorkerRole).where(
+                        ThpWorkerRole.thp_worker_id == worker.id
+                    )
+                )
+                for index, role_id in enumerate(role_ids):
+                    session.add(
+                        ThpWorkerRole(
+                            thp_worker_id=worker.id,
+                            responsibility_role_id=int(role_id),
+                            sort_order=index,
+                        )
+                    )
             session.commit()
             session.refresh(worker)
             return worker
