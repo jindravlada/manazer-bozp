@@ -767,11 +767,19 @@ class ExamSnapshotTestCase(unittest.TestCase):
         self.assertEqual(test_exam_service.get_examiners(board.id)[0].display_name, "Adam Dvořák")
 
     def test_list_detail_and_prepare_dialog(self) -> None:
-        employee, _workplace, _role = _employee(
-            "71009",
-            "Jan",
-            "Novák",
+        workplace = settings_service.save_workplace(name="Provoz 71009")
+        role = responsibility_role_service.create_role(name="Mistr 71009")
+        employee = settings_service.save_worker(
+            first_name="Jan",
+            last_name="Novák",
             title_before="Ing.",
+            personal_number="71009",
+            workplace_id=workplace.id,
+            responsibility_role_ids=[role.id],
+            active=True,
+            is_thp=False,
+            may_examine=False,
+            performs_controls=False,
         )
         topic, _questions = _written("Detail", ["Text pro detail"], image=_png(self.images / "detail.png", (8, 8, 8)))
         oral_topic = oral_question_topic_service.create_topic(name="Ústní detail")

@@ -41,12 +41,15 @@ with patch.object(Path, "home", return_value=_TMP):
         EXAM_ROLE_CHAIR,
         EXAM_ROLE_EXAMINER,
         EXAM_ROLE_MEMBER,
+        EMPLOYEE_SOURCE_THP_WORKER,
         EXAM_STATUS_PREPARED,
         EXAMINER_MODE_COMMISSION,
         EXAMINER_MODE_NONE,
         EXAMINER_MODE_SINGLE,
         VALIDITY_UNIT_YEARS,
     )
+    from moduly.nastaveni.modely.thp_worker import ThpWorker
+    from moduly.nastaveni.modely.thp_worker_role import ThpWorkerRole
     from moduly.testy.modely.oral_question import OralQuestion
     from moduly.testy.modely.oral_question_topic import OralQuestionTopic
     from moduly.testy.modely.test_definition import TestDefinition
@@ -108,6 +111,22 @@ def _employee(number: str, first: str, last: str, *, may_examine: bool = False):
     )
 
 
+def _worker(number: str, first: str, last: str, *, may_examine: bool = False, active: bool = True):
+    workplace = settings_service.save_workplace(name=f"Centrální provoz {number}")
+    role = responsibility_role_service.create_role(name=f"Centrální role {number}")
+    return settings_service.save_worker(
+        personal_number=number,
+        first_name=first,
+        last_name=last,
+        workplace_id=workplace.id,
+        responsibility_role_ids=[role.id],
+        may_examine=may_examine,
+        active=active,
+        is_thp=False,
+        performs_controls=False,
+    )
+
+
 def _label(employee) -> str:
     return f"{employee.personal_number} – {employee.display_name}"
 
@@ -162,6 +181,8 @@ class ExamineeExcludedFromExaminersTestCase(unittest.TestCase):
             session.execute(delete(OralQuestionTopic))
             session.execute(delete(TestEmployeeRole))
             session.execute(delete(TestEmployee))
+            session.execute(delete(ThpWorkerRole))
+            session.execute(delete(ThpWorker))
             session.execute(delete(Attachment))
             session.commit()
         self.topic = oral_question_topic_service.create_topic(name="Ústní 8c")
@@ -172,6 +193,11 @@ class ExamineeExcludedFromExaminersTestCase(unittest.TestCase):
         self.gama = _employee("83004", "Iva", "Bezpráva", may_examine=False)
         self.delta = _employee("83005", "Petr", "Neaktivní", may_examine=True)
         test_employee_service.deactivate(self.delta.id)
+        self.w_examinee = _worker("C83001", "Jan", "Testovaný", may_examine=True)
+        self.w_alfa = _worker("C83002", "Klára", "Zkoušející", may_examine=True)
+        self.w_beta = _worker("C83003", "Adam", "Komise", may_examine=True)
+        self.w_gama = _worker("C83004", "Iva", "Bezpráva", may_examine=False)
+        self.w_delta = _worker("C83005", "Petr", "Neaktivní", may_examine=True, active=False)
 
     def tearDown(self) -> None:
         for dialog in self._dialogs:
@@ -191,52 +217,54 @@ class ExamineeExcludedFromExaminersTestCase(unittest.TestCase):
 
     def test_offer_hides_examinee_and_keeps_other_examiners(self) -> None:
         dialog = self._dialog()
-        dialog.employee.setCurrentText(_label(self.examinee))
-        self.assertEqual(dialog.employee.person_id(), self.examinee.id)
+        dialog.employee.setCurrentText(_label(self.w_examinee))
+        self.assertEqual(dialog.employee.person_id(), self.w_examinee.id)
         for combo in (dialog.examiner, dialog.chair, dialog.member):
             offered = _ids(combo)
-            self.assertNotIn(self.examinee.id, offered)
-            self.assertIn(self.alfa.id, offered)
-            self.assertIn(self.beta.id, offered)
-            self.assertNotIn(self.gama.id, offered)
-            self.assertNotIn(self.delta.id, offered)
+            self.assertNotIn(self.w_examinee.id, offered)
+            self.assertIn(self.w_alfa.id, offered)
+            self.assertIn(self.w_beta.id, offered)
+            self.assertNotIn(self.w_gama.id, offered)
+            self.assertNotIn(self.w_delta.id, offered)
 
     def test_changing_examinee_removes_conflict_from_selection(self) -> None:
         dialog = self._dialog()
-        dialog.employee.setCurrentText(_label(self.examinee))
-        dialog.examiner.setCurrentText(_label(self.alfa))
-        dialog.chair.setCurrentText(_label(self.beta))
-        dialog.member.setCurrentText(_label(self.alfa))
+        dialog.employee.setCurrentText(_label(self.w_examinee))
+        dialog.examiner.setCurrentText(_label(self.w_alfa))
+        dialog.chair.setCurrentText(_label(self.w_beta))
+        dialog.member.setCurrentText(_label(self.w_alfa))
         dialog._add_member()
-        self.assertEqual(dialog._member_ids(), [self.alfa.id])
+        self.assertEqual(dialog._member_ids(), [self.w_alfa.id])
 
         with patch(
             "moduly.testy.ui.test_exam_prepare_dialog.QMessageBox.warning"
         ) as warning:
-            dialog.employee.setCurrentText(_label(self.alfa))
+            dialog.employee.setCurrentText(_label(self.w_alfa))
         warning.assert_called()
         self.assertEqual(warning.call_args.args[1], "Testy")
         self.assertEqual(warning.call_args.args[2], EXAMINEE_CANNOT_EXAMINE)
-        self.assertEqual(dialog.employee.person_id(), self.alfa.id)
+        self.assertEqual(dialog.employee.person_id(), self.w_alfa.id)
         self.assertIsNone(dialog.examiner.person_id())
-        self.assertEqual(dialog.chair.person_id(), self.beta.id)
-        self.assertNotIn(self.alfa.id, dialog._member_ids())
-        self.assertNotIn(self.alfa.id, _ids(dialog.examiner))
-        self.assertNotIn(self.alfa.id, _ids(dialog.chair))
-        self.assertNotIn(self.alfa.id, _ids(dialog.member))
-        self.assertIn(self.beta.id, _ids(dialog.examiner))
-        self.assertIn(self.examinee.id, _ids(dialog.examiner))
+        self.assertEqual(dialog.chair.person_id(), self.w_beta.id)
+        self.assertNotIn(self.w_alfa.id, dialog._member_ids())
+        self.assertNotIn(self.w_alfa.id, _ids(dialog.examiner))
+        self.assertNotIn(self.w_alfa.id, _ids(dialog.chair))
+        self.assertNotIn(self.w_alfa.id, _ids(dialog.member))
+        self.assertIn(self.w_beta.id, _ids(dialog.examiner))
+        self.assertIn(self.w_examinee.id, _ids(dialog.examiner))
         self.assertIsNone(dialog.get_data()["examiner_id"])
+        self.assertEqual(dialog.get_data()["employee_source"], EMPLOYEE_SOURCE_THP_WORKER)
+        self.assertEqual(dialog.get_data()["examiner_source"], EMPLOYEE_SOURCE_THP_WORKER)
 
         with patch(
             "moduly.testy.ui.test_exam_prepare_dialog.QMessageBox.warning"
         ) as chair_warning:
-            dialog.employee.setCurrentText(_label(self.beta))
+            dialog.employee.setCurrentText(_label(self.w_beta))
         chair_warning.assert_called()
         self.assertEqual(chair_warning.call_args.args[2], EXAMINEE_CANNOT_EXAMINE)
         self.assertIsNone(dialog.chair.person_id())
-        self.assertNotIn(self.beta.id, _ids(dialog.chair))
-        self.assertIn(self.alfa.id, _ids(dialog.chair))
+        self.assertNotIn(self.w_beta.id, _ids(dialog.chair))
+        self.assertIn(self.w_alfa.id, _ids(dialog.chair))
 
     def test_service_rejects_examinee_in_every_examiner_role(self) -> None:
         single = _oral_test("Jeden", self.topic.id, EXAMINER_MODE_SINGLE)

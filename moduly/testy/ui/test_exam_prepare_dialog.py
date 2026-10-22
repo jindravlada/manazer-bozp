@@ -29,6 +29,7 @@ from core.widgets.dialog_utils import (
 from core.widgets.editor_dialog_controller import EditorDialogController
 from core.widgets.no_wheel_guards import NoWheelComboBox
 from moduly.testy.constants import (
+    EMPLOYEE_SOURCE_THP_WORKER,
     EXAM_DIALOG_TITLE,
     EXAM_ROLE_CHAIR_LABEL,
     EXAMINER_MODE_COMMISSION,
@@ -37,8 +38,8 @@ from moduly.testy.constants import (
     EXAMINER_MODE_SINGLE,
     MODULE_NAME,
 )
+from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.testy.sluzby.test_definition_service import test_definition_service
-from moduly.testy.sluzby.test_employee_service import test_employee_service
 from moduly.testy.sluzby.test_exam_service import (
     EXAMINEE_CANNOT_EXAMINE,
     TestExamError,
@@ -128,8 +129,11 @@ class TestExamPrepareDialog(QDialog):
         )
         self._editor.install_auto_dirty_tracking()
 
-        self.employee.set_people(test_employee_service.list_employees(include_inactive=False))
-        self._eligible_examiners = test_employee_service.list_eligible_examiners()
+        active_workers = settings_service.get_workers(include_inactive=False)
+        self.employee.set_people(active_workers)
+        self._eligible_examiners = [
+            worker for worker in active_workers if worker.may_examine
+        ]
         self._apply_examiner_choices()
         self._load_tests()
         self._apply_mode()
@@ -155,6 +159,8 @@ class TestExamPrepareDialog(QDialog):
         mode = self._mode()
         return {
             "employee_id": self.employee.person_id(),
+            "employee_source": EMPLOYEE_SOURCE_THP_WORKER,
+            "examiner_source": EMPLOYEE_SOURCE_THP_WORKER,
             "test_id": self._test_id(),
             "exam_date": self.exam_date.date().toPython(),
             "valid_until": self.valid_until.date().toPython(),
