@@ -2,10 +2,22 @@
 
 from datetime import date, datetime
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    Date,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    text,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.database.base import Base
+from moduly.testy.constants import EMPLOYEE_SOURCE_TEST_EMPLOYEE
 
 
 class TestExam(Base):
@@ -19,6 +31,10 @@ class TestExam(Base):
     __table_args__ = (
         Index("ix_test_exams_employee_id", "employee_id"),
         Index("ix_test_exams_test_definition_id", "test_definition_id"),
+        CheckConstraint(
+            "employee_source IN ('test_employee', 'thp_worker')",
+            name="ck_test_exams_employee_source",
+        ),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -26,6 +42,13 @@ class TestExam(Base):
         Integer,
         ForeignKey("test_employees.id"),
         nullable=False,
+    )
+    # Historické zkoušky mají test_employee. Centrální zdroj se zatím nezapisuje.
+    employee_source: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default=EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+        server_default=text(f"'{EMPLOYEE_SOURCE_TEST_EMPLOYEE}'"),
     )
     test_definition_id: Mapped[int] = mapped_column(
         Integer,

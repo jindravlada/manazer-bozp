@@ -3999,8 +3999,11 @@ def _ensure_test_exam_tables() -> None:
             "test_exams",
             "written_technical_detail TEXT NOT NULL DEFAULT ''",
         )
+        _add_employee_source_column("test_exams")
     if not _table_columns("test_exam_examiners"):
         TestExamExaminer.__table__.create(bind=_db_engine(), checkfirst=True)
+    else:
+        _add_employee_source_column("test_exam_examiners")
     if not _table_columns("test_exam_written_questions"):
         TestExamWrittenQuestion.__table__.create(bind=_db_engine(), checkfirst=True)
     if not _table_columns("test_exam_written_answers"):
@@ -4015,6 +4018,27 @@ def _ensure_test_exam_tables() -> None:
         )
 
         TestExamValidityTracking.__table__.create(bind=_db_engine(), checkfirst=True)
+    else:
+        _add_employee_source_column("test_exam_validity_tracking")
+
+
+def _add_employee_source_column(table_name: str) -> None:
+    """EMPLOYEE-CENTRAL-6: zdroj employee_id. Existující řádky jsou test_employee.
+
+    Přidá sloupec jen když chybí. Opakované spuštění employee_id, výsledky
+    ani snímky nepřepisuje. Pozdější hodnota thp_worker se neresetuje.
+    """
+    if table_name not in {
+        "test_exams",
+        "test_exam_examiners",
+        "test_exam_validity_tracking",
+    }:
+        return
+    _add_column(
+        table_name,
+        "employee_source VARCHAR(20) NOT NULL DEFAULT 'test_employee' "
+        "CHECK (employee_source IN ('test_employee', 'thp_worker'))",
+    )
 
 
 def _ensure_responsibility_roles_table() -> None:

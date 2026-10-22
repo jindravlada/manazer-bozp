@@ -11,6 +11,10 @@ from moduly.nastaveni.modely.test_employee_central_link import TestEmployeeCentr
 from moduly.nastaveni.modely.thp_worker import ThpWorker
 from moduly.nastaveni.modely.thp_worker_role import ThpWorkerRole
 from moduly.nastaveni.modely.workplace import Workplace
+from moduly.testy.constants import (
+    EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+    EMPLOYEE_SOURCE_THP_WORKER,
+)
 from moduly.testy.modely.test_employee import TestEmployee
 from moduly.testy.modely.test_employee_role import TestEmployeeRole
 
@@ -76,19 +80,36 @@ _UNLINK_KNOWN_COLUMNS: dict[str, frozenset[str]] = {
             "written_mode",
             "signed_protocol_attachment_id",
             "written_technical_detail",
+            "employee_source",
         }
     ),
     "test_exam_examiners": frozenset(
-        {"id", "exam_id", "employee_id", "display_name", "role", "position"}
+        {
+            "id",
+            "exam_id",
+            "employee_id",
+            "employee_source",
+            "display_name",
+            "role",
+            "position",
+        }
     ),
     "test_exam_validity_tracking": frozenset(
-        {"id", "employee_id", "test_definition_id"}
+        {"id", "employee_id", "employee_source", "test_definition_id"}
     ),
 }
 
 _UNLINK_DEPENDENCY_MESSAGE = (
     "Propojení nelze zrušit, protože závislost převodu historických vazeb "
     "nebo nových zkoušek nelze spolehlivě ověřit."
+)
+_UNLINK_NEW_EXAM_MESSAGE = (
+    "Propojení nelze zrušit, protože na něm závisí nová zkouška."
+)
+_EXAM_SOURCE_TABLES = (
+    "test_exams",
+    "test_exam_examiners",
+    "test_exam_validity_tracking",
 )
 
 
@@ -263,7 +284,11 @@ class EmployeeCentralLinkRepository:
                 raise EmployeeLinkError(
                     "Požadovaná dvojice neodpovídá uloženému propojení."
                 )
-            self._assert_unlink_has_no_unknown_dependency(session)
+            self._assert_unlink_has_no_unknown_dependency(
+                session,
+                test_employee_id=test_employee_id,
+                thp_worker_id=thp_worker_id,
+            )
             self._delete_link(
                 session,
                 by_employee,
@@ -295,17 +320,53 @@ class EmployeeCentralLinkRepository:
                 "Propojení mezi těmito zaměstnanci neexistuje."
             )
 
-    def _assert_unlink_has_no_unknown_dependency(self, session: Session) -> None:
-        """Zrušení projde jen u známého schématu bez sloupců převodu zkoušek.
+    def _assert_unlink_has_no_unknown_dependency(
+        self,
+        session: Session,
+        *,
+        test_employee_id: int,
+        thp_worker_id: int,
+    ) -> None:
+        """Zrušení projde jen u známého schématu a bez nové zkoušky této dvojice.
 
-        Historické zkoušky dál ukazují na ``test_employees`` a mapa na ně
-        neodkazuje. Nový sloupec v mapě nebo ve zkouškách by mohl znamenat
-        dokončený převod. Ten tento kód nečte, proto zrušení odmítne.
+        Sloupec ``employee_source`` je známý. Hodnota ``test_employee`` patří
+        k historickým zkouškám a zrušení mapy nebrání. Řádek ``thp_worker``
+        u tohoto zaměstnance už je nová zkouška, proto se vazba neruší.
+        Neznámý sloupec nebo nepovolený zdroj ověřit nejde, proto se zrušení
+        odmítne.
         """
         for table_name, known in _UNLINK_KNOWN_COLUMNS.items():
             live = self._live_columns(session, table_name)
             if live is None or live != known:
                 raise EmployeeLinkError(_UNLINK_DEPENDENCY_MESSAGE)
+        for table_name in _EXAM_SOURCE_TABLES:
+            invalid = session.execute(
+                text(
+                    f'SELECT COUNT(*) FROM "{table_name}" '
+                    "WHERE employee_source IS NULL "
+                    "OR employee_source NOT IN (:historical, :central)"
+                ),
+                {
+                    "historical": EMPLOYEE_SOURCE_TEST_EMPLOYEE,
+                    "central": EMPLOYEE_SOURCE_THP_WORKER,
+                },
+            ).scalar()
+            if int(invalid or 0) > 0:
+                raise EmployeeLinkError(_UNLINK_DEPENDENCY_MESSAGE)
+            dependent = session.execute(
+                text(
+                    f'SELECT COUNT(*) FROM "{table_name}" '
+                    "WHERE employee_source = :central "
+                    "AND employee_id IN (:worker_id, :test_employee_id)"
+                ),
+                {
+                    "central": EMPLOYEE_SOURCE_THP_WORKER,
+                    "worker_id": int(thp_worker_id),
+                    "test_employee_id": int(test_employee_id),
+                },
+            ).scalar()
+            if int(dependent or 0) > 0:
+                raise EmployeeLinkError(_UNLINK_NEW_EXAM_MESSAGE)
 
     def _live_columns(self, session: Session, table_name: str) -> set[str] | None:
         exists = session.execute(

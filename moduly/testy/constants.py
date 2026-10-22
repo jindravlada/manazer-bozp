@@ -16,6 +16,10 @@ DIALOG_TITLE_NEW = "Nový zaměstnanec"
 DIALOG_TITLE_EDIT = "Zaměstnanec"
 SEARCH_PLACEHOLDER = "🔍 Hledat zaměstnance..."
 
+# Původ hodnoty employee_id u zkoušky, zkoušejícího a sledování platnosti.
+EMPLOYEE_SOURCE_TEST_EMPLOYEE = "test_employee"
+EMPLOYEE_SOURCE_THP_WORKER = "thp_worker"
+
 COL_ID = 0
 COL_PERSONAL_NUMBER = 1
 COL_LAST_NAME = 2
