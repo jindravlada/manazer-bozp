@@ -47,7 +47,11 @@ from moduly.testy.ui.written_questions_tab import WrittenQuestionsTab
 
 
 class TestyPage(QWidget):
-    """Modul Testy: zaměstnanci, otázky a definice testů."""
+    """Modul Testy: příprava testů a evidence výsledků.
+
+    Záložka zaměstnanců zůstává v paměti kvůli historickým datům,
+    v pásu záložek se nezobrazuje. Nové osoby se zakládají v Nastavení.
+    """
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -77,6 +81,12 @@ class TestyPage(QWidget):
         self.tabs.addTab(self.tests_tab, AGENDA_TESTS)
         self.tabs.addTab(self.exams_tab, AGENDA_EXAMS)
         self.tabs.addTab(self.validity_tab, AGENDA_EXAM_VALIDITY)
+        employee_index = self.tabs.indexOf(self.employees_tab)
+        self.tabs.setTabVisible(employee_index, False)
+        for index in range(self.tabs.count()):
+            if self.tabs.isTabVisible(index):
+                self.tabs.setCurrentIndex(index)
+                break
         self.exams_tab.exams_changed.connect(self.validity_tab.refresh)
         self.tabs.currentChanged.connect(self._on_tab_changed)
 

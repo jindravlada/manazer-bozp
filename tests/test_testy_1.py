@@ -64,7 +64,7 @@ class Testy1ModuleTestCase(unittest.TestCase):
         self.assertEqual(labels.get("InfoText"), PAGE_SUBTITLE)
         self.assertEqual(
             PAGE_SUBTITLE,
-            "Evidence zaměstnanců, příprava testů a evidence výsledků přezkoušení.",
+            "Příprava testů a evidence výsledků přezkoušení.",
         )
 
     def test_available_from_main_navigation(self) -> None:
