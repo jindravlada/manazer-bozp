@@ -4057,56 +4057,256 @@ _EXAM_EMPLOYEE_INDEXES = {
 }
 
 
+# Tabulky, kterým přejmenování test_exams přepsalo cizí klíč na test_exams__kept.
+# Další cíle v jejich definici (otázka, odpověď, banka) se nesmí přepisovat.
+_EXAM_KEPT_REFERENCE_TABLES = (
+    "test_exam_examiners",
+    "test_exam_written_questions",
+    "test_exam_written_choices",
+    "test_exam_oral_questions",
+)
+
+
 def _release_exam_employee_foreign_keys() -> None:
-    """EMPLOYEE-CENTRAL-9: employee_id už nepatří jen do test_employees.
+    """EMPLOYEE-CENTRAL-9 a CENTRAL-21: uvolnit employee_id a opravit __kept.
 
-    Historické hodnoty se kopírují beze změny. Ostatní vazby a indexy zůstávají.
+    Všechny úpravy schématu zkoušek proběhnou v jedné transakci. Při chybě
+    se vrátí původní definice i řádky. Přejmenování živé tabulky na __kept
+    se už nepoužívá, protože SQLite při něm přepíše odkazy potomků.
     """
+    with _db_engine().connect() as connection:
+        if not _exam_foreign_key_fix_pending(connection):
+            return
+    _run_schema_transaction(_apply_exam_foreign_key_fixes)
+
+
+def _exam_foreign_key_fix_pending(connection) -> bool:
     for table_name in ("test_exams", "test_exam_examiners"):
-        _release_employee_foreign_key(table_name)
+        if _employee_fk_targets_test_employees(connection, table_name):
+            return True
+    existing = _schema_table_names(connection)
+    for table_name in _EXAM_KEPT_REFERENCE_TABLES:
+        create_sql = _table_create_sql(connection, table_name)
+        if create_sql is None:
+            continue
+        if _restore_dropped_kept_references(create_sql, existing) != create_sql:
+            return True
+    return False
 
 
-def _release_employee_foreign_key(table_name: str) -> None:
+def _apply_exam_foreign_key_fixes(connection) -> None:
+    for table_name in ("test_exams", "test_exam_examiners"):
+        _release_employee_foreign_key_on(connection, table_name)
+    for table_name in _EXAM_KEPT_REFERENCE_TABLES:
+        _repair_kept_reference_on(connection, table_name)
+
+
+def _release_employee_foreign_key_on(connection, table_name: str) -> None:
     import re
 
-    with _db_engine().connect() as connection:
-        if not _employee_fk_targets_test_employees(connection, table_name):
-            return
-        create_sql = connection.execute(
-            text(
-                "SELECT sql FROM sqlite_master "
-                "WHERE type = 'table' AND name = :table_name"
-            ),
-            {"table_name": table_name},
-        ).scalar()
-        index_sqls = [
-            str(row[0])
-            for row in connection.execute(
-                text(
-                    "SELECT sql FROM sqlite_master "
-                    "WHERE type = 'index' AND tbl_name = :table_name "
-                    "AND sql IS NOT NULL"
-                ),
-                {"table_name": table_name},
-            )
-        ]
+    if not _employee_fk_targets_test_employees(connection, table_name):
+        return
+    create_sql = _table_create_sql(connection, table_name)
     if not create_sql:
         return
-    rebuilt = _without_test_employee_fk(str(create_sql), re)
-    if rebuilt == str(create_sql):
+    existing = _schema_table_names(connection)
+    rebuilt = _restore_dropped_kept_references(
+        _without_test_employee_fk(create_sql, re),
+        existing,
+    )
+    if rebuilt == create_sql:
         return
-    kept = f"{table_name}__kept"
-    with _db_engine().begin() as connection:
-        if not _employee_fk_targets_test_employees(connection, table_name):
-            return
-        connection.execute(text(f'ALTER TABLE "{table_name}" RENAME TO "{kept}"'))
-        connection.execute(text(rebuilt))
-        connection.execute(text(f'INSERT INTO "{table_name}" SELECT * FROM "{kept}"'))
-        connection.execute(text(f'DROP TABLE "{kept}"'))
-        for index_sql in index_sqls:
-            connection.execute(text(index_sql))
-        for index_sql in _EXAM_EMPLOYEE_INDEXES.get(table_name, ()):
-            connection.execute(text(index_sql))
+    _replace_table_keeping_rows(
+        connection,
+        table_name,
+        rebuilt,
+        _table_object_sql(connection, table_name, "index")
+        + list(_EXAM_EMPLOYEE_INDEXES.get(table_name, ())),
+        _table_object_sql(connection, table_name, "trigger"),
+    )
+
+
+def _repair_kept_reference_on(connection, table_name: str) -> None:
+    """Vrátí odkaz na tabulku__kept jen tehdy, když tato tabulka už neexistuje.
+
+    Cíl je tabulka bez přípony. Odkaz na existující tabulku, včetně otázky
+    nebo odpovědi, zůstane. Když tabulka__kept pořád existuje, odkaz se
+    nemění: data by se mohla přiřadit k jiné tabulce.
+    """
+    create_sql = _table_create_sql(connection, table_name)
+    if not create_sql:
+        return
+    rebuilt = _restore_dropped_kept_references(
+        create_sql,
+        _schema_table_names(connection),
+    )
+    if rebuilt == create_sql:
+        return
+    _replace_table_keeping_rows(
+        connection,
+        table_name,
+        rebuilt,
+        _table_object_sql(connection, table_name, "index"),
+        _table_object_sql(connection, table_name, "trigger"),
+    )
+
+
+def _run_schema_transaction(work) -> None:
+    """Jedna transakce DDL. Cizí klíče potomků se při přejmenování nemění.
+
+    Ovladač sqlite3 ukládá CREATE TABLE hned, dokud se před ním nepošle
+    BEGIN a isolation_level není None. Bez toho by při chybě zůstala
+    dočasná tabulka. Pragma i isolation_level se po návratu vrací.
+    Produkční engine foreign_keys nezapíná.
+    """
+    connection = _db_engine().connect()
+    dbapi = connection.connection.driver_connection
+    previous_isolation = dbapi.isolation_level
+    foreign_keys = 0
+    legacy = 0
+    try:
+        foreign_keys = connection.execute(text("PRAGMA foreign_keys")).scalar()
+        legacy = connection.execute(text("PRAGMA legacy_alter_table")).scalar()
+        connection.exec_driver_sql("PRAGMA foreign_keys=OFF")
+        connection.exec_driver_sql("PRAGMA legacy_alter_table=ON")
+        connection.commit()
+        dbapi.isolation_level = None
+        connection.exec_driver_sql("BEGIN")
+        try:
+            work(connection)
+        except Exception:
+            connection.exec_driver_sql("ROLLBACK")
+            raise
+        else:
+            connection.exec_driver_sql("COMMIT")
+    finally:
+        try:
+            dbapi.isolation_level = previous_isolation
+            foreign_sql = "ON" if int(foreign_keys or 0) else "OFF"
+            legacy_sql = "ON" if int(legacy or 0) else "OFF"
+            connection.exec_driver_sql(f"PRAGMA foreign_keys={foreign_sql}")
+            connection.exec_driver_sql(f"PRAGMA legacy_alter_table={legacy_sql}")
+            connection.commit()
+        finally:
+            connection.close()
+
+
+def _replace_table_keeping_rows(
+    connection,
+    table_name: str,
+    create_sql: str,
+    index_sqls: list[str],
+    trigger_sqls: list[str] | tuple[str, ...] = (),
+) -> None:
+    """Vymění definici tabulky. Živý název se nerenamuje na __kept.
+
+    Nová tabulka se naplní, teprve potom se původní zahodí a nová přejmenuje
+    zpět. Potomci po celou dobu dál ukazují na původní jméno.
+    """
+    temporary = f"{table_name}__fkrepair"
+    if _table_create_sql(connection, temporary):
+        raise RuntimeError(
+            f"Dočasná tabulka {temporary} už existuje. Oprava se nespustila."
+        )
+    before = _table_fingerprint(connection, table_name)
+    connection.exec_driver_sql(_create_table_named(create_sql, temporary))
+    connection.exec_driver_sql(
+        f'INSERT INTO "{temporary}" SELECT * FROM "{table_name}"'
+    )
+    if _table_fingerprint(connection, temporary) != before:
+        raise RuntimeError(
+            f"Oprava tabulky {table_name} by změnila uložené řádky."
+        )
+    connection.exec_driver_sql(f'DROP TABLE "{table_name}"')
+    connection.exec_driver_sql(
+        f'ALTER TABLE "{temporary}" RENAME TO "{table_name}"'
+    )
+    for statement in index_sqls:
+        connection.exec_driver_sql(statement)
+    for statement in trigger_sqls:
+        connection.exec_driver_sql(statement)
+    if _table_fingerprint(connection, table_name) != before:
+        raise RuntimeError(
+            f"Oprava tabulky {table_name} by změnila uložené řádky."
+        )
+
+
+def _table_fingerprint(connection, table_name: str) -> tuple[int, str]:
+    import hashlib
+
+    rows = connection.execute(
+        text(f'SELECT * FROM "{table_name}" ORDER BY rowid')
+    ).fetchall()
+    payload = repr(tuple(tuple(row) for row in rows)).encode()
+    return len(rows), hashlib.sha256(payload).hexdigest()
+
+
+def _schema_table_names(connection) -> set[str]:
+    rows = connection.execute(
+        text("SELECT name FROM sqlite_master WHERE type = 'table'")
+    ).fetchall()
+    return {str(row[0]) for row in rows}
+
+
+def _table_create_sql(connection, table_name: str) -> str | None:
+    row = connection.execute(
+        text(
+            "SELECT sql FROM sqlite_master "
+            "WHERE type = 'table' AND name = :table_name"
+        ),
+        {"table_name": table_name},
+    ).scalar()
+    return str(row) if row else None
+
+
+def _table_object_sql(connection, table_name: str, object_type: str) -> list[str]:
+    rows = connection.execute(
+        text(
+            "SELECT sql FROM sqlite_master "
+            "WHERE type = :object_type AND tbl_name = :table_name "
+            "AND sql IS NOT NULL ORDER BY name"
+        ),
+        {"object_type": object_type, "table_name": table_name},
+    ).fetchall()
+    return [str(row[0]) for row in rows]
+
+
+def _create_table_named(create_sql: str, table_name: str) -> str:
+    import re
+
+    updated, count = re.subn(
+        r"^(\s*CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?)"
+        r'(?:"[^"]+"|\'[^\']+\'|[A-Za-z_][A-Za-z0-9_]*)',
+        lambda match: f'{match.group(1)}"{table_name}"',
+        create_sql,
+        count=1,
+        flags=re.IGNORECASE,
+    )
+    if count != 1:
+        raise RuntimeError(f"Nelze přejmenovat definici tabulky {table_name}.")
+    return updated
+
+
+def _restore_dropped_kept_references(create_sql: str, existing_tables: set[str]) -> str:
+    import re
+
+    def replace(match: re.Match[str]) -> str:
+        name = match.group(1) or match.group(2) or match.group(3)
+        if not name.endswith("__kept"):
+            return match.group(0)
+        base = name[: -len("__kept")]
+        if name in existing_tables or base not in existing_tables:
+            return match.group(0)
+        return f"REFERENCES {base}"
+
+    return re.sub(
+        r"REFERENCES\s+(?:\"([A-Za-z_][A-Za-z0-9_]*)\""
+        r"|'([A-Za-z_][A-Za-z0-9_]*)'"
+        r"|([A-Za-z_][A-Za-z0-9_]*))",
+        replace,
+        create_sql,
+        flags=re.IGNORECASE,
+    )
 
 
 def _employee_fk_targets_test_employees(connection, table_name: str) -> bool:
