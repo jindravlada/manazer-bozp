@@ -15,6 +15,8 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QMessageBox,
+    QPushButton,
+    QSizePolicy,
     QSpinBox,
     QTabWidget,
     QTableWidget,
@@ -28,6 +30,11 @@ from core.widgets.dialog_utils import (
     configure_resizable_form_dialog,
     create_save_cancel_box,
     wrap_in_scroll_area,
+)
+from core.widgets.editor_dialog_controller import (
+    EDITOR_CLOSE_LABEL,
+    configure_editor_close_button,
+    configure_editor_save_button,
 )
 from moduly.periodicke_cinnosti.ui.save_confirmation import ConfirmingSaveController
 from core.widgets.nullable_date_edit import NullableDateEdit
@@ -71,6 +78,9 @@ from moduly.periodicke_cinnosti.sluzby.periodic_activity_service import (
     periodic_activity_service,
 )
 
+_SAVE_CLOSE_LABEL = "Uložit a zavřít"
+_UNSAVED_ABORT_LABEL = "Zpět"
+
 
 class PeriodicActivityDialog(QDialog):
     def __init__(self, parent=None, activity=None):
@@ -87,14 +97,26 @@ class PeriodicActivityDialog(QDialog):
         layout.addWidget(self.tabs, 1)
 
         buttons = create_save_cancel_box(self, is_new=activity is None)
-        layout.addWidget(buttons)
         self._editor = ConfirmingSaveController(
             self,
             buttons,
             is_new=activity is None,
             title=self.windowTitle(),
             on_save=self._save,
+            unsaved_abort_label=_UNSAVED_ABORT_LABEL,
         )
+        configure_editor_close_button(self._editor.close_button, is_new=False)
+        if self._editor.close_button is not None:
+            self._editor.close_button.setText(EDITOR_CLOSE_LABEL)
+        layout.addLayout(self._build_footer(buttons))
+        buttons.hide()
+        for button in (
+            self._editor.save_button,
+            self._save_close_btn,
+            self._editor.close_button,
+        ):
+            if button is not None:
+                button.setVisible(True)
         self._editor.set_snapshot_provider(self.get_data)
         self._editor.install_auto_dirty_tracking()
 
@@ -317,6 +339,40 @@ class PeriodicActivityDialog(QDialog):
         self.history_attachments_hint.hide()
         self.history_attachments.set_entity(ENTITY_PERIODIC_OCCURRENCE, occurrence_id)
 
+    def _build_footer(self, buttons) -> QHBoxLayout:
+        """Uložit | Uložit a zavřít | Zavřít vpravo."""
+        footer = QHBoxLayout()
+        footer.setContentsMargins(0, 0, 0, 0)
+        footer.setSpacing(8)
+        footer.addStretch(1)
+
+        self._save_close_btn = QPushButton(_SAVE_CLOSE_LABEL)
+        configure_editor_save_button(self._save_close_btn)
+        self._save_close_btn.setText(_SAVE_CLOSE_LABEL)
+        self._save_close_btn.clicked.connect(self._save_and_close)
+        self._editor.bind_extra_save_button(self._save_close_btn)
+
+        ordered = [
+            self._editor.save_button,
+            self._save_close_btn,
+            self._editor.close_button,
+        ]
+        for button in ordered:
+            if button is None:
+                continue
+            button.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+            button.setAutoDefault(False)
+            button.setDefault(False)
+            footer.addWidget(button)
+        self._button_box = buttons
+        return footer
+
+    def _save_and_close(self) -> None:
+        if not self._editor._run_save():
+            return
+        self._editor._closing = True
+        QDialog.accept(self)
+
     def get_data(self) -> dict:
         worker = self.responsible_selector.current_person()
         worker_id = self.responsible_selector.current_person_id()
@@ -345,9 +401,12 @@ class PeriodicActivityDialog(QDialog):
         if not data["title"]:
             QMessageBox.warning(self, self.windowTitle(), TITLE_REQUIRED_MESSAGE)
             return False
+        creating = self.activity is None
         try:
-            if self.activity is None:
+            if creating:
                 self.activity = periodic_activity_service.create_activity(**data)
+                self.setWindowTitle(DIALOG_TITLE_EDIT)
+                self._editor._title = DIALOG_TITLE_EDIT
                 self._load_history(self.activity.id)
             else:
                 self.activity = periodic_activity_service.update_activity(
