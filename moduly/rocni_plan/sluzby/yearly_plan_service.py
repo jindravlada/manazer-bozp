@@ -7,6 +7,7 @@ from datetime import date, datetime
 
 from core.shared.working_days import first_working_day
 from moduly.periodicke_cinnosti.sluzby.periodic_activity_service import (
+    add_calendar_months,
     add_period,
     periodic_activity_service,
 )
@@ -61,6 +62,7 @@ from moduly.schuzky.sluzby.meeting_service import meeting_service
 from moduly.ukoly.sluzby.task_service import task_service
 
 _MAX_PERIODIC_PROJECTIONS = 5000
+PERIODIC_ATTENTION_HORIZON_MONTHS = 3
 
 
 class YearlyPlanValidationError(ValueError):
@@ -260,6 +262,68 @@ def _periodic_display_status(planned_due: date, *, has_occurrence: bool, today: 
     return DISPLAY_PLANNED
 
 
+def iter_periodic_due_dates(activity, *, until: date):
+    """Termíny od next_due_date po krocích periody, včetně until.
+
+    Stejný krok jako Roční plán: add_period, konec při nepostupujícím datu
+    nebo po vyčerpání stropu. Budoucí výskyty nezapisuje.
+    """
+    due = getattr(activity, "next_due_date", None)
+    if due is None:
+        return
+    candidate = due
+    for _ in range(_MAX_PERIODIC_PROJECTIONS):
+        if candidate > until:
+            return
+        yield candidate
+        try:
+            nxt = add_period(
+                candidate,
+                activity.repeat_every,
+                activity.repeat_unit,
+            )
+        except Exception:
+            return
+        if nxt <= candidate:
+            return
+        candidate = nxt
+
+
+def completed_periodic_dates(activity_id: int) -> set[date]:
+    """Plánovaná data provedení. Opakování téhož data je jeden termín."""
+    found: set[date] = set()
+    for occurrence in periodic_activity_service.list_occurrences(activity_id):
+        planned = occurrence.planned_due_date
+        if planned is not None:
+            found.add(planned)
+    return found
+
+
+def attention_periodic_due_dates(activity, *, today: date) -> list[date]:
+    """Jeden prošlý otevřený termín a otevřené termíny do dneška + 3 měsíce.
+
+    Mezilehlé prošlé měsíce se do upozornění nepromítají.
+    Splněné datum se nevrací.
+    """
+    horizon_end = add_calendar_months(today, PERIODIC_ATTENTION_HORIZON_MONTHS)
+    completed = completed_periodic_dates(activity.id)
+    overdue: date | None = None
+    upcoming: list[date] = []
+    for candidate in iter_periodic_due_dates(activity, until=horizon_end):
+        if candidate in completed:
+            continue
+        if candidate < today:
+            if overdue is None:
+                overdue = candidate
+            continue
+        upcoming.append(candidate)
+    dates: list[date] = []
+    if overdue is not None:
+        dates.append(overdue)
+    dates.extend(upcoming)
+    return dates
+
+
 def list_periodic_rows_for_month(
     year: int,
     month: int,
@@ -299,45 +363,34 @@ def list_periodic_rows_for_month(
                 )
             )
 
-        due = activity.next_due_date
-        if due is None:
+        if activity.next_due_date is None:
             continue
 
-        candidate = due
-        for _ in range(_MAX_PERIODIC_PROJECTIONS):
-            if candidate.year > year:
-                break
-            if candidate.year == year and candidate.month == month:
-                key = (activity.id, candidate)
-                if key not in seen:
-                    seen.add(key)
-                    rows.append(
-                        YearlyPlanRow(
-                            kind=ROW_KIND_PERIODIC,
-                            title=title,
-                            note=note,
-                            display_status=_periodic_display_status(
-                                candidate,
-                                has_occurrence=False,
-                                today=today,
-                            ),
-                            link_text="—",
-                            source_label=SOURCE_LABEL_PERIODIC,
-                            activity_id=activity.id,
-                            planned_due_date=candidate,
-                        )
-                    )
-            try:
-                nxt = add_period(
-                    candidate,
-                    activity.repeat_every,
-                    activity.repeat_unit,
+        for candidate in iter_periodic_due_dates(
+            activity, until=date(year, 12, 31)
+        ):
+            if candidate.year != year or candidate.month != month:
+                continue
+            key = (activity.id, candidate)
+            if key in seen:
+                continue
+            seen.add(key)
+            rows.append(
+                YearlyPlanRow(
+                    kind=ROW_KIND_PERIODIC,
+                    title=title,
+                    note=note,
+                    display_status=_periodic_display_status(
+                        candidate,
+                        has_occurrence=False,
+                        today=today,
+                    ),
+                    link_text="—",
+                    source_label=SOURCE_LABEL_PERIODIC,
+                    activity_id=activity.id,
+                    planned_due_date=candidate,
                 )
-            except Exception:
-                break
-            if nxt <= candidate:
-                break
-            candidate = nxt
+            )
 
     return rows
 

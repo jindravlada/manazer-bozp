@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import calendar
 from datetime import date, datetime
 
 from PySide6.QtCore import QDate, QEvent, QPoint, QRect, Qt
@@ -14,6 +15,7 @@ from core.widgets.persistent_tooltips import (
     show_persistent_tooltip,
 )
 
+from core.dashboard.attention_item import ITEM_TYPE_PERIODIC, TYPE_LABELS
 from core.dashboard.widget_base import DashboardPanel
 from moduly.agenda.constants import (
     ITEM_TYPE_MEETING,
@@ -26,6 +28,13 @@ from moduly.agenda.constants import (
     TYPE_LABEL_TASK,
 )
 from moduly.agenda.sluzby.agenda_service import AgendaItem, agenda_service
+from moduly.periodicke_cinnosti.sluzby.periodic_activity_service import (
+    periodic_activity_service,
+)
+from moduly.rocni_plan.sluzby.yearly_plan_service import (
+    completed_periodic_dates,
+    iter_periodic_due_dates,
+)
 
 # Kompaktní kalendář – preferred velikost, aby při užším okně neblokoval zmenšení.
 _CALENDAR_WIDTH = 420
@@ -329,6 +338,8 @@ def build_calendar_day_data(
         and item.row_state != ROW_STATE_CANCELED
         # Ukončené úkoly patří do filtrů Agendy, ne do kalendáře na ploše.
         and not (item.item_type == ITEM_TYPE_TASK and item.row_state == ROW_STATE_DONE)
+        # Periodické činnosti kreslí periodic_calendar_marks pro otevřený měsíc.
+        and item.item_type != ITEM_TYPE_PERIODIC
     ]
 
     by_day: dict[date, list[AgendaItem]] = {}
@@ -353,6 +364,53 @@ def build_calendar_day_data(
     return task_dates, day_events
 
 
+def periodic_calendar_marks(
+    year: int,
+    month: int,
+    *,
+    today: date | None = None,
+) -> tuple[dict[date, set[str]], dict[date, list[str]]]:
+    """Tečky periodických činností pro jeden zobrazený měsíc.
+
+    Stejná projekce jako Roční plán, bez omezení na tři měsíce a bez zápisu.
+    Splněný termín je zelená tečka, ne nesplněný.
+    """
+    today = today or date.today()
+    last_day = calendar.monthrange(year, month)[1]
+    until = date(year, month, last_day)
+    type_label = TYPE_LABELS[ITEM_TYPE_PERIODIC]
+    task_dates: dict[date, set[str]] = {}
+    day_events: dict[date, list[str]] = {}
+
+    for activity in periodic_activity_service.get_all(active_only=True):
+        title = (activity.title or "").strip() or f"Periodická činnost #{activity.id}"
+        block = f"• {type_label}\n  {title}"
+        completed = completed_periodic_dates(activity.id)
+        for planned in completed:
+            if planned.year != year or planned.month != month:
+                continue
+            task_dates.setdefault(planned, set()).add("done")
+            lines = day_events.setdefault(planned, [])
+            if block not in lines:
+                lines.append(block)
+        for candidate in iter_periodic_due_dates(activity, until=until):
+            if candidate.year != year or candidate.month != month:
+                continue
+            if candidate in completed:
+                continue
+            if candidate < today:
+                kind = "overdue"
+            elif candidate == today:
+                kind = "today"
+            else:
+                kind = "future"
+            task_dates.setdefault(candidate, set()).add(kind)
+            lines = day_events.setdefault(candidate, [])
+            if block not in lines:
+                lines.append(block)
+    return task_dates, day_events
+
+
 class CalendarPlaceholderWidget(DashboardPanel):
     def __init__(self):
         super().__init__("Kalendář")
@@ -361,9 +419,30 @@ class CalendarPlaceholderWidget(DashboardPanel):
         self.layout.addWidget(self.calendar, 0, Qt.AlignHCenter)
         self.setMinimumHeight(_PANEL_MIN_HEIGHT)
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        self._base_dates: dict[date, set[str]] = {}
+        self._base_events: dict[date, list[str]] = {}
+        self._calendar_ready = False
+        self.calendar.currentPageChanged.connect(self._apply_visible_month)
         self.refresh()
 
     def refresh(self):
-        task_dates, day_events = build_calendar_day_data()
-        self.calendar.set_task_dates(task_dates)
-        self.calendar.set_day_events(day_events)
+        self._base_dates, self._base_events = build_calendar_day_data()
+        self._calendar_ready = True
+        self._apply_visible_month()
+
+    def _apply_visible_month(self, year: int | None = None, month: int | None = None):
+        if not self._calendar_ready:
+            return
+        if year is None:
+            year = self.calendar.yearShown()
+        if month is None:
+            month = self.calendar.monthShown()
+        dates = {day: set(kinds) for day, kinds in self._base_dates.items()}
+        events = {day: list(lines) for day, lines in self._base_events.items()}
+        extra_dates, extra_events = periodic_calendar_marks(year, month)
+        for day, kinds in extra_dates.items():
+            dates.setdefault(day, set()).update(kinds)
+        for day, lines in extra_events.items():
+            events.setdefault(day, []).extend(lines)
+        self.calendar.set_task_dates(dates)
+        self.calendar.set_day_events(events)

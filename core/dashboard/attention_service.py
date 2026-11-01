@@ -60,7 +60,10 @@ from moduly.rocni_plan.constants import (
     month_planning_attention_title,
     month_planning_source_id,
 )
-from moduly.rocni_plan.sluzby.yearly_plan_service import yearly_plan_service
+from moduly.rocni_plan.sluzby.yearly_plan_service import (
+    attention_periodic_due_dates,
+    yearly_plan_service,
+)
 from moduly.schuzky.constants import DEFAULT_MEETING_PRIORITY, STATUS_PLANNED
 from moduly.schuzky.sluzby.meeting_service import meeting_service
 from moduly.smlouvy_ozo.constants import STATUS_EXPIRED, UNIT_DAYS, status_label
@@ -320,7 +323,38 @@ def _periodic_subtitle(activity) -> str:
     return SOURCE_LABEL_PERIODIC
 
 
+def _periodic_attention_item(
+    activity,
+    due_date: date | None,
+    *,
+    identity_key: str = "",
+) -> AttentionItem:
+    title = (activity.title or "").strip() or f"Periodická činnost #{activity.id}"
+    return AttentionItem(
+        item_type=ITEM_TYPE_PERIODIC,
+        source_type=ITEM_TYPE_PERIODIC,
+        source_id=activity.id,
+        title=title,
+        date=due_date,
+        subtitle=_periodic_subtitle(activity),
+        status="Aktivní",
+        priority="",
+        open_metadata={
+            "source_type": ITEM_TYPE_PERIODIC,
+            "source_id": activity.id,
+        },
+        sort_key=build_sort_key(
+            due_date,
+            item_type=ITEM_TYPE_PERIODIC,
+            title=title,
+            source_id=activity.id,
+        ),
+        identity_key=identity_key,
+    )
+
+
 def _from_periodics(today: date) -> list[AttentionItem]:
+    """Připomínky: prošlý nejbližší termín a nastavené období připomenutí."""
     items: list[AttentionItem] = []
     for activity in periodic_activity_service.get_all(active_only=True):
         if not is_due_for_attention(
@@ -331,30 +365,27 @@ def _from_periodics(today: date) -> list[AttentionItem]:
             today=today,
         ):
             continue
-        title = (activity.title or "").strip() or f"Periodická činnost #{activity.id}"
-        due_date = activity.next_due_date
-        items.append(
-            AttentionItem(
-                item_type=ITEM_TYPE_PERIODIC,
-                source_type=ITEM_TYPE_PERIODIC,
-                source_id=activity.id,
-                title=title,
-                date=due_date,
-                subtitle=_periodic_subtitle(activity),
-                status="Aktivní",
-                priority="",
-                open_metadata={
-                    "source_type": ITEM_TYPE_PERIODIC,
-                    "source_id": activity.id,
-                },
-                sort_key=build_sort_key(
+        items.append(_periodic_attention_item(activity, activity.next_due_date))
+    return items
+
+
+def _from_periodic_horizon(today: date) -> list[AttentionItem]:
+    """Agenda a Nadcházející: jeden prošlý termín a výhled na tři měsíce."""
+    items: list[AttentionItem] = []
+    seen: set[tuple[int, date]] = set()
+    for activity in periodic_activity_service.get_all(active_only=True):
+        for due_date in attention_periodic_due_dates(activity, today=today):
+            key = (int(activity.id), due_date)
+            if key in seen:
+                continue
+            seen.add(key)
+            items.append(
+                _periodic_attention_item(
+                    activity,
                     due_date,
-                    item_type=ITEM_TYPE_PERIODIC,
-                    title=title,
-                    source_id=activity.id,
-                ),
+                    identity_key=f"periodic:{int(activity.id)}:{due_date.isoformat()}",
+                )
             )
-        )
     return items
 
 
@@ -1010,6 +1041,8 @@ def get_state_supervision_reminder_items(
 def get_attention_items(*, today: date | None = None) -> list[AttentionItem]:
     """Vrátí položky pro Nadcházející (včetně periodik a měsíčního plánu).
 
+    Periodické činnosti jsou ve tříměsíčním výhledu. Panel Co hoří dál bere
+    jen připomenutí přes get_periodic_reminder_items.
     Externí Neshody/PKZ sem nepatří — jen dny programu auditu a úkoly Agendy.
     Připomínky findings berou get_external_finding_reminder_items.
     """
@@ -1020,7 +1053,7 @@ def get_attention_items(*, today: date | None = None) -> list[AttentionItem]:
         + _from_external_audit_days(today)
         + _from_inspections(today)
         + _from_meetings(today)
-        + _from_periodics(today)
+        + _from_periodic_horizon(today)
         + _from_yearly_plan_month(today)
         + _from_ozo_contracts(today)
         + _from_ozo_person_certificates(today)
