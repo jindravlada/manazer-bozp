@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
-from datetime import datetime
+from datetime import date, datetime
 
 import logging
 
@@ -471,6 +471,7 @@ class StateSupervisionEditorDialog(QDialog):
         self._document_drafts: list[StateSupervisionRequiredDocumentDraft] = []
         self._timeline_drafts: list[StateSupervisionTimelineItemDraft] = []
         self._findings_drafts: list[StateSupervisionFindingDraft] = []
+        self._finding_settlement_baseline: dict[str, tuple[str, date | None]] = {}
         self._participant_drafts: list[StateSupervisionParticipantDraft] = []
         self._attachment_staging = AttachmentStagingState()
         self._finding_task_busy = False
@@ -2072,10 +2073,116 @@ class StateSupervisionEditorDialog(QDialog):
         return tuple(rows)
 
     def _findings_drafts_for_save(self) -> list[StateSupervisionFindingDraft]:
-        return [
-            replace(item, display_order=index * 10)
-            for index, item in enumerate(self._findings_drafts)
-        ]
+        """Uloží drafty. Nezměněné vypořádání vezme z aktuální databáze.
+
+        Stav a datum vypořádání, které uživatel v tomto editoru nezměnil,
+        se nepřepisují hodnotami načtenými při otevření. Ostatní pole
+        zůstávají z draftu. Úmyslná změna stavu nebo data se zapíše.
+        """
+        stored = self._stored_finding_settlements()
+        drafts: list[StateSupervisionFindingDraft] = []
+        for index, item in enumerate(self._findings_drafts):
+            status = str(item.status or "")
+            resolved_at = item.resolved_at
+            if item.id is not None and not self._finding_settlement_changed(item):
+                current = stored.get(int(item.id))
+                if current is not None:
+                    status, resolved_at = current
+            drafts.append(
+                replace(
+                    item,
+                    display_order=index * 10,
+                    status=status,
+                    resolved_at=resolved_at,
+                )
+            )
+        return drafts
+
+    def _capture_finding_settlement_baseline(self) -> None:
+        self._finding_settlement_baseline = {
+            item.client_key: (str(item.status or ""), item.resolved_at)
+            for item in self._findings_drafts
+        }
+
+    def _finding_settlement_changed(self, item: StateSupervisionFindingDraft) -> bool:
+        known = self._finding_settlement_baseline.get(item.client_key)
+        if known is None:
+            return True
+        return (str(item.status or ""), item.resolved_at) != known
+
+    def _stored_finding_settlements(self) -> dict[int, tuple[str, date | None]]:
+        supervision_id = self.supervision_id
+        if supervision_id is None:
+            return {}
+        rows = state_supervision_finding_service.list_findings(int(supervision_id))
+        return {
+            int(row.id): (str(row.status or ""), row.resolved_at)
+            for row in rows
+            if row.id is not None
+        }
+
+    def _refresh_open_finding_settlement(self, client_key: str) -> None:
+        """Promítne stav a datum vypořádání z databáze do otevřeného editoru."""
+        draft = self._finding_draft_by_key(client_key)
+        if draft is None or draft.id is None:
+            self._refresh_findings_table(select_key=client_key)
+            return
+        current = self._stored_finding_settlements().get(int(draft.id))
+        if current is None:
+            self._refresh_findings_table(select_key=client_key)
+            return
+        status, resolved_at = current
+        for index, item in enumerate(self._findings_drafts):
+            if item.client_key != client_key:
+                continue
+            self._findings_drafts[index] = replace(
+                item,
+                status=status,
+                resolved_at=resolved_at,
+            )
+            break
+        self._finding_settlement_baseline[client_key] = (status, resolved_at)
+        self._patch_editor_baseline_settlement(client_key, status, resolved_at)
+        self._refresh_findings_table(select_key=client_key)
+        editor = getattr(self, "_editor", None)
+        if editor is not None:
+            editor.refresh_dirty()
+
+    def _patch_editor_baseline_settlement(
+        self,
+        client_key: str,
+        status: str,
+        resolved_at: date | None,
+    ) -> None:
+        """Sladí baseline jen u stavu a data, ostatní neuložené úpravy ponechá."""
+        editor = getattr(self, "_editor", None)
+        baseline = getattr(editor, "_baseline", None) if editor is not None else None
+        if not isinstance(baseline, tuple):
+            return
+        patched: list[object] = []
+        replaced = False
+        for part in baseline:
+            if not replaced and isinstance(part, tuple):
+                rows: list[object] = []
+                part_replaced = False
+                for row in part:
+                    if (
+                        isinstance(row, tuple)
+                        and len(row) == 14
+                        and row[1] == client_key
+                    ):
+                        values = list(row)
+                        values[5] = status
+                        values[11] = resolved_at
+                        row = tuple(values)
+                        part_replaced = True
+                    rows.append(row)
+                if part_replaced:
+                    part = tuple(rows)
+                    replaced = True
+            patched.append(part)
+        if replaced:
+            editor._baseline = tuple(patched)
 
     def _load_findings(self, supervision_id: int, *, select_key: str | None = None) -> None:
         records = state_supervision_finding_service.list_findings(int(supervision_id))
@@ -2100,6 +2207,7 @@ class StateSupervisionEditorDialog(QDialog):
                 )
             )
         self._findings_drafts = loaded
+        self._capture_finding_settlement_baseline()
         self._refresh_findings_table(select_key=select_key)
 
     def _finding_tasks_by_id(self) -> dict[int, object]:
@@ -2442,7 +2550,7 @@ class StateSupervisionEditorDialog(QDialog):
             return
         dialog = TaskDialog(self, task=task)
         dialog.exec()
-        self._refresh_findings_table(select_key=select_key)
+        self._refresh_open_finding_settlement(select_key)
 
     def _notify_agenda_task_created(self) -> None:
         from moduly.agenda.ui.agenda_page import AgendaPage
