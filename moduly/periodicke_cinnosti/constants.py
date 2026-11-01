@@ -131,6 +131,11 @@ HISTORY_HEADERS = [
     "Výsledek / poznámka",
 ]
 
+HISTORY_COL_PLANNED = 0
+HISTORY_COL_PERFORMED = 1
+HISTORY_COL_PERFORMER = 2
+HISTORY_COL_NOTE = 3
+
 
 def format_interval(every: int, unit: str) -> str:
     label = UNIT_LABELS.get(unit, unit)

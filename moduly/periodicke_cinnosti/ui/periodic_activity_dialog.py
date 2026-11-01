@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import date, datetime, time
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QEvent, Qt
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QCheckBox,
@@ -12,12 +12,14 @@ from PySide6.QtWidgets import (
     QDialog,
     QFormLayout,
     QHBoxLayout,
+    QHeaderView,
     QLabel,
     QLineEdit,
     QMessageBox,
     QPushButton,
     QSizePolicy,
     QSpinBox,
+    QStyle,
     QTabWidget,
     QTableWidget,
     QTextEdit,
@@ -26,6 +28,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.attachment_widget import AttachmentWidget
+from core.widgets.table_utils import refresh_elided_cell_tooltips
 from core.widgets.dialog_utils import (
     configure_resizable_form_dialog,
     create_save_cancel_box,
@@ -60,6 +63,10 @@ from moduly.periodicke_cinnosti.constants import (
     ENTITY_PERIODIC_OCCURRENCE,
     HISTORY_ATTACHMENTS_HINT,
     HISTORY_ATTACHMENTS_LABEL,
+    HISTORY_COL_NOTE,
+    HISTORY_COL_PERFORMED,
+    HISTORY_COL_PERFORMER,
+    HISTORY_COL_PLANNED,
     HISTORY_HEADERS,
     NEXT_FROM_LABELS,
     NEXT_FROM_VALUES,
@@ -80,6 +87,8 @@ from moduly.periodicke_cinnosti.sluzby.periodic_activity_service import (
 
 _SAVE_CLOSE_LABEL = "Uložit a zavřít"
 _UNSAVED_ABORT_LABEL = "Zpět"
+_HISTORY_DATE_SAMPLE = "31.12.2026 23:59"
+_HISTORY_NAME_SAMPLE = "Jméno Příjmení Pracovníka"
 
 
 class PeriodicActivityDialog(QDialog):
@@ -200,6 +209,7 @@ class PeriodicActivityDialog(QDialog):
 
     def _history_tab(self) -> QWidget:
         page = QWidget()
+        page.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         layout = QVBoxLayout(page)
         self.history_empty = QLabel("Zatím není evidováno žádné provedení.")
         self.history_empty.setObjectName("MutedText")
@@ -211,8 +221,13 @@ class PeriodicActivityDialog(QDialog):
         self.history_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.history_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.history_table.setAlternatingRowColors(True)
+        self._configure_history_table()
         enable_typed_sorting(self.history_table)
         self.history_table.itemSelectionChanged.connect(self._on_history_selection_changed)
+        self.history_table.horizontalHeader().sectionResized.connect(
+            self._refresh_history_note_tooltips
+        )
+        self.history_table.installEventFilter(self)
 
         self.history_attachments_hint = QLabel(HISTORY_ATTACHMENTS_HINT)
         self.history_attachments_hint.setObjectName("MutedText")
@@ -290,13 +305,13 @@ class PeriodicActivityDialog(QDialog):
                 )
                 planned_item = create_typed_item(planned_text, planned_sort)
                 planned_item.setData(Qt.ItemDataRole.UserRole, occurrence.id)
-                self.history_table.setItem(row, 0, planned_item)
+                self.history_table.setItem(row, HISTORY_COL_PLANNED, planned_item)
 
                 performed = occurrence.performed_at
                 performed_text = f"{performed.day:02d}.{performed.month:02d}.{performed.year}"
                 self.history_table.setItem(
                     row,
-                    1,
+                    HISTORY_COL_PERFORMED,
                     create_typed_item(
                         performed_text,
                         typed_datetime(datetime.combine(performed, time.min)),
@@ -305,22 +320,76 @@ class PeriodicActivityDialog(QDialog):
                 who = (occurrence.performed_by_name or "").strip() or "—"
                 self.history_table.setItem(
                     row,
-                    2,
+                    HISTORY_COL_PERFORMER,
                     create_typed_item(who, typed_text(who)),
                 )
                 note = (occurrence.result_note or "").strip() or "—"
                 self.history_table.setItem(
                     row,
-                    3,
+                    HISTORY_COL_NOTE,
                     create_typed_item(note, typed_text(note)),
                 )
+            self._refresh_history_note_tooltips()
         self._clear_history_attachments()
+
+    def _configure_history_table(self) -> None:
+        """Tabulka vyplní šířku záložky; poznámka bere zbytek, data a jméno zůstanou čitelná."""
+        table = self.history_table
+        table.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        table.setWordWrap(False)
+        table.setTextElideMode(Qt.TextElideMode.ElideRight)
+        header = table.horizontalHeader()
+        header.setStretchLastSection(False)
+        date_width = max(
+            self._history_text_width(HISTORY_HEADERS[HISTORY_COL_PLANNED], header=True),
+            self._history_text_width(HISTORY_HEADERS[HISTORY_COL_PERFORMED], header=True),
+            self._history_text_width(_HISTORY_DATE_SAMPLE),
+        )
+        name_width = max(
+            self._history_text_width(HISTORY_HEADERS[HISTORY_COL_PERFORMER], header=True),
+            self._history_text_width(_HISTORY_NAME_SAMPLE),
+        )
+        header.setMinimumSectionSize(date_width)
+        table.setColumnWidth(HISTORY_COL_PLANNED, date_width)
+        table.setColumnWidth(HISTORY_COL_PERFORMED, date_width)
+        table.setColumnWidth(HISTORY_COL_PERFORMER, name_width)
+        for column in (HISTORY_COL_PLANNED, HISTORY_COL_PERFORMED, HISTORY_COL_PERFORMER):
+            header.setSectionResizeMode(column, QHeaderView.ResizeMode.Interactive)
+        header.setSectionResizeMode(HISTORY_COL_NOTE, QHeaderView.ResizeMode.Stretch)
+
+        metrics = table.fontMetrics()
+        row_height = max(metrics.lineSpacing(), metrics.height()) + 8
+        vertical = table.verticalHeader()
+        vertical.setMinimumSectionSize(row_height)
+        vertical.setDefaultSectionSize(row_height)
+        vertical.setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
+        header.setMinimumHeight(row_height)
+
+    def _history_text_width(self, text: str, *, header: bool = False) -> int:
+        table = self.history_table
+        metrics = table.horizontalHeader().fontMetrics() if header else table.fontMetrics()
+        sort_mark = 0
+        if header:
+            sort_mark = table.style().pixelMetric(
+                QStyle.PixelMetric.PM_HeaderMarkSize,
+                None,
+                table.horizontalHeader(),
+            )
+        return metrics.horizontalAdvance(text) + sort_mark + 28
+
+    def _refresh_history_note_tooltips(self, *_args) -> None:
+        refresh_elided_cell_tooltips(self.history_table, (HISTORY_COL_NOTE,))
+
+    def eventFilter(self, watched, event) -> bool:
+        if watched is getattr(self, "history_table", None) and event.type() == QEvent.Type.Resize:
+            self._refresh_history_note_tooltips()
+        return super().eventFilter(watched, event)
 
     def _selected_occurrence_id(self) -> int | None:
         rows = self.history_table.selectionModel().selectedRows()
         if len(rows) != 1:
             return None
-        item = self.history_table.item(rows[0].row(), 0)
+        item = self.history_table.item(rows[0].row(), HISTORY_COL_PLANNED)
         if item is None:
             return None
         value = item.data(Qt.ItemDataRole.UserRole)
