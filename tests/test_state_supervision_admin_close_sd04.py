@@ -44,6 +44,7 @@ with patch.object(Path, "home", return_value=_TMP):
         STATUS_ANNOUNCED,
         STATUS_CLOSED,
         STATUS_IN_PROGRESS,
+        STATUS_PREPARATION,
     )
     from moduly.statni_dozor.sluzby.state_supervision_service import (
         state_supervision_service,
@@ -153,7 +154,7 @@ class StateSupervisionAdminCloseSd04TestCase(unittest.TestCase):
         self.assertIsNone(kept.closed_at)
         self.assertEqual(dialog.subject_edit.toPlainText(), "Rozpracovaný text")
         self.assertEqual(dialog.closed_at_edit.get_datetime(), _CLOSED_AT)
-        self.assertEqual(dialog.get_data()["status"], STATUS_CLOSED)
+        self.assertEqual(dialog.get_data()["status"], STATUS_ANNOUNCED)
         self.assertTrue(dialog._editor.is_dirty())
         self.assertEqual(
             finding_service.get_by_id(finding.id).status,
@@ -167,6 +168,7 @@ class StateSupervisionAdminCloseSd04TestCase(unittest.TestCase):
         self.assertEqual(closed.status, STATUS_CLOSED)
         self.assertEqual(closed.closed_at, _CLOSED_AT)
         self.assertEqual(closed.subject, "Rozpracovaný text")
+        self.assertEqual(dialog.get_data()["status"], STATUS_CLOSED)
         dialog.close()
 
         reopened = self._open(parent.id)
@@ -230,3 +232,35 @@ class StateSupervisionAdminCloseSd04TestCase(unittest.TestCase):
         self.assertEqual(closed_again.status, STATUS_CLOSED)
         self.assertEqual(closed_again.closed_at, _CLOSED_AT)
         fresh.close()
+
+    def test_06_rejected_closure_restores_previous_status(self) -> None:
+        for original in (STATUS_IN_PROGRESS, STATUS_PREPARATION):
+            with self.subTest(original=original):
+                parent = self._supervision(status=original)
+                self._finding(
+                    parent.id,
+                    status=FINDING_STATUS_OTEVRENE,
+                    description=f"Otevřené {original}",
+                )
+                dialog = self._open(parent.id)
+                dialog.file_number_edit.setText(f"č. {original}")
+                self._fill_closed_at(dialog)
+                self.assertEqual(dialog.get_data()["status"], original)
+                with patch(_CONFIRM, return_value=False) as confirm:
+                    self.assertFalse(dialog._editor._run_save())
+                    confirm.assert_called_once()
+                kept = state_supervision_service.get_supervision(parent.id)
+                self.assertEqual(kept.status, original)
+                self.assertIsNone(kept.closed_at)
+                self.assertEqual(dialog.get_data()["status"], original)
+                self.assertEqual(dialog.closed_at_edit.get_datetime(), _CLOSED_AT)
+                self.assertEqual(dialog.file_number_edit.text(), f"č. {original}")
+                with patch(_CONFIRM, return_value=True) as confirm:
+                    self.assertTrue(dialog._editor._run_save())
+                    confirm.assert_called_once()
+                closed = state_supervision_service.get_supervision(parent.id)
+                self.assertEqual(closed.status, STATUS_CLOSED)
+                self.assertEqual(closed.closed_at, _CLOSED_AT)
+                self.assertEqual(closed.file_number, f"č. {original}")
+                self.assertEqual(dialog.get_data()["status"], STATUS_CLOSED)
+                dialog.close()

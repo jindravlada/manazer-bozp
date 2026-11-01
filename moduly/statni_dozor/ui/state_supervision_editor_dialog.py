@@ -1618,10 +1618,11 @@ class StateSupervisionEditorDialog(QDialog):
         return None
 
     def _apply_administrative_closure(self, data: dict) -> dict:
-        """Nově vyplněné administrativní uzavření převede kontrolu na Uzavřena.
+        """Nově vyplněné administrativní uzavření uloží kontrolu jako Uzavřena.
 
-        Prázdné datum stav nemění. Odstranění data u už uzavřené kontroly
-        ji samo neotevírá. Zrušená kontrola se tímto polem nezavírá.
+        Stav ve formuláři se mění až po úspěšném uložení. Prázdné datum
+        stav nemění. Odstranění data u už uzavřené kontroly ji samo neotevírá.
+        Zrušená kontrola se tímto polem nezavírá.
         """
         if data.get("closed_at") is None:
             return data
@@ -1630,8 +1631,9 @@ class StateSupervisionEditorDialog(QDialog):
             return data
         if self._baseline_closed_at() is not None:
             return data
-        self._set_combo_data(self.status_combo, STATUS_CLOSED)
-        return self.get_data()
+        updated = dict(data)
+        updated["status"] = STATUS_CLOSED
+        return updated
 
     def _is_transition_to_closed(self, working_status: str) -> bool:
         return working_status == STATUS_CLOSED and self._baseline_status() != STATUS_CLOSED
