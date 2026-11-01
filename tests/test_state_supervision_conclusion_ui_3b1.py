@@ -329,6 +329,14 @@ class StateSupervisionConclusionUi3b1TestCase(unittest.TestCase):
         self.assertEqual(loaded.protocol_received_at, protocol)
         self.assertEqual(loaded.objections_due_at, due)
         self.assertEqual(loaded.objections_submitted_at, submitted)
+        self.assertEqual(
+            loaded.objections_note,
+            "Námitky po lhůtě, historicky pravdivé.",
+        )
+        self.assertEqual(
+            dialog.objections_note_edit.toPlainText(),
+            "Námitky po lhůtě, historicky pravdivé.",
+        )
         self.assertEqual(loaded.completion_evidence_sent_at, past)
         self.assertEqual(loaded.authority_confirmation_at, future)
         self.assertFalse(dialog._editor.is_dirty())
@@ -341,6 +349,10 @@ class StateSupervisionConclusionUi3b1TestCase(unittest.TestCase):
         updated = state_supervision_service.get_supervision(first_id)
         self.assertEqual(updated.result, "Uložena opatření")
         self.assertEqual(updated.final_summary, "Upravené shrnutí")
+        self.assertEqual(
+            updated.objections_note,
+            "Námitky po lhůtě, historicky pravdivé.",
+        )
 
         self.assertTrue(self._save(dialog))
         self.assertEqual(_count("state_supervisions"), before + 1)
@@ -644,6 +656,62 @@ class StateSupervisionConclusionUi3b1TestCase(unittest.TestCase):
         self.assertIsInstance(page.tabs, QTabWidget)
         self.assertIsInstance(page.state_supervision_tab, StateSupervisionTab)
         page.close()
+
+    def test_12_objections_note_survives_save_tab_switch_and_reopen(self) -> None:
+        note = "Námitky nebudou podány.\nDoplněno po protokolu."
+        dialog = StateSupervisionEditorDialog()
+        dialog.show()
+        dialog.authority_combo.setCurrentText(f"KHS {self.marker}")
+        dialog.file_number_edit.setText("ČJ/SD-01")
+        dialog.final_summary_edit.setPlainText("Shrnutí zůstane")
+        dialog.tabs.setCurrentIndex(dialog._conclusion_tab_index)
+        dialog.objections_note_edit.setPlainText(note)
+        dialog.tabs.setCurrentIndex(0)
+        dialog.tabs.setCurrentIndex(2)
+        self.assertEqual(dialog.objections_note_edit.toPlainText(), note)
+        self.assertEqual(dialog.get_data()["objections_note"], note)
+        self.assertTrue(self._save(dialog))
+        self.assertEqual(dialog.objections_note_edit.toPlainText(), note)
+        supervision_id = dialog.supervision_id
+        dialog.tabs.setCurrentIndex(1)
+        self.assertEqual(dialog.objections_note_edit.toPlainText(), note)
+        dialog._editor._closing = True
+        dialog.close()
+
+        loaded = state_supervision_service.get_supervision(supervision_id)
+        self.assertEqual(loaded.objections_note, note)
+        self.assertEqual(loaded.file_number, "ČJ/SD-01")
+        self.assertEqual(loaded.final_summary, "Shrnutí zůstane")
+
+        db = storage_module.storage_service.database_path
+        conn = sqlite3.connect(str(db))
+        try:
+            row = conn.execute(
+                "SELECT objections_note, file_number, final_summary "
+                "FROM state_supervisions WHERE id = ?",
+                (supervision_id,),
+            ).fetchone()
+        finally:
+            conn.close()
+        self.assertEqual(row[0], note)
+        self.assertEqual(row[1], "ČJ/SD-01")
+        self.assertEqual(row[2], "Shrnutí zůstane")
+
+        reopened = StateSupervisionEditorDialog(supervision_id=supervision_id)
+        reopened.show()
+        reopened.tabs.setCurrentIndex(0)
+        reopened.tabs.setCurrentIndex(reopened._conclusion_tab_index)
+        self.assertEqual(reopened.objections_note_edit.toPlainText(), note)
+        self.assertEqual(reopened.file_number_edit.text(), "ČJ/SD-01")
+        reopened.result_combo.setCurrentText("Bez zjištěných nedostatků")
+        self.assertTrue(self._save(reopened))
+        again = state_supervision_service.get_supervision(supervision_id)
+        self.assertEqual(again.objections_note, note)
+        self.assertEqual(again.file_number, "ČJ/SD-01")
+        self.assertEqual(again.final_summary, "Shrnutí zůstane")
+        self.assertEqual(again.result, "Bez zjištěných nedostatků")
+        reopened._editor._closing = True
+        reopened.close()
 
 
 if __name__ == "__main__":
