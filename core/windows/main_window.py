@@ -473,12 +473,16 @@ class MainWindow(QMainWindow):
             MeetingValidationError,
             meeting_service,
         )
-        from moduly.schuzky.ui.meeting_dialog import MeetingDialog
+        from moduly.schuzky.ui.meeting_dialog import MeetingDialog, editor_persisted
 
         dashboard = self._page_widgets.get("dashboard")
         parent = dashboard if dashboard is not None else self
         dialog = MeetingDialog(parent)
-        if not exec_maximized(dialog):
+        finished = bool(exec_maximized(dialog))
+        if editor_persisted(dialog):
+            self._refresh_dashboard_and_agenda()
+            return
+        if not finished:
             return
         try:
             meeting = meeting_service.create_meeting(**dialog.get_data())
@@ -768,7 +772,7 @@ class MainWindow(QMainWindow):
             MeetingValidationError,
             meeting_service,
         )
-        from moduly.schuzky.ui.meeting_dialog import MeetingDialog
+        from moduly.schuzky.ui.meeting_dialog import MeetingDialog, editor_persisted
 
         meeting = meeting_service.get_by_id(meeting_id)
         dashboard = self._page_widgets.get("dashboard")
@@ -782,7 +786,8 @@ class MainWindow(QMainWindow):
         dialog = MeetingDialog(parent, meeting=meeting)
         from core.widgets.dialog_utils import exec_maximized
 
-        if exec_maximized(dialog):
+        finished = bool(exec_maximized(dialog))
+        if not editor_persisted(dialog) and finished:
             try:
                 meeting_service.update_meeting(meeting_id, **dialog.get_data())
                 meeting_agenda_item_service.save_items(

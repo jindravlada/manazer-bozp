@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
-from PySide6.QtWidgets import QApplication, QDialog
+from PySide6.QtWidgets import QApplication, QDialog, QMessageBox
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -131,10 +131,17 @@ class EventMyMessagePersistence1TestCase(unittest.TestCase):
         self.assertTrue(dialog._editor.is_dirty())
         self.assertTrue(dialog._editor.save_button.isEnabled())
 
-        with patch.object(dialog, "_validate", return_value=True):
+        with (
+            patch.object(dialog, "_validate", return_value=True),
+            patch(
+                "moduly.schuzky.ui.meeting_dialog._exec_message_box",
+                return_value=int(QMessageBox.StandardButton.Ok),
+            ),
+        ):
             dialog._editor.save_button.click()
-        self.assertEqual(dialog.result(), QDialog.DialogCode.Accepted)
-        self._persist(dialog, meeting.id)
+        self.assertNotEqual(dialog.result(), QDialog.DialogCode.Accepted)
+        self.assertFalse(dialog._editor.is_dirty())
+        self.assertTrue(dialog.isVisible() or dialog.meeting is not None)
 
         self.assertEqual(self._reopen_message(meeting.id), "Uložené sdělení")
         loaded = meeting_agenda_item_service.get_for_meeting(meeting.id)
@@ -150,10 +157,21 @@ class EventMyMessagePersistence1TestCase(unittest.TestCase):
         dialog.agenda_items_widget.moje_sdeleni_edit.setPlainText("Sdělení nové")
         self.assertEqual(self._working_copy_message(dialog), "Sdělení nové")
 
-        with patch.object(dialog, "_validate", return_value=True):
+        with (
+            patch.object(dialog, "_validate", return_value=True),
+            patch(
+                "moduly.schuzky.ui.meeting_dialog._exec_message_box",
+                return_value=int(QMessageBox.StandardButton.Ok),
+            ),
+        ):
             dialog._editor.save_button.click()
-        self.assertEqual(dialog.result(), QDialog.DialogCode.Accepted)
-        meeting_id = self._persist(dialog)
+        self.assertNotEqual(dialog.result(), QDialog.DialogCode.Accepted)
+        self.assertIsNotNone(dialog.meeting)
+        meeting_id = int(dialog.meeting.id)
+        self.assertEqual(
+            len([item for item in meeting_service.get_all() if item.title == "Nová se sdělením"]),
+            1,
+        )
 
         self.assertEqual(self._reopen_message(meeting_id), "Sdělení nové")
         loaded = meeting_agenda_item_service.get_for_meeting(meeting_id)

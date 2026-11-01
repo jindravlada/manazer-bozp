@@ -55,7 +55,7 @@ from moduly.schuzky.sluzby.meeting_service import (
     MeetingValidationError,
     meeting_service,
 )
-from moduly.schuzky.ui.meeting_dialog import MeetingDialog
+from moduly.schuzky.ui.meeting_dialog import MeetingDialog, editor_persisted
 from moduly.schuzky.ui.meeting_template_actions import create_meeting_from_template
 from moduly.ukoly.sluzby.task_service import task_service
 from moduly.ukoly.ui.task_dialog import TaskDialog
@@ -352,7 +352,12 @@ class AgendaPage(QWidget):
 
     def new_meeting(self) -> None:
         dialog = MeetingDialog(self)
-        if not exec_maximized(dialog):
+        finished = bool(exec_maximized(dialog))
+        if editor_persisted(dialog):
+            self.refresh()
+            self._refresh_dashboard()
+            return
+        if not finished:
             return
         try:
             meeting = meeting_service.create_meeting(**dialog.get_data())
@@ -408,7 +413,12 @@ class AgendaPage(QWidget):
             self._refresh_dashboard()
             return
         dialog = MeetingDialog(self, meeting=meeting)
-        if not exec_maximized(dialog):
+        finished = bool(exec_maximized(dialog))
+        if editor_persisted(dialog):
+            self.refresh()
+            self._refresh_dashboard()
+            return
+        if not finished:
             return
         try:
             meeting_service.update_meeting(meeting_id, **dialog.get_data())

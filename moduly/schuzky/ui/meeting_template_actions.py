@@ -15,7 +15,7 @@ from moduly.schuzky.constants import LIST_WINDOW_TITLE, TEMPLATE_LIST_TITLE
 from moduly.schuzky.sluzby.meeting_agenda_item_service import meeting_agenda_item_service
 from moduly.schuzky.sluzby.meeting_service import MeetingValidationError, meeting_service
 from moduly.schuzky.sluzby.meeting_template_service import meeting_template_service
-from moduly.schuzky.ui.meeting_dialog import MeetingDialog
+from moduly.schuzky.ui.meeting_dialog import MeetingDialog, editor_persisted
 from moduly.schuzky.ui.meeting_template_dialogs import MeetingTemplatePickDialog
 from moduly.schuzky.ui.meeting_templates_page import MeetingTemplatesPage
 
@@ -106,7 +106,10 @@ def create_meeting_from_template(parent: QWidget) -> bool:
         return False
 
     dialog = MeetingDialog(parent, template=template)
-    if not exec_maximized(dialog):
+    finished = bool(exec_maximized(dialog))
+    if editor_persisted(dialog):
+        return True
+    if not finished:
         return False
     try:
         meeting = meeting_service.create_meeting(**dialog.get_data())

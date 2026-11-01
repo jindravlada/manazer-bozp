@@ -8,9 +8,12 @@ from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
     QFormLayout,
+    QHBoxLayout,
     QLabel,
     QLineEdit,
     QMessageBox,
+    QPushButton,
+    QSizePolicy,
     QTabWidget,
     QTextEdit,
     QVBoxLayout,
@@ -18,7 +21,13 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box
-from core.widgets.editor_dialog_controller import EditorDialogController
+from core.widgets.editor_dialog_controller import (
+    EDITOR_CLOSE_LABEL,
+    _safe_disconnect,
+    configure_editor_close_button,
+    configure_editor_save_button,
+    EditorDialogController,
+)
 from core.widgets.nullable_date_edit import NullableDateEdit
 from moduly.schuzky.constants import (
     DEFAULT_EVENT_DURATION_HOURS,
@@ -35,8 +44,9 @@ from moduly.schuzky.constants import (
     TAB_DISCUSSION,
     TAB_MEETING,
 )
+from moduly.schuzky.sluzby.meeting_agenda_item_service import meeting_agenda_item_service
 from moduly.schuzky.sluzby.meeting_event_type_service import meeting_event_type_service
-from moduly.schuzky.sluzby.meeting_service import meeting_service
+from moduly.schuzky.sluzby.meeting_service import MeetingValidationError, meeting_service
 from moduly.schuzky.sluzby.meeting_template_service import meeting_template_service
 from moduly.schuzky.ui.event_datetime_fields import EventDateTimeFields
 from moduly.schuzky.ui.meeting_agenda_items_widget import MeetingAgendaItemsWidget
@@ -52,6 +62,18 @@ from moduly.schuzky.ui.meeting_people_widgets import (
 )
 
 DEFAULT_EVENT_DURATION = timedelta(hours=DEFAULT_EVENT_DURATION_HOURS)
+_SAVE_CLOSE_LABEL = "Uložit a zavřít"
+_UNSAVED_ABORT_LABEL = "Zpět"
+_SAVE_CONFIRMATION_TEXT = "Změny byly úspěšně uloženy."
+
+
+def _exec_message_box(box: QMessageBox) -> int:
+    return int(box.exec())
+
+
+def editor_persisted(dialog) -> bool:
+    """True jen když editor událost v této relaci skutečně uložil."""
+    return getattr(dialog, "was_saved", False) is True
 
 
 def _plain_text_edit(*, placeholder: str, min_height: int) -> QTextEdit:
@@ -66,6 +88,7 @@ class MeetingDialog(QDialog):
     def __init__(self, parent=None, meeting=None, *, template=None):
         super().__init__(parent)
         self.meeting = meeting
+        self._was_saved = False
         # Legacy textová pole zápisu – v UI se nezobrazují, při uložení se zachovají.
         self._legacy_proceedings = ""
         self._legacy_conclusions = ""
@@ -84,13 +107,32 @@ class MeetingDialog(QDialog):
         layout.addWidget(self.tabs, 1)
 
         buttons = create_save_cancel_box(self, is_new=meeting is None)
-        layout.addWidget(buttons)
         self._editor = EditorDialogController(
             self,
             buttons,
             is_new=meeting is None,
             title=self.windowTitle(),
+            unsaved_abort_label=_UNSAVED_ABORT_LABEL,
         )
+        self._editor.set_save_handler(self._persist)
+        if self._editor.save_button is not None:
+            _safe_disconnect(
+                self._editor.save_button.clicked,
+                self._editor._handle_save_clicked,
+            )
+            self._editor.save_button.clicked.connect(self._save_keep_open)
+        configure_editor_close_button(self._editor.close_button, is_new=False)
+        if self._editor.close_button is not None:
+            self._editor.close_button.setText(EDITOR_CLOSE_LABEL)
+        layout.addLayout(self._build_footer(buttons))
+        buttons.hide()
+        for button in (
+            self._editor.save_button,
+            self._save_close_btn,
+            self._editor.close_button,
+        ):
+            if button is not None:
+                button.setVisible(True)
         self._editor.set_snapshot_provider(self._snapshot)
         self._editor.install_auto_dirty_tracking()
         self.starts_at_edit.dateTimeChanged.connect(self._editor.mark_dirty)
@@ -351,6 +393,92 @@ class MeetingDialog(QDialog):
                 # Uložit přesto – konflikt není chyba; další uložení kontrolu zopakuje.
 
         return True
+
+    @property
+    def was_saved(self) -> bool:
+        return self._was_saved
+
+    def _build_footer(self, buttons) -> QHBoxLayout:
+        """Uložit | Uložit a zavřít | Zavřít vpravo."""
+        footer = QHBoxLayout()
+        footer.setContentsMargins(0, 0, 0, 0)
+        footer.setSpacing(8)
+        footer.addStretch(1)
+
+        self._save_close_btn = QPushButton(_SAVE_CLOSE_LABEL)
+        configure_editor_save_button(self._save_close_btn)
+        self._save_close_btn.setText(_SAVE_CLOSE_LABEL)
+        self._save_close_btn.clicked.connect(self._save_and_close)
+        self._editor.bind_extra_save_button(self._save_close_btn)
+
+        ordered = [
+            self._editor.save_button,
+            self._save_close_btn,
+            self._editor.close_button,
+        ]
+        for button in ordered:
+            if button is None:
+                continue
+            button.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+            button.setAutoDefault(False)
+            button.setDefault(False)
+            footer.addWidget(button)
+        self._button_box = buttons
+        return footer
+
+    def _save_keep_open(self) -> None:
+        if self._editor._run_save():
+            self._show_save_confirmation()
+
+    def _save_and_close(self) -> None:
+        if not self._editor._run_save():
+            return
+        self._editor._closing = True
+        QDialog.accept(self)
+
+    def _show_save_confirmation(self) -> None:
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Information)
+        box.setWindowTitle(self.windowTitle())
+        box.setText(_SAVE_CONFIRMATION_TEXT)
+        box.setStandardButtons(QMessageBox.StandardButton.Ok)
+        ok_button = box.button(QMessageBox.StandardButton.Ok)
+        if ok_button is not None:
+            ok_button.setText("OK")
+        _exec_message_box(box)
+
+    def _persist(self) -> bool:
+        """Společný zápis pro Uložit, Uložit a zavřít i Uložit v dotazu při zavření."""
+        if not self._validate():
+            return False
+        data = self.get_data()
+        items = self.get_agenda_items()
+        try:
+            if self.meeting is None:
+                saved = meeting_service.create_meeting(**data)
+            else:
+                saved = meeting_service.update_meeting(self.meeting.id, **data)
+            self.meeting = saved
+            meeting_agenda_item_service.save_items(saved.id, items)
+        except MeetingValidationError as error:
+            QMessageBox.warning(self, DIALOG_WINDOW_TITLE, str(error))
+            return False
+        except Exception as exc:
+            QMessageBox.warning(
+                self,
+                DIALOG_WINDOW_TITLE,
+                "Událost se nepodařilo uložit.\n\n" + str(exc),
+            )
+            return False
+
+        self.meeting = meeting_service.get_by_id(saved.id) or saved
+        self.agenda_items_widget.load_for_meeting(self.meeting.id)
+        self._was_saved = True
+        return True
+
+    def _on_accept(self) -> None:
+        """Validace a zavření bez vlastního zápisu – volají to starší testy."""
+        self.accept()
 
     def accept(self) -> None:
         if not self._validate():

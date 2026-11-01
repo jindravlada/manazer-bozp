@@ -566,13 +566,20 @@ class YearlyPlanTab(QWidget):
             QMessageBox.warning(self, ACTION_CREATE_MEETING, ALREADY_LINKED_MESSAGE)
             return
 
+        from moduly.schuzky.ui.meeting_dialog import editor_persisted
+
         dialog = MeetingDialog(self)
         dialog.title_edit.setText(item.title or "")
-        if not exec_maximized(dialog):
+        finished = bool(exec_maximized(dialog))
+        saved_in_dialog = editor_persisted(dialog)
+        if not finished and not saved_in_dialog:
             return
         try:
-            meeting = meeting_service.create_meeting(**dialog.get_data())
-            meeting_agenda_item_service.save_items(meeting.id, dialog.get_agenda_items())
+            if saved_in_dialog:
+                meeting = dialog.meeting
+            else:
+                meeting = meeting_service.create_meeting(**dialog.get_data())
+                meeting_agenda_item_service.save_items(meeting.id, dialog.get_agenda_items())
             if self.table.selected_is_recurring():
                 slot = self._selected_slot()
                 if slot is None:

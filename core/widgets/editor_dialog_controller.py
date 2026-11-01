@@ -182,6 +182,7 @@ class EditorDialogController(QObject):
         title: str,
         on_save: Callable[[], bool] | None = None,
         is_dirty: Callable[[], bool] | None = None,
+        unsaved_abort_label: str | None = None,
         parent: QObject | None = None,
     ):
         super().__init__(parent or dialog)
@@ -191,6 +192,8 @@ class EditorDialogController(QObject):
         self._title = title
         self._on_save = on_save
         self._is_dirty_fn = is_dirty
+        self._unsaved_abort_label = unsaved_abort_label
+        self._extra_save_buttons: list[QPushButton] = []
         self._dirty = bool(is_new)
         self._closing = False
         self._cleaned = False
@@ -242,6 +245,11 @@ class EditorDialogController(QObject):
 
     def set_save_handler(self, on_save: Callable[[], bool]) -> None:
         self._on_save = on_save
+
+    def bind_extra_save_button(self, button: QPushButton) -> None:
+        """Další ukládací tlačítko se aktivuje stejně jako Uložit."""
+        self._extra_save_buttons.append(button)
+        self._refresh_save_enabled()
 
     def set_dirty_checker(self, is_dirty: Callable[[], bool]) -> None:
         self._is_dirty_fn = is_dirty
@@ -310,7 +318,11 @@ class EditorDialogController(QObject):
         if not self.is_dirty():
             return True
 
-        decision = confirm_unsaved_editor_close(self._dialog, title=self._title)
+        decision = confirm_unsaved_editor_close(
+            self._dialog,
+            title=self._title,
+            abort_label=self._unsaved_abort_label,
+        )
         if decision == "cancel":
             return False
         if decision == "save":
@@ -323,10 +335,12 @@ class EditorDialogController(QObject):
         self._dialog.reject()
 
     def _refresh_save_enabled(self) -> None:
-        if self._is_new:
-            set_editor_save_enabled(self._buttons, True)
-            return
-        set_editor_save_enabled(self._buttons, self.is_dirty())
+        enabled = True if self._is_new else self.is_dirty()
+        set_editor_save_enabled(self._buttons, enabled)
+        if self.save_button is not None:
+            self.save_button.setEnabled(enabled)
+        for button in self._extra_save_buttons:
+            button.setEnabled(enabled)
 
     def _run_save(self) -> bool:
         if self._on_save is None:

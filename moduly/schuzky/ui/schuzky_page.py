@@ -27,7 +27,7 @@ from moduly.schuzky.sluzby.meeting_service import (
     MeetingValidationError,
     meeting_service,
 )
-from moduly.schuzky.ui.meeting_dialog import MeetingDialog
+from moduly.schuzky.ui.meeting_dialog import MeetingDialog, editor_persisted
 from moduly.schuzky.ui.meeting_table import MeetingTable
 from moduly.schuzky.ui.meeting_template_actions import (
     create_meeting_from_template,
@@ -130,18 +130,31 @@ class SchuzkyPage(QWidget):
             return None
         return int(item.text())
 
-    def new_meeting(self) -> None:
-        dialog = MeetingDialog(self)
-        if not exec_maximized(dialog):
+    def _finish_meeting_editor(self, dialog: MeetingDialog, *, create: bool) -> None:
+        """Editor si ukládá sám. Starší cesta zapíše jen když dialog jen potvrdil."""
+        finished = bool(exec_maximized(dialog))
+        if editor_persisted(dialog):
+            self.refresh()
+            self._refresh_dashboard()
+            return
+        if not finished:
             return
         try:
-            meeting = meeting_service.create_meeting(**dialog.get_data())
-            meeting_agenda_item_service.save_items(meeting.id, dialog.get_agenda_items())
+            if create or dialog.meeting is None:
+                meeting = meeting_service.create_meeting(**dialog.get_data())
+                meeting_id = meeting.id
+            else:
+                meeting_id = dialog.meeting.id
+                meeting_service.update_meeting(meeting_id, **dialog.get_data())
+            meeting_agenda_item_service.save_items(meeting_id, dialog.get_agenda_items())
         except MeetingValidationError as error:
             QMessageBox.warning(self, LIST_WINDOW_TITLE, str(error))
             return
         self.refresh()
         self._refresh_dashboard()
+
+    def new_meeting(self) -> None:
+        self._finish_meeting_editor(MeetingDialog(self), create=True)
 
     def new_meeting_from_template(self) -> None:
         if create_meeting_from_template(self):
@@ -165,17 +178,10 @@ class SchuzkyPage(QWidget):
             self._refresh_dashboard()
             return
 
-        dialog = MeetingDialog(self, meeting=meeting)
-        if not exec_maximized(dialog):
-            return
-        try:
-            meeting_service.update_meeting(meeting_id, **dialog.get_data())
-            meeting_agenda_item_service.save_items(meeting_id, dialog.get_agenda_items())
-        except MeetingValidationError as error:
-            QMessageBox.warning(self, LIST_WINDOW_TITLE, str(error))
-            return
-        self.refresh()
-        self._refresh_dashboard()
+        self._finish_meeting_editor(
+            MeetingDialog(self, meeting=meeting),
+            create=False,
+        )
 
     def _refresh_dashboard(self) -> None:
         if callable(self._dashboard_refresh_callback):
