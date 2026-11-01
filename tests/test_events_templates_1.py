@@ -31,6 +31,7 @@ with patch.object(Path, "home", return_value=_TMP):
 
     from moduly.agenda.ui.agenda_page import AgendaPage
     from moduly.nastaveni.sluzby.person_service import person_service
+    from moduly.nastaveni.sluzby.settings_service import settings_service
     from moduly.schuzky.constants import (
         ACTION_NEW_FROM_TEMPLATE,
         DEFAULT_MEETING_STATUS,
@@ -39,6 +40,10 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.schuzky.sluzby.meeting_agenda_item_service import (
         meeting_agenda_item_service,
+    )
+    from moduly.schuzky.sluzby.meeting_participant_ref import (
+        MEETING_SOURCE_PERSON,
+        MEETING_SOURCE_THP_WORKER,
     )
     from moduly.schuzky.sluzby.meeting_service import meeting_service
     from moduly.schuzky.sluzby.meeting_template_service import meeting_template_service
@@ -117,13 +122,20 @@ class EventsTemplates1TestCase(unittest.TestCase):
             ],
         )
 
+        person_ref = {
+            "source_type": MEETING_SOURCE_PERSON,
+            "source_id": organizer.id,
+        }
+        self.assertEqual(meeting_template_service.organizer_ref(template), person_ref)
+        self.assertEqual(template.organizer_person_id, organizer.id)
+
         dialog = MeetingDialog(template=template)
         data = dialog.get_data()
         self.assertEqual(data["title"], "Šablona A")
         self.assertEqual(data["event_type"], "Porada")
         self.assertEqual(data["location"], "Zasedačka")
         self.assertEqual(data["priority"], "Normální")
-        self.assertEqual(data["organizer_person_id"], organizer.id)
+        self.assertEqual(data["organizer_ref"], person_ref)
         self.assertIsNone(data["starts_at"])
         self.assertIsNone(data["ends_at"])
         self.assertEqual(data["status"], DEFAULT_MEETING_STATUS)
@@ -144,10 +156,52 @@ class EventsTemplates1TestCase(unittest.TestCase):
         assert reloaded is not None
         self.assertIsNone(reloaded.starts_at)
         self.assertEqual(reloaded.status, STATUS_PLANNED)
+        self.assertEqual(meeting_service.organizer_ref(reloaded), person_ref)
+        self.assertEqual(reloaded.organizer_person_id, organizer.id)
+        self.assertEqual(reloaded.organizer_source_type, MEETING_SOURCE_PERSON)
+        self.assertEqual(reloaded.organizer_source_id, organizer.id)
         saved_items = meeting_agenda_item_service.get_for_meeting(meeting.id)
         self.assertEqual(len(saved_items), 2)
         self.assertEqual(saved_items[0].title, "Bod 1")
         self.assertEqual(saved_items[0].prubeh_jednani or "", "")
+        dialog._editor.force_close()
+
+    def test_new_meeting_from_template_prefill_thp_organizer(self) -> None:
+        worker = settings_service.save_worker(
+            first_name="Technik",
+            last_name="Šablony",
+            position="BOZP",
+        )
+        thp_ref = {
+            "source_type": MEETING_SOURCE_THP_WORKER,
+            "source_id": worker.id,
+        }
+        template = meeting_template_service.create_template(
+            name="Šablona THP",
+            event_type="Porada",
+            location="Dílna",
+            organizer_ref=thp_ref,
+        )
+        self.assertEqual(meeting_template_service.organizer_ref(template), thp_ref)
+        self.assertIsNone(template.organizer_person_id)
+        self.assertEqual(template.organizer_source_type, MEETING_SOURCE_THP_WORKER)
+        self.assertEqual(template.organizer_source_id, worker.id)
+
+        dialog = MeetingDialog(template=template)
+        data = dialog.get_data()
+        self.assertEqual(data["organizer_ref"], thp_ref)
+        self.assertIsNone(data["starts_at"])
+        self.assertEqual(data["status"], DEFAULT_MEETING_STATUS)
+
+        meeting = meeting_service.create_meeting(**data)
+        reloaded = meeting_service.get_by_id(meeting.id)
+        assert reloaded is not None
+        self.assertEqual(meeting_service.organizer_ref(reloaded), thp_ref)
+        self.assertIsNone(reloaded.organizer_person_id)
+        self.assertEqual(reloaded.organizer_source_type, MEETING_SOURCE_THP_WORKER)
+        self.assertEqual(reloaded.organizer_source_id, worker.id)
+        self.assertEqual(reloaded.status, STATUS_PLANNED)
+        dialog._editor.force_close()
 
     def test_pick_dialog_shows_template_meta(self) -> None:
         meeting_template_service.create_template(
