@@ -68,6 +68,9 @@ from moduly.periodicke_cinnosti.constants import (
     HISTORY_COL_PERFORMER,
     HISTORY_COL_PLANNED,
     HISTORY_HEADERS,
+    NEXT_FROM_CHANGE_CANCEL,
+    NEXT_FROM_CHANGE_CONFIRM,
+    NEXT_FROM_CHANGE_TITLE,
     NEXT_FROM_LABELS,
     NEXT_FROM_VALUES,
     PLACE_KIND_LABELS,
@@ -470,6 +473,11 @@ class PeriodicActivityDialog(QDialog):
         if not data["title"]:
             QMessageBox.warning(self, self.windowTitle(), TITLE_REQUIRED_MESSAGE)
             return False
+        if self.activity is not None:
+            adjusted = self._apply_next_from_change(data)
+            if adjusted is None:
+                return False
+            data = adjusted
         creating = self.activity is None
         try:
             if creating:
@@ -486,3 +494,70 @@ class PeriodicActivityDialog(QDialog):
             QMessageBox.warning(self, self.windowTitle(), str(error))
             return False
         return True
+
+    def _apply_next_from_change(self, data: dict) -> dict | None:
+        """Při změně způsobu výpočtu přepočítá termín a vyžádá potvrzení."""
+        stored_from = self.activity.next_from or DEFAULT_NEXT_FROM
+        new_from = data["next_from"]
+        if stored_from == new_from:
+            return data
+        projected = periodic_activity_service.next_due_for_mode(
+            self.activity.id,
+            next_from=new_from,
+            repeat_every=int(data["repeat_every"]),
+            repeat_unit=data["repeat_unit"],
+        )
+        stored_due = self.activity.next_due_date
+        if projected is None or projected == stored_due:
+            return data
+        message = format_next_from_change_message(
+            old_mode=NEXT_FROM_LABELS.get(stored_from, stored_from),
+            new_mode=NEXT_FROM_LABELS.get(new_from, new_from),
+            old_due=stored_due,
+            new_due=projected,
+        )
+        if not self._ask_next_from_change(message):
+            return None
+        self.next_due_edit.set_date_value(projected)
+        refreshed = self.get_data()
+        refreshed["next_from"] = new_from
+        return refreshed
+
+    def _ask_next_from_change(self, message: str) -> bool:
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Question)
+        box.setWindowTitle(NEXT_FROM_CHANGE_TITLE)
+        box.setText(message)
+        box.setStandardButtons(
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        confirm = box.button(QMessageBox.StandardButton.Yes)
+        cancel = box.button(QMessageBox.StandardButton.No)
+        if confirm is not None:
+            confirm.setText(NEXT_FROM_CHANGE_CONFIRM)
+        if cancel is not None:
+            cancel.setText(NEXT_FROM_CHANGE_CANCEL)
+        return box.exec() == QMessageBox.StandardButton.Yes
+
+
+def format_next_from_change_message(
+    *,
+    old_mode: str,
+    new_mode: str,
+    old_due: date | None,
+    new_due: date | None,
+) -> str:
+    return "\n".join(
+        (
+            f"Původní způsob výpočtu: {old_mode}",
+            f"Nový způsob výpočtu: {new_mode}",
+            f"Původní další termín: {_format_due(old_due)}",
+            f"Nový další termín: {_format_due(new_due)}",
+        )
+    )
+
+
+def _format_due(value: date | None) -> str:
+    if value is None:
+        return "neuvedeno"
+    return f"{value.day:02d}.{value.month:02d}.{value.year}"

@@ -167,6 +167,57 @@ def calculate_next_due_date(
             return candidate
 
 
+def period_end_for_repeat(
+    performed_at: date,
+    closed_period_ends: list[date],
+) -> date | None:
+    """Období už splněné, do kterého provedení ještě patří.
+
+    Nejzazší termín je poslední den období. Provedení v ten den nebo dřív
+    je opakování téhož období. Pozdější datum patří až dalšímu období.
+    """
+    if not closed_period_ends:
+        return None
+    if performed_at > max(closed_period_ends):
+        return None
+    covering = [item for item in closed_period_ends if item >= performed_at]
+    if covering:
+        return min(covering)
+    return min(closed_period_ends)
+
+
+def next_due_from_history(
+    occurrences: list[PeriodicActivityOccurrence],
+    *,
+    next_from: str,
+    repeat_every: int,
+    repeat_unit: str,
+) -> date | None:
+    """Další termín z existující historie, bez zápisu.
+
+    Bez provedení není z čeho přepočítat a volající ponechá uložené datum.
+    """
+    performed = [item.performed_at for item in occurrences if item.performed_at is not None]
+    if not performed:
+        return None
+    if next_from == NEXT_FROM_ACTUAL:
+        return add_period(max(performed), repeat_every, repeat_unit)
+    closed = [item.planned_due_date for item in occurrences if item.planned_due_date is not None]
+    if not closed:
+        return None
+    last_closed = max(closed)
+    latest_performed = max(performed)
+    if latest_performed <= last_closed:
+        return add_period(last_closed, repeat_every, repeat_unit)
+    return calculate_next_due_date(
+        planned_due_date=last_closed,
+        performed_at=latest_performed,
+        repeat_every=repeat_every,
+        repeat_unit=repeat_unit,
+        next_from=NEXT_FROM_PLANNED,
+    )
+
+
 class PeriodicActivityService:
     def __init__(self) -> None:
         self.repository = PeriodicActivityRepository()
@@ -302,14 +353,28 @@ class PeriodicActivityService:
         if kind == PERFORMER_KIND_EXTERNAL:
             performed_by_id = None
 
-        planned = activity.next_due_date
-        next_due = calculate_next_due_date(
-            planned_due_date=planned,
-            performed_at=performed_at,
-            repeat_every=activity.repeat_every,
-            repeat_unit=activity.repeat_unit,
-            next_from=activity.next_from,
-        )
+        occurrences = self.list_occurrences(activity.id)
+        closed_ends = [
+            item.planned_due_date
+            for item in occurrences
+            if item.planned_due_date is not None
+        ]
+        repeat_period = None
+        if activity.next_from == NEXT_FROM_PLANNED:
+            repeat_period = period_end_for_repeat(performed_at, closed_ends)
+
+        if repeat_period is not None:
+            planned = repeat_period
+            next_due = activity.next_due_date
+        else:
+            planned = activity.next_due_date
+            next_due = calculate_next_due_date(
+                planned_due_date=planned,
+                performed_at=performed_at,
+                repeat_every=activity.repeat_every,
+                repeat_unit=activity.repeat_unit,
+                next_from=activity.next_from,
+            )
 
         occurrence = PeriodicActivityOccurrence(
             activity_id=activity.id,
@@ -326,6 +391,22 @@ class PeriodicActivityService:
         activity.updated_at = datetime.now()
         self.repository.update(activity)
         return saved
+
+    def next_due_for_mode(
+        self,
+        activity_id: int,
+        *,
+        next_from: str,
+        repeat_every: int,
+        repeat_unit: str,
+    ) -> date | None:
+        """Náhled dalšího termínu po změně způsobu výpočtu. Nic nezapisuje."""
+        return next_due_from_history(
+            self.list_occurrences(activity_id),
+            next_from=next_from,
+            repeat_every=repeat_every,
+            repeat_unit=repeat_unit,
+        )
 
     def _validated_fields(
         self,

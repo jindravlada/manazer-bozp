@@ -64,6 +64,10 @@ NEXT_FROM_LABELS = {
     NEXT_FROM_ACTUAL: "skutečného data provedení",
 }
 
+NEXT_FROM_CHANGE_TITLE = "Změna způsobu výpočtu"
+NEXT_FROM_CHANGE_CONFIRM = "Uložit změnu"
+NEXT_FROM_CHANGE_CANCEL = "Zrušit"
+
 PERFORMER_KIND_THP = "thp"
 PERFORMER_KIND_PERSON = "person"
 PERFORMER_KIND_EXTERNAL = "external"
