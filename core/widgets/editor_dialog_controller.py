@@ -45,12 +45,14 @@ def confirm_unsaved_editor_close(
     *,
     title: str,
     text: str | None = None,
+    abort_label: str | None = None,
 ) -> UnsavedCloseDecision:
     """Standardní dialog neuložených změn. Vrací ``save`` / ``discard`` / ``cancel``.
 
     Všechny tři akce mají ``ActionRole``, aby Enter / Accept / Escape
     neaktivovaly omylem „Uložit“ (dříve AcceptRole).
     ``text`` ponechává společná tlačítka a mění jen znění dotazu.
+    ``abort_label`` mění jen popisek třetího tlačítka (výchozí je „Zrušit“).
     """
     message = QMessageBox(parent)
     message.setWindowTitle(title)
@@ -67,11 +69,13 @@ def confirm_unsaved_editor_close(
         QMessageBox.ButtonRole.ActionRole,
     )
     discard_btn.setIcon(_standard_icon(QStyle.StandardPixmap.SP_DialogResetButton))
+    abort_text = abort_label or EDITOR_UNSAVED_ABORT_LABEL
     cancel_btn = message.addButton(
-        EDITOR_UNSAVED_ABORT_LABEL,
+        abort_text,
         QMessageBox.ButtonRole.ActionRole,
     )
     configure_editor_close_button(cancel_btn, is_new=True)
+    cancel_btn.setText(abort_text)
     message.setDefaultButton(cancel_btn)
     message.setEscapeButton(cancel_btn)
     message.exec()

@@ -1,7 +1,9 @@
 from datetime import date
+import copy
 import json
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
@@ -12,6 +14,7 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QMessageBox,
     QPushButton,
+    QSizePolicy,
     QTabWidget,
     QTextEdit,
     QVBoxLayout,
@@ -50,10 +53,25 @@ from moduly.vysetrovani_mu.ui.mu_dodrzovani_predpisu_widget import MuDodrzovaniP
 from moduly.vysetrovani_mu.ui.mu_kontrola_souladu_widget import MuKontrolaSouladuWidget
 from moduly.vysetrovani_mu.ui.mu_svedci_widget import MuSvedciWidget
 from moduly.vysetrovani_mu.ui.mu_zaver_widget import MuZaverWidget
-from core.widgets.dialog_utils import add_work_dialog_footer, create_save_cancel_box
+from core.widgets.editor_dialog_controller import (
+    EDITOR_CLOSE_LABEL,
+    EDITOR_SAVE_LABEL,
+    configure_editor_close_button,
+    configure_editor_save_button,
+    confirm_unsaved_editor_close,
+)
+from moduly.vysetrovani_mu.sluzby.mu_investigation_service import mu_investigation_service
 from moduly.vysetrovani_mu.ui.mu_zajisteni_dukazu_widget import MuZajisteniDukazuWidget
 from moduly.vysetrovani_mu.sluzby.mu_source_context import resolve_mu_source_context
 from moduly.vysetrovani_mu.sluzby.mu_investigation_check import InvestigationCheckResult
+
+_SAVE_CLOSE_LABEL = "Uložit a zavřít"
+_UNSAVED_ABORT_LABEL = "Zpět"
+_SAVE_CONFIRMATION_TEXT = "Změny byly úspěšně uloženy."
+
+
+def _exec_message_box(box: QMessageBox) -> int:
+    return int(box.exec())
 
 
 class MuInvestigationDialog(QDialog):
@@ -72,6 +90,9 @@ class MuInvestigationDialog(QDialog):
         self.investigation = investigation
         self._preset_accident_id = accident_id
         self._suppress_event_character_source_switch = False
+        self._baseline: object | None = None
+        self._closing = False
+        self._was_saved = False
 
         self.setWindowTitle("Vyšetřování mimořádné události")
         self.resize(860, 720)
@@ -104,12 +125,7 @@ class MuInvestigationDialog(QDialog):
         self.tabs.currentChanged.connect(self._on_tab_changed)
         layout.addWidget(self.tabs)
 
-        buttons = create_save_cancel_box(self)
-        buttons.accepted.connect(self._accept_dialog)
-        buttons.rejected.connect(self.reject)
-        self.check_spis_btn = QPushButton("Kontrola spisu")
-        self.check_spis_btn.clicked.connect(self._open_investigation_check)
-        add_work_dialog_footer(layout, work_widgets=[self.check_spis_btn], buttons=buttons)
+        layout.addLayout(self._build_footer())
 
         self.started_at_edit.dateChanged.connect(self._sync_casova_osa_started_at)
         self.oznameni_widget.oznameni_datum.dateChanged.connect(self._sync_casova_osa_oznameni)
@@ -162,6 +178,224 @@ class MuInvestigationDialog(QDialog):
         self._update_source_panel()
         self._sync_kontrola_souladu_event_character()
         self._previous_event_character = self.event_character_combo.currentText()
+        self._capture_baseline()
+
+    @property
+    def was_saved(self) -> bool:
+        return self._was_saved
+
+    def _build_footer(self) -> QHBoxLayout:
+        """MU-EDITOR-SAVE-1: vpravo Uložit | Uložit a zavřít | Zavřít."""
+        footer = QHBoxLayout()
+        footer.setContentsMargins(0, 0, 0, 0)
+        footer.setSpacing(8)
+
+        self.check_spis_btn = QPushButton("Kontrola spisu")
+        self.check_spis_btn.clicked.connect(self._open_investigation_check)
+        footer.addWidget(self.check_spis_btn)
+        footer.addStretch(1)
+
+        self._save_btn = QPushButton()
+        configure_editor_save_button(self._save_btn)
+        self._save_btn.setText(EDITOR_SAVE_LABEL)
+
+        self._save_close_btn = QPushButton(_SAVE_CLOSE_LABEL)
+        configure_editor_save_button(self._save_close_btn)
+        self._save_close_btn.setText(_SAVE_CLOSE_LABEL)
+
+        self._close_btn = QPushButton()
+        configure_editor_close_button(self._close_btn, is_new=False)
+        self._close_btn.setText(EDITOR_CLOSE_LABEL)
+
+        for button in (
+            self.check_spis_btn,
+            self._save_btn,
+            self._save_close_btn,
+            self._close_btn,
+        ):
+            button.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+            button.setAutoDefault(False)
+            button.setDefault(False)
+
+        self._save_btn.clicked.connect(self._save_keep_open)
+        self._save_close_btn.clicked.connect(self._save_and_close)
+        self._close_btn.clicked.connect(self._request_close)
+
+        footer.addWidget(self._save_btn)
+        footer.addWidget(self._save_close_btn)
+        footer.addWidget(self._close_btn)
+        return footer
+
+    def _capture_baseline(self) -> None:
+        self._baseline = copy.deepcopy(self.get_data())
+
+    def _is_dirty(self) -> bool:
+        return self.get_data() != self._baseline
+
+    def _save_keep_open(self) -> None:
+        """Uloží změny, potvrdí úspěch a editor nechá otevřený."""
+        show_confirmation = self._is_dirty() or self.investigation is None
+        if not self._persist():
+            return
+        if show_confirmation:
+            self._show_save_confirmation()
+
+    def _show_save_confirmation(self) -> None:
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Information)
+        box.setWindowTitle(self.windowTitle())
+        box.setText(_SAVE_CONFIRMATION_TEXT)
+        box.setStandardButtons(QMessageBox.StandardButton.Ok)
+        ok_button = box.button(QMessageBox.StandardButton.Ok)
+        if ok_button is not None:
+            ok_button.setText("OK")
+        _exec_message_box(box)
+
+    def _save_and_close(self) -> None:
+        if self._persist():
+            self._done_accept()
+
+    def _persist(self) -> bool:
+        """Společné uložení pro Uložit, Uložit a zavřít i dotaz při zavření."""
+        self._warn_unresolved_findings()
+        data = self.get_data()
+        try:
+            if self.investigation is None:
+                saved = mu_investigation_service.create_investigation(**data)
+            else:
+                saved = mu_investigation_service.update_investigation(
+                    self.investigation.id,
+                    **data,
+                )
+                if saved is None:
+                    QMessageBox.warning(
+                        self,
+                        self.windowTitle(),
+                        "Vyšetřování nebylo nalezeno.",
+                    )
+                    return False
+        except Exception as exc:
+            QMessageBox.warning(
+                self,
+                self.windowTitle(),
+                "Vyšetřování se nepodařilo uložit.\n\n" + str(exc),
+            )
+            return False
+
+        self.investigation = mu_investigation_service.get_by_id(saved.id) or saved
+        self._apply_saved_investigation()
+        follow_up = self.get_data()
+        if follow_up != data and self.investigation is not None:
+            try:
+                updated = mu_investigation_service.update_investigation(
+                    self.investigation.id,
+                    **follow_up,
+                )
+            except Exception as exc:
+                QMessageBox.warning(
+                    self,
+                    self.windowTitle(),
+                    "Vyšetřování se nepodařilo uložit.\n\n" + str(exc),
+                )
+                return False
+            if updated is None:
+                QMessageBox.warning(
+                    self,
+                    self.windowTitle(),
+                    "Vyšetřování nebylo nalezeno.",
+                )
+                return False
+            self.investigation = mu_investigation_service.get_by_id(updated.id) or updated
+        self._was_saved = True
+        self._capture_baseline()
+        return True
+
+    def _warn_unresolved_findings(self) -> None:
+        investigation_id = self.investigation.id if self.investigation is not None else None
+        if investigation_id is None or not finding_service.has_unresolved(
+            ENTITY_MU_INVESTIGATION,
+            investigation_id,
+        ):
+            return
+        QMessageBox.information(
+            self,
+            "Závěr",
+            "Vyšetřování obsahuje otevřená zjištění.",
+        )
+
+    def _apply_saved_investigation(self) -> None:
+        if self.investigation is None:
+            return
+        number = self.investigation.number or "—"
+        self.number_header.setText(f"Číslo: {number}")
+        investigation_id = self.investigation.id
+        self.ishikawa_widget.set_investigation_id(investigation_id)
+        self.findings_widget.set_investigation_id(investigation_id)
+        self.zaver_widget.set_investigation_id(investigation_id)
+        self._refresh_source_dependent_widgets()
+
+    def _close_outcome(self) -> str:
+        """``close`` zavře bez dalšího zápisu, ``saved`` po uložení, ``abort`` zůstane."""
+        if self._closing or not self._is_dirty():
+            return "close"
+        decision = confirm_unsaved_editor_close(
+            self,
+            title=self.windowTitle(),
+            abort_label=_UNSAVED_ABORT_LABEL,
+        )
+        if decision == "cancel":
+            return "abort"
+        if decision == "discard":
+            return "close"
+        if not self._persist():
+            return "abort"
+        return "saved"
+
+    def _request_close(self) -> None:
+        self.reject()
+
+    def _done_accept(self) -> None:
+        self._closing = True
+        QDialog.accept(self)
+
+    def _done_reject(self) -> None:
+        self._closing = True
+        QDialog.reject(self)
+
+    def accept(self) -> None:
+        if self._closing:
+            QDialog.accept(self)
+            return
+        self._save_and_close()
+
+    def reject(self) -> None:
+        if self._closing:
+            QDialog.reject(self)
+            return
+        outcome = self._close_outcome()
+        if outcome == "abort":
+            return
+        if outcome == "saved":
+            self._done_accept()
+            return
+        self._done_reject()
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        if self._closing:
+            event.accept()
+            return
+        if not self.isVisible():
+            self._closing = True
+            event.accept()
+            return
+        outcome = self._close_outcome()
+        if outcome == "abort":
+            event.ignore()
+            return
+        self._closing = True
+        if outcome == "saved":
+            QDialog.accept(self)
+        event.accept()
 
     def _on_event_character_changed(self, new_character: str) -> None:
         self._sync_kontrola_souladu_event_character()
@@ -180,19 +414,6 @@ class MuInvestigationDialog(QDialog):
             self._update_source_panel()
 
         self._previous_event_character = new_character
-
-    def _accept_dialog(self) -> None:
-        investigation_id = self.investigation.id if self.investigation is not None else None
-        if investigation_id is not None and finding_service.has_unresolved(
-            ENTITY_MU_INVESTIGATION,
-            investigation_id,
-        ):
-            QMessageBox.information(
-                self,
-                "Závěr",
-                "Vyšetřování obsahuje otevřená zjištění.",
-            )
-        self.accept()
 
     def _refresh_findings_tab(self) -> None:
         self.findings_widget.refresh()

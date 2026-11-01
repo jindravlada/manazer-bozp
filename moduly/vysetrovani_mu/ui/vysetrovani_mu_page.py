@@ -202,14 +202,29 @@ class VysetrovaniMuPage(QWidget):
 
         accident_service.update_accident(investigation.source_id, closed=should_close)
 
+    def _finish_investigation_editor(self, dialog: MuInvestigationDialog) -> None:
+        """Editor si ukládá sám. Seznam se obnoví jen po skutečném uložení."""
+        exec_maximized(dialog)
+        if not dialog.was_saved:
+            return
+
+        stored = None
+        if dialog.investigation is not None and dialog.investigation.id:
+            stored = mu_investigation_service.get_by_id(dialog.investigation.id)
+        if stored is not None:
+            self._sync_accident_closed_from_investigation(stored)
+            if (
+                stored.status == MU_STATUS_DOKONCENO
+                and self.status_filter.currentText() == MU_STATUS_FILTER_PROBIHA
+            ):
+                self.status_filter.setCurrentText(MU_STATUS_FILTER_DOKONCENO)
+                return
+
+        self._populate_year_filter()
+        self.refresh()
+
     def new_investigation(self):
-        dialog = MuInvestigationDialog(self)
-        if exec_maximized(dialog):
-            data = dialog.get_data()
-            investigation = mu_investigation_service.create_investigation(**data)
-            self._sync_accident_closed_from_investigation(investigation)
-            self._populate_year_filter()
-            self.refresh()
+        self._finish_investigation_editor(MuInvestigationDialog(self))
 
     def edit_selected_investigation(self):
         investigation_id = self._selected_investigation_id()
@@ -225,16 +240,9 @@ class VysetrovaniMuPage(QWidget):
             self.refresh()
             return
 
-        dialog = MuInvestigationDialog(self, investigation=investigation)
-        if exec_maximized(dialog):
-            data = dialog.get_data()
-            updated = mu_investigation_service.update_investigation(investigation_id, **data)
-            self._sync_accident_closed_from_investigation(updated)
-            if data.get("status") == MU_STATUS_DOKONCENO and self.status_filter.currentText() == MU_STATUS_FILTER_PROBIHA:
-                self.status_filter.setCurrentText(MU_STATUS_FILTER_DOKONCENO)
-            else:
-                self._populate_year_filter()
-                self.refresh()
+        self._finish_investigation_editor(
+            MuInvestigationDialog(self, investigation=investigation)
+        )
 
     def open_from_accident(self, accident_id: int) -> None:
         existing = mu_investigation_service.find_by_source(SOURCE_TYPE_ACCIDENT, accident_id)
@@ -248,13 +256,9 @@ class VysetrovaniMuPage(QWidget):
             QMessageBox.warning(self, "Vyšetřování MU", "Úraz nebyl nalezen.")
             return
 
-        dialog = MuInvestigationDialog(self, accident_id=accident_id)
-        if exec_maximized(dialog):
-            data = dialog.get_data()
-            investigation = mu_investigation_service.create_investigation(**data)
-            self._sync_accident_closed_from_investigation(investigation)
-            self._populate_year_filter()
-            self.refresh()
+        self._finish_investigation_editor(
+            MuInvestigationDialog(self, accident_id=accident_id)
+        )
 
     def delete_selected_investigation(self):
         investigation_id = self._selected_investigation_id()
