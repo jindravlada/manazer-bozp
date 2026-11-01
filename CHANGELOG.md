@@ -14,6 +14,31 @@
 
 ---
 
+# Verze 4.1.4
+
+Datum vydání:
+
+1. 11. 2026
+
+Změny funkcí
+
+- Editory vyšetřování mimořádné události, události a periodické činnosti ukládají stejně: Uložit nechá formulář otevřený, Uložit a zavřít ho zavře, Zavřít se zeptá na neuložené změny.
+- Z existující události lze uložit šablonu. Událost samotná se tím nezmění. Šablona převezme organizátora jako osobu i jako THP.
+- Agenda, Nadcházející a kalendář ukazují periodické termíny: nejbližší nesplněný termín v minulosti a plánované termíny na tři kalendářní měsíce dopředu. Kalendář kreslí i vzdálenější měsíc, který je právě zobrazený. Co hoří dál používá jen připomenutí.
+- Editor Nový test i úprava testu jdou maximalizovat a znovu zmenšit tlačítkem v titulku. Tabulky okruhů využijí volnou výšku.
+
+Opravy chyb
+
+- Poznámka k námitkám ve Státním dozoru se ukládá spolu se závěrem.
+- Otevřený editor dozoru už při uložení nepřepíše automatické vypořádání zjištění.
+- Stav zjištění a datum vypořádání se drží pohromadě.
+- Vyplnění administrativního data uzavře kontrolu. Když uživatel uzavření odmítne, původní stav kontroly zůstane.
+- Uložit a zavřít u čistého formuláře dozoru už nezůstane omylem zapnuté.
+- Tabulka historie periodické činnosti se roztáhne na šířku okna.
+- Opakované provedení ve stejné periodě neposune pevný harmonogram. Posun od skutečného data provedení zůstává jen u tohoto způsobu výpočtu.
+
+---
+
 # Verze 4.1.3
 
 Datum vydání:

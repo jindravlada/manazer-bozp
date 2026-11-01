@@ -1,0 +1,24 @@
+Sestavení instalátoru Manažer BOZP pro Windows
+================================================
+
+Tento balíček se sestavuje na počítači s Windows 10 nebo 11.
+Na Linuxu se instalační setup.exe nevytváří.
+
+Potřebujete:
+
+- Python 3.14
+- Inno Setup 6 (ISCC.exe na PATH, nebo v obvyklé složce Inno Setup 6)
+
+Postup z kořene rozbaleného balíčku:
+
+1. Spusťte build_windows.bat.
+2. Skript založí .venv, nainstaluje requirements.txt a requirements-build.txt,
+   sestaví program přes PyInstaller a vytvoří instalátor přes installer.iss.
+3. Hotový instalátor je v adresáři installer\.
+   Název je Manazer_BOZP_4_1_4_Setup.exe.
+
+Uživatelská databáze se do instalátoru nekopíruje.
+Data zůstávají v %LOCALAPPDATA%\manazer-bozp a aktualizace je nepřepíše.
+
+Licence je GNU GPL verze 3 nebo novější, soubor LICENSE.txt.
+Autor: Ing. Vladimír Jindra.
