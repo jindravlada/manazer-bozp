@@ -541,7 +541,17 @@ class StateSupervisionFindingsCore5a1TestCase(unittest.TestCase):
         self.assertEqual(summary[FINDING_TYPE_NESHODA], 1)
 
         sig = inspect.signature(FindingService.delete)
-        self.assertNotIn("session", sig.parameters)
+        finding_id = sig.parameters["finding_id"]
+        session_param = sig.parameters["session"]
+        self.assertEqual(finding_id.kind, inspect.Parameter.POSITIONAL_OR_KEYWORD)
+        self.assertEqual(session_param.kind, inspect.Parameter.KEYWORD_ONLY)
+        self.assertIsNone(session_param.default)
+        required = [
+            name
+            for name, param in sig.parameters.items()
+            if name != "self" and param.default is inspect.Parameter.empty
+        ]
+        self.assertEqual(required, ["finding_id"])
         ss = self._supervision()
         ss_finding = finding_service.create(
             ENTITY_STATE_SUPERVISION,

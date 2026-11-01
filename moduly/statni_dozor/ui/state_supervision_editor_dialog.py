@@ -284,8 +284,9 @@ class _SupervisionEditorController(ConfirmingSaveController):
     """Stejná aktivace Uložit i pro tlačítko Uložit a zavřít."""
 
     def __init__(self, *args, extra_save_buttons=(), **kwargs):
-        self._extra_save_buttons = list(extra_save_buttons)
         super().__init__(*args, **kwargs)
+        for button in extra_save_buttons:
+            self.bind_extra_save_button(button)
 
     def _refresh_save_enabled(self) -> None:
         super()._refresh_save_enabled()
