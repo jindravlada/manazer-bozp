@@ -125,6 +125,27 @@ class MeetingTemplateDialog(QDialog):
             meeting_template_service.parse_agenda_items(template)
         )
 
+    def apply_draft(self, data: dict) -> None:
+        """Předvyplní novou šablonu. Nic neukládá."""
+        self.name_edit.setText(str(data.get("name") or ""))
+
+        event_type = meeting_event_type_service.normalize(data.get("event_type"))
+        if self.event_type_combo.findText(event_type) < 0:
+            self.event_type_combo.addItem(event_type)
+        self.event_type_combo.setCurrentText(event_type)
+
+        priority = meeting_service.normalize_priority(data.get("priority"))
+        if self.priority_combo.findText(priority) >= 0:
+            self.priority_combo.setCurrentText(priority)
+
+        self.location_edit.set_location_text(str(data.get("location") or ""))
+        self.organizer_selector.set_ref(data.get("organizer_ref"))
+        self.participants_selector.set_participants(
+            participant_refs=list(data.get("participant_refs") or []),
+            external_participants=list(data.get("external_participants") or []),
+        )
+        self.agenda_items_widget.load_items(list(data.get("agenda_items") or []))
+
     def get_data(self) -> dict:
         name = self.name_edit.text().strip()
         return {

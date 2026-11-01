@@ -37,7 +37,11 @@ with patch.object(Path, "home", return_value=_TMP):
         EDITOR_UNSAVED_DISCARD_LABEL,
         confirm_unsaved_editor_close,
     )
-    from moduly.schuzky.constants import DIALOG_WINDOW_TITLE, STATUS_CLOSED
+    from moduly.schuzky.constants import (
+        ACTION_SAVE_AS_TEMPLATE,
+        DIALOG_WINDOW_TITLE,
+        STATUS_CLOSED,
+    )
     from moduly.schuzky.sluzby.meeting_agenda_item_service import (
         meeting_agenda_item_service,
     )
@@ -117,11 +121,20 @@ class AgendaEventSave1TestCase(unittest.TestCase):
         fresh = self._open()
         existing = self._open(self._create())
         try:
+            self.assertEqual(
+                self._labels(fresh),
+                [EDITOR_SAVE_LABEL, _SAVE_CLOSE_LABEL, EDITOR_CLOSE_LABEL],
+            )
+            self.assertEqual(
+                self._labels(existing),
+                [
+                    ACTION_SAVE_AS_TEMPLATE,
+                    EDITOR_SAVE_LABEL,
+                    _SAVE_CLOSE_LABEL,
+                    EDITOR_CLOSE_LABEL,
+                ],
+            )
             for dialog in (fresh, existing):
-                self.assertEqual(
-                    self._labels(dialog),
-                    [EDITOR_SAVE_LABEL, _SAVE_CLOSE_LABEL, EDITOR_CLOSE_LABEL],
-                )
                 layout = dialog.layout()
                 footer = layout.itemAt(layout.count() - 1).layout()
                 stretch_at = next(

@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from core.widgets.dialog_utils import create_save_cancel_box
+from core.widgets.dialog_utils import create_save_cancel_box, exec_maximized
 from core.widgets.editor_dialog_controller import (
     EDITOR_CLOSE_LABEL,
     _safe_disconnect,
@@ -31,6 +31,8 @@ from core.widgets.editor_dialog_controller import (
 from core.widgets.nullable_date_edit import NullableDateEdit
 from moduly.schuzky.constants import (
     DEFAULT_EVENT_DURATION_HOURS,
+    ACTION_SAVE_AS_TEMPLATE,
+    AGENDA_ITEM_STATUS_READY,
     DEFAULT_EVENT_TYPE,
     DEFAULT_MEETING_PRIORITY,
     DEFAULT_MEETING_STATUS,
@@ -41,13 +43,18 @@ from moduly.schuzky.constants import (
     PAST_PLANNED_BACK_BUTTON,
     PAST_PLANNED_START_MESSAGE,
     STATUS_PLANNED,
+    TEMPLATE_DIALOG_TITLE,
     TAB_DISCUSSION,
     TAB_MEETING,
 )
 from moduly.schuzky.sluzby.meeting_agenda_item_service import meeting_agenda_item_service
 from moduly.schuzky.sluzby.meeting_event_type_service import meeting_event_type_service
 from moduly.schuzky.sluzby.meeting_service import MeetingValidationError, meeting_service
-from moduly.schuzky.sluzby.meeting_template_service import meeting_template_service
+from moduly.schuzky.sluzby.meeting_template_service import (
+    MeetingTemplateValidationError,
+    meeting_template_service,
+)
+from moduly.schuzky.ui.meeting_template_dialog import MeetingTemplateDialog
 from moduly.schuzky.ui.event_datetime_fields import EventDateTimeFields
 from moduly.schuzky.ui.meeting_agenda_items_widget import MeetingAgendaItemsWidget
 from moduly.schuzky.ui.meeting_conflict_dialog import (
@@ -403,6 +410,12 @@ class MeetingDialog(QDialog):
         footer = QHBoxLayout()
         footer.setContentsMargins(0, 0, 0, 0)
         footer.setSpacing(8)
+        if self.meeting is not None:
+            self.save_as_template_btn = QPushButton(ACTION_SAVE_AS_TEMPLATE)
+            self.save_as_template_btn.setAutoDefault(False)
+            self.save_as_template_btn.setDefault(False)
+            self.save_as_template_btn.clicked.connect(self._save_as_template)
+            footer.addWidget(self.save_as_template_btn)
         footer.addStretch(1)
 
         self._save_close_btn = QPushButton(_SAVE_CLOSE_LABEL)
@@ -425,6 +438,45 @@ class MeetingDialog(QDialog):
             footer.addWidget(button)
         self._button_box = buttons
         return footer
+
+    def _template_draft(self) -> dict:
+        """Údaje šablony z právě zobrazeného formuláře, bez termínu a průběhu."""
+        data = self.get_data()
+        agenda_items = []
+        for raw in self.get_agenda_items():
+            title = str(raw.get("title") or "").strip()
+            message = str(raw.get("moje_sdeleni") or "")
+            if not title and not message.strip():
+                continue
+            agenda_items.append(
+                {
+                    "title": title,
+                    "moje_sdeleni": message,
+                    "status": AGENDA_ITEM_STATUS_READY,
+                }
+            )
+        title = data.get("title") or ""
+        return {
+            "name": title,
+            "event_type": data.get("event_type") or "",
+            "title": title,
+            "location": data.get("location") or "",
+            "priority": data.get("priority") or DEFAULT_MEETING_PRIORITY,
+            "organizer_ref": data.get("organizer_ref"),
+            "participant_refs": list(data.get("participant_refs") or []),
+            "external_participants": list(data.get("external_participants") or []),
+            "agenda_items": agenda_items,
+        }
+
+    def _save_as_template(self) -> None:
+        dialog = MeetingTemplateDialog(self)
+        dialog.apply_draft(self._template_draft())
+        if not exec_maximized(dialog):
+            return
+        try:
+            meeting_template_service.create_template(**dialog.get_data())
+        except MeetingTemplateValidationError as error:
+            QMessageBox.warning(self, TEMPLATE_DIALOG_TITLE, str(error))
 
     def _save_keep_open(self) -> None:
         if self._editor._run_save():

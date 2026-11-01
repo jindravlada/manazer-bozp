@@ -34,6 +34,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from moduly.schuzky.constants import (
         ACTION_NEW_FROM_TEMPLATE,
+        ACTION_SAVE_AS_TEMPLATE,
         DEFAULT_MEETING_STATUS,
         STATUS_PLANNED,
         TEMPLATE_BTN_USE,
@@ -268,9 +269,16 @@ class EventsTemplates1TestCase(unittest.TestCase):
         self.assertEqual(created[0].status, STATUS_PLANNED)
 
     def test_no_save_as_template_button(self) -> None:
-        dialog = MeetingDialog()
-        texts = [btn.text() for btn in dialog.findChildren(QPushButton)]
-        self.assertNotIn("Uložit jako šablonu...", texts)
+        fresh = MeetingDialog()
+        fresh_texts = [btn.text() for btn in fresh.findChildren(QPushButton)]
+        self.assertNotIn(ACTION_SAVE_AS_TEMPLATE, fresh_texts)
+        self.assertFalse(hasattr(fresh, "save_as_template_btn"))
+        fresh._editor.force_close()
+
+        meeting = meeting_service.create_meeting(title="Uložená událost")
+        dialog = MeetingDialog(meeting=meeting)
+        self.assertEqual(dialog.save_as_template_btn.text(), ACTION_SAVE_AS_TEMPLATE)
+        dialog._editor.force_close()
 
 
 if __name__ == "__main__":

@@ -36,6 +36,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.sablony_udalosti.constants import MODULE_KEY, MODULE_NAME
     from moduly.schuzky.constants import (
         ACTION_NEW_FROM_TEMPLATE,
+        ACTION_SAVE_AS_TEMPLATE,
         DEFAULT_MEETING_STATUS,
         STATUS_PLANNED,
         TEMPLATE_ACTION_DELETE,
@@ -299,10 +300,17 @@ class EventsTemplates2TestCase(unittest.TestCase):
         self.assertEqual(meeting_items[0].title, "Jiný bod")
 
     def test_meeting_dialog_has_no_save_as_template(self) -> None:
-        dialog = MeetingDialog()
-        texts = [btn.text() for btn in dialog.findChildren(QPushButton)]
-        self.assertNotIn("Uložit jako šablonu...", texts)
-        self.assertFalse(hasattr(dialog, "save_as_template_btn"))
+        fresh = MeetingDialog()
+        texts = [btn.text() for btn in fresh.findChildren(QPushButton)]
+        self.assertNotIn(ACTION_SAVE_AS_TEMPLATE, texts)
+        self.assertFalse(hasattr(fresh, "save_as_template_btn"))
+        fresh._editor.force_close()
+
+        meeting = meeting_service.create_meeting(title="Uložená událost")
+        dialog = MeetingDialog(meeting=meeting)
+        self.assertTrue(hasattr(dialog, "save_as_template_btn"))
+        self.assertEqual(dialog.save_as_template_btn.text(), ACTION_SAVE_AS_TEMPLATE)
+        dialog._editor.force_close()
 
     def test_pages_actions(self) -> None:
         page = MeetingTemplatesPage()
