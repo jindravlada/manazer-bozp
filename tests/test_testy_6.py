@@ -9,7 +9,13 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from PySide6.QtWidgets import QApplication, QDialog
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import (
+    QApplication,
+    QDialog,
+    QDialogButtonBox,
+    QScrollArea,
+)
 from sqlalchemy import delete, func, select
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -47,6 +53,8 @@ with patch.object(Path, "home", return_value=_TMP):
         PART_YES_LABEL,
         STATUS_INACTIVE_LABEL,
         TEST_COL_NAME,
+        TEST_DIALOG_TITLE_EDIT,
+        TEST_DIALOG_TITLE_NEW,
         TEST_COL_ORAL,
         TEST_COL_QUESTION_COUNT,
         TEST_COL_STATUS,
@@ -639,6 +647,102 @@ class TestDefinitionTestCase(unittest.TestCase):
         self.assertEqual(self.page.tabs.tabText(6), AGENDA_EXAM_VALIDITY)
         self.assertEqual(self.tests.new_btn.text(), "Nový test")
         self.assertEqual(active.id, test_definition_service.get_test(active.id).id)
+
+    def test_dialog_size_maximize_and_table_stretch(self) -> None:
+        dialog = TestDefinitionDialog()
+        try:
+            self._assert_resizable_definition_dialog(dialog, TEST_DIALOG_TITLE_NEW)
+            dialog.written_group.setChecked(True)
+            dialog.oral_group.setChecked(True)
+            dialog.show()
+            QApplication.processEvents()
+            dialog.resize(820, 720)
+            QApplication.processEvents()
+            written_before = dialog.written_composition.table.height()
+            oral_before = dialog.oral_composition.table.height()
+            self.assertGreater(written_before, 0)
+            self.assertGreater(oral_before, 0)
+            self.assertGreater(dialog.written_composition.table.maximumHeight(), 180)
+            self.assertGreater(dialog.oral_composition.table.maximumHeight(), 180)
+
+            dialog.resize(820, 1400)
+            QApplication.processEvents()
+            self.assertGreater(dialog.written_composition.table.height(), written_before)
+            self.assertGreater(dialog.oral_composition.table.height(), oral_before)
+            self._assert_buttons_stay_clear(dialog)
+
+            dialog.resize(640, 480)
+            QApplication.processEvents()
+            self._assert_buttons_stay_clear(dialog)
+
+            dialog.resize(820, 720)
+            QApplication.processEvents()
+            normal = dialog.size()
+            dialog.showMaximized()
+            QApplication.processEvents()
+            self.assertTrue(dialog.windowState() & Qt.WindowState.WindowMaximized)
+            dialog.showNormal()
+            QApplication.processEvents()
+            self.assertFalse(dialog.windowState() & Qt.WindowState.WindowMaximized)
+            self.assertEqual(dialog.size(), normal)
+
+            dialog.name.setText("Rozměr")
+            self.assertEqual(dialog.get_data()["name"], "Rozměr")
+        finally:
+            dialog._editor.force_close()
+
+        topic = _written_topic("Rozměr okruh", 3)
+        created = test_definition_service.create_test(
+            **_fields(
+                name="Uložený rozměr",
+                uses_written=True,
+                written_topics=[TestTopicQuota(topic.id, 1)],
+            )
+        )
+        edit = TestDefinitionDialog(test=created)
+        try:
+            self._assert_resizable_definition_dialog(edit, TEST_DIALOG_TITLE_EDIT)
+            self.assertEqual(edit.name.text(), "Uložený rozměr")
+            buttons = edit.findChild(QDialogButtonBox)
+            close_btn = buttons.button(QDialogButtonBox.StandardButton.Cancel)
+            self.assertEqual(close_btn.text(), "Zavřít")
+            self.assertTrue(close_btn.isEnabled())
+            updated = test_definition_service.update_test(
+                created.id,
+                **edit.get_data(),
+            )
+            self.assertEqual(updated.name, "Uložený rozměr")
+            self.assertEqual(
+                test_definition_service.written_question_count(updated.id),
+                1,
+            )
+        finally:
+            edit._editor.force_close()
+
+    def _assert_resizable_definition_dialog(self, dialog, title: str) -> None:
+        self.assertEqual(dialog.windowTitle(), title)
+        self.assertEqual(dialog.width(), 820)
+        self.assertEqual(dialog.height(), 720)
+        self.assertEqual(dialog.minimumWidth(), 640)
+        self.assertEqual(dialog.minimumHeight(), 480)
+        self.assertEqual(dialog.maximumWidth(), 16777215)
+        self.assertEqual(dialog.maximumHeight(), 16777215)
+        self.assertTrue(dialog.windowFlags() & Qt.WindowType.WindowMaximizeButtonHint)
+        self.assertFalse(dialog.windowState() & Qt.WindowState.WindowMaximized)
+
+    def _assert_buttons_stay_clear(self, dialog) -> None:
+        buttons = dialog.findChild(QDialogButtonBox)
+        scroll = dialog.findChild(QScrollArea)
+        self.assertIsNotNone(buttons)
+        self.assertIsNotNone(scroll)
+        save = buttons.button(QDialogButtonBox.StandardButton.Save)
+        cancel = buttons.button(QDialogButtonBox.StandardButton.Cancel)
+        self.assertTrue(buttons.isVisible())
+        self.assertTrue(save.isVisible())
+        self.assertTrue(cancel.isVisible())
+        self.assertFalse(scroll.geometry().intersects(buttons.geometry()))
+        self.assertGreaterEqual(buttons.geometry().top(), scroll.geometry().bottom())
+        self.assertLessEqual(buttons.geometry().bottom(), dialog.rect().bottom())
 
 
 if __name__ == "__main__":

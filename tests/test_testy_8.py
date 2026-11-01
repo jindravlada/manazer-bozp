@@ -118,11 +118,9 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.testy.sluzby.written_question_topic_service import (
         written_question_topic_service,
     )
-    from moduly.testy.ui.test_definition_dialog import TestDefinitionDialog
     from moduly.testy.ui.test_definitions_tab import TestDefinitionsTab
     from moduly.testy.ui.test_exams_tab import TestExamsTab
     from moduly.testy.ui.written_exam_window import WrittenExamWindow
-    from core.widgets.dialog_utils import exec_maximized
 
 
 _APP = QApplication.instance() or QApplication([])
@@ -1362,43 +1360,36 @@ class ElectronicWrittenExamTestCase(unittest.TestCase):
 
     def test_definition_editor_opens_maximized(self) -> None:
         tab = TestDefinitionsTab()
-        seen: dict = {}
+        opened: list[QDialog] = []
 
         def fake_exec(dialog):
-            seen["state"] = dialog.windowState()
-            seen["title"] = dialog.windowTitle()
-            seen["has_name"] = hasattr(dialog, "name")
-            dialog.close()
+            opened.append(dialog)
             return 0
 
-        with patch(
-            "moduly.testy.ui.test_definitions_tab.exec_maximized",
-            side_effect=fake_exec,
-        ) as mocked:
+        with patch.object(QDialog, "exec", new=fake_exec):
             tab.new_test()
-        mocked.assert_called_once()
-        self.assertTrue(seen["state"] & Qt.WindowState.WindowMaximized)
-        self.assertEqual(seen["title"], TEST_DIALOG_TITLE_NEW)
-        self.assertTrue(seen["has_name"])
+        self.assertEqual(len(opened), 1)
+        self.assertEqual(opened[0].windowTitle(), TEST_DIALOG_TITLE_NEW)
+        self.assertTrue(hasattr(opened[0], "name"))
+        self.assertFalse(opened[0].windowState() & Qt.WindowState.WindowMaximized)
+        self.assertEqual(opened[0].size().width(), 820)
+        self.assertEqual(opened[0].size().height(), 720)
+        self.assertTrue(
+            opened[0].windowFlags() & Qt.WindowType.WindowMaximizeButtonHint
+        )
 
         _topic, test = _written_test("Editor", ["Otázka editoru"])
         tab.refresh()
         self._select_named_table(tab.table, test.name, name_column=1)
-        with patch(
-            "moduly.testy.ui.test_definitions_tab.exec_maximized",
-            side_effect=fake_exec,
-        ):
+        opened.clear()
+        with patch.object(QDialog, "exec", new=fake_exec):
             tab.edit_selected()
-        self.assertEqual(seen["title"], TEST_DIALOG_TITLE_EDIT)
-        self.assertTrue(seen["state"] & Qt.WindowState.WindowMaximized)
-
-        dialog = TestDefinitionDialog()
-        try:
-            with patch.object(QDialog, "exec", return_value=0):
-                self.assertEqual(exec_maximized(dialog), 0)
-            self.assertTrue(dialog.windowState() & Qt.WindowState.WindowMaximized)
-        finally:
-            dialog.close()
+        self.assertEqual(len(opened), 1)
+        self.assertEqual(opened[0].windowTitle(), TEST_DIALOG_TITLE_EDIT)
+        self.assertFalse(opened[0].windowState() & Qt.WindowState.WindowMaximized)
+        self.assertTrue(
+            opened[0].windowFlags() & Qt.WindowType.WindowMaximizeButtonHint
+        )
 
     def test_manager_lock_hides_navigation_and_ignores_close(self) -> None:
         window = MainWindow()

@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPlainTextEdit,
     QRadioButton,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -74,9 +75,14 @@ class TestDefinitionDialog(QDialog):
             min_width=640,
             min_height=480,
         )
+        # QWIDGETSIZE_MAX. Konečné maximum Qt skryje tlačítko maximalizace.
+        self.setMaximumSize(16777215, 16777215)
+        self.setWindowFlag(Qt.WindowType.WindowMaximizeButtonHint, True)
+        self.resize(820, 720)
 
         layout = QVBoxLayout(self)
         form_host = QWidget()
+        form_host.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         form = QVBoxLayout(form_host)
 
         basics = QGroupBox("Základní údaje")
@@ -105,7 +111,7 @@ class TestDefinitionDialog(QDialog):
         limits.addRow("Sekund na otázku:", self.seconds)
         self.total_questions_label = QLabel("Celkem otázek: 0")
         self.duration_label = QLabel("Čas testu: 0 min")
-        written_layout.addWidget(self.written_composition)
+        written_layout.addWidget(self.written_composition, 1)
         written_layout.addLayout(limits)
         written_layout.addWidget(self.total_questions_label)
         written_layout.addWidget(self.duration_label)
@@ -115,7 +121,7 @@ class TestDefinitionDialog(QDialog):
         self.oral_group.setChecked(False)
         oral_layout = QVBoxLayout(self.oral_group)
         self.oral_composition = TestDefinitionCompositionEditor()
-        oral_layout.addWidget(self.oral_composition)
+        oral_layout.addWidget(self.oral_composition, 1)
 
         organization = QGroupBox("Organizace")
         organization_layout = QVBoxLayout(organization)
@@ -145,11 +151,10 @@ class TestDefinitionDialog(QDialog):
         validity_row.addStretch()
 
         form.addWidget(basics)
-        form.addWidget(self.written_group)
-        form.addWidget(self.oral_group)
+        form.addWidget(self.written_group, 1)
+        form.addWidget(self.oral_group, 1)
         form.addWidget(organization)
         form.addWidget(validity)
-        form.addStretch()
 
         layout.addWidget(wrap_in_scroll_area(form_host), 1)
         buttons = create_save_cancel_box(self, is_new=is_new)
@@ -177,7 +182,6 @@ class TestDefinitionDialog(QDialog):
         self._update_summary()
         configure_form_tab_navigation(self)
         self._editor.capture_baseline()
-        self.setWindowState(self.windowState() | Qt.WindowState.WindowMaximized)
 
     def accept(self) -> None:
         data = self.get_data()

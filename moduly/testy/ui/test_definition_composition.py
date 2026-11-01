@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QHeaderView,
     QPushButton,
+    QSizePolicy,
     QTableWidget,
     QTableWidgetItem,
     QVBoxLayout,
@@ -48,14 +49,18 @@ class TestDefinitionCompositionEditor(QWidget):
         self.table.setSelectionMode(QTableWidget.SelectionMode.NoSelection)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setMinimumHeight(120)
-        self.table.setMaximumHeight(180)
+        self.table.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Expanding,
+        )
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         header = self.table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
 
         layout.addLayout(add_row)
-        layout.addWidget(self.table)
+        layout.addWidget(self.table, 1)
 
         self.add_btn.clicked.connect(self.add_current)
 

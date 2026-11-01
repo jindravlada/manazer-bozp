@@ -21,7 +21,6 @@ from core.widgets.dialog_utils import (
     configure_edit_action_button,
     configure_new_action_button,
     configure_perform_action_button,
-    exec_maximized,
 )
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_row_actions import install_table_row_actions
@@ -110,7 +109,7 @@ class TestDefinitionsTab(QWidget):
 
     def new_test(self) -> None:
         dialog = TestDefinitionDialog(self)
-        if not exec_maximized(dialog):
+        if not dialog.exec():
             return
         self._reload(dialog.saved_test_id)
 
@@ -124,7 +123,7 @@ class TestDefinitionsTab(QWidget):
             self.refresh()
             return
         dialog = TestDefinitionDialog(self, test=test)
-        if not exec_maximized(dialog):
+        if not dialog.exec():
             return
         self._reload(dialog.saved_test_id)
 
