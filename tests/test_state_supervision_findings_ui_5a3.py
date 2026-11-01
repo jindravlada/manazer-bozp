@@ -381,7 +381,7 @@ class StateSupervisionFindingsUi5a3TestCase(unittest.TestCase):
         sub.status_combo.setCurrentIndex(
             sub.status_combo.findData(FINDING_STATUS_VYPORADANO)
         )
-        self.assertIsNone(sub.resolved_at_edit.get_date())
+        self.assertEqual(sub.resolved_at_edit.get_date(), date.today())
         sub._on_save()
         saved = sub.result_draft
         self.assertIsNotNone(saved)
@@ -393,7 +393,7 @@ class StateSupervisionFindingsUi5a3TestCase(unittest.TestCase):
         self.assertEqual(saved.due_date, date(2026, 9, 15))
         self.assertEqual(saved.recommended_action, "Doplnit označení.")
         self.assertEqual(saved.resolution_note, "Poznámka k vypořádání.")
-        self.assertIsNone(saved.resolved_at)
+        self.assertEqual(saved.resolved_at, date.today())
         self.assertEqual(saved.task_id, 4242)
         self.assertEqual(saved.id, 7)
         self.assertEqual(saved.client_key, "keep-key")

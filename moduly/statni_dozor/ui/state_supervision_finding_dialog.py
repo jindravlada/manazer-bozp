@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from datetime import date
 
 from PySide6.QtCore import QEvent, QObject, Qt
 from PySide6.QtGui import QColor, QPainter
@@ -37,6 +38,8 @@ from moduly.statni_dozor.constants import (
     DIALOG_FINDING_EDIT,
     DIALOG_FINDING_NEW,
     FINDING_DESCRIPTION_REQUIRED_MESSAGE,
+    FINDING_RESOLVED_DATE_CONFLICT_MESSAGE,
+    FINDING_RESOLVED_DATE_REQUIRED_MESSAGE,
     LABEL_FINDING_DESCRIPTION,
     LABEL_FINDING_DUE,
     LABEL_FINDING_PERSON,
@@ -61,6 +64,20 @@ _STATUS_ORDER = (
     FINDING_STATUS_V_PROCESU,
     FINDING_STATUS_VYPORADANO,
 )
+_OPEN_STATUSES = (
+    FINDING_STATUS_OTEVRENE,
+    FINDING_STATUS_V_PROCESU,
+)
+
+
+def finding_settlement_conflict(status: str | None, resolved_at: date | None) -> str | None:
+    """Vrátí hlášku, pokud stav a datum vypořádání nejdou dohromady."""
+    normalized = str(status or FINDING_STATUS_OTEVRENE)
+    if normalized == FINDING_STATUS_VYPORADANO and resolved_at is None:
+        return FINDING_RESOLVED_DATE_REQUIRED_MESSAGE
+    if normalized in _OPEN_STATUSES and resolved_at is not None:
+        return FINDING_RESOLVED_DATE_CONFLICT_MESSAGE
+    return None
 
 
 class _ParentDimOverlay(QWidget):
@@ -141,6 +158,7 @@ class StateSupervisionFindingDialog(QDialog):
             client_key=new_finding_client_key(),
         )
         self._result: StateSupervisionFindingDraft | None = None
+        self._previous_status = FINDING_STATUS_OTEVRENE
         self.setWindowTitle(DIALOG_FINDING_NEW if is_new else DIALOG_FINDING_EDIT)
         self.setWindowModality(Qt.WindowModality.WindowModal)
         configure_resizable_form_dialog(
@@ -187,7 +205,10 @@ class StateSupervisionFindingDialog(QDialog):
         layout.addWidget(buttons)
 
         configure_form_tab_navigation(self)
+        self.status_combo.blockSignals(True)
         self._apply_draft(self._original)
+        self.status_combo.blockSignals(False)
+        self.status_combo.currentIndexChanged.connect(self._on_status_changed)
 
     @property
     def result_draft(self) -> StateSupervisionFindingDraft | None:
@@ -208,6 +229,7 @@ class StateSupervisionFindingDialog(QDialog):
         if self.status_combo.findData(status_value) < 0:
             status_value = FINDING_STATUS_OTEVRENE
         self._set_combo_data(self.status_combo, status_value)
+        self._previous_status = str(status_value)
         if draft.responsible_person_id:
             self.person_selector.set_person_id(draft.responsible_person_id)
         elif draft.responsible_person_name:
@@ -218,6 +240,19 @@ class StateSupervisionFindingDialog(QDialog):
         self.recommended_action_edit.setPlainText(str(draft.recommended_action or ""))
         self.resolution_note_edit.setPlainText(str(draft.resolution_note or ""))
         self.resolved_at_edit.set_date_value(draft.resolved_at)
+
+    def _on_status_changed(self) -> None:
+        status = str(self.status_combo.currentData() or FINDING_STATUS_OTEVRENE)
+        previous = self._previous_status
+        self._previous_status = status
+        if status == previous:
+            return
+        if status == FINDING_STATUS_VYPORADANO:
+            if not self.resolved_at_edit.has_date():
+                self.resolved_at_edit.set_date_value(date.today())
+            return
+        if previous == FINDING_STATUS_VYPORADANO and status in _OPEN_STATUSES:
+            self.resolved_at_edit.clear_date()
 
     def get_draft(self) -> StateSupervisionFindingDraft:
         person = self.person_selector.current_person()
@@ -249,7 +284,12 @@ class StateSupervisionFindingDialog(QDialog):
                 self, self.windowTitle(), FINDING_DESCRIPTION_REQUIRED_MESSAGE
             )
             return
-        self._result = self.get_draft()
+        draft = self.get_draft()
+        conflict = finding_settlement_conflict(draft.status, draft.resolved_at)
+        if conflict:
+            QMessageBox.warning(self, self.windowTitle(), conflict)
+            return
+        self._result = draft
         self.accept()
 
 

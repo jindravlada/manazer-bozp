@@ -569,6 +569,13 @@ FINDING_STORED_REMOVE_HINT = (
     "Uložené zjištění zůstává v historii. Lze jej upravit nebo označit jako vypořádané."
 )
 FINDING_DESCRIPTION_REQUIRED_MESSAGE = "Není vyplněn popis zjištění."
+FINDING_RESOLVED_DATE_REQUIRED_MESSAGE = (
+    "U vypořádaného zjištění musí být vyplněno datum vypořádání."
+)
+FINDING_RESOLVED_DATE_CONFLICT_MESSAGE = (
+    "Při stavu Otevřené nebo V procesu nesmí být vyplněno datum vypořádání. "
+    "Vymažte datum, nebo nejdříve změňte stav na Vypořádané."
+)
 ACTION_CONFIRM_CLOSE_SUPERVISION = "Uzavřít kontrolu"
 CLOSURE_WARNING_INTRO = "Kontrola dosud obsahuje:"
 CLOSURE_WARNING_OPEN_FINDINGS = "otevřená nebo rozpracovaná zjištění"

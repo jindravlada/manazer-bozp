@@ -51,6 +51,9 @@ from core.widgets.info_tooltip import set_widget_tooltip
 from core.widgets.nullable_datetime_edit import NullableDateTimeEdit
 from core.widgets.search_combo_box import SearchComboBox
 from core.shared.finding_display import FINDING_STATUS_LABELS
+from moduly.statni_dozor.ui.state_supervision_finding_dialog import (
+    finding_settlement_conflict,
+)
 from core.widgets.table_utils import apply_cell_tooltip, configure_table_columns
 from core.widgets.workplace_selector import WorkplaceSelector
 from moduly.nastaveni.sluzby.settings_service import settings_service
@@ -72,6 +75,7 @@ from moduly.statni_dozor.constants import (
     DIALOG_TITLE_NEW,
     DOCUMENT_NOT_IN_ACTIVE_LIST_MESSAGE,
     FINDING_NO_LONGER_AVAILABLE_MESSAGE,
+    FINDING_RESOLVED_DATE_CONFLICT_MESSAGE,
     ATTENDANCE_UNEVALUATED_LABEL,
     COL_DOCUMENT_TITLE,
     COL_FINDING_TASK,
@@ -1625,6 +1629,11 @@ class StateSupervisionEditorDialog(QDialog):
             return False
         if not self._confirm_closure_if_needed(str(data["status"])):
             return False
+        settlement_conflict = self._manual_finding_settlement_conflict()
+        if settlement_conflict:
+            self._focus_course_tab()
+            QMessageBox.warning(self, self.windowTitle(), settlement_conflict)
+            return False
         payload = {key: data[key] for key in _EDITOR_FIELDS}
         previous_id = self._supervision_id
         try:
@@ -2109,6 +2118,21 @@ class StateSupervisionEditorDialog(QDialog):
         if known is None:
             return True
         return (str(item.status or ""), item.resolved_at) != known
+
+    def _manual_finding_settlement_conflict(self) -> str | None:
+        """Rozporné ruční datum u otevřeného zjištění. Nezměněný stav z databáze nechá být.
+
+        Chybějící datum u stavu Vypořádané doplní uložení zjištění dneškem.
+        Dialog zjištění takovou kombinaci k uložení nepustí, aby uživatel
+        mohl datum upravit.
+        """
+        for item in self._findings_drafts:
+            if item.id is not None and not self._finding_settlement_changed(item):
+                continue
+            conflict = finding_settlement_conflict(item.status, item.resolved_at)
+            if conflict == FINDING_RESOLVED_DATE_CONFLICT_MESSAGE:
+                return conflict
+        return None
 
     def _stored_finding_settlements(self) -> dict[int, tuple[str, date | None]]:
         supervision_id = self.supervision_id
