@@ -163,6 +163,7 @@ from moduly.statni_dozor.constants import (
     STATE_SUPERVISION_NOTIFICATION_METHOD_ORDER,
     STATE_SUPERVISION_STATUS_LABELS,
     STATE_SUPERVISION_STATUS_ORDER,
+    STATUS_CANCELLED,
     STATUS_CLOSED,
     TAB_ANNOUNCEMENT,
     TAB_ATTACHMENTS,
@@ -1607,6 +1608,31 @@ class StateSupervisionEditorDialog(QDialog):
             return str(self._record.status or DEFAULT_STATUS)
         return DEFAULT_STATUS
 
+    def _baseline_closed_at(self):
+        baseline = getattr(self._editor, "_baseline", None)
+        index = _EDITOR_FIELDS.index("closed_at")
+        if isinstance(baseline, tuple) and len(baseline) > index:
+            return baseline[index]
+        if self._record is not None:
+            return _normalize_datetime(self._record.closed_at)
+        return None
+
+    def _apply_administrative_closure(self, data: dict) -> dict:
+        """Nově vyplněné administrativní uzavření převede kontrolu na Uzavřena.
+
+        Prázdné datum stav nemění. Odstranění data u už uzavřené kontroly
+        ji samo neotevírá. Zrušená kontrola se tímto polem nezavírá.
+        """
+        if data.get("closed_at") is None:
+            return data
+        status = str(data.get("status") or DEFAULT_STATUS)
+        if status in (STATUS_CLOSED, STATUS_CANCELLED):
+            return data
+        if self._baseline_closed_at() is not None:
+            return data
+        self._set_combo_data(self.status_combo, STATUS_CLOSED)
+        return self.get_data()
+
     def _is_transition_to_closed(self, working_status: str) -> bool:
         return working_status == STATUS_CLOSED and self._baseline_status() != STATUS_CLOSED
 
@@ -1623,6 +1649,11 @@ class StateSupervisionEditorDialog(QDialog):
 
     def _persist(self) -> bool:
         data = self.get_data()
+        message = self._validation_message(data)
+        if message:
+            QMessageBox.warning(self, self.windowTitle(), message)
+            return False
+        data = self._apply_administrative_closure(data)
         message = self._validation_message(data)
         if message:
             QMessageBox.warning(self, self.windowTitle(), message)
