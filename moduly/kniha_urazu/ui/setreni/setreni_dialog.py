@@ -30,10 +30,19 @@ from PySide6.QtWidgets import (
     QHeaderView,
     QMessageBox,
     QAbstractItemView,
+    QSizePolicy,
 )
 
 
 from core.widgets.dialog_utils import create_save_cancel_box, configure_form_tab_navigation
+from core.widgets.editor_dialog_controller import (
+    EDITOR_CLOSE_LABEL,
+    EditorDialogController,
+    _safe_disconnect,
+    configure_editor_close_button,
+    configure_editor_save_button,
+    set_editor_save_enabled,
+)
 from moduly.kniha_urazu.ui.setreni.accident_findings_widget import AccidentFindingsWidget
 from moduly.kniha_urazu.sluzby.accident_case_closure import (
     AccidentCaseClosureCheck,
@@ -103,6 +112,48 @@ from moduly.ukoly.ui.task_dialog import TaskDialog
 from core.widgets.search_combo_box import SearchComboBox
 
 
+UNSAVED_CHANGES_PROMPT = (
+    "V ohlašovacích povinnostech jsou neuložené změny. Chcete je uložit?"
+)
+UNSAVED_DISCARD_LABEL = "Zahodit změny"
+SAVE_CONFIRMATION_TITLE = "Ohlašovací povinnosti"
+SAVE_CONFIRMATION_TEXT = "Změny byly úspěšně uloženy."
+_SAVE_CLOSE_LABEL = "Uložit a zavřít"
+
+
+def _exec_message_box(box: QMessageBox) -> int:
+    return box.exec()
+
+
+class _ReportingEditorController(EditorDialogController):
+    """Uložit zůstává dostupné i na čistém formuláři.
+
+    Skrytý dialog (testy před ``show``) se zavírá bez dotazu, stejně jako dřív.
+    """
+
+    def request_close(self) -> bool:
+        dialog = self._dialog
+        if getattr(dialog, "_closing", False):
+            return True
+        if dialog is not None and not dialog.isVisible():
+            return True
+        return super().request_close()
+
+    def eventFilter(self, watched, event):  # noqa: N802
+        dialog = getattr(self, "_dialog", None)
+        if dialog is not None and getattr(dialog, "_closing", False):
+            self._closing = True
+            return False
+        return super().eventFilter(watched, event)
+
+    def _refresh_save_enabled(self) -> None:
+        set_editor_save_enabled(self._buttons, True)
+        if self.save_button is not None:
+            self.save_button.setEnabled(True)
+        for button in self._extra_save_buttons:
+            button.setEnabled(True)
+
+
 class SetreniDialog(QDialog):
     """Administrativní karta pracovního úrazu (ohlášení, záznam o úrazu, ukončení)."""
 
@@ -111,6 +162,11 @@ class SetreniDialog(QDialog):
 
         self.accident = accident
         self.open_mu_after_close = False
+        self._baseline = None
+        self._closing = False
+        self._baseline_after_show = False
+        self._was_saved = False
+        self._editor: _ReportingEditorController | None = None
         self._focus_obligation_key = (focus_obligation_key or "").strip() or None
         self.investigation = investigation_service.get_or_create(accident.id) if accident is not None else None
         self._zajisteni_saved_data = {}
@@ -139,17 +195,166 @@ class SetreniDialog(QDialog):
         self._init_ohlasovaci_povinnosti_widgets()
         layout.addWidget(self._tab_ohlasovaci_povinnosti(), 1)
 
-        buttons = create_save_cancel_box(self)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+        buttons = create_save_cancel_box(self, is_new=False)
+        self._editor = _ReportingEditorController(
+            self,
+            buttons,
+            is_new=False,
+            title=self.windowTitle(),
+            on_save=self._persist,
+            unsaved_text=UNSAVED_CHANGES_PROMPT,
+            discard_label=UNSAVED_DISCARD_LABEL,
+        )
+        if self._editor.save_button is not None:
+            _safe_disconnect(
+                self._editor.save_button.clicked,
+                self._editor._handle_save_clicked,
+            )
+            self._editor.save_button.clicked.connect(self._save_keep_open)
+        configure_editor_close_button(self._editor.close_button, is_new=False)
+        if self._editor.close_button is not None:
+            self._editor.close_button.setText(EDITOR_CLOSE_LABEL)
+        layout.addLayout(self._build_footer())
+        buttons.hide()
+        for button in (
+            self._editor.save_button,
+            self._save_close_btn,
+            self._editor.close_button,
+        ):
+            if button is not None:
+                button.setVisible(True)
+        self._editor.set_snapshot_provider(self._snapshot)
 
         configure_form_tab_navigation(self)
         self._focus_obligation_row(self._focus_obligation_key)
+        self._capture_baseline()
 
-    def accept(self):
-        self._save_administrativa()
-        super().accept()
+    def showEvent(self, event) -> None:  # noqa: N802
+        super().showEvent(event)
+        # Dopočtené lhůty se mohou propsat až při zobrazení. Čistý stav je až po nich.
+        if not self._baseline_after_show:
+            self._baseline_after_show = True
+            self._capture_baseline()
+
+    @property
+    def was_saved(self) -> bool:
+        return self._was_saved
+
+    def _build_footer(self) -> QHBoxLayout:
+        """Vpravo Uložit | Uložit a zavřít | Zavřít."""
+        footer = QHBoxLayout()
+        footer.setContentsMargins(0, 0, 0, 0)
+        footer.setSpacing(8)
+        footer.addStretch(1)
+
+        assert self._editor is not None
+        self._save_close_btn = QPushButton(_SAVE_CLOSE_LABEL)
+        configure_editor_save_button(self._save_close_btn)
+        self._save_close_btn.setText(_SAVE_CLOSE_LABEL)
+        self._save_close_btn.clicked.connect(self._save_and_close)
+        self._editor.bind_extra_save_button(self._save_close_btn)
+
+        ordered = [
+            self._editor.save_button,
+            self._save_close_btn,
+            self._editor.close_button,
+        ]
+        for button in ordered:
+            if button is None:
+                continue
+            button.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+            button.setAutoDefault(False)
+            button.setDefault(False)
+            footer.addWidget(button)
+        return footer
+
+    def _snapshot(self):
+        return json.loads(
+            json.dumps(self._administrativa_save_data(), ensure_ascii=False, sort_keys=True)
+        )
+
+    def _capture_baseline(self) -> None:
+        self._baseline = self._snapshot()
+        if self._editor is not None:
+            self._editor.capture_baseline()
+
+    def _is_dirty(self) -> bool:
+        if self._baseline is None:
+            return False
+        return self._snapshot() != self._baseline
+
+    def _stored_administrativa(self) -> dict:
+        """Stejné klíče, jaké by zápis přepsal, v podobě už uložené v šetření."""
+        current = self._snapshot()
+        stored = self._zajisteni_saved_data if isinstance(self._zajisteni_saved_data, dict) else {}
+        comparable = {key: stored.get(key) for key in current}
+        return json.loads(json.dumps(comparable, ensure_ascii=False, sort_keys=True))
+
+    def _needs_write(self) -> bool:
+        """Zápis jen při úpravě, nebo když uložený JSON neodpovídá formuláři.
+
+        Zavření bez úprav sem nevede, takže samo otevření nic nepřepisuje.
+        Stejný formulář podruhé už zápis nespouští.
+        """
+        if self.accident is None:
+            return False
+        if self._is_dirty():
+            return True
+        return self._snapshot() != self._stored_administrativa()
+
+    def _show_save_confirmation(self) -> None:
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Information)
+        box.setWindowTitle(SAVE_CONFIRMATION_TITLE)
+        box.setText(SAVE_CONFIRMATION_TEXT)
+        box.setStandardButtons(QMessageBox.StandardButton.Ok)
+        ok_button = box.button(QMessageBox.StandardButton.Ok)
+        if ok_button is not None:
+            ok_button.setText("OK")
+        _exec_message_box(box)
+
+    def _save_keep_open(self) -> None:
+        """Uloží změny, potvrdí úspěch a editor nechá otevřený."""
+        confirm = self._needs_write()
+        assert self._editor is not None
+        if not self._editor._run_save():
+            return
+        if confirm:
+            self._show_save_confirmation()
+
+    def _save_and_close(self) -> None:
+        if self._closing or (self._editor is not None and self._editor._closing):
+            self._closing = True
+            if self._editor is not None:
+                self._editor._closing = True
+            QDialog.accept(self)
+            return
+        assert self._editor is not None
+        if not self._editor._run_save():
+            return
+        self._closing = True
+        self._editor._closing = True
+        QDialog.accept(self)
+
+    def accept(self) -> None:
+        self._save_and_close()
+
+    def _persist(self) -> bool:
+        """Společný zápis pro Uložit, Uložit a zavřít i Uložit v dotazu při zavření."""
+        if not self._needs_write():
+            return True
+        try:
+            self._save_administrativa()
+        except Exception as exc:
+            QMessageBox.warning(
+                self,
+                "Nelze uložit ohlašovací povinnosti",
+                "Ohlašovací povinnosti se nepodařilo uložit.\n\n" + str(exc),
+            )
+            return False
+        self._was_saved = True
+        self._capture_baseline()
+        return True
 
     def _save_administrativa(self) -> None:
         if self.accident is None:
@@ -217,8 +422,9 @@ class SetreniDialog(QDialog):
     def _open_mu_investigation(self) -> None:
         if self.accident is None:
             return
-        self.open_mu_after_close = True
         self.accept()
+        if int(self.result()) == int(QDialog.DialogCode.Accepted):
+            self.open_mu_after_close = True
 
     def _administrativa_save_data(self):
         return {
