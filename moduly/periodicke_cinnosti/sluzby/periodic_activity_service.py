@@ -8,12 +8,16 @@ from datetime import date, datetime, timedelta
 from moduly.nastaveni.sluzby.person_service import person_service
 from moduly.nastaveni.sluzby.settings_service import settings_service
 from moduly.periodicke_cinnosti.constants import (
+    CALENDAR_PARTIAL_MESSAGE,
     DEFAULT_NEXT_FROM,
     DEFAULT_NOTIFY_EVERY,
     DEFAULT_NOTIFY_UNIT,
     DEFAULT_PLACE_KIND,
     DEFAULT_REPEAT_EVERY,
     DEFAULT_REPEAT_UNIT,
+    MAX_CALENDAR_INTERVAL_MONTHS,
+    MAX_CALENDAR_YEAR,
+    MIN_CALENDAR_YEAR,
     NEXT_FROM_ACTUAL,
     NEXT_FROM_PLANNED,
     NEXT_FROM_VALUES,
@@ -44,6 +48,10 @@ from moduly.periodicke_cinnosti.repository.periodic_activity_repository import (
 
 class PeriodicActivityValidationError(ValueError):
     """Neplatná data periodické činnosti."""
+
+
+# Volající update nepředal kalendářní pole: uložené hodnoty se nemění.
+_CALENDAR_UNSET = object()
 
 
 def add_calendar_months(value: date, months: int) -> date:
@@ -250,6 +258,10 @@ class PeriodicActivityService:
         next_from: str = DEFAULT_NEXT_FROM,
         note: str = "",
         active: bool = True,
+        calendar_start_year: int | None = None,
+        calendar_start_month: int | None = None,
+        calendar_interval_months: int | None = None,
+        calendar_setup_required: bool = False,
     ) -> PeriodicActivity:
         data = self._validated_fields(
             title=title,
@@ -267,6 +279,14 @@ class PeriodicActivityService:
             next_from=next_from,
             note=note,
             active=active,
+        )
+        data.update(
+            self._calendar_fields(
+                calendar_start_year=calendar_start_year,
+                calendar_start_month=calendar_start_month,
+                calendar_interval_months=calendar_interval_months,
+                calendar_setup_required=calendar_setup_required,
+            )
         )
         activity = PeriodicActivity(**data)
         return self.repository.add(activity)
@@ -290,6 +310,10 @@ class PeriodicActivityService:
         next_from: str = DEFAULT_NEXT_FROM,
         note: str = "",
         active: bool = True,
+        calendar_start_year: int | None | object = _CALENDAR_UNSET,
+        calendar_start_month: int | None | object = _CALENDAR_UNSET,
+        calendar_interval_months: int | None | object = _CALENDAR_UNSET,
+        calendar_setup_required: bool | object = _CALENDAR_UNSET,
     ) -> PeriodicActivity:
         activity = self.repository.get_by_id(activity_id)
         if activity is None:
@@ -312,6 +336,28 @@ class PeriodicActivityService:
             note=note,
             active=active,
         )
+        if (
+            calendar_start_year is not _CALENDAR_UNSET
+            or calendar_start_month is not _CALENDAR_UNSET
+            or calendar_interval_months is not _CALENDAR_UNSET
+            or calendar_setup_required is not _CALENDAR_UNSET
+        ):
+            data.update(
+                self._calendar_fields(
+                    calendar_start_year=activity.calendar_start_year
+                    if calendar_start_year is _CALENDAR_UNSET
+                    else calendar_start_year,
+                    calendar_start_month=activity.calendar_start_month
+                    if calendar_start_month is _CALENDAR_UNSET
+                    else calendar_start_month,
+                    calendar_interval_months=activity.calendar_interval_months
+                    if calendar_interval_months is _CALENDAR_UNSET
+                    else calendar_interval_months,
+                    calendar_setup_required=bool(activity.calendar_setup_required)
+                    if calendar_setup_required is _CALENDAR_UNSET
+                    else bool(calendar_setup_required),
+                )
+            )
         for key, value in data.items():
             setattr(activity, key, value)
         activity.updated_at = datetime.now()
@@ -407,6 +453,46 @@ class PeriodicActivityService:
             repeat_every=repeat_every,
             repeat_unit=repeat_unit,
         )
+
+    def _calendar_fields(
+        self,
+        *,
+        calendar_start_year: int | None,
+        calendar_start_month: int | None,
+        calendar_interval_months: int | None,
+        calendar_setup_required: bool,
+    ) -> dict:
+        """Kalendářní řada. Prázdná trojice se neukládá a původní termín nemění."""
+        provided = (
+            calendar_start_year is not None,
+            calendar_start_month is not None,
+            calendar_interval_months is not None,
+        )
+        if not any(provided):
+            return {
+                "calendar_start_year": None,
+                "calendar_start_month": None,
+                "calendar_interval_months": None,
+                "calendar_setup_required": bool(calendar_setup_required),
+            }
+        if not all(provided):
+            raise PeriodicActivityValidationError(CALENDAR_PARTIAL_MESSAGE)
+
+        year = int(calendar_start_year)
+        month = int(calendar_start_month)
+        interval = int(calendar_interval_months)
+        if year < MIN_CALENDAR_YEAR or year > MAX_CALENDAR_YEAR:
+            raise PeriodicActivityValidationError("Počáteční rok je mimo povolený rozsah.")
+        if month < 1 or month > 12:
+            raise PeriodicActivityValidationError("Počáteční měsíc musí být 1 až 12.")
+        if interval < 1 or interval > MAX_CALENDAR_INTERVAL_MONTHS:
+            raise PeriodicActivityValidationError("Interval v měsících musí být alespoň 1.")
+        return {
+            "calendar_start_year": year,
+            "calendar_start_month": month,
+            "calendar_interval_months": interval,
+            "calendar_setup_required": False,
+        }
 
     def _validated_fields(
         self,

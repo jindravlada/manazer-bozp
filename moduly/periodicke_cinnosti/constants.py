@@ -45,6 +45,35 @@ DEFAULT_NOTIFY_EVERY = 0
 DEFAULT_NOTIFY_UNIT = UNIT_DAYS
 DEFAULT_NEXT_FROM = NEXT_FROM_PLANNED
 
+# RP-02: pevné kalendářní opakování. Stará pole next_due_date / repeat_* zůstávají.
+CALENDAR_MONTH_UNSET = "— vyberte —"
+CALENDAR_VALUE_UNSET = "—"
+MIN_CALENDAR_YEAR = 1900
+MAX_CALENDAR_YEAR = 2100
+MAX_CALENDAR_INTERVAL_MONTHS = 1200
+DEFAULT_CALENDAR_INTERVAL_MONTHS = 12
+CALENDAR_SETUP_WARNING = (
+    "Tato činnost se opakuje ve dnech nebo týdnech. Původní údaje zůstávají beze změny. "
+    "Pro pevné kalendářní opakování nastavte počáteční měsíc, rok a interval v měsících."
+)
+CALENDAR_PARTIAL_MESSAGE = (
+    "Vyplňte počáteční měsíc, rok a interval v měsících, nebo je nechte nevyplněné."
+)
+CALENDAR_MONTH_NAMES = (
+    "leden",
+    "únor",
+    "březen",
+    "duben",
+    "květen",
+    "červen",
+    "červenec",
+    "srpen",
+    "září",
+    "říjen",
+    "listopad",
+    "prosinec",
+)
+
 PLACE_KIND_LABELS = {
     PLACE_KIND_WORKPLACE: "Provoz / pracoviště",
     PLACE_KIND_ORGANIZATION: "Celá organizace",

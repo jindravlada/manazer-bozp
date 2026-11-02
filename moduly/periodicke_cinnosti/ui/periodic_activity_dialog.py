@@ -52,12 +52,20 @@ from core.widgets.typed_table_sort import (
 )
 from core.widgets.workplace_selector import WorkplaceSelector
 from moduly.periodicke_cinnosti.constants import (
+    CALENDAR_MONTH_NAMES,
+    CALENDAR_MONTH_UNSET,
+    CALENDAR_SETUP_WARNING,
+    CALENDAR_VALUE_UNSET,
+    DEFAULT_CALENDAR_INTERVAL_MONTHS,
     DEFAULT_NEXT_FROM,
     DEFAULT_NOTIFY_EVERY,
     DEFAULT_NOTIFY_UNIT,
     DEFAULT_PLACE_KIND,
     DEFAULT_REPEAT_EVERY,
     DEFAULT_REPEAT_UNIT,
+    MAX_CALENDAR_INTERVAL_MONTHS,
+    MAX_CALENDAR_YEAR,
+    MIN_CALENDAR_YEAR,
     DIALOG_TITLE_EDIT,
     DIALOG_TITLE_NEW,
     ENTITY_PERIODIC_OCCURRENCE,
@@ -81,7 +89,9 @@ from moduly.periodicke_cinnosti.constants import (
     TAB_HISTORY,
     TIME_UNITS,
     TITLE_REQUIRED_MESSAGE,
+    UNIT_DAYS,
     UNIT_LABELS,
+    UNIT_WEEKS,
 )
 from moduly.periodicke_cinnosti.sluzby.periodic_activity_service import (
     PeriodicActivityValidationError,
@@ -98,6 +108,7 @@ class PeriodicActivityDialog(QDialog):
     def __init__(self, parent=None, activity=None):
         super().__init__(parent)
         self.activity = activity
+        self._calendar_setup_required = False
         self.setWindowTitle(DIALOG_TITLE_EDIT if activity is not None else DIALOG_TITLE_NEW)
         self.setWindowModality(Qt.WindowModality.WindowModal)
         configure_resizable_form_dialog(self, width=720, height=640, min_width=520, min_height=420)
@@ -157,6 +168,26 @@ class PeriodicActivityDialog(QDialog):
         self.place_text.setPlaceholderText("Místo mimo organizaci")
 
         self.responsible_selector = ThpWorkerSelector(include_empty=True)
+
+        self.calendar_setup_warning = QLabel(CALENDAR_SETUP_WARNING)
+        self.calendar_setup_warning.setObjectName("MutedText")
+        self.calendar_setup_warning.setWordWrap(True)
+        self.calendar_setup_warning.hide()
+
+        self.calendar_month = QComboBox()
+        self.calendar_month.addItem(CALENDAR_MONTH_UNSET, None)
+        for index, name in enumerate(CALENDAR_MONTH_NAMES, start=1):
+            self.calendar_month.addItem(name, index)
+
+        self.calendar_year = QSpinBox()
+        self.calendar_year.setRange(MIN_CALENDAR_YEAR - 1, MAX_CALENDAR_YEAR)
+        self.calendar_year.setSpecialValueText(CALENDAR_VALUE_UNSET)
+
+        self.calendar_interval = QSpinBox()
+        self.calendar_interval.setRange(0, MAX_CALENDAR_INTERVAL_MONTHS)
+        self.calendar_interval.setSpecialValueText(CALENDAR_VALUE_UNSET)
+        self._set_calendar_defaults()
+
         self.next_due_edit = NullableDateEdit()
 
         self.repeat_every = QSpinBox()
@@ -202,12 +233,21 @@ class PeriodicActivityDialog(QDialog):
         form.addRow("", self.workplace_selector)
         form.addRow("", self.place_text)
         form.addRow("Odpovědná osoba:", self.responsible_selector)
+        form.addRow(self.calendar_setup_warning)
+        form.addRow("Počáteční měsíc:", self.calendar_month)
+        form.addRow("Počáteční rok:", self.calendar_year)
+        form.addRow("Interval v měsících:", self.calendar_interval)
         form.addRow("Nejbližší termín:", self.next_due_edit)
         form.addRow("Opakovat každých:", repeat_widget)
         form.addRow("Připomenout:", notify_widget)
         form.addRow("Další termín počítat od:", self.next_from)
         form.addRow("Poznámka:", self.note_edit)
         form.addRow("", self.active_checkbox)
+        self.calendar_month.currentIndexChanged.connect(self._refresh_calendar_warning)
+        self.calendar_year.valueChanged.connect(self._refresh_calendar_warning)
+        self.calendar_interval.valueChanged.connect(self._refresh_calendar_warning)
+        self.repeat_unit.currentIndexChanged.connect(self._refresh_calendar_warning)
+        self._refresh_calendar_warning()
         return page
 
     def _history_tab(self) -> QWidget:
@@ -245,6 +285,65 @@ class PeriodicActivityDialog(QDialog):
         layout.addWidget(self.history_attachments, 1)
         return page
 
+    def _set_calendar_defaults(self) -> None:
+        today = date.today()
+        month_index = self.calendar_month.findData(today.month)
+        if month_index >= 0:
+            self.calendar_month.setCurrentIndex(month_index)
+        self.calendar_year.setValue(today.year)
+        self.calendar_interval.setValue(DEFAULT_CALENDAR_INTERVAL_MONTHS)
+
+    def _clear_calendar_fields(self) -> None:
+        unset = self.calendar_month.findData(None)
+        self.calendar_month.setCurrentIndex(unset if unset >= 0 else 0)
+        self.calendar_year.setValue(MIN_CALENDAR_YEAR - 1)
+        self.calendar_interval.setValue(0)
+
+    def _load_calendar(self, activity) -> None:
+        year = getattr(activity, "calendar_start_year", None)
+        month = getattr(activity, "calendar_start_month", None)
+        interval = getattr(activity, "calendar_interval_months", None)
+        if year is None or month is None or interval is None:
+            self._clear_calendar_fields()
+            return
+        month_index = self.calendar_month.findData(int(month))
+        if month_index >= 0:
+            self.calendar_month.setCurrentIndex(month_index)
+        self.calendar_year.setValue(int(year))
+        self.calendar_interval.setValue(int(interval))
+
+    def _calendar_year_value(self) -> int | None:
+        year = int(self.calendar_year.value())
+        if year < MIN_CALENDAR_YEAR:
+            return None
+        return year
+
+    def _calendar_interval_value(self) -> int | None:
+        interval = int(self.calendar_interval.value())
+        if interval < 1:
+            return None
+        return interval
+
+    def _calendar_is_complete(self) -> bool:
+        return (
+            self.calendar_month.currentData() is not None
+            and self._calendar_year_value() is not None
+            and self._calendar_interval_value() is not None
+        )
+
+    def _calendar_setup_flag(self) -> bool:
+        if self._calendar_is_complete():
+            return False
+        unit = self.repeat_unit.currentData()
+        return bool(self._calendar_setup_required) or unit in {UNIT_DAYS, UNIT_WEEKS}
+
+    def _refresh_calendar_warning(self, *_args) -> None:
+        unit = self.repeat_unit.currentData()
+        legacy = unit in {UNIT_DAYS, UNIT_WEEKS}
+        self.calendar_setup_warning.setVisible(
+            not self._calendar_is_complete() and (self._calendar_setup_required or legacy)
+        )
+
     def _sync_place_fields(self) -> None:
         kind = self.place_kind.currentData()
         self.workplace_selector.setVisible(kind == PLACE_KIND_WORKPLACE)
@@ -262,6 +361,8 @@ class PeriodicActivityDialog(QDialog):
         self.place_text.setText(activity.place_text or "")
         self.responsible_selector.set_person_id(activity.responsible_person_id)
         self.next_due_edit.set_date_value(activity.next_due_date)
+        self._calendar_setup_required = bool(getattr(activity, "calendar_setup_required", False))
+        self._load_calendar(activity)
         self.repeat_every.setValue(activity.repeat_every or DEFAULT_REPEAT_EVERY)
         unit_index = self.repeat_unit.findData(activity.repeat_unit or DEFAULT_REPEAT_UNIT)
         if unit_index >= 0:
@@ -276,6 +377,7 @@ class PeriodicActivityDialog(QDialog):
         self.note_edit.setPlainText(activity.note or "")
         self.active_checkbox.setChecked(bool(activity.active))
         self._sync_place_fields()
+        self._refresh_calendar_warning()
 
     def _load_history(self, activity_id: int | None) -> None:
         with sorting_paused(self.history_table):
@@ -459,6 +561,10 @@ class PeriodicActivityDialog(QDialog):
             "responsible_person_id": worker_id,
             "responsible_person_name": worker_name,
             "next_due_date": self.next_due_edit.get_date(),
+            "calendar_start_year": self._calendar_year_value(),
+            "calendar_start_month": self.calendar_month.currentData(),
+            "calendar_interval_months": self._calendar_interval_value(),
+            "calendar_setup_required": self._calendar_setup_flag(),
             "repeat_every": int(self.repeat_every.value()),
             "repeat_unit": self.repeat_unit.currentData() or DEFAULT_REPEAT_UNIT,
             "notify_every": int(self.notify_every.value()),

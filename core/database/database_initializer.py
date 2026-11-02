@@ -358,6 +358,7 @@ def initialize_database() -> None:
     _ensure_meeting_remind_from_column()
     _ensure_meeting_organizer_source_columns()
     _ensure_periodic_occurrence_columns()
+    _ensure_periodic_calendar_columns()
     _ensure_meeting_event_types_table()
     _ensure_meeting_agenda_items_table()
     _ensure_meeting_templates_table()
@@ -452,6 +453,32 @@ def _ensure_meeting_priority_column() -> None:
         return
     if "priority" not in columns:
         _add_column("meetings", "priority VARCHAR(30) DEFAULT 'Normální' NOT NULL")
+
+
+def _ensure_periodic_calendar_columns() -> None:
+    """Doplní kotvu kalendářní periody a odvodí ji u starších činností.
+
+    Opakované spuštění už nastavené ani ručně upravené hodnoty nepřepisuje.
+    """
+    columns = _table_columns("periodic_activities")
+    if not columns:
+        return
+    if "calendar_start_year" not in columns:
+        _add_column("periodic_activities", "calendar_start_year INTEGER")
+    if "calendar_start_month" not in columns:
+        _add_column("periodic_activities", "calendar_start_month INTEGER")
+    if "calendar_interval_months" not in columns:
+        _add_column("periodic_activities", "calendar_interval_months INTEGER")
+    if "calendar_setup_required" not in columns:
+        _add_column(
+            "periodic_activities",
+            "calendar_setup_required BOOLEAN NOT NULL DEFAULT 0",
+        )
+    from moduly.periodicke_cinnosti.sluzby.periodic_calendar import (
+        apply_calendar_periodicity_migration,
+    )
+
+    apply_calendar_periodicity_migration()
 
 
 def _ensure_periodic_occurrence_columns() -> None:

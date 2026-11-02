@@ -47,6 +47,16 @@ class PeriodicActivity(Base):
 
     next_from: Mapped[str] = mapped_column(String(20), default=DEFAULT_NEXT_FROM, nullable=False)
 
+    # Pevná kalendářní řada (RP-02). Nezávislá na next_due_date a na provedení.
+    calendar_start_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    calendar_start_month: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    calendar_interval_months: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    calendar_setup_required: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False,
+        nullable=False,
+    )
+
     note: Mapped[str] = mapped_column(Text, default="")
     active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
