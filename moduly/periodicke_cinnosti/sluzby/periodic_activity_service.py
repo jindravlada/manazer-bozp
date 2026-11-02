@@ -15,7 +15,6 @@ from moduly.periodicke_cinnosti.constants import (
     DEFAULT_PLACE_KIND,
     DEFAULT_REPEAT_EVERY,
     DEFAULT_REPEAT_UNIT,
-    MAX_CALENDAR_INTERVAL_MONTHS,
     MAX_CALENDAR_YEAR,
     MIN_CALENDAR_YEAR,
     NEXT_FROM_ACTUAL,
@@ -485,7 +484,7 @@ class PeriodicActivityService:
             raise PeriodicActivityValidationError("Počáteční rok je mimo povolený rozsah.")
         if month < 1 or month > 12:
             raise PeriodicActivityValidationError("Počáteční měsíc musí být 1 až 12.")
-        if interval < 1 or interval > MAX_CALENDAR_INTERVAL_MONTHS:
+        if interval < 1:
             raise PeriodicActivityValidationError("Interval v měsících musí být alespoň 1.")
         return {
             "calendar_start_year": year,

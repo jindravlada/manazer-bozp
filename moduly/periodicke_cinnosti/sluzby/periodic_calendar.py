@@ -12,7 +12,6 @@ from sqlalchemy import select
 
 from core.database.session import get_session
 from moduly.periodicke_cinnosti.constants import (
-    MAX_CALENDAR_INTERVAL_MONTHS,
     MAX_CALENDAR_YEAR,
     MIN_CALENDAR_YEAR,
     UNIT_DAYS,
@@ -143,5 +142,5 @@ def _validate_anchor(start_year: int, start_month: int, interval_months: int) ->
     if int(start_year) < MIN_CALENDAR_YEAR or int(start_year) > MAX_CALENDAR_YEAR:
         raise CalendarPeriodicityError("Počáteční rok je mimo povolený rozsah.")
     _validate_month(start_month)
-    if int(interval_months) < 1 or int(interval_months) > MAX_CALENDAR_INTERVAL_MONTHS:
+    if int(interval_months) < 1:
         raise CalendarPeriodicityError("Interval v měsících musí být alespoň 1.")

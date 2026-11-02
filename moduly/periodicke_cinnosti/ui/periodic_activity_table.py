@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import datetime, time
-
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QAbstractItemView, QHeaderView, QTableWidget
 
@@ -12,8 +10,8 @@ from core.widgets.typed_table_sort import (
     enable_typed_sorting,
     sorting_paused,
     typed_bool,
-    typed_datetime,
     typed_empty,
+    typed_int,
     typed_text,
 )
 from moduly.periodicke_cinnosti.constants import (
@@ -26,8 +24,8 @@ from moduly.periodicke_cinnosti.constants import (
     COL_RESPONSIBLE,
     COL_TITLE,
     COLUMN_HEADERS,
-    format_interval,
-    format_notify,
+    format_calendar_interval,
+    format_calendar_start,
     format_place,
 )
 from moduly.periodicke_cinnosti.modely.periodic_activity import PeriodicActivity
@@ -46,6 +44,7 @@ class PeriodicActivityTable(QTableWidget):
         self.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.setColumnHidden(COL_ID, True)
+        self.setColumnHidden(COL_NOTIFY, True)
         self.horizontalHeader().setStretchLastSection(False)
         self.horizontalHeader().setSectionResizeMode(COL_TITLE, QHeaderView.ResizeMode.Stretch)
         enable_typed_sorting(self)
@@ -98,30 +97,35 @@ class PeriodicActivityTable(QTableWidget):
                     create_typed_item(responsible, typed_text(responsible), stable_id=activity.id),
                 )
 
-                if activity.next_due_date is None:
-                    due_text = "—"
-                    due_sort = typed_empty()
+                start_text = format_calendar_start(
+                    activity.calendar_start_year,
+                    activity.calendar_start_month,
+                )
+                if start_text == "—":
+                    start_sort = typed_empty()
                 else:
-                    due = activity.next_due_date
-                    due_text = f"{due.day:02d}.{due.month:02d}.{due.year}"
-                    due_sort = typed_datetime(datetime.combine(due, time.min))
+                    start_sort = typed_int(
+                        int(activity.calendar_start_year) * 12
+                        + int(activity.calendar_start_month)
+                    )
                 self.setItem(
                     row,
                     COL_NEXT_DUE,
-                    create_typed_item(due_text, due_sort, stable_id=activity.id),
+                    create_typed_item(start_text, start_sort, stable_id=activity.id),
                 )
 
-                period = format_interval(activity.repeat_every, activity.repeat_unit)
+                interval = activity.calendar_interval_months
+                interval_text = format_calendar_interval(interval)
+                interval_sort = typed_int(int(interval)) if interval_text != "—" else typed_empty()
                 self.setItem(
                     row,
                     COL_PERIOD,
-                    create_typed_item(period, typed_text(period), stable_id=activity.id),
+                    create_typed_item(interval_text, interval_sort, stable_id=activity.id),
                 )
-                notify = format_notify(activity.notify_every, activity.notify_unit)
                 self.setItem(
                     row,
                     COL_NOTIFY,
-                    create_typed_item(notify, typed_text(notify), stable_id=activity.id),
+                    create_typed_item("", typed_empty(), stable_id=activity.id),
                 )
                 active_text = "Ano" if activity.active else "Ne"
                 self.setItem(

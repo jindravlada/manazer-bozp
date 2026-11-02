@@ -9,7 +9,7 @@ from datetime import date
 from pathlib import Path
 from unittest.mock import patch
 
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QMessageBox
 
 from tests.temp_dir_helpers import create_tracked_temp_dir
 
@@ -219,24 +219,12 @@ class PeriodicDuePc03TestCase(unittest.TestCase):
         before = self._history(activity.id)
         activity = periodic_activity_service.get_by_id(activity.id)
         self.dialog = PeriodicActivityDialog(activity=activity)
-        index = self.dialog.next_from.findData(NEXT_FROM_ACTUAL)
-        self.dialog.next_from.setCurrentIndex(index)
-        seen: dict[str, str] = {}
-
-        def confirm(message: str) -> bool:
-            seen["message"] = message
-            return True
-
-        self.dialog._ask_next_from_change = confirm
+        self.dialog.title_edit.setText("Beze změny výpočtu")
         self.assertTrue(self.dialog._save())
         stored = periodic_activity_service.get_by_id(activity.id)
-        self.assertEqual(stored.next_from, NEXT_FROM_ACTUAL)
-        self.assertEqual(stored.next_due_date, date(2026, 11, 6))
+        self.assertEqual(stored.next_from, NEXT_FROM_PLANNED)
+        self.assertEqual(stored.next_due_date, date(2026, 12, 5))
         self.assertEqual(self._history(activity.id), before)
-        self.assertIn("Původní způsob výpočtu: plánovaného termínu", seen["message"])
-        self.assertIn("Nový způsob výpočtu: skutečného data provedení", seen["message"])
-        self.assertIn("Původní další termín: 05.12.2026", seen["message"])
-        self.assertIn("Nový další termín: 06.11.2026", seen["message"])
 
     def test_rejected_mode_change_keeps_stored_values(self) -> None:
         activity = self._activity(due=date(2026, 11, 5))
@@ -247,11 +235,12 @@ class PeriodicDuePc03TestCase(unittest.TestCase):
         before = self._history(activity.id)
         activity = periodic_activity_service.get_by_id(activity.id)
         self.dialog = PeriodicActivityDialog(activity=activity)
-        self.dialog.title_edit.setText("Přejmenováno")
-        index = self.dialog.next_from.findData(NEXT_FROM_ACTUAL)
-        self.dialog.next_from.setCurrentIndex(index)
-        self.dialog._ask_next_from_change = lambda _message: False
-        self.assertFalse(self.dialog._save())
+        self.dialog.title_edit.setText("")
+        with patch(
+            "moduly.periodicke_cinnosti.ui.periodic_activity_dialog.QMessageBox.warning",
+            return_value=QMessageBox.StandardButton.Ok,
+        ):
+            self.assertFalse(self.dialog._save())
         stored = periodic_activity_service.get_by_id(activity.id)
         self.assertEqual(stored.title, "Kontrola pracoviště")
         self.assertEqual(stored.next_from, NEXT_FROM_PLANNED)

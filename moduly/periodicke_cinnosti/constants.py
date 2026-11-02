@@ -50,7 +50,6 @@ CALENDAR_MONTH_UNSET = "— vyberte —"
 CALENDAR_VALUE_UNSET = "—"
 MIN_CALENDAR_YEAR = 1900
 MAX_CALENDAR_YEAR = 2100
-MAX_CALENDAR_INTERVAL_MONTHS = 1200
 DEFAULT_CALENDAR_INTERVAL_MONTHS = 12
 CALENDAR_SETUP_WARNING = (
     "Tato činnost se opakuje ve dnech nebo týdnech. Původní údaje zůstávají beze změny. "
@@ -58,6 +57,9 @@ CALENDAR_SETUP_WARNING = (
 )
 CALENDAR_PARTIAL_MESSAGE = (
     "Vyplňte počáteční měsíc, rok a interval v měsících, nebo je nechte nevyplněné."
+)
+CALENDAR_REQUIRED_MESSAGE = (
+    "Vyplňte počáteční měsíc, rok a interval v měsících."
 )
 CALENDAR_MONTH_NAMES = (
     "leden",
@@ -180,8 +182,8 @@ COLUMN_HEADERS = [
     "Název",
     "Místo",
     "Odpovědná osoba",
-    "Nejbližší termín",
-    "Perioda",
+    "Počátek",
+    "Interval",
     "Připomenout",
     "Aktivní",
 ]
@@ -213,6 +215,25 @@ def format_place(activity) -> str:
         text = (getattr(activity, "place_text", None) or "").strip()
         return text or PLACE_KIND_LABELS[PLACE_KIND_OTHER]
     return PLACE_KIND_LABELS.get(kind, PLACE_KIND_LABELS[PLACE_KIND_NONE])
+
+
+def format_calendar_start(year: int | None, month: int | None) -> str:
+    if year is None or month is None or not 1 <= int(month) <= 12:
+        return "—"
+    return f"{CALENDAR_MONTH_NAMES[int(month) - 1]} {int(year)}"
+
+
+def format_calendar_interval(months: int | None) -> str:
+    if months is None or int(months) < 1:
+        return "—"
+    count = int(months)
+    if count == 1:
+        noun = "měsíc"
+    elif count % 100 not in (11, 12, 13, 14) and count % 10 in (2, 3, 4):
+        noun = "měsíce"
+    else:
+        noun = "měsíců"
+    return f"{count} {noun}"
 
 
 def format_notify(every: int, unit: str) -> str:

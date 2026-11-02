@@ -39,7 +39,6 @@ with patch.object(Path, "home", return_value=_TMP):
     from core.dashboard.widget_today import TodayWidget
     from moduly.periodicke_cinnosti.constants import (
         COLUMN_HEADERS,
-        COL_NOTIFY,
         NEXT_FROM_PLANNED,
         UNIT_DAYS,
         UNIT_YEARS,
@@ -107,19 +106,22 @@ class AgendaPeriodicReminder1TestCase(unittest.TestCase):
     def test_ui_label_pripomenout(self) -> None:
         from PySide6.QtWidgets import QFormLayout, QLabel
 
-        self.assertEqual(COLUMN_HEADERS[COL_NOTIFY], "Připomenout")
+        self.assertNotIn("Nejbližší termín", COLUMN_HEADERS)
+        self.assertEqual(COLUMN_HEADERS[4], "Počátek")
+        self.assertEqual(COLUMN_HEADERS[5], "Interval")
         dialog = PeriodicActivityDialog()
+        labels = []
         form = dialog.findChild(QFormLayout)
-        found = False
         for row in range(form.rowCount()):
             label_item = form.itemAt(row, QFormLayout.ItemRole.LabelRole)
             if label_item is None:
                 continue
             widget = label_item.widget()
-            if isinstance(widget, QLabel) and widget.text() == "Připomenout:":
-                found = True
-                break
-        self.assertTrue(found)
+            if isinstance(widget, QLabel):
+                labels.append(widget.text())
+        self.assertNotIn("Připomenout:", labels)
+        self.assertNotIn("Nejbližší termín:", labels)
+        self.assertIn("Interval v měsících:", labels)
         dialog._editor.force_close()
 
     def test_zero_days_means_on_due_date(self) -> None:

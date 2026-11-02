@@ -40,7 +40,6 @@ from core.widgets.editor_dialog_controller import (
     configure_editor_save_button,
 )
 from moduly.periodicke_cinnosti.ui.save_confirmation import ConfirmingSaveController
-from core.widgets.nullable_date_edit import NullableDateEdit
 from core.widgets.thp_worker_selector import ThpWorkerSelector
 from core.widgets.typed_table_sort import (
     create_typed_item,
@@ -54,6 +53,7 @@ from core.widgets.workplace_selector import WorkplaceSelector
 from moduly.periodicke_cinnosti.constants import (
     CALENDAR_MONTH_NAMES,
     CALENDAR_MONTH_UNSET,
+    CALENDAR_REQUIRED_MESSAGE,
     CALENDAR_SETUP_WARNING,
     CALENDAR_VALUE_UNSET,
     DEFAULT_CALENDAR_INTERVAL_MONTHS,
@@ -63,7 +63,6 @@ from moduly.periodicke_cinnosti.constants import (
     DEFAULT_PLACE_KIND,
     DEFAULT_REPEAT_EVERY,
     DEFAULT_REPEAT_UNIT,
-    MAX_CALENDAR_INTERVAL_MONTHS,
     MAX_CALENDAR_YEAR,
     MIN_CALENDAR_YEAR,
     DIALOG_TITLE_EDIT,
@@ -76,21 +75,14 @@ from moduly.periodicke_cinnosti.constants import (
     HISTORY_COL_PERFORMER,
     HISTORY_COL_PLANNED,
     HISTORY_HEADERS,
-    NEXT_FROM_CHANGE_CANCEL,
-    NEXT_FROM_CHANGE_CONFIRM,
-    NEXT_FROM_CHANGE_TITLE,
-    NEXT_FROM_LABELS,
-    NEXT_FROM_VALUES,
     PLACE_KIND_LABELS,
     PLACE_KIND_OTHER,
     PLACE_KIND_WORKPLACE,
     PLACE_KINDS,
     TAB_ACTIVITY,
     TAB_HISTORY,
-    TIME_UNITS,
     TITLE_REQUIRED_MESSAGE,
     UNIT_DAYS,
-    UNIT_LABELS,
     UNIT_WEEKS,
 )
 from moduly.periodicke_cinnosti.sluzby.periodic_activity_service import (
@@ -184,43 +176,9 @@ class PeriodicActivityDialog(QDialog):
         self.calendar_year.setSpecialValueText(CALENDAR_VALUE_UNSET)
 
         self.calendar_interval = QSpinBox()
-        self.calendar_interval.setRange(0, MAX_CALENDAR_INTERVAL_MONTHS)
+        self.calendar_interval.setRange(0, 2147483647)
         self.calendar_interval.setSpecialValueText(CALENDAR_VALUE_UNSET)
         self._set_calendar_defaults()
-
-        self.next_due_edit = NullableDateEdit()
-
-        self.repeat_every = QSpinBox()
-        self.repeat_every.setRange(1, 9999)
-        self.repeat_every.setValue(DEFAULT_REPEAT_EVERY)
-        self.repeat_unit = QComboBox()
-        for unit in TIME_UNITS:
-            self.repeat_unit.addItem(UNIT_LABELS[unit], unit)
-        self.repeat_unit.setCurrentIndex(TIME_UNITS.index(DEFAULT_REPEAT_UNIT))
-        repeat_row = QHBoxLayout()
-        repeat_row.addWidget(self.repeat_every)
-        repeat_row.addWidget(self.repeat_unit, 1)
-        repeat_widget = QWidget()
-        repeat_widget.setLayout(repeat_row)
-
-        self.notify_every = QSpinBox()
-        self.notify_every.setRange(0, 9999)
-        self.notify_every.setValue(DEFAULT_NOTIFY_EVERY)
-        self.notify_unit = QComboBox()
-        for unit in TIME_UNITS:
-            self.notify_unit.addItem(UNIT_LABELS[unit], unit)
-        self.notify_unit.setCurrentIndex(TIME_UNITS.index(DEFAULT_NOTIFY_UNIT))
-        notify_row = QHBoxLayout()
-        notify_row.addWidget(self.notify_every)
-        notify_row.addWidget(self.notify_unit, 1)
-        notify_row.addWidget(QLabel("před termínem"))
-        notify_widget = QWidget()
-        notify_widget.setLayout(notify_row)
-
-        self.next_from = QComboBox()
-        for value in NEXT_FROM_VALUES:
-            self.next_from.addItem(NEXT_FROM_LABELS[value], value)
-        self.next_from.setCurrentIndex(NEXT_FROM_VALUES.index(DEFAULT_NEXT_FROM))
 
         self.note_edit = QTextEdit()
         self.note_edit.setAcceptRichText(False)
@@ -228,25 +186,23 @@ class PeriodicActivityDialog(QDialog):
         self.active_checkbox = QCheckBox("Aktivní")
         self.active_checkbox.setChecked(True)
 
+        repeat_heading = QLabel("Opakování v Ročním plánu")
+        repeat_heading.setObjectName("MutedText")
         form.addRow("Název:", self.title_edit)
+        form.addRow("Poznámka:", self.note_edit)
         form.addRow("Místo:", self.place_kind)
         form.addRow("", self.workplace_selector)
         form.addRow("", self.place_text)
         form.addRow("Odpovědná osoba:", self.responsible_selector)
+        form.addRow("", self.active_checkbox)
+        form.addRow(repeat_heading)
         form.addRow(self.calendar_setup_warning)
         form.addRow("Počáteční měsíc:", self.calendar_month)
         form.addRow("Počáteční rok:", self.calendar_year)
         form.addRow("Interval v měsících:", self.calendar_interval)
-        form.addRow("Nejbližší termín:", self.next_due_edit)
-        form.addRow("Opakovat každých:", repeat_widget)
-        form.addRow("Připomenout:", notify_widget)
-        form.addRow("Další termín počítat od:", self.next_from)
-        form.addRow("Poznámka:", self.note_edit)
-        form.addRow("", self.active_checkbox)
         self.calendar_month.currentIndexChanged.connect(self._refresh_calendar_warning)
         self.calendar_year.valueChanged.connect(self._refresh_calendar_warning)
         self.calendar_interval.valueChanged.connect(self._refresh_calendar_warning)
-        self.repeat_unit.currentIndexChanged.connect(self._refresh_calendar_warning)
         self._refresh_calendar_warning()
         return page
 
@@ -331,17 +287,22 @@ class PeriodicActivityDialog(QDialog):
             and self._calendar_interval_value() is not None
         )
 
+    def _stored_repeat_unit(self) -> str:
+        if self.activity is None:
+            return ""
+        return (self.activity.repeat_unit or "").strip()
+
     def _calendar_setup_flag(self) -> bool:
         if self._calendar_is_complete():
             return False
-        unit = self.repeat_unit.currentData()
-        return bool(self._calendar_setup_required) or unit in {UNIT_DAYS, UNIT_WEEKS}
+        legacy = self._stored_repeat_unit() in {UNIT_DAYS, UNIT_WEEKS}
+        return bool(self._calendar_setup_required) or legacy
 
     def _refresh_calendar_warning(self, *_args) -> None:
-        unit = self.repeat_unit.currentData()
-        legacy = unit in {UNIT_DAYS, UNIT_WEEKS}
         self.calendar_setup_warning.setVisible(
-            not self._calendar_is_complete() and (self._calendar_setup_required or legacy)
+            self.activity is not None
+            and not self._calendar_is_complete()
+            and self._calendar_setup_flag()
         )
 
     def _sync_place_fields(self) -> None:
@@ -360,20 +321,8 @@ class PeriodicActivityDialog(QDialog):
         )
         self.place_text.setText(activity.place_text or "")
         self.responsible_selector.set_person_id(activity.responsible_person_id)
-        self.next_due_edit.set_date_value(activity.next_due_date)
         self._calendar_setup_required = bool(getattr(activity, "calendar_setup_required", False))
         self._load_calendar(activity)
-        self.repeat_every.setValue(activity.repeat_every or DEFAULT_REPEAT_EVERY)
-        unit_index = self.repeat_unit.findData(activity.repeat_unit or DEFAULT_REPEAT_UNIT)
-        if unit_index >= 0:
-            self.repeat_unit.setCurrentIndex(unit_index)
-        self.notify_every.setValue(activity.notify_every if activity.notify_every is not None else 0)
-        notify_index = self.notify_unit.findData(activity.notify_unit or DEFAULT_NOTIFY_UNIT)
-        if notify_index >= 0:
-            self.notify_unit.setCurrentIndex(notify_index)
-        next_index = self.next_from.findData(activity.next_from or DEFAULT_NEXT_FROM)
-        if next_index >= 0:
-            self.next_from.setCurrentIndex(next_index)
         self.note_edit.setPlainText(activity.note or "")
         self.active_checkbox.setChecked(bool(activity.active))
         self._sync_place_fields()
@@ -547,12 +496,35 @@ class PeriodicActivityDialog(QDialog):
         self._editor._closing = True
         QDialog.accept(self)
 
+    def _legacy_fields(self) -> dict:
+        """Skrytá historická pole. Běžné uložení jim nedává nové výchozí hodnoty."""
+        activity = self.activity
+        if activity is None:
+            return {
+                "next_due_date": None,
+                "repeat_every": DEFAULT_REPEAT_EVERY,
+                "repeat_unit": DEFAULT_REPEAT_UNIT,
+                "notify_every": DEFAULT_NOTIFY_EVERY,
+                "notify_unit": DEFAULT_NOTIFY_UNIT,
+                "next_from": DEFAULT_NEXT_FROM,
+            }
+        return {
+            "next_due_date": activity.next_due_date,
+            "repeat_every": int(activity.repeat_every or DEFAULT_REPEAT_EVERY),
+            "repeat_unit": activity.repeat_unit or DEFAULT_REPEAT_UNIT,
+            "notify_every": int(
+                activity.notify_every if activity.notify_every is not None else DEFAULT_NOTIFY_EVERY
+            ),
+            "notify_unit": activity.notify_unit or DEFAULT_NOTIFY_UNIT,
+            "next_from": activity.next_from or DEFAULT_NEXT_FROM,
+        }
+
     def get_data(self) -> dict:
         worker = self.responsible_selector.current_person()
         worker_id = self.responsible_selector.current_person_id()
         worker_name = worker.display_name if worker else self.responsible_selector.currentText().strip()
         workplace_id = self.workplace_selector.current_workplace_id()
-        return {
+        data = {
             "title": self.title_edit.text().strip(),
             "place_kind": self.place_kind.currentData() or DEFAULT_PLACE_KIND,
             "workplace_id": workplace_id,
@@ -560,30 +532,26 @@ class PeriodicActivityDialog(QDialog):
             "place_text": self.place_text.text().strip(),
             "responsible_person_id": worker_id,
             "responsible_person_name": worker_name,
-            "next_due_date": self.next_due_edit.get_date(),
             "calendar_start_year": self._calendar_year_value(),
             "calendar_start_month": self.calendar_month.currentData(),
             "calendar_interval_months": self._calendar_interval_value(),
             "calendar_setup_required": self._calendar_setup_flag(),
-            "repeat_every": int(self.repeat_every.value()),
-            "repeat_unit": self.repeat_unit.currentData() or DEFAULT_REPEAT_UNIT,
-            "notify_every": int(self.notify_every.value()),
-            "notify_unit": self.notify_unit.currentData() or DEFAULT_NOTIFY_UNIT,
-            "next_from": self.next_from.currentData() or DEFAULT_NEXT_FROM,
             "note": self.note_edit.toPlainText().strip(),
             "active": self.active_checkbox.isChecked(),
         }
+        data.update(self._legacy_fields())
+        return data
 
     def _save(self) -> bool:
         data = self.get_data()
         if not data["title"]:
             QMessageBox.warning(self, self.windowTitle(), TITLE_REQUIRED_MESSAGE)
             return False
-        if self.activity is not None:
-            adjusted = self._apply_next_from_change(data)
-            if adjusted is None:
-                return False
-            data = adjusted
+        if not self._calendar_is_complete() and (
+            self.activity is None or self._activity_has_calendar()
+        ):
+            QMessageBox.warning(self, self.windowTitle(), CALENDAR_REQUIRED_MESSAGE)
+            return False
         creating = self.activity is None
         try:
             if creating:
@@ -601,69 +569,12 @@ class PeriodicActivityDialog(QDialog):
             return False
         return True
 
-    def _apply_next_from_change(self, data: dict) -> dict | None:
-        """Při změně způsobu výpočtu přepočítá termín a vyžádá potvrzení."""
-        stored_from = self.activity.next_from or DEFAULT_NEXT_FROM
-        new_from = data["next_from"]
-        if stored_from == new_from:
-            return data
-        projected = periodic_activity_service.next_due_for_mode(
-            self.activity.id,
-            next_from=new_from,
-            repeat_every=int(data["repeat_every"]),
-            repeat_unit=data["repeat_unit"],
+    def _activity_has_calendar(self) -> bool:
+        activity = self.activity
+        if activity is None:
+            return False
+        return (
+            activity.calendar_start_year is not None
+            and activity.calendar_start_month is not None
+            and activity.calendar_interval_months is not None
         )
-        stored_due = self.activity.next_due_date
-        if projected is None or projected == stored_due:
-            return data
-        message = format_next_from_change_message(
-            old_mode=NEXT_FROM_LABELS.get(stored_from, stored_from),
-            new_mode=NEXT_FROM_LABELS.get(new_from, new_from),
-            old_due=stored_due,
-            new_due=projected,
-        )
-        if not self._ask_next_from_change(message):
-            return None
-        self.next_due_edit.set_date_value(projected)
-        refreshed = self.get_data()
-        refreshed["next_from"] = new_from
-        return refreshed
-
-    def _ask_next_from_change(self, message: str) -> bool:
-        box = QMessageBox(self)
-        box.setIcon(QMessageBox.Icon.Question)
-        box.setWindowTitle(NEXT_FROM_CHANGE_TITLE)
-        box.setText(message)
-        box.setStandardButtons(
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        )
-        confirm = box.button(QMessageBox.StandardButton.Yes)
-        cancel = box.button(QMessageBox.StandardButton.No)
-        if confirm is not None:
-            confirm.setText(NEXT_FROM_CHANGE_CONFIRM)
-        if cancel is not None:
-            cancel.setText(NEXT_FROM_CHANGE_CANCEL)
-        return box.exec() == QMessageBox.StandardButton.Yes
-
-
-def format_next_from_change_message(
-    *,
-    old_mode: str,
-    new_mode: str,
-    old_due: date | None,
-    new_due: date | None,
-) -> str:
-    return "\n".join(
-        (
-            f"Původní způsob výpočtu: {old_mode}",
-            f"Nový způsob výpočtu: {new_mode}",
-            f"Původní další termín: {_format_due(old_due)}",
-            f"Nový další termín: {_format_due(new_due)}",
-        )
-    )
-
-
-def _format_due(value: date | None) -> str:
-    if value is None:
-        return "neuvedeno"
-    return f"{value.day:02d}.{value.month:02d}.{value.year}"

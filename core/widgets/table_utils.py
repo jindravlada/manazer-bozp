@@ -272,8 +272,9 @@ def configure_table_columns(table: QTableWidget, profile: str) -> None:
         for column, width in widths.items():
             table.setColumnWidth(column, width)
         table.setColumnHidden(COL_ID, True)
+        table.setColumnHidden(COL_NOTIFY, True)
         header.setSectionResizeMode(COL_TITLE, QHeaderView.Stretch)
-        for column in (COL_PLACE, COL_RESPONSIBLE, COL_NEXT_DUE, COL_PERIOD, COL_NOTIFY, COL_ACTIVE):
+        for column in (COL_PLACE, COL_RESPONSIBLE, COL_NEXT_DUE, COL_PERIOD, COL_ACTIVE):
             header.setSectionResizeMode(column, QHeaderView.Fixed)
 
     elif profile == "yearly_plan":

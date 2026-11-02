@@ -152,11 +152,7 @@ class AgendaPeriodicSave1TestCase(unittest.TestCase):
         try:
             dialog.title_edit.setText("Jedna činnost")
             dialog.note_edit.setPlainText("poznámka")
-            dialog.next_due_edit.set_date_value(date(2026, 8, 15))
-            dialog.repeat_every.setValue(3)
-            unit_index = dialog.repeat_unit.findData(UNIT_MONTHS)
-            dialog.repeat_unit.setCurrentIndex(unit_index)
-            dialog.notify_every.setValue(10)
+            dialog.calendar_interval.setValue(60)
             first = self._run(dialog._editor.save_button.click)
             self.assertEqual(len(first), 1)
             self.assertEqual(first[0].windowTitle(), _SAVE_CONFIRMATION_TITLE)
@@ -186,15 +182,13 @@ class AgendaPeriodicSave1TestCase(unittest.TestCase):
         stored = matches[0]
         self.assertEqual(stored.title, "Jedna činnost upravena")
         self.assertEqual(stored.note, "poznámka")
-        self.assertEqual(stored.next_due_date, date(2026, 8, 15))
-        self.assertEqual(stored.repeat_every, 3)
-        self.assertEqual(stored.repeat_unit, UNIT_MONTHS)
-        self.assertEqual(stored.notify_every, 10)
+        self.assertIsNone(stored.next_due_date)
+        self.assertEqual(stored.calendar_interval_months, 60)
 
         reopened = self._open(periodic_activity_service.get_by_id(activity_id))
         try:
             self.assertEqual(reopened.title_edit.text(), "Jedna činnost upravena")
-            self.assertEqual(reopened.repeat_every.value(), 3)
+            self.assertEqual(reopened.calendar_interval.value(), 60)
             self.assertFalse(reopened._editor.is_dirty())
             self.assertFalse(reopened._editor.is_new)
         finally:
@@ -204,15 +198,15 @@ class AgendaPeriodicSave1TestCase(unittest.TestCase):
         activity = self._create()
         dialog = self._open(activity)
         dialog.note_edit.setPlainText("zapsáno a zavřeno")
-        dialog.repeat_every.setValue(2)
         shown = self._run(dialog._save_close_btn.click)
         self.assertEqual(shown, [])
         self.assertEqual(dialog.result(), QDialog.DialogCode.Accepted)
         stored = periodic_activity_service.get_by_id(activity.id)
         assert stored is not None
         self.assertEqual(stored.note, "zapsáno a zavřeno")
-        self.assertEqual(stored.repeat_every, 2)
+        self.assertEqual(stored.repeat_every, 1)
         self.assertEqual(stored.next_due_date, date(2026, 6, 1))
+        self.assertIsNone(stored.calendar_start_year)
         dialog.deleteLater()
 
     def test_failed_save_keeps_window_and_draft(self) -> None:
@@ -449,7 +443,6 @@ class AgendaPeriodicSave1TestCase(unittest.TestCase):
 
         def save_and_close(dialog: PeriodicActivityDialog) -> int:
             dialog.title_edit.setText("Ze seznamu")
-            dialog.next_due_edit.set_date_value(date(2026, 9, 1))
             dialog._save_and_close()
             return int(dialog.result())
 
