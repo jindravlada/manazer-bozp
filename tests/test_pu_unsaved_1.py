@@ -307,7 +307,7 @@ class PuUnsaved1TestCase(unittest.TestCase):
             ["Zrušit"],
         )
         self.assertEqual(seen[0][1], UNSAVED_CHANGES_PROMPT)
-        self.assertEqual(seen[0][2], ["Uložit", "Neukládat", "Zrušit"])
+        self.assertEqual(seen[0][2], ["Uložit", "Zahodit změny", "Zrušit"])
         self.assertTrue(dialog.isVisible())
         self.assertEqual(
             dialog.tab_uraz_widget.popis_urazoveho_deje.toPlainText(),
@@ -336,7 +336,7 @@ class PuUnsaved1TestCase(unittest.TestCase):
         dialog.tab_uraz_widget.popis_urazoveho_deje.setPlainText("Tento text se nemá uložit")
         self._click_boxes(
             lambda: self._button(dialog, QDialogButtonBox.StandardButton.Cancel).click(),
-            ["Neukládat"],
+            ["Zahodit změny"],
         )
         self.assertFalse(dialog.isVisible())
         self.assertNotEqual(dialog.result(), QDialog.DialogCode.Accepted)
@@ -362,7 +362,7 @@ class PuUnsaved1TestCase(unittest.TestCase):
         before = self._stored(accident.id)
         dialog = self._open(accident)
         dialog.tab_uraz_widget.popis_urazoveho_deje.setPlainText("Úprava před křížkem")
-        seen = self._click_boxes(dialog.close, ["Neukládat"])
+        seen = self._click_boxes(dialog.close, ["Zahodit změny"])
         self.assertEqual(seen[0][1], UNSAVED_CHANGES_PROMPT)
         self.assertFalse(dialog.isVisible())
         self.assertEqual(self._stored(accident.id), before)
@@ -413,8 +413,11 @@ class PuUnsaved1TestCase(unittest.TestCase):
         )
         self.assertEqual(seen[0][0], SAVE_CONFIRMATION_TITLE)
         self.assertEqual(seen[0][1], SAVE_CONFIRMATION_TEXT)
-        self.assertFalse(dialog.isVisible())
-        self.assertEqual(dialog.result(), QDialog.DialogCode.Accepted)
+        self.assertTrue(dialog.isVisible())
+        self.assertFalse(dialog._closing)
+        self.assertFalse(dialog._is_dirty(), self._dirty_keys(dialog))
+        self.assertTrue(dialog.was_saved)
+        self.assertNotEqual(dialog.result(), QDialog.DialogCode.Accepted)
         stored = accident_service.get_by_id(accident.id)
         self.assertEqual(stored.popis_urazoveho_deje, "Uložený popis děje.")
         self.assertEqual(stored.description, "Uložený popis děje.")
@@ -436,7 +439,7 @@ class PuUnsaved1TestCase(unittest.TestCase):
         self.assertTrue(dialog._is_dirty())
         seen = self._click_boxes(
             lambda: QTest.keyClick(dialog, Qt.Key.Key_Escape),
-            ["Neukládat"],
+            ["Zahodit změny"],
         )
         self.assertEqual(seen[0][1], UNSAVED_CHANGES_PROMPT)
         self.assertFalse(dialog.isVisible())
@@ -454,10 +457,10 @@ class PuUnsaved1TestCase(unittest.TestCase):
             dialog.tab_uraz_widget.misto_urazu.setPlainText("uložené místo")
             self._click_boxes(
                 lambda: self._button(dialog, QDialogButtonBox.StandardButton.Cancel).click(),
-                ["Uložit", "OK"],
+                ["Uložit"],
             )
             self.assertFalse(dialog.isVisible())
-            self.assertEqual(dialog.result(), QDialog.DialogCode.Accepted)
+            self.assertTrue(dialog.was_saved)
             reloaded = accident_service.get_by_id(accident.id)
             self.assertEqual(reloaded.misto_urazu, "uložené místo")
             return int(dialog.result())

@@ -2,13 +2,15 @@ from collections.abc import Callable
 from datetime import date
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
     QFormLayout,
+    QHBoxLayout,
     QLineEdit,
     QMessageBox,
+    QPushButton,
+    QSizePolicy,
     QSpinBox,
     QTabWidget,
     QTextEdit,
@@ -18,6 +20,14 @@ from PySide6.QtWidgets import (
 
 from core.shared.constants import ENTITY_ACCIDENT
 from core.widgets.attachment_widget import AttachmentWidget
+from core.widgets.editor_dialog_controller import (
+    EDITOR_CLOSE_LABEL,
+    EditorDialogController,
+    _safe_disconnect,
+    configure_editor_close_button,
+    configure_editor_save_button,
+    set_editor_save_enabled,
+)
 from core.widgets.dialog_utils import (
     configure_form_tab_navigation,
     create_save_cancel_box,
@@ -25,10 +35,10 @@ from core.widgets.dialog_utils import (
     wrap_in_scroll_area,
 )
 
-from core.widgets.editor_dialog_controller import confirm_unsaved_editor_close
 from core.widgets.date_edit import DateEdit
 from core.widgets.nullable_date_edit import NullableDateEdit
 from core.widgets.workplace_selector import WorkplaceSelector
+from moduly.kniha_urazu.sluzby.accident_service import accident_service
 from moduly.kniha_urazu.sluzby.accident_dpn_care import (
     dpn_care_return_from_saved_data,
 )
@@ -78,8 +88,10 @@ ACCIDENT_DATE_CHANGE_CANCEL_LABEL = "Zrušit"
 UNSAVED_CHANGES_PROMPT = (
     "V záznamu pracovního úrazu jsou neuložené změny. Chcete je uložit?"
 )
+UNSAVED_DISCARD_LABEL = "Zahodit změny"
 SAVE_CONFIRMATION_TITLE = "Pracovní úraz"
 SAVE_CONFIRMATION_TEXT = "Změny byly úspěšně uloženy."
+_SAVE_CLOSE_LABEL = "Uložit a zavřít"
 
 
 def _exec_message_box(box: QMessageBox) -> int:
@@ -97,6 +109,35 @@ def _normalize_snapshot(value):
     return value
 
 
+class _AccidentEditorController(EditorDialogController):
+    """Stejná lišta jako u MU a událostí; Uložit zůstává dostupné i na čistém formuláři.
+
+    Skrytý dialog (testy před ``show``) se zavírá bez dotazu, stejně jako dřív.
+    """
+
+    def request_close(self) -> bool:
+        dialog = self._dialog
+        if getattr(dialog, "_closing", False):
+            return True
+        if dialog is not None and not dialog.isVisible():
+            return True
+        return super().request_close()
+
+    def eventFilter(self, watched, event):  # noqa: N802
+        dialog = getattr(self, "_dialog", None)
+        if dialog is not None and getattr(dialog, "_closing", False):
+            self._closing = True
+            return False
+        return super().eventFilter(watched, event)
+
+    def _refresh_save_enabled(self) -> None:
+        set_editor_save_enabled(self._buttons, True)
+        if self.save_button is not None:
+            self.save_button.setEnabled(True)
+        for button in self._extra_save_buttons:
+            button.setEnabled(True)
+
+
 class AccidentDialog(QDialog):
     def __init__(self, parent=None, accident=None, focus_tab=None, *, on_persist=None):
         super().__init__(parent)
@@ -106,6 +147,8 @@ class AccidentDialog(QDialog):
         self._baseline: dict | None = None
         self._closing = False
         self._baseline_after_show = False
+        self._was_saved = False
+        self._editor: _AccidentEditorController | None = None
         self.setWindowTitle("Pracovní úraz")
         configure_resizable_form_dialog(self, width=860, height=680, min_width=640, min_height=480)
 
@@ -136,9 +179,34 @@ class AccidentDialog(QDialog):
         layout.addWidget(self.tabs, 1)
 
         buttons = create_save_cancel_box(self, is_new=accident is None)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+        self._editor = _AccidentEditorController(
+            self,
+            buttons,
+            is_new=accident is None,
+            title=self.windowTitle(),
+            on_save=self._persist,
+            unsaved_text=UNSAVED_CHANGES_PROMPT,
+            discard_label=UNSAVED_DISCARD_LABEL,
+        )
+        if self._editor.save_button is not None:
+            _safe_disconnect(
+                self._editor.save_button.clicked,
+                self._editor._handle_save_clicked,
+            )
+            self._editor.save_button.clicked.connect(self._save_keep_open)
+        configure_editor_close_button(self._editor.close_button, is_new=False)
+        if self._editor.close_button is not None:
+            self._editor.close_button.setText(EDITOR_CLOSE_LABEL)
+        layout.addLayout(self._build_footer())
+        buttons.hide()
+        for button in (
+            self._editor.save_button,
+            self._save_close_btn,
+            self._editor.close_button,
+        ):
+            if button is not None:
+                button.setVisible(True)
+        self._editor.set_snapshot_provider(self._snapshot)
 
         self._connect_logic()
 
@@ -157,11 +225,48 @@ class AccidentDialog(QDialog):
             self._baseline_after_show = True
             self._capture_baseline()
 
+    @property
+    def was_saved(self) -> bool:
+        return self._was_saved
+
+    def _build_footer(self) -> QHBoxLayout:
+        """Vpravo Uložit | Uložit a zavřít | Zavřít."""
+        footer = QHBoxLayout()
+        footer.setContentsMargins(0, 0, 0, 0)
+        footer.setSpacing(8)
+        footer.addStretch(1)
+
+        assert self._editor is not None
+        self._save_close_btn = QPushButton(_SAVE_CLOSE_LABEL)
+        configure_editor_save_button(self._save_close_btn)
+        self._save_close_btn.setText(_SAVE_CLOSE_LABEL)
+        self._save_close_btn.clicked.connect(self._save_and_close)
+        self._editor.bind_extra_save_button(self._save_close_btn)
+
+        ordered = [
+            self._editor.save_button,
+            self._save_close_btn,
+            self._editor.close_button,
+        ]
+        for button in ordered:
+            if button is None:
+                continue
+            button.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+            button.setAutoDefault(False)
+            button.setDefault(False)
+            footer.addWidget(button)
+        return footer
+
+    def _snapshot(self):
+        return _normalize_snapshot(self.get_data())
+
     def _capture_baseline(self) -> None:
-        self._baseline = _normalize_snapshot(self.get_data())
+        self._baseline = self._snapshot()
+        if self._editor is not None:
+            self._editor.capture_baseline()
 
     def _is_dirty(self) -> bool:
-        return _normalize_snapshot(self.get_data()) != self._baseline
+        return self._snapshot() != self._baseline
 
     def _show_save_confirmation(self) -> None:
         box = QMessageBox(self)
@@ -174,53 +279,88 @@ class AccidentDialog(QDialog):
             ok_button.setText("OK")
         _exec_message_box(box)
 
-    def _confirm_close(self) -> bool:
-        if self._closing or not self.isVisible() or not self._is_dirty():
+    def _save_keep_open(self) -> None:
+        """Uloží změny, potvrdí úspěch a editor nechá otevřený."""
+        confirm = self._is_dirty() or getattr(self.accident, "id", None) is None
+        assert self._editor is not None
+        if not self._editor._run_save():
+            return
+        if confirm:
+            self._show_save_confirmation()
+
+    def _save_and_close(self) -> None:
+        if self._closing or (self._editor is not None and self._editor._closing):
+            self._closing = True
+            if self._editor is not None:
+                self._editor._closing = True
+            QDialog.accept(self)
+            return
+        assert self._editor is not None
+        if not self._editor._run_save():
+            return
+        self._closing = True
+        self._editor._closing = True
+        QDialog.accept(self)
+
+    def _persist(self) -> bool:
+        """Společný zápis pro Uložit, Uložit a zavřít i Uložit v dotazu při zavření."""
+        has_id = getattr(self.accident, "id", None) is not None
+        if has_id and not self._is_dirty():
             return True
-        decision = confirm_unsaved_editor_close(
-            self,
-            title=self.windowTitle(),
-            text=UNSAVED_CHANGES_PROMPT,
-        )
-        if decision == "cancel":
+
+        if not self._validate_tabs():
             return False
-        if decision == "save":
-            self.accept()
-            return self.result() == QDialog.DialogCode.Accepted
+        if not self._validate_date_rules():
+            return False
+        if not self._confirm_extreme_breath_alcohol():
+            return False
+        if not self._confirm_injury_date_change():
+            return False
+
+        if self._on_persist is not None:
+            try:
+                result = self._on_persist(self.get_data())
+            except Exception as exc:
+                QMessageBox.warning(
+                    self,
+                    "Nelze uložit pracovní úraz",
+                    "Pracovní úraz se nepodařilo uložit.\n\n" + str(exc),
+                )
+                return False
+            if result is None or result is False:
+                QMessageBox.warning(
+                    self,
+                    "Nelze uložit pracovní úraz",
+                    "Pracovní úraz se nepodařilo uložit.",
+                )
+                return False
+            if result is not True:
+                self._adopt_saved(result)
+            elif has_id:
+                self._was_saved = True
+
+        self._finish_saved_form()
         return True
 
-    def closeEvent(self, event: QCloseEvent) -> None:  # noqa: N802
-        if self._closing:
-            event.accept()
+    def _adopt_saved(self, saved) -> None:
+        """Po prvním vytvoření další Uložit aktualizuje stejný záznam."""
+        self.accident = saved
+        accident_id = getattr(saved, "id", None)
+        if not accident_id:
             return
-        if not self._confirm_close():
-            event.ignore()
-            return
-        if self.result() == QDialog.DialogCode.Accepted:
-            self._closing = True
-            event.accept()
-            return
-        self._closing = True
-        event.accept()
+        self.tab_attachments_widget.set_entity(ENTITY_ACCIDENT, int(accident_id))
+        self._was_saved = True
 
-    def reject(self) -> None:  # noqa: N802
-        if not self._confirm_close():
-            return
-        if self.result() == QDialog.DialogCode.Accepted:
-            return
-        self._closing = True
-        super().reject()
+        def update(data: dict, accident_id: int = int(accident_id)) -> bool:
+            return accident_service.update_accident(accident_id, **data) is not None
 
-    def _apply_focus_tab(self, focus_tab: str | None) -> None:
-        title = (focus_tab or "").strip()
-        if not title:
-            return
-        for index in range(self.tabs.count()):
-            if self.tabs.tabText(index) == title:
-                self.tabs.setCurrentIndex(index)
-                return
+        self._on_persist = update
 
-    def accept(self):
+    def _finish_saved_form(self) -> None:
+        self.tab_uraz_widget.commit_injury_date_baseline()
+        self._capture_baseline()
+
+    def _validate_tabs(self) -> bool:
         validations = [
             ("Zapisovatel", self.tab_podatel_widget),
             ("Zaměstnanec", self.tab_zamestnanec_widget),
@@ -260,26 +400,21 @@ class AccidentDialog(QDialog):
                     "Nelze uložit pracovní úraz",
                     msg,
                 )
+                return False
+        return True
+
+    def _apply_focus_tab(self, focus_tab: str | None) -> None:
+        title = (focus_tab or "").strip()
+        if not title:
+            return
+        for index in range(self.tabs.count()):
+            if self.tabs.tabText(index) == title:
+                self.tabs.setCurrentIndex(index)
                 return
 
-        if not self._validate_date_rules():
-            return
-
-        if not self._confirm_extreme_breath_alcohol():
-            return
-
-        if not self._confirm_injury_date_change():
-            return
-
-        if self._on_persist is not None:
-            if not self._on_persist(self.get_data()):
-                return
-            self._show_save_confirmation()
-
-        self.tab_uraz_widget.commit_injury_date_baseline()
-        self._capture_baseline()
-        self._closing = True
-        super().accept()
+    def accept(self) -> None:
+        """Uložit a zavřít. Při chybě validace nebo zápisu editor zůstane otevřený."""
+        self._save_and_close()
 
     def _confirm_extreme_breath_alcohol(self) -> bool:
         value = self.tab_dalsi_widget.get_data().get("mnozstvi_alkohol", "")

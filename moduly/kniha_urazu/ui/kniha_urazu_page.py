@@ -152,14 +152,20 @@ class KnihaUrazuPage(QWidget):
         dialog.exec()
 
     def new_accident(self):
-        dialog = AccidentDialog(self, on_persist=self._persist_new_accident)
-        if exec_maximized(dialog):
+        self._finish_accident_editor(
+            AccidentDialog(self, on_persist=self._persist_new_accident)
+        )
+
+    def _finish_accident_editor(self, dialog: AccidentDialog) -> None:
+        """Editor si ukládá sám. Přehled se obnoví jen po skutečném uložení."""
+        exec_maximized(dialog)
+        if dialog.was_saved:
             self.refresh()
 
-    def _persist_new_accident(self, data: dict) -> bool:
+    def _persist_new_accident(self, data: dict):
         if not (data.get("jmeno_prijmeni") or data.get("popis_urazoveho_deje")):
             return True
-        return accident_service.create_accident(**data) is not None
+        return accident_service.create_accident(**data)
 
     def edit_selected_accident(self):
         accident_id = self._selected_accident_id()
@@ -194,14 +200,14 @@ class KnihaUrazuPage(QWidget):
         def persist(data: dict) -> bool:
             return accident_service.update_accident(accident_id, **data) is not None
 
-        dialog = AccidentDialog(
-            self,
-            accident=accident,
-            focus_tab=focus_tab,
-            on_persist=persist,
+        self._finish_accident_editor(
+            AccidentDialog(
+                self,
+                accident=accident,
+                focus_tab=focus_tab,
+                on_persist=persist,
+            )
         )
-        if exec_maximized(dialog):
-            self.refresh()
 
     def generate_accident_report(self):
         accident_id = self._selected_accident_id()

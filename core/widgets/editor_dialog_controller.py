@@ -46,6 +46,7 @@ def confirm_unsaved_editor_close(
     title: str,
     text: str | None = None,
     abort_label: str | None = None,
+    discard_label: str | None = None,
 ) -> UnsavedCloseDecision:
     """Standardní dialog neuložených změn. Vrací ``save`` / ``discard`` / ``cancel``.
 
@@ -53,6 +54,7 @@ def confirm_unsaved_editor_close(
     neaktivovaly omylem „Uložit“ (dříve AcceptRole).
     ``text`` ponechává společná tlačítka a mění jen znění dotazu.
     ``abort_label`` mění jen popisek třetího tlačítka (výchozí je „Zrušit“).
+    ``discard_label`` mění jen popisek prostředního tlačítka (výchozí je „Neukládat“).
     """
     message = QMessageBox(parent)
     message.setWindowTitle(title)
@@ -64,8 +66,9 @@ def confirm_unsaved_editor_close(
         QMessageBox.ButtonRole.ActionRole,
     )
     configure_editor_save_button(save_btn)
+    discard_text = discard_label or EDITOR_UNSAVED_DISCARD_LABEL
     discard_btn = message.addButton(
-        EDITOR_UNSAVED_DISCARD_LABEL,
+        discard_text,
         QMessageBox.ButtonRole.ActionRole,
     )
     discard_btn.setIcon(_standard_icon(QStyle.StandardPixmap.SP_DialogResetButton))
@@ -183,6 +186,8 @@ class EditorDialogController(QObject):
         on_save: Callable[[], bool] | None = None,
         is_dirty: Callable[[], bool] | None = None,
         unsaved_abort_label: str | None = None,
+        unsaved_text: str | None = None,
+        discard_label: str | None = None,
         parent: QObject | None = None,
     ):
         super().__init__(parent or dialog)
@@ -193,6 +198,8 @@ class EditorDialogController(QObject):
         self._on_save = on_save
         self._is_dirty_fn = is_dirty
         self._unsaved_abort_label = unsaved_abort_label
+        self._unsaved_text = unsaved_text
+        self._discard_label = discard_label
         self._extra_save_buttons: list[QPushButton] = []
         self._dirty = bool(is_new)
         self._closing = False
@@ -321,7 +328,9 @@ class EditorDialogController(QObject):
         decision = confirm_unsaved_editor_close(
             self._dialog,
             title=self._title,
+            text=self._unsaved_text,
             abort_label=self._unsaved_abort_label,
+            discard_label=self._discard_label,
         )
         if decision == "cancel":
             return False
