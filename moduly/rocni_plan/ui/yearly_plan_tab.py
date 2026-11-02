@@ -28,11 +28,15 @@ from moduly.rocni_plan.constants import (
     ACTION_MARK_MONTH_PROCESSED,
     ACTION_MOVE,
     ACTION_NEW,
+    ACTION_RESTORE_PLANNING,
+    ACTION_SKIP,
     ALREADY_LINKED_MESSAGE,
     CANCEL_CONFIRM_MESSAGE,
     CANCELLED_ACTION_MESSAGE,
     ITEM_NOT_FOUND_MESSAGE,
     MARK_MONTH_PROCESSED_CONFIRM,
+    DISPLAY_TO_PLAN,
+    DISPLAY_WILL_NOT_PERFORM,
     MONTH_ALREADY_PROCESSED_MESSAGE,
     SOURCE_MODULE_YEARLY_PLAN,
     STATUS_CANCELLED,
@@ -45,6 +49,12 @@ from moduly.rocni_plan.constants import (
 from moduly.periodicke_cinnosti.sluzby.periodic_activity_service import (
     periodic_activity_service,
 )
+from moduly.periodicke_cinnosti.sluzby.periodic_calendar_occurrence_service import (
+    CalendarOccurrenceError,
+    move_occurrence as move_calendar_occurrence,
+    restore_to_planning,
+    skip_occurrence,
+)
 from moduly.periodicke_cinnosti.ui.periodic_activity_dialog import PeriodicActivityDialog
 from moduly.rocni_plan.sluzby.yearly_plan_service import (
     YearlyPlanValidationError,
@@ -52,6 +62,7 @@ from moduly.rocni_plan.sluzby.yearly_plan_service import (
     yearly_plan_service,
 )
 from moduly.rocni_plan.ui.yearly_plan_item_dialog import YearlyPlanItemDialog
+from moduly.rocni_plan.ui.periodic_skip_dialog import PeriodicSkipDialog
 from moduly.rocni_plan.ui.yearly_plan_move_dialog import YearlyPlanMoveDialog
 from moduly.rocni_plan.ui.yearly_plan_table import (
     YearlyPlanMonthSection,
@@ -92,6 +103,8 @@ class YearlyPlanTab(QWidget):
         self.create_task_btn = QPushButton(ACTION_CREATE_TASK)
         self.create_meeting_btn = QPushButton(ACTION_CREATE_MEETING)
         self.move_btn = QPushButton(ACTION_MOVE)
+        self.skip_btn = QPushButton(ACTION_SKIP)
+        self.restore_plan_btn = QPushButton(ACTION_RESTORE_PLANNING)
         self.cancel_btn = QPushButton(ACTION_CANCEL)
         self.mark_month_btn = QPushButton(ACTION_MARK_MONTH_PROCESSED)
         # Kompatibilita se staršími testy – stav fokusovaného měsíce.
@@ -105,6 +118,8 @@ class YearlyPlanTab(QWidget):
             self.create_task_btn,
             self.create_meeting_btn,
             self.move_btn,
+            self.skip_btn,
+            self.restore_plan_btn,
             self.cancel_btn,
             self.mark_month_btn,
         ):
@@ -115,6 +130,8 @@ class YearlyPlanTab(QWidget):
         toolbar.addWidget(self.create_task_btn)
         toolbar.addWidget(self.create_meeting_btn)
         toolbar.addWidget(self.move_btn)
+        toolbar.addWidget(self.skip_btn)
+        toolbar.addWidget(self.restore_plan_btn)
         toolbar.addWidget(self.cancel_btn)
         toolbar.addWidget(self.mark_month_btn)
         toolbar.addStretch()
@@ -136,6 +153,8 @@ class YearlyPlanTab(QWidget):
         self.create_task_btn.clicked.connect(self.create_task_for_selected)
         self.create_meeting_btn.clicked.connect(self.create_meeting_for_selected)
         self.move_btn.clicked.connect(self.move_selected)
+        self.skip_btn.clicked.connect(self.skip_selected)
+        self.restore_plan_btn.clicked.connect(self.restore_selected)
         self.cancel_btn.clicked.connect(self.cancel_selected)
         self.mark_month_btn.clicked.connect(self.mark_month_processed)
         self.year_spin.valueChanged.connect(self._on_year_changed)
@@ -322,13 +341,20 @@ class YearlyPlanTab(QWidget):
         else:
             self.mark_month_btn.setEnabled(False)
 
-        if not single or is_header or is_periodic:
+        if not single or is_header:
             self.edit_btn.setEnabled(False)
             self.create_task_btn.setEnabled(False)
             self.create_meeting_btn.setEnabled(False)
             self.move_btn.setEnabled(False)
+            self.skip_btn.setEnabled(False)
+            self.restore_plan_btn.setEnabled(False)
             self.cancel_btn.setEnabled(False)
             return
+        if is_periodic:
+            self._refresh_periodic_actions()
+            return
+        self.skip_btn.setEnabled(False)
+        self.restore_plan_btn.setEnabled(False)
         item = self._selected_item()
         self.edit_btn.setEnabled(item is not None)
         status, task_id, meeting_id = self._occurrence_state(item)
@@ -354,6 +380,8 @@ class YearlyPlanTab(QWidget):
             (ACTION_CREATE_TASK, self.create_task_for_selected, self.create_task_btn),
             (ACTION_CREATE_MEETING, self.create_meeting_for_selected, self.create_meeting_btn),
             (ACTION_MOVE, self.move_selected, self.move_btn),
+            (ACTION_SKIP, self.skip_selected, self.skip_btn),
+            (ACTION_RESTORE_PLANNING, self.restore_selected, self.restore_plan_btn),
             (ACTION_CANCEL, self.cancel_selected, self.cancel_btn),
         ):
             action = menu.addAction(label, handler)
@@ -408,8 +436,25 @@ class YearlyPlanTab(QWidget):
         self.refresh()
         self._notify_changed()
 
+    def _refresh_periodic_actions(self) -> None:
+        """Přesun a Nevykoná se jen u výskytu kalendářní řady. Úkol a událost zatím ne."""
+        managed = self.table.selected_is_calendar_occurrence()
+        status = self.table.selected_display_status()
+        self.edit_btn.setEnabled(False)
+        self.create_task_btn.setEnabled(False)
+        self.create_meeting_btn.setEnabled(False)
+        self.cancel_btn.setEnabled(False)
+        self.move_btn.setEnabled(managed)
+        self.skip_btn.setEnabled(managed and status == DISPLAY_TO_PLAN)
+        self.restore_plan_btn.setEnabled(
+            managed and status == DISPLAY_WILL_NOT_PERFORM
+        )
+
     def move_selected(self) -> None:
         if not self.move_btn.isEnabled():
+            return
+        if self.table.selected_is_calendar_occurrence():
+            self._move_calendar_occurrence()
             return
         item = self._selected_item()
         if item is None:
@@ -460,6 +505,82 @@ class YearlyPlanTab(QWidget):
         except YearlyPlanValidationError as error:
             QMessageBox.warning(self, ACTION_MOVE, str(error))
             return
+        self._notify_changed()
+
+    def _move_calendar_occurrence(self) -> None:
+        activity_id = self.table.selected_activity_id()
+        slot = self.table.selected_slot_year_month()
+        if activity_id is None or slot is None:
+            return
+        shown = self.table.selected_display_year_month() or slot
+        dialog = YearlyPlanMoveDialog(
+            self,
+            from_year=shown[0],
+            from_month=shown[1],
+            default_year=shown[0],
+            default_month=shown[1],
+        )
+        if not dialog.exec():
+            return
+        try:
+            move_calendar_occurrence(
+                activity_id,
+                original_year=slot[0],
+                original_month=slot[1],
+                to_year=dialog.selected_year(),
+                to_month=dialog.selected_month(),
+            )
+        except CalendarOccurrenceError as error:
+            QMessageBox.warning(self, ACTION_MOVE, str(error))
+            return
+        self._focus_month = dialog.selected_month()
+        if dialog.selected_year() != self.current_year():
+            self.set_year_month(dialog.selected_year(), dialog.selected_month())
+        else:
+            self._pending_scroll_month = self._focus_month
+            self.refresh()
+        self._notify_changed()
+
+    def skip_selected(self) -> None:
+        if not self.skip_btn.isEnabled():
+            return
+        activity_id = self.table.selected_activity_id()
+        slot = self.table.selected_slot_year_month()
+        if activity_id is None or slot is None:
+            return
+        dialog = PeriodicSkipDialog(self)
+        if not dialog.exec():
+            return
+        try:
+            skip_occurrence(
+                activity_id,
+                original_year=slot[0],
+                original_month=slot[1],
+                reason=dialog.reason(),
+            )
+        except CalendarOccurrenceError as error:
+            QMessageBox.warning(self, ACTION_SKIP, str(error))
+            return
+        self.refresh()
+        self._notify_changed()
+
+    def restore_selected(self) -> None:
+        if not self.restore_plan_btn.isEnabled():
+            return
+        activity_id = self.table.selected_activity_id()
+        slot = self.table.selected_slot_year_month()
+        if activity_id is None or slot is None:
+            return
+        try:
+            restore_to_planning(
+                activity_id,
+                original_year=slot[0],
+                original_month=slot[1],
+            )
+        except CalendarOccurrenceError as error:
+            QMessageBox.warning(self, ACTION_RESTORE_PLANNING, str(error))
+            return
+        self.refresh()
         self._notify_changed()
 
     def cancel_selected(self) -> None:

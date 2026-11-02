@@ -45,6 +45,9 @@ def initialize_database() -> None:
     from moduly.periodicke_cinnosti.modely.periodic_activity_occurrence import (  # noqa: F401
         PeriodicActivityOccurrence,
     )
+    from moduly.periodicke_cinnosti.modely.periodic_calendar_occurrence import (  # noqa: F401
+        PeriodicCalendarOccurrence,
+    )
     from moduly.rocni_plan.modely.yearly_plan_item import YearlyPlanItem  # noqa: F401
     from moduly.rocni_plan.modely.yearly_plan_item_move import (  # noqa: F401
         YearlyPlanItemMove,
@@ -359,6 +362,7 @@ def initialize_database() -> None:
     _ensure_meeting_organizer_source_columns()
     _ensure_periodic_occurrence_columns()
     _ensure_periodic_calendar_columns()
+    _ensure_periodic_calendar_occurrence_table()
     _ensure_meeting_event_types_table()
     _ensure_meeting_agenda_items_table()
     _ensure_meeting_templates_table()
@@ -479,6 +483,15 @@ def _ensure_periodic_calendar_columns() -> None:
     )
 
     apply_calendar_periodicity_migration()
+
+
+def _ensure_periodic_calendar_occurrence_table() -> None:
+    """Tabulka výjimek výskytů. Opakované volání nepřidává řádky."""
+    from moduly.periodicke_cinnosti.modely.periodic_calendar_occurrence import (
+        PeriodicCalendarOccurrence,
+    )
+
+    PeriodicCalendarOccurrence.__table__.create(bind=_db_engine(), checkfirst=True)
 
 
 def _ensure_periodic_occurrence_columns() -> None:

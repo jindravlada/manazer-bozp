@@ -26,6 +26,9 @@ class YearlyPlanRow:
     slot_year: int | None = None
     slot_month: int | None = None
     is_recurring: bool = False
+    calendar_managed: bool = False
+    display_year: int | None = None
+    display_month: int | None = None
 
     @property
     def is_manual(self) -> bool:

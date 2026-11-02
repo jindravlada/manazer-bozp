@@ -70,6 +70,9 @@ DISPLAY_VIA_MEETING = STATUS_VIA_MEETING
 DISPLAY_DONE = "done"
 DISPLAY_CANCELLED = STATUS_CANCELLED
 DISPLAY_REST = "rest"
+# Výskyty periodické kalendářní řady (RP-03). Ruční položky tyto stavy nepoužívají.
+DISPLAY_TO_PLAN = "to_plan"
+DISPLAY_WILL_NOT_PERFORM = "will_not_perform"
 
 DISPLAY_STATUS_LABELS = {
     DISPLAY_PLANNED: "Naplánováno",
@@ -78,6 +81,8 @@ DISPLAY_STATUS_LABELS = {
     DISPLAY_DONE: "Splněno",
     DISPLAY_CANCELLED: "Zrušeno",
     DISPLAY_REST: "Rest",
+    DISPLAY_TO_PLAN: "K naplánování",
+    DISPLAY_WILL_NOT_PERFORM: "Nevykoná se",
 }
 
 SOURCE_MODULE_YEARLY_PLAN = "yearly_plan"
@@ -111,7 +116,10 @@ ACTION_EDIT = "Upravit"
 ACTION_CREATE_TASK = "Vytvořit úkol"
 ACTION_CREATE_MEETING = "Vytvořit událost"
 ACTION_MOVE = "Přesunout"
+ACTION_SKIP = "Nevykoná se"
+ACTION_RESTORE_PLANNING = "Vrátit do plánování"
 ACTION_CANCEL = "Zrušit"
+SKIP_DIALOG_TITLE = "Nevykoná se"
 ACTION_MARK_MONTH_PROCESSED = "Měsíc zpracován"
 
 DIALOG_TITLE_NEW = "Nová položka Ročního plánu"

@@ -47,6 +47,9 @@ _ROLE_IS_MONTH_HEADER = Qt.ItemDataRole.UserRole + 7
 _ROLE_HEADER_MONTH = Qt.ItemDataRole.UserRole + 8
 _ROLE_HEADER_NAME = Qt.ItemDataRole.UserRole + 9
 _ROLE_HEADER_SUMMARY = Qt.ItemDataRole.UserRole + 10
+_ROLE_CALENDAR_MANAGED = Qt.ItemDataRole.UserRole + 11
+_ROLE_DISPLAY_YEAR = Qt.ItemDataRole.UserRole + 12
+_ROLE_DISPLAY_MONTH = Qt.ItemDataRole.UserRole + 13
 
 _HEADER_NAME_GAP = "   "
 
@@ -280,6 +283,33 @@ class YearlyPlanTable(QTableWidget):
         except (TypeError, ValueError):
             return None
 
+    def selected_is_calendar_occurrence(self) -> bool:
+        item = self._selected_id_item()
+        if item is None or item.data(_ROLE_IS_MONTH_HEADER):
+            return False
+        return bool(item.data(_ROLE_CALENDAR_MANAGED))
+
+    def selected_display_status(self) -> str | None:
+        rows = self.selectionModel().selectedRows()
+        if len(rows) != 1:
+            return None
+        item = self.item(rows[0].row(), COL_STATUS)
+        if item is None:
+            return None
+        status = item.data(_ROLE_DISPLAY_STATUS)
+        return str(status) if status else None
+
+    def selected_display_year_month(self) -> tuple[int, int] | None:
+        item = self._selected_id_item()
+        if item is None or item.data(_ROLE_IS_MONTH_HEADER):
+            return None
+        year = item.data(_ROLE_DISPLAY_YEAR)
+        month = item.data(_ROLE_DISPLAY_MONTH)
+        try:
+            return int(year), int(month)
+        except (TypeError, ValueError):
+            return None
+
     def load_year_sections(self, sections: list[YearlyPlanMonthSection]) -> None:
         palette = self.palette()
         base_brush = QBrush(palette.color(QPalette.ColorRole.Base))
@@ -372,6 +402,17 @@ class YearlyPlanTable(QTableWidget):
                 + (plan_row.slot_month or 0)
             )
             id_text = str(plan_row.plan_item_id)
+        elif plan_row.calendar_managed:
+            stable_id = (
+                1_000_000_000
+                + (plan_row.activity_id or 0) * 100_000
+                + (plan_row.slot_year or 0) * 12
+                + (plan_row.slot_month or 0)
+            )
+            id_text = f"P{plan_row.activity_id or 0}"
+        elif plan_row.occurrence_id is not None:
+            stable_id = 2_000_000_000 + int(plan_row.occurrence_id)
+            id_text = f"P{plan_row.activity_id or 0}"
         else:
             stable_id = 1_000_000_000 + (plan_row.activity_id or 0)
             id_text = f"P{plan_row.activity_id or 0}"
@@ -387,6 +428,9 @@ class YearlyPlanTable(QTableWidget):
         id_item.setData(_ROLE_SLOT_YEAR, plan_row.slot_year)
         id_item.setData(_ROLE_SLOT_MONTH, plan_row.slot_month)
         id_item.setData(_ROLE_IS_RECURRING, bool(plan_row.is_recurring))
+        id_item.setData(_ROLE_CALENDAR_MANAGED, bool(plan_row.calendar_managed))
+        id_item.setData(_ROLE_DISPLAY_YEAR, plan_row.display_year)
+        id_item.setData(_ROLE_DISPLAY_MONTH, plan_row.display_month)
         id_item.setData(_ROLE_IS_MONTH_HEADER, False)
         id_item.setBackground(brush)
         self.setItem(row_index, COL_ID, id_item)

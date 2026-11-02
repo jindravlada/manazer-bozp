@@ -73,6 +73,35 @@ CALENDAR_MONTH_NAMES = (
     "listopad",
     "prosinec",
 )
+CALENDAR_MONTH_NAMES_FROM = (
+    "ledna",
+    "února",
+    "března",
+    "dubna",
+    "května",
+    "června",
+    "července",
+    "srpna",
+    "září",
+    "října",
+    "listopadu",
+    "prosince",
+)
+
+# RP-03: stav jednoho výskytu. Výchozí měsíc v řadě se neukládá.
+CALENDAR_STATUS_TO_PLAN = "to_plan"
+CALENDAR_STATUS_WILL_NOT_PERFORM = "will_not_perform"
+CALENDAR_OCCURRENCE_STATUSES = (
+    CALENDAR_STATUS_TO_PLAN,
+    CALENDAR_STATUS_WILL_NOT_PERFORM,
+)
+CALENDAR_SKIP_REASON_REQUIRED = (
+    "Vyplňte odůvodnění, proč se výskyt nevykoná."
+)
+CALENDAR_NOT_READY_MESSAGE = (
+    "U této činnosti není nastavená kalendářní periodicita."
+)
+CALENDAR_SLOT_NOT_ON_SERIES = "Tento měsíc není v kalendářní řadě činnosti."
 
 PLACE_KIND_LABELS = {
     PLACE_KIND_WORKPLACE: "Provoz / pracoviště",

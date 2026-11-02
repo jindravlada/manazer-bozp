@@ -6,10 +6,18 @@ import calendar
 from datetime import date, datetime
 
 from core.shared.working_days import first_working_day
+from moduly.periodicke_cinnosti.constants import (
+    CALENDAR_STATUS_WILL_NOT_PERFORM,
+)
 from moduly.periodicke_cinnosti.sluzby.periodic_activity_service import (
     add_calendar_months,
     add_period,
     periodic_activity_service,
+)
+from moduly.periodicke_cinnosti.sluzby.periodic_calendar_occurrence_service import (
+    calendar_is_ready,
+    moved_from_label,
+    views_for_display_month,
 )
 from moduly.rocni_plan.constants import (
     DEFAULT_DUE_KIND,
@@ -20,8 +28,10 @@ from moduly.rocni_plan.constants import (
     DISPLAY_DONE,
     DISPLAY_PLANNED,
     DISPLAY_REST,
+    DISPLAY_TO_PLAN,
     DISPLAY_VIA_MEETING,
     DISPLAY_VIA_TASK,
+    DISPLAY_WILL_NOT_PERFORM,
     DUE_KIND_DAY,
     DUE_KIND_FIRST_WORKING_DAY,
     DUE_KIND_NONE,
@@ -330,7 +340,13 @@ def list_periodic_rows_for_month(
     *,
     today: date | None = None,
 ) -> list[YearlyPlanRow]:
-    """Projekce aktivních Periodických činností do měsíce (bez kopírování do DB)."""
+    """Projekce aktivních Periodických činností do měsíce.
+
+    Historie provedení zůstává ve svém původním měsíci jako Splněno.
+    Činnost s nastavenou kalendářní řadou se dál promítá z RP-02 a z uložených
+    výjimek. Měsíc, ve kterém už je provedení, se znovu neotevírá.
+    Činnost bez řady nebo s ručním nastavením dál používá dosavadní next_due_date.
+    """
     today = today or date.today()
     rows: list[YearlyPlanRow] = []
     seen: set[tuple[int, date]] = set()
@@ -338,11 +354,13 @@ def list_periodic_rows_for_month(
     for activity in periodic_activity_service.get_all(active_only=True):
         title = (activity.title or "").strip() or f"Periodická činnost #{activity.id}"
         note = (activity.note or "").strip()
+        performed_months: set[tuple[int, int]] = set()
 
         for occurrence in periodic_activity_service.list_occurrences(activity.id):
             planned = occurrence.planned_due_date
             if planned is None:
                 continue
+            performed_months.add((planned.year, planned.month))
             if planned.year != year or planned.month != month:
                 continue
             key = (activity.id, planned)
@@ -362,6 +380,19 @@ def list_periodic_rows_for_month(
                     occurrence_id=occurrence.id,
                 )
             )
+
+        if calendar_is_ready(activity):
+            rows.extend(
+                _calendar_rows_for_activity(
+                    activity,
+                    year=year,
+                    month=month,
+                    title=title,
+                    note=note,
+                    performed_months=performed_months,
+                )
+            )
+            continue
 
         if activity.next_due_date is None:
             continue
@@ -392,6 +423,52 @@ def list_periodic_rows_for_month(
                 )
             )
 
+    return rows
+
+
+def _calendar_rows_for_activity(
+    activity,
+    *,
+    year: int,
+    month: int,
+    title: str,
+    note: str,
+    performed_months: set[tuple[int, int]],
+) -> list[YearlyPlanRow]:
+    rows: list[YearlyPlanRow] = []
+    for view in views_for_display_month(
+        activity,
+        year,
+        month,
+        performed_months,
+    ):
+        row_title = title
+        if (view.original_year, view.original_month) != (
+            view.display_year,
+            view.display_month,
+        ):
+            row_title = f"{title} ({moved_from_label(view.original_year, view.original_month)})"
+        row_note = note
+        status = DISPLAY_TO_PLAN
+        if view.status == CALENDAR_STATUS_WILL_NOT_PERFORM:
+            status = DISPLAY_WILL_NOT_PERFORM
+            row_note = view.skip_reason or note
+        rows.append(
+            YearlyPlanRow(
+                kind=ROW_KIND_PERIODIC,
+                title=row_title,
+                note=row_note,
+                display_status=status,
+                link_text="—",
+                source_label=SOURCE_LABEL_PERIODIC,
+                activity_id=activity.id,
+                slot_year=view.original_year,
+                slot_month=view.original_month,
+                calendar_managed=True,
+                display_year=view.display_year,
+                display_month=view.display_month,
+            )
+        )
     return rows
 
 
