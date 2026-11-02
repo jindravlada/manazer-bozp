@@ -447,17 +447,20 @@ def _calendar_rows_for_activity(
         ):
             row_title = f"{title} ({moved_from_label(view.original_year, view.original_month)})"
         row_note = note
-        status = DISPLAY_TO_PLAN
         if view.status == CALENDAR_STATUS_WILL_NOT_PERFORM:
             status = DISPLAY_WILL_NOT_PERFORM
             row_note = view.skip_reason or note
+        elif view.task_id is not None or view.meeting_id is not None:
+            status = DISPLAY_PLANNED
+        else:
+            status = DISPLAY_TO_PLAN
         rows.append(
             YearlyPlanRow(
                 kind=ROW_KIND_PERIODIC,
                 title=row_title,
                 note=row_note,
                 display_status=status,
-                link_text="—",
+                link_text=_link_text(view.task_id, view.meeting_id),
                 source_label=SOURCE_LABEL_PERIODIC,
                 activity_id=activity.id,
                 slot_year=view.original_year,
@@ -465,6 +468,8 @@ def _calendar_rows_for_activity(
                 calendar_managed=True,
                 display_year=view.display_year,
                 display_month=view.display_month,
+                task_id=view.task_id,
+                meeting_id=view.meeting_id,
             )
         )
     return rows

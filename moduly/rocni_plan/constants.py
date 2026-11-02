@@ -115,6 +115,8 @@ ACTION_NEW = "Nová položka"
 ACTION_EDIT = "Upravit"
 ACTION_CREATE_TASK = "Vytvořit úkol"
 ACTION_CREATE_MEETING = "Vytvořit událost"
+ACTION_OPEN_TASK = "Otevřít úkol"
+ACTION_OPEN_MEETING = "Otevřít událost"
 ACTION_MOVE = "Přesunout"
 ACTION_SKIP = "Nevykoná se"
 ACTION_RESTORE_PLANNING = "Vrátit do plánování"
@@ -139,6 +141,12 @@ MARK_MONTH_PROCESSED_CONFIRM = (
     "co budete dělat. Stavy jednotlivých položek se nemění."
 )
 ALREADY_LINKED_MESSAGE = "Položka už má vazbu na Úkol nebo Událost."
+MISSING_LINKED_TASK_MESSAGE = (
+    "Navázaný úkol už v Agendě není. Nový úkol se sám nevytvoří."
+)
+MISSING_LINKED_MEETING_MESSAGE = (
+    "Navázaná událost už v Agendě není. Nová událost se sama nevytvoří."
+)
 CANCELLED_ACTION_MESSAGE = "Položku ve stavu Nevykoná se nelze upravit touto akcí."
 SKIP_REASON_REQUIRED_MESSAGE = "Vyplňte odůvodnění, proč se položka nevykoná."
 MONTH_ALREADY_PROCESSED_MESSAGE = "Tento měsíc už je označen jako zpracovaný."

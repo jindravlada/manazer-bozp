@@ -36,6 +36,12 @@ class CalendarOccurrenceError(ValueError):
     """Výskyt nelze přesunout nebo označit."""
 
 
+ALREADY_LINKED_MESSAGE = "Výskyt už má vazbu na úkol nebo událost."
+SKIPPED_LINK_MESSAGE = (
+    "Výskyt ve stavu Nevykoná se nelze navázat na úkol nebo událost."
+)
+
+
 @dataclass(frozen=True)
 class CalendarOccurrenceView:
     original_year: int
@@ -44,6 +50,8 @@ class CalendarOccurrenceView:
     display_month: int
     status: str
     skip_reason: str
+    task_id: int | None = None
+    meeting_id: int | None = None
 
 
 def calendar_is_ready(activity) -> bool:
@@ -192,6 +200,91 @@ def skip_occurrence(
         return row
 
 
+def get_occurrence(
+    activity_id: int,
+    original_year: int,
+    original_month: int,
+) -> PeriodicCalendarOccurrence | None:
+    with get_session() as session:
+        return _locked_slot(session, activity_id, original_year, original_month)
+
+
+def link_task(
+    activity_id: int,
+    *,
+    original_year: int,
+    original_month: int,
+    task_id: int,
+) -> PeriodicCalendarOccurrence:
+    """Zapíše vazbu na už uložený úkol. Přesun ani termín úkolu nemění."""
+    return _link(
+        activity_id,
+        original_year=original_year,
+        original_month=original_month,
+        task_id=int(task_id),
+        meeting_id=None,
+    )
+
+
+def link_meeting(
+    activity_id: int,
+    *,
+    original_year: int,
+    original_month: int,
+    meeting_id: int,
+) -> PeriodicCalendarOccurrence:
+    """Zapíše vazbu na už uloženou událost. Přesun ani termín události nemění."""
+    return _link(
+        activity_id,
+        original_year=original_year,
+        original_month=original_month,
+        task_id=None,
+        meeting_id=int(meeting_id),
+    )
+
+
+def _link(
+    activity_id: int,
+    *,
+    original_year: int,
+    original_month: int,
+    task_id: int | None,
+    meeting_id: int | None,
+) -> PeriodicCalendarOccurrence:
+    if task_id is None and meeting_id is None:
+        raise CalendarOccurrenceError("Chybí uložený úkol nebo událost.")
+    if task_id is not None and meeting_id is not None:
+        raise CalendarOccurrenceError(ALREADY_LINKED_MESSAGE)
+    activity = _require_activity(activity_id)
+    _require_slot(activity, original_year, original_month)
+    with get_session() as session:
+        row = _locked_slot(session, activity_id, original_year, original_month)
+        if row is not None and (row.status or "") == CALENDAR_STATUS_WILL_NOT_PERFORM:
+            raise CalendarOccurrenceError(SKIPPED_LINK_MESSAGE)
+        if row is not None and (row.task_id is not None or row.meeting_id is not None):
+            raise CalendarOccurrenceError(ALREADY_LINKED_MESSAGE)
+        if row is None:
+            row = PeriodicCalendarOccurrence(
+                activity_id=activity_id,
+                original_year=original_year,
+                original_month=original_month,
+                display_year=original_year,
+                display_month=original_month,
+                status=CALENDAR_STATUS_TO_PLAN,
+                skip_reason="",
+                task_id=task_id,
+                meeting_id=meeting_id,
+            )
+            session.add(row)
+        else:
+            row.task_id = task_id
+            row.meeting_id = meeting_id
+            row.updated_at = datetime.now()
+        session.commit()
+        session.refresh(row)
+        return row
+
+
 def restore_to_planning(
     activity_id: int,
     *,
@@ -241,6 +334,8 @@ def _view(
         display_month=item.display_month,
         status=status,
         skip_reason=(item.skip_reason or "").strip(),
+        task_id=item.task_id,
+        meeting_id=item.meeting_id,
     )
 
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime, time
 
 from PySide6.QtCore import QTimer, Qt
 from PySide6.QtGui import QHideEvent, QShowEvent
@@ -24,6 +24,8 @@ from moduly.rocni_plan.constants import (
     ACTION_CANCEL,
     ACTION_CREATE_MEETING,
     ACTION_CREATE_TASK,
+    ACTION_OPEN_MEETING,
+    ACTION_OPEN_TASK,
     ACTION_EDIT,
     ACTION_MARK_MONTH_PROCESSED,
     ACTION_MOVE,
@@ -37,6 +39,8 @@ from moduly.rocni_plan.constants import (
     DISPLAY_TO_PLAN,
     DISPLAY_WILL_NOT_PERFORM,
     ITEM_NOT_FOUND_MESSAGE,
+    MISSING_LINKED_MEETING_MESSAGE,
+    MISSING_LINKED_TASK_MESSAGE,
     MARK_MONTH_PROCESSED_CONFIRM,
     MONTH_ALREADY_PROCESSED_MESSAGE,
     SOURCE_MODULE_YEARLY_PLAN,
@@ -46,11 +50,19 @@ from moduly.rocni_plan.constants import (
     YEAR_SPIN_MAX,
     YEAR_SPIN_MIN,
 )
+from moduly.periodicke_cinnosti.constants import (
+    PLACE_KIND_ORGANIZATION,
+    PLACE_KIND_OTHER,
+    PLACE_KIND_WORKPLACE,
+    PLACE_KIND_LABELS,
+)
 from moduly.periodicke_cinnosti.sluzby.periodic_activity_service import (
     periodic_activity_service,
 )
 from moduly.periodicke_cinnosti.sluzby.periodic_calendar_occurrence_service import (
     CalendarOccurrenceError,
+    link_meeting as link_calendar_meeting,
+    link_task as link_calendar_task,
     move_occurrence as move_calendar_occurrence,
     restore_to_planning,
     skip_occurrence,
@@ -69,12 +81,9 @@ from moduly.rocni_plan.ui.yearly_plan_table import (
     YearlyPlanTable,
 )
 from moduly.schuzky.constants import LIST_WINDOW_TITLE as MEETINGS_TITLE
-from moduly.schuzky.sluzby.meeting_agenda_item_service import meeting_agenda_item_service
-from moduly.schuzky.sluzby.meeting_service import (
-    MeetingValidationError,
-    meeting_service,
-)
-from moduly.schuzky.ui.meeting_dialog import MeetingDialog
+from moduly.schuzky.sluzby.meeting_service import meeting_service
+from moduly.schuzky.ui.meeting_dialog import MeetingDialog, editor_persisted
+from moduly.ukoly.sluzby.task_service import task_service
 from moduly.ukoly.ui.task_dialog import TaskDialog
 
 
@@ -318,6 +327,8 @@ class YearlyPlanTab(QWidget):
         return task_id is not None or meeting_id is not None
 
     def _refresh_action_buttons(self, *_args) -> None:
+        self.create_task_btn.setText(ACTION_CREATE_TASK)
+        self.create_meeting_btn.setText(ACTION_CREATE_MEETING)
         single = self._selected_row_count() == 1
         is_header = bool(single and self.table.selected_is_month_header())
         is_periodic = bool(single and self.table.selected_is_periodic())
@@ -363,16 +374,16 @@ class YearlyPlanTab(QWidget):
         if self.table.selected_is_month_header():
             return
         menu = QMenu(self)
-        for label, handler, button in (
-            (ACTION_EDIT, self.edit_selected, self.edit_btn),
-            (ACTION_CREATE_TASK, self.create_task_for_selected, self.create_task_btn),
-            (ACTION_CREATE_MEETING, self.create_meeting_for_selected, self.create_meeting_btn),
-            (ACTION_MOVE, self.move_selected, self.move_btn),
-            (ACTION_SKIP, self.skip_selected, self.skip_btn),
-            (ACTION_RESTORE_PLANNING, self.restore_selected, self.restore_plan_btn),
-            (ACTION_CANCEL, self.cancel_selected, self.cancel_btn),
+        for handler, button in (
+            (self.edit_selected, self.edit_btn),
+            (self.create_task_for_selected, self.create_task_btn),
+            (self.create_meeting_for_selected, self.create_meeting_btn),
+            (self.move_selected, self.move_btn),
+            (self.skip_selected, self.skip_btn),
+            (self.restore_selected, self.restore_plan_btn),
+            (self.cancel_selected, self.cancel_btn),
         ):
-            action = menu.addAction(label, handler)
+            action = menu.addAction(button.text(), handler)
             action.setEnabled(button.isEnabled())
         menu.exec(self.table.viewport().mapToGlobal(position))
 
@@ -425,18 +436,32 @@ class YearlyPlanTab(QWidget):
         self._notify_changed()
 
     def _refresh_periodic_actions(self) -> None:
-        """Přesun a Nevykoná se jen u výskytu kalendářní řady. Úkol a událost zatím ne."""
+        """Kalendářní výskyt: vytvořit, nebo otevřít už navázaný záznam."""
         managed = self.table.selected_is_calendar_occurrence()
         status = self.table.selected_display_status()
+        task_id = self.table.selected_linked_task_id()
+        meeting_id = self.table.selected_linked_meeting_id()
         self.edit_btn.setEnabled(False)
-        self.create_task_btn.setEnabled(False)
-        self.create_meeting_btn.setEnabled(False)
         self.cancel_btn.setEnabled(False)
         self.move_btn.setEnabled(managed)
         self.skip_btn.setEnabled(managed and status == DISPLAY_TO_PLAN)
         self.restore_plan_btn.setEnabled(
             managed and status == DISPLAY_WILL_NOT_PERFORM
         )
+        can_create = (
+            managed
+            and status == DISPLAY_TO_PLAN
+            and task_id is None
+            and meeting_id is None
+        )
+        self.create_task_btn.setEnabled(can_create or (managed and task_id is not None))
+        self.create_meeting_btn.setEnabled(
+            can_create or (managed and meeting_id is not None)
+        )
+        if task_id is not None:
+            self.create_task_btn.setText(ACTION_OPEN_TASK)
+        if meeting_id is not None:
+            self.create_meeting_btn.setText(ACTION_OPEN_MEETING)
 
     def move_selected(self) -> None:
         if not self.move_btn.isEnabled():
@@ -642,6 +667,9 @@ class YearlyPlanTab(QWidget):
     def create_task_for_selected(self) -> None:
         if not self.create_task_btn.isEnabled():
             return
+        if self.table.selected_is_calendar_occurrence():
+            self._create_or_open_calendar_task()
+            return
         item = self._selected_item()
         if item is None:
             QMessageBox.warning(self, TAB_YEARLY_PLAN, ITEM_NOT_FOUND_MESSAGE)
@@ -660,7 +688,6 @@ class YearlyPlanTab(QWidget):
             create_kwargs={
                 "source_module": SOURCE_MODULE_YEARLY_PLAN,
                 "source_record_id": item.id,
-                "requires_verification": False,
             },
         )
         dialog.title_edit.setPlainText(item.title or "")
@@ -695,6 +722,9 @@ class YearlyPlanTab(QWidget):
     def create_meeting_for_selected(self) -> None:
         if not self.create_meeting_btn.isEnabled():
             return
+        if self.table.selected_is_calendar_occurrence():
+            self._create_or_open_calendar_meeting()
+            return
         item = self._selected_item()
         if item is None:
             QMessageBox.warning(self, TAB_YEARLY_PLAN, ITEM_NOT_FOUND_MESSAGE)
@@ -708,20 +738,14 @@ class YearlyPlanTab(QWidget):
             QMessageBox.warning(self, ACTION_CREATE_MEETING, ALREADY_LINKED_MESSAGE)
             return
 
-        from moduly.schuzky.ui.meeting_dialog import editor_persisted
-
         dialog = MeetingDialog(self)
         dialog.title_edit.setText(item.title or "")
-        finished = bool(exec_maximized(dialog))
-        saved_in_dialog = editor_persisted(dialog)
-        if not finished and not saved_in_dialog:
+        dialog._editor.capture_baseline()
+        exec_maximized(dialog)
+        meeting = dialog.meeting if editor_persisted(dialog) else None
+        if meeting is None:
             return
         try:
-            if saved_in_dialog:
-                meeting = dialog.meeting
-            else:
-                meeting = meeting_service.create_meeting(**dialog.get_data())
-                meeting_agenda_item_service.save_items(meeting.id, dialog.get_agenda_items())
             if self.table.selected_is_recurring():
                 slot = self._selected_slot()
                 if slot is None:
@@ -734,12 +758,171 @@ class YearlyPlanTab(QWidget):
                 )
             else:
                 yearly_plan_service.link_meeting(item.id, meeting.id)
-        except (MeetingValidationError, YearlyPlanValidationError) as error:
+        except YearlyPlanValidationError as error:
             QMessageBox.warning(self, MEETINGS_TITLE, str(error))
             return
         self.refresh()
         self._notify_changed()
 
+    def _create_or_open_calendar_task(self) -> None:
+        activity_id, slot = self._calendar_target()
+        if activity_id is None or slot is None:
+            return
+        task_id = self.table.selected_linked_task_id()
+        if task_id is not None:
+            self._open_linked_task(task_id)
+            return
+        if self.table.selected_display_status() != DISPLAY_TO_PLAN:
+            return
+        activity = periodic_activity_service.get_by_id(activity_id)
+        if activity is None:
+            QMessageBox.warning(self, TAB_YEARLY_PLAN, ITEM_NOT_FOUND_MESSAGE)
+            self.refresh()
+            return
+        dialog = TaskDialog(
+            self,
+            create_kwargs={
+                "source_module": SOURCE_MODULE_YEARLY_PLAN,
+                "source_record_id": activity.id,
+            },
+        )
+        self._prefill_task_from_activity(dialog, activity)
+        dialog.exec()
+        task = dialog.task
+        if task is None:
+            return
+        try:
+            link_calendar_task(
+                activity.id,
+                original_year=slot[0],
+                original_month=slot[1],
+                task_id=task.id,
+            )
+        except CalendarOccurrenceError as error:
+            QMessageBox.warning(self, ACTION_CREATE_TASK, str(error))
+            return
+        self.refresh()
+        self._notify_changed()
+
+    def _create_or_open_calendar_meeting(self) -> None:
+        activity_id, slot = self._calendar_target()
+        if activity_id is None or slot is None:
+            return
+        meeting_id = self.table.selected_linked_meeting_id()
+        if meeting_id is not None:
+            self._open_linked_meeting(meeting_id)
+            return
+        if self.table.selected_display_status() != DISPLAY_TO_PLAN:
+            return
+        activity = periodic_activity_service.get_by_id(activity_id)
+        if activity is None:
+            QMessageBox.warning(self, TAB_YEARLY_PLAN, ITEM_NOT_FOUND_MESSAGE)
+            self.refresh()
+            return
+        dialog = MeetingDialog(self)
+        self._prefill_meeting_from_activity(dialog, activity)
+        exec_maximized(dialog)
+        meeting = dialog.meeting if editor_persisted(dialog) else None
+        if meeting is None:
+            return
+        try:
+            link_calendar_meeting(
+                activity.id,
+                original_year=slot[0],
+                original_month=slot[1],
+                meeting_id=meeting.id,
+            )
+        except CalendarOccurrenceError as error:
+            QMessageBox.warning(self, ACTION_CREATE_MEETING, str(error))
+            return
+        self.refresh()
+        self._notify_changed()
+
+    def _calendar_target(self) -> tuple[int | None, tuple[int, int] | None]:
+        activity_id = self.table.selected_activity_id()
+        slot = self.table.selected_slot_year_month()
+        if activity_id is None or slot is None:
+            QMessageBox.warning(self, TAB_YEARLY_PLAN, ITEM_NOT_FOUND_MESSAGE)
+            self.refresh()
+            return None, None
+        return activity_id, slot
+
+    def _offer_date(self) -> date:
+        shown = self.table.selected_display_year_month()
+        if shown is None:
+            slot = self.table.selected_slot_year_month()
+            if slot is None:
+                return date.today().replace(day=1)
+            return date(slot[0], slot[1], 1)
+        return date(shown[0], shown[1], 1)
+
+    def _prefill_task_from_activity(self, dialog: TaskDialog, activity) -> None:
+        dialog.title_edit.setPlainText(activity.title or "")
+        dialog.requires_verification_checkbox.setChecked(False)
+        if activity.responsible_person_id:
+            dialog.person_selector.set_person_id(activity.responsible_person_id)
+        if (
+            activity.place_kind == PLACE_KIND_WORKPLACE
+            and activity.workplace_id is not None
+        ):
+            dialog.workplace_selector.set_workplace_id(
+                activity.workplace_id,
+                activity.workplace_name or "",
+            )
+        dialog.due_date_edit.set_date_iso(self._offer_date().isoformat())
+        if activity.note:
+            dialog.note_edit.setPlainText(activity.note)
+        dialog._capture_baseline()
+
+    def _prefill_meeting_from_activity(self, dialog: MeetingDialog, activity) -> None:
+        dialog.title_edit.setText(activity.title or "")
+        location = _meeting_location(activity)
+        if location:
+            dialog.location_edit.set_location_text(location)
+        if activity.note:
+            dialog.agenda_edit.setPlainText(activity.note)
+        dialog.starts_at_edit.set_datetime(
+            datetime.combine(self._offer_date(), time(9, 0))
+        )
+        dialog._editor.capture_baseline()
+
+    def _open_linked_task(self, task_id: int) -> None:
+        task = task_service.get_task_by_id(task_id)
+        if task is None:
+            QMessageBox.warning(
+                self,
+                ACTION_OPEN_TASK,
+                MISSING_LINKED_TASK_MESSAGE,
+            )
+            return
+        dialog = TaskDialog(self, task=task)
+        dialog.exec()
+        self.refresh()
+
+    def _open_linked_meeting(self, meeting_id: int) -> None:
+        meeting = meeting_service.get_by_id(meeting_id)
+        if meeting is None:
+            QMessageBox.warning(
+                self,
+                ACTION_OPEN_MEETING,
+                MISSING_LINKED_MEETING_MESSAGE,
+            )
+            return
+        dialog = MeetingDialog(self, meeting=meeting)
+        exec_maximized(dialog)
+        self.refresh()
+
     def _notify_changed(self) -> None:
         if callable(self._on_changed):
             self._on_changed()
+
+
+def _meeting_location(activity) -> str:
+    kind = getattr(activity, "place_kind", "") or ""
+    if kind == PLACE_KIND_WORKPLACE:
+        return (getattr(activity, "workplace_name", None) or "").strip()
+    if kind == PLACE_KIND_OTHER:
+        return (getattr(activity, "place_text", None) or "").strip()
+    if kind == PLACE_KIND_ORGANIZATION:
+        return PLACE_KIND_LABELS[PLACE_KIND_ORGANIZATION]
+    return ""

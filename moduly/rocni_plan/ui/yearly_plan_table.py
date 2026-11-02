@@ -49,6 +49,8 @@ _ROLE_HEADER_SUMMARY = Qt.ItemDataRole.UserRole + 10
 _ROLE_CALENDAR_MANAGED = Qt.ItemDataRole.UserRole + 11
 _ROLE_DISPLAY_YEAR = Qt.ItemDataRole.UserRole + 12
 _ROLE_DISPLAY_MONTH = Qt.ItemDataRole.UserRole + 13
+_ROLE_TASK_ID = Qt.ItemDataRole.UserRole + 14
+_ROLE_MEETING_ID = Qt.ItemDataRole.UserRole + 15
 
 _HEADER_NAME_GAP = "   "
 
@@ -301,6 +303,25 @@ class YearlyPlanTable(QTableWidget):
         status = item.data(_ROLE_DISPLAY_STATUS)
         return str(status) if status else None
 
+    def selected_linked_task_id(self) -> int | None:
+        return self._selected_optional_id(_ROLE_TASK_ID)
+
+    def selected_linked_meeting_id(self) -> int | None:
+        return self._selected_optional_id(_ROLE_MEETING_ID)
+
+    def _selected_optional_id(self, role: Qt.ItemDataRole) -> int | None:
+        item = self._selected_id_item()
+        if item is None or item.data(_ROLE_IS_MONTH_HEADER):
+            return None
+        raw = item.data(role)
+        try:
+            if raw is None:
+                return None
+            value = int(raw)
+        except (TypeError, ValueError):
+            return None
+        return value or None
+
     def selected_display_year_month(self) -> tuple[int, int] | None:
         item = self._selected_id_item()
         if item is None or item.data(_ROLE_IS_MONTH_HEADER):
@@ -433,6 +454,8 @@ class YearlyPlanTable(QTableWidget):
         id_item.setData(_ROLE_CALENDAR_MANAGED, bool(plan_row.calendar_managed))
         id_item.setData(_ROLE_DISPLAY_YEAR, plan_row.display_year)
         id_item.setData(_ROLE_DISPLAY_MONTH, plan_row.display_month)
+        id_item.setData(_ROLE_TASK_ID, plan_row.task_id)
+        id_item.setData(_ROLE_MEETING_ID, plan_row.meeting_id)
         id_item.setData(_ROLE_IS_MONTH_HEADER, False)
         id_item.setBackground(brush)
         self.setItem(row_index, COL_ID, id_item)
