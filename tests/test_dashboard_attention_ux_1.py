@@ -11,6 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from PySide6.QtWidgets import QApplication
+from sqlalchemy import delete
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -27,6 +28,7 @@ with patch.object(Path, "home", return_value=_TMP):
     importlib.reload(session_module)
 
     from core.database.database_initializer import initialize_database
+    from core.database.session import get_session
 
     initialize_database()
 
@@ -45,6 +47,9 @@ with patch.object(Path, "home", return_value=_TMP):
         periodic_activity_service,
     )
     from moduly.rocni_plan.constants import month_planning_attention_title
+    from moduly.rocni_plan.modely.yearly_plan_item import YearlyPlanItem
+    from moduly.rocni_plan.modely.yearly_plan_item_move import YearlyPlanItemMove
+    from moduly.rocni_plan.modely.yearly_plan_occurrence import YearlyPlanOccurrence
     from moduly.rocni_plan.sluzby.yearly_plan_service import yearly_plan_service
 
 
@@ -67,6 +72,11 @@ class DashboardAttentionUx1TestCase(unittest.TestCase):
                 next_from=activity.next_from,
                 place_kind=activity.place_kind,
             )
+        with get_session() as session:
+            session.execute(delete(YearlyPlanOccurrence))
+            session.execute(delete(YearlyPlanItemMove))
+            session.execute(delete(YearlyPlanItem))
+            session.commit()
         for year in range(2025, 2032):
             for month in range(1, 13):
                 yearly_plan_service.month_status_repository.delete_for_month(
@@ -85,10 +95,10 @@ class DashboardAttentionUx1TestCase(unittest.TestCase):
             active=True,
         )
         today = date(2026, 9, 16)
-        self.assertTrue(
+        self.assertFalse(
             any(item.source_id == activity.id for item in get_periodic_reminder_items(today=today))
         )
-        self.assertTrue(
+        self.assertFalse(
             any(
                 item.item_type == ITEM_TYPE_PERIODIC and item.source_id == activity.id
                 for item in get_attention_items(today=today)
@@ -96,7 +106,7 @@ class DashboardAttentionUx1TestCase(unittest.TestCase):
         )
         widget = TodayWidget()
         widget.refresh(today=today)
-        self.assertIn("Periodika souběh", widget.content.text())
+        self.assertNotIn("Periodika souběh", widget.content.text())
         widget.close()
 
     def test_month_plan_in_both_panels_on_first_working_day(self) -> None:

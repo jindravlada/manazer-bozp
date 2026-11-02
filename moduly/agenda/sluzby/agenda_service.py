@@ -170,8 +170,30 @@ def _from_tasks(*, today: date) -> list[AgendaItem]:
     return items
 
 
+def _yearly_plan_meeting_ids() -> set[int]:
+    """Události navázané z Ročního plánu. Databázi nemění."""
+    from sqlalchemy import select
+
+    from core.database.session import open_session
+    from moduly.periodicke_cinnosti.modely.periodic_calendar_occurrence import (
+        PeriodicCalendarOccurrence,
+    )
+    from moduly.rocni_plan.modely.yearly_plan_item import YearlyPlanItem
+    from moduly.rocni_plan.modely.yearly_plan_occurrence import YearlyPlanOccurrence
+
+    linked: set[int] = set()
+    with open_session() as (session, _owns):
+        for model in (YearlyPlanItem, YearlyPlanOccurrence, PeriodicCalendarOccurrence):
+            rows = session.scalars(
+                select(model.meeting_id).where(model.meeting_id.is_not(None))
+            )
+            linked.update(int(value) for value in rows if value is not None)
+    return linked
+
+
 def _from_meetings(*, now: datetime) -> list[AgendaItem]:
     items: list[AgendaItem] = []
+    yearly_plan_meetings = _yearly_plan_meeting_ids()
     for meeting in meeting_service.get_all():
         title = (meeting.title or "").strip() or "Bez názvu"
         base_title = title
@@ -189,7 +211,11 @@ def _from_meetings(*, now: datetime) -> list[AgendaItem]:
                 title=title,
                 person=person,
                 status=status,
-                source=SOURCE_LABEL_MEETING,
+                source=(
+                    "Roční plán"
+                    if int(meeting.id) in yearly_plan_meetings
+                    else SOURCE_LABEL_MEETING
+                ),
                 row_state=_meeting_row_state(meeting, now=now),
                 priority=_normalize_priority(
                     getattr(meeting, "priority", None) or DEFAULT_MEETING_PRIORITY
@@ -220,7 +246,10 @@ def _attention_dedup_key(title: str, due_date: date | None, source: str) -> tupl
 
 def _from_attention_items(*, today: date, existing: list[AgendaItem]) -> list[AgendaItem]:
     """Termínované AttentionItems, které Agenda ještě nemá jako úkol/událost."""
-    from core.dashboard.attention_item import attention_item_is_overdue
+    from core.dashboard.attention_item import (
+        ITEM_TYPE_PERIODIC,
+        attention_item_is_overdue,
+    )
     from core.dashboard.attention_service import get_attention_items
 
     seen_native = {(item.item_type, int(item.source_id)) for item in existing}
@@ -230,6 +259,8 @@ def _from_attention_items(*, today: date, existing: list[AgendaItem]) -> list[Ag
     }
     items: list[AgendaItem] = []
     for attention in get_attention_items(today=today):
+        if attention.item_type == ITEM_TYPE_PERIODIC:
+            continue
         if attention.item_type in NATIVE_ITEM_TYPES:
             continue
         if (attention.item_type, int(attention.source_id)) in seen_native:

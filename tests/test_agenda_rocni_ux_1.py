@@ -114,7 +114,7 @@ class AgendaRocniUx1TestCase(unittest.TestCase):
         widget = TodayWidget()
         widget.refresh(today=today)
         text = widget.content.text()
-        self.assertIn("Zpracovat úkoly měsíce – srpen 2026", text)
+        self.assertIn("Roční plán – srpen 2026: zbývá 1 činnost k naplánování.", text)
         self.assertIn("🔴", text)
         self.assertIn("03.08.2026", text)
         widget.close()
@@ -154,7 +154,7 @@ class AgendaRocniUx1TestCase(unittest.TestCase):
 
         widget = TodayWidget()
         widget.refresh(today=today)
-        self.assertNotIn("Zpracovat úkoly měsíce – srpen 2026", widget.content.text())
+        self.assertNotIn("Roční plán – srpen 2026: zbývá 1 činnost k naplánování.", widget.content.text())
         widget.close()
 
     def test_due_today_month_is_in_pripominky(self) -> None:
@@ -170,7 +170,7 @@ class AgendaRocniUx1TestCase(unittest.TestCase):
         widget = TodayWidget()
         widget.refresh(today=today)
         text = widget.content.text()
-        self.assertIn("Zpracovat úkoly měsíce – srpen 2026", text)
+        self.assertIn("Roční plán – srpen 2026: zbývá 1 činnost k naplánování.", text)
         self.assertIn("🔵", text)
         widget.close()
 

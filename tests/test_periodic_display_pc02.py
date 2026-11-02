@@ -7,7 +7,7 @@ import os
 import unittest
 from datetime import date, datetime
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
@@ -44,7 +44,6 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from core.dashboard.widget_today import TodayWidget
     from core.dashboard.widget_upcoming_tasks import UpcomingTasksWidget
-    from core.windows.main_window import MainWindow
     from moduly.agenda.constants import COL_TITLE, ITEM_TYPE_MEETING, ITEM_TYPE_TASK
     from moduly.agenda.sluzby.agenda_service import agenda_service
     from moduly.agenda.ui.agenda_page import AgendaPage
@@ -115,32 +114,14 @@ class PeriodicDisplayPc02TestCase(unittest.TestCase):
         in_two = self._create(title="Za dva měsíce", due=date(2027, 1, 1))
         in_four = self._create(title="Za čtyři měsíce", due=date(2027, 3, 1))
 
-        self.assertEqual(self._agenda_dates(overdue.id), [date(2026, 10, 5)])
-        self.assertEqual(self._upcoming_dates(overdue.id), [date(2026, 10, 5)])
-        self.assertEqual(self._reminder_dates(overdue.id), [date(2026, 10, 5)])
+        for activity in (overdue, today_item, in_two, in_four):
+            self.assertEqual(self._agenda_dates(activity.id), [])
+            self.assertEqual(self._upcoming_dates(activity.id), [])
+            self.assertEqual(self._reminder_dates(activity.id), [])
 
-        self.assertEqual(self._agenda_dates(today_item.id), [_TODAY])
-        self.assertEqual(self._upcoming_dates(today_item.id), [_TODAY])
-        self.assertEqual(self._reminder_dates(today_item.id), [_TODAY])
-
-        self.assertEqual(self._agenda_dates(in_two.id), [date(2027, 1, 1)])
-        self.assertEqual(self._upcoming_dates(in_two.id), [date(2027, 1, 1)])
-        self.assertEqual(self._reminder_dates(in_two.id), [])
-
-        self.assertEqual(self._agenda_dates(in_four.id), [])
-        self.assertEqual(self._upcoming_dates(in_four.id), [])
-        self.assertEqual(self._reminder_dates(in_four.id), [])
-
-        marks, events = periodic_calendar_marks(2027, 3, today=_TODAY)
-        self.assertEqual(marks[date(2027, 3, 1)], {"future"})
-        self.assertIn("Za čtyři měsíce", "\n".join(events[date(2027, 3, 1)]))
-        self.assertNotIn("overdue", marks[date(2027, 3, 1)])
-
-        today_marks, _ = periodic_calendar_marks(2026, 11, today=_TODAY)
-        self.assertEqual(today_marks[_TODAY], {"today"})
-        self.assertNotIn(date(2026, 10, 5), today_marks)
-        october, _ = periodic_calendar_marks(2026, 10, today=_TODAY)
-        self.assertEqual(october[date(2026, 10, 5)], {"overdue"})
+        self.assertEqual(periodic_calendar_marks(2027, 3, today=_TODAY), ({}, {}))
+        self.assertEqual(periodic_calendar_marks(2026, 11, today=_TODAY), ({}, {}))
+        self.assertEqual(periodic_calendar_marks(2026, 10, today=_TODAY), ({}, {}))
 
     def test_distant_calendar_month_and_single_overdue(self) -> None:
         distant = self._create(
@@ -155,20 +136,10 @@ class PeriodicDisplayPc02TestCase(unittest.TestCase):
         )
         before = periodic_activity_service.list_occurrences(stale.id)
 
-        stale_dates = self._agenda_dates(stale.id)
-        self.assertEqual(
-            [item for item in stale_dates if item < _TODAY],
-            [date(2024, 1, 5)],
-        )
-        self.assertEqual(
-            [item for item in stale_dates if item >= _TODAY],
-            [date(2026, 11, 5), date(2026, 12, 5), date(2027, 1, 5)],
-        )
-        self.assertEqual(stale_dates, sorted(stale_dates))
-        self.assertEqual(len(stale_dates), len(set(stale_dates)))
-        self.assertNotIn(date(2025, 3, 5), stale_dates)
-        self.assertEqual(self._upcoming_dates(stale.id), stale_dates)
-        self.assertEqual(self._reminder_dates(stale.id), [date(2024, 1, 5)])
+        self.assertEqual(self._agenda_dates(stale.id), [])
+        self.assertEqual(self._upcoming_dates(stale.id), [])
+        self.assertEqual(self._reminder_dates(stale.id), [])
+        self.assertEqual(self._agenda_dates(distant.id), [])
 
         plan = [
             row
@@ -180,14 +151,12 @@ class PeriodicDisplayPc02TestCase(unittest.TestCase):
             [(date(2025, 3, 5), DISPLAY_TO_PLAN)],
         )
 
-        marks, _ = periodic_calendar_marks(2030, 6, today=_TODAY)
-        self.assertEqual(marks[date(2030, 6, 15)], {"future"})
-        self.assertNotIn(date(2030, 6, 15), self._agenda_dates(distant.id))
+        self.assertEqual(periodic_calendar_marks(2030, 6, today=_TODAY), ({}, {}))
         self.assertEqual(periodic_activity_service.list_occurrences(stale.id), before)
 
         panel = CalendarPlaceholderWidget()
         panel.calendar.setCurrentPage(2030, 6)
-        self.assertIn("future", panel.calendar._task_dates.get(date(2030, 6, 15), set()))
+        self.assertNotIn(date(2030, 6, 15), panel.calendar._task_dates)
         panel.close()
 
     def test_repeated_performance_and_completed_occurrence(self) -> None:
@@ -206,20 +175,10 @@ class PeriodicDisplayPc02TestCase(unittest.TestCase):
         self.assertEqual(stored.next_due_date, date(2026, 12, 5))
         self.assertEqual(len(periodic_activity_service.list_occurrences(activity.id)), 3)
 
-        self.assertEqual(
-            self._agenda_dates(activity.id),
-            [date(2026, 12, 5), date(2027, 1, 5)],
-        )
-        self.assertNotIn(date(2026, 11, 5), self._agenda_dates(activity.id))
-        self.assertEqual(self._agenda_dates(activity.id).count(date(2026, 12, 5)), 1)
+        self.assertEqual(self._agenda_dates(activity.id), [])
         self.assertEqual(self._reminder_dates(activity.id), [])
-
-        november, _ = periodic_calendar_marks(2026, 11, today=_TODAY)
-        self.assertEqual(november[date(2026, 11, 5)], {"done"})
-        self.assertNotIn("overdue", november[date(2026, 11, 5)])
-        self.assertNotIn("future", november[date(2026, 11, 5)])
-        december, _ = periodic_calendar_marks(2026, 12, today=_TODAY)
-        self.assertEqual(december[date(2026, 12, 5)], {"future"})
+        self.assertEqual(periodic_calendar_marks(2026, 11, today=_TODAY), ({}, {}))
+        self.assertEqual(periodic_calendar_marks(2026, 12, today=_TODAY), ({}, {}))
 
     def test_inactive_is_hidden(self) -> None:
         activity = self._create(title="Neaktivní", due=_TODAY, active=False)
@@ -244,43 +203,29 @@ class PeriodicDisplayPc02TestCase(unittest.TestCase):
         pairs = {(item.item_type, item.source_id) for item in items}
         self.assertIn((ITEM_TYPE_TASK, task.id), pairs)
         self.assertIn((ITEM_TYPE_MEETING, meeting.id), pairs)
-        self.assertIn((ITEM_TYPE_PERIODIC, activity.id), pairs)
+        self.assertNotIn((ITEM_TYPE_PERIODIC, activity.id), pairs)
 
-        opened: list = []
-        page = AgendaPage(open_attention_callback=opened.append)
+        page = AgendaPage()
         self.assertEqual(set(page.type_checks), {ITEM_TYPE_TASK, ITEM_TYPE_MEETING})
         page.refresh()
-        selected = False
         for row in range(page.table.rowCount()):
             payload = page.table.item(row, COL_TITLE).data(Qt.ItemDataRole.UserRole)
-            if (
+            self.assertFalse(
                 payload is not None
                 and payload.item_type == ITEM_TYPE_PERIODIC
                 and payload.source_id == activity.id
-            ):
-                page.table.selectRow(row)
-                selected = True
-                break
-        self.assertTrue(selected)
-        page.edit_selected()
-        self.assertEqual(opened[-1].source_id, activity.id)
-        self.assertEqual(opened[-1].item_type, ITEM_TYPE_PERIODIC)
-
-        window = MagicMock()
-        MainWindow._open_attention_item(window, opened[-1])
-        window._open_periodic_activity_by_id.assert_called_once_with(activity.id)
+            )
         page.close()
 
-        upcoming_opened: list = []
-        widget = UpcomingTasksWidget(open_attention_callback=upcoming_opened.append)
+        widget = UpcomingTasksWidget()
         widget.refresh()
         for row in range(widget.table.rowCount()):
             payload = widget.table.item(row, 0).data(Qt.ItemDataRole.UserRole)
-            if payload is not None and payload.source_id == activity.id:
-                widget.table.selectRow(row)
-                break
-        widget.open_button.click()
-        self.assertEqual(upcoming_opened[-1].source_id, activity.id)
+            self.assertFalse(
+                payload is not None
+                and getattr(payload, "item_type", None) == ITEM_TYPE_PERIODIC
+                and payload.source_id == activity.id
+            )
         widget.close()
 
     def test_burning_panel_keeps_reminder_window(self) -> None:
@@ -292,9 +237,8 @@ class PeriodicDisplayPc02TestCase(unittest.TestCase):
         widget = TodayWidget()
         widget.refresh(today=_TODAY)
         text = widget.content.text()
-        self.assertIn("Hoří po termínu", text)
-        self.assertIn("05.10.2026", text)
-        self.assertIn("Hoří dnes", text)
+        self.assertNotIn("Hoří po termínu", text)
+        self.assertNotIn("Hoří dnes", text)
         self.assertNotIn("Nehoří za dva měsíce", text)
         self.assertNotIn("Nehoří za čtyři měsíce", text)
         widget.close()

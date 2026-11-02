@@ -83,7 +83,7 @@ class AgendaAnnualPlanReminder1TestCase(unittest.TestCase):
         self.assertEqual(self._titles(date(2026, 8, 2)), [])
         widget = TodayWidget()
         widget.refresh(today=date(2026, 8, 2))
-        self.assertNotIn("Zpracovat úkoly měsíce – srpen 2026", widget.content.text())
+        self.assertNotIn("Roční plán – srpen 2026: zbývá 1 činnost k naplánování.", widget.content.text())
         widget.close()
 
     def test_on_first_working_day_in_reminders_and_upcoming(self) -> None:
@@ -137,7 +137,7 @@ class AgendaAnnualPlanReminder1TestCase(unittest.TestCase):
         )
         widget = TodayWidget()
         widget.refresh(today=today)
-        self.assertNotIn("Zpracovat úkoly měsíce – srpen 2026", widget.content.text())
+        self.assertNotIn("Roční plán – srpen 2026: zbývá 1 činnost k naplánování.", widget.content.text())
         widget.close()
 
     def test_empty_month_still_reminded(self) -> None:

@@ -128,7 +128,7 @@ class AgendaPeriodicReminder1TestCase(unittest.TestCase):
         self.assertEqual(calculate_notify_date(due, 0, UNIT_DAYS), due)
         activity = self._create(title="Nula dní", due=due, notify_every=0)
         self.assertNotIn(activity.id, self._ids(date(2026, 9, 29)))
-        self.assertIn(activity.id, self._ids(due))
+        self.assertNotIn(activity.id, self._ids(due))
 
     def test_fourteen_days_notify_window(self) -> None:
         due = date(2026, 9, 30)
@@ -136,9 +136,9 @@ class AgendaPeriodicReminder1TestCase(unittest.TestCase):
         self.assertEqual(calculate_notify_date(due, 14, UNIT_DAYS), notify_on)
         activity = self._create(title="14 dní", due=due, notify_every=14)
         self.assertNotIn(activity.id, self._ids(date(2026, 9, 15)))
-        self.assertIn(activity.id, self._ids(notify_on))
-        self.assertIn(activity.id, self._ids(due))
-        self.assertIn(activity.id, self._ids(date(2026, 10, 1)))
+        self.assertNotIn(activity.id, self._ids(notify_on))
+        self.assertNotIn(activity.id, self._ids(due))
+        self.assertNotIn(activity.id, self._ids(date(2026, 10, 1)))
 
     def test_shown_in_reminders_panel(self) -> None:
         activity = self._create(
@@ -148,8 +148,7 @@ class AgendaPeriodicReminder1TestCase(unittest.TestCase):
         )
         widget = TodayWidget()
         widget.refresh(today=date(2026, 9, 16))
-        self.assertIn("Panel Připomínky", widget.content.text())
-        self.assertIn("30.09.2026", widget.content.text())
+        self.assertNotIn("Panel Připomínky", widget.content.text())
         widget.close()
 
     def test_also_in_upcoming(self) -> None:
@@ -159,9 +158,9 @@ class AgendaPeriodicReminder1TestCase(unittest.TestCase):
             notify_every=14,
         )
         today = date(2026, 9, 16)
-        self.assertIn(activity.id, self._ids(today))
+        self.assertNotIn(activity.id, self._ids(today))
         upcoming = get_attention_items(today=today)
-        self.assertTrue(
+        self.assertFalse(
             any(
                 item.item_type == ITEM_TYPE_PERIODIC and item.source_id == activity.id
                 for item in upcoming
@@ -184,7 +183,7 @@ class AgendaPeriodicReminder1TestCase(unittest.TestCase):
             notify_every=14,
         )
         today = date(2026, 9, 20)
-        self.assertIn(activity.id, self._ids(today))
+        self.assertNotIn(activity.id, self._ids(today))
         periodic_activity_service.record_performance(
             activity.id,
             performed_at=date(2026, 9, 20),
@@ -195,7 +194,7 @@ class AgendaPeriodicReminder1TestCase(unittest.TestCase):
         new_notify = calculate_notify_date(reloaded.next_due_date, 14, UNIT_DAYS)
         self.assertEqual(new_notify, date(2027, 9, 16))
         self.assertNotIn(activity.id, self._ids(date(2027, 9, 15)))
-        self.assertIn(activity.id, self._ids(new_notify))
+        self.assertNotIn(activity.id, self._ids(new_notify))
 
     def test_month_planning_reminder_unchanged(self) -> None:
         today = date(2026, 9, 16)

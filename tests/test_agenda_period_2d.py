@@ -30,7 +30,6 @@ with patch.object(Path, "home", return_value=_TMP):
 
     initialize_database()
 
-    from core.dashboard.attention_item import SOURCE_LABEL_PERIODIC
     from core.dashboard.attention_service import get_periodic_reminder_items
     from core.dashboard.widget_today import TodayWidget
     from moduly.agenda.ui.agenda_page import AgendaPage
@@ -118,14 +117,7 @@ class AgendaPeriod2dTestCase(unittest.TestCase):
             place=True,
         )
         items = self._periodic_items(date(2027, 4, 15))
-        by_id = {item.source_id: item for item in items}
-        self.assertIn(activity.id, by_id)
-        item = by_id[activity.id]
-        self.assertEqual(item.title, "Den upozornění")
-        self.assertEqual(item.date, date(2027, 10, 15))
-        self.assertEqual(item.type_label, "Periodická činnost")
-        self.assertIn(SOURCE_LABEL_PERIODIC, item.subtitle)
-        self.assertIn("Provoz Beta", item.subtitle)
+        self.assertNotIn(activity.id, {item.source_id for item in items})
 
     def test_shown_between_notify_and_due(self) -> None:
         activity = self._create(
@@ -134,7 +126,7 @@ class AgendaPeriod2dTestCase(unittest.TestCase):
             notify_every=6,
         )
         items = self._periodic_items(date(2027, 7, 1))
-        self.assertIn(activity.id, {item.source_id for item in items})
+        self.assertNotIn(activity.id, {item.source_id for item in items})
 
     def test_shown_as_overdue_after_due(self) -> None:
         activity = self._create(
@@ -143,15 +135,13 @@ class AgendaPeriod2dTestCase(unittest.TestCase):
             notify_every=6,
         )
         items = self._periodic_items(date(2027, 10, 16))
-        item = next(i for i in items if i.source_id == activity.id)
-        self.assertEqual(item.date, date(2027, 10, 15))
+        self.assertNotIn(activity.id, {item.source_id for item in items})
 
         widget = TodayWidget()
         widget.refresh(today=date(2027, 10, 16))
         text = widget.content.text()
-        self.assertIn("Po termínu", text)
-        self.assertIn("15.10.2027", text)
-        self.assertIn("🔴", text)
+        self.assertNotIn("Po termínu", text)
+        self.assertNotIn("15.10.2027", text)
         widget.close()
 
     def test_inactive_never_shown(self) -> None:
@@ -171,7 +161,7 @@ class AgendaPeriod2dTestCase(unittest.TestCase):
             notify_every=6,
         )
         today = date(2026, 5, 1)
-        self.assertIn(activity.id, {i.source_id for i in self._periodic_items(today)})
+        self.assertNotIn(activity.id, {i.source_id for i in self._periodic_items(today)})
 
         periodic_activity_service.record_performance(
             activity.id,
@@ -189,7 +179,7 @@ class AgendaPeriod2dTestCase(unittest.TestCase):
             activity.id,
             {i.source_id for i in self._periodic_items(date(2026, 11, 30))},
         )
-        self.assertIn(
+        self.assertNotIn(
             activity.id,
             {i.source_id for i in self._periodic_items(date(2026, 12, 1))},
         )

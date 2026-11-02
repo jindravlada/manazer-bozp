@@ -200,8 +200,21 @@ def format_processed_at(value) -> str:
     return str(value)
 
 
-def month_planning_attention_title(year: int, month: int) -> str:
-    return f"Zpracovat úkoly měsíce – {format_year_month(year, month)}"
+def planning_remaining_phrase(count: int) -> str:
+    """Český počet činností, které v měsíci zůstávají K naplánování."""
+    remaining = int(count)
+    if remaining == 1:
+        return "zbývá 1 činnost k naplánování"
+    if remaining % 100 not in (11, 12, 13, 14) and remaining % 10 in (2, 3, 4):
+        return f"zbývají {remaining} činnosti k naplánování"
+    return f"zbývá {remaining} činností k naplánování"
+
+
+def month_planning_attention_title(year: int, month: int, remaining: int = 1) -> str:
+    return (
+        f"Roční plán – {format_year_month(year, month)}: "
+        f"{planning_remaining_phrase(remaining)}."
+    )
 
 
 def month_planning_source_id(year: int, month: int) -> int:

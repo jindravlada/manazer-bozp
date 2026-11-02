@@ -21,7 +21,6 @@ from core.dashboard.attention_item import (
     ITEM_TYPE_MEETING,
     ITEM_TYPE_OZO_CONTRACT,
     ITEM_TYPE_OZO_PERSON_CERTIFICATE,
-    ITEM_TYPE_PERIODIC,
     ITEM_TYPE_QUALIFICATION_CERTIFICATE,
     ITEM_TYPE_TASK,
     ITEM_TYPE_YEARLY_PLAN_MONTH,
@@ -32,7 +31,6 @@ from core.dashboard.attention_item import (
     SOURCE_LABEL_KNIHA_URAZU,
     SOURCE_LABEL_OZO_CONTRACT,
     SOURCE_LABEL_OZO_PERSON,
-    SOURCE_LABEL_PERIODIC,
     SOURCE_LABEL_QUALIFICATION,
     SOURCE_LABEL_YEARLY_PLAN,
     AttentionItem,
@@ -50,20 +48,12 @@ from core.shared.task_source_display import task_source_short_labels
 from core.shared.working_days import first_working_day
 from moduly.agenda.constants import PRIORITY_CRITICAL
 from moduly.audity.sluzby.audit_service import audit_service
-from moduly.periodicke_cinnosti.constants import PLACE_KIND_NONE, format_place
-from moduly.periodicke_cinnosti.sluzby.periodic_activity_service import (
-    is_due_for_attention,
-    periodic_activity_service,
-)
 from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
 from moduly.rocni_plan.constants import (
     month_planning_attention_title,
     month_planning_source_id,
 )
-from moduly.rocni_plan.sluzby.yearly_plan_service import (
-    attention_periodic_due_dates,
-    yearly_plan_service,
-)
+from moduly.rocni_plan.sluzby.yearly_plan_service import yearly_plan_service
 from moduly.schuzky.constants import DEFAULT_MEETING_PRIORITY, STATUS_PLANNED
 from moduly.schuzky.sluzby.meeting_service import meeting_service
 from moduly.smlouvy_ozo.constants import STATUS_EXPIRED, UNIT_DAYS, status_label
@@ -309,84 +299,25 @@ def _from_meetings(_today: date) -> list[AttentionItem]:
     return items
 
 
-def _periodic_place_label(activity) -> str:
-    kind = getattr(activity, "place_kind", PLACE_KIND_NONE) or PLACE_KIND_NONE
-    if kind == PLACE_KIND_NONE:
-        return ""
-    return (format_place(activity) or "").strip()
-
-
-def _periodic_subtitle(activity) -> str:
-    place = _periodic_place_label(activity)
-    if place:
-        return f"{SOURCE_LABEL_PERIODIC} · {place}"
-    return SOURCE_LABEL_PERIODIC
-
-
-def _periodic_attention_item(
-    activity,
-    due_date: date | None,
-    *,
-    identity_key: str = "",
-) -> AttentionItem:
-    title = (activity.title or "").strip() or f"Periodická činnost #{activity.id}"
-    return AttentionItem(
-        item_type=ITEM_TYPE_PERIODIC,
-        source_type=ITEM_TYPE_PERIODIC,
-        source_id=activity.id,
-        title=title,
-        date=due_date,
-        subtitle=_periodic_subtitle(activity),
-        status="Aktivní",
-        priority="",
-        open_metadata={
-            "source_type": ITEM_TYPE_PERIODIC,
-            "source_id": activity.id,
-        },
-        sort_key=build_sort_key(
-            due_date,
-            item_type=ITEM_TYPE_PERIODIC,
-            title=title,
-            source_id=activity.id,
-        ),
-        identity_key=identity_key,
-    )
-
-
 def _from_periodics(today: date) -> list[AttentionItem]:
-    """Připomínky: prošlý nejbližší termín a nastavené období připomenutí."""
-    items: list[AttentionItem] = []
-    for activity in periodic_activity_service.get_all(active_only=True):
-        if not is_due_for_attention(
-            next_due_date=activity.next_due_date,
-            notify_every=activity.notify_every,
-            notify_unit=activity.notify_unit,
-            active=bool(activity.active),
-            today=today,
-        ):
-            continue
-        items.append(_periodic_attention_item(activity, activity.next_due_date))
-    return items
+    """Připomínky jednotlivých periodických činností se do Co hoří nepromítají.
+
+    Nezpracovaný měsíc Ročního plánu jde samostatně přes _from_yearly_plan_month.
+    """
+    del today
+    return []
 
 
 def _from_periodic_horizon(today: date) -> list[AttentionItem]:
-    """Agenda a Nadcházející: jeden prošlý termín a výhled na tři měsíce."""
-    items: list[AttentionItem] = []
-    seen: set[tuple[int, date]] = set()
-    for activity in periodic_activity_service.get_all(active_only=True):
-        for due_date in attention_periodic_due_dates(activity, today=today):
-            key = (int(activity.id), due_date)
-            if key in seen:
-                continue
-            seen.add(key)
-            items.append(
-                _periodic_attention_item(
-                    activity,
-                    due_date,
-                    identity_key=f"periodic:{int(activity.id)}:{due_date.isoformat()}",
-                )
-            )
-    return items
+    """Automaticky vypočítané periodické termíny se do Nadcházejících nepromítají."""
+    del today
+    return []
+
+
+def _unplanned_yearly_plan_count(year: int, month: int, today: date) -> int:
+    rows = yearly_plan_service.list_month_rows(year, month, today=today)
+    summary = yearly_plan_service.month_summary(rows, today=today)
+    return int(summary.get("to_plan", 0))
 
 
 def _from_yearly_plan_month(today: date) -> list[AttentionItem]:
@@ -394,7 +325,8 @@ def _from_yearly_plan_month(today: date) -> list[AttentionItem]:
         return []
     year = today.year
     month = today.month
-    title = month_planning_attention_title(year, month)
+    remaining = _unplanned_yearly_plan_count(year, month, today)
+    title = month_planning_attention_title(year, month, remaining)
     source_id = month_planning_source_id(year, month)
     due_date = first_working_day(year, month)
     return [
@@ -756,7 +688,7 @@ def get_external_finding_reminder_items(
 
 
 def get_periodic_reminder_items(*, today: date | None = None) -> list[AttentionItem]:
-    """Periodické činnosti od data připomenutí — pro panel Připomínky."""
+    """Jednotlivé periodické činnosti se do Připomínek už nepromítají."""
     today = today or date.today()
     return _from_periodics(today)
 
@@ -1039,12 +971,11 @@ def get_state_supervision_reminder_items(
 
 
 def get_attention_items(*, today: date | None = None) -> list[AttentionItem]:
-    """Vrátí položky pro Nadcházející (včetně periodik a měsíčního plánu).
+    """Vrátí položky pro Nadcházející včetně upozornění na měsíc Ročního plánu.
 
-    Periodické činnosti jsou ve tříměsíčním výhledu. Panel Co hoří dál bere
-    jen připomenutí přes get_periodic_reminder_items.
-    Externí Neshody/PKZ sem nepatří — jen dny programu auditu a úkoly Agendy.
-    Připomínky findings berou get_external_finding_reminder_items.
+    Automaticky vypočítané periodické termíny sem nepatří. Skutečné úkoly
+    a události ano. Externí Neshody/PKZ sem nepatří — jen dny programu auditu
+    a úkoly Agendy. Připomínky findings berou get_external_finding_reminder_items.
     """
     today = today or date.today()
     items = (

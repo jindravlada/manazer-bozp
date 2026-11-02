@@ -114,7 +114,10 @@ class AgendaRocni2eTestCase(unittest.TestCase):
             item.title,
             month_planning_attention_title(2026, 8),
         )
-        self.assertEqual(item.title, "Zpracovat úkoly měsíce – srpen 2026")
+        self.assertEqual(
+            item.title,
+            "Roční plán – srpen 2026: zbývá 1 činnost k naplánování.",
+        )
         self.assertEqual(item.subtitle, SOURCE_LABEL_YEARLY_PLAN)
         self.assertEqual(item.source_id, month_planning_source_id(2026, 8))
         self.assertEqual(item.date, date(2026, 8, 3))

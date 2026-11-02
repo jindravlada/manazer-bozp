@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import calendar
 from datetime import date, datetime
 
 from PySide6.QtCore import QDate, QEvent, QPoint, QRect, Qt
@@ -15,7 +14,7 @@ from core.widgets.persistent_tooltips import (
     show_persistent_tooltip,
 )
 
-from core.dashboard.attention_item import ITEM_TYPE_PERIODIC, TYPE_LABELS
+from core.dashboard.attention_item import ITEM_TYPE_PERIODIC
 from core.dashboard.widget_base import DashboardPanel
 from moduly.agenda.constants import (
     ITEM_TYPE_MEETING,
@@ -28,13 +27,6 @@ from moduly.agenda.constants import (
     TYPE_LABEL_TASK,
 )
 from moduly.agenda.sluzby.agenda_service import AgendaItem, agenda_service
-from moduly.periodicke_cinnosti.sluzby.periodic_activity_service import (
-    periodic_activity_service,
-)
-from moduly.rocni_plan.sluzby.yearly_plan_service import (
-    completed_periodic_dates,
-    iter_periodic_due_dates,
-)
 
 # Kompaktní kalendář – preferred velikost, aby při užším okně neblokoval zmenšení.
 _CALENDAR_WIDTH = 420
@@ -338,7 +330,7 @@ def build_calendar_day_data(
         and item.row_state != ROW_STATE_CANCELED
         # Ukončené úkoly patří do filtrů Agendy, ne do kalendáře na ploše.
         and not (item.item_type == ITEM_TYPE_TASK and item.row_state == ROW_STATE_DONE)
-        # Periodické činnosti kreslí periodic_calendar_marks pro otevřený měsíc.
+        # Vypočítaný výskyt periodické činnosti není termín práce.
         and item.item_type != ITEM_TYPE_PERIODIC
     ]
 
@@ -370,45 +362,9 @@ def periodic_calendar_marks(
     *,
     today: date | None = None,
 ) -> tuple[dict[date, set[str]], dict[date, list[str]]]:
-    """Tečky periodických činností pro jeden zobrazený měsíc.
-
-    Stejná projekce jako Roční plán, bez omezení na tři měsíce a bez zápisu.
-    Splněný termín je zelená tečka, ne nesplněný.
-    """
-    today = today or date.today()
-    last_day = calendar.monthrange(year, month)[1]
-    until = date(year, month, last_day)
-    type_label = TYPE_LABELS[ITEM_TYPE_PERIODIC]
-    task_dates: dict[date, set[str]] = {}
-    day_events: dict[date, list[str]] = {}
-
-    for activity in periodic_activity_service.get_all(active_only=True):
-        title = (activity.title or "").strip() or f"Periodická činnost #{activity.id}"
-        block = f"• {type_label}\n  {title}"
-        completed = completed_periodic_dates(activity.id)
-        for planned in completed:
-            if planned.year != year or planned.month != month:
-                continue
-            task_dates.setdefault(planned, set()).add("done")
-            lines = day_events.setdefault(planned, [])
-            if block not in lines:
-                lines.append(block)
-        for candidate in iter_periodic_due_dates(activity, until=until):
-            if candidate.year != year or candidate.month != month:
-                continue
-            if candidate in completed:
-                continue
-            if candidate < today:
-                kind = "overdue"
-            elif candidate == today:
-                kind = "today"
-            else:
-                kind = "future"
-            task_dates.setdefault(candidate, set()).add(kind)
-            lines = day_events.setdefault(candidate, [])
-            if block not in lines:
-                lines.append(block)
-    return task_dates, day_events
+    """Kalendář nekreslí vypočítaný výskyt periodické činnosti jako termín práce."""
+    del year, month, today
+    return {}, {}
 
 
 class CalendarPlaceholderWidget(DashboardPanel):

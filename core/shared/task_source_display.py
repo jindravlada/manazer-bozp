@@ -121,6 +121,7 @@ def _legacy_source_short_label(source: str) -> str:
 
     mapping = {
         "manual": "Ručně",
+        "yearly_plan": "Roční plán",
         "uraz": "Úrazy",
         "kniha_urazu": "Úrazy",
         "kniha_urazu_opatreni": "Úrazy",
@@ -285,6 +286,7 @@ def _legacy_source_label(source: str) -> str:
 
     mapping = {
         "manual": "Ručně",
+        "yearly_plan": "Roční plán",
         "uraz": "Kniha úrazů",
         "kniha_urazu": "Kniha úrazů",
         "kniha_urazu_opatreni": "Kniha úrazů – opatření",
