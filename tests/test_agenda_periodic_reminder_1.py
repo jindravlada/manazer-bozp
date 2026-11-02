@@ -199,6 +199,7 @@ class AgendaPeriodicReminder1TestCase(unittest.TestCase):
 
     def test_month_planning_reminder_unchanged(self) -> None:
         today = date(2026, 9, 16)
+        yearly_plan_service.create(year=2026, month=9, title="K naplánování")
         items = get_yearly_plan_month_reminder_items(today=today)
         self.assertTrue(
             any(

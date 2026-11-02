@@ -114,6 +114,15 @@ class DashboardUpcomingTaskControlDeadline1TestCase(unittest.TestCase):
             audit_service.delete_audit(audit.id)
         for inspection in list(bozp_inspection_service.get_all()):
             bozp_inspection_service.delete_inspection(inspection.id)
+        from moduly.rocni_plan.modely.yearly_plan_item import YearlyPlanItem
+        from moduly.rocni_plan.modely.yearly_plan_item_move import YearlyPlanItemMove
+        from moduly.rocni_plan.modely.yearly_plan_occurrence import YearlyPlanOccurrence
+
+        with get_session() as session:
+            session.execute(delete(YearlyPlanOccurrence))
+            session.execute(delete(YearlyPlanItemMove))
+            session.execute(delete(YearlyPlanItem))
+            session.commit()
         today = date.today()
         for year, month in ((today.year, today.month), (2026, 8), (2026, 9)):
             if not yearly_plan_service.is_month_processed(year, month):

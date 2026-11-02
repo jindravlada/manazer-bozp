@@ -33,10 +33,11 @@ from moduly.rocni_plan.constants import (
     ALREADY_LINKED_MESSAGE,
     CANCEL_CONFIRM_MESSAGE,
     CANCELLED_ACTION_MESSAGE,
-    ITEM_NOT_FOUND_MESSAGE,
-    MARK_MONTH_PROCESSED_CONFIRM,
+    DISPLAY_PLANNED,
     DISPLAY_TO_PLAN,
     DISPLAY_WILL_NOT_PERFORM,
+    ITEM_NOT_FOUND_MESSAGE,
+    MARK_MONTH_PROCESSED_CONFIRM,
     MONTH_ALREADY_PROCESSED_MESSAGE,
     SOURCE_MODULE_YEARLY_PLAN,
     STATUS_CANCELLED,
@@ -44,7 +45,6 @@ from moduly.rocni_plan.constants import (
     TAB_YEARLY_PLAN,
     YEAR_SPIN_MAX,
     YEAR_SPIN_MIN,
-    format_processed_at,
 )
 from moduly.periodicke_cinnosti.sluzby.periodic_activity_service import (
     periodic_activity_service,
@@ -106,7 +106,8 @@ class YearlyPlanTab(QWidget):
         self.skip_btn = QPushButton(ACTION_SKIP)
         self.restore_plan_btn = QPushButton(ACTION_RESTORE_PLANNING)
         self.cancel_btn = QPushButton(ACTION_CANCEL)
-        self.mark_month_btn = QPushButton(ACTION_MARK_MONTH_PROCESSED)
+        self.mark_month_btn = QPushButton(ACTION_MARK_MONTH_PROCESSED, self)
+        self.mark_month_btn.hide()
         # Kompatibilita se staršími testy – stav fokusovaného měsíce.
         self.month_status_label = QLabel("")
         self.month_status_label.setObjectName("MutedText")
@@ -133,7 +134,6 @@ class YearlyPlanTab(QWidget):
         toolbar.addWidget(self.skip_btn)
         toolbar.addWidget(self.restore_plan_btn)
         toolbar.addWidget(self.cancel_btn)
-        toolbar.addWidget(self.mark_month_btn)
         toolbar.addStretch()
         toolbar.addWidget(self.month_status_label)
 
@@ -156,7 +156,6 @@ class YearlyPlanTab(QWidget):
         self.skip_btn.clicked.connect(self.skip_selected)
         self.restore_plan_btn.clicked.connect(self.restore_selected)
         self.cancel_btn.clicked.connect(self.cancel_selected)
-        self.mark_month_btn.clicked.connect(self.mark_month_processed)
         self.year_spin.valueChanged.connect(self._on_year_changed)
         self.table.doubleClicked.connect(self.edit_selected)
         self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
@@ -240,20 +239,15 @@ class YearlyPlanTab(QWidget):
 
     def _refresh_focus_month_state(self, focus_rows) -> None:
         summary = yearly_plan_service.month_summary(focus_rows)
+        state = "Zpracován" if summary.get("processed") else "Nezpracován"
         self.summary_label.setText(
-            "Celkem: {total}   Splněno: {done}   Řeší se: {in_progress}   "
-            "Resty: {rest}   Zrušeno: {cancelled}".format(**summary)
+            f"{state}   Celkem: {summary['total']}   "
+            f"K naplánování: {summary['to_plan']}   "
+            f"Naplánováno: {summary['planned']}   "
+            f"Nevykoná se: {summary['will_not_perform']}   "
+            f"Splněno: {summary['done']}"
         )
-        status = yearly_plan_service.get_month_status(
-            self.current_year(),
-            self._focus_month,
-        )
-        if status is None:
-            self.month_status_label.setText("")
-            return
-        self.month_status_label.setText(
-            f"Zpracováno: {format_processed_at(status.processed_at)}"
-        )
+        self.month_status_label.setText(state)
 
     def _month_for_mark_action(self) -> int | None:
         """Měsíc jen z označeného oddělovacího řádku (ne z položky, ne z dialogu)."""
@@ -328,18 +322,7 @@ class YearlyPlanTab(QWidget):
         is_header = bool(single and self.table.selected_is_month_header())
         is_periodic = bool(single and self.table.selected_is_periodic())
 
-        if is_header:
-            month = self.table.selected_header_month()
-            can_mark = bool(
-                month is not None
-                and not yearly_plan_service.is_month_processed(
-                    self.current_year(),
-                    month,
-                )
-            )
-            self.mark_month_btn.setEnabled(can_mark)
-        else:
-            self.mark_month_btn.setEnabled(False)
+        self.mark_month_btn.setEnabled(False)
 
         if not single or is_header:
             self.edit_btn.setEnabled(False)
@@ -353,17 +336,22 @@ class YearlyPlanTab(QWidget):
         if is_periodic:
             self._refresh_periodic_actions()
             return
-        self.skip_btn.setEnabled(False)
-        self.restore_plan_btn.setEnabled(False)
         item = self._selected_item()
         self.edit_btn.setEnabled(item is not None)
         status, task_id, meeting_id = self._occurrence_state(item)
+        display = self.table.selected_display_status()
         can_act = bool(item and status != STATUS_CANCELLED)
         unlinked = bool(can_act and not self._has_link_ids(task_id, meeting_id))
         self.create_task_btn.setEnabled(unlinked)
         self.create_meeting_btn.setEnabled(unlinked)
         self.move_btn.setEnabled(can_act)
-        self.cancel_btn.setEnabled(can_act)
+        self.cancel_btn.setEnabled(False)
+        self.skip_btn.setEnabled(
+            bool(item and display in {DISPLAY_TO_PLAN, DISPLAY_PLANNED})
+        )
+        self.restore_plan_btn.setEnabled(
+            bool(item and display == DISPLAY_WILL_NOT_PERFORM)
+        )
 
     def _show_context_menu(self, position) -> None:
         index = self.table.indexAt(position)
@@ -544,21 +532,38 @@ class YearlyPlanTab(QWidget):
     def skip_selected(self) -> None:
         if not self.skip_btn.isEnabled():
             return
-        activity_id = self.table.selected_activity_id()
-        slot = self.table.selected_slot_year_month()
-        if activity_id is None or slot is None:
-            return
         dialog = PeriodicSkipDialog(self)
         if not dialog.exec():
             return
         try:
-            skip_occurrence(
-                activity_id,
-                original_year=slot[0],
-                original_month=slot[1],
-                reason=dialog.reason(),
-            )
-        except CalendarOccurrenceError as error:
+            if self.table.selected_is_calendar_occurrence():
+                activity_id = self.table.selected_activity_id()
+                slot = self.table.selected_slot_year_month()
+                if activity_id is None or slot is None:
+                    return
+                skip_occurrence(
+                    activity_id,
+                    original_year=slot[0],
+                    original_month=slot[1],
+                    reason=dialog.reason(),
+                )
+            else:
+                item = self._selected_item()
+                if item is None:
+                    return
+                if self.table.selected_is_recurring():
+                    slot = self._selected_slot()
+                    if slot is None:
+                        raise YearlyPlanValidationError(ITEM_NOT_FOUND_MESSAGE)
+                    yearly_plan_service.skip_manual_occurrence(
+                        item.id,
+                        year=slot[0],
+                        month=slot[1],
+                        reason=dialog.reason(),
+                    )
+                else:
+                    yearly_plan_service.skip_manual(item.id, reason=dialog.reason())
+        except (CalendarOccurrenceError, YearlyPlanValidationError) as error:
             QMessageBox.warning(self, ACTION_SKIP, str(error))
             return
         self.refresh()
@@ -567,17 +572,33 @@ class YearlyPlanTab(QWidget):
     def restore_selected(self) -> None:
         if not self.restore_plan_btn.isEnabled():
             return
-        activity_id = self.table.selected_activity_id()
-        slot = self.table.selected_slot_year_month()
-        if activity_id is None or slot is None:
-            return
         try:
-            restore_to_planning(
-                activity_id,
-                original_year=slot[0],
-                original_month=slot[1],
-            )
-        except CalendarOccurrenceError as error:
+            if self.table.selected_is_calendar_occurrence():
+                activity_id = self.table.selected_activity_id()
+                slot = self.table.selected_slot_year_month()
+                if activity_id is None or slot is None:
+                    return
+                restore_to_planning(
+                    activity_id,
+                    original_year=slot[0],
+                    original_month=slot[1],
+                )
+            else:
+                item = self._selected_item()
+                if item is None:
+                    return
+                if self.table.selected_is_recurring():
+                    slot = self._selected_slot()
+                    if slot is None:
+                        raise YearlyPlanValidationError(ITEM_NOT_FOUND_MESSAGE)
+                    yearly_plan_service.restore_manual_occurrence(
+                        item.id,
+                        year=slot[0],
+                        month=slot[1],
+                    )
+                else:
+                    yearly_plan_service.restore_manual(item.id)
+        except (CalendarOccurrenceError, YearlyPlanValidationError) as error:
             QMessageBox.warning(self, ACTION_RESTORE_PLANNING, str(error))
             return
         self.refresh()

@@ -215,8 +215,9 @@ class AgendaRocniUx2TestCase(unittest.TestCase):
         tab = YearlyPlanTab()
         tab.set_year_month(2031, 6)
         text = tab.table.header_text_for_month(6)
-        self.assertIn("Zpracováno:", text)
-        self.assertIn("10. 6. 2031", text)
+        self.assertIn("Zpracován", text)
+        self.assertNotIn("10. 6. 2031", text)
+        self.assertIsNotNone(yearly_plan_service.get_month_status(2031, 6))
         tab.close()
 
     def test_open_from_dashboard_scrolls_to_month(self) -> None:
@@ -256,12 +257,20 @@ class AgendaRocniUx2TestCase(unittest.TestCase):
     def test_format_month_header_text(self) -> None:
         text = format_month_header_text(
             8,
-            {"total": 2, "done": 1, "in_progress": 0, "rest": 1, "cancelled": 0},
+            {
+                "total": 2,
+                "done": 1,
+                "planned": 0,
+                "to_plan": 1,
+                "will_not_perform": 0,
+                "processed": 0,
+            },
             processed_at=datetime(2031, 8, 5, 12, 0, 0),
         )
         self.assertTrue(text.startswith("Srpen"))
+        self.assertIn("Nezpracován", text)
         self.assertIn("Celkem: 2", text)
-        self.assertIn("Zpracováno: 5. 8. 2031", text)
+        self.assertNotIn("5. 8. 2031", text)
 
     def test_month_header_bold_name_separate_from_summary(self) -> None:
         from moduly.rocni_plan.ui.yearly_plan_table import (
@@ -271,10 +280,17 @@ class AgendaRocniUx2TestCase(unittest.TestCase):
 
         name, summary = format_month_header_parts(
             3,
-            {"total": 1, "done": 0, "in_progress": 1, "rest": 0, "cancelled": 0},
+            {
+                "total": 1,
+                "done": 0,
+                "planned": 1,
+                "to_plan": 0,
+                "will_not_perform": 0,
+                "processed": 1,
+            },
         )
         self.assertEqual(name, "Březen")
-        self.assertTrue(summary.startswith("Celkem:"))
+        self.assertTrue(summary.startswith("Zpracován"))
         self.assertNotIn("Březen", summary)
 
         tab = YearlyPlanTab()

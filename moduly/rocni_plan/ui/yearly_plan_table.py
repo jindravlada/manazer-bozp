@@ -26,7 +26,6 @@ from moduly.rocni_plan.constants import (
     COLUMN_HEADERS,
     ROW_KIND_MANUAL,
     ROW_KIND_PERIODIC,
-    format_processed_at,
     month_label,
     status_label,
 )
@@ -68,14 +67,17 @@ def format_month_header_parts(
     *,
     processed_at=None,
 ) -> tuple[str, str]:
-    """Vrátí (název měsíce, souhrn). Název se zobrazuje tučně, souhrn normálně."""
+    """Vrátí (název měsíce, souhrn). Stav měsíce je vypočtený, razítko ho nemění."""
+    _ = processed_at
     name = month_label(month).capitalize()
+    state = "Zpracován" if summary.get("processed") else "Nezpracován"
     parts = [
-        "Celkem: {total}   Splněno: {done}   Řeší se: {in_progress}   "
-        "Resty: {rest}   Zrušeno: {cancelled}".format(**summary),
+        f"{state}   Celkem: {summary.get('total', 0)}   "
+        f"K naplánování: {summary.get('to_plan', 0)}   "
+        f"Naplánováno: {summary.get('planned', 0)}   "
+        f"Nevykoná se: {summary.get('will_not_perform', summary.get('cancelled', 0))}   "
+        f"Splněno: {summary.get('done', 0)}",
     ]
-    if processed_at is not None:
-        parts.append(f"Zpracováno: {format_processed_at(processed_at)}")
     return name, _HEADER_NAME_GAP.join(parts)
 
 

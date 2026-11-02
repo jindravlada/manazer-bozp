@@ -11,6 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from PySide6.QtWidgets import QApplication
+from sqlalchemy import delete
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -46,7 +47,7 @@ with patch.object(Path, "home", return_value=_TMP):
         COL_TITLE,
         DISPLAY_DONE,
         DISPLAY_PLANNED,
-        DISPLAY_REST,
+        DISPLAY_TO_PLAN,
         ROW_KIND_MANUAL,
         ROW_KIND_PERIODIC,
         SOURCE_LABEL_MANUAL,
@@ -57,7 +58,11 @@ with patch.object(Path, "home", return_value=_TMP):
         list_periodic_rows_for_month,
         yearly_plan_service,
     )
+    from moduly.rocni_plan.modely.yearly_plan_item import YearlyPlanItem
+    from moduly.rocni_plan.modely.yearly_plan_item_move import YearlyPlanItemMove
+    from moduly.rocni_plan.modely.yearly_plan_occurrence import YearlyPlanOccurrence
     from moduly.rocni_plan.ui.yearly_plan_tab import YearlyPlanTab
+    from core.database.session import get_session
 
 
 class AgendaRocni2dTestCase(unittest.TestCase):
@@ -66,10 +71,13 @@ class AgendaRocni2dTestCase(unittest.TestCase):
         cls._app = QApplication.instance() or QApplication([])
 
     def setUp(self) -> None:
-        for year in (2025, 2026, 2027):
-            for item in list(yearly_plan_service.list_for_year(year)):
-                if item.status != STATUS_CANCELLED:
-                    yearly_plan_service.cancel(item.id)
+        # Zrušené položky zůstávají v měsíci. Sdílená testovací databáze
+        # by jinak nafoukla souhrn o záznamy z jiných modulů.
+        with get_session() as session:
+            session.execute(delete(YearlyPlanOccurrence))
+            session.execute(delete(YearlyPlanItemMove))
+            session.execute(delete(YearlyPlanItem))
+            session.commit()
         for activity in list(periodic_activity_service.get_all()):
             periodic_activity_service.update_activity(
                 activity.id,
@@ -113,7 +121,7 @@ class AgendaRocni2dTestCase(unittest.TestCase):
         periodic = [row for row in rows if row.is_periodic]
         self.assertEqual(len(periodic), 1)
         self.assertEqual(periodic[0].activity_id, activity.id)
-        self.assertEqual(periodic[0].display_status, DISPLAY_PLANNED)
+        self.assertEqual(periodic[0].display_status, DISPLAY_TO_PLAN)
         self.assertEqual(periodic[0].source_label, SOURCE_LABEL_PERIODIC)
         self.assertEqual(periodic[0].planned_due_date, date(2026, 5, 12))
 
@@ -209,7 +217,7 @@ class AgendaRocni2dTestCase(unittest.TestCase):
             if row.activity_id == activity.id
         ]
         self.assertEqual(len(march), 1)
-        self.assertEqual(march[0].display_status, DISPLAY_REST)
+        self.assertEqual(march[0].display_status, DISPLAY_TO_PLAN)
         self.assertEqual(march[0].planned_due_date, date(2026, 3, 10))
 
     def test_overdue_without_occurrence_is_rest(self) -> None:
@@ -225,7 +233,7 @@ class AgendaRocni2dTestCase(unittest.TestCase):
             if row.activity_id == activity.id
         ]
         self.assertEqual(len(rows), 1)
-        self.assertEqual(rows[0].display_status, DISPLAY_REST)
+        self.assertEqual(rows[0].display_status, DISPLAY_TO_PLAN)
 
     def test_no_duplicates(self) -> None:
         activity = self._create_periodic(
@@ -357,8 +365,8 @@ class AgendaRocni2dTestCase(unittest.TestCase):
         )
         self.assertEqual(summary["total"], 3)
         self.assertEqual(summary["done"], 1)
-        self.assertEqual(summary["planned"], 2)
-        self.assertEqual(summary["rest"], 0)
+        self.assertEqual(summary["to_plan"], 2)
+        self.assertEqual(summary["planned"], 0)
 
         september = yearly_plan_service.list_month_rows(
             2026, 9, today=date(2026, 10, 15)
@@ -366,10 +374,10 @@ class AgendaRocni2dTestCase(unittest.TestCase):
         sep_summary = yearly_plan_service.month_summary(
             september, today=date(2026, 10, 15)
         )
-        self.assertGreaterEqual(sep_summary["rest"], 1)
+        self.assertGreaterEqual(sep_summary["to_plan"], 1)
         self.assertTrue(
             any(
-                row.activity_id == overdue.id and row.display_status == DISPLAY_REST
+                row.activity_id == overdue.id and row.display_status == DISPLAY_TO_PLAN
                 for row in september
             )
         )

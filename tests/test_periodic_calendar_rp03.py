@@ -390,7 +390,7 @@ class CalendarYearlyPlanTestCase(unittest.TestCase):
         self.assertIn(date(2026, 3, 10), [row.planned_due_date for row in march])
         april = _rows(2026, 4, activity.id)
         self.assertTrue(all(not row.calendar_managed for row in april))
-        self.assertTrue(all(row.display_status != DISPLAY_TO_PLAN for row in march + april))
+        self.assertTrue(all(row.display_status == DISPLAY_TO_PLAN for row in march + april))
         with self.assertRaises(CalendarOccurrenceError):
             move_occurrence(
                 activity.id,

@@ -139,7 +139,8 @@ MARK_MONTH_PROCESSED_CONFIRM = (
     "co budete dělat. Stavy jednotlivých položek se nemění."
 )
 ALREADY_LINKED_MESSAGE = "Položka už má vazbu na Úkol nebo Událost."
-CANCELLED_ACTION_MESSAGE = "Zrušenou položku nelze upravit touto akcí."
+CANCELLED_ACTION_MESSAGE = "Položku ve stavu Nevykoná se nelze upravit touto akcí."
+SKIP_REASON_REQUIRED_MESSAGE = "Vyplňte odůvodnění, proč se položka nevykoná."
 MONTH_ALREADY_PROCESSED_MESSAGE = "Tento měsíc už je označen jako zpracovaný."
 
 COL_ID = 0

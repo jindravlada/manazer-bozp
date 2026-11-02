@@ -26,12 +26,9 @@ with patch.object(Path, "home", return_value=_TMP):
     initialize_database()
 
     from moduly.rocni_plan.constants import (
-        DISPLAY_CANCELLED,
-        DISPLAY_DONE,
         DISPLAY_PLANNED,
-        DISPLAY_REST,
-        DISPLAY_VIA_MEETING,
-        DISPLAY_VIA_TASK,
+        DISPLAY_TO_PLAN,
+        DISPLAY_WILL_NOT_PERFORM,
         SOURCE_MODULE_YEARLY_PLAN,
         STATUS_CANCELLED,
         status_label,
@@ -88,9 +85,9 @@ class AgendaRocni2cTestCase(unittest.TestCase):
         self.assertEqual(task.computed_status, "Ukončeno")
         self.assertEqual(
             resolve_display_status(linked, today=date(2026, 5, 15)),
-            DISPLAY_DONE,
+            DISPLAY_PLANNED,
         )
-        self.assertEqual(status_label(DISPLAY_DONE), "Splněno")
+        self.assertEqual(status_label(DISPLAY_PLANNED), "Naplánováno")
         # stored status remains via_task
         self.assertEqual(yearly_plan_service.get_by_id(item.id).status, "via_task")
 
@@ -100,7 +97,7 @@ class AgendaRocni2cTestCase(unittest.TestCase):
         self.assertEqual(task.computed_status, "Aktivní")
         self.assertEqual(
             resolve_display_status(linked, today=date(2026, 5, 15)),
-            DISPLAY_VIA_TASK,
+            DISPLAY_PLANNED,
         )
 
     def test_closed_meeting_is_done(self) -> None:
@@ -108,7 +105,7 @@ class AgendaRocni2cTestCase(unittest.TestCase):
         linked, _meeting = self._link_meeting(item, status=MEETING_CLOSED)
         self.assertEqual(
             resolve_display_status(linked, today=date(2026, 6, 15)),
-            DISPLAY_DONE,
+            DISPLAY_PLANNED,
         )
 
     def test_planned_meeting_is_via_meeting(self) -> None:
@@ -116,7 +113,7 @@ class AgendaRocni2cTestCase(unittest.TestCase):
         planned_linked, _ = self._link_meeting(planned_item, status=MEETING_PLANNED)
         self.assertEqual(
             resolve_display_status(planned_linked, today=date(2026, 6, 15)),
-            DISPLAY_VIA_MEETING,
+            DISPLAY_PLANNED,
         )
 
     def test_cancelled_meeting_is_not_done(self) -> None:
@@ -128,7 +125,7 @@ class AgendaRocni2cTestCase(unittest.TestCase):
         )
         self.assertEqual(
             resolve_display_status(linked, today=date(2026, 7, 1)),
-            DISPLAY_REST,
+            DISPLAY_PLANNED,
         )
 
     def test_cancelled_item_never_rest(self) -> None:
@@ -136,25 +133,25 @@ class AgendaRocni2cTestCase(unittest.TestCase):
         cancelled = yearly_plan_service.cancel(item.id)
         self.assertEqual(
             resolve_display_status(cancelled, today=date(2026, 10, 1)),
-            DISPLAY_CANCELLED,
+            DISPLAY_WILL_NOT_PERFORM,
         )
         self.assertNotEqual(
             resolve_display_status(cancelled, today=date(2026, 10, 1)),
-            DISPLAY_REST,
+            DISPLAY_TO_PLAN,
         )
-        self.assertEqual(status_label(DISPLAY_CANCELLED), "Zrušeno")
+        self.assertEqual(status_label(DISPLAY_WILL_NOT_PERFORM), "Nevykoná se")
 
     def test_past_unfinished_is_rest(self) -> None:
         item = self._create_item(year=2026, month=9, title="Září rest")
         self.assertTrue(month_has_ended(2026, 9, today=date(2026, 10, 1)))
         self.assertEqual(
             resolve_display_status(item, today=date(2026, 10, 1)),
-            DISPLAY_REST,
+            DISPLAY_TO_PLAN,
         )
         linked, _ = self._link_task(item, completed=False)
         self.assertEqual(
             resolve_display_status(linked, today=date(2026, 10, 1)),
-            DISPLAY_REST,
+            DISPLAY_PLANNED,
         )
 
     def test_current_and_future_month_not_rest(self) -> None:
@@ -162,21 +159,22 @@ class AgendaRocni2cTestCase(unittest.TestCase):
         future = self._create_item(year=2026, month=12, title="Budoucí")
         today = date(2026, 10, 15)
         self.assertFalse(month_has_ended(2026, 10, today=today))
-        self.assertEqual(resolve_display_status(current, today=today), DISPLAY_PLANNED)
-        self.assertEqual(resolve_display_status(future, today=today), DISPLAY_PLANNED)
+        self.assertEqual(resolve_display_status(current, today=today), DISPLAY_TO_PLAN)
+        self.assertEqual(resolve_display_status(future, today=today), DISPLAY_TO_PLAN)
 
     def test_moved_item_evaluated_by_new_month(self) -> None:
         item = self._create_item(year=2026, month=8, title="Přesun")
         # bez přesunu by v říjnu byl rest
         self.assertEqual(
             resolve_display_status(item, today=date(2026, 10, 1)),
-            DISPLAY_REST,
+            DISPLAY_TO_PLAN,
         )
         moved = yearly_plan_service.move_to_month(item.id, to_year=2026, to_month=11)
         self.assertEqual(moved.month, 11)
+        self.assertEqual(moved.status, item.status)
         self.assertEqual(
             resolve_display_status(moved, today=date(2026, 10, 1)),
-            DISPLAY_PLANNED,
+            DISPLAY_TO_PLAN,
         )
 
     def test_month_summary_matches_display_statuses(self) -> None:
@@ -199,10 +197,11 @@ class AgendaRocni2cTestCase(unittest.TestCase):
         summary = yearly_plan_service.month_summary(scoped, today=today)
 
         self.assertEqual(summary["total"], 5)
-        self.assertEqual(summary["done"], 1)
-        self.assertEqual(summary["in_progress"], 0)  # past month → rest, not via_*
-        self.assertEqual(summary["rest"], 3)  # open task, planned meeting, plain
-        self.assertEqual(summary["cancelled"], 1)
+        self.assertEqual(summary["done"], 0)
+        self.assertEqual(summary["planned"], 3)
+        self.assertEqual(summary["to_plan"], 1)
+        self.assertEqual(summary["will_not_perform"], 1)
+        self.assertEqual(summary["processed"], 0)
 
         # aktuální měsíc: řeší se se započítá
         now_item = self._create_item(year=2026, month=10, title="T1")
@@ -213,8 +212,8 @@ class AgendaRocni2cTestCase(unittest.TestCase):
             if item.title == "T1"
         ]
         now_summary = yearly_plan_service.month_summary(now_items, today=today)
-        self.assertEqual(now_summary["in_progress"], 1)
-        self.assertEqual(now_summary["rest"], 0)
+        self.assertEqual(now_summary["planned"], 1)
+        self.assertEqual(now_summary["to_plan"], 0)
         _ = cancelled  # keep cancel side-effect explicit
 
 

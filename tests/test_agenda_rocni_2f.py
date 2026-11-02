@@ -33,6 +33,8 @@ with patch.object(Path, "home", return_value=_TMP):
     from core.shared.working_days import first_working_day
     from moduly.rocni_plan.constants import (
         DISPLAY_CANCELLED,
+        DISPLAY_WILL_NOT_PERFORM,
+        DISPLAY_PLANNED,
         DISPLAY_VIA_MEETING,
         DISPLAY_VIA_TASK,
         DUE_KIND_DAY,
@@ -183,7 +185,7 @@ class AgendaRocni2fTestCase(unittest.TestCase):
         april = yearly_plan_service.list_month_rows(2040, 4, today=date(2040, 3, 1))
         march_row = next(row for row in march if row.plan_item_id == item.id)
         april_row = next(row for row in april if row.plan_item_id == item.id)
-        self.assertEqual(march_row.display_status, DISPLAY_CANCELLED)
+        self.assertEqual(march_row.display_status, DISPLAY_WILL_NOT_PERFORM)
         self.assertNotEqual(april_row.display_status, DISPLAY_CANCELLED)
 
     def test_move_one_occurrence_keeps_target_slot(self) -> None:
@@ -243,7 +245,7 @@ class AgendaRocni2fTestCase(unittest.TestCase):
             )
             if row.plan_item_id == item.id
         )
-        self.assertEqual(may.display_status, DISPLAY_VIA_TASK)
+        self.assertEqual(may.display_status, DISPLAY_PLANNED)
         self.assertEqual(may.link_text, f"Úkol #{task.id}")
         self.assertEqual(june.link_text, "—")
 
@@ -266,7 +268,7 @@ class AgendaRocni2fTestCase(unittest.TestCase):
             )
             if row.plan_item_id == item.id
         )
-        self.assertEqual(july.display_status, DISPLAY_VIA_MEETING)
+        self.assertEqual(july.display_status, DISPLAY_PLANNED)
         self.assertEqual(july.link_text, f"Událost #{meeting.id}")
         may_again = next(
             row

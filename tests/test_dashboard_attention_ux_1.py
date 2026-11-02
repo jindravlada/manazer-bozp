@@ -100,6 +100,7 @@ class DashboardAttentionUx1TestCase(unittest.TestCase):
         widget.close()
 
     def test_month_plan_in_both_panels_on_first_working_day(self) -> None:
+        yearly_plan_service.create(year=2026, month=8, title="K naplánování")
         today = date(2026, 8, 3)
         title = month_planning_attention_title(2026, 8)
         self.assertTrue(
@@ -118,6 +119,7 @@ class DashboardAttentionUx1TestCase(unittest.TestCase):
 
     def test_reminders_do_not_exclude_from_upcoming(self) -> None:
         """Položka v Připomínkách není automaticky odfiltrována z Nadcházejících."""
+        yearly_plan_service.create(year=2026, month=9, title="K naplánování")
         today = date(2026, 9, 1)
         reminder_ids = {
             (item.item_type, item.source_id)

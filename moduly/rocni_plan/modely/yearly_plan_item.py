@@ -28,6 +28,7 @@ class YearlyPlanItem(Base):
     note: Mapped[str] = mapped_column(Text, default="")
 
     status: Mapped[str] = mapped_column(String(30), default=DEFAULT_STATUS, nullable=False)
+    skip_reason: Mapped[str] = mapped_column(Text, default="", nullable=False)
 
     task_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     meeting_id: Mapped[int | None] = mapped_column(Integer, nullable=True)

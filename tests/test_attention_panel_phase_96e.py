@@ -88,6 +88,18 @@ class AttentionPanelPhase96eTestCase(unittest.TestCase):
                 agenda=meeting.agenda or "",
                 status=STATUS_CANCELLED,
             )
+        from sqlalchemy import delete
+
+        from core.database.session import get_session
+        from moduly.rocni_plan.modely.yearly_plan_item import YearlyPlanItem
+        from moduly.rocni_plan.modely.yearly_plan_item_move import YearlyPlanItemMove
+        from moduly.rocni_plan.modely.yearly_plan_occurrence import YearlyPlanOccurrence
+
+        with get_session() as session:
+            session.execute(delete(YearlyPlanOccurrence))
+            session.execute(delete(YearlyPlanItemMove))
+            session.execute(delete(YearlyPlanItem))
+            session.commit()
         today = date.today()
         if not yearly_plan_service.is_month_processed(today.year, today.month):
             yearly_plan_service.mark_month_processed(today.year, today.month)

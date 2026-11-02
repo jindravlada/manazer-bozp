@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, Integer, String, UniqueConstraint
+from sqlalchemy import DateTime, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from core.database.base import Base
@@ -39,6 +39,7 @@ class YearlyPlanOccurrence(Base):
     display_month: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
 
     status: Mapped[str] = mapped_column(String(30), default=DEFAULT_STATUS, nullable=False)
+    skip_reason: Mapped[str] = mapped_column(Text, default="", nullable=False)
     task_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     meeting_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
 

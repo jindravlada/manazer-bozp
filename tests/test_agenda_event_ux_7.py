@@ -155,8 +155,9 @@ class AgendaEventUx7TestCase(unittest.TestCase):
         closed_item = yearly_plan_service.get_by_id(closed_item.id)
         self.assertEqual(
             resolve_display_status(closed_item, today=date(2026, 5, 15)),
-            DISPLAY_DONE,
+            DISPLAY_PLANNED,
         )
+        self.assertEqual(closed_meeting.status, STATUS_CLOSED)
 
         cancelled_item = yearly_plan_service.create(
             year=2026, month=5, title="UX7 zrušená"
@@ -189,7 +190,7 @@ class AgendaEventUx7TestCase(unittest.TestCase):
         planned_item = yearly_plan_service.get_by_id(planned_item.id)
         self.assertEqual(
             resolve_display_status(planned_item, today=date(2026, 5, 15)),
-            DISPLAY_VIA_MEETING,
+            DISPLAY_PLANNED,
         )
 
     def test_legacy_held_normalizes_to_closed(self) -> None:

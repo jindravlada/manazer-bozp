@@ -87,6 +87,7 @@ class AgendaAnnualPlanReminder1TestCase(unittest.TestCase):
         widget.close()
 
     def test_on_first_working_day_in_reminders_and_upcoming(self) -> None:
+        yearly_plan_service.create(year=2026, month=8, title="K naplánování")
         today = date(2026, 8, 3)
         title = month_planning_attention_title(2026, 8)
         items = get_yearly_plan_month_reminder_items(today=today)
@@ -108,6 +109,7 @@ class AgendaAnnualPlanReminder1TestCase(unittest.TestCase):
         widget.close()
 
     def test_stays_after_first_working_day(self) -> None:
+        yearly_plan_service.create(year=2026, month=8, title="Pořád k naplánování")
         today = date(2026, 8, 9)
         title = month_planning_attention_title(2026, 8)
         self.assertIn(title, self._titles(today))
@@ -119,10 +121,13 @@ class AgendaAnnualPlanReminder1TestCase(unittest.TestCase):
         widget.close()
 
     def test_mark_processed_removes(self) -> None:
+        item = yearly_plan_service.create(year=2026, month=8, title="Razítko nestačí")
         today = date(2026, 8, 9)
         yearly_plan_service.mark_month_processed(
             2026, 8, processed_at=datetime(2026, 8, 9, 10, 0, 0)
         )
+        self.assertIn(month_planning_attention_title(2026, 8), self._titles(today))
+        yearly_plan_service.skip_manual(item.id, reason="Provoz stojí.")
         self.assertEqual(self._titles(today), [])
         self.assertFalse(
             any(
@@ -136,14 +141,20 @@ class AgendaAnnualPlanReminder1TestCase(unittest.TestCase):
         widget.close()
 
     def test_empty_month_still_reminded(self) -> None:
-        # Září 2026 bez položek — první pracovní den 1. 9.
+        # Září 2026 bez položek k naplánování je zpracované.
         today = date(2026, 9, 1)
-        self.assertEqual(yearly_plan_service.list_month_rows(2026, 9, today=today), [])
+        rows = [
+            row
+            for row in yearly_plan_service.list_month_rows(2026, 9, today=today)
+            if row.display_status == "to_plan"
+        ]
+        self.assertEqual(rows, [])
         title = month_planning_attention_title(2026, 9)
-        self.assertIn(title, self._titles(today))
+        self.assertNotIn(title, self._titles(today))
 
     def test_previous_month_not_carried(self) -> None:
         # Srpen nezpracován, jsme v září — jen září.
+        yearly_plan_service.create(year=2026, month=9, title="Jen září")
         today = date(2026, 9, 1)
         titles = self._titles(today)
         self.assertIn(month_planning_attention_title(2026, 9), titles)

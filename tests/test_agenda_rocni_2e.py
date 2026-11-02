@@ -42,7 +42,7 @@ with patch.object(Path, "home", return_value=_TMP):
         periodic_activity_service,
     )
     from moduly.rocni_plan.constants import (
-        DISPLAY_REST,
+        DISPLAY_TO_PLAN,
         TAB_YEARLY_PLAN,
         month_planning_attention_title,
         month_planning_source_id,
@@ -105,6 +105,7 @@ class AgendaRocni2eTestCase(unittest.TestCase):
         )
 
     def test_attention_from_first_working_day(self) -> None:
+        yearly_plan_service.create(year=2026, month=8, title="K naplánování")
         today = date(2026, 8, 3)
         items = self._month_items(today)
         self.assertEqual(len(items), 1)
@@ -131,6 +132,7 @@ class AgendaRocni2eTestCase(unittest.TestCase):
         page.close()
 
     def test_mark_month_processed_hides_attention(self) -> None:
+        yearly_plan_service.create(year=2026, month=9, title="Stále k naplánování")
         today = date(2026, 9, 7)
         self.assertEqual(len(self._month_items(today)), 1)
         status = yearly_plan_service.mark_month_processed(
@@ -140,14 +142,14 @@ class AgendaRocni2eTestCase(unittest.TestCase):
         )
         self.assertEqual(status.year, 2026)
         self.assertEqual(status.month, 9)
-        self.assertEqual(len(self._month_items(today)), 0)
+        self.assertEqual(len(self._month_items(today)), 1)
         self.assertTrue(yearly_plan_service.is_month_processed(2026, 9))
 
         tab = YearlyPlanTab()
         tab.set_year_month(2026, 9)
         header = tab.table.header_text_for_month(9)
-        self.assertIn("Zpracováno:", header)
-        self.assertIn("7. 9. 2026", header)
+        self.assertIn("Nezpracován", header)
+        self.assertNotIn("7. 9. 2026", header)
         self.assertIn("Září", header)
         tab.close()
 
@@ -158,11 +160,11 @@ class AgendaRocni2eTestCase(unittest.TestCase):
             title="Rest zůstává",
         )
         before = resolve_display_status(item, today=date(2030, 6, 1))
-        self.assertEqual(before, DISPLAY_REST)
+        self.assertEqual(before, DISPLAY_TO_PLAN)
         yearly_plan_service.mark_month_processed(2030, 5)
         reloaded = yearly_plan_service.get_by_id(item.id)
         after = resolve_display_status(reloaded, today=date(2030, 6, 1))
-        self.assertEqual(after, DISPLAY_REST)
+        self.assertEqual(after, DISPLAY_TO_PLAN)
         self.assertEqual(reloaded.status, item.status)
 
     def test_new_manual_item_after_processed_does_not_restore_attention(self) -> None:
@@ -170,7 +172,7 @@ class AgendaRocni2eTestCase(unittest.TestCase):
         yearly_plan_service.mark_month_processed(2030, 10)
         self.assertEqual(self._month_items(today), [])
         yearly_plan_service.create(year=2030, month=10, title="Dodatečná položka")
-        self.assertEqual(self._month_items(today), [])
+        self.assertEqual(len(self._month_items(today)), 1)
         self.assertTrue(yearly_plan_service.is_month_processed(2030, 10))
 
     def test_new_periodic_after_processed_does_not_restore_attention(self) -> None:
@@ -185,7 +187,7 @@ class AgendaRocni2eTestCase(unittest.TestCase):
             next_from=NEXT_FROM_PLANNED,
             active=True,
         )
-        self.assertEqual(self._month_items(today), [])
+        self.assertEqual(len(self._month_items(today)), 1)
         rows = yearly_plan_service.list_month_rows(2030, 11, today=today)
         self.assertTrue(any(row.is_periodic for row in rows))
         self.assertTrue(yearly_plan_service.is_month_processed(2030, 11))

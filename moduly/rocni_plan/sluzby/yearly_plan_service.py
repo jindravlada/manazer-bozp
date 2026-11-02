@@ -38,6 +38,7 @@ from moduly.rocni_plan.constants import (
     DUE_KINDS,
     ITEM_STATUSES,
     MONTH_ALREADY_PROCESSED_MESSAGE,
+    SKIP_REASON_REQUIRED_MESSAGE,
     REPEAT_UNIT_MONTHS,
     REPEAT_UNIT_NONE,
     REPEAT_UNIT_YEARS,
@@ -64,13 +65,6 @@ from moduly.rocni_plan.repository.yearly_plan_repository import (
     YearlyPlanMonthStatusRepository,
     YearlyPlanOccurrenceRepository,
 )
-from moduly.schuzky.constants import (
-    STATUS_CLOSED as MEETING_CLOSED,
-    STATUS_PLANNED as MEETING_PLANNED,
-)
-from moduly.schuzky.sluzby.meeting_service import meeting_service
-from moduly.ukoly.sluzby.task_service import task_service
-
 _MAX_PERIODIC_PROJECTIONS = 5000
 PERIODIC_ATTENTION_HORIZON_MONTHS = 3
 
@@ -137,37 +131,20 @@ def resolve_display_status_fields(
     month: int,
     today: date | None = None,
 ) -> str:
-    today = today or date.today()
+    """Rozhodnutí, jak bude položka zajištěna.
 
+    Dokončení úkolu nebo události stav nemění. Uložené kódy planned,
+    via_task, via_meeting a cancelled se nepřepisují. `cancelled` bez
+    uloženého odůvodnění je historické Nevykoná se, ne nová práce.
+    """
+    _ = (year, month, today)
     if (status or "") == STATUS_CANCELLED:
-        return DISPLAY_CANCELLED
-
-    base = DISPLAY_PLANNED
-
-    if task_id is not None:
-        task = task_service.get_task_by_id(task_id)
-        if task is not None and task.computed_status == "Ukončeno":
-            return DISPLAY_DONE
-        base = DISPLAY_VIA_TASK
-    elif meeting_id is not None:
-        meeting = meeting_service.get_by_id(meeting_id)
-        meeting_status = meeting_service.normalize_status(
-            meeting.status if meeting is not None else ""
-        )
-        if meeting_status == MEETING_CLOSED:
-            return DISPLAY_DONE
-        if meeting_status == MEETING_PLANNED:
-            base = DISPLAY_VIA_MEETING
-        else:
-            base = DISPLAY_PLANNED
-    elif (status or "") == STATUS_VIA_TASK:
-        base = DISPLAY_VIA_TASK
-    elif (status or "") == STATUS_VIA_MEETING:
-        base = DISPLAY_VIA_MEETING
-
-    if month_has_ended(year, month, today=today):
-        return DISPLAY_REST
-    return base
+        return DISPLAY_WILL_NOT_PERFORM
+    if task_id is not None or meeting_id is not None:
+        return DISPLAY_PLANNED
+    if (status or "") in {STATUS_VIA_TASK, STATUS_VIA_MEETING}:
+        return DISPLAY_PLANNED
+    return DISPLAY_TO_PLAN
 
 
 def resolve_display_status(item: YearlyPlanItem, *, today: date | None = None) -> str:
@@ -191,18 +168,25 @@ def summarize_display_statuses(statuses: list[str]) -> dict[str, int]:
         "rest": 0,
         "cancelled": 0,
         "planned": 0,
+        "to_plan": 0,
+        "will_not_perform": 0,
+        "processed": 0,
     }
     for status in statuses:
         if status == DISPLAY_DONE:
             summary["done"] += 1
+        elif status == DISPLAY_TO_PLAN:
+            summary["to_plan"] += 1
+        elif status in {DISPLAY_WILL_NOT_PERFORM, DISPLAY_CANCELLED}:
+            summary["will_not_perform"] += 1
+            summary["cancelled"] += 1
         elif status in {DISPLAY_VIA_TASK, DISPLAY_VIA_MEETING}:
             summary["in_progress"] += 1
         elif status == DISPLAY_REST:
             summary["rest"] += 1
-        elif status == DISPLAY_CANCELLED:
-            summary["cancelled"] += 1
         elif status == DISPLAY_PLANNED:
             summary["planned"] += 1
+    summary["processed"] = 1 if summary["to_plan"] == 0 else 0
     return summary
 
 
@@ -212,6 +196,18 @@ def _link_text(task_id: int | None, meeting_id: int | None) -> str:
     if meeting_id is not None:
         return f"Událost #{meeting_id}"
     return "—"
+
+
+def _decision_note(note: str, status: str, skip_reason: str) -> str:
+    text = (note or "").strip()
+    reason = (skip_reason or "").strip()
+    if (status or "") != STATUS_CANCELLED or not reason:
+        return text
+    if not text:
+        return reason
+    if reason in text:
+        return text
+    return f"{text}\n{reason}"
 
 
 def _manual_row_from_fields(
@@ -227,11 +223,12 @@ def _manual_row_from_fields(
     slot_month: int | None = None,
     is_recurring: bool = False,
     occurrence_id: int | None = None,
+    skip_reason: str = "",
 ) -> YearlyPlanRow:
     return YearlyPlanRow(
         kind=ROW_KIND_MANUAL,
         title=(item.title or "").strip() or f"Položka #{item.id}",
-        note=(item.note or "").strip(),
+        note=_decision_note(item.note or "", status, skip_reason),
         display_status=resolve_display_status_fields(
             status=status,
             task_id=task_id,
@@ -261,15 +258,16 @@ def _manual_row(item: YearlyPlanItem, *, today: date) -> YearlyPlanRow:
         meeting_id=item.meeting_id,
         today=today,
         is_recurring=False,
+        skip_reason=getattr(item, "skip_reason", "") or "",
     )
 
 
 def _periodic_display_status(planned_due: date, *, has_occurrence: bool, today: date) -> str:
+    """Historické provedení zůstává Splněno. Otevřený výskyt je K naplánování."""
+    _ = (planned_due, today)
     if has_occurrence:
         return DISPLAY_DONE
-    if month_has_ended(planned_due.year, planned_due.month, today=today):
-        return DISPLAY_REST
-    return DISPLAY_PLANNED
+    return DISPLAY_TO_PLAN
 
 
 def iter_periodic_due_dates(activity, *, until: date):
@@ -666,12 +664,6 @@ class YearlyPlanService:
 
         item.year = to_year
         item.month = to_month
-        if item.task_id is not None:
-            item.status = STATUS_VIA_TASK
-        elif item.meeting_id is not None:
-            item.status = STATUS_VIA_MEETING
-        else:
-            item.status = STATUS_PLANNED
         item.updated_at = datetime.now()
         return self.repository.update(item)
 
@@ -1020,6 +1012,7 @@ class YearlyPlanService:
                         slot_month=occurrence.month,
                         is_recurring=True,
                         occurrence_id=occurrence.id,
+                        skip_reason=getattr(occurrence, "skip_reason", "") or "",
                     )
                 )
             seen_slots.add((item.id, year, month))
@@ -1048,6 +1041,7 @@ class YearlyPlanService:
                     slot_month=occurrence.month,
                     is_recurring=True,
                     occurrence_id=occurrence.id,
+                    skip_reason=getattr(occurrence, "skip_reason", "") or "",
                 )
             )
             seen_slots.add(slot_key)
@@ -1087,7 +1081,104 @@ class YearlyPlanService:
         return self.month_status_repository.get_for_month(year, month)
 
     def is_month_processed(self, year: int, month: int) -> bool:
+        """True, pokud v databázi zůstalo historické ruční razítko.
+
+        Razítko se do zobrazení ani do upozornění nezapočítává.
+        """
         return self.get_month_status(year, month) is not None
+
+    def is_month_automatically_processed(
+        self,
+        year: int,
+        month: int,
+        *,
+        today: date | None = None,
+    ) -> bool:
+        """Zpracován, pokud žádná zobrazená položka není K naplánování."""
+        today = today or date.today()
+        self._validate_year_month(year, month)
+        rows = self.list_month_rows(year, month, today=today)
+        return all(row.display_status != DISPLAY_TO_PLAN for row in rows)
+
+    def skip_manual(self, item_id: int, *, reason: str) -> YearlyPlanItem:
+        """Nevykoná se u jednorázové položky. Vazby ani text poznámky nemění."""
+        text = _required_skip_reason(reason)
+        item = self.repository.get_by_id(item_id)
+        if item is None:
+            raise YearlyPlanValidationError("Položka Ročního plánu nebyla nalezena.")
+        if is_repeating(item):
+            raise YearlyPlanValidationError(
+                "Opakovanou řadu nelze vynechat najednou. Vynechte jednotlivý výskyt."
+            )
+        item.status = STATUS_CANCELLED
+        item.skip_reason = text
+        item.updated_at = datetime.now()
+        return self.repository.update(item)
+
+    def restore_manual(self, item_id: int) -> YearlyPlanItem:
+        """Zruší Nevykoná se. Vazba na úkol nebo událost zůstane."""
+        item = self.repository.get_by_id(item_id)
+        if item is None:
+            raise YearlyPlanValidationError("Položka Ročního plánu nebyla nalezena.")
+        if is_repeating(item):
+            raise YearlyPlanValidationError(
+                "Opakovanou řadu nelze vrátit najednou. Vraťte jednotlivý výskyt."
+            )
+        if (item.status or "") != STATUS_CANCELLED:
+            return item
+        item.skip_reason = ""
+        item.status = _status_after_restore(item.task_id, item.meeting_id)
+        item.updated_at = datetime.now()
+        return self.repository.update(item)
+
+    def skip_manual_occurrence(
+        self,
+        definition_id: int,
+        *,
+        year: int,
+        month: int,
+        reason: str,
+    ) -> YearlyPlanOccurrence:
+        """Nevykoná se u jednoho výskytu. Pravidlo opakování ani vazby nemění."""
+        text = _required_skip_reason(reason)
+        item = self.repository.get_by_id(definition_id)
+        if item is None or not is_repeating(item):
+            raise YearlyPlanValidationError("Opakovaná položka nebyla nalezena.")
+        self._validate_year_month(year, month)
+        if not definition_occurs_in_month(item, year, month):
+            raise YearlyPlanValidationError("Výskyt nepatří do této opakované řady.")
+        occurrence = self._ensure_occurrence(
+            definition_id,
+            year=year,
+            month=month,
+            status=STATUS_CANCELLED,
+            keep_links=True,
+        )
+        occurrence.skip_reason = text
+        occurrence.updated_at = datetime.now()
+        return self.occurrence_repository.update(occurrence)
+
+    def restore_manual_occurrence(
+        self,
+        definition_id: int,
+        *,
+        year: int,
+        month: int,
+    ) -> YearlyPlanOccurrence | None:
+        """Zruší Nevykoná se u jednoho výskytu. Přesun ani vazby nemění."""
+        item = self.repository.get_by_id(definition_id)
+        if item is None or not is_repeating(item):
+            raise YearlyPlanValidationError("Opakovaná položka nebyla nalezena.")
+        occurrence = self.occurrence_repository.get_slot(definition_id, year, month)
+        if occurrence is None or (occurrence.status or "") != STATUS_CANCELLED:
+            return occurrence
+        occurrence.skip_reason = ""
+        occurrence.status = _status_after_restore(
+            occurrence.task_id,
+            occurrence.meeting_id,
+        )
+        occurrence.updated_at = datetime.now()
+        return self.occurrence_repository.update(occurrence)
 
     def mark_month_processed(
         self,
@@ -1116,7 +1207,26 @@ class YearlyPlanService:
         today = today or date.today()
         if today < first_working_day(today.year, today.month):
             return False
-        return not self.is_month_processed(today.year, today.month)
+        return not self.is_month_automatically_processed(
+            today.year,
+            today.month,
+            today=today,
+        )
+
+
+def _required_skip_reason(reason: str) -> str:
+    text = (reason or "").strip()
+    if not text:
+        raise YearlyPlanValidationError(SKIP_REASON_REQUIRED_MESSAGE)
+    return text
+
+
+def _status_after_restore(task_id: int | None, meeting_id: int | None) -> str:
+    if task_id is not None:
+        return STATUS_VIA_TASK
+    if meeting_id is not None:
+        return STATUS_VIA_MEETING
+    return STATUS_PLANNED
 
 
 yearly_plan_service = YearlyPlanService()

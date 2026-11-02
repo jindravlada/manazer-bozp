@@ -11,6 +11,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from PySide6.QtWidgets import QApplication
+from sqlalchemy import delete
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -59,7 +60,14 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.rocni_plan.sluzby.yearly_plan_service import yearly_plan_service
     from moduly.rocni_plan.ui.yearly_plan_tab import YearlyPlanTab
     from moduly.schuzky.constants import DIALOG_WINDOW_TITLE
+    from moduly.periodicke_cinnosti.sluzby.periodic_activity_service import (
+        periodic_activity_service,
+    )
+    from moduly.rocni_plan.modely.yearly_plan_item import YearlyPlanItem
+    from moduly.rocni_plan.modely.yearly_plan_item_move import YearlyPlanItemMove
+    from moduly.rocni_plan.modely.yearly_plan_occurrence import YearlyPlanOccurrence
     from moduly.schuzky.ui.meeting_dialog import MeetingDialog
+    from core.database.session import get_session
 
 
 class AgendaRocniUx1TestCase(unittest.TestCase):
@@ -73,8 +81,27 @@ class AgendaRocniUx1TestCase(unittest.TestCase):
                 yearly_plan_service.month_status_repository.delete_for_month(
                     year, month
                 )
+        with get_session() as session:
+            session.execute(delete(YearlyPlanOccurrence))
+            session.execute(delete(YearlyPlanItemMove))
+            session.execute(delete(YearlyPlanItem))
+            session.commit()
+        for activity in list(periodic_activity_service.get_all()):
+            periodic_activity_service.update_activity(
+                activity.id,
+                title=activity.title,
+                active=False,
+                next_due_date=activity.next_due_date,
+                repeat_every=activity.repeat_every,
+                repeat_unit=activity.repeat_unit,
+                notify_every=activity.notify_every,
+                notify_unit=activity.notify_unit,
+                next_from=activity.next_from,
+                place_kind=activity.place_kind,
+            )
 
     def test_overdue_month_attention_appears_in_co_hori(self) -> None:
+        yearly_plan_service.create(year=2026, month=8, title="Nezpracovaný srpen")
         today = date(2026, 8, 9)  # po prvním pracovním dni 3. 8.
         items = overdue_yearly_plan_month_items(today)
         self.assertEqual(len(items), 1)
@@ -93,6 +120,7 @@ class AgendaRocniUx1TestCase(unittest.TestCase):
         widget.close()
 
     def test_month_processed_removes_from_co_hori_and_upcoming(self) -> None:
+        item = yearly_plan_service.create(year=2026, month=8, title="Srpen k rozhodnutí")
         today = date(2026, 8, 9)
         self.assertEqual(len(overdue_yearly_plan_month_items(today)), 1)
         self.assertTrue(
@@ -107,6 +135,8 @@ class AgendaRocniUx1TestCase(unittest.TestCase):
             8,
             processed_at=datetime(2026, 8, 9, 10, 0, 0),
         )
+        self.assertEqual(len(overdue_yearly_plan_month_items(today)), 1)
+        yearly_plan_service.skip_manual(item.id, reason="Nebude se konat.")
 
         self.assertEqual(overdue_yearly_plan_month_items(today), [])
         self.assertFalse(
@@ -128,6 +158,7 @@ class AgendaRocniUx1TestCase(unittest.TestCase):
         widget.close()
 
     def test_due_today_month_is_in_pripominky(self) -> None:
+        yearly_plan_service.create(year=2026, month=8, title="První pracovní den")
         today = date(2026, 8, 3)  # první pracovní den = termín
         self.assertEqual(len(overdue_yearly_plan_month_items(today)), 1)
         self.assertTrue(

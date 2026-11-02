@@ -42,7 +42,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.periodicke_cinnosti.ui.periodic_activity_dialog import (
         PeriodicActivityDialog,
     )
-    from moduly.rocni_plan.constants import DISPLAY_DONE, DISPLAY_PLANNED
+    from moduly.rocni_plan.constants import DISPLAY_DONE, DISPLAY_TO_PLAN
     from moduly.rocni_plan.sluzby.yearly_plan_service import list_periodic_rows_for_month
 
 
@@ -125,14 +125,14 @@ class PeriodicDuePc03TestCase(unittest.TestCase):
         self.assertIn(november[0][2], {item[0] for item in history})
         self.assertEqual(
             self._plan(activity.id, 12),
-            [(date(2026, 12, 5), DISPLAY_PLANNED, None)],
+            [(date(2026, 12, 5), DISPLAY_TO_PLAN, None)],
         )
         january = [
             (row.planned_due_date, row.display_status)
             for row in list_periodic_rows_for_month(2027, 1, today=date(2026, 11, 1))
             if row.activity_id == activity.id
         ]
-        self.assertEqual(january, [(date(2027, 1, 5), DISPLAY_PLANNED)])
+        self.assertEqual(january, [(date(2027, 1, 5), DISPLAY_TO_PLAN)])
 
     def test_performance_on_due_date(self) -> None:
         activity = self._activity(due=date(2026, 11, 5))
@@ -206,7 +206,7 @@ class PeriodicDuePc03TestCase(unittest.TestCase):
         self.assertTrue(all(item[1] == DISPLAY_DONE for item in november))
         self.assertEqual(
             self._plan(activity.id, 12),
-            [(date(2026, 12, 2), DISPLAY_PLANNED, None)],
+            [(date(2026, 12, 2), DISPLAY_TO_PLAN, None)],
         )
 
     def test_mode_change_confirms_new_due_and_keeps_history(self) -> None:

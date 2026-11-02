@@ -139,7 +139,8 @@ class AgendaRocniUx4TestCase(unittest.TestCase):
         self._select_month_header(tab, 3)
         self.assertTrue(tab.table.selected_is_month_header())
         self.assertEqual(tab.table.selected_header_month(), 3)
-        self.assertTrue(tab.mark_month_btn.isEnabled())
+        self.assertFalse(tab.mark_month_btn.isEnabled())
+        self.assertFalse(tab.mark_month_btn.isVisible())
         self.assertFalse(tab.edit_btn.isEnabled())
         self.assertFalse(tab.create_task_btn.isEnabled())
         self.assertFalse(tab.create_meeting_btn.isEnabled())
@@ -157,8 +158,9 @@ class AgendaRocniUx4TestCase(unittest.TestCase):
         tab = YearlyPlanTab()
         tab.set_year_month(2031, 5)
         text = tab.table.header_text_for_month(5)
-        self.assertIn("Zpracováno:", text)
-        self.assertIn("12. 5. 2031", text)
+        self.assertIn("Zpracován", text)
+        self.assertNotIn("12. 5. 2031", text)
+        self.assertIsNotNone(yearly_plan_service.get_month_status(2031, 5))
         self._select_month_header(tab, 5)
         self.assertFalse(tab.mark_month_btn.isEnabled())
         tab.close()
@@ -168,7 +170,7 @@ class AgendaRocniUx4TestCase(unittest.TestCase):
         tab = YearlyPlanTab()
         tab.set_year_month(2031, 7)
         self._select_month_header(tab, 7)
-        self.assertTrue(tab.mark_month_btn.isEnabled())
+        self.assertFalse(tab.mark_month_btn.isEnabled())
         self._select_item_row(tab, item.id)
         self.assertFalse(tab.mark_month_btn.isEnabled())
         self.assertTrue(tab.edit_btn.isEnabled())
@@ -218,17 +220,12 @@ class AgendaRocniUx4TestCase(unittest.TestCase):
         tab = YearlyPlanTab()
         tab.set_year_month(2031, 9)
         self._select_month_header(tab, 9)
-        self.assertTrue(tab.mark_month_btn.isEnabled())
-        with patch.object(
-            QMessageBox,
-            "question",
-            return_value=QMessageBox.StandardButton.Yes,
-        ):
-            tab.mark_month_processed()
-        self.assertTrue(yearly_plan_service.is_month_processed(2031, 9))
-        text = tab.table.header_text_for_month(9)
-        self.assertIn("Zpracováno:", text)
         self.assertFalse(tab.mark_month_btn.isEnabled())
+        tab.mark_month_processed()
+        self.assertFalse(yearly_plan_service.is_month_processed(2031, 9))
+        text = tab.table.header_text_for_month(9)
+        self.assertIn("Zpracován", text)
+        self.assertNotIn("Zpracováno:", text)
         tab.close()
 
     def test_month_header_span_covers_visible_columns(self) -> None:

@@ -52,7 +52,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.periodicke_cinnosti.sluzby.periodic_activity_service import (
         periodic_activity_service,
     )
-    from moduly.rocni_plan.constants import DISPLAY_REST
+    from moduly.rocni_plan.constants import DISPLAY_TO_PLAN
     from moduly.rocni_plan.sluzby.yearly_plan_service import list_periodic_rows_for_month
     from moduly.schuzky.sluzby.meeting_service import meeting_service
     from moduly.ukoly.sluzby.task_service import task_service
@@ -177,7 +177,7 @@ class PeriodicDisplayPc02TestCase(unittest.TestCase):
         ]
         self.assertEqual(
             [(row.planned_due_date, row.display_status) for row in plan],
-            [(date(2025, 3, 5), DISPLAY_REST)],
+            [(date(2025, 3, 5), DISPLAY_TO_PLAN)],
         )
 
         marks, _ = periodic_calendar_marks(2030, 6, today=_TODAY)

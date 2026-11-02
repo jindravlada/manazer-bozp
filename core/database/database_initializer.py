@@ -514,12 +514,19 @@ def _ensure_yearly_plan_repeat_columns() -> None:
         _add_column("yearly_plan_items", "due_kind VARCHAR(30) DEFAULT 'none' NOT NULL")
     if "due_day" not in columns:
         _add_column("yearly_plan_items", "due_day INTEGER")
+    if "skip_reason" not in columns:
+        _add_column("yearly_plan_items", "skip_reason TEXT DEFAULT '' NOT NULL")
 
     occurrence_columns = _table_columns("yearly_plan_occurrences")
     if not occurrence_columns:
         from moduly.rocni_plan.modely.yearly_plan_occurrence import YearlyPlanOccurrence
 
         YearlyPlanOccurrence.__table__.create(bind=_db_engine(), checkfirst=True)
+    elif "skip_reason" not in occurrence_columns:
+        _add_column(
+            "yearly_plan_occurrences",
+            "skip_reason TEXT DEFAULT '' NOT NULL",
+        )
 
 
 def _ensure_meeting_external_participants_column() -> None:
