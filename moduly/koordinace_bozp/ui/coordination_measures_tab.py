@@ -360,9 +360,12 @@ class CoordinationMeasuresTab(CoordinationTabEditPolicyMixin, QWidget):
 
     def _selected_measure(self):
         measure_id = self.table.selected_measure_id()
-        if measure_id is None:
+        if measure_id is None or self.coordination_id is None:
             return None
-        return coordination_measure_service.get_by_id(measure_id)
+        measure = coordination_measure_service.get_by_id(measure_id)
+        if measure is None or measure.coordination_id != self.coordination_id:
+            return None
+        return measure
 
     def _agreement_editors(self) -> tuple[QTextEdit, ...]:
         return (

@@ -84,6 +84,16 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.nastaveni.sluzby.settings_service import settings_service
 
 
+def _select_measure(tab, measure_id: int) -> int:
+    for row in range(tab.table.rowCount()):
+        item = tab.table.item(row, 0)
+        if item is not None and int(item.text()) == measure_id:
+            tab.table.selectRow(row)
+            tab._update_action_buttons()
+            return row
+    raise AssertionError(f"Opatření {measure_id} není v tabulce této koordinace.")
+
+
 def _fill_id_table(ids: list[int]):
     table = __import__("PySide6.QtWidgets", fromlist=["QTableWidget"]).QTableWidget()
     table.setColumnCount(1)
@@ -172,11 +182,59 @@ class UxCoord5SelectionTestCase(unittest.TestCase):
             },
         ):
             tab.add_measure()
-        self.assertEqual(tab.table.rowCount(), 1)
-        self.assertEqual(tab.table.selected_measure_id(), tab.table.selected_measure_id())
+        own = coordination_measure_service.list_for_coordination(coordination.id)
+        shown = [
+            int(tab.table.item(row, 0).text())
+            for row in range(tab.table.rowCount())
+        ]
+        self.assertEqual(set(shown), {item.id for item in own})
+        self.assertEqual(len(shown), len(own))
+        self.assertTrue(all(item.coordination_id == coordination.id for item in own))
         selected = coordination_measure_service.get_by_id(tab.table.selected_measure_id())
         assert selected is not None
         self.assertEqual(selected.title, "Nové opatření")
+        self.assertEqual(selected.coordination_id, coordination.id)
+
+    def test_deactivate_does_not_touch_another_coordination(self) -> None:
+        first = self._create_coordination()
+        second = bozp_coordination_service.create_coordination(
+            subject="Jiná koordinace",
+            meeting_date=date.today(),
+            place="Brno",
+        )
+        own = coordination_measure_service.add(
+            first.id,
+            title="Vlastní",
+            description="Text",
+            category=MEASURE_CATEGORY_COMMUNICATION,
+        )
+        foreign = coordination_measure_service.add(
+            second.id,
+            title="Cizí",
+            description="Text",
+            category=MEASURE_CATEGORY_COMMUNICATION,
+        )
+        tab = CoordinationMeasuresTab(coordination_id=first.id)
+        shown = {
+            int(tab.table.item(row, 0).text())
+            for row in range(tab.table.rowCount())
+        }
+        self.assertIn(own.id, shown)
+        self.assertNotIn(foreign.id, shown)
+        _select_measure(tab, own.id)
+        with patch(
+            "moduly.koordinace_bozp.ui.coordination_measures_tab.QMessageBox.question",
+            return_value=QMessageBox.StandardButton.Yes,
+        ):
+            tab.deactivate_selected_measure()
+        self.assertFalse(coordination_measure_service.get_by_id(own.id).active)
+        self.assertTrue(coordination_measure_service.get_by_id(foreign.id).active)
+        self.assertTrue(
+            all(
+                item.active
+                for item in coordination_measure_service.list_for_coordination(second.id)
+            )
+        )
 
     def test_edit_keeps_selected_record(self) -> None:
         coordination = self._create_coordination()

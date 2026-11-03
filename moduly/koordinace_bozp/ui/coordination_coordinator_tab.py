@@ -293,6 +293,11 @@ class CoordinationCoordinatorTab(CoordinationTabEditPolicyMixin, QWidget):
                     require_complete=require_complete,
                 )
                 if employer_name is None:
+                    if (
+                        self.employer_combo.currentData()
+                        == COORDINATOR_MANUAL_OTHER_ORGANIZATION
+                    ):
+                        return False
                     return not require_complete
                 coordination_coordinator_service.set_coordinator(
                     self.coordination_id,
@@ -320,12 +325,11 @@ class CoordinationCoordinatorTab(CoordinationTabEditPolicyMixin, QWidget):
         if selection == COORDINATOR_MANUAL_OTHER_ORGANIZATION:
             employer_name = (self.employer_name.text() or "").strip()
             if not employer_name:
-                if require_complete:
-                    QMessageBox.warning(
-                        self,
-                        TAB_COORDINATOR,
-                        "Zadejte název organizace.",
-                    )
+                QMessageBox.warning(
+                    self,
+                    TAB_COORDINATOR,
+                    "Zadejte název organizace.",
+                )
                 return None
             return employer_name
         if isinstance(selection, int):

@@ -290,6 +290,31 @@ class KoordinaceBozpPhaseCoord001TestCase(unittest.TestCase):
                 meeting_date=date.today(),
             )
 
+    def test_stored_empty_subject_is_left_unchanged(self) -> None:
+        created = bozp_coordination_service.create_coordination(
+            subject="Původní název",
+            meeting_date=date.today(),
+        )
+        with get_session() as session:
+            row = session.get(BozpCoordination, created.id)
+            assert row is not None
+            row.subject = ""
+            session.commit()
+
+        loaded = bozp_coordination_service.get_by_id(created.id)
+        assert loaded is not None
+        self.assertEqual(loaded.subject, "")
+        with self.assertRaises(BozpCoordinationError):
+            bozp_coordination_service.update_coordination(
+                created.id,
+                meeting_date=loaded.meeting_date,
+                place=loaded.place or "",
+                subject="   ",
+            )
+        again = bozp_coordination_service.get_by_id(created.id)
+        assert again is not None
+        self.assertEqual(again.subject, "")
+
 
 if __name__ == "__main__":
     unittest.main()

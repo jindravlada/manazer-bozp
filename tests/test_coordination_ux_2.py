@@ -140,7 +140,7 @@ class CoordinationUx2TestCase(unittest.TestCase):
 
     def test_draft_can_be_saved_repeatedly(self) -> None:
         created = bozp_coordination_service.create_coordination(
-            subject="",
+            subject="Rozpracovaná schůzka",
             meeting_date=date(2026, 7, 30),
             place="Místnost",
         )

@@ -13,6 +13,7 @@ from moduly.koordinace_bozp.constants import (
     PBP_FILTER_ALL,
     STATUS_FILTER_ALL,
     STATUS_FILTERS,
+    SUBJECT_REQUIRED_MESSAGE,
     VALIDITY_FILTER_ALL,
     VALIDITY_FILTER_EXPIRED,
     VALIDITY_FILTER_EXPIRING,
@@ -142,7 +143,7 @@ class BozpCoordinationService:
         workplace_handover_text: str = "",
         final_provisions_text: str = "",
     ) -> BozpCoordination:
-        normalized_subject = self._normalize_subject(subject)
+        normalized_subject = self._require_subject(subject)
         # COORDINATION-UX-2: nová koordinace vždy startuje jako Rozpracováno.
         # Povinná pole se nevalidují při uložení – jen při uzavření.
         resolved_meeting = meeting_date or date.today()
@@ -223,10 +224,11 @@ class BozpCoordinationService:
         coordination = self.repository.get_by_id(coordination_id)
         if coordination is None:
             return None
+        normalized_subject = self._require_subject(subject)
 
         coordination.meeting_date = meeting_date or coordination.meeting_date
         coordination.place = (place or "").strip()
-        coordination.subject = self._normalize_subject(subject)
+        coordination.subject = normalized_subject
         # UX-COORD-6a: stav se mění jen přes coordination_lifecycle_service.
         coordination.note = (note or "").strip()
         if emergency_reporting is not None:
@@ -281,8 +283,14 @@ class BozpCoordinationService:
 
     @staticmethod
     def _normalize_subject(subject: str) -> str:
-        """Normalizuje název akce; prázdný text je při uložení povolen (COORDINATION-UX-2)."""
         return " ".join((subject or "").strip().split())
+
+    def _require_subject(self, subject: str) -> str:
+        """Název akce je povinný. Čtení už uloženého prázdného záznamu se nemění."""
+        normalized = self._normalize_subject(subject)
+        if not normalized:
+            raise BozpCoordinationError(SUBJECT_REQUIRED_MESSAGE)
+        return normalized
 
     @staticmethod
     def _validate_validity_range(valid_from: date, valid_to: date) -> None:

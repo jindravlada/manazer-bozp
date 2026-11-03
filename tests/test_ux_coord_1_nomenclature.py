@@ -46,6 +46,7 @@ with patch.object(Path, "home", return_value=_TMP):
         TABLE_HEADERS,
     )
     from moduly.koordinace_bozp.sluzby.bozp_coordination_service import (
+        BozpCoordinationError,
         bozp_coordination_service,
     )
     from moduly.koordinace_bozp.sluzby.coordination_protocol_document import (
@@ -148,10 +149,8 @@ class UxCoord1NomenclatureTestCase(unittest.TestCase):
         self.assertGreaterEqual(text.count("dialog.showMaximized()"), 2)
 
     def test_validation_uses_new_label(self) -> None:
-        # COORDINATION-UX-2: název akce není povinný při uložení.
-        created = bozp_coordination_service.create_coordination(subject="  ")
-        self.assertEqual(created.subject, "")
-        self.assertEqual(created.status, "draft")
+        with self.assertRaises(BozpCoordinationError):
+            bozp_coordination_service.create_coordination(subject="  ")
         self.assertIn("Název akce", SUBJECT_REQUIRED_MESSAGE)
         self.assertNotIn("Předmět koordinace", SUBJECT_REQUIRED_MESSAGE)
 

@@ -218,6 +218,12 @@ class UxCoord4cManualCoordinatorEmployerTestCase(unittest.TestCase):
             tab.employer_name.clear()
             self.assertFalse(dialog._save())
             warning.assert_called()
+            kept = coordination_coordinator_service.get_for_coordination(
+                coordination.id
+            )
+            assert kept is not None
+            self.assertEqual(kept.employer_name, "Externí BOZP s.r.o.")
+            self.assertEqual(kept.full_name, "Externí Koordinátor")
         dialog.mark_clean()
         dialog.close()
 

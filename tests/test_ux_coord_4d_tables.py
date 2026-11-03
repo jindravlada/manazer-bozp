@@ -101,6 +101,16 @@ def _send_key(widget, key: Qt.Key) -> None:
     QApplication.sendEvent(widget, event)
 
 
+def _select_measure(tab, measure_id: int) -> int:
+    for row in range(tab.table.rowCount()):
+        item = tab.table.item(row, 0)
+        if item is not None and int(item.text()) == measure_id:
+            tab.table.selectRow(row)
+            tab._update_action_buttons()
+            return row
+    raise AssertionError(f"Opatření {measure_id} není v tabulce této koordinace.")
+
+
 class UxCoord4dTablesTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -189,11 +199,11 @@ class UxCoord4dTablesTestCase(unittest.TestCase):
             category=MEASURE_CATEGORY_COMMUNICATION,
         )
         tab = CoordinationMeasuresTab(coordination_id=coordination.id)
-        tab.table.selectRow(0)
+        row = _select_measure(tab, measure.id)
         with patch.object(tab, "edit_selected_measure") as edit_mock:
             tab.table.doubleClicked.disconnect()
             tab.table.doubleClicked.connect(tab.edit_selected_measure)
-            index = tab.table.model().index(0, MSR_COL_DESCRIPTION)
+            index = tab.table.model().index(row, MSR_COL_DESCRIPTION)
             tab.table.doubleClicked.emit(index)
             edit_mock.assert_called()
         self.assertEqual(tab.table.selected_measure_id(), measure.id)
@@ -228,10 +238,20 @@ class UxCoord4dTablesTestCase(unittest.TestCase):
             description="Text",
             category=MEASURE_CATEGORY_COMMUNICATION,
         )
+        other = bozp_coordination_service.create_coordination(
+            subject="Jiná koordinace",
+            meeting_date=date.today(),
+            place="Brno",
+        )
+        foreign = coordination_measure_service.add(
+            other.id,
+            title="Cizí opatření",
+            description="Text",
+            category=MEASURE_CATEGORY_COMMUNICATION,
+        )
         tab = CoordinationMeasuresTab(coordination_id=coordination.id)
         tab.table.setFocus()
-        tab.table.selectRow(0)
-        tab._update_action_buttons()
+        _select_measure(tab, measure.id)
         self.assertTrue(tab.deactivate_btn.isEnabled())
 
         with patch(
@@ -244,6 +264,10 @@ class UxCoord4dTablesTestCase(unittest.TestCase):
         reloaded = coordination_measure_service.get_by_id(measure.id)
         assert reloaded is not None
         self.assertFalse(reloaded.active)
+        foreign_row = coordination_measure_service.get_by_id(foreign.id)
+        assert foreign_row is not None
+        self.assertTrue(foreign_row.active)
+        self.assertEqual(foreign_row.coordination_id, other.id)
 
     def test_delete_without_selection_does_nothing(self) -> None:
         coordination = self._create_coordination()
@@ -277,8 +301,7 @@ class UxCoord4dTablesTestCase(unittest.TestCase):
         coordination_measure_service.deactivate(measure.id)
         tab = CoordinationMeasuresTab(coordination_id=coordination.id)
         tab.table.setFocus()
-        tab.table.selectRow(0)
-        tab._update_action_buttons()
+        _select_measure(tab, measure.id)
         self.assertFalse(tab.deactivate_btn.isEnabled())
 
         with patch(
