@@ -799,6 +799,10 @@ def _ensure_task_columns() -> None:
         "task_type": "task_type VARCHAR(50) DEFAULT 'corrective'",
         "source_check_code": "source_check_code VARCHAR(100) DEFAULT ''",
         "remind_from": "remind_from DATE",
+        # Stejný typ jako Task.source_module. DEFAULT umožní doplnit NOT NULL
+        # do tabulky, která sloupec ještě nemá; existující hodnota se nemění.
+        "source_module": "source_module VARCHAR(50) NOT NULL DEFAULT 'manual'",
+        "source_record_id": "source_record_id INTEGER",
     }
     for column_name, column_sql in additions.items():
         if column_name not in columns:
