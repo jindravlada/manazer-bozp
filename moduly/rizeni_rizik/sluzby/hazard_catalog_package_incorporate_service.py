@@ -1181,8 +1181,15 @@ class HazardCatalogPackageIncorporateService:
     def _resolve_legal_document_id(self, link) -> int | None:
         if link.legal_document_id is not None:
             return int(link.legal_document_id)
-        reference = link.reference or ""
+        reference = (link.reference or "").strip()
         match = hazard_catalog_legal_document_resolver.resolve(reference)
+        if match.kind == LegalDocumentMatchKind.AMBIGUOUS:
+            labels = [label for _document_id, label in match.candidates if label]
+            detail = f" ({'; '.join(labels)})" if labels else ""
+            raise HazardCatalogPackageIncorporateError(
+                f"Citaci „{reference}“ odpovídá více právních dokumentů{detail}. "
+                "Vazba se nevytvořila."
+            )
         if match.kind != LegalDocumentMatchKind.EXACT or match.document_id is None:
             return None
         document = legal_document_service.get_by_id(int(match.document_id))

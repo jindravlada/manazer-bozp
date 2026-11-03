@@ -247,10 +247,80 @@ class LegalDocumentLinksR19bTestCase(unittest.TestCase):
             year=2001,
             title="Duplicitní NV 378/2001",
         )
+        with self.assertRaises(HazardCatalogPackageIncorporateError) as caught:
+            hazard_catalog_package_incorporate_service._resolve_legal_document_id(
+                AiProposalPackageLegalLink(reference="NV 378/2001"),
+            )
+        self.assertIn("378/2001", str(caught.exception))
+        self.assertIn("více právních dokumentů", str(caught.exception))
+        self.assertEqual(
+            hazard_library_template_legal_link_service.get_for_template(self.template.id),
+            [],
+        )
+
+    def test_explicit_document_id_ignores_same_citation(self) -> None:
+        duplicate = legal_document_service.create(
+            document_type=DOCUMENT_TYPE_NARIZENI_VLADY,
+            number="378",
+            year=2001,
+            title="Duplicitní NV 378/2001",
+        )
+        document_id = hazard_catalog_package_incorporate_service._resolve_legal_document_id(
+            AiProposalPackageLegalLink(
+                reference="NV 378/2001",
+                legal_document_id=self.nv.id,
+            ),
+        )
+        self.assertEqual(document_id, self.nv.id)
+        self.assertNotEqual(document_id, duplicate.id)
+
+    def test_similar_title_of_another_regulation_stays_unique(self) -> None:
+        legal_document_service.create(
+            document_type=DOCUMENT_TYPE_VYHLASKA,
+            number="50",
+            year=1979,
+            title="Vyhláška o odborné způsobilosti v elektrotechnice",
+        )
+        document_id = hazard_catalog_package_incorporate_service._resolve_legal_document_id(
+            AiProposalPackageLegalLink(reference="vyhl. č. 50/1978 Sb."),
+        )
+        self.assertEqual(document_id, self.vyhl.id)
+
+    def test_existing_link_survives_ambiguous_resolution(self) -> None:
+        kept = hazard_library_template_legal_link_service.create_link(
+            template_id=self.template.id,
+            legal_document_id=self.vyhl.id,
+            note="původní",
+        )
+        legal_document_service.create(
+            document_type=DOCUMENT_TYPE_NARIZENI_VLADY,
+            number="378",
+            year=2001,
+            title="Duplicitní NV 378/2001",
+        )
         with self.assertRaises(HazardCatalogPackageIncorporateError):
             hazard_catalog_package_incorporate_service._resolve_legal_document_id(
                 AiProposalPackageLegalLink(reference="NV 378/2001"),
             )
+        links = hazard_library_template_legal_link_service.get_for_template(self.template.id)
+        self.assertEqual([link.id for link in links], [kept.id])
+        self.assertEqual(links[0].legal_document_id, self.vyhl.id)
+
+    def test_repeated_ambiguous_resolution_creates_no_link(self) -> None:
+        legal_document_service.create(
+            document_type=DOCUMENT_TYPE_NARIZENI_VLADY,
+            number="378",
+            year=2001,
+            title="Duplicitní NV 378/2001",
+        )
+        link = AiProposalPackageLegalLink(reference="NV 378/2001")
+        for _attempt in range(2):
+            with self.assertRaises(HazardCatalogPackageIncorporateError):
+                hazard_catalog_package_incorporate_service._resolve_legal_document_id(link)
+        self.assertEqual(
+            hazard_library_template_legal_link_service.get_for_template(self.template.id),
+            [],
+        )
 
 
 if __name__ == "__main__":

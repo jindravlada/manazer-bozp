@@ -1803,9 +1803,17 @@ class AiPeerReviewWidget(QWidget):
 
         package = self._package_for_incorporate(record_id)
         if package is not None:
-            unresolved = hazard_catalog_package_incorporate_service.unresolved_legal_references(
-                package,
-            )
+            try:
+                unresolved = hazard_catalog_package_incorporate_service.unresolved_legal_references(
+                    package,
+                )
+            except HazardCatalogPackageIncorporateError as error:
+                QMessageBox.warning(
+                    self,
+                    AI_PEER_REVIEW_DIALOG_TITLE,
+                    format_ai_peer_review_user_error(error),
+                )
+                return
             if unresolved:
                 from moduly.rizeni_rizik.ui.hazard_catalog_ai_package_edit_dialog import (
                     confirm_unresolved_legal_links,
