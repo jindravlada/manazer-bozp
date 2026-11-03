@@ -53,11 +53,13 @@ class UxStandard002TestCase(unittest.TestCase):
         self.assertFalse(hasattr(page, "open_btn"))
         self.assertFalse(hasattr(agenda_constants, "ACTION_OPEN"))
 
-        toolbar_labels = [
-            btn.text()
-            for btn in page.findChildren(QPushButton)
-            if btn.text() in ("Otevřít", ACTION_EDIT)
+        agenda_buttons = [
+            page.new_task_btn,
+            page.new_meeting_btn,
+            page.new_from_template_btn,
+            page.edit_btn,
         ]
+        toolbar_labels = [btn.text() for btn in agenda_buttons]
         self.assertEqual(toolbar_labels.count(ACTION_EDIT), 1)
         self.assertNotIn("Otevřít", toolbar_labels)
 

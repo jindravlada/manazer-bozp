@@ -335,7 +335,9 @@ class AuditLeadRecommendation1TestCase(unittest.TestCase):
                 },
             ],
         )
-        return audit
+        from tests.support_prepared_audit import mark_audit_prepared
+
+        return mark_audit_prepared(audit.id)
 
     def _set_result(self, audit_id: int, *, control_point_id: str, result: str):
         return control_result_service.set_result(
@@ -571,7 +573,19 @@ class AuditLeadRecommendation1TestCase(unittest.TestCase):
         self.assertIsNone(loaded.finished_at)
         self.assertIsNone(loaded.lead_auditor_recommendation)
 
-        dialog.conclusion_widget._complete_audit()
+        from PySide6.QtWidgets import QMessageBox
+
+        with patch("moduly.audity.ui.audit_dialog.QMessageBox.warning"), patch(
+            "moduly.audity.ui.audit_dialog.QMessageBox.information"
+        ), patch(
+            "moduly.audity.ui.audit_conclusion_widget.QMessageBox.warning"
+        ), patch(
+            "moduly.audity.ui.audit_conclusion_widget.QMessageBox.information"
+        ), patch(
+            "moduly.audity.ui.audit_conclusion_widget.QMessageBox.question",
+            return_value=QMessageBox.StandardButton.Yes,
+        ):
+            dialog.conclusion_widget._complete_audit()
         loaded = audit_service.get_by_id(audit.id)
         assert loaded is not None
         self.assertEqual(loaded.status, AUDIT_STATUS_DOKONCENO)

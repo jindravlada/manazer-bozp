@@ -309,7 +309,7 @@ class KoordinaceBozpPhaseCoord002TestCase(unittest.TestCase):
             company_name="Beta stavební a.s.",
             abbreviation="",
         )
-        self.assertEqual(participant.abbreviation, "")
+        self.assertEqual(participant.abbreviation, "BSA")
         self.assertEqual(
             employer_abbreviation(participant),
             default_abbreviation("Beta stavební a.s."),
@@ -320,16 +320,15 @@ class KoordinaceBozpPhaseCoord002TestCase(unittest.TestCase):
         )
 
         main = coordination_employer_service.list_for_coordination(coordination.id)[0]
-        cleared = coordination_employer_service.update_employer(
-            main.id,
-            abbreviation="",
+        from moduly.koordinace_bozp.sluzby.coordination_employer_service import (
+            CoordinationEmployerError,
         )
-        assert cleared is not None
-        self.assertEqual(cleared.abbreviation, "")
-        self.assertEqual(
-            employer_abbreviation(cleared),
-            default_abbreviation("Hlavní firma s.r.o."),
-        )
+
+        with self.assertRaises(CoordinationEmployerError):
+            coordination_employer_service.update_employer(
+                main.id,
+                abbreviation="",
+            )
 
     def test_dialog_employers_tab(self) -> None:
         coordination = bozp_coordination_service.create_coordination(

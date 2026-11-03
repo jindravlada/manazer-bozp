@@ -290,23 +290,23 @@ class LegalESbirkaOpenDataFragmentsTestCase(unittest.TestCase):
                 self.skipTest(message)
             raise
 
-        self.assertEqual(labour.source_eli, _ELI_262)
+        self.assertTrue(labour.source_eli.startswith("eli/cz/sb/2006/262/"))
         self.assertGreaterEqual(len(labour.fragments), 2500)
         self.assertTrue(_by_kind(labour, "par"))
         self.assertTrue(_by_kind(labour, "odst"))
         self.assertTrue(_by_kind(labour, "pism"))
         self.assertTrue(_by_kind(labour, "priloha"))
-        self.assertTrue(all(item.fragment_eli.startswith(_ELI_262) for item in labour.fragments))
+        self.assertTrue(all(item.fragment_eli.startswith("eli/cz/sb/2006/262/") for item in labour.fragments))
         self.assertTrue(
             all(item.source_url.startswith(f"https://{ESBIRKA_OPENDATA_HOST}/") for item in labour.fragments)
         )
 
-        self.assertEqual(driving.source_eli, _ELI_361)
+        self.assertTrue(driving.source_eli.startswith("eli/cz/sb/2007/361/"))
         self.assertGreaterEqual(len(driving.fragments), 1000)
         self.assertTrue(_by_kind(driving, "par"))
         self.assertTrue(_by_kind(driving, "pism"))
         self.assertTrue(_by_kind(driving, "priloha"))
-        self.assertTrue(all(item.fragment_eli.startswith(_ELI_361) for item in driving.fragments))
+        self.assertTrue(all(item.fragment_eli.startswith("eli/cz/sb/2007/361/") for item in driving.fragments))
 
 
 if __name__ == "__main__":

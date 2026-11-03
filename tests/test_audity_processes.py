@@ -8,6 +8,14 @@ from unittest.mock import MagicMock, patch
 
 _TMP = Path(tempfile.mkdtemp())
 
+
+def _live_processes(widget):
+    """Widget sám katalog nenačte; dialog to dělá přes set_question_source."""
+    from moduly.audity.sluzby.audit_question_source_service import AuditQuestionSource
+
+    widget.set_question_source(AuditQuestionSource(mode="live", audit_id=None))
+    return widget
+
 with patch.object(Path, "home", return_value=_TMP):
     import core.services.storage_service as storage_module
 
@@ -129,14 +137,15 @@ class AudityProcessesTestCase(unittest.TestCase):
         audit = self._create_audit_with_team()
         dialog = AuditDialog(audit=audit)
 
-        self.assertEqual(dialog.tabs.count(), 8)
+        self.assertEqual(dialog.tabs.count(), 9)
         self.assertEqual(dialog.tabs.tabText(1), "Komise")
         self.assertEqual(dialog.tabs.tabText(2), "Úvod")
         self.assertEqual(dialog.tabs.tabText(3), TAB_DOCUMENTACE)
         self.assertEqual(dialog.tabs.tabText(4), TAB_TEREN)
-        self.assertEqual(dialog.tabs.tabText(5), "Zjištění")
-        self.assertEqual(dialog.tabs.tabText(6), "Úkoly")
-        self.assertEqual(dialog.tabs.tabText(7), "Závěr")
+        self.assertEqual(dialog.tabs.tabText(5), "Mimořádné ověření")
+        self.assertEqual(dialog.tabs.tabText(6), "Zjištění")
+        self.assertEqual(dialog.tabs.tabText(7), "Úkoly")
+        self.assertEqual(dialog.tabs.tabText(8), "Závěr")
 
     def test_tree_shows_seed_process(self) -> None:
         from moduly.audity.ui.audit_knowledge_tree_widget import AuditKnowledgeTreeWidget
@@ -151,7 +160,7 @@ class AudityProcessesTestCase(unittest.TestCase):
         from moduly.audity.ui.audit_processes_widget import AuditProcessesWidget
 
         audit = self._create_audit_with_team()
-        widget = AuditProcessesWidget()
+        widget = _live_processes(AuditProcessesWidget())
         widget.set_audit_id(audit.id)
         widget.knowledge_tree.select_node("urazy_mimo_udalosti", "evidence_hlaseni_urazu")
 
@@ -179,7 +188,7 @@ class AudityProcessesTestCase(unittest.TestCase):
 
         from moduly.audity.ui.audit_processes_widget import AuditProcessesWidget
 
-        processes = AuditProcessesWidget()
+        processes = _live_processes(AuditProcessesWidget())
         with patch.object(
             processes.knowledge_widget.criterion_widget,
             "scroll_to_top",
@@ -215,7 +224,7 @@ class AudityProcessesTestCase(unittest.TestCase):
 
         from moduly.audity.ui.audit_processes_widget import AuditProcessesWidget
 
-        widget = AuditProcessesWidget()
+        widget = _live_processes(AuditProcessesWidget())
         widget.set_audit_id(audit.id)
         widget.knowledge_tree.select_node("urazy_mimo_udalosti", "evidence_hlaseni_urazu")
         return widget, context
@@ -324,7 +333,7 @@ class AudityProcessesTestCase(unittest.TestCase):
         )
         from moduly.audity.ui.audit_processes_widget import AuditProcessesWidget
 
-        widget = AuditProcessesWidget()
+        widget = _live_processes(AuditProcessesWidget())
         widget.knowledge_tree.select_node("urazy_mimo_udalosti")
 
         self.assertEqual(widget.content_stack.currentIndex(), widget._PAGE_OVERVIEW)
@@ -348,7 +357,7 @@ class AudityProcessesTestCase(unittest.TestCase):
         )
         from moduly.audity.ui.audit_processes_widget import AuditProcessesWidget
 
-        widget = AuditProcessesWidget()
+        widget = _live_processes(AuditProcessesWidget())
         widget.knowledge_tree.select_node("planovani_bozp")
 
         right_texts = {label.text() for label in widget.methodology_panel.findChildren(QLabel)}
@@ -404,7 +413,7 @@ class AudityProcessesTestCase(unittest.TestCase):
         )
         from moduly.audity.ui.audit_processes_widget import AuditProcessesWidget
 
-        widget = AuditProcessesWidget()
+        widget = _live_processes(AuditProcessesWidget())
         widget.knowledge_tree.select_node("urazy_mimo_udalosti", "evidence_hlaseni_urazu")
 
         center_widget = widget.knowledge_widget.criterion_widget
@@ -427,7 +436,7 @@ class AudityProcessesTestCase(unittest.TestCase):
         from PySide6.QtWidgets import QLabel
         from moduly.audity.ui.audit_processes_widget import AuditProcessesWidget
 
-        widget = AuditProcessesWidget()
+        widget = _live_processes(AuditProcessesWidget())
         widget.knowledge_tree.select_node("urazy_mimo_udalosti", "evidence_hlaseni_urazu")
 
         labels = [label.text() for label in widget.methodology_panel.findChildren(QLabel)]
@@ -654,7 +663,7 @@ class AudityProcessesTestCase(unittest.TestCase):
         from moduly.audity.ui.audity_knowledge_editor_dialog import AudityKnowledgeEditorDialog
         from moduly.audity.ui.audit_processes_widget import AuditProcessesWidget
 
-        widget = AuditProcessesWidget()
+        widget = _live_processes(AuditProcessesWidget())
         widget.edit_knowledge_btn.click()
 
         mock_exec.assert_called_once()
@@ -665,7 +674,7 @@ class AudityProcessesTestCase(unittest.TestCase):
     def test_knowledge_editor_button_passes_current_context(self, mock_exec) -> None:
         from moduly.audity.ui.audit_processes_widget import AuditProcessesWidget
 
-        widget = AuditProcessesWidget()
+        widget = _live_processes(AuditProcessesWidget())
         widget.knowledge_tree.select_node("urazy_mimo_udalosti", "evidence_hlaseni_urazu")
         widget.edit_knowledge_btn.click()
 
@@ -687,7 +696,7 @@ class AudityProcessesTestCase(unittest.TestCase):
             note="Zachovat po editoru",
         )
 
-        widget = AuditProcessesWidget()
+        widget = _live_processes(AuditProcessesWidget())
         widget.set_audit_id(audit.id)
         widget.knowledge_tree.select_node("urazy_mimo_udalosti", "evidence_hlaseni_urazu")
         widget._open_knowledge_editor()
@@ -763,7 +772,7 @@ class AudityProcessesTestCase(unittest.TestCase):
             dialog.processes_widget._planned_process_ids,
             set(process_ids),
         )
-        self.assertEqual(dialog.processes_widget.knowledge_tree.topLevelItemCount(), 2)
+        self.assertEqual(dialog.processes_widget.knowledge_tree.topLevelItemCount(), 0)
 
 
 if __name__ == "__main__":

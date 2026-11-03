@@ -190,11 +190,11 @@ class AgendaRocniUx1TestCase(unittest.TestCase):
             self.assertTrue(button.icon().isNull(), msg=f"Neočekávaná ikona: {label}")
         tab.close()
 
-    def test_periodic_toolbar_buttons_are_text_only(self) -> None:
+    def test_periodic_toolbar_buttons_keep_text_and_icon(self) -> None:
         tab = PeriodicActivitiesTab()
         for button in (tab.new_btn, tab.edit_btn, tab.perform_btn):
             self.assertTrue(button.text())
-            self.assertTrue(button.icon().isNull(), msg=button.text())
+            self.assertFalse(button.icon().isNull(), msg=button.text())
         tab.close()
 
     def test_unsaved_prompt_matches_standard_dialog(self) -> None:
@@ -237,7 +237,10 @@ class AgendaRocniUx1TestCase(unittest.TestCase):
         self.assertNotEqual(dialog.result(), dialog.DialogCode.Accepted)
         dialog._editor.force_close()
 
-    def test_meeting_dialog_save_from_prompt_accepts(self) -> None:
+    def test_meeting_dialog_save_from_prompt_keeps_record_open(self) -> None:
+        """Uložit v potvrzení zavření zapíše událost a dialog samo neuzavře."""
+        from moduly.schuzky.sluzby.meeting_service import meeting_service
+
         dialog = MeetingDialog()
         dialog.title_edit.setText("Uložit z promptu")
         with patch(
@@ -245,8 +248,10 @@ class AgendaRocniUx1TestCase(unittest.TestCase):
             return_value="save",
         ):
             self.assertTrue(dialog._editor.request_close())
-            self.assertEqual(dialog.result(), dialog.DialogCode.Accepted)
-        dialog.close()
+        self.assertNotEqual(dialog.result(), dialog.DialogCode.Accepted)
+        titles = [item.title for item in meeting_service.get_all()]
+        self.assertIn("Uložit z promptu", titles)
+        dialog._editor.force_close()
 
 
 if __name__ == "__main__":

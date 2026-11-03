@@ -161,7 +161,10 @@ class AuditEffectivenessFix1TestCase(unittest.TestCase):
         assert closed is not None
         self.assertEqual(closed.computed_status, "Ukončeno")
         self.assertFalse(is_waiting_effectiveness_check(closed))
-        self.assertIsNone(_agenda_item(closed.id))
+        closed_item = _agenda_item(closed.id)
+        self.assertIsNotNone(closed_item)
+        self.assertEqual(closed_item.status, "Ukončeno")
+        self.assertNotEqual(closed_item.type_label, AGENDA_TYPE_CONTROL)
         self.assertIsNone(_attention_item(closed.id))
 
     def test_checked_audit_corrective_leaves_effectiveness_agenda(self) -> None:
@@ -184,7 +187,10 @@ class AuditEffectivenessFix1TestCase(unittest.TestCase):
         assert closed is not None
         self.assertEqual(closed.computed_status, "Ukončeno")
         self.assertFalse(is_waiting_effectiveness_check(closed))
-        self.assertIsNone(_agenda_item(closed.id))
+        closed_item = _agenda_item(closed.id)
+        self.assertIsNotNone(closed_item)
+        self.assertEqual(closed_item.status, "Ukončeno")
+        self.assertNotEqual(closed_item.type_label, AGENDA_TYPE_CONTROL)
         self.assertIsNone(_attention_item(closed.id))
 
     def test_canceled_audit_corrective_is_hidden(self) -> None:

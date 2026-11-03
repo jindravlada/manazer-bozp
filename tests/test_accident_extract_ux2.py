@@ -7,7 +7,6 @@ import importlib
 import os
 import re
 import shutil
-import subprocess
 import sys
 import tempfile
 import unittest
@@ -20,8 +19,11 @@ from xml.etree import ElementTree as ET
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 _TMP = Path(tempfile.mkdtemp(prefix="accident-extract-ux2-"))
-_REPO = Path(__file__).resolve().parents[1]
-_TEMPLATE_REL = "moduly/kniha_urazu/templates/exporty/VypisPracovniUraz.odt"
+# Hashe známých starých výchozích šablon, které služba eviduje. Commity v klonu nejsou.
+_OLD_HASH = "f3a749298dea6271f0543f5f82bcf286248a997ffe4fc5d21141d83eddf69a27"
+_UX1_HASH = "22b71c1bebbd30338d3f5a1264e776c23bd8e83ea21d6870ddfbbe1a860ea45f"
+_OLD_DEFAULT = b"known-old-vypis-default"
+_UX1_DEFAULT = b"known-ux1-vypis-default"
 
 with patch.object(Path, "home", return_value=_TMP):
     import core.services.storage_service as storage_module
@@ -46,6 +48,20 @@ with patch.object(Path, "home", return_value=_TMP):
     vypis_storage = vypis_module.storage_service
     from moduly.kniha_urazu.sluzby.zaverecna_zprava_service import zaverecna_zprava_service
 
+_REAL_HASH = vypis_storage._file_sha256
+
+
+def _fake_known_hash(path) -> str:
+    candidate = Path(path)
+    if candidate.is_file():
+        payload = candidate.read_bytes()
+        if payload == _OLD_DEFAULT:
+            return _OLD_HASH
+        if payload == _UX1_DEFAULT:
+            return _UX1_HASH
+    return _REAL_HASH(path)
+
+
 KIND_OVER_3 = "pracovní úraz s pracovní neschopností delší než 3 kalendářní dny"
 MEASURES = "Zajistit zábradlí na galerii."
 NS = {
@@ -55,14 +71,6 @@ NS = {
     "fo": "urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0",
     "table": "urn:oasis:names:tc:opendocument:xmlns:table:1.0",
 }
-
-
-def _git_bytes(rev_path: str) -> bytes:
-    return subprocess.check_output(["git", "-C", str(_REPO), "show", rev_path])
-
-
-_OLD_DEFAULT = _git_bytes(f"6005ad4:{_TEMPLATE_REL}")
-_UX1_DEFAULT = _git_bytes(f"265f190:{_TEMPLATE_REL}")
 
 
 def _odt_content(path: Path) -> str:
@@ -146,6 +154,13 @@ class AccidentExtractUx2TestCase(unittest.TestCase):
         if backup_dir.exists():
             shutil.rmtree(backup_dir)
         vypis_urazu_service.last_template_resolution = None
+        self._hash_patch = patch.object(
+            vypis_storage,
+            "_file_sha256",
+            side_effect=_fake_known_hash,
+        )
+        self._hash_patch.start()
+        self.addCleanup(self._hash_patch.stop)
 
     def _create(self, **kwargs):
         data = {

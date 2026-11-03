@@ -309,7 +309,7 @@ class InspectionReport1TestCase(unittest.TestCase):
         )
         context = bozp_inspection_export_context_service.build(inspection)
         text = context.overall_assessment_text()
-        self.assertIn("závada", text.casefold())
+        self.assertIn("nedostatky", text.casefold())
         self.assertNotIn("neshoda", text.casefold())
         self.assertNotIn("neshody", text.casefold())
 

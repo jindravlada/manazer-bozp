@@ -71,6 +71,17 @@ class AuditConclusion1TestCase(unittest.TestCase):
         from PySide6.QtWidgets import QApplication
 
         cls._app = QApplication.instance() or QApplication([])
+        from PySide6.QtWidgets import QMessageBox
+
+        cls._messages = patch(
+            "moduly.audity.ui.audit_dialog.QMessageBox.warning",
+            return_value=QMessageBox.StandardButton.Ok,
+        )
+        cls._messages.start()
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls._messages.stop()
 
     def setUp(self) -> None:
         for audit in list(audit_service.get_all()):
@@ -129,7 +140,9 @@ class AuditConclusion1TestCase(unittest.TestCase):
                 },
             ],
         )
-        return audit
+        from tests.support_prepared_audit import mark_audit_prepared
+
+        return mark_audit_prepared(audit.id)
 
     def test_01_schema_column_present(self) -> None:
         from core.database.session import get_session
@@ -153,6 +166,10 @@ class AuditConclusion1TestCase(unittest.TestCase):
     def test_03_dirty_and_save_keep_open(self) -> None:
         audit = self._create_audit()
         dialog = AuditDialog(audit=audit)
+        dialog.commission_widget.leader_selector.set_person_id(self.leader.id)
+        dialog.commission_widget.workplace_selector.set_person_id(self.workplace_rep.id)
+        dialog.commission_widget.union_selector.set_person_id(self.union.id)
+        dialog._capture_baseline()
         self.assertFalse(dialog._is_dirty())
         dialog.conclusion_widget.conclusion_edit.setPlainText("Dirty závěr")
         self.assertTrue(dialog._is_dirty())
@@ -165,6 +182,10 @@ class AuditConclusion1TestCase(unittest.TestCase):
     def test_04_save_and_close_persists(self) -> None:
         audit = self._create_audit()
         dialog = AuditDialog(audit=audit)
+        dialog.commission_widget.leader_selector.set_person_id(self.leader.id)
+        dialog.commission_widget.workplace_selector.set_person_id(self.workplace_rep.id)
+        dialog.commission_widget.union_selector.set_person_id(self.union.id)
+        dialog._capture_baseline()
         dialog.conclusion_widget.conclusion_edit.setPlainText("Uložit a zavřít")
         dialog._save_and_close()
         loaded = audit_service.get_by_id(audit.id)

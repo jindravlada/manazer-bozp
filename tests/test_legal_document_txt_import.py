@@ -107,14 +107,21 @@ class LegalDocumentTxtImportTestCase(unittest.TestCase):
             )
         self.assertIn("název", str(context.exception).lower())
 
-    def test_import_empty_document_type_raises_value_error(self) -> None:
-        with self.assertRaises(ValueError) as context:
-            legal_document_txt_import_service.import_from_txt(
-                self.sample_path,
-                document_type="",
-                title="Zákoník práce",
-            )
-        self.assertIn("typ", str(context.exception).lower())
+    def test_import_empty_document_type_uses_title(self) -> None:
+        from moduly.pravni_pozadavky.legal_document_type_utils import DOCUMENT_TYPE_ZAKON
+        from moduly.pravni_pozadavky.sluzby.legal_document_service import (
+            legal_document_service,
+        )
+
+        result = legal_document_txt_import_service.import_from_txt(
+            self.sample_path,
+            document_type="",
+            title="Zákoník práce",
+        )
+        document = legal_document_service.get_by_id(result.document_id)
+        self.assertIsNotNone(document)
+        assert document is not None
+        self.assertEqual(document.document_type, DOCUMENT_TYPE_ZAKON)
 
     def test_import_without_sections_raises_value_error(self) -> None:
         with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False, encoding="utf-8") as handle:

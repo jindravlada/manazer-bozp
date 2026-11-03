@@ -126,6 +126,17 @@ class AuditSectionSummaryUx1TestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls._app = QApplication.instance() or QApplication([])
+        from PySide6.QtWidgets import QMessageBox
+
+        cls._messages = patch(
+            "moduly.audity.ui.audit_dialog.QMessageBox.warning",
+            return_value=QMessageBox.StandardButton.Ok,
+        )
+        cls._messages.start()
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls._messages.stop()
 
     def setUp(self) -> None:
         for audit in list(audit_service.get_all()):
@@ -334,7 +345,9 @@ class AuditSectionSummaryUx1TestCase(unittest.TestCase):
                 },
             ],
         )
-        audit = audit_service.get_by_id(audit.id)
+        from tests.support_prepared_audit import mark_audit_prepared
+
+        audit = mark_audit_prepared(audit.id)
         dialog = AuditDialog(audit=audit)
         self._fill_commission(dialog, ids)
         criterion = dialog.processes_widget.knowledge_widget.criterion_widget

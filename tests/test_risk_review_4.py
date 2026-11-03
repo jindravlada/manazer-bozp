@@ -14,6 +14,16 @@ from unittest.mock import patch
 _TMP = Path(tempfile.mkdtemp(prefix="risk-review-4-"))
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
+
+def _write_jpeg(path: Path) -> None:
+    import io
+
+    from PIL import Image
+
+    buffer = io.BytesIO()
+    Image.new("RGB", (2, 2), (20, 40, 60)).save(buffer, format="JPEG")
+    path.write_bytes(buffer.getvalue())
+
 with patch.object(Path, "home", return_value=_TMP):
     import core.services.storage_service as storage_module
 
@@ -231,10 +241,7 @@ class RiskReview4TestCase(unittest.TestCase):
         rows = risk_measure_review_service.list_checklist_rows(self.review.id)
         item_id = rows[0].item_id
         photo = _TMP / "kontrola.jpg"
-        photo.write_bytes(
-            b"\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x00\x00\x01\x00\x01\x00\x00"
-            b"\xff\xd9"
-        )
+        _write_jpeg(photo)
 
         dialog = RiskMeasureReviewItemPhotosDialog(item_id=item_id)
         with patch(

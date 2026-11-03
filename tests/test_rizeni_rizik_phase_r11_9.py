@@ -52,6 +52,12 @@ with patch.object(Path, "home", return_value=_TMP):
 
 
 class AiPeerReviewNoPersonalDataR119TestCase(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        from PySide6.QtWidgets import QApplication
+
+        cls._app = QApplication.instance() or QApplication([])
+
     def setUp(self) -> None:
         from sqlalchemy import delete
 

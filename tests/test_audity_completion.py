@@ -33,7 +33,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.audity.constants import (
         AUDIT_COMPLETION_CONFIRM_MESSAGE,
         AUDIT_STATUS_DOKONCENO,
-        AUDIT_STATUS_PLANOVANO,
+        AUDIT_STATUS_PROBIHA,
         COMMISSION_RECORD_LEADER,
         COMMISSION_RECORD_UNION,
         COMMISSION_RECORD_WORKPLACE,
@@ -50,6 +50,17 @@ class AudityCompletionTestCase(unittest.TestCase):
         from PySide6.QtWidgets import QApplication
 
         cls._app = QApplication.instance() or QApplication([])
+        from PySide6.QtWidgets import QMessageBox
+
+        cls._messages = patch(
+            "moduly.audity.ui.audit_dialog.QMessageBox.warning",
+            return_value=QMessageBox.StandardButton.Ok,
+        )
+        cls._messages.start()
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls._messages.stop()
 
     def setUp(self) -> None:
         for audit in audit_service.get_all():
@@ -93,7 +104,14 @@ class AudityCompletionTestCase(unittest.TestCase):
                 },
             ],
         )
-        return audit
+        from tests.support_prepared_audit import mark_audit_prepared
+
+        prepared = mark_audit_prepared(audit.id)
+        if prepared.started_at is None:
+            prepared = audit_service.update_audit(
+                prepared.id, started_at=date.today()
+            )
+        return prepared
 
     def _create_open_finding(self, audit_id: int) -> int:
         finding = finding_service.create(
@@ -187,7 +205,8 @@ class AudityCompletionTestCase(unittest.TestCase):
         )
         loaded = audit_service.get_by_id(audit.id)
         assert loaded is not None
-        self.assertEqual(loaded.status, AUDIT_STATUS_PLANOVANO)
+        self.assertEqual(loaded.status, AUDIT_STATUS_PROBIHA)
+        self.assertIsNone(loaded.finished_at)
 
     @patch("moduly.audity.ui.audit_conclusion_widget.QMessageBox.question")
     def test_complete_with_blockers_confirm_saves_completed(self, mock_question) -> None:

@@ -377,7 +377,11 @@ class ExternalAuditEa1TestCase(unittest.TestCase):
         editor = ExternalAuditEditorDialog()
         editor.ico.setText("33333333")
         editor.organization_name.setText("Keep open")
-        editor._save_keep_open()
+        with patch(
+            "moduly.externi_audity.ui.external_audit_editor_dialog._exec_message_box",
+            return_value=0,
+        ):
+            editor._save_keep_open()
         self.assertIsNotNone(editor._draft.audit_id)
 
         editor2 = ExternalAuditEditorDialog()

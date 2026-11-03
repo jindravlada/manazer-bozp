@@ -458,6 +458,17 @@ class AuditProverkySectionNoteFunctionalTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         _app()
+        from PySide6.QtWidgets import QMessageBox
+
+        cls._messages = patch(
+            "moduly.audity.ui.audit_dialog.QMessageBox.warning",
+            return_value=QMessageBox.StandardButton.Ok,
+        )
+        cls._messages.start()
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls._messages.stop()
 
     def setUp(self) -> None:
         with get_session() as session:
@@ -749,7 +760,9 @@ class AuditProverkySectionNoteFunctionalTestCase(unittest.TestCase):
                 },
             ],
         )
-        audit = audit_service.get_by_id(audit.id)
+        from tests.support_prepared_audit import mark_audit_prepared
+
+        audit = mark_audit_prepared(audit.id)
         dialog = AuditDialog(audit=audit)
         self._fill_audit_commission(dialog, ids)
         criterion = dialog.processes_widget.knowledge_widget.criterion_widget

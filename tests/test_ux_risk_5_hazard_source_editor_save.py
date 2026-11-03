@@ -99,7 +99,10 @@ class UxRisk5HazardSourceEditorSaveTests(unittest.TestCase):
         dialog.name.setText("Nový zdroj UX-RISK-5 uložit")
         self.assertTrue(dialog.save_button.isEnabled())
 
-        dialog.save_button.click()
+        with patch(
+            "moduly.rizeni_rizik.ui.hazard_library_template_dialog.show_risk_management_save_confirmation"
+        ):
+            dialog.save_button.click()
 
         self.assertIsNotNone(dialog.template)
         self.assertIsNotNone(dialog.template.id)

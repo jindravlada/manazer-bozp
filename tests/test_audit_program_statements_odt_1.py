@@ -50,6 +50,7 @@ with patch.object(Path, "home", return_value=_TMP):
         AUDIT_PROGRAM_PRINT_STATEMENTS_RESULT_VD,
         AUDIT_PROGRAM_PRINT_STATEMENTS_STATUS_CURRENT,
         AUDIT_PROGRAM_PRINT_STATEMENTS_STATUS_FROZEN,
+        AUDIT_PROGRAM_PRINT_STATEMENTS_STATUS_UNFROZEN,
         DEFAULT_AUDIT_PROGRAM_STANDARDS,
         PROCESS_TERM_CRITERION,
         PROCESS_TERM_PROCESS,
@@ -323,6 +324,14 @@ class AuditProgramStatementsOdt1TestCase(unittest.TestCase):
         )
         self.assertTrue(audit.number)
         self.assertEqual(audit.started_at, date(2026, 3, 15))
+        unprepared = audit_program_statements_export_context_service.build_for_visit(
+            visit.id
+        )
+        self.assertEqual(
+            unprepared.document_status,
+            AUDIT_PROGRAM_PRINT_STATEMENTS_STATUS_UNFROZEN,
+        )
+        audit = audit_program_service.prepare_audit_from_visit(audit.id)
         original = audit_program_statements_export_context_service.build_for_visit(
             visit.id
         )

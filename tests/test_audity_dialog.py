@@ -88,7 +88,8 @@ class AudityDialogTestCase(unittest.TestCase):
         dialog = self._open_dialog()
 
         self.assertIsNone(dialog.audit)
-        self.assertEqual(dialog.tabs.count(), 8)
+        self.assertEqual(dialog.tabs.count(), 9)
+        self.assertIn("Mimořádné ověření", [dialog.tabs.tabText(index) for index in range(dialog.tabs.count())])
         for index, label in enumerate(TAB_LABELS):
             self.assertEqual(dialog.tabs.tabText(index), label)
 

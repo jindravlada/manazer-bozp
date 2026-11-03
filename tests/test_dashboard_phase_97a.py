@@ -146,8 +146,7 @@ class DashboardPhase97aTestCase(unittest.TestCase):
         joined = "\n".join(events)
         self.assertIn("Úkol", joined)
         self.assertIn("Objednat měření", joined)
-        # Audity zatím nejsou součástí Agendy / kalendáře (budoucí rozšíření).
-        self.assertNotIn("Audit – Provoz Delta", joined)
+        self.assertIn("Audit – Provoz Delta", joined)
 
         empty_day = due + timedelta(days=20)
         self.assertNotIn(empty_day, panel.calendar._day_events)

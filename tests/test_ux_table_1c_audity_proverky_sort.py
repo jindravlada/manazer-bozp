@@ -49,7 +49,7 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.audity.sluzby.audit_service import audit_service
     from moduly.audity.ui.audit_findings_widget import AuditFindingsWidget
-    from moduly.audity.ui.audit_table import COL_STATUS, AuditTable
+    from moduly.audity.ui.audit_table import COL_AUDIT_DATE, COL_STATUS, COL_WORKPLACE, AuditTable
     from moduly.audity.ui.audit_tasks_widget import AuditTasksWidget
     from moduly.proverky.constants import (
         INSPECTION_STATUS_DOKONCENO,
@@ -91,12 +91,12 @@ class UxTable1cAuditySortTests(unittest.TestCase):
 
         table = AuditTable()
         table.load_audits(audit_service.get_all())
-        table.sortItems(4, Qt.SortOrder.AscendingOrder)
-        self.assertEqual(_column_texts(table, 4), ["Cibule", "Hrášek", "Chalupa"])
+        table.sortItems(COL_WORKPLACE, Qt.SortOrder.AscendingOrder)
+        self.assertEqual(_column_texts(table, COL_WORKPLACE), ["Cibule", "Hrášek", "Chalupa"])
         self.assertEqual(_column_ids(table), [b.id, c.id, a.id])
 
-        table.sortItems(4, Qt.SortOrder.DescendingOrder)
-        self.assertEqual(_column_texts(table, 4), ["Chalupa", "Hrášek", "Cibule"])
+        table.sortItems(COL_WORKPLACE, Qt.SortOrder.DescendingOrder)
+        self.assertEqual(_column_texts(table, COL_WORKPLACE), ["Chalupa", "Hrášek", "Cibule"])
 
     def test_audit_list_date_sort(self) -> None:
         mid = audit_service.create_audit(
@@ -117,7 +117,7 @@ class UxTable1cAuditySortTests(unittest.TestCase):
 
         table = AuditTable()
         table.load_audits(audit_service.get_all())
-        table.sortItems(5, Qt.SortOrder.AscendingOrder)
+        table.sortItems(COL_AUDIT_DATE, Qt.SortOrder.AscendingOrder)
         self.assertEqual(_column_ids(table), [early.id, mid.id, late.id])
 
     def test_audit_list_status_workflow_order(self) -> None:
@@ -152,7 +152,7 @@ class UxTable1cAuditySortTests(unittest.TestCase):
 
         table = AuditTable()
         table.load_audits(audit_service.get_all())
-        table.sortItems(4, Qt.SortOrder.AscendingOrder)
+        table.sortItems(COL_WORKPLACE, Qt.SortOrder.AscendingOrder)
         table.selectRow(0)
         selected = table.selectionModel().selectedRows()
         self.assertEqual(int(table.item(selected[0].row(), 0).text()), target.id)
@@ -163,12 +163,12 @@ class UxTable1cAuditySortTests(unittest.TestCase):
 
         table = AuditTable()
         table.load_audits(audit_service.get_all())
-        table.sortItems(4, Qt.SortOrder.AscendingOrder)
-        self.assertEqual(_column_texts(table, 4)[0], "Cibule")
+        table.sortItems(COL_WORKPLACE, Qt.SortOrder.AscendingOrder)
+        self.assertEqual(_column_texts(table, COL_WORKPLACE)[0], "Cibule")
 
         audit_service.create_audit(workplace_name="Hrášek", year=2026)
         table.load_audits(audit_service.get_all())
-        self.assertEqual(_column_texts(table, 4), ["Cibule", "Hrášek", "Chalupa"])
+        self.assertEqual(_column_texts(table, COL_WORKPLACE), ["Cibule", "Hrášek", "Chalupa"])
 
     def test_audit_tasks_due_date_and_status(self) -> None:
         audit = audit_service.create_audit(workplace_name="Úkoly", year=2026)

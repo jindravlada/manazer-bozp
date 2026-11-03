@@ -216,10 +216,10 @@ class ExtAuditUxFix1RemindersTests(unittest.TestCase):
         html = widget.content.text()
         widget.close()
 
+        self.assertNotIn("Periodika 11.09", html)
         order = [
             html.index("Událost 09.09"),
             html.index("Úkol 10.09"),
-            html.index("Periodika 11.09"),
             html.index("Úkol 02.10"),
         ]
         self.assertEqual(order, sorted(order))

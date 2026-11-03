@@ -111,6 +111,17 @@ class AuditDialogUx2cDeferredTextTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls._app = QApplication.instance() or QApplication([])
+        from PySide6.QtWidgets import QMessageBox
+
+        cls._messages = patch(
+            "moduly.audity.ui.audit_dialog.QMessageBox.warning",
+            return_value=QMessageBox.StandardButton.Ok,
+        )
+        cls._messages.start()
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls._messages.stop()
 
     def setUp(self) -> None:
         for audit in audit_service.get_all():
@@ -159,9 +170,9 @@ class AuditDialogUx2cDeferredTextTestCase(unittest.TestCase):
                 },
             ],
         )
-        reloaded = audit_service.get_by_id(audit.id)
-        assert reloaded is not None
-        return reloaded
+        from tests.support_prepared_audit import mark_audit_prepared
+
+        return mark_audit_prepared(audit.id)
 
     def _fill_commission(self, dialog: AuditDialog) -> None:
         dialog.commission_widget.leader_selector.set_person_id(self.leader_id)

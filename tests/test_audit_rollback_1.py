@@ -42,7 +42,18 @@ class AuditRollback1StabilityTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls._app = QApplication.instance() or QApplication([])
+        from PySide6.QtWidgets import QMessageBox
+
+        cls._messages = patch(
+            "moduly.audity.ui.audit_dialog.QMessageBox.warning",
+            return_value=QMessageBox.StandardButton.Ok,
+        )
+        cls._messages.start()
         audit_knowledge_service.ensure_catalogs()
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls._messages.stop()
 
     def setUp(self) -> None:
         for audit in audit_service.get_all():
@@ -101,7 +112,11 @@ class AuditRollback1StabilityTestCase(unittest.TestCase):
         dialog.spis_widget.workplace_selector.set_workplace(None, "")
         self._app.processEvents()
 
-        dialog.close()
+        with patch(
+            "moduly.audity.ui.audit_dialog.confirm_unsaved_editor_close",
+            return_value="discard",
+        ):
+            dialog.close()
         self._app.processEvents()
 
 

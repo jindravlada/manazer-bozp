@@ -489,6 +489,7 @@ class AudityProtokolExportTestCase(unittest.TestCase):
             "statistika_text",
             "souhrn_text",
             "datum_vygenerovani",
+            "zmeny_od_posledniho_auditu_text",
         }
         self.assertEqual(set(values.keys()), expected_keys)
         self.assertEqual(values["datum_ukonceni_auditu"], "Dosud neukončen")
