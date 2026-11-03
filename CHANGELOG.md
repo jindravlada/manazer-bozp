@@ -14,6 +14,73 @@
 
 ---
 
+# Verze 4.2.0
+
+Datum vydání:
+
+3. 11. 2026
+
+Změny od veřejné verze 4.1.3.
+
+Periodické činnosti a Roční plán
+
+- Činnost má pevný kalendářní rytmus: počáteční měsíc, rok a interval v měsících. Provedení ani starší termín řadu neposouvají a historie provedení zůstává.
+- Opakované provedení ve stejné periodě neotevře další období dřív, než skončí nejzazší termín. Změna způsobu výpočtu se přepočte až po potvrzení.
+- Každý měsíc má vlastní výskyt. Přesun a „Nevykoná se“ se týkají jen vybraného měsíce. Pevná řada a ruční položky plánu zůstávají.
+- Stavy K naplánování, Naplánováno a Nevykoná se vycházejí z vazby na úkol nebo událost a z rozhodnutí. Zpracování měsíce se pozná samo.
+- Úkol nebo událost z výskytu vznikne až po uložení ve standardním editoru. Zavření dialogu samo nic nezaloží.
+- Editor činnosti ukládá měsíc, rok a interval. Běžné uložení nepřepisuje historická pole.
+- Uložit nechá editor otevřený, Uložit a zavřít ho zavře až po úspěchu. Opakované uložení nové činnosti nezaloží druhý záznam.
+- Tabulka historie má čitelnější sloupce a delší poznámku ukáže v nápovědě.
+
+Agenda a přehledy
+
+- Agenda, Nadcházející, Co hoří a kalendář ukazují skutečné úkoly a události. Samotný periodický termín mezi ně nepatří.
+- Na nezpracovaný měsíc Ročního plánu dál upozorňuje připomenutí. Tento zdroj se jmenuje Roční plán.
+- Z existující události lze uložit šablonu, aniž by se událost změnila. Šablona převezme organizátora.
+- Uložení události nechá editor otevřený. Uložit a zavřít ho zavře až po úspěchu a opakované uložení nové události nezaloží druhý záznam.
+
+Kniha úrazů
+
+- Editor úrazu i ohlašovací povinnosti se ukládají stejně: Uložit nechá formulář otevřený a Uložit a zavřít ho zavře až po úspěchu. Neuložené změny lze uložit nebo zahodit.
+
+Audity
+
+- Tisk programu auditu má stejné procesy, oblasti a otázky ve stejném pořadí jako program v aplikaci.
+- Po přípravě auditu tisk používá zmrazenou metodiku. Pozdější úprava katalogu obsah tisku nezmění.
+- Nepřipravený audit dál vychází z aktuálního katalogu.
+
+Koordinace BOZP
+
+- Název akce je povinný.
+- U ručně zadané organizace je povinný její název.
+- Deaktivace opatření změní jen opatření otevřené koordinace.
+
+Řízení rizik
+
+- Jednoznačná citace předpisu se do balíku rizik přiřadí jako dosud.
+- Když stejnému předpisu odpovídá více dokumentů, nová vazba se nevytvoří a aplikace uvede důvod. Už uložené vazby zůstanou.
+- Balík, který už nese identifikátor konkrétního dokumentu, se kvůli stejnému názvu jiného dokumentu nepovažuje za nejednoznačný.
+
+Státní dozor
+
+- Poznámka k námitkám se ukládá spolu se závěrem.
+- Otevřený editor už při uložení nezruší automatické vypořádání zjištění.
+- Stav zjištění a datum vypořádání se drží pohromadě.
+- Vyplnění administrativního data uzavře kontrolu. Když uživatel uzavření odmítne, původní stav kontroly zůstane.
+- Uložit a zavřít u čistého formuláře už nezůstane omylem zapnuté.
+
+Testy
+
+- Editor nového testu i úpravy testu lze maximalizovat a znovu zmenšit tlačítkem v titulku okna.
+
+Přechod ze starší databáze
+
+- Databáze verze 4.1.3 se před prvním zápisem nových údajů Ročního plánu automaticky zálohuje.
+- Starší databáze se doplní o chybějící údaje úkolů, auditů a právních předpisů, aby je šlo dál otevřít. Uložené údaje se nemění.
+
+---
+
 # Verze 4.1.4
 
 Datum vydání:

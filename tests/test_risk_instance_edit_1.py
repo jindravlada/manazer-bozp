@@ -243,7 +243,7 @@ class RiskInstanceEdit1TestCase(unittest.TestCase):
         self.assertIn("HazardInventoryItemDialog", source)
         self.assertNotIn("HazardLibraryTemplateDialog", source)
         self.assertNotIn("_on_master_edited", source)
-        self.assertEqual(APP_VERSION, "4.1.4")
+        self.assertEqual(APP_VERSION, "4.2.0")
 
     def test_hodonin_edit_does_not_change_master_or_breclav(self) -> None:
         dialog = HazardIdentificationDialog(identification=self.hodonin)

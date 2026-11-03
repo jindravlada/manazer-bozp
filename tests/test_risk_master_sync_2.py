@@ -274,7 +274,7 @@ class RiskMasterSync2TestCase(unittest.TestCase):
         return any(row is not None for row in checks)
 
     def test_version_matches_application(self) -> None:
-        self.assertEqual(APP_VERSION, "4.1.4")
+        self.assertEqual(APP_VERSION, "4.2.0")
         self.assertEqual(APP_VERSION, self._app_version)
 
     def test_apply_mn_groups_a_and_b_exactly_once(self) -> None:
