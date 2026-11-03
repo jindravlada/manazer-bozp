@@ -1553,6 +1553,24 @@ def _ensure_legal_requirement_columns() -> None:
         _add_column("legal_requirements", "process_inputs TEXT DEFAULT ''")
     if "process_outputs" not in columns:
         _add_column("legal_requirements", "process_outputs TEXT DEFAULT ''")
+    for column_name, column_sql in {
+        "regulation_number": "regulation_number VARCHAR(100) NOT NULL DEFAULT ''",
+        "provision": "provision VARCHAR(200) NOT NULL DEFAULT ''",
+        "area": "area VARCHAR(150) NOT NULL DEFAULT ''",
+        "requirement_summary": "requirement_summary TEXT NOT NULL DEFAULT ''",
+        "organization_impact": "organization_impact TEXT NOT NULL DEFAULT ''",
+        "responsible_person_id": "responsible_person_id INTEGER",
+        "responsible_person_name": "responsible_person_name VARCHAR(150) NOT NULL DEFAULT ''",
+        "verification_periodicity": "verification_periodicity VARCHAR(50) NOT NULL DEFAULT ''",
+        "last_verification_date": "last_verification_date DATE",
+        "next_verification_date": "next_verification_date DATE",
+        "compliance_status": "compliance_status VARCHAR(50) NOT NULL DEFAULT ''",
+        "note": "note TEXT NOT NULL DEFAULT ''",
+        "created_at": "created_at DATETIME",
+        "updated_at": "updated_at DATETIME",
+    }.items():
+        if column_name not in columns:
+            _add_column("legal_requirements", column_sql)
     _ensure_legal_requirement_parent_index()
 
 
@@ -4789,8 +4807,27 @@ def _ensure_legal_document_columns() -> None:
     columns = _table_columns("legal_documents")
     if not columns:
         return
-    if "included_in_processes" not in columns:
-        _add_column("legal_documents", "included_in_processes BOOLEAN DEFAULT 0")
+    # Stejné typy jako LegalDocument. Konstantní výchozí hodnoty jen u sloupců,
+    # které model takto definuje. Číslo, rok a data účinnosti se nedopočítávají.
+    additions = {
+        "number": "number VARCHAR(100) NOT NULL DEFAULT ''",
+        "year": "year INTEGER",
+        "short_title": "short_title VARCHAR(150) NOT NULL DEFAULT ''",
+        "valid_from": "valid_from DATE",
+        "valid_to": "valid_to DATE",
+        "effective_from": "effective_from DATE",
+        "effective_to": "effective_to DATE",
+        "source_url": "source_url VARCHAR(500) NOT NULL DEFAULT ''",
+        "local_file_path": "local_file_path VARCHAR(500) NOT NULL DEFAULT ''",
+        "note": "note TEXT NOT NULL DEFAULT ''",
+        "active": "active BOOLEAN NOT NULL DEFAULT 1",
+        "included_in_processes": "included_in_processes BOOLEAN DEFAULT 0",
+        "created_at": "created_at DATETIME",
+        "updated_at": "updated_at DATETIME",
+    }
+    for column_name, column_sql in additions.items():
+        if column_name not in columns:
+            _add_column("legal_documents", column_sql)
 
 
 def _migrate_legal_document_types() -> None:
