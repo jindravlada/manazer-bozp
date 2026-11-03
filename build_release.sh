@@ -3,6 +3,80 @@ set -e
 
 APP_NAME="ManazerBOZP"
 OUTPUT_NAME="ManagerBOZP.AppImage"
+
+# Snímek AppImage v aktuálním adresáři: inode, velikost, čas a cesta.
+snapshot_appimages() {
+  local dest="$1"
+  (
+    shopt -s nullglob
+    local path
+    for path in ./*.AppImage; do
+      stat --printf '%i\t%s\t%Y\t%n\n' "$path"
+    done | LC_ALL=C sort
+  ) > "$dest"
+}
+
+# Výsledkem smí být jen AppImage vytvořený nebo přepsaný právě tímto během.
+publish_built_appimage() {
+  local before="$1"
+  local after="$2"
+  local -a candidates=()
+  local line path base
+
+  while IFS= read -r line; do
+    [ -z "$line" ] && continue
+    path="${line##*$'\t'}"
+    base="$(basename "$path")"
+    if [ "$base" = "linuxdeploy-x86_64.AppImage" ]; then
+      continue
+    fi
+    candidates+=("$path")
+  done < <(comm -13 "$before" "$after")
+
+  if [ "${#candidates[@]}" -eq 0 ]; then
+    echo "AppImage nebyl vytvořen. Starší balíčky v pracovním adresáři zůstaly nedotčené."
+    exit 1
+  fi
+  if [ "${#candidates[@]}" -gt 1 ]; then
+    echo "Sestavení změnilo více AppImage souborů a výsledek nelze určit:"
+    printf ' - %s\n' "${candidates[@]}"
+    exit 1
+  fi
+
+  if [ "$(basename "${candidates[0]}")" != "$OUTPUT_NAME" ]; then
+    mv -- "${candidates[0]}" "$OUTPUT_NAME"
+  fi
+  chmod +x "$OUTPUT_NAME"
+}
+
+run_appimage_packaging() {
+  local before after status
+  before="$(mktemp)"
+  after="$(mktemp)"
+  set +e
+  (
+    set -e
+    snapshot_appimages "$before"
+    if [ "$#" -gt 0 ]; then
+      "$@"
+    else
+      "$LINUXDEPLOY_WORKDIR/squashfs-root/AppRun" \
+        --appdir AppDir \
+        --desktop-file AppDir/usr/share/applications/ManazerBOZP.desktop \
+        --icon-file AppDir/usr/share/icons/hicolor/scalable/apps/manazer-bozp.svg \
+        --icon-filename manazer-bozp \
+        --output appimage
+    fi
+    snapshot_appimages "$after"
+    publish_built_appimage "$before" "$after"
+  )
+  status=$?
+  set -e
+  rm -f "$before" "$after"
+  return "$status"
+}
+
+main() {
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 cd "$PROJECT_DIR"
@@ -44,7 +118,6 @@ fi
 
 echo "== Čištění =="
 rm -rf build dist AppDir squashfs-root
-rm -f "$OUTPUT_NAME" Mana_er_BOZP*.AppImage ManazerBOZP*.AppImage Manažer_BOZP*.AppImage
 
 echo "== PyInstaller =="
 if [ ! -f "$PROJECT_DIR/zdroje/preklady/qtbase_cs.qm" ]; then
@@ -98,23 +171,13 @@ cat > AppDir/usr/share/icons/hicolor/scalable/apps/manazer-bozp.svg <<'SVG'
 SVG
 
 echo "== AppImage =="
-"$LINUXDEPLOY_WORKDIR/squashfs-root/AppRun" \
-  --appdir AppDir \
-  --desktop-file AppDir/usr/share/applications/ManazerBOZP.desktop \
-  --icon-file AppDir/usr/share/icons/hicolor/scalable/apps/manazer-bozp.svg \
-  --icon-filename manazer-bozp \
-  --output appimage
-
-FOUND_APPIMAGE="$(ls -t *.AppImage | grep -v '^linuxdeploy-x86_64.AppImage$' | head -n 1)"
-
-if [ -z "$FOUND_APPIMAGE" ]; then
-  echo "AppImage nebyl vytvořen."
-  exit 1
-fi
-
-mv "$FOUND_APPIMAGE" "$OUTPUT_NAME"
-chmod +x "$OUTPUT_NAME"
+run_appimage_packaging
 
 echo
 echo "HOTOVO:"
 ls -lh "$OUTPUT_NAME"
+}
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  main "$@"
+fi
