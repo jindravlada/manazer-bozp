@@ -41,6 +41,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from core.services.storage_service import storage_service
     from moduly.audity.constants import (
         AUDIT_PROGRAM_PRINT_STATEMENTS_BUTTON,
+        AUDIT_START_UNCLASSIFIED_QUESTIONS,
         AUDIT_PROGRAM_PRINT_STATEMENTS_EMPTY,
         AUDIT_PROGRAM_PRINT_STATEMENTS_OPEN_FAILED,
         AUDIT_PROGRAM_PRINT_STATEMENTS_RESULT_MARKS,
@@ -366,8 +367,11 @@ class AuditProgramStatementsOdt1TestCase(unittest.TestCase):
 
         plain = _odt_plain_text(_odt_content(path))
         self.assertNotIn(CANARY_TEXT, plain)
+        position = 0
         for text in original_texts:
-            self.assertIn(text, plain)
+            found = plain.find(text, position)
+            self.assertGreaterEqual(found, 0, text)
+            position = found + 1
         self.assertIn(
             AUDIT_PROGRAM_PRINT_STATEMENTS_STATUS_FROZEN.format(number=audit.number),
             plain,
@@ -517,6 +521,150 @@ class AuditProgramStatementsOdt1TestCase(unittest.TestCase):
         message = mock_info.call_args.args[2]
         self.assertIn(AUDIT_PROGRAM_PRINT_STATEMENTS_EMPTY, message)
         self.assertIsNone(audit_program_service.repository.get_visit(visit.id).audit_id)
+
+    def _assert_document_matches_rows(self, plain: str, rows) -> None:
+        self.assertTrue(rows)
+        self.assertEqual(
+            plain.count(AUDIT_PROGRAM_PRINT_STATEMENTS_RESULT_MARKS),
+            len(rows),
+        )
+        seen_processes: list[str] = []
+        cursor = 0
+        spans: list[tuple[str, int]] = []
+        for row in rows:
+            if row.process_name in seen_processes:
+                continue
+            seen_processes.append(row.process_name)
+            heading = f"{PROCESS_TERM_PROCESS}: {row.process_name}"
+            found = plain.find(heading, cursor)
+            self.assertGreaterEqual(found, 0, heading)
+            spans.append((row.process_name, found))
+            cursor = found + 1
+        spans.append(("", len(plain)))
+        grouped: dict[str, list] = {}
+        for row in rows:
+            grouped.setdefault(row.process_name, []).append(row)
+        for index, (process_name, start) in enumerate(spans[:-1]):
+            chunk = plain[start:spans[index + 1][1]]
+            self.assertEqual(
+                chunk.count(AUDIT_PROGRAM_PRINT_STATEMENTS_RESULT_MARKS),
+                len(grouped[process_name]),
+            )
+            area_cursor = 0
+            seen_areas: list[str] = []
+            question_cursor = 0
+            for row in grouped[process_name]:
+                if row.area_name not in seen_areas:
+                    seen_areas.append(row.area_name)
+                    area_heading = f"{PROCESS_TERM_CRITERION}: {row.area_name}"
+                    area_at = chunk.find(area_heading, area_cursor)
+                    self.assertGreaterEqual(area_at, 0, area_heading)
+                    area_cursor = area_at + 1
+                question_at = chunk.find(row.assertion_text, question_cursor)
+                self.assertGreaterEqual(question_at, 0, row.assertion_text)
+                question_cursor = question_at + 1
+            self.assertLess(area_cursor, question_cursor)
+
+    def test_14_two_processes_follow_program_order(self) -> None:
+        first = self._process_nodes[0]
+        first_name = first.process_label or first.label
+        second = next(
+            node
+            for node in self._process_nodes[1:]
+            if (node.process_label or node.label) < first_name
+        )
+        second_name = second.process_label or second.label
+        program = self._create_program(name="Dva procesy")
+        visit = self._add_visit(program.id, month=6)
+        self._assign_process(visit, first)
+        self._assign_process(visit, second)
+
+        context = audit_program_statements_export_context_service.build_for_visit(
+            visit.id
+        )
+        process_order: list[str] = []
+        for row in context.rows:
+            if row.process_name not in process_order:
+                process_order.append(row.process_name)
+        self.assertEqual(process_order, [second_name, first_name])
+        self.assertEqual(
+            len(context.rows),
+            len({(row.process_id, row.assertion_text, row.area_name) for row in context.rows}),
+        )
+        plain = _odt_plain_text(_odt_content(self._print(visit.id)))
+        self._assert_document_matches_rows(plain, context.rows)
+        self.assertIn(AUDIT_PROGRAM_PRINT_STATEMENTS_STATUS_CURRENT, plain)
+
+    def test_15_prepared_document_matches_snapshot_rows(self) -> None:
+        _program, visit, _other = self._create_two_visits()
+        audit = audit_program_service.create_audit_from_visit(
+            visit.id, started_at=date(2026, 3, 15)
+        )
+        audit_program_service.prepare_audit_from_visit(audit.id)
+        context = audit_program_statements_export_context_service.build_for_visit(
+            visit.id
+        )
+        plain = _odt_plain_text(_odt_content(self._print(visit.id)))
+        self._assert_document_matches_rows(plain, context.rows)
+        self.assertIn(
+            AUDIT_PROGRAM_PRINT_STATEMENTS_STATUS_FROZEN.format(number=audit.number),
+            plain,
+        )
+
+    def test_16_repeat_export_is_identical(self) -> None:
+        _program, visit, _other = self._create_two_visits()
+        first = _odt_plain_text(_odt_content(self._print(visit.id)))
+        second = _odt_plain_text(_odt_content(self._print(visit.id)))
+        self.assertEqual(first, second)
+        audit = audit_program_service.create_audit_from_visit(
+            visit.id, started_at=date(2026, 3, 15)
+        )
+        audit_program_service.prepare_audit_from_visit(audit.id)
+        frozen_first = _odt_plain_text(_odt_content(self._print(visit.id)))
+        frozen_second = _odt_plain_text(_odt_content(self._print(visit.id)))
+        self.assertEqual(frozen_first, frozen_second)
+        self.assertNotEqual(first, frozen_first)
+
+    def test_17_unclassified_questions_are_not_omitted(self) -> None:
+        from moduly.audity.sluzby.audit_question_snapshot_service import (
+            AuditV2SnapshotError,
+        )
+
+        program, visit, _other = self._create_two_visits()
+        before_snapshots = self._snapshot_count()
+        classified = AuditKnowledgeService.get_audit_questions
+
+        def without_kind(self_svc, section):
+            cleaned = []
+            for item in classified(self_svc, section):
+                if not isinstance(item, dict):
+                    continue
+                row = dict(item)
+                row.pop("question_kind", None)
+                cleaned.append(row)
+            return cleaned
+
+        with patch.object(AuditKnowledgeService, "get_audit_questions", without_kind):
+            audit = audit_program_service.create_audit_from_visit(
+                visit.id, started_at=date(2026, 5, 1)
+            )
+            with self.assertRaises(AuditV2SnapshotError) as prepare_error:
+                audit_program_service.prepare_audit_from_visit(audit.id)
+            self.assertIn(
+                AUDIT_START_UNCLASSIFIED_QUESTIONS,
+                str(prepare_error.exception),
+            )
+            with self.assertRaises(AuditV2SnapshotError) as print_error:
+                self._print(visit.id)
+            self.assertIn(
+                AUDIT_START_UNCLASSIFIED_QUESTIONS,
+                str(print_error.exception),
+            )
+        self.assertEqual(self._snapshot_count(), before_snapshots)
+        reloaded = audit_program_service.repository.get_visit(visit.id)
+        self.assertEqual(reloaded.audit_id, audit.id)
+        stored = audit_service.get_by_id(audit.id)
+        self.assertIsNone(stored.questions_frozen_at)
 
     def test_13_plan_export_regression(self) -> None:
         program, _visit, _other = self._create_two_visits()

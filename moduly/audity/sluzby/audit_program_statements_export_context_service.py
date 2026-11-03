@@ -336,6 +336,36 @@ def _items_from_drafts(
     ]
 
 
+def _questions_for_print(section: dict) -> list[dict]:
+    """Znění ze sekce snímku. Živý katalog se čte jen když sekce vlastní tvrzení nemá."""
+    raw = section.get("auditni_tvrzeni")
+    if isinstance(raw, list) and raw:
+        return audit_knowledge_service.get_active_items(
+            audit_knowledge_service.normalize_auditni_tvrzeni(list(raw))
+        )
+    return audit_knowledge_service.get_audit_questions(section)
+
+
+def _program_process_rank(visit_id: int) -> dict[str, int]:
+    """Pořadí procesů jako ve stromu programu: název, pak id přiřazení."""
+    processes = list(audit_program_service.repository.list_visit_processes(int(visit_id)))
+    processes.sort(key=lambda item: (item.process_name or "", item.id))
+    return {
+        str(item.process_id).strip(): index
+        for index, item in enumerate(processes)
+        if str(item.process_id or "").strip()
+    }
+
+
+def _sort_items_like_program(items, visit_id: int):
+    rank = _program_process_rank(visit_id)
+    tail = len(rank)
+    return sorted(
+        items,
+        key=lambda item: rank.get(str(item[0]).strip(), tail),
+    )
+
+
 def _items_from_knowledge_roots(
     roots: list[KnowledgeTreeNode] | tuple[KnowledgeTreeNode, ...],
 ) -> list[tuple[str, str, str, str, str, str]]:
@@ -348,7 +378,7 @@ def _items_from_knowledge_roots(
             if section is not None:
                 section_id = str(section.get("id") or node.node_id or "").strip()
                 section_name = str(section.get("nazev") or node.label or "").strip()
-                for question in audit_knowledge_service.get_audit_questions(section):
+                for question in _questions_for_print(section):
                     items.append(
                         (
                             process_id,
@@ -422,6 +452,7 @@ class AuditProgramStatementsExportContextService:
                 )
             return self._build_from_audit(
                 visit.audit_id,
+                visit_id=int(visit.id),
                 program_label=program_label,
                 planned_period=planned_period,
                 workplace_name=workplace_name,
@@ -437,6 +468,7 @@ class AuditProgramStatementsExportContextService:
         self,
         audit_id: int,
         *,
+        visit_id: int,
         program_label: str,
         planned_period: str,
         workplace_name: str,
@@ -455,6 +487,7 @@ class AuditProgramStatementsExportContextService:
         )
         items = _items_from_knowledge_roots(standard_roots)
         items.extend(_items_from_knowledge_roots(extraordinary_roots))
+        items = _sort_items_like_program(items, visit_id)
         rows = _rows_from_items(items, source.roots)
         if not rows:
             raise AuditProgramStatementsEmptyError(AUDIT_PROGRAM_PRINT_STATEMENTS_EMPTY)
@@ -500,7 +533,8 @@ class AuditProgramStatementsExportContextService:
             knowledge_tree=knowledge_tree,
         )
         drafts = _append_extraordinary_drafts(drafts, workplace_id=int(workplace_id))
-        rows = _rows_from_items(_items_from_drafts(drafts), knowledge_tree)
+        items = _sort_items_like_program(_items_from_drafts(drafts), int(visit.id))
+        rows = _rows_from_items(items, knowledge_tree)
         if not rows:
             raise AuditProgramStatementsEmptyError(AUDIT_PROGRAM_PRINT_STATEMENTS_EMPTY)
         return AuditProgramStatementsExportContext(
