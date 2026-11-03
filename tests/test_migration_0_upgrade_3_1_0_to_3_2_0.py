@@ -437,8 +437,32 @@ class Migration0UpgradeTestCase(unittest.TestCase):
                 conn.execute("SELECT title FROM tasks WHERE id=1").fetchone()[0],
                 "Úkol BOZP 3.1.0",
             )
+            self.assertEqual(
+                conn.execute(
+                    "SELECT id, title, note FROM audits WHERE id=1"
+                ).fetchone(),
+                (1, "Audit BOZP", "Interní audit"),
+            )
+            self.assertEqual(
+                conn.execute(
+                    "SELECT id, entity_id, stored_path, filename FROM attachments "
+                    "WHERE id=1"
+                ).fetchone(),
+                (1, 1, "accident/1/Protokol.pdf", "Protokol.pdf"),
+            )
+            indexes = {
+                str(row[1])
+                for row in conn.execute("PRAGMA index_list(audits)").fetchall()
+            }
         finally:
             conn.close()
+
+        self.assertIn("workplace_id", _table_columns(db, "audits"))
+        self.assertIn("ix_audits_workplace_id", indexes)
+        self.assertEqual(
+            (self.ws / "prilohy" / "accident" / "1" / "Protokol.pdf").read_bytes(),
+            b"%PDF-310",
+        )
 
         self.assertEqual(
             (self.ws / "konfigurace" / "sprava_dat.json").read_text(encoding="utf-8"),

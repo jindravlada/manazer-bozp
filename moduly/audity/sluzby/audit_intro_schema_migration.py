@@ -1,6 +1,8 @@
-"""AUDIT-INTRO-1: aditivní sloupec changes_since_last + index workplace_id.
+"""AUDIT-INTRO-1: aditivní sloupce a index workplace_id.
 
 Pouze ADD COLUMN / CREATE INDEX IF NOT EXISTS. Bez změny existujících dat.
+Sloupec workplace_id se doplní před indexem, stejnou definicí jako
+database_initializer._ensure_audit_columns.
 """
 
 from __future__ import annotations
@@ -32,6 +34,9 @@ BACKUP_NAME_PREFIX = "pre_audit_intro_1"
 AUDIT_INTRO_COLUMNS: tuple[tuple[str, str], ...] = (
     ("changes_since_last", "changes_since_last TEXT"),
 )
+
+# Stejná definice jako core.database.database_initializer._ensure_audit_columns.
+AUDIT_WORKPLACE_ID_COLUMN_SQL = "workplace_id INTEGER"
 
 CREATE_AUDITS_WORKPLACE_INDEX_SQL = """
 CREATE INDEX IF NOT EXISTS ix_audits_workplace_id
@@ -118,6 +123,10 @@ def apply_audit_intro_schema_ddl(db_path: Path) -> None:
             if column_name in existing:
                 continue
             connection.execute(f"ALTER TABLE audits ADD COLUMN {column_sql}")
+        if "workplace_id" not in existing:
+            connection.execute(
+                f"ALTER TABLE audits ADD COLUMN {AUDIT_WORKPLACE_ID_COLUMN_SQL}"
+            )
         connection.execute(CREATE_AUDITS_WORKPLACE_INDEX_SQL)
         connection.commit()
     except Exception:
