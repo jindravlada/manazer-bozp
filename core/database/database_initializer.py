@@ -255,6 +255,10 @@ def initialize_database() -> None:
         CoordinationEmployerRiskSubmission,
         CoordinationRiskSubmissionHistory,
     )
+    from moduly.koordinace_bozp.modely.coordination_risk_receipt import (  # noqa: F401
+        CoordinationRiskReceipt,
+        CoordinationRiskReceiptHistory,
+    )
     from moduly.koordinace_bozp.modely.coordination_attachment import (  # noqa: F401
         CoordinationAttachment,
     )
@@ -3480,6 +3484,48 @@ def _ensure_bozp_coordinations_table() -> None:
         """
         CREATE INDEX IF NOT EXISTS idx_coordination_risk_submission_history_submission
         ON coordination_risk_submission_history (submission_id)
+        """,
+    )
+
+    receipt_columns = _table_columns("coordination_risk_receipts")
+    if not receipt_columns:
+        from moduly.koordinace_bozp.modely.coordination_risk_receipt import (
+            CoordinationRiskReceipt,
+            CoordinationRiskReceiptHistory,
+        )
+
+        CoordinationRiskReceipt.__table__.create(
+            bind=_db_engine(),
+            checkfirst=True,
+        )
+        CoordinationRiskReceiptHistory.__table__.create(
+            bind=_db_engine(),
+            checkfirst=True,
+        )
+
+    history_receipt_columns = _table_columns("coordination_risk_receipt_history")
+    if not history_receipt_columns:
+        from moduly.koordinace_bozp.modely.coordination_risk_receipt import (
+            CoordinationRiskReceiptHistory,
+        )
+
+        CoordinationRiskReceiptHistory.__table__.create(
+            bind=_db_engine(),
+            checkfirst=True,
+        )
+
+    _ensure_index(
+        "idx_coordination_risk_receipts_employer",
+        """
+        CREATE INDEX IF NOT EXISTS idx_coordination_risk_receipts_employer
+        ON coordination_risk_receipts (coordination_employer_id)
+        """,
+    )
+    _ensure_index(
+        "idx_coordination_risk_receipt_history_receipt",
+        """
+        CREATE INDEX IF NOT EXISTS idx_coordination_risk_receipt_history_receipt
+        ON coordination_risk_receipt_history (receipt_id)
         """,
     )
 
