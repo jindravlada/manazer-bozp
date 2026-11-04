@@ -23,6 +23,7 @@ from moduly.koordinace_bozp.constants import (
     ATTACHMENT_TYPE_LABELS,
     ATTACHMENT_TYPE_MAIN_EMPLOYER_PBP,
     ATTACHMENT_TYPE_OTHER,
+    ATTACHMENT_TYPE_RISK_RECEIPT,
     CONTACT_TYPES,
     CONTACT_TYPE_LABELS,
     COORDINATION_PBP_INFO_TEXT,
@@ -464,9 +465,11 @@ class CoordinationProtocolBuilder:
             include_inactive=False,
         )
         pbp_revision = coordination_pbp_attachment_service.get_current(coordination_id)
-        attachments = coordination_attachment_service.repository.list_for_coordination(
-            coordination_id,
-            include_inactive=False,
+        attachments = self._without_risk_receipt_attachments(
+            coordination_attachment_service.repository.list_for_coordination(
+                coordination_id,
+                include_inactive=False,
+            )
         )
 
         risk_rows = []
@@ -767,9 +770,11 @@ class CoordinationProtocolBuilder:
                 )
                 continue
             if status in RISK_SUBMISSION_COMPLETED_STATUSES:
-                attachments = coordination_attachment_service.list_for_employer(
-                    employer["id"],
-                    include_inactive=False,
+                attachments = self._without_risk_receipt_attachments(
+                    coordination_attachment_service.list_for_employer(
+                        employer["id"],
+                        include_inactive=False,
+                    )
                 )
                 if not attachments and status != RISK_SUBMISSION_STATUS_STATED_AT_MEETING:
                     warnings.append(
@@ -1141,6 +1146,8 @@ class CoordinationProtocolBuilder:
                 }
             )
         for attachment in attachments:
+            if attachment.attachment_type == ATTACHMENT_TYPE_RISK_RECEIPT:
+                continue
             item = {
                 "id": attachment.id,
                 "source": "attachment",
@@ -1180,6 +1187,15 @@ class CoordinationProtocolBuilder:
                 }
             )
         return result
+
+    @staticmethod
+    def _without_risk_receipt_attachments(attachments):
+        """Příloha následného převzetí nepatří do protokolu ani k původní dohodě."""
+        return [
+            item
+            for item in attachments
+            if item.attachment_type != ATTACHMENT_TYPE_RISK_RECEIPT
+        ]
 
 
 coordination_protocol_builder = CoordinationProtocolBuilder()

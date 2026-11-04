@@ -31,12 +31,16 @@ with patch.object(Path, "home", return_value=_TMP):
 
     from core.database.session import get_session
     from moduly.koordinace_bozp.constants import (
+        ATTACHMENT_TYPE_RISK_RECEIPT,
         RISK_RECEIPT_METHOD_EMAIL,
         RISK_RECEIPT_METHOD_IN_PERSON,
         RISK_RECEIPT_METHOD_PAPER,
         RISK_SUBMISSION_STATUS_WILL_EMAIL,
     )
     from moduly.koordinace_bozp.modely.bozp_coordination import BozpCoordination
+    from moduly.koordinace_bozp.modely.coordination_attachment import (
+        CoordinationAttachment,
+    )
     from moduly.koordinace_bozp.modely.coordination_employer import CoordinationEmployer
     from moduly.koordinace_bozp.modely.coordination_measure import CoordinationMeasure
     from moduly.koordinace_bozp.modely.coordination_employer_risk_submission import (
@@ -49,6 +53,9 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.koordinace_bozp.sluzby.bozp_coordination_service import (
         bozp_coordination_service,
+    )
+    from moduly.koordinace_bozp.sluzby.coordination_attachment_service import (
+        coordination_attachment_service,
     )
     from moduly.koordinace_bozp.sluzby.coordination_employer_service import (
         coordination_employer_service,
@@ -70,6 +77,7 @@ class CoordinationRiskReceiptB1Test(unittest.TestCase):
             session.execute(delete(CoordinationRiskReceipt))
             session.execute(delete(CoordinationRiskSubmissionHistory))
             session.execute(delete(CoordinationEmployerRiskSubmission))
+            session.execute(delete(CoordinationAttachment))
             session.execute(delete(CoordinationMeasure))
             session.execute(delete(CoordinationEmployer))
             session.execute(delete(BozpCoordination))
@@ -190,7 +198,7 @@ class CoordinationRiskReceiptB1Test(unittest.TestCase):
         )
 
     def test_correction_keeps_history_and_current_values(self) -> None:
-        _coordination, contractor, _other = self._contractors()
+        coordination, contractor, _other = self._contractors()
         first_day = date(2026, 11, 2)
         second_day = date(2026, 11, 4)
         created = coordination_risk_receipt_service.save_receipt(
@@ -200,6 +208,14 @@ class CoordinationRiskReceiptB1Test(unittest.TestCase):
             note="první evidence",
         )
         recorded_at = created.recorded_at
+        source = _TMP / "prevzeti.pdf"
+        source.write_bytes(b"%PDF-1.4\n")
+        attachment = coordination_attachment_service.add_file(
+            coordination_id=coordination.id,
+            coordination_employer_id=contractor.id,
+            source_path=source,
+            attachment_type=ATTACHMENT_TYPE_RISK_RECEIPT,
+        )
 
         updated = coordination_risk_receipt_service.save_receipt(
             contractor.id,
@@ -207,7 +223,7 @@ class CoordinationRiskReceiptB1Test(unittest.TestCase):
             receipt_method=RISK_RECEIPT_METHOD_PAPER,
             storage_location="Archiv stavby",
             note="upřesněno po kontrole",
-            attachment_id=15,
+            attachment_id=attachment.id,
         )
         self.assertEqual(updated.id, created.id)
         self.assertEqual(updated.recorded_at, recorded_at)
@@ -215,7 +231,7 @@ class CoordinationRiskReceiptB1Test(unittest.TestCase):
         self.assertEqual(updated.receipt_method, RISK_RECEIPT_METHOD_PAPER)
         self.assertEqual(updated.storage_location, "Archiv stavby")
         self.assertEqual(updated.note, "upřesněno po kontrole")
-        self.assertEqual(updated.attachment_id, 15)
+        self.assertEqual(updated.attachment_id, attachment.id)
 
         history = coordination_risk_receipt_service.list_history(created.id)
         self.assertEqual(len(history), 1)
@@ -229,7 +245,7 @@ class CoordinationRiskReceiptB1Test(unittest.TestCase):
         self.assertEqual(entry.note_before, "první evidence")
         self.assertEqual(entry.note_after, "upřesněno po kontrole")
         self.assertIsNone(entry.attachment_id_before)
-        self.assertEqual(entry.attachment_id_after, 15)
+        self.assertEqual(entry.attachment_id_after, attachment.id)
         self.assertIsNotNone(entry.changed_at)
 
         again = coordination_risk_receipt_service.save_receipt(
@@ -249,7 +265,7 @@ class CoordinationRiskReceiptB1Test(unittest.TestCase):
         )
         self.assertEqual(history[1].storage_location_before, "Archiv stavby")
         self.assertEqual(history[1].storage_location_after, "")
-        self.assertEqual(history[1].attachment_id_before, 15)
+        self.assertEqual(history[1].attachment_id_before, attachment.id)
         self.assertIsNone(history[1].attachment_id_after)
         loaded = coordination_risk_receipt_service.get_for_employer(contractor.id)
         self.assertEqual(loaded.receipt_method, RISK_RECEIPT_METHOD_IN_PERSON)

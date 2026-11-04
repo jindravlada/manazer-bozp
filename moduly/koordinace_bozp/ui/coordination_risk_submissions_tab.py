@@ -21,11 +21,13 @@ from core.widgets.table_selection import (
 )
 from moduly.koordinace_bozp.constants import (
     ATTACHMENT_TYPE_CONTRACTOR_RISKS,
+    ATTACHMENT_TYPE_RISK_RECEIPT,
     COORD_HEADER_RISKS,
     COORDINATION_ATTACHMENT_ALLOWED_SUFFIXES,
     MAIN_EMPLOYER_RISK_HANDOVER_ATTACHMENT_TITLE,
     MAIN_EMPLOYER_RISK_HANDOVER_PROTOCOL_TEXT,
     RISK_HANDOVER_STATUS_LABELS,
+    RISK_HANDOVER_STATUS_SUBSEQUENTLY_RECEIVED,
     RISK_SUBMISSION_STATUS_EARLIER,
     RISK_SUBMISSION_STATUS_EMAIL_BEFORE,
     RISK_SUBMISSION_STATUS_LABELS,
@@ -114,6 +116,10 @@ class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
 
         self.status_label = QLabel()
         content_layout.addWidget(self.status_label)
+        self.subsequent_receipt_label = QLabel()
+        self.subsequent_receipt_label.setWordWrap(True)
+        self.subsequent_receipt_label.setVisible(False)
+        content_layout.addWidget(self.subsequent_receipt_label)
 
         self.form = QFormLayout()
         self.submission_method = QComboBox()
@@ -191,6 +197,20 @@ class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
 
         self.set_coordination_id(coordination_id)
         self._update_field_visibility()
+
+    def set_content_editable(self, editable: bool, *, before_mutate=None) -> None:
+        super().set_content_editable(editable, before_mutate=before_mutate)
+        self._apply_field_edit_mode()
+
+    def _apply_field_edit_mode(self) -> None:
+        editable = getattr(self, "_content_editable", True)
+        self.submission_method.setEnabled(editable)
+        self.submission_date.setEnabled(editable)
+        self.document_reference.setReadOnly(not editable)
+        self.expected_email.setReadOnly(not editable)
+        self.risks_text.setReadOnly(not editable)
+        self.note.setReadOnly(not editable)
+        self._update_attachment_buttons()
 
     def set_dirty_callback(self, callback) -> None:
         self._dirty_callback = callback
@@ -279,6 +299,8 @@ class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
             self._form_dirty = False
             self._loading = False
             self.status_label.setText("")
+            self.subsequent_receipt_label.clear()
+            self.subsequent_receipt_label.setVisible(False)
             self.attachments_table.setRowCount(0)
             self._update_field_visibility()
             self._update_attachment_buttons()
@@ -297,9 +319,28 @@ class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
 
         submission = coordination_risk_submission_service.get_for_employer(employer_id)
         status = coordination_risk_submission_service.handover_status(employer_id)
-        self.status_label.setText(
-            f"Stav: {RISK_HANDOVER_STATUS_LABELS.get(status, status)}"
+        operational = coordination_risk_submission_service.operational_handover(
+            employer_id
         )
+        if operational.status == RISK_HANDOVER_STATUS_SUBSEQUENTLY_RECEIVED:
+            received = (
+                operational.received_on.strftime("%d.%m.%Y")
+                if operational.received_on
+                else "—"
+            )
+            self.status_label.setText(f"Stav: {operational.label}")
+            self.subsequent_receipt_label.setText(
+                "Následné převzetí nemění původní dohodu.\n"
+                f"Datum skutečného převzetí: {received}\n"
+                f"Způsob převzetí: {operational.receipt_method_label or '—'}"
+            )
+            self.subsequent_receipt_label.setVisible(True)
+        else:
+            self.status_label.setText(
+                f"Stav: {RISK_HANDOVER_STATUS_LABELS.get(status, status)}"
+            )
+            self.subsequent_receipt_label.clear()
+            self.subsequent_receipt_label.setVisible(False)
         self._loading = True
         if submission is None:
             self.submission_method.setCurrentIndex(
@@ -326,10 +367,14 @@ class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
         self._loading = False
         self._update_field_visibility()
 
-        attachments = coordination_attachment_service.list_for_employer(
-            employer_id,
-            include_inactive=True,
-        )
+        attachments = [
+            item
+            for item in coordination_attachment_service.list_for_employer(
+                employer_id,
+                include_inactive=True,
+            )
+            if item.attachment_type != ATTACHMENT_TYPE_RISK_RECEIPT
+        ]
         self.attachments_table.load_attachments(attachments)
         configure_and_persist_table_columns(
             self.attachments_table,

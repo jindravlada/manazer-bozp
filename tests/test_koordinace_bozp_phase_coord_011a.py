@@ -72,6 +72,10 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.koordinace_bozp.modely.coordination_pbp_revision import (
         CoordinationPbpRevision,
     )
+    from moduly.koordinace_bozp.modely.coordination_risk_receipt import (
+        CoordinationRiskReceipt,
+        CoordinationRiskReceiptHistory,
+    )
     from moduly.koordinace_bozp.modely.coordination_workplace import (
         CoordinationWorkplace,
     )
@@ -155,6 +159,8 @@ class KoordinaceBozpPhaseCoord011aTestCase(unittest.TestCase):
         with get_session() as session:
             session.execute(delete(CoordinationPbpRevision))
             session.execute(delete(CoordinationAttachment))
+            session.execute(delete(CoordinationRiskReceiptHistory))
+            session.execute(delete(CoordinationRiskReceipt))
             session.execute(delete(CoordinationEmployerRiskSubmission))
             session.execute(delete(CoordinationContact))
             session.execute(delete(CoordinationEmployerActivity))

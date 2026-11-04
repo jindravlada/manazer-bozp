@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import date, datetime
 
 from moduly.koordinace_bozp.constants import (
+    BOZP_COORDINATION_STATUS_CLOSED,
     ENTITY_COORDINATION_RISK_SUBMISSION,
     RISK_HANDOVER_STATUS_LABELS,
     RISK_HANDOVER_STATUS_MAIN,
@@ -217,6 +218,38 @@ class CoordinationRiskSubmissionService:
             status=status,
             label=RISK_HANDOVER_STATUS_LABELS.get(status, status),
         )
+
+    def accepts_subsequent_risk_receipt(self, coordination_id: int) -> bool:
+        """Uzavřená koordinace s plánovaným předáním nebo už uloženým převzetím."""
+        from moduly.koordinace_bozp.sluzby.bozp_coordination_service import (
+            bozp_coordination_service,
+        )
+        from moduly.koordinace_bozp.sluzby.coordination_lifecycle_service import (
+            normalize_coordination_status,
+        )
+        from moduly.koordinace_bozp.sluzby.coordination_risk_receipt_service import (
+            coordination_risk_receipt_service,
+        )
+
+        coordination = bozp_coordination_service.get_by_id(coordination_id)
+        if coordination is None:
+            return False
+        if (
+            normalize_coordination_status(coordination.status)
+            != BOZP_COORDINATION_STATUS_CLOSED
+        ):
+            return False
+        for employer in self.employer_repository.list_for_coordination(
+            coordination_id,
+            include_inactive=True,
+        ):
+            if employer.is_main:
+                continue
+            if coordination_risk_receipt_service.get_for_employer(employer.id) is not None:
+                return True
+            if self.handover_status(employer.id) in RISK_SUBMISSION_PENDING_STATUSES:
+                return True
+        return False
 
     def is_pending_status(self, status: str | None) -> bool:
         return (status or "") in RISK_SUBMISSION_PENDING_STATUSES

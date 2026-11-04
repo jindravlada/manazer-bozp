@@ -9,9 +9,13 @@ from __future__ import annotations
 from datetime import date, datetime
 
 from moduly.koordinace_bozp.constants import (
+    ATTACHMENT_TYPE_RISK_RECEIPT,
     ENTITY_COORDINATION_RISK_SUBMISSION,
     RISK_RECEIPT_METHOD_PAPER,
     RISK_RECEIPT_METHODS,
+)
+from moduly.koordinace_bozp.sluzby.coordination_attachment_service import (
+    coordination_attachment_service,
 )
 from moduly.koordinace_bozp.modely.coordination_risk_receipt import (
     CoordinationRiskReceipt,
@@ -81,7 +85,7 @@ class CoordinationRiskReceiptService:
 
         storage_location = (storage_location or "").strip()
         note = (note or "").strip()
-        attachment_id = self._normalize_attachment_id(attachment_id)
+        attachment_id = self._require_receipt_attachment(employer, attachment_id)
         if method == RISK_RECEIPT_METHOD_PAPER and not storage_location:
             raise CoordinationRiskReceiptError(
                 "U listinného převzetí je povinné uvést místo uložení dokumentu."
@@ -205,12 +209,29 @@ class CoordinationRiskReceiptService:
             and task.source_record_id == submission_id
         )
 
-    def _normalize_attachment_id(self, attachment_id: int | None) -> int | None:
+    def _require_receipt_attachment(self, employer, attachment_id: int | None) -> int | None:
+        """Příloha převzetí musí být typu risk_receipt a patřit stejnému dodavateli."""
         if attachment_id is None:
             return None
         value = int(attachment_id)
         if value <= 0:
             raise CoordinationRiskReceiptError("Neplatná příloha.")
+        attachment = coordination_attachment_service.get_by_id(value)
+        if (
+            attachment is None
+            or attachment.attachment_type != ATTACHMENT_TYPE_RISK_RECEIPT
+        ):
+            raise CoordinationRiskReceiptError(
+                "Lze přiřadit jen přílohu typu „Následné převzetí rizik“."
+            )
+        if attachment.coordination_employer_id != employer.id:
+            raise CoordinationRiskReceiptError(
+                "Příloha nepatří vybranému dodavateli."
+            )
+        if attachment.coordination_id != employer.coordination_id:
+            raise CoordinationRiskReceiptError(
+                "Příloha nepatří k této koordinaci."
+            )
         return value
 
 

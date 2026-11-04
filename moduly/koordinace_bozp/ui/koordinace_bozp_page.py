@@ -42,6 +42,9 @@ from moduly.koordinace_bozp.sluzby.coordination_lifecycle_service import (
     coordination_lifecycle_service,
     normalize_coordination_status,
 )
+from moduly.koordinace_bozp.sluzby.coordination_risk_submission_service import (
+    coordination_risk_submission_service,
+)
 from moduly.koordinace_bozp.sluzby.coordination_pbp_freshness import PbpFreshnessCache
 from moduly.koordinace_bozp.ui.bozp_coordination_dialog import BozpCoordinationDialog
 from moduly.koordinace_bozp.ui.bozp_coordination_table import BozpCoordinationTable
@@ -50,6 +53,9 @@ from moduly.koordinace_bozp.ui.coordination_lifecycle_ui import (
 )
 from moduly.koordinace_bozp.ui.coordination_protocol_preview_dialog import (
     CoordinationProtocolPreviewDialog,
+)
+from moduly.koordinace_bozp.ui.coordination_risk_receipt_dialog import (
+    CoordinationRiskReceiptDialog,
 )
 
 
@@ -67,12 +73,14 @@ class KoordinaceBozpPage(QWidget):
         self.new_btn = QPushButton("Nová koordinace")
         self.open_btn = QPushButton("Otevřít")
         self.print_btn = QPushButton("Tisk protokolu")
+        self.risk_receipt_btn = QPushButton("Předání rizik")
         self.activate_btn = QPushButton("Aktivovat")
         self.deactivate_btn = QPushButton("Deaktivovat")
 
         toolbar.addWidget(self.new_btn)
         toolbar.addWidget(self.open_btn)
         toolbar.addWidget(self.print_btn)
+        toolbar.addWidget(self.risk_receipt_btn)
         toolbar.addWidget(self.activate_btn)
         toolbar.addWidget(self.deactivate_btn)
         self.lifecycle_toolbar = QHBoxLayout()
@@ -120,6 +128,7 @@ class KoordinaceBozpPage(QWidget):
         self.new_btn.clicked.connect(self.new_coordination)
         self.open_btn.clicked.connect(self.open_selected_coordination)
         self.print_btn.clicked.connect(self.print_selected_protocol)
+        self.risk_receipt_btn.clicked.connect(self.open_risk_receipt)
         self.activate_btn.clicked.connect(self.activate_selected_coordination)
         self.deactivate_btn.clicked.connect(self.deactivate_selected_coordination)
         self.status_filter.currentIndexChanged.connect(self.refresh)
@@ -214,6 +223,17 @@ class KoordinaceBozpPage(QWidget):
             preserve_scroll=True,
         )
 
+    def open_risk_receipt(self) -> None:
+        coordination = self._selected_coordination()
+        if coordination is None or not self.risk_receipt_btn.isEnabled():
+            return
+        dialog = CoordinationRiskReceiptDialog(
+            self,
+            coordination_id=coordination.id,
+        )
+        dialog.exec()
+        self.refresh(select_id=coordination.id, preserve_scroll=True)
+
     def print_selected_protocol(self) -> None:
         coordination = self._selected_coordination()
         if coordination is None:
@@ -298,6 +318,12 @@ class KoordinaceBozpPage(QWidget):
         has_selection = coordination is not None
         self.open_btn.setEnabled(has_selection)
         self.print_btn.setEnabled(has_selection)
+        self.risk_receipt_btn.setEnabled(
+            has_selection
+            and coordination_risk_submission_service.accepts_subsequent_risk_receipt(
+                coordination.id
+            )
+        )
         self._clear_lifecycle_buttons()
         if not has_selection:
             self.activate_btn.setEnabled(False)
