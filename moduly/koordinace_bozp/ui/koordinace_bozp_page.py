@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.widgets.dialog_utils import exec_maximized
 from core.widgets.filter_bar import FilterBar
 from core.widgets.table_header_settings import configure_and_persist_table_columns
 from core.widgets.table_row_actions import install_table_row_actions
@@ -231,7 +232,7 @@ class KoordinaceBozpPage(QWidget):
             self,
             coordination_id=coordination.id,
         )
-        dialog.exec()
+        exec_maximized(dialog)
         self.refresh(select_id=coordination.id, preserve_scroll=True)
 
     def print_selected_protocol(self) -> None:

@@ -10,7 +10,8 @@ from datetime import date, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
-from PySide6.QtWidgets import QApplication, QMessageBox
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QApplication, QHeaderView, QMessageBox, QSizePolicy
 from sqlalchemy import delete
 
 _TMP = Path(tempfile.mkdtemp(prefix="coord-risk-receipt-b3-"))
@@ -38,6 +39,7 @@ with patch.object(Path, "home", return_value=_TMP):
         ATTACHMENT_TYPE_RISK_RECEIPT,
         ATT_COL_ID,
         COL_ID,
+        ENTITY_COORDINATION_RISK_SUBMISSION,
         PROTOCOL_WARNING_RISKS_WITHOUT_ATTACHMENT,
         RISK_RECEIPT_METHOD_EMAIL,
         RISK_RECEIPT_METHOD_IN_PERSON,
@@ -92,11 +94,20 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.koordinace_bozp.ui.koordinace_bozp_page import KoordinaceBozpPage
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from moduly.ukoly.modely.task import Task
+    from moduly.ukoly.sluzby.task_service import task_service
+    from core.shared.task_source_display import (
+        task_source_label,
+        task_source_short_label,
+    )
 
 
 _PROTOCOL_DAY = date(2026, 11, 4)
 _BOX = (
     "moduly.koordinace_bozp.ui.coordination_risk_receipt_dialog._exec_message_box"
+)
+_UNSAVED = (
+    "moduly.koordinace_bozp.ui.coordination_risk_receipt_dialog"
+    ".confirm_unsaved_editor_close"
 )
 
 
@@ -213,26 +224,44 @@ class CoordinationRiskReceiptB3Test(unittest.TestCase):
         self.assertIn("listinně", dialog.agreement_method.text())
         self.assertEqual(dialog.agreement_date.text(), "21.11.2026")
 
-    def test_confirmation_is_required_and_values_stay(self) -> None:
+    def test_save_without_checkbox_requires_date_and_completes_task(self) -> None:
         coordination, contractor, _other = self._pair()
         self._close(coordination)
-        self._plan_email(contractor)
+        submission = self._plan_email(contractor)
         dialog = CoordinationRiskReceiptDialog(None, coordination_id=coordination.id)
         dialog.employer_combo.setCurrentIndex(
             dialog.employer_combo.findData(contractor.id)
         )
-        dialog.received_on.set_date_value(date(2026, 11, 18))
+        self.assertFalse(hasattr(dialog, "confirmed"))
         dialog.note.setPlainText("rozepsaná poznámka")
-        dialog.confirmed.setChecked(False)
+        dialog.received_on.clear_date()
 
         with self._capture_messages():
             self.assertFalse(dialog.save_receipt())
 
-        self.assertTrue(any("Potvrďte" in message for message in self._messages))
+        self.assertTrue(any("Datum" in message for message in self._messages))
         self.assertEqual(dialog.note.toPlainText(), "rozepsaná poznámka")
-        self.assertEqual(dialog.received_on.get_date(), date(2026, 11, 18))
+        self.assertIsNone(dialog.received_on.get_date())
         self.assertIsNone(
             coordination_risk_receipt_service.get_for_employer(contractor.id)
+        )
+        task = task_service.get_task_by_id(submission.task_id)
+        self.assertFalse(task.completed)
+        self.assertEqual(task.source_module, ENTITY_COORDINATION_RISK_SUBMISSION)
+        self.assertEqual(task_source_short_label(task), "Koordinace BOZP")
+        self.assertEqual(task_source_label(task), "Koordinace BOZP")
+
+        dialog.received_on.set_date_value(date(2026, 11, 18))
+        with self._capture_messages():
+            self.assertTrue(dialog.save_receipt())
+
+        stored = coordination_risk_receipt_service.get_for_employer(contractor.id)
+        self.assertEqual(stored.received_on, date(2026, 11, 18))
+        self.assertEqual(stored.note, "rozepsaná poznámka")
+        self.assertTrue(task_service.get_task_by_id(submission.task_id).completed)
+        self.assertEqual(
+            task_service.get_task_by_id(submission.task_id).source_module,
+            ENTITY_COORDINATION_RISK_SUBMISSION,
         )
         self.assertEqual(
             bozp_coordination_service.get_by_id(coordination.id).status,
@@ -244,7 +273,6 @@ class CoordinationRiskReceiptB3Test(unittest.TestCase):
         self._close(coordination)
         self._plan_email(contractor)
         dialog = self._dialog_for(coordination.id, contractor.id)
-        dialog.confirmed.setChecked(True)
         dialog.received_on.set_date_value(date(2026, 11, 18))
         dialog.receipt_method.setCurrentIndex(
             dialog.receipt_method.findData(RISK_RECEIPT_METHOD_PAPER)
@@ -278,7 +306,10 @@ class CoordinationRiskReceiptB3Test(unittest.TestCase):
         self._close(coordination)
         self._plan_email(contractor)
         dialog = self._dialog_for(coordination.id, contractor.id)
-        dialog.confirmed.setChecked(True)
+        self.assertTrue(dialog.history_panel.isHidden())
+        self.assertTrue(
+            bool(dialog.windowState() & Qt.WindowState.WindowMaximized)
+        )
         dialog.received_on.set_date_value(date(2026, 11, 18))
         dialog.receipt_method.setCurrentIndex(
             dialog.receipt_method.findData(RISK_RECEIPT_METHOD_EMAIL)
@@ -286,6 +317,7 @@ class CoordinationRiskReceiptB3Test(unittest.TestCase):
         dialog.note.setPlainText("první evidence")
         with self._capture_messages():
             self.assertTrue(dialog.save_receipt())
+        self.assertTrue(dialog.history_panel.isHidden())
         recorded_at = coordination_risk_receipt_service.get_for_employer(
             contractor.id
         ).recorded_at
@@ -301,7 +333,13 @@ class CoordinationRiskReceiptB3Test(unittest.TestCase):
         self.assertEqual(stored.recorded_at, recorded_at)
         self.assertEqual(stored.note, "oprava data")
         self.assertEqual(dialog.history_table.rowCount(), 1)
+        self.assertFalse(dialog.history_panel.isHidden())
         note_cell = dialog.history_table.item(0, 7).text()
+        self.assertEqual(dialog.history_table.item(0, 7).toolTip(), note_cell)
+        self.assertEqual(
+            dialog.history_table.horizontalHeader().sectionResizeMode(7),
+            QHeaderView.ResizeMode.Stretch,
+        )
         self.assertIn("první evidence", note_cell)
         self.assertIn("oprava data", note_cell)
         self.assertEqual(dialog.recorded_label.text(), recorded_at.strftime("%d.%m.%Y %H:%M"))
@@ -337,7 +375,6 @@ class CoordinationRiskReceiptB3Test(unittest.TestCase):
         source = _TMP / "rizika.pdf"
         source.write_bytes(b"%PDF-1.4\n")
         dialog = self._dialog_for(coordination.id, contractor.id)
-        dialog.confirmed.setChecked(True)
         dialog.received_on.set_date_value(date(2026, 11, 18))
         dialog.note.setPlainText("poznámka mimo protokol")
         dialog._pending_path = str(source)
@@ -409,6 +446,86 @@ class CoordinationRiskReceiptB3Test(unittest.TestCase):
         self.assertFalse(tab.submission_method.isEnabled())
         self.assertTrue(tab.note.isReadOnly())
         self.assertFalse(tab.save_btn.isEnabled())
+
+    def test_buttons_save_keep_open_and_save_close(self) -> None:
+        coordination, contractor, _other = self._pair()
+        self._close(coordination)
+        self._plan_email(contractor)
+        dialog = self._dialog_for(coordination.id, contractor.id)
+        dialog.show()
+        self.assertEqual(dialog.save_btn.text(), "Uložit")
+        self.assertEqual(dialog.save_close_btn.text(), "Uložit a zavřít")
+        self.assertEqual(dialog.close_btn.text(), "Zavřít")
+        self.assertEqual(
+            dialog.note.sizePolicy().verticalPolicy(),
+            QSizePolicy.Policy.Fixed,
+        )
+        self.assertLessEqual(
+            dialog.note.maximumHeight(),
+            dialog.note.fontMetrics().lineSpacing() * 6,
+        )
+        dialog.received_on.set_date_value(date(2026, 11, 18))
+        dialog.note.setPlainText("první uložení")
+        with self._capture_messages():
+            dialog.save_btn.click()
+        self.assertTrue(dialog.isVisible())
+        self.assertEqual(
+            coordination_risk_receipt_service.get_for_employer(contractor.id).note,
+            "první uložení",
+        )
+
+        dialog.note.setPlainText("uložit a zavřít")
+        with self._capture_messages():
+            dialog.save_close_btn.click()
+        self.assertFalse(dialog.isVisible())
+        self.assertEqual(
+            coordination_risk_receipt_service.get_for_employer(contractor.id).note,
+            "uložit a zavřít",
+        )
+        self.assertEqual(
+            bozp_coordination_service.get_by_id(coordination.id).status,
+            BOZP_COORDINATION_STATUS_CLOSED,
+        )
+
+    def test_unsaved_close_uses_standard_prompt(self) -> None:
+        coordination, contractor, _other = self._pair()
+        self._close(coordination)
+        self._plan_email(contractor)
+        dialog = self._dialog_for(coordination.id, contractor.id)
+        dialog.show()
+        dialog.received_on.set_date_value(date(2026, 11, 18))
+        dialog.note.setPlainText("ještě neuloženo")
+
+        def choose_back(_parent, **kwargs):
+            self.assertEqual(kwargs.get("abort_label"), "Zpět")
+            return "cancel"
+
+        with patch(_UNSAVED, side_effect=choose_back):
+            dialog.close_btn.click()
+            dialog.close()
+        self.assertTrue(dialog.isVisible())
+        self.assertEqual(dialog.note.toPlainText(), "ještě neuloženo")
+        self.assertIsNone(
+            coordination_risk_receipt_service.get_for_employer(contractor.id)
+        )
+
+        with patch(_UNSAVED, return_value="discard"):
+            dialog.close()
+        self.assertFalse(dialog.isVisible())
+        self.assertIsNone(
+            coordination_risk_receipt_service.get_for_employer(contractor.id)
+        )
+
+        dialog = self._dialog_for(coordination.id, contractor.id)
+        dialog.show()
+        dialog.received_on.set_date_value(date(2026, 11, 19))
+        dialog.note.setPlainText("uložit ze zavření")
+        with patch(_UNSAVED, return_value="save"), self._capture_messages():
+            dialog.close()
+        self.assertFalse(dialog.isVisible())
+        stored = coordination_risk_receipt_service.get_for_employer(contractor.id)
+        self.assertEqual(stored.note, "uložit ze zavření")
+        self.assertEqual(stored.received_on, date(2026, 11, 19))
 
     def test_receipt_file_stays_out_of_original_list_and_protocol(self) -> None:
         coordination, contractor, _other = self._pair()
@@ -560,7 +677,6 @@ class CoordinationRiskReceiptB3Test(unittest.TestCase):
         self._close(coordination)
         self._plan_email(contractor)
         dialog = self._dialog_for(coordination.id, contractor.id)
-        dialog.confirmed.setChecked(True)
         dialog.received_on.set_date_value(date(2026, 11, 18))
         first = self._pdf("prvni.pdf", b"%PDF-1.4 prvni\n")
         second = self._pdf("druhy.pdf", b"%PDF-1.4 druhy\n")

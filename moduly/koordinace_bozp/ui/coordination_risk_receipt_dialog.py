@@ -6,18 +6,19 @@ from datetime import date, datetime
 from pathlib import Path
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import (
-    QCheckBox,
     QComboBox,
     QDialog,
-    QDialogButtonBox,
     QFileDialog,
     QFormLayout,
     QHBoxLayout,
+    QHeaderView,
     QLabel,
     QLineEdit,
     QMessageBox,
     QPushButton,
+    QSizePolicy,
     QTableWidget,
     QTableWidgetItem,
     QTextEdit,
@@ -28,6 +29,11 @@ from PySide6.QtWidgets import (
 from core.widgets.dialog_utils import (
     configure_resizable_form_dialog,
     wrap_in_scroll_area,
+)
+from core.widgets.editor_dialog_controller import (
+    configure_editor_close_button,
+    configure_editor_save_button,
+    confirm_unsaved_editor_close,
 )
 from core.widgets.nullable_date_edit import NullableDateEdit
 from moduly.koordinace_bozp.constants import (
@@ -58,8 +64,11 @@ from moduly.koordinace_bozp.sluzby.coordination_risk_submission_service import (
 )
 
 _DIALOG_TITLE = "Předání rizik"
+_HISTORY_COL_NOTE = 7
 _HISTORY_COL_ATTACHMENT_BEFORE = 8
 _HISTORY_COL_ATTACHMENT_AFTER = 9
+_HISTORY_STRETCH_COLUMNS = (5, 6, _HISTORY_COL_NOTE, 8, 9)
+_UNSAVED_BACK_LABEL = "Zpět"
 
 
 def _exec_message_box(box: QMessageBox) -> int:
@@ -86,6 +95,7 @@ class CoordinationRiskReceiptDialog(QDialog):
         self.coordination_id = coordination_id
         self._loading = False
         self._dirty = False
+        self._allow_close = False
         self._loaded_employer_id: int | None = None
         self._current_attachment_id: int | None = None
         self._pending_path: str | None = None
@@ -116,11 +126,6 @@ class CoordinationRiskReceiptDialog(QDialog):
         form.addRow("Dohodnutý způsob:", self.agreement_method)
         form.addRow("Dohodnutý termín:", self.agreement_date)
 
-        self.confirmed = QCheckBox(
-            "Potvrzuji skutečné převzetí informací o rizicích"
-        )
-        form.addRow("Převzetí:", self.confirmed)
-
         self.received_on = NullableDateEdit()
         form.addRow("Datum skutečného převzetí:", self.received_on)
 
@@ -135,7 +140,12 @@ class CoordinationRiskReceiptDialog(QDialog):
         form.addRow(self._storage_label, self.storage_location)
 
         self.note = QTextEdit()
-        self.note.setMinimumHeight(70)
+        note_height = self.note.fontMetrics().lineSpacing() * 5 + 16
+        self.note.setFixedHeight(note_height)
+        self.note.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Fixed,
+        )
         form.addRow("Poznámka:", self.note)
 
         attachment_row = QHBoxLayout()
@@ -156,6 +166,10 @@ class CoordinationRiskReceiptDialog(QDialog):
         form.addRow("Zaevidováno:", self.recorded_label)
 
         layout.addWidget(wrap_in_scroll_area(form_host), 1)
+
+        self.history_panel = QWidget()
+        history_layout = QVBoxLayout(self.history_panel)
+        history_layout.setContentsMargins(0, 0, 0, 0)
         history_header = QHBoxLayout()
         history_header.addWidget(QLabel("Historie změn"))
         history_header.addStretch()
@@ -163,7 +177,7 @@ class CoordinationRiskReceiptDialog(QDialog):
         history_header.addWidget(self.open_history_btn)
         history_header_host = QWidget()
         history_header_host.setLayout(history_header)
-        layout.addWidget(history_header_host)
+        history_layout.addWidget(history_header_host)
         self.history_table = QTableWidget(0, 10)
         self.history_table.setHorizontalHeaderLabels(
             [
@@ -184,24 +198,45 @@ class CoordinationRiskReceiptDialog(QDialog):
             QTableWidget.SelectionBehavior.SelectRows
         )
         self.history_table.setAlternatingRowColors(True)
+        self.history_table.setWordWrap(True)
+        self.history_table.setTextElideMode(Qt.TextElideMode.ElideNone)
         self.history_table.setMinimumHeight(140)
-        layout.addWidget(self.history_table)
+        history_header_view = self.history_table.horizontalHeader()
+        history_header_view.setStretchLastSection(False)
+        for column in range(self.history_table.columnCount()):
+            mode = (
+                QHeaderView.ResizeMode.Stretch
+                if column in _HISTORY_STRETCH_COLUMNS
+                else QHeaderView.ResizeMode.ResizeToContents
+            )
+            history_header_view.setSectionResizeMode(column, mode)
+        self.history_table.verticalHeader().setSectionResizeMode(
+            QHeaderView.ResizeMode.ResizeToContents
+        )
+        history_layout.addWidget(self.history_table, 1)
+        self.history_panel.setVisible(False)
+        layout.addWidget(self.history_panel, 1)
 
-        buttons = QDialogButtonBox()
-        self.save_btn = buttons.addButton(
-            "Uložit",
-            QDialogButtonBox.ButtonRole.ActionRole,
-        )
-        close_btn = buttons.addButton(
-            "Zavřít",
-            QDialogButtonBox.ButtonRole.RejectRole,
-        )
-        self.save_btn.clicked.connect(self.save_receipt)
-        close_btn.clicked.connect(self.reject)
-        layout.addWidget(buttons)
+        footer = QHBoxLayout()
+        footer.addStretch(1)
+        self.save_btn = QPushButton("Uložit")
+        self.save_close_btn = QPushButton("Uložit a zavřít")
+        self.close_btn = QPushButton("Zavřít")
+        configure_editor_save_button(self.save_btn)
+        configure_editor_save_button(self.save_close_btn)
+        self.save_close_btn.setText("Uložit a zavřít")
+        configure_editor_close_button(self.close_btn, is_new=False)
+        for button in (self.save_btn, self.save_close_btn, self.close_btn):
+            button.setAutoDefault(False)
+            button.setDefault(False)
+            footer.addWidget(button)
+        layout.addLayout(footer)
+
+        self.save_btn.clicked.connect(lambda _checked=False: self.save_receipt())
+        self.save_close_btn.clicked.connect(lambda _checked=False: self.save_and_close())
+        self.close_btn.clicked.connect(lambda _checked=False: self.reject())
 
         self.employer_combo.currentIndexChanged.connect(self._on_employer_changed)
-        self.confirmed.toggled.connect(self._mark_dirty)
         self.received_on.dateChanged.connect(self._mark_dirty)
         self.receipt_method.currentIndexChanged.connect(self._on_method_changed)
         self.storage_location.textEdited.connect(self._mark_dirty)
@@ -214,12 +249,18 @@ class CoordinationRiskReceiptDialog(QDialog):
         )
 
         self._reload_employers()
+        self.setWindowState(self.windowState() | Qt.WindowState.WindowMaximized)
+
+    def save_and_close(self) -> bool:
+        """Uloží převzetí a při úspěchu dialog zavře."""
+        if not self.save_receipt():
+            return False
+        self._allow_close = True
+        self.accept()
+        return True
 
     def save_receipt(self) -> bool:
         """Uloží převzetí. Při chybě dialog zůstane otevřený a údaje zůstanou."""
-        if not self.confirmed.isChecked():
-            self._warn("Potvrďte skutečné převzetí informací o rizicích.")
-            return False
         employer_id = self.employer_combo.currentData()
         if not isinstance(employer_id, int):
             self._warn("Vyberte dodavatele.")
@@ -255,6 +296,41 @@ class CoordinationRiskReceiptDialog(QDialog):
         self._reload_employers(select_id=employer_id)
         self._info("Změny byly úspěšně uloženy.")
         return True
+
+    def reject(self) -> None:  # noqa: A003
+        if self._allow_close:
+            super().reject()
+            return
+        if not self._prepare_close():
+            return
+        self._allow_close = True
+        super().reject()
+
+    def closeEvent(self, event: QCloseEvent) -> None:  # noqa: N802
+        if self._allow_close or not self.isVisible():
+            super().closeEvent(event)
+            return
+        if not self._prepare_close():
+            event.ignore()
+            return
+        self._allow_close = True
+        super().closeEvent(event)
+
+    def _prepare_close(self) -> bool:
+        """Při neuložených změnách nabídne Uložit / Neukládat / Zpět."""
+        if not self._dirty:
+            return True
+        decision = confirm_unsaved_editor_close(
+            self,
+            title=_DIALOG_TITLE,
+            abort_label=_UNSAVED_BACK_LABEL,
+        )
+        if decision == "cancel":
+            return False
+        if decision == "discard":
+            self._dirty = False
+            return True
+        return self.save_receipt()
 
     def open_current_attachment(self) -> bool:
         """Otevře aktuálně přiřazenou přílohu převzetí."""
@@ -358,7 +434,6 @@ class CoordinationRiskReceiptDialog(QDialog):
             self.operational_status.setText("—")
             self.agreement_method.setText("—")
             self.agreement_date.setText("—")
-            self.confirmed.setChecked(False)
             self.received_on.clear_date()
             self.storage_location.clear()
             self.note.clear()
@@ -369,6 +444,7 @@ class CoordinationRiskReceiptDialog(QDialog):
             self._dirty = False
             self._loading = False
             self._update_storage_label()
+            self._sync_history_visibility()
             return
 
         operational = coordination_risk_submission_service.operational_handover(
@@ -392,7 +468,6 @@ class CoordinationRiskReceiptDialog(QDialog):
 
         receipt = coordination_risk_receipt_service.get_for_employer(employer_id)
         if receipt is None:
-            self.confirmed.setChecked(False)
             self.received_on.clear_date()
             self.storage_location.clear()
             self.note.clear()
@@ -400,7 +475,6 @@ class CoordinationRiskReceiptDialog(QDialog):
             self.attachment_label.setText("Nepřipojeno")
             self.open_attachment_btn.setEnabled(False)
         else:
-            self.confirmed.setChecked(True)
             self.received_on.set_date_value(receipt.received_on)
             method = receipt.receipt_method or method
             self.storage_location.setText(receipt.storage_location or "")
@@ -415,6 +489,7 @@ class CoordinationRiskReceiptDialog(QDialog):
         self._dirty = False
         self._loading = False
         self._update_storage_label()
+        self._sync_history_visibility()
 
     def _load_history(self, receipt_id: int) -> None:
         history = coordination_risk_receipt_service.list_history(receipt_id)
@@ -437,7 +512,7 @@ class CoordinationRiskReceiptDialog(QDialog):
                 f"{entry.note_before or '—'} → {entry.note_after or '—'}",
             )
             for column, value in enumerate(values):
-                self.history_table.setItem(row, column, QTableWidgetItem(value))
+                self.history_table.setItem(row, column, self._history_cell(value))
             self.history_table.setItem(
                 row,
                 _HISTORY_COL_ATTACHMENT_BEFORE,
@@ -448,6 +523,8 @@ class CoordinationRiskReceiptDialog(QDialog):
                 _HISTORY_COL_ATTACHMENT_AFTER,
                 self._attachment_history_item(entry.attachment_id_after),
             )
+        self.history_table.resizeRowsToContents()
+        self._sync_history_visibility()
 
     def _open_attachment(self, attachment_id: int) -> bool:
         try:
@@ -469,11 +546,20 @@ class CoordinationRiskReceiptDialog(QDialog):
             return None
         return int(value)
 
+    def _history_cell(self, text: str) -> QTableWidgetItem:
+        item = QTableWidgetItem(text)
+        if text and text != "—":
+            item.setToolTip(text)
+        return item
+
     def _attachment_history_item(self, attachment_id: int | None) -> QTableWidgetItem:
-        item = QTableWidgetItem(self._attachment_name(attachment_id))
+        item = self._history_cell(self._attachment_name(attachment_id))
         if attachment_id:
             item.setData(Qt.ItemDataRole.UserRole, int(attachment_id))
         return item
+
+    def _sync_history_visibility(self) -> None:
+        self.history_panel.setVisible(self.history_table.rowCount() > 0)
 
     def _attachment_name(self, attachment_id: int | None) -> str:
         if not attachment_id:

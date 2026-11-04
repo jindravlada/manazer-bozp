@@ -117,6 +117,7 @@ def _entity_source_short_label(entity_type: str) -> str:
 
 
 def _legacy_source_short_label(source: str) -> str:
+    from moduly.koordinace_bozp.constants import ENTITY_COORDINATION_RISK_SUBMISSION
     from moduly.rizeni_rizik.constants import ENTITY_RISK_MEASURE_REVIEW
 
     mapping = {
@@ -136,6 +137,7 @@ def _legacy_source_short_label(source: str) -> str:
         ENTITY_LEGAL_REQUIREMENT: "Právní pož.",
         ENTITY_MEETING: "Schůzka",
         ENTITY_RISK_MEASURE_REVIEW: "Revize",
+        ENTITY_COORDINATION_RISK_SUBMISSION: "Koordinace BOZP",
     }
     return mapping.get(source or "", source or "—")
 
@@ -282,6 +284,7 @@ def _entity_record_detail(entity_type: str, entity_id: int) -> str:
 
 
 def _legacy_source_label(source: str) -> str:
+    from moduly.koordinace_bozp.constants import ENTITY_COORDINATION_RISK_SUBMISSION
     from moduly.rizeni_rizik.constants import ENTITY_RISK_MEASURE_REVIEW
 
     mapping = {
@@ -301,5 +304,6 @@ def _legacy_source_label(source: str) -> str:
         ENTITY_LEGAL_REQUIREMENT: "Právní požadavek",
         ENTITY_MEETING: "Schůzka",
         ENTITY_RISK_MEASURE_REVIEW: "Revize posouzení rizik",
+        ENTITY_COORDINATION_RISK_SUBMISSION: "Koordinace BOZP",
     }
     return mapping.get(source or "", source or "—")
