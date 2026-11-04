@@ -32,6 +32,8 @@ with patch.object(Path, "home", return_value=_TMP):
 
     from core.database.session import get_session
     from moduly.koordinace_bozp.constants import (
+        BOZP_COORDINATION_STATUS_CLOSED,
+        BOZP_COORDINATION_STATUS_DRAFT,
         ENTITY_COORDINATION_RISK_SUBMISSION,
         RISK_SUBMISSION_STATUS_EARLIER,
         RISK_SUBMISSION_STATUS_EMAIL_BEFORE,
@@ -73,8 +75,17 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.koordinace_bozp.sluzby.coordination_attachment_service import (
         coordination_attachment_service,
     )
+    from moduly.koordinace_bozp.sluzby.coordination_coordinator_service import (
+        coordination_coordinator_service,
+    )
     from moduly.koordinace_bozp.sluzby.coordination_employer_service import (
         coordination_employer_service,
+    )
+    from moduly.koordinace_bozp.sluzby.coordination_lifecycle_service import (
+        coordination_lifecycle_service,
+    )
+    from moduly.koordinace_bozp.sluzby.coordination_workplace_service import (
+        coordination_workplace_service,
     )
     from moduly.koordinace_bozp.sluzby.coordination_protocol_builder import (
         coordination_protocol_builder,
@@ -85,6 +96,10 @@ with patch.object(Path, "home", return_value=_TMP):
     )
     from moduly.koordinace_bozp.ui.coordination_risk_submissions_tab import (
         CoordinationRiskSubmissionsTab,
+    )
+    from moduly.nastaveni.constants.workplace_hierarchy_constants import (
+        WORKPLACE_ITEM_TYPE_OPERATION,
+        WORKPLACE_ITEM_TYPE_WORKPLACE,
     )
     from moduly.nastaveni.sluzby.settings_service import settings_service
     from moduly.ukoly.modely.task import Task
@@ -130,6 +145,21 @@ class UxCoord13RiskSubmissionTestCase(unittest.TestCase):
             abbreviation="ZX-ZF",
         )
         return coordination, contractor
+
+    def _follow_up_tasks(self, submission_id: int):
+        return task_service.list_by_source(
+            ENTITY_COORDINATION_RISK_SUBMISSION,
+            submission_id,
+        )
+
+    def _plan_handover(self, contractor, *, due, note="čekáme PDF"):
+        return coordination_risk_submission_service.save_submission(
+            contractor.id,
+            submission_method=RISK_SUBMISSION_STATUS_WILL_EMAIL,
+            submission_date=due,
+            expected_email="rizika@example.com",
+            note=note,
+        )
 
     def test_all_new_statuses_exist(self) -> None:
         self.assertEqual(len(RISK_SUBMISSION_STATUSES), 5)
@@ -195,6 +225,228 @@ class UxCoord13RiskSubmissionTestCase(unittest.TestCase):
         assert task is not None
         self.assertEqual(task.due_date, due)
         self.assertIn("Předání rizik", task.title)
+
+    def test_open_follow_up_task_is_updated_in_place(self) -> None:
+        _coordination, contractor = self._setup()
+        due = date.today() + timedelta(days=7)
+        saved = self._plan_handover(contractor, due=due, note="první poznámka")
+        later = due + timedelta(days=2)
+        updated = coordination_risk_submission_service.save_submission(
+            contractor.id,
+            submission_method=RISK_SUBMISSION_STATUS_WILL_PAPER,
+            submission_date=later,
+            note="upřesněný termín",
+        )
+        tasks = self._follow_up_tasks(saved.id)
+        self.assertEqual(len(tasks), 1)
+        self.assertEqual(updated.task_id, saved.task_id)
+        task = task_service.get_task_by_id(updated.task_id)
+        assert task is not None
+        self.assertFalse(task.completed)
+        self.assertEqual(task.due_date, later)
+        self.assertIn("upřesněný termín", task.description)
+        self.assertEqual(task.source_record_id, saved.id)
+
+    def test_completed_follow_up_task_is_not_duplicated(self) -> None:
+        _coordination, contractor = self._setup()
+        due = date(2026, 11, 4)
+        saved = self._plan_handover(contractor, due=due)
+        task_service.mark_completed(saved.task_id)
+        original = task_service.get_task_by_id(saved.task_id)
+        assert original is not None
+        snapshot = (
+            original.title,
+            original.description,
+            original.due_date,
+            original.completed,
+            original.completed_date,
+        )
+
+        noted = coordination_risk_submission_service.save_submission(
+            contractor.id,
+            submission_method=RISK_SUBMISSION_STATUS_WILL_EMAIL,
+            submission_date=due,
+            expected_email="rizika@example.com",
+            note="Skutečné převzetí rizik potvrzeno dodavatelem.",
+        )
+        switched = coordination_risk_submission_service.save_submission(
+            contractor.id,
+            submission_method=RISK_SUBMISSION_STATUS_WILL_PAPER,
+            submission_date=due,
+            note="pořád plánované předání",
+        )
+
+        tasks = self._follow_up_tasks(saved.id)
+        self.assertEqual([task.id for task in tasks], [saved.task_id])
+        self.assertEqual(noted.task_id, saved.task_id)
+        self.assertEqual(switched.task_id, saved.task_id)
+        kept = task_service.get_task_by_id(saved.task_id)
+        assert kept is not None
+        self.assertEqual(
+            (kept.title, kept.description, kept.due_date, kept.completed, kept.completed_date),
+            snapshot,
+        )
+
+    def test_missing_task_id_reuses_completed_task_by_source(self) -> None:
+        _coordination, contractor = self._setup()
+        due = date(2026, 11, 4)
+        saved = self._plan_handover(contractor, due=due)
+        task_service.mark_completed(saved.task_id)
+        original = task_service.get_task_by_id(saved.task_id)
+        assert original is not None
+        description = original.description
+        saved.task_id = None
+        coordination_risk_submission_service.repository.update(saved)
+
+        again = coordination_risk_submission_service.save_submission(
+            contractor.id,
+            submission_method=RISK_SUBMISSION_STATUS_WILL_EMAIL,
+            submission_date=due,
+            expected_email="rizika@example.com",
+            note="poznámka po ztrátě vazby",
+        )
+        tasks = self._follow_up_tasks(saved.id)
+        self.assertEqual([task.id for task in tasks], [original.id])
+        self.assertEqual(again.task_id, original.id)
+        kept = task_service.get_task_by_id(original.id)
+        assert kept is not None
+        self.assertTrue(kept.completed)
+        self.assertEqual(kept.description, description)
+        self.assertEqual(kept.due_date, due)
+
+    def test_existing_duplicates_stay_untouched(self) -> None:
+        _coordination, contractor = self._setup()
+        due = date(2026, 11, 4)
+        saved = self._plan_handover(contractor, due=due)
+        task_service.mark_completed(saved.task_id)
+        original = task_service.get_task_by_id(saved.task_id)
+        assert original is not None
+        original_description = original.description
+        duplicate = task_service.create_task(
+            title=original.title,
+            description="druhý dokončený úkol",
+            due_date=due,
+            completed=True,
+            source_module=ENTITY_COORDINATION_RISK_SUBMISSION,
+            source_record_id=saved.id,
+            requires_verification=False,
+        )
+        open_duplicate = task_service.create_task(
+            title=original.title,
+            description="otevřená duplicita",
+            due_date=due,
+            source_module=ENTITY_COORDINATION_RISK_SUBMISSION,
+            source_record_id=saved.id,
+            requires_verification=False,
+        )
+
+        updated = coordination_risk_submission_service.save_submission(
+            contractor.id,
+            submission_method=RISK_SUBMISSION_STATUS_WILL_EMAIL,
+            submission_date=due + timedelta(days=1),
+            expected_email="rizika@example.com",
+            note="další uložení",
+        )
+        tasks = self._follow_up_tasks(saved.id)
+        self.assertEqual(
+            [task.id for task in tasks],
+            [original.id, duplicate.id, open_duplicate.id],
+        )
+        self.assertEqual(updated.task_id, open_duplicate.id)
+        kept_original = task_service.get_task_by_id(original.id)
+        kept_duplicate = task_service.get_task_by_id(duplicate.id)
+        kept_open = task_service.get_task_by_id(open_duplicate.id)
+        assert kept_original is not None and kept_duplicate is not None
+        assert kept_open is not None
+        self.assertTrue(kept_original.completed)
+        self.assertEqual(kept_original.description, original_description)
+        self.assertEqual(kept_original.due_date, due)
+        self.assertTrue(kept_duplicate.completed)
+        self.assertEqual(kept_duplicate.description, "druhý dokončený úkol")
+        self.assertFalse(kept_open.completed)
+        self.assertEqual(kept_open.due_date, due + timedelta(days=1))
+        self.assertIn("další uložení", kept_open.description)
+
+    def test_final_status_attachment_and_reclose_keep_completed_task(self) -> None:
+        coordination = bozp_coordination_service.create_coordination(
+            subject="UX-COORD-13 uzavření",
+            meeting_date=date(2026, 11, 4),
+            place="Jednací místnost",
+        )
+        operation = settings_service.save_workplace(
+            name="UX-COORD-13 provoz",
+            item_type=WORKPLACE_ITEM_TYPE_OPERATION,
+        )
+        workplace = settings_service.save_workplace(
+            name="UX-COORD-13 pracoviště",
+            item_type=WORKPLACE_ITEM_TYPE_WORKPLACE,
+            parent_id=operation.id,
+        )
+        coordination_workplace_service.add(
+            coordination.id,
+            operation_id=operation.id,
+            workplace_id=workplace.id,
+        )
+        main = coordination_employer_service.ensure_main_employer(coordination.id)
+        coordination_coordinator_service.set_coordinator(
+            coordination.id,
+            full_name="Koordinátor test",
+            role="Koordinátor BOZP",
+            employer_name=main.company_name or "Hlavní",
+        )
+        contractor = coordination_employer_service.add_participant(
+            coordination.id,
+            company_name="OGES dodavatel s.r.o.",
+            abbreviation="OGES",
+        )
+        due = date(2026, 11, 4)
+        saved = self._plan_handover(contractor, due=due)
+        task_service.mark_completed(saved.task_id)
+        original = task_service.get_task_by_id(saved.task_id)
+        assert original is not None
+        description = original.description
+
+        coordination_risk_submission_service.save_submission(
+            contractor.id,
+            submission_method=RISK_SUBMISSION_STATUS_EMAIL_BEFORE,
+            submission_date=due,
+            document_reference="MSG-OGES",
+            note="Skutečné převzetí rizik.",
+        )
+        source = _TMP / "oges.pdf"
+        source.write_bytes(b"%PDF oges")
+        coordination_attachment_service.add_file(
+            coordination_id=coordination.id,
+            coordination_employer_id=contractor.id,
+            source_path=source,
+        )
+        closed = coordination_lifecycle_service.transition(
+            coordination.id,
+            BOZP_COORDINATION_STATUS_CLOSED,
+            confirm_warnings=True,
+        )
+        reopened = coordination_lifecycle_service.transition(
+            closed.id,
+            BOZP_COORDINATION_STATUS_DRAFT,
+            confirm_sensitive=True,
+        )
+        coordination_lifecycle_service.transition(
+            reopened.id,
+            BOZP_COORDINATION_STATUS_CLOSED,
+            confirm_warnings=True,
+        )
+
+        tasks = self._follow_up_tasks(saved.id)
+        self.assertEqual([task.id for task in tasks], [saved.task_id])
+        kept = task_service.get_task_by_id(saved.task_id)
+        assert kept is not None
+        self.assertTrue(kept.completed)
+        self.assertEqual(kept.description, description)
+        self.assertEqual(kept.due_date, due)
+        stored = coordination_risk_submission_service.get_for_employer(contractor.id)
+        assert stored is not None
+        self.assertEqual(stored.task_id, saved.task_id)
+        self.assertEqual(stored.submission_method, RISK_SUBMISSION_STATUS_EMAIL_BEFORE)
 
     def test_attachments_on_create_and_later(self) -> None:
         coordination, contractor = self._setup()

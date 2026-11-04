@@ -236,6 +236,15 @@ class CoordinationRiskSubmissionService:
                 return self.repository.update(submission)
             return submission
 
+        # Splněný úkol je pořád tentýž závazek. Nový vznikne jen bez navázaného úkolu.
+        completed_task = self._completed_follow_up_task(submission)
+        if completed_task is not None:
+            if submission.task_id != completed_task.id:
+                submission.task_id = completed_task.id
+                submission.updated_at = datetime.now()
+                return self.repository.update(submission)
+            return submission
+
         task = task_service.create_task(
             title=title[:200],
             description=description,
@@ -247,6 +256,25 @@ class CoordinationRiskSubmissionService:
         submission.task_id = task.id
         submission.updated_at = datetime.now()
         return self.repository.update(submission)
+
+    def _completed_follow_up_task(self, submission):
+        """Vrátí splněný úkol předání, pokud už k záznamu nějaký patří.
+
+        Nejdřív přímá vazba ``task_id``, potom zdrojový modul a id předání.
+        Úkol se neupravuje a další splněné duplicity se nemažou.
+        """
+        if submission.task_id:
+            linked = task_service.get_task_by_id(submission.task_id)
+            if linked is not None and linked.completed:
+                return linked
+        related = task_service.list_by_source(
+            ENTITY_COORDINATION_RISK_SUBMISSION,
+            submission.id,
+        )
+        completed = [task for task in related if task.completed]
+        if not completed:
+            return None
+        return min(completed, key=lambda task: task.id)
 
     def _follow_up_task_description(self, submission, employer, short: str) -> str:
         description_parts = [
