@@ -50,6 +50,7 @@ from moduly.koordinace_bozp.constants import (
     RISK_HANDOVER_STATUS_LABELS,
     RISK_HANDOVER_STATUS_MAIN,
     RISK_HANDOVER_STATUS_NOT_SUBMITTED,
+    RISK_HANDOVER_STATUS_SUBSEQUENTLY_RECEIVED,
     RISK_HANDOVER_STATUS_UNSET,
     RISK_SUBMISSION_COMPLETED_STATUSES,
     RISK_SUBMISSION_PENDING_STATUSES,
@@ -737,10 +738,20 @@ class CoordinationProtocolBuilder:
             status = row["handover_status"]
             if status == RISK_HANDOVER_STATUS_MAIN:
                 continue
-            if status in (
+            # Protokol tiskne původní dohodu. Následné převzetí jen zruší upozornění.
+            operational = coordination_risk_submission_service.operational_handover(
+                employer["id"]
+            )
+            pending_or_missing = status in (
                 RISK_HANDOVER_STATUS_UNSET,
                 RISK_HANDOVER_STATUS_NOT_SUBMITTED,
-            ) or status in RISK_SUBMISSION_PENDING_STATUSES:
+            ) or status in RISK_SUBMISSION_PENDING_STATUSES
+            if (
+                operational.status == RISK_HANDOVER_STATUS_SUBSEQUENTLY_RECEIVED
+                and pending_or_missing
+            ):
+                continue
+            if pending_or_missing:
                 warnings.append(
                     ProtocolWarning(
                         code=PROTOCOL_WARNING_RISKS_NOT_SUBMITTED,

@@ -1,6 +1,7 @@
-"""Ukládání následného převzetí rizik (fáze B1).
+"""Ukládání následného převzetí rizik.
 
-Nemění původní dohodu, provozní stav předání, protokol ani úkoly.
+Nemění původní dohodu ani údaje, ze kterých se sestavuje protokol.
+Při prvním uložení dokončí jen jednoznačně navázaný otevřený úkol.
 """
 
 from __future__ import annotations
@@ -8,6 +9,7 @@ from __future__ import annotations
 from datetime import date, datetime
 
 from moduly.koordinace_bozp.constants import (
+    ENTITY_COORDINATION_RISK_SUBMISSION,
     RISK_RECEIPT_METHOD_PAPER,
     RISK_RECEIPT_METHODS,
 )
@@ -18,9 +20,14 @@ from moduly.koordinace_bozp.modely.coordination_risk_receipt import (
 from moduly.koordinace_bozp.repository.coordination_employer_repository import (
     CoordinationEmployerRepository,
 )
+from moduly.koordinace_bozp.repository.coordination_employer_risk_submission_repository import (
+    CoordinationEmployerRiskSubmissionRepository,
+)
 from moduly.koordinace_bozp.repository.coordination_risk_receipt_repository import (
     CoordinationRiskReceiptRepository,
 )
+from moduly.ukoly.modely.task import Task
+from moduly.ukoly.sluzby.task_service import task_service
 
 
 class CoordinationRiskReceiptError(ValueError):
@@ -31,6 +38,7 @@ class CoordinationRiskReceiptService:
     def __init__(self) -> None:
         self.repository = CoordinationRiskReceiptRepository()
         self.employer_repository = CoordinationEmployerRepository()
+        self.submission_repository = CoordinationEmployerRiskSubmissionRepository()
 
     def get_for_employer(
         self,
@@ -93,7 +101,9 @@ class CoordinationRiskReceiptService:
                 created_at=now,
                 updated_at=now,
             )
-            return self.repository.add(receipt)
+            stored = self.repository.add(receipt)
+            self._complete_linked_open_task(coordination_employer_id)
+            return stored
 
         if not self._values_changed(
             existing,
@@ -143,6 +153,56 @@ class CoordinationRiskReceiptService:
             or (receipt.storage_location or "") != storage_location
             or (receipt.note or "") != note
             or receipt.attachment_id != attachment_id
+        )
+
+    def _complete_linked_open_task(self, coordination_employer_id: int) -> None:
+        """Dokončí otevřený úkol jen podle vazby na předání, ne podle názvu.
+
+        Platné ``submission.task_id`` má přednost a ostatní úkoly se nedotýkají.
+        Bez platné vazby se dokončí jen jediný úkol zdroje. Při více úkolech
+        zdroje se nedokončí žádný. Oprava převzetí sem nevede.
+        """
+        submission = self.submission_repository.get_for_employer(
+            coordination_employer_id
+        )
+        if submission is None:
+            return
+
+        linked = self._task_linked_by_submission(submission)
+        if linked is not None:
+            if not linked.completed and not linked.canceled:
+                task_service.mark_completed(linked.id)
+            return
+
+        related = self._tasks_for_submission(submission.id)
+        open_tasks = [task for task in related if not task.completed]
+        if len(related) == 1 and len(open_tasks) == 1:
+            task_service.mark_completed(open_tasks[0].id)
+
+    def _task_linked_by_submission(self, submission) -> Task | None:
+        if not submission.task_id:
+            return None
+        task = task_service.get_task_by_id(submission.task_id)
+        if not self._belongs_to_submission(task, submission.id):
+            return None
+        return task
+
+    def _tasks_for_submission(self, submission_id: int) -> list[Task]:
+        return [
+            task
+            for task in task_service.list_by_source(
+                ENTITY_COORDINATION_RISK_SUBMISSION,
+                submission_id,
+            )
+            if self._belongs_to_submission(task, submission_id) and not task.canceled
+        ]
+
+    def _belongs_to_submission(self, task: Task | None, submission_id: int) -> bool:
+        if task is None:
+            return False
+        return (
+            task.source_module == ENTITY_COORDINATION_RISK_SUBMISSION
+            and task.source_record_id == submission_id
         )
 
     def _normalize_attachment_id(self, attachment_id: int | None) -> int | None:

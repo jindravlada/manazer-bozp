@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import date, datetime
 
 from moduly.koordinace_bozp.constants import (
     ENTITY_COORDINATION_RISK_SUBMISSION,
+    RISK_HANDOVER_STATUS_LABELS,
     RISK_HANDOVER_STATUS_MAIN,
+    RISK_HANDOVER_STATUS_SUBSEQUENTLY_RECEIVED,
     RISK_HANDOVER_STATUS_UNSET,
+    RISK_RECEIPT_METHOD_LABELS,
     RISK_SUBMISSION_COMPLETED_STATUSES,
     RISK_SUBMISSION_PENDING_STATUSES,
     RISK_SUBMISSION_STATUS_LABELS,
@@ -36,6 +40,17 @@ from moduly.ukoly.sluzby.task_service import task_service
 
 class CoordinationRiskSubmissionError(ValueError):
     pass
+
+
+@dataclass(frozen=True)
+class OperationalRiskHandover:
+    """Provozní stav předání. Do protokolu se nepropisuje."""
+
+    status: str
+    label: str
+    received_on: date | None = None
+    receipt_method: str = ""
+    receipt_method_label: str = ""
 
 
 class CoordinationRiskSubmissionService:
@@ -165,9 +180,43 @@ class CoordinationRiskSubmissionService:
 
     def handover_status_label(self, coordination_employer_id: int) -> str:
         status = self.handover_status(coordination_employer_id)
-        from moduly.koordinace_bozp.constants import RISK_HANDOVER_STATUS_LABELS
-
         return RISK_HANDOVER_STATUS_LABELS.get(status, status)
+
+    def operational_handover(
+        self,
+        coordination_employer_id: int,
+    ) -> OperationalRiskHandover:
+        """Stav pro upozornění a přehled. Původní dohoda zůstává v ``handover_status``."""
+        agreement_status = self.handover_status(coordination_employer_id)
+        if agreement_status == RISK_HANDOVER_STATUS_MAIN:
+            return self._operational_from_agreement(agreement_status)
+
+        from moduly.koordinace_bozp.sluzby.coordination_risk_receipt_service import (
+            coordination_risk_receipt_service,
+        )
+
+        receipt = coordination_risk_receipt_service.get_for_employer(
+            coordination_employer_id
+        )
+        if receipt is None:
+            return self._operational_from_agreement(agreement_status)
+
+        method = receipt.receipt_method or ""
+        return OperationalRiskHandover(
+            status=RISK_HANDOVER_STATUS_SUBSEQUENTLY_RECEIVED,
+            label=RISK_HANDOVER_STATUS_LABELS[
+                RISK_HANDOVER_STATUS_SUBSEQUENTLY_RECEIVED
+            ],
+            received_on=receipt.received_on,
+            receipt_method=method,
+            receipt_method_label=RISK_RECEIPT_METHOD_LABELS.get(method, method),
+        )
+
+    def _operational_from_agreement(self, status: str) -> OperationalRiskHandover:
+        return OperationalRiskHandover(
+            status=status,
+            label=RISK_HANDOVER_STATUS_LABELS.get(status, status),
+        )
 
     def is_pending_status(self, status: str | None) -> bool:
         return (status or "") in RISK_SUBMISSION_PENDING_STATUSES
