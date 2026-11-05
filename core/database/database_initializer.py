@@ -2401,6 +2401,7 @@ def _ensure_supplier_risk_tables() -> None:
         from moduly.rizeni_rizik.modely.supplier_risk import SupplierRiskDocument
 
         SupplierRiskDocument.__table__.create(bind=_db_engine(), checkfirst=True)
+    _add_column("supplier_risk_documents", "prepared_on DATE")
     _ensure_index(
         "uq_supplier_risk_companies_ico",
         """

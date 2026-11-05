@@ -30,15 +30,28 @@ from moduly.rizeni_rizik.sluzby.supplier_risk_service import (
 class SupplierRiskDocumentDialog(QDialog):
     """Založení nebo úprava dokumentu rizik dodavatele."""
 
-    def __init__(self, parent=None, document: SupplierRiskDocumentRow | None = None):
+    def __init__(
+        self,
+        parent=None,
+        document: SupplierRiskDocumentRow | None = None,
+        *,
+        company_id: int | None = None,
+    ):
         super().__init__(parent)
         self.document = document
+        self.company_id = company_id
+        self._company_scoped = company_id is not None
         self.source_path = ""
         self._filling = False
         self.reused_existing_company = False
-        self.setWindowTitle(
-            "Upravit dokument rizik" if document is not None else "Nový dokument rizik"
-        )
+        if self._company_scoped:
+            self.setWindowTitle(
+                "Upravit dokument" if document is not None else "Přidat dokument"
+            )
+        else:
+            self.setWindowTitle(
+                "Upravit dokument rizik" if document is not None else "Nový dokument rizik"
+            )
         configure_resizable_form_dialog(
             self,
             width=560,
@@ -49,11 +62,7 @@ class SupplierRiskDocumentDialog(QDialog):
 
         layout = QVBoxLayout(self)
         form = QFormLayout()
-        self.company = QComboBox()
-        self.name = QLineEdit()
-        self.ico = QLineEdit()
-        self.ares_button = QPushButton("Načíst z ARES")
-        self.ares_button.clicked.connect(lambda _checked=False: self._load_from_ares())
+        self.prepared_on = NullableDateEdit()
         self.received_on = NullableDateEdit()
         self.note = QPlainTextEdit()
         self.note.setFixedHeight(self.fontMetrics().lineSpacing() * 4 + 16)
@@ -65,14 +74,22 @@ class SupplierRiskDocumentDialog(QDialog):
         file_row = QHBoxLayout()
         file_row.addWidget(self.file_name, 1)
         file_row.addWidget(self.file_button)
-        ico_row = QHBoxLayout()
-        ico_row.addWidget(self.ico, 1)
-        ico_row.addWidget(self.ares_button)
 
-        form.addRow("Firma:", self.company)
-        form.addRow("Název firmy *:", self.name)
-        form.addRow("IČO *:", ico_row)
-        form.addRow("Dokument rizik *:", file_row)
+        if not self._company_scoped:
+            self.company = QComboBox()
+            self.name = QLineEdit()
+            self.ico = QLineEdit()
+            self.ares_button = QPushButton("Načíst z ARES")
+            self.ares_button.clicked.connect(lambda _checked=False: self._load_from_ares())
+            ico_row = QHBoxLayout()
+            ico_row.addWidget(self.ico, 1)
+            ico_row.addWidget(self.ares_button)
+            form.addRow("Firma:", self.company)
+            form.addRow("Název firmy *:", self.name)
+            form.addRow("IČO *:", ico_row)
+        document_label = "Dokument rizik:" if document is not None else "Dokument rizik *:"
+        form.addRow(document_label, file_row)
+        form.addRow("Datum zpracování:", self.prepared_on)
         form.addRow("Datum převzetí:", self.received_on)
         form.addRow("Poznámka:", self.note)
         layout.addLayout(form)
@@ -88,10 +105,14 @@ class SupplierRiskDocumentDialog(QDialog):
         cancel.clicked.connect(self.reject)
         layout.addWidget(buttons)
 
-        self.company.currentIndexChanged.connect(self._on_company_changed)
+        if not self._company_scoped:
+            self.company.currentIndexChanged.connect(self._on_company_changed)
         self._load()
 
     def _load(self) -> None:
+        if self._company_scoped:
+            self._load_company_scoped()
+            return
         self._filling = True
         self.company.clear()
         self.company.addItem("Nová firma", None)
@@ -112,6 +133,7 @@ class SupplierRiskDocumentDialog(QDialog):
         else:
             self.name.setText(self.document.company_name)
             self.ico.setText(self.document.ico)
+            self.prepared_on.set_date_value(self.document.prepared_on)
             self.received_on.set_date_value(self.document.received_on)
             self.note.setPlainText(self.document.note)
             self.file_name.setText(self.document.filename or "Dokument")
@@ -120,6 +142,19 @@ class SupplierRiskDocumentDialog(QDialog):
                 "Novou verzi dokumentu evidujte jako nový záznam."
             )
         self._filling = False
+
+    def _load_company_scoped(self) -> None:
+        if self.document is None:
+            self.file_button.setEnabled(True)
+            return
+        self.prepared_on.set_date_value(self.document.prepared_on)
+        self.received_on.set_date_value(self.document.received_on)
+        self.note.setPlainText(self.document.note)
+        self.file_name.setText(self.document.filename or "Dokument")
+        self.file_button.setEnabled(False)
+        self.file_button.setToolTip(
+            "Novou verzi dokumentu evidujte jako nový záznam."
+        )
 
     def _on_company_changed(self) -> None:
         if self._filling:
@@ -155,16 +190,23 @@ class SupplierRiskDocumentDialog(QDialog):
         self.source_path = path
         self.file_name.setText(Path(path).name)
 
-    def _save(self) -> None:
+    def _date_error(self) -> str | None:
+        if self.prepared_on.line_edit.text().strip() and self.prepared_on.get_date() is None:
+            return "Datum zpracování nemá platný formát."
         if self.received_on.line_edit.text().strip() and self.received_on.get_date() is None:
-            QMessageBox.warning(
-                self,
-                "Dokument rizik",
-                "Datum převzetí nemá platný formát.",
-            )
+            return "Datum převzetí nemá platný formát."
+        return None
+
+    def _save(self) -> None:
+        date_error = self._date_error()
+        if date_error:
+            QMessageBox.warning(self, "Dokument rizik", date_error)
             return
         try:
-            if self.document is None:
+            if self._company_scoped:
+                self._save_for_company()
+                result = None
+            elif self.document is None:
                 result = supplier_risk_service.create_document(
                     company_id=self.company.currentData(),
                     name=self.name.text(),
@@ -172,6 +214,7 @@ class SupplierRiskDocumentDialog(QDialog):
                     received_on=self.received_on.get_date(),
                     note=self.note.toPlainText(),
                     source_path=self.source_path,
+                    prepared_on=self.prepared_on.get_date(),
                 )
             else:
                 result = supplier_risk_service.update_document(
@@ -181,9 +224,13 @@ class SupplierRiskDocumentDialog(QDialog):
                     ico=self.ico.text(),
                     received_on=self.received_on.get_date(),
                     note=self.note.toPlainText(),
+                    prepared_on=self.prepared_on.get_date(),
                 )
         except SupplierRiskError as exc:
             QMessageBox.warning(self, "Dokument rizik", str(exc))
+            return
+        if result is None:
+            self.accept()
             return
         self.reused_existing_company = result.reused_existing_company
         if result.reused_existing_company:
@@ -193,3 +240,22 @@ class SupplierRiskDocumentDialog(QDialog):
                 "Firma s tímto IČO už je evidována. Dokument byl přiřazen k existujícímu záznamu.",
             )
         self.accept()
+
+    def _save_for_company(self) -> None:
+        if self.company_id is None:
+            raise SupplierRiskError("Firma nebyla nalezena.")
+        if self.document is None:
+            supplier_risk_service.add_company_document(
+                self.company_id,
+                received_on=self.received_on.get_date(),
+                note=self.note.toPlainText(),
+                source_path=self.source_path,
+                prepared_on=self.prepared_on.get_date(),
+            )
+            return
+        supplier_risk_service.update_document_details(
+            self.document.id,
+            received_on=self.received_on.get_date(),
+            note=self.note.toPlainText(),
+            prepared_on=self.prepared_on.get_date(),
+        )

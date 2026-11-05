@@ -366,12 +366,11 @@ class SupplierRiskC1Test(unittest.TestCase):
         )
         tab = SupplierRiskDocumentsTab()
         self.assertTrue(tab.new_btn.isEnabled())
-        self.assertFalse(tab.edit_btn.isEnabled())
         self.assertFalse(tab.open_btn.isEnabled())
-        self.assertEqual(tab.table.columnCount(), 5)
+        self.assertEqual(tab.table.columnCount(), 2)
         self.assertEqual(
-            [tab.table.horizontalHeaderItem(column).text() for column in range(5)],
-            ["Název firmy", "IČO", "Dokument rizik", "Datum převzetí", "Poznámka"],
+            [tab.table.horizontalHeaderItem(column).text() for column in range(2)],
+            ["IČO", "Název firmy"],
         )
         tab.text_filter.search_edit.setText("222")
         self.assertEqual(tab.table.rowCount(), 2)
@@ -380,7 +379,7 @@ class SupplierRiskC1Test(unittest.TestCase):
         ]
         self.assertEqual(hidden.count(False), 1)
         visible_row = hidden.index(False)
-        self.assertEqual(tab.table.item(visible_row, 0).text(), "Beta")
+        self.assertEqual(tab.table.item(visible_row, 1).text(), "Beta")
         tab.text_filter.search_edit.setText("tajná")
         self.assertTrue(all(tab.table.isRowHidden(row) for row in range(2)))
         tab.text_filter.search_edit.setText("alfa")
@@ -388,14 +387,7 @@ class SupplierRiskC1Test(unittest.TestCase):
             row for row in range(2) if not tab.table.isRowHidden(row)
         )
         tab.table.selectRow(visible_row)
-        self.assertTrue(tab.edit_btn.isEnabled())
         self.assertTrue(tab.open_btn.isEnabled())
-        with patch(
-            "moduly.rizeni_rizik.sluzby.supplier_risk_service.open_local_file",
-            return_value=True,
-        ) as opened:
-            tab.open_document()
-        self.assertEqual(Path(opened.call_args.args[0]).read_bytes(), b"a")
         tab.deleteLater()
 
     def test_dialog_creates_document_without_date_and_reuses_ico(self):

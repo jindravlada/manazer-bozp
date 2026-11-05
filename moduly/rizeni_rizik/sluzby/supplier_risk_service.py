@@ -23,6 +23,12 @@ class SupplierRiskError(ValueError):
     """Neplatná evidence rizik dodavatele."""
 
 
+_KEEP_PREPARED_ON = object()
+
+
+DUPLICATE_SUPPLIER_ICO_MESSAGE = "Firma s tímto IČO už je evidována."
+
+
 @dataclass(frozen=True)
 class SupplierRiskDocumentRow:
     id: int
@@ -30,6 +36,7 @@ class SupplierRiskDocumentRow:
     company_name: str
     ico: str
     filename: str
+    prepared_on: date | None
     received_on: date | None
     note: str
     attachment_id: int
@@ -60,6 +67,16 @@ def _stored_ico(value: str | None) -> str | None:
     return text or None
 
 
+def _require_company_identity(name: str, ico: str | None) -> tuple[str, str]:
+    cleaned_name = (name or "").strip()
+    if not cleaned_name:
+        raise SupplierRiskError("Název firmy je povinný.")
+    normalized_ico = normalize_supplier_ico(ico)
+    if not normalized_ico:
+        raise SupplierRiskError("IČO je povinné.")
+    return cleaned_name, normalized_ico
+
+
 def supplier_risk_search_matches(*, company_name: str, ico: str, query: str) -> bool:
     text = (query or "").strip().lower()
     if not text:
@@ -74,6 +91,51 @@ class SupplierRiskService:
 
     def list_companies(self) -> list[SupplierRiskCompany]:
         return self.repository.list_companies()
+
+    def get_company(self, company_id: int) -> SupplierRiskCompany | None:
+        return self.repository.get_company(company_id)
+
+    def create_company(self, *, name: str, ico: str | None) -> SupplierRiskCompany:
+        """Založí firmu bez dokumentu. Stejné IČO odmítne a nic nesloučí."""
+        cleaned_name, normalized_ico = _require_company_identity(name, ico)
+        if self.repository.get_by_ico(normalized_ico) is not None:
+            raise SupplierRiskError(DUPLICATE_SUPPLIER_ICO_MESSAGE)
+        try:
+            return self.repository.add_company(
+                SupplierRiskCompany(
+                    name=cleaned_name,
+                    ico=normalized_ico,
+                    created_at=datetime.now(),
+                    updated_at=datetime.now(),
+                )
+            )
+        except IntegrityError as exc:
+            raise SupplierRiskError(DUPLICATE_SUPPLIER_ICO_MESSAGE) from exc
+
+    def update_company_identity(
+        self,
+        company_id: int,
+        *,
+        name: str,
+        ico: str | None,
+    ) -> SupplierRiskCompany:
+        """Upraví název a IČO. Dokumenty zůstanou u této firmy."""
+        cleaned_name, normalized_ico = _require_company_identity(name, ico)
+        current = self.repository.get_company(company_id)
+        if current is None:
+            raise SupplierRiskError("Firma nebyla nalezena.")
+        other = self.repository.get_by_ico(normalized_ico)
+        if other is not None and other.id != current.id:
+            raise SupplierRiskError(DUPLICATE_SUPPLIER_ICO_MESSAGE)
+        if current.name == cleaned_name and _stored_ico(current.ico) == normalized_ico:
+            return current
+        current.name = cleaned_name
+        current.ico = normalized_ico
+        current.updated_at = datetime.now()
+        try:
+            return self.repository.update_company(current)
+        except IntegrityError as exc:
+            raise SupplierRiskError(DUPLICATE_SUPPLIER_ICO_MESSAGE) from exc
 
     def company_name_from_ares(self, ico: str | None) -> str:
         """Vrátí jen obchodní jméno. Při neúspěchu nic neukládá."""
@@ -97,6 +159,69 @@ class SupplierRiskService:
             rows.append(self._row(document, company, attachment))
         return rows
 
+    def list_company_documents(self, company_id: int) -> list[SupplierRiskDocumentRow]:
+        return [row for row in self.list_documents() if row.company_id == company_id]
+
+    def add_company_document(
+        self,
+        company_id: int,
+        *,
+        received_on: date | None,
+        note: str,
+        source_path: str,
+        prepared_on: date | None = None,
+    ) -> SupplierRiskDocumentRow:
+        """Přidá nový dokument. Původní záznamy ani jejich soubory nemění."""
+        company = self.repository.get_company(company_id)
+        if company is None:
+            raise SupplierRiskError("Firma nebyla nalezena.")
+        source = Path(source_path or "")
+        if not source.is_file():
+            raise SupplierRiskError("Dokument rizik je povinný.")
+        document = self.repository.add_document(
+            SupplierRiskDocument(
+                company_id=company.id,
+                received_on=received_on,
+                prepared_on=prepared_on,
+                note=(note or "").strip(),
+                attachment_id=None,
+                created_at=datetime.now(),
+                updated_at=datetime.now(),
+            )
+        )
+        attachment = attachment_service.add_file(
+            SUPPLIER_RISK_ENTITY_TYPE,
+            document.id,
+            str(source),
+        )
+        if attachment is None:
+            self.repository.delete_document(document.id)
+            raise SupplierRiskError("Dokument se nepodařilo uložit do úložiště příloh.")
+        document.attachment_id = attachment.id
+        document.updated_at = datetime.now()
+        document = self.repository.update_document(document)
+        return self._require_row(document.id)
+
+    def update_document_details(
+        self,
+        document_id: int,
+        *,
+        received_on: date | None,
+        note: str,
+        prepared_on: date | None | object = _KEEP_PREPARED_ON,
+    ) -> SupplierRiskDocumentRow:
+        """Změní údaje dokumentu. Soubor ani firmu nemění a datum zpracování samo nedoplní."""
+        document = self.repository.get_document(document_id)
+        if document is None or not document.attachment_id:
+            raise SupplierRiskError("Dokument nebyl nalezen.")
+        document.received_on = received_on
+        document.note = (note or "").strip()
+        if prepared_on is not _KEEP_PREPARED_ON:
+            document.prepared_on = prepared_on
+        document.updated_at = datetime.now()
+        self.repository.update_document(document)
+        return self._require_row(document_id)
+
     def create_document(
         self,
         *,
@@ -106,6 +231,7 @@ class SupplierRiskService:
         received_on: date | None,
         note: str,
         source_path: str,
+        prepared_on: date | None = None,
     ) -> SupplierRiskSaveResult:
         source = Path(source_path or "")
         if not source.is_file():
@@ -119,6 +245,7 @@ class SupplierRiskService:
             SupplierRiskDocument(
                 company_id=company.id,
                 received_on=received_on,
+                prepared_on=prepared_on,
                 note=(note or "").strip(),
                 attachment_id=None,
                 created_at=datetime.now(),
@@ -150,6 +277,7 @@ class SupplierRiskService:
         ico: str | None,
         received_on: date | None,
         note: str,
+        prepared_on: date | None | object = _KEEP_PREPARED_ON,
     ) -> SupplierRiskSaveResult:
         document = self.repository.get_document(document_id)
         if document is None or not document.attachment_id:
@@ -163,6 +291,8 @@ class SupplierRiskService:
         document.company_id = company.id
         document.received_on = received_on
         document.note = (note or "").strip()
+        if prepared_on is not _KEEP_PREPARED_ON:
+            document.prepared_on = prepared_on
         document.attachment_id = original_attachment_id
         document.updated_at = datetime.now()
         self.repository.update_document(document)
@@ -252,6 +382,7 @@ class SupplierRiskService:
             company_name=company.name or "",
             ico=company.ico or "",
             filename=(attachment.filename if attachment is not None else "") or "",
+            prepared_on=document.prepared_on,
             received_on=document.received_on,
             note=document.note or "",
             attachment_id=int(document.attachment_id or 0),

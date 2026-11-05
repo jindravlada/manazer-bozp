@@ -34,6 +34,7 @@ class SupplierRiskDocument(Base):
         nullable=False,
     )
     received_on: Mapped[date | None] = mapped_column(Date, nullable=True)
+    prepared_on: Mapped[date | None] = mapped_column(Date, nullable=True)
     note: Mapped[str] = mapped_column(Text, nullable=False, default="")
     attachment_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
