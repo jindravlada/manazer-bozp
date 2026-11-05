@@ -21,6 +21,7 @@ from moduly.rizeni_rizik.constants import (
     RISK_LIST_FILTER_ALL,
     RISK_LIST_FILTER_INACTIVE,
     RISK_MEASURE_REVIEW_TAB_TITLE,
+    SUPPLIER_RISK_TAB_TITLE,
 )
 from moduly.rizeni_rizik.constants_library import HAZARD_LIBRARY_PAGE_TITLE
 from moduly.rizeni_rizik.sluzby.hazard_identification_service import hazard_identification_service
@@ -29,6 +30,7 @@ from moduly.rizeni_rizik.ui.hazard_identification_table import HazardIdentificat
 from moduly.rizeni_rizik.ui.hazard_library_page import HazardLibraryPage
 from moduly.rizeni_rizik.ui.pravidla_bezpecne_prace_dialog import PravidlaBezpecnePraceDialog
 from moduly.rizeni_rizik.ui.risk_measure_reviews_tab import RiskMeasureReviewsTab
+from moduly.rizeni_rizik.ui.supplier_risk_documents_tab import SupplierRiskDocumentsTab
 
 
 class HazardIdentificationsTab(QWidget):
@@ -213,9 +215,11 @@ class RizeniRizikPage(QWidget):
         )
         self.library_page = HazardLibraryPage()
         self.reviews_tab = RiskMeasureReviewsTab()
+        self.supplier_risks_tab = SupplierRiskDocumentsTab()
         self.tabs.addTab(self.identifications_tab, "Identifikace")
         self.tabs.addTab(self.library_page, HAZARD_LIBRARY_PAGE_TITLE)
         self.tabs.addTab(self.reviews_tab, RISK_MEASURE_REVIEW_TAB_TITLE)
+        self.tabs.addTab(self.supplier_risks_tab, SUPPLIER_RISK_TAB_TITLE)
         layout.addWidget(self.tabs)
 
     def open_library_template(self, template_id: int) -> None:
@@ -230,3 +234,4 @@ class RizeniRizikPage(QWidget):
         self.identifications_tab.refresh()
         self.library_page.refresh()
         self.reviews_tab.refresh()
+        self.supplier_risks_tab.refresh()

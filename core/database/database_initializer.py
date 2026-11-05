@@ -226,6 +226,10 @@ def initialize_database() -> None:
         PravidlaBezpecnePraceEditionRule,
     )
     from moduly.rizeni_rizik.modely.profession import Profession  # noqa: F401
+    from moduly.rizeni_rizik.modely.supplier_risk import (  # noqa: F401
+        SupplierRiskCompany,
+        SupplierRiskDocument,
+    )
     from moduly.rizeni_rizik.modely.profession_exposed_group import (  # noqa: F401
         ProfessionExposedGroup,
     )
@@ -337,6 +341,7 @@ def initialize_database() -> None:
     _ensure_hazard_required_measures_table()
     _ensure_risk_measure_reviews_table()
     _ensure_risk_measure_review_items_table()
+    _ensure_supplier_risk_tables()
     _ensure_hazard_identification_photos_table()
     _ensure_hazard_library_templates_table()
     _ensure_hazard_library_template_operations_table()
@@ -2383,6 +2388,34 @@ def _ensure_hazard_required_measures_table() -> None:
                 )
             )
             connection.commit()
+
+
+def _ensure_supplier_risk_tables() -> None:
+    company_columns = _table_columns("supplier_risk_companies")
+    if not company_columns:
+        from moduly.rizeni_rizik.modely.supplier_risk import SupplierRiskCompany
+
+        SupplierRiskCompany.__table__.create(bind=_db_engine(), checkfirst=True)
+    document_columns = _table_columns("supplier_risk_documents")
+    if not document_columns:
+        from moduly.rizeni_rizik.modely.supplier_risk import SupplierRiskDocument
+
+        SupplierRiskDocument.__table__.create(bind=_db_engine(), checkfirst=True)
+    _ensure_index(
+        "uq_supplier_risk_companies_ico",
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_supplier_risk_companies_ico
+        ON supplier_risk_companies (ico)
+        WHERE ico IS NOT NULL AND TRIM(ico) <> ''
+        """,
+    )
+    _ensure_index(
+        "idx_supplier_risk_documents_company",
+        """
+        CREATE INDEX IF NOT EXISTS idx_supplier_risk_documents_company
+        ON supplier_risk_documents (company_id)
+        """,
+    )
 
 
 def _ensure_risk_measure_reviews_table() -> None:

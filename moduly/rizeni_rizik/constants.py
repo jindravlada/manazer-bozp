@@ -610,6 +610,23 @@ def format_risk_measure_review_status_label(status: str) -> str:
     return RISK_MEASURE_REVIEW_STATUS_LABELS.get(status, status or "—")
 
 
+SUPPLIER_RISK_TAB_TITLE = "Rizika dodavatelů"
+SUPPLIER_RISK_ENTITY_TYPE = "supplier_risk_document"
+SUPPLIER_RISK_COL_COMPANY = 0
+SUPPLIER_RISK_COL_ICO = 1
+SUPPLIER_RISK_COL_DOCUMENT = 2
+SUPPLIER_RISK_COL_DATE = 3
+SUPPLIER_RISK_COL_NOTE = 4
+SUPPLIER_RISK_COLUMN_COUNT = 5
+SUPPLIER_RISK_TABLE_HEADERS = [
+    "Název firmy",
+    "IČO",
+    "Dokument rizik",
+    "Datum převzetí",
+    "Poznámka",
+]
+
+
 def format_inventory_item_display_name(
     name: str,
     *,
