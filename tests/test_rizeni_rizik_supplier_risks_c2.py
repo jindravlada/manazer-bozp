@@ -163,7 +163,13 @@ class SupplierRiskC2Test(unittest.TestCase):
         self.assertFalse(dialog.open_document_btn.isEnabled())
         dialog.name.setText("  Nová firma  ")
         dialog.ico.setText(" 123 ")
-        with patch.object(QMessageBox, "warning") as warning:
+        with (
+            patch.object(QMessageBox, "warning") as warning,
+            patch(
+                "moduly.rizeni_rizik.ui.supplier_risk_company_dialog._exec_message_box",
+                return_value=int(QMessageBox.StandardButton.Ok),
+            ),
+        ):
             dialog._save_identity()
         warning.assert_not_called()
         self.assertIsNotNone(dialog.company)
@@ -173,6 +179,58 @@ class SupplierRiskC2Test(unittest.TestCase):
         self.assertEqual(len(supplier_risk_service.list_companies()), 1)
         self.assertTrue(dialog.add_document_btn.isEnabled())
         self.assertEqual(dialog.documents.rowCount(), 0)
+        dialog.deleteLater()
+
+    def test_identity_save_confirmation_only_after_success(self):
+        shown: list[QMessageBox] = []
+
+        def _capture(box: QMessageBox) -> int:
+            shown.append(box)
+            return int(QMessageBox.StandardButton.Ok)
+
+        dialog = SupplierRiskCompanyDialog()
+        dialog.name.setText("Nová firma")
+        dialog.ico.setText("12345678")
+        with patch(
+            "moduly.rizeni_rizik.ui.supplier_risk_company_dialog._exec_message_box",
+            side_effect=_capture,
+        ):
+            dialog._save_identity()
+        self.assertEqual(len(shown), 1)
+        self.assertEqual(shown[0].icon(), QMessageBox.Icon.Information)
+        self.assertEqual(shown[0].text(), "Údaje dodavatele byly úspěšně uloženy.")
+        self.assertEqual(dialog.company.name, "Nová firma")
+        self.assertEqual(dialog.company.ico, "12345678")
+        self.assertNotEqual(dialog.result(), QDialog.DialogCode.Accepted)
+        self.assertTrue(dialog.add_document_btn.isEnabled())
+        self.assertEqual(dialog.documents.rowCount(), 0)
+
+        shown.clear()
+        dialog.name.setText("Nová firma s.r.o.")
+        with patch(
+            "moduly.rizeni_rizik.ui.supplier_risk_company_dialog._exec_message_box",
+            side_effect=_capture,
+        ):
+            dialog._save_identity()
+        self.assertEqual(len(shown), 1)
+        self.assertEqual(shown[0].text(), "Údaje dodavatele byly úspěšně uloženy.")
+        self.assertEqual(dialog.company.name, "Nová firma s.r.o.")
+        self.assertEqual(dialog.windowTitle(), "Dodavatel")
+
+        shown.clear()
+        dialog.ico.clear()
+        with (
+            patch(
+                "moduly.rizeni_rizik.ui.supplier_risk_company_dialog._exec_message_box",
+                side_effect=_capture,
+            ),
+            patch.object(QMessageBox, "warning") as warning,
+        ):
+            dialog._save_identity()
+        self.assertEqual(shown, [])
+        self.assertIn("IČO", warning.call_args.args[2])
+        self.assertEqual(dialog.company.name, "Nová firma s.r.o.")
+        self.assertEqual(dialog.company.ico, "12345678")
         dialog.deleteLater()
 
     def test_add_several_documents(self):

@@ -49,6 +49,15 @@ from moduly.koordinace_bozp.sluzby.coordination_risk_submission_service import (
     CoordinationRiskSubmissionError,
     coordination_risk_submission_service,
 )
+from moduly.koordinace_bozp.sluzby.coordination_supplier_risk_link_service import (
+    coordination_supplier_risk_link_service,
+)
+from moduly.koordinace_bozp.ui.coordination_catalog_documents_dialog import (
+    CoordinationCatalogDocumentsDialog,
+)
+from moduly.rizeni_rizik.sluzby.supplier_risk_service import (
+    SUPPLIER_CATALOG_MATCH_ONE,
+)
 from moduly.koordinace_bozp.ui.coordination_attachment_table import (
     CoordinationAttachmentTable,
 )
@@ -156,9 +165,11 @@ class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
 
         content_layout.addWidget(QLabel("Přílohy:"))
         att_toolbar = QHBoxLayout()
+        self.catalog_documents_btn = QPushButton("Dokumenty z katalogu")
         self.add_attachment_btn = QPushButton("Přidat přílohu")
         self.open_attachment_btn = QPushButton("Otevřít")
         self.deactivate_attachment_btn = QPushButton("Deaktivovat")
+        att_toolbar.addWidget(self.catalog_documents_btn)
         att_toolbar.addWidget(self.add_attachment_btn)
         att_toolbar.addWidget(self.open_attachment_btn)
         att_toolbar.addWidget(self.deactivate_attachment_btn)
@@ -182,6 +193,7 @@ class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
         self.risks_text.textChanged.connect(self._notify_dirty)
         self.note.textChanged.connect(self._notify_dirty)
         self.save_btn.clicked.connect(self.save_submission)
+        self.catalog_documents_btn.clicked.connect(self.open_catalog_documents)
         self.add_attachment_btn.clicked.connect(self.add_attachment)
         self.open_attachment_btn.clicked.connect(self.open_attachment)
         self.deactivate_attachment_btn.clicked.connect(self.deactivate_attachment)
@@ -285,6 +297,7 @@ class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
         editable = getattr(self, "_content_editable", True)
         self.save_btn.setEnabled(has_employer and editable)
         self.add_attachment_btn.setEnabled(has_employer and editable)
+        self._update_catalog_button()
         if not has_employer:
             self._loading = True
             self.submission_method.setCurrentIndex(
@@ -303,6 +316,7 @@ class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
             self.subsequent_receipt_label.setVisible(False)
             self.attachments_table.setRowCount(0)
             self._update_field_visibility()
+            self.catalog_documents_btn.setEnabled(False)
             self._update_attachment_buttons()
             return
 
@@ -441,6 +455,25 @@ class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
         if had_changes:
             _show_submission_save_confirmation(self)
 
+    def open_catalog_documents(self) -> None:
+        if not self.allow_mutate() or not self.catalog_documents_btn.isEnabled():
+            return
+        employer_id = self.employer_combo.currentData()
+        if not isinstance(employer_id, int):
+            return
+        CoordinationCatalogDocumentsDialog(employer_id, self).exec()
+
+    def _update_catalog_button(self) -> None:
+        employer_id = self.employer_combo.currentData()
+        editable = getattr(self, "_content_editable", True)
+        enabled = False
+        if editable and isinstance(employer_id, int):
+            offer = coordination_supplier_risk_link_service.offer_for_employer(
+                employer_id
+            )
+            enabled = offer.status == SUPPLIER_CATALOG_MATCH_ONE
+        self.catalog_documents_btn.setEnabled(enabled)
+
     def add_attachment(self) -> None:
         if not self.allow_mutate():
             return
@@ -569,6 +602,7 @@ class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
         attachment_id = self.attachments_table.selected_attachment_id()
         has_selection = attachment_id is not None
         self.open_attachment_btn.setEnabled(has_selection)
+        self._update_catalog_button()
         if not getattr(self, "_content_editable", True):
             self.save_btn.setEnabled(False)
             self.add_attachment_btn.setEnabled(False)

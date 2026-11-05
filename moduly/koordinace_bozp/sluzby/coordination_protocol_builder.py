@@ -53,6 +53,7 @@ from moduly.koordinace_bozp.constants import (
     RISK_HANDOVER_STATUS_NOT_SUBMITTED,
     RISK_HANDOVER_STATUS_SUBSEQUENTLY_RECEIVED,
     RISK_HANDOVER_STATUS_UNSET,
+    RISK_RECEIPT_METHOD_LABELS,
     RISK_SUBMISSION_COMPLETED_STATUSES,
     RISK_SUBMISSION_PENDING_STATUSES,
     RISK_SUBMISSION_STATUS_LABELS,
@@ -92,8 +93,14 @@ from moduly.koordinace_bozp.sluzby.coordination_pbp_attachment_service import (
 from moduly.koordinace_bozp.sluzby.coordination_pbp_freshness import (
     evaluate_pbp_freshness,
 )
+from moduly.koordinace_bozp.sluzby.coordination_risk_receipt_service import (
+    coordination_risk_receipt_service,
+)
 from moduly.koordinace_bozp.sluzby.coordination_risk_submission_service import (
     coordination_risk_submission_service,
+)
+from moduly.koordinace_bozp.sluzby.coordination_supplier_risk_link_service import (
+    coordination_supplier_risk_link_service,
 )
 from moduly.koordinace_bozp.sluzby.coordination_validity import (
     coordination_validity_state,
@@ -489,6 +496,8 @@ class CoordinationProtocolBuilder:
                         status,
                     ),
                     "submission": self._submission_dict(submission),
+                    "catalog_documents": self._catalog_document_dicts(employer.id),
+                    "subsequent_receipt": self._subsequent_receipt_dict(employer.id),
                 }
             )
 
@@ -741,7 +750,7 @@ class CoordinationProtocolBuilder:
             status = row["handover_status"]
             if status == RISK_HANDOVER_STATUS_MAIN:
                 continue
-            # Protokol tiskne původní dohodu. Následné převzetí jen zruší upozornění.
+            # Upozornění sleduje původní dohodu. Následné převzetí ho jen zruší.
             operational = coordination_risk_submission_service.operational_handover(
                 employer["id"]
             )
@@ -776,7 +785,11 @@ class CoordinationProtocolBuilder:
                         include_inactive=False,
                     )
                 )
-                if not attachments and status != RISK_SUBMISSION_STATUS_STATED_AT_MEETING:
+                if (
+                    not attachments
+                    and not row.get("catalog_documents")
+                    and status != RISK_SUBMISSION_STATUS_STATED_AT_MEETING
+                ):
                     warnings.append(
                         ProtocolWarning(
                             code=PROTOCOL_WARNING_RISKS_WITHOUT_ATTACHMENT,
@@ -1049,6 +1062,44 @@ class CoordinationProtocolBuilder:
             "email": email,
             "employer_name": employer_name,
             "note": coordinator.note or "",
+        }
+
+    @staticmethod
+    def _catalog_document_dicts(employer_id: int) -> list[dict]:
+        return [
+            {
+                "document_id": item.document_id,
+                "filename": item.filename,
+                "prepared_on": (
+                    item.prepared_on.isoformat() if item.prepared_on else None
+                ),
+                "received_on": (
+                    item.received_on.isoformat() if item.received_on else None
+                ),
+            }
+            for item in coordination_supplier_risk_link_service.list_for_employer(
+                employer_id
+            )
+        ]
+
+    @staticmethod
+    def _subsequent_receipt_dict(employer_id: int) -> dict | None:
+        receipt = coordination_risk_receipt_service.get_for_employer(employer_id)
+        if receipt is None:
+            return None
+        filename = ""
+        attachment_id = getattr(receipt, "attachment_id", None)
+        if attachment_id:
+            attachment = coordination_attachment_service.get_by_id(int(attachment_id))
+            if attachment is not None:
+                filename = attachment.original_filename or ""
+        method = receipt.receipt_method or ""
+        received_on = receipt.received_on
+        return {
+            "received_on": received_on.isoformat() if received_on else None,
+            "receipt_method": method,
+            "receipt_method_label": RISK_RECEIPT_METHOD_LABELS.get(method, method),
+            "filename": filename,
         }
 
     @staticmethod

@@ -277,6 +277,8 @@ PROTOCOL_APPENDIX_OVERVIEW_INTRO = (
 )
 PROTOCOL_APPENDIX_A = "Příloha A – Pravidla bezpečné práce (PBP)"
 PROTOCOL_APPENDIX_B = "Příloha B – Přehled předaných rizik zaměstnavatelů"
+PROTOCOL_CATALOG_DOCUMENTS_HEADING = "Dokumenty použité z katalogu"
+PROTOCOL_SUBSEQUENT_RECEIPT_HEADING = "Následné převzetí rizik"
 PROTOCOL_APPENDIX_C = "Příloha C+ – Další přiložené dokumenty"
 PROTOCOL_APPENDIX_C_INTRO = (
     "Samotné soubory se k tomuto protokolu nepřipojují; níže je pouze seznam."

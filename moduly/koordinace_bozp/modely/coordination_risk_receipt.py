@@ -1,7 +1,7 @@
 """Následné převzetí rizik dodavatele (fáze B).
 
-Samostatný záznam. Nemění dohodu v ``coordination_employer_risk_submissions``,
-ze které se sestavuje koordinační protokol.
+Samostatný záznam. Nemění dohodu v ``coordination_employer_risk_submissions``.
+Nově sestavený protokol ho vypíše vlastním odstavcem v příloze B.
 """
 
 from datetime import date, datetime

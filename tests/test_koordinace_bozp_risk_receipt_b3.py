@@ -63,6 +63,9 @@ with patch.object(Path, "home", return_value=_TMP):
         CoordinationRiskReceipt,
         CoordinationRiskReceiptHistory,
     )
+    from moduly.koordinace_bozp.modely.coordination_supplier_risk_link import (
+        CoordinationSupplierRiskLink,
+    )
     from moduly.koordinace_bozp.sluzby.bozp_coordination_service import (
         bozp_coordination_service,
     )
@@ -118,6 +121,7 @@ class CoordinationRiskReceiptB3Test(unittest.TestCase):
 
     def setUp(self) -> None:
         with get_session() as session:
+            session.execute(delete(CoordinationSupplierRiskLink))
             session.execute(delete(CoordinationRiskReceiptHistory))
             session.execute(delete(CoordinationRiskReceipt))
             session.execute(delete(CoordinationRiskSubmissionHistory))
@@ -386,18 +390,22 @@ class CoordinationRiskReceiptB3Test(unittest.TestCase):
             coordination.id,
             today=_PROTOCOL_DAY,
         )
+        before_lines = render_blocks_to_plain_lines(
+            before.protocol_data["document"]["blocks"]
+        )
+        after_lines = render_blocks_to_plain_lines(
+            after.protocol_data["document"]["blocks"]
+        )
+        extra_lines = [line for line in after_lines if line not in before_lines]
         self.assertEqual(
-            before.protocol_data["document"]["blocks"],
-            after.protocol_data["document"]["blocks"],
+            extra_lines,
+            ["Následné převzetí rizik: 18.11.2026, E-mail, rizika.pdf"],
         )
-        lines = "\n".join(
-            render_blocks_to_plain_lines(after.protocol_data["document"]["blocks"])
-        )
+        lines = "\n".join(after_lines)
         self.assertIn("dohoda v protokolu", lines)
         self.assertIn("text rizik v protokolu", lines)
         self.assertNotIn("poznámka mimo protokol", lines)
         self.assertNotIn("Následně převzato", lines)
-        self.assertNotIn("rizika.pdf", lines)
         stored = coordination_risk_receipt_service.get_for_employer(contractor.id)
         self.assertIsNotNone(stored.attachment_id)
         attached = coordination_attachment_service.get_by_id(stored.attachment_id)
@@ -565,9 +573,16 @@ class CoordinationRiskReceiptB3Test(unittest.TestCase):
             coordination.id,
             today=_PROTOCOL_DAY,
         )
+        before_lines = render_blocks_to_plain_lines(
+            before.protocol_data["document"]["blocks"]
+        )
+        after_lines = render_blocks_to_plain_lines(
+            after.protocol_data["document"]["blocks"]
+        )
+        extra_lines = [line for line in after_lines if line not in before_lines]
         self.assertEqual(
-            before.protocol_data["document"]["blocks"],
-            after.protocol_data["document"]["blocks"],
+            extra_lines,
+            ["Následné převzetí rizik: 18.11.2026, E-mail, nasledne.pdf"],
         )
         self.assertEqual(
             before.protocol_data["attachments_by_group"],
@@ -577,10 +592,10 @@ class CoordinationRiskReceiptB3Test(unittest.TestCase):
             before.summary.active_attachments,
             after.summary.active_attachments,
         )
-        lines = "\n".join(
-            render_blocks_to_plain_lines(after.protocol_data["document"]["blocks"])
-        )
-        self.assertNotIn("nasledne.pdf", lines)
+        lines = "\n".join(after_lines)
+        self.assertIn("předáno e-mailem", lines)
+        self.assertIn("původní text rizik", lines)
+        self.assertIn("nasledne.pdf", lines)
         self.assertIn("puvodni.pdf", self._group_filenames(after))
         self.assertNotIn("nasledne.pdf", self._group_filenames(after))
         warning_codes = [item.code for item in after.warnings]

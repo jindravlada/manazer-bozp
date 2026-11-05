@@ -13,6 +13,8 @@ from moduly.koordinace_bozp.constants import (
     PROTOCOL_APPENDIX_A,
     PROTOCOL_APPENDIX_B,
     PROTOCOL_APPENDIX_C,
+    PROTOCOL_CATALOG_DOCUMENTS_HEADING,
+    PROTOCOL_SUBSEQUENT_RECEIPT_HEADING,
     PROTOCOL_APPENDIX_C_INTRO,
     PROTOCOL_APPENDIX_OVERVIEW,
     PROTOCOL_APPENDIX_OVERVIEW_INTRO,
@@ -520,6 +522,51 @@ def _main_employer(protocol_data: Mapping[str, Any]) -> dict[str, Any] | None:
     return employers[0] if employers else None
 
 
+def _catalog_document_line(item: Mapping[str, Any]) -> str:
+    """Název souboru a jen ta data, která jsou u dokumentu vyplněná."""
+    filename = (item.get("filename") or "").strip() or "dokument"
+    parts = [filename]
+    prepared_on = item.get("prepared_on")
+    received_on = item.get("received_on")
+    if prepared_on:
+        parts.append(f"zpracováno {_format_date(str(prepared_on))}")
+    if received_on:
+        parts.append(f"převzato {_format_date(str(received_on))}")
+    return ", ".join(parts)
+
+
+def _subsequent_receipt_line(receipt: Mapping[str, Any]) -> str:
+    parts: list[str] = []
+    received_on = receipt.get("received_on")
+    if received_on:
+        parts.append(_format_date(str(received_on)))
+    method = (receipt.get("receipt_method_label") or "").strip()
+    if method:
+        parts.append(method)
+    filename = (receipt.get("filename") or "").strip()
+    if filename:
+        parts.append(filename)
+    if not parts:
+        return PROTOCOL_SUBSEQUENT_RECEIPT_HEADING
+    return f"{PROTOCOL_SUBSEQUENT_RECEIPT_HEADING}: {', '.join(parts)}"
+
+
+def _append_catalog_documents(out: _BlockList, row: Mapping[str, Any]) -> None:
+    documents = row.get("catalog_documents") or []
+    if not documents:
+        return
+    out.paragraph(PROTOCOL_CATALOG_DOCUMENTS_HEADING, bold=True)
+    for item in documents:
+        out.bullet(_catalog_document_line(item))
+
+
+def _append_subsequent_receipt(out: _BlockList, row: Mapping[str, Any]) -> None:
+    receipt = row.get("subsequent_receipt")
+    if not receipt:
+        return
+    out.paragraph(_subsequent_receipt_line(receipt))
+
+
 def _append_risk_submission_details(out: _BlockList, row: Mapping[str, Any]) -> None:
     """Do protokolu doplní text rizik a poznámku konkrétního dodavatele."""
     submission = row.get("submission") or {}
@@ -830,6 +877,8 @@ def build_protocol_document(protocol_data: Mapping[str, Any]) -> dict[str, Any]:
             out.paragraph(str(label), bold=True, style=BLOCK_STYLE_EMPLOYER_ABBR)
             out.paragraph(str(status))
             _append_risk_submission_details(out, row)
+            _append_catalog_documents(out, row)
+            _append_subsequent_receipt(out, row)
     else:
         out.paragraph("—")
 

@@ -266,6 +266,9 @@ def initialize_database() -> None:
     from moduly.koordinace_bozp.modely.coordination_attachment import (  # noqa: F401
         CoordinationAttachment,
     )
+    from moduly.koordinace_bozp.modely.coordination_supplier_risk_link import (  # noqa: F401
+        CoordinationSupplierRiskLink,
+    )
     from moduly.koordinace_bozp.modely.coordination_pbp_revision import (  # noqa: F401
         CoordinationPbpRevision,
     )
@@ -3585,6 +3588,17 @@ def _ensure_bozp_coordinations_table() -> None:
         ON coordination_attachments (coordination_employer_id)
         """,
     )
+
+    link_columns = _table_columns("coordination_supplier_risk_links")
+    if not link_columns:
+        from moduly.koordinace_bozp.modely.coordination_supplier_risk_link import (
+            CoordinationSupplierRiskLink,
+        )
+
+        CoordinationSupplierRiskLink.__table__.create(
+            bind=_db_engine(),
+            checkfirst=True,
+        )
 
     pbp_revision_columns = _table_columns("coordination_pbp_revisions")
     if not pbp_revision_columns:

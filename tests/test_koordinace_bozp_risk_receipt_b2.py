@@ -48,6 +48,9 @@ with patch.object(Path, "home", return_value=_TMP):
         CoordinationRiskReceipt,
         CoordinationRiskReceiptHistory,
     )
+    from moduly.koordinace_bozp.modely.coordination_supplier_risk_link import (
+        CoordinationSupplierRiskLink,
+    )
     from moduly.koordinace_bozp.sluzby.bozp_coordination_service import (
         bozp_coordination_service,
     )
@@ -78,6 +81,7 @@ _PROTOCOL_DAY = date(2026, 11, 4)
 class CoordinationRiskReceiptB2Test(unittest.TestCase):
     def setUp(self) -> None:
         with get_session() as session:
+            session.execute(delete(CoordinationSupplierRiskLink))
             session.execute(delete(CoordinationRiskReceiptHistory))
             session.execute(delete(CoordinationRiskReceipt))
             session.execute(delete(CoordinationRiskSubmissionHistory))
@@ -187,11 +191,11 @@ class CoordinationRiskReceiptB2Test(unittest.TestCase):
         after_lines = render_blocks_to_plain_lines(
             after.protocol_data["document"]["blocks"]
         )
+        extra_lines = [line for line in after_lines if line not in before_lines]
         self.assertEqual(
-            before.protocol_data["document"]["blocks"],
-            after.protocol_data["document"]["blocks"],
+            extra_lines,
+            ["Následné převzetí rizik: 18.11.2026, Osobně"],
         )
-        self.assertEqual(before_lines, after_lines)
         self.assertEqual(
             before.protocol_data["attachments_by_group"],
             after.protocol_data["attachments_by_group"],

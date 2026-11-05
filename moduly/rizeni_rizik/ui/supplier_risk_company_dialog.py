@@ -47,6 +47,24 @@ from moduly.rizeni_rizik.ui.supplier_risk_document_dialog import (
 )
 
 _DOCUMENT_ID_ROLE = Qt.ItemDataRole.UserRole
+_SAVE_CONFIRMATION_TITLE = "Dodavatel"
+_SAVE_CONFIRMATION_TEXT = "Údaje dodavatele byly úspěšně uloženy."
+
+
+def _exec_message_box(box: QMessageBox) -> int:
+    return int(box.exec())
+
+
+def _show_identity_save_confirmation(parent: QDialog) -> None:
+    box = QMessageBox(parent)
+    box.setIcon(QMessageBox.Icon.Information)
+    box.setWindowTitle(_SAVE_CONFIRMATION_TITLE)
+    box.setText(_SAVE_CONFIRMATION_TEXT)
+    box.setStandardButtons(QMessageBox.StandardButton.Ok)
+    ok_button = box.button(QMessageBox.StandardButton.Ok)
+    if ok_button is not None:
+        ok_button.setText("OK")
+    _exec_message_box(box)
 
 
 def _date_item(value):
@@ -185,6 +203,7 @@ class SupplierRiskCompanyDialog(QDialog):
         self.ico.setText(saved.ico or "")
         self.setWindowTitle("Dodavatel")
         self._refresh_document_buttons()
+        _show_identity_save_confirmation(self)
 
     def _refresh_documents(self) -> None:
         rows: list[SupplierRiskDocumentRow] = []

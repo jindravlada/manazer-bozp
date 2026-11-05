@@ -1,6 +1,7 @@
 """Ukládání následného převzetí rizik.
 
-Nemění původní dohodu ani údaje, ze kterých se sestavuje protokol.
+Nemění původní dohodu. Protokol si převzetí přečte při sestavení
+jako samostatný odstavec přílohy B.
 Při prvním uložení dokončí jen jednoznačně navázaný otevřený úkol.
 """
 
