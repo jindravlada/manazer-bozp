@@ -42,6 +42,11 @@ CATALOG_REGISTRATION_FAILED_MESSAGE = (
     "Zápis do katalogu Rizika dodavatelů se nepodařil.\n\n"
     "Dokument lze do katalogu doplnit ručně."
 )
+CATALOG_RECEIPT_REGISTRATION_FAILED_MESSAGE = (
+    "Následné převzetí rizik bylo uloženo.\n"
+    "Zápis dokumentu do katalogu Rizika dodavatelů se nepodařil.\n\n"
+    "Dokument lze do katalogu doplnit ručně."
+)
 
 
 class CoordinationSupplierRiskLinkError(ValueError):
@@ -142,6 +147,7 @@ class CoordinationSupplierRiskLinkService:
         """Zaeviduje už uloženou přílohu koordinace v katalogu, bez druhé kopie souboru."""
         from moduly.koordinace_bozp.constants import (
             ATTACHMENT_TYPE_CONTRACTOR_RISKS,
+            ATTACHMENT_TYPE_RISK_RECEIPT,
             RISK_SUBMISSION_COMPLETED_STATUSES,
         )
         from moduly.koordinace_bozp.sluzby.coordination_attachment_service import (
@@ -161,21 +167,29 @@ class CoordinationSupplierRiskLinkService:
             or attachment.coordination_employer_id != employer.id
         ):
             raise CoordinationSupplierRiskLinkError(CATALOG_REGISTRATION_FAILED_MESSAGE)
-        if (
-            employer.is_main
-            or attachment.attachment_type != ATTACHMENT_TYPE_CONTRACTOR_RISKS
-        ):
+        if employer.is_main or attachment.attachment_type not in {
+            ATTACHMENT_TYPE_CONTRACTOR_RISKS,
+            ATTACHMENT_TYPE_RISK_RECEIPT,
+        }:
             return CatalogRegistrationResult(status=CATALOG_REGISTRATION_SKIPPED)
+        receipt_received_on = None
+        if attachment.attachment_type == ATTACHMENT_TYPE_RISK_RECEIPT:
+            receipt_received_on = _current_receipt_date(
+                employer.id,
+                int(attachment.id),
+            )
+            if receipt_received_on is _RECEIPT_NOT_CURRENT:
+                return CatalogRegistrationResult(status=CATALOG_REGISTRATION_SKIPPED)
 
         existing = supplier_risk_service.repository.get_by_coordination_attachment(
             int(attachment.id)
         )
         if existing is not None:
-            self._ensure_link(employer.id, int(existing.id))
-            return CatalogRegistrationResult(
-                status=CATALOG_REGISTRATION_ALREADY,
-                document_id=int(existing.id),
-                company_id=int(existing.company_id),
+            return self._already_registered(
+                employer.id,
+                existing,
+                attachment_type=attachment.attachment_type,
+                receipt_received_on=receipt_received_on,
             )
 
         match = supplier_risk_service.find_catalog_company_by_ico(employer.ico)
@@ -203,10 +217,13 @@ class CoordinationSupplierRiskLinkService:
         else:
             return CatalogRegistrationResult(status=CATALOG_REGISTRATION_SKIPPED)
 
-        received_on = _handover_received_on(
-            coordination_risk_submission_service.get_for_employer(employer.id),
-            RISK_SUBMISSION_COMPLETED_STATUSES,
-        )
+        if attachment.attachment_type == ATTACHMENT_TYPE_RISK_RECEIPT:
+            received_on = receipt_received_on
+        else:
+            received_on = _handover_received_on(
+                coordination_risk_submission_service.get_for_employer(employer.id),
+                RISK_SUBMISSION_COMPLETED_STATUSES,
+            )
         try:
             document_id = _insert_catalog_document_and_link(
                 company_id=company_id,
@@ -226,11 +243,11 @@ class CoordinationSupplierRiskLinkService:
                 raise CoordinationSupplierRiskLinkError(
                     CATALOG_REGISTRATION_FAILED_MESSAGE
                 )
-            self._ensure_link(int(employer.id), int(existing.id))
-            return CatalogRegistrationResult(
-                status=CATALOG_REGISTRATION_ALREADY,
-                document_id=int(existing.id),
-                company_id=int(existing.company_id),
+            return self._already_registered(
+                int(employer.id),
+                existing,
+                attachment_type=attachment.attachment_type,
+                receipt_received_on=receipt_received_on,
             )
         except Exception as exc:
             if created_company_id is not None:
@@ -244,6 +261,37 @@ class CoordinationSupplierRiskLinkService:
             status=CATALOG_REGISTRATION_REGISTERED,
             document_id=document_id,
             company_id=company_id,
+        )
+
+    def _already_registered(
+        self,
+        coordination_employer_id: int,
+        document,
+        *,
+        attachment_type: str,
+        receipt_received_on,
+    ) -> CatalogRegistrationResult:
+        from moduly.koordinace_bozp.constants import ATTACHMENT_TYPE_RISK_RECEIPT
+
+        self._ensure_link(coordination_employer_id, int(document.id))
+        if (
+            attachment_type == ATTACHMENT_TYPE_RISK_RECEIPT
+            and document.received_on != receipt_received_on
+        ):
+            try:
+                supplier_risk_service.update_document_details(
+                    int(document.id),
+                    received_on=receipt_received_on,
+                    note=document.note or "",
+                )
+            except Exception as exc:
+                raise CoordinationSupplierRiskLinkError(
+                    CATALOG_RECEIPT_REGISTRATION_FAILED_MESSAGE
+                ) from exc
+        return CatalogRegistrationResult(
+            status=CATALOG_REGISTRATION_ALREADY,
+            document_id=int(document.id),
+            company_id=int(document.company_id),
         )
 
     def _ensure_link(self, coordination_employer_id: int, document_id: int) -> None:
@@ -277,6 +325,23 @@ class CoordinationSupplierRiskLinkService:
         if offer.status != SUPPLIER_CATALOG_MATCH_ONE or offer.company_id is None:
             raise CoordinationSupplierRiskLinkError(CATALOG_ASSIGNMENT_REFUSED_MESSAGE)
         return {int(document.id) for document in offer.documents}
+
+
+_RECEIPT_NOT_CURRENT = object()
+
+
+def _current_receipt_date(coordination_employer_id: int, coordination_attachment_id: int):
+    """Datum jen z aktuálního následného převzetí, které tuto přílohu používá."""
+    from moduly.koordinace_bozp.sluzby.coordination_risk_receipt_service import (
+        coordination_risk_receipt_service,
+    )
+
+    receipt = coordination_risk_receipt_service.get_for_employer(
+        coordination_employer_id
+    )
+    if receipt is None or int(receipt.attachment_id or 0) != coordination_attachment_id:
+        return _RECEIPT_NOT_CURRENT
+    return receipt.received_on
 
 
 def _handover_received_on(submission, completed_statuses) -> object:

@@ -59,6 +59,10 @@ from moduly.koordinace_bozp.sluzby.coordination_risk_receipt_service import (
     CoordinationRiskReceiptError,
     coordination_risk_receipt_service,
 )
+from moduly.koordinace_bozp.sluzby.coordination_supplier_risk_link_service import (
+    CATALOG_RECEIPT_REGISTRATION_FAILED_MESSAGE,
+    coordination_supplier_risk_link_service,
+)
 from moduly.koordinace_bozp.sluzby.coordination_risk_submission_service import (
     coordination_risk_submission_service,
 )
@@ -293,8 +297,20 @@ class CoordinationRiskReceiptDialog(QDialog):
         except CoordinationRiskReceiptError as error:
             self._warn(str(error))
             return False
+        catalog_failed = False
+        if attachment_id:
+            try:
+                coordination_supplier_risk_link_service.register_handed_attachment(
+                    employer_id,
+                    attachment_id,
+                )
+            except Exception:
+                catalog_failed = True
         self._reload_employers(select_id=employer_id)
-        self._info("Změny byly úspěšně uloženy.")
+        if catalog_failed:
+            self._warn(CATALOG_RECEIPT_REGISTRATION_FAILED_MESSAGE)
+        else:
+            self._info("Změny byly úspěšně uloženy.")
         return True
 
     def reject(self) -> None:  # noqa: A003
