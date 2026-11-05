@@ -28,6 +28,11 @@ _KEEP_PREPARED_ON = object()
 
 DUPLICATE_SUPPLIER_ICO_MESSAGE = "Firma s tímto IČO už je evidována."
 
+SUPPLIER_CATALOG_MATCH_INVALID = "invalid"
+SUPPLIER_CATALOG_MATCH_NONE = "none"
+SUPPLIER_CATALOG_MATCH_ONE = "one"
+SUPPLIER_CATALOG_MATCH_AMBIGUOUS = "ambiguous"
+
 
 @dataclass(frozen=True)
 class SupplierRiskDocumentRow:
@@ -41,6 +46,16 @@ class SupplierRiskDocumentRow:
     note: str
     attachment_id: int
     stored_path: str
+
+
+@dataclass(frozen=True)
+class SupplierCatalogMatch:
+    """Výsledek vyhledání firmy podle IČO. Firma je vyplněná jen při jedné shodě."""
+
+    status: str
+    normalized_ico: str | None
+    company_id: int | None
+    match_count: int
 
 
 @dataclass(frozen=True)
@@ -60,6 +75,14 @@ def normalize_supplier_ico(value: str | None) -> str | None:
     if len(without_spaces) > 8:
         raise SupplierRiskError("IČO smí obsahovat nejvýše 8 číslic.")
     return without_spaces.zfill(8)
+
+
+def catalog_ico_key(value: str | None) -> str | None:
+    """Normalizuje uložené IČO pro porovnání. Neplatný text se shody neúčastní."""
+    try:
+        return normalize_supplier_ico(value)
+    except SupplierRiskError:
+        return None
 
 
 def _stored_ico(value: str | None) -> str | None:
@@ -94,6 +117,45 @@ class SupplierRiskService:
 
     def get_company(self, company_id: int) -> SupplierRiskCompany | None:
         return self.repository.get_company(company_id)
+
+    def find_catalog_company_by_ico(self, ico: str | None) -> SupplierCatalogMatch:
+        """Najde firmu v katalogu podle IČO z koordinace. Nic nezakládá ani nemění."""
+        try:
+            normalized = normalize_supplier_ico(ico)
+        except SupplierRiskError:
+            normalized = None
+        if not normalized:
+            return SupplierCatalogMatch(
+                status=SUPPLIER_CATALOG_MATCH_INVALID,
+                normalized_ico=None,
+                company_id=None,
+                match_count=0,
+            )
+        matched_ids = [
+            int(company.id)
+            for company in self.repository.list_companies()
+            if catalog_ico_key(company.ico) == normalized
+        ]
+        if not matched_ids:
+            return SupplierCatalogMatch(
+                status=SUPPLIER_CATALOG_MATCH_NONE,
+                normalized_ico=normalized,
+                company_id=None,
+                match_count=0,
+            )
+        if len(matched_ids) == 1:
+            return SupplierCatalogMatch(
+                status=SUPPLIER_CATALOG_MATCH_ONE,
+                normalized_ico=normalized,
+                company_id=matched_ids[0],
+                match_count=1,
+            )
+        return SupplierCatalogMatch(
+            status=SUPPLIER_CATALOG_MATCH_AMBIGUOUS,
+            normalized_ico=normalized,
+            company_id=None,
+            match_count=len(matched_ids),
+        )
 
     def create_company(self, *, name: str, ico: str | None) -> SupplierRiskCompany:
         """Založí firmu bez dokumentu. Stejné IČO odmítne a nic nesloučí."""
