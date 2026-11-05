@@ -2405,6 +2405,15 @@ def _ensure_supplier_risk_tables() -> None:
 
         SupplierRiskDocument.__table__.create(bind=_db_engine(), checkfirst=True)
     _add_column("supplier_risk_documents", "prepared_on DATE")
+    _add_column("supplier_risk_documents", "coordination_attachment_id INTEGER")
+    _ensure_index(
+        "uq_supplier_risk_documents_coordination_attachment",
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_supplier_risk_documents_coordination_attachment
+        ON supplier_risk_documents (coordination_attachment_id)
+        WHERE coordination_attachment_id IS NOT NULL
+        """,
+    )
     _ensure_index(
         "uq_supplier_risk_companies_ico",
         """

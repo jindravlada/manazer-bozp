@@ -307,7 +307,8 @@ class KoordPredaniUlozeni1SaveConfirmationTestCase(unittest.TestCase):
         tab = self._select(dialog, self.supplier_b.id)
         tab.note.setPlainText("uloženo hlavním tlačítkem")
         shown = self._run(dialog.save_button.click)
-        self._assert_confirmation(shown)
+        self.assertEqual(len(shown), 1)
+        self.assertEqual(shown[0].text(), "Koordinace BOZP byla úspěšně uložena.")
         stored = coordination_risk_submission_service.get_for_employer(self.supplier_b.id)
         assert stored is not None
         self.assertEqual(stored.coordination_employer_id, self.supplier_b.id)

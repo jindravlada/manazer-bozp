@@ -46,6 +46,7 @@ class SupplierRiskDocumentRow:
     note: str
     attachment_id: int
     stored_path: str
+    coordination_attachment_id: int | None = None
 
 
 @dataclass(frozen=True)
@@ -274,7 +275,7 @@ class SupplierRiskService:
     ) -> SupplierRiskDocumentRow:
         """Změní údaje dokumentu. Soubor ani firmu nemění a datum zpracování samo nedoplní."""
         document = self.repository.get_document(document_id)
-        if document is None or not document.attachment_id:
+        if document is None or not _has_single_file_store(document):
             raise SupplierRiskError("Dokument nebyl nalezen.")
         document.received_on = received_on
         document.note = (note or "").strip()
@@ -342,9 +343,10 @@ class SupplierRiskService:
         prepared_on: date | None | object = _KEEP_PREPARED_ON,
     ) -> SupplierRiskSaveResult:
         document = self.repository.get_document(document_id)
-        if document is None or not document.attachment_id:
+        if document is None or not _has_single_file_store(document):
             raise SupplierRiskError("Dokument nebyl nalezen.")
         original_attachment_id = document.attachment_id
+        original_coordination_attachment_id = document.coordination_attachment_id
         company, reused = self._resolve_company(
             company_id=company_id,
             name=name,
@@ -356,6 +358,7 @@ class SupplierRiskService:
         if prepared_on is not _KEEP_PREPARED_ON:
             document.prepared_on = prepared_on
         document.attachment_id = original_attachment_id
+        document.coordination_attachment_id = original_coordination_attachment_id
         document.updated_at = datetime.now()
         self.repository.update_document(document)
         return SupplierRiskSaveResult(
@@ -365,11 +368,8 @@ class SupplierRiskService:
 
     def open_document(self, document_id: int, parent=None) -> bool:
         row = self._require_row(document_id)
-        attachment = attachment_service.repository.get_by_id(row.attachment_id)
-        if attachment is None:
-            raise SupplierRiskError("Soubor dokumentu nebyl v úložišti nalezen.")
-        path = attachment_service.resolve_path(attachment)
-        if not path.is_file():
+        path = _stored_file(row)
+        if path is None or not path.is_file():
             raise SupplierRiskError("Soubor dokumentu nebyl v úložišti nalezen.")
         return bool(open_local_file(path, parent=parent, title="Dokument rizik"))
 
@@ -430,26 +430,74 @@ class SupplierRiskService:
     def _require_row(self, document_id: int) -> SupplierRiskDocumentRow:
         for document, company, attachment in self.repository.list_rows():
             if document.id == document_id:
-                row = self._row(document, company, attachment)
-                if not row.attachment_id:
+                if not _has_single_file_store(document):
                     raise SupplierRiskError("Dokument nebyl nalezen.")
-                return row
+                return self._row(document, company, attachment)
         raise SupplierRiskError("Dokument nebyl nalezen.")
 
     @staticmethod
     def _row(document, company, attachment) -> SupplierRiskDocumentRow:
+        filename = (attachment.filename if attachment is not None else "") or ""
+        stored_path = (attachment.stored_path if attachment is not None else "") or ""
+        coordination_attachment_id = (
+            int(document.coordination_attachment_id)
+            if document.coordination_attachment_id
+            else None
+        )
+        if coordination_attachment_id is not None and not document.attachment_id:
+            coordination_filename, coordination_path = _coordination_file(
+                coordination_attachment_id
+            )
+            filename = coordination_filename
+            stored_path = coordination_path
         return SupplierRiskDocumentRow(
             id=int(document.id),
             company_id=int(company.id),
             company_name=company.name or "",
             ico=company.ico or "",
-            filename=(attachment.filename if attachment is not None else "") or "",
+            filename=filename,
             prepared_on=document.prepared_on,
             received_on=document.received_on,
             note=document.note or "",
             attachment_id=int(document.attachment_id or 0),
-            stored_path=(attachment.stored_path if attachment is not None else "") or "",
+            stored_path=stored_path,
+            coordination_attachment_id=coordination_attachment_id,
         )
+
+
+def _has_single_file_store(document) -> bool:
+    """Dokument odkazuje buď na globální přílohu, nebo na přílohu koordinace."""
+    has_global = bool(document.attachment_id)
+    has_coordination = bool(document.coordination_attachment_id)
+    return has_global != has_coordination
+
+
+def _coordination_file(coordination_attachment_id: int) -> tuple[str, str]:
+    from moduly.koordinace_bozp.sluzby.coordination_attachment_service import (
+        CoordinationAttachmentError,
+        coordination_attachment_service,
+    )
+
+    attachment = coordination_attachment_service.get_by_id(coordination_attachment_id)
+    if attachment is None:
+        return "", ""
+    try:
+        path = coordination_attachment_service.resolve_path(attachment)
+    except CoordinationAttachmentError:
+        return attachment.original_filename or "", ""
+    return attachment.original_filename or "", str(path)
+
+
+def _stored_file(row: SupplierRiskDocumentRow) -> Path | None:
+    if row.coordination_attachment_id and not row.attachment_id:
+        _filename, stored = _coordination_file(row.coordination_attachment_id)
+        return Path(stored) if stored else None
+    if not row.attachment_id:
+        return None
+    attachment = attachment_service.repository.get_by_id(row.attachment_id)
+    if attachment is None:
+        return None
+    return attachment_service.resolve_path(attachment)
 
 
 supplier_risk_service = SupplierRiskService()

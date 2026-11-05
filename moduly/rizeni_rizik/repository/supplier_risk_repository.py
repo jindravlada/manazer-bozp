@@ -71,6 +71,36 @@ class SupplierRiskRepository:
             session.expunge(merged)
             return merged
 
+    def get_by_coordination_attachment(
+        self,
+        coordination_attachment_id: int,
+    ) -> SupplierRiskDocument | None:
+        with get_session() as session:
+            stmt = select(SupplierRiskDocument).where(
+                SupplierRiskDocument.coordination_attachment_id
+                == coordination_attachment_id
+            )
+            document = session.scalars(stmt).first()
+            if document is not None:
+                session.expunge(document)
+            return document
+
+    def delete_company_without_documents(self, company_id: int) -> None:
+        """Smaže firmu jen tehdy, když u ní není žádný dokument."""
+        with get_session() as session:
+            company = session.get(SupplierRiskCompany, company_id)
+            if company is None:
+                return
+            document_id = session.scalar(
+                select(SupplierRiskDocument.id)
+                .where(SupplierRiskDocument.company_id == company_id)
+                .limit(1)
+            )
+            if document_id is not None:
+                return
+            session.delete(company)
+            session.commit()
+
     def get_document(self, document_id: int) -> SupplierRiskDocument | None:
         with get_session() as session:
             document = session.get(SupplierRiskDocument, document_id)

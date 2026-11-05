@@ -50,6 +50,7 @@ from moduly.koordinace_bozp.sluzby.coordination_risk_submission_service import (
     coordination_risk_submission_service,
 )
 from moduly.koordinace_bozp.sluzby.coordination_supplier_risk_link_service import (
+    CATALOG_REGISTRATION_FAILED_MESSAGE,
     coordination_supplier_risk_link_service,
 )
 from moduly.koordinace_bozp.ui.coordination_catalog_documents_dialog import (
@@ -499,6 +500,17 @@ class CoordinationRiskSubmissionsTab(CoordinationTabEditPolicyMixin, QWidget):
         except CoordinationAttachmentError as error:
             QMessageBox.warning(self, TAB_RISK_SUBMISSIONS, str(error))
             return
+        try:
+            coordination_supplier_risk_link_service.register_handed_attachment(
+                employer_id,
+                created.id,
+            )
+        except Exception:
+            QMessageBox.warning(
+                self,
+                TAB_RISK_SUBMISSIONS,
+                CATALOG_REGISTRATION_FAILED_MESSAGE,
+            )
         self.load_selected_employer(
             select_attachment_id=created.id,
             ensure_visible=True,

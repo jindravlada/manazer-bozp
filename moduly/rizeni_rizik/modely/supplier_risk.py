@@ -37,6 +37,12 @@ class SupplierRiskDocument(Base):
     prepared_on: Mapped[date | None] = mapped_column(Date, nullable=True)
     note: Mapped[str] = mapped_column(Text, nullable=False, default="")
     attachment_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Soubor předaný při koordinaci. Vyplněný jen když attachment_id zůstává prázdné.
+    coordination_attachment_id: Mapped[int | None] = mapped_column(
+        Integer,
+        ForeignKey("coordination_attachments.id"),
+        nullable=True,
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime,

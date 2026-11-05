@@ -350,7 +350,7 @@ class BozpCoordinationDialog(QDialog):
         box = QMessageBox(self)
         box.setIcon(QMessageBox.Icon.Information)
         box.setWindowTitle("Koordinační schůzka BOZP")
-        box.setText("Změny byly úspěšně uloženy.")
+        box.setText("Koordinace BOZP byla úspěšně uložena.")
         box.setStandardButtons(QMessageBox.StandardButton.Ok)
         ok_button = box.button(QMessageBox.StandardButton.Ok)
         if ok_button is not None:

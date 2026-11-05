@@ -75,7 +75,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.ukoly.modely.task import Task
 
 CONFIRMATION_TITLE = "Koordinační schůzka BOZP"
-CONFIRMATION_TEXT = "Změny byly úspěšně uloženy."
+CONFIRMATION_TEXT = "Koordinace BOZP byla úspěšně uložena."
 
 
 class KoordUlozeni1SaveConfirmationTestCase(unittest.TestCase):
@@ -163,6 +163,7 @@ class KoordUlozeni1SaveConfirmationTestCase(unittest.TestCase):
         self.assertEqual(saved.subject, "Uložený název")
         self.assertEqual(saved.status, BOZP_COORDINATION_STATUS_DRAFT)
         self.assertFalse(dialog.is_dirty())
+        self.assertTrue(dialog.isVisible())
         dialog.close()
 
     def test_failed_save_keeps_text_and_skips_confirmation(self) -> None:

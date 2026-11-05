@@ -5,11 +5,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, datetime
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 
 from core.database.session import get_session
 from core.models.attachment import Attachment
+from moduly.koordinace_bozp.modely.coordination_attachment import CoordinationAttachment
 from moduly.koordinace_bozp.modely.coordination_supplier_risk_link import (
     CoordinationSupplierRiskLink,
 )
@@ -36,7 +37,10 @@ class CoordinationSupplierRiskLinkRepository:
                     CoordinationSupplierRiskLink.supplier_risk_document_id,
                     SupplierRiskDocument.prepared_on,
                     SupplierRiskDocument.received_on,
-                    Attachment.filename,
+                    func.coalesce(
+                        Attachment.filename,
+                        CoordinationAttachment.original_filename,
+                    ),
                 )
                 .join(
                     SupplierRiskDocument,
@@ -46,6 +50,11 @@ class CoordinationSupplierRiskLinkRepository:
                 .outerjoin(
                     Attachment,
                     Attachment.id == SupplierRiskDocument.attachment_id,
+                )
+                .outerjoin(
+                    CoordinationAttachment,
+                    CoordinationAttachment.id
+                    == SupplierRiskDocument.coordination_attachment_id,
                 )
                 .where(
                     CoordinationSupplierRiskLink.coordination_employer_id
