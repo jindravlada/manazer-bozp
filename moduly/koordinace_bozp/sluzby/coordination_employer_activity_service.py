@@ -132,6 +132,8 @@ class CoordinationEmployerActivityService:
             coordination_employer_id,
             activity_name=name,
             coordination_workplace_id=workplace_id,
+            planned_from=planned_from,
+            planned_to=planned_to,
         )
         activity = CoordinationEmployerActivity(
             coordination_employer_id=coordination_employer_id,
@@ -173,6 +175,8 @@ class CoordinationEmployerActivityService:
             coordination_employer_id,
             activity_name=name,
             coordination_workplace_id=workplace_id,
+            planned_from=planned_from,
+            planned_to=planned_to,
             exclude_id=activity.id,
         )
 
@@ -200,6 +204,8 @@ class CoordinationEmployerActivityService:
             activity.coordination_employer_id,
             activity_name=activity.activity_name,
             coordination_workplace_id=activity.coordination_workplace_id,
+            planned_from=activity.planned_from,
+            planned_to=activity.planned_to,
             exclude_id=activity.id,
             active_only=True,
         )
@@ -271,10 +277,17 @@ class CoordinationEmployerActivityService:
         *,
         activity_name: str,
         coordination_workplace_id: int | None,
+        planned_from: date | None = None,
+        planned_to: date | None = None,
         exclude_id: int | None = None,
         active_only: bool = False,
     ) -> None:
+        """Duplicita je jen shodný zaměstnavatel, místo, název a oba termíny.
+
+        Jiný interval, včetně překryvu, je další výskyt téže činnosti.
+        """
         needle = normalize_activity_name(activity_name).casefold()
+        workplace_id = coordination_workplace_id or None
         for item in self.repository.list_for_employer(
             coordination_employer_id,
             include_inactive=not active_only,
@@ -285,11 +298,13 @@ class CoordinationEmployerActivityService:
                 continue
             if (
                 normalize_activity_name(item.activity_name).casefold() == needle
-                and (item.coordination_workplace_id or None)
-                == (coordination_workplace_id or None)
+                and (item.coordination_workplace_id or None) == workplace_id
+                and item.planned_from == planned_from
+                and item.planned_to == planned_to
             ):
                 raise CoordinationEmployerActivityError(
-                    "Stejná činnost je u tohoto zaměstnavatele a místa již evidována."
+                    "Stejná činnost se stejným termínem je u tohoto "
+                    "zaměstnavatele a místa již evidována."
                 )
 
 

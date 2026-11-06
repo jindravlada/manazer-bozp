@@ -224,6 +224,93 @@ class KoordinaceBozpPhaseCoord008TestCase(unittest.TestCase):
         )
         self.assertIsNone(other.coordination_workplace_id)
 
+    def test_same_activity_allowed_on_separate_dates(self) -> None:
+        coordination = self._create_coordination()
+        contractor = self._create_participant(coordination.id)
+        place = self._create_place(coordination.id)
+        created = []
+        for day in (11, 18, 19):
+            term = date(2026, 11, day)
+            created.append(
+                coordination_employer_activity_service.add(
+                    contractor.id,
+                    activity_name="Montáž",
+                    coordination_workplace_id=place.id,
+                    planned_from=term,
+                    planned_to=term,
+                )
+            )
+        overlapping = coordination_employer_activity_service.add(
+            contractor.id,
+            activity_name="  montáž ",
+            coordination_workplace_id=place.id,
+            planned_from=date(2026, 11, 11),
+            planned_to=date(2026, 11, 19),
+        )
+        items = coordination_employer_activity_service.list_for_employer(contractor.id)
+        self.assertEqual(len(items), 4)
+        self.assertEqual(len({item.id for item in created + [overlapping]}), 4)
+        self.assertEqual(
+            {(item.planned_from, item.planned_to) for item in items},
+            {
+                (date(2026, 11, 11), date(2026, 11, 11)),
+                (date(2026, 11, 18), date(2026, 11, 18)),
+                (date(2026, 11, 19), date(2026, 11, 19)),
+                (date(2026, 11, 11), date(2026, 11, 19)),
+            },
+        )
+
+    def test_identical_interval_rejected(self) -> None:
+        coordination = self._create_coordination()
+        contractor = self._create_participant(coordination.id)
+        place = self._create_place(coordination.id)
+        term_from = date(2026, 11, 11)
+        term_to = date(2026, 11, 11)
+        coordination_employer_activity_service.add(
+            contractor.id,
+            activity_name="Montáž",
+            coordination_workplace_id=place.id,
+            planned_from=term_from,
+            planned_to=term_to,
+        )
+        with self.assertRaises(CoordinationEmployerActivityError) as ctx:
+            coordination_employer_activity_service.add(
+                contractor.id,
+                activity_name="  montáž  ",
+                coordination_workplace_id=place.id,
+                planned_from=term_from,
+                planned_to=term_to,
+            )
+        self.assertIn("stejným termínem", str(ctx.exception).casefold())
+
+        shifted = coordination_employer_activity_service.add(
+            contractor.id,
+            activity_name="Montáž",
+            coordination_workplace_id=place.id,
+            planned_from=date(2026, 11, 18),
+            planned_to=date(2026, 11, 19),
+        )
+        with self.assertRaises(CoordinationEmployerActivityError):
+            coordination_employer_activity_service.update(
+                shifted.id,
+                coordination_employer_id=contractor.id,
+                activity_name="Montáž",
+                coordination_workplace_id=place.id,
+                planned_from=term_from,
+                planned_to=term_to,
+            )
+        kept = coordination_employer_activity_service.update(
+            shifted.id,
+            coordination_employer_id=contractor.id,
+            activity_name="Montáž",
+            coordination_workplace_id=place.id,
+            planned_from=date(2026, 11, 18),
+            planned_to=date(2026, 11, 19),
+            note="beze změny termínu",
+        )
+        self.assertEqual(kept.id, shifted.id)
+        self.assertEqual(kept.note, "beze změny termínu")
+
     def test_reject_inactive_workplace(self) -> None:
         coordination = self._create_coordination()
         contractor = self._create_participant(coordination.id)
