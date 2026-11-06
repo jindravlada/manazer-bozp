@@ -397,6 +397,13 @@ def is_dpn_ended(dpn_do: date | None) -> bool:
     return dpn_do is not None
 
 
+def dpn_has_arisen(accident: AccidentLike | None) -> bool:
+    """DPN vznikla, jakmile je vyplněné zahájení ``Accident.dpn_od``."""
+    if accident is None:
+        return False
+    return getattr(accident, "dpn_od", None) is not None
+
+
 def is_dpn_record_update_relevant(accident: AccidentLike | None) -> bool:
     """Aktualizace ZoÚ po DPN jen u úrazů se záznamem a vyplněným ``dpn_do``."""
     if accident is None:
@@ -1001,6 +1008,9 @@ def is_obligation_visible(
             record_duty_generation=record_duty_generation,
         ):
             return True
+        # Úraz bez DPN sekci nezobrazí ani kvůli starým řádkům. Data se nemažou.
+        if not dpn_has_arisen(accident):
+            return False
         if cssz_row_has_recorded_data(row):
             return True
         return cssz_row_has_recorded_data(

@@ -11,7 +11,7 @@ from datetime import date
 from pathlib import Path
 from unittest.mock import patch
 
-from PySide6.QtWidgets import QApplication, QRadioButton
+from PySide6.QtWidgets import QApplication, QGroupBox, QRadioButton
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -66,6 +66,7 @@ with patch.object(Path, "home", return_value=_TMP):
     from moduly.ukoly.modely.task import Task
 
 
+KIND_NO_PN = "Bez pracovní neschopnosti"
 KIND_OVER_3 = "pracovní úraz s pracovní neschopností delší než 3 kalendářní dny"
 KIND_UP_TO_3 = "pracovní úraz s pracovní neschopností nepřesahující 3 kalendářní dny"
 KIND_SERIOUS = "závažný pracovní úraz (hospitalizace více než 5 po sobě jdoucích dnů)"
@@ -176,6 +177,12 @@ class PuDpn3TestCase(unittest.TestCase):
             + list(getattr(dialog, "admin_dpn_rows", []))
         )
         return [row.get("key") for row in rows]
+
+    def _dpn_section_visible(self, dialog: SetreniDialog) -> bool:
+        return any(
+            box.title() == "AKTUALIZACE ZÁZNAMU PO UKONČENÍ DPN"
+            for box in dialog.findChildren(QGroupBox)
+        )
 
     def _visible_dpn_keys(self, dialog: SetreniDialog) -> list[str]:
         return [
@@ -469,6 +476,89 @@ class PuDpn3TestCase(unittest.TestCase):
         dialog = SetreniDialog(accident=cleared)
         self.assertIn(OBLIGATION_AKTUALIZACE_OIP_OBU_PORTAL, self._visible_dpn_keys(dialog))
         dialog.close()
+
+    def _saved_portal_row(self, accident_id: int) -> dict:
+        return next(
+            row
+            for row in (self._saved_data(accident_id).get("admin_zaslani") or [])
+            if row.get("key") == OBLIGATION_AKTUALIZACE_OIP_OBU_PORTAL
+        )
+
+    def test_no_dpn_hides_update_section_and_keeps_saved_rows(self) -> None:
+        for kind, name in (
+            (KIND_NO_PN, "Bez DPN"),
+            (KIND_SERIOUS, "Závažný bez DPN"),
+        ):
+            accident = self._create(
+                druh_urazu=kind,
+                dpn_od=None,
+                dpn_do=None,
+                jmeno_prijmeni=name,
+            )
+            self._write_saved(
+                accident.id,
+                {
+                    "admin_zaslani": [
+                        {
+                            "key": OBLIGATION_AKTUALIZACE_OIP_OBU_PORTAL,
+                            "datum": "2026-04-16",
+                            "upresneni": "historické podání",
+                        }
+                    ]
+                },
+            )
+            self.assertFalse(
+                is_obligation_relevant(
+                    accident,
+                    OBLIGATION_AKTUALIZACE_OIP_OBU_PORTAL,
+                )
+            )
+            dialog = SetreniDialog(accident=accident)
+            self.assertFalse(self._visible_dpn_keys(dialog))
+            self.assertFalse(self._dpn_section_visible(dialog))
+            dialog.accept()
+            portal = self._saved_portal_row(accident.id)
+            self.assertEqual(portal.get("datum"), "2026-04-16")
+            self.assertEqual(portal.get("upresneni"), "historické podání")
+
+    def test_later_ended_dpn_shows_update_section(self) -> None:
+        accident = self._create(
+            druh_urazu=KIND_NO_PN,
+            dpn_od=None,
+            dpn_do=None,
+            jmeno_prijmeni="DPN dodatečně",
+        )
+        self._write_saved(
+            accident.id,
+            {
+                "admin_zaslani": [
+                    {
+                        "key": OBLIGATION_AKTUALIZACE_OIP_OBU_PORTAL,
+                        "datum": "2026-04-16",
+                        "zpusob": METHOD_PORTAL_SUIP,
+                        "upresneni": "podání před DPN",
+                    }
+                ]
+            },
+        )
+        hidden = SetreniDialog(accident=accident)
+        self.assertFalse(self._dpn_section_visible(hidden))
+        hidden.close()
+
+        ended = accident_service.update_accident(
+            accident.id,
+            dpn_od=date(2026, 4, 1),
+            dpn_do=date(2026, 4, 15),
+        )
+        self.assertTrue(is_obligation_relevant(ended, OBLIGATION_AKTUALIZACE_OIP_OBU_PORTAL))
+        self.assertEqual(self._post_dpn_keys(ended), COMMON_POST_DPN)
+        dialog = SetreniDialog(accident=ended)
+        self.assertTrue(self._dpn_section_visible(dialog))
+        self.assertEqual(set(self._visible_dpn_keys(dialog)), COMMON_POST_DPN)
+        dialog.close()
+        portal = self._saved_portal_row(accident.id)
+        self.assertEqual(portal.get("datum"), "2026-04-16")
+        self.assertEqual(portal.get("upresneni"), "podání před DPN")
 
 
 if __name__ == "__main__":
