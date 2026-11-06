@@ -9,6 +9,7 @@ import unittest
 import zipfile
 from datetime import date
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from PySide6.QtWidgets import QApplication
@@ -44,7 +45,9 @@ with patch.object(Path, "home", return_value=_TMP):
         AUDIT_INTRO_CHANGES_EMPTY,
         AUDIT_INTRO_CHANGES_LABEL,
         AUDIT_INTRO_CONTINUITY_SECTION,
+        AUDIT_INTRO_EXPORT_FINDINGS_HEADING,
         AUDIT_INTRO_EXPORT_SECTION,
+        AUDIT_INTRO_EXPORT_TASKS_HEADING,
         AUDIT_INTRO_FINDINGS_GROUP,
         AUDIT_INTRO_FIRST_AUDIT_MESSAGE,
         AUDIT_INTRO_NO_HISTORICAL_FINDINGS,
@@ -286,6 +289,58 @@ class AuditIntro2ExportTestCase(unittest.TestCase):
         content = _odt_text(path)
         self.assertIn("Otevřené zjištění historie", content)
         self.assertIn("Změna organizace směn.", content)
+
+    def test_detailed_intro_keeps_full_multiline_finding(self) -> None:
+        empty = SimpleNamespace(
+            id=9,
+            description="   ",
+            source_control_point_label="Bod kontroly",
+            reference_label="",
+        )
+        self.assertEqual(audit_history_service._finding_title(empty), "Bod kontroly")
+
+        first_line = (
+            "Záznamy z kontrol BOZP a PO prováděné zaměstnanci ČEZ jsou uloženy "
+            "u zaměstnanců ČEZ a nejsou v případě potřeby okamžitě k dispozici."
+        )
+        description = f"{first_line}\nDruhý řádek zjištění zůstává celý."
+        self.assertGreater(len(first_line), 120)
+
+        previous = self._create_audit(
+            year=2025,
+            month=3,
+            audit_date=date(2025, 3, 1),
+            finished_at=date(2025, 3, 1),
+        )
+        finding = finding_service.create(
+            ENTITY_AUDITY,
+            previous.id,
+            finding_type=FINDING_TYPE_NESHODA,
+            description=description,
+            status=FINDING_STATUS_OTEVRENE,
+        )
+        task = task_service.create_task(
+            title="Krátký název úkolu",
+            responsible_person_id=self.worker.id,
+            due_date=date(2025, 6, 1),
+        )
+        finding_service.update(finding.id, task_id=task.id)
+        current = self._create_audit(
+            year=2026,
+            month=4,
+            started_at=date(2026, 4, 1),
+        )
+        intro = audit_export_context_service.build(
+            current, config=DETAILED_REPORT_DOCUMENT_CONFIG
+        ).placeholder_values()["uvod_text"]
+        findings_part = intro.split(AUDIT_INTRO_EXPORT_FINDINGS_HEADING, 1)[1].split(
+            AUDIT_INTRO_EXPORT_TASKS_HEADING, 1
+        )[0]
+        tasks_part = intro.split(AUDIT_INTRO_EXPORT_TASKS_HEADING, 1)[1]
+        self.assertIn(description, findings_part)
+        self.assertIn(description, tasks_part)
+        self.assertIn("Původní zjištění / audit", tasks_part)
+        self.assertIn("Krátký název úkolu", tasks_part)
 
     def test_missing_findings_and_tasks_messages(self) -> None:
         previous = self._create_audit(

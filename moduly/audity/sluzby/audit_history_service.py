@@ -474,7 +474,7 @@ class AuditHistoryService:
     def _finding_title(finding) -> str:
         description = str(finding.description or "").strip()
         if description:
-            return description.splitlines()[0][:120]
+            return description
         if finding.source_control_point_label:
             return str(finding.source_control_point_label).strip()
         if finding.reference_label:
