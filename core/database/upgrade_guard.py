@@ -29,12 +29,22 @@ UPGRADE_FROM_VERSION = "3.1.0"
 UPGRADE_TO_VERSION = "3.2.0"
 TRANSITION_ID = f"{UPGRADE_FROM_VERSION}-to-{UPGRADE_TO_VERSION}"
 RELEASE_420_TRANSITION_ID = "4.1.3-to-4.2.0"
+RELEASE_421_TRANSITION_ID = "4.2.0-to-4.2.1"
 _RELEASE_420_CALENDAR_COLUMNS = (
     "calendar_start_year",
     "calendar_start_month",
     "calendar_interval_months",
     "calendar_setup_required",
 )
+# Pět tabulek rizik dodavatelů přidaných od veřejné 4.2.0.
+_RELEASE_421_TABLES = (
+    "supplier_risk_companies",
+    "supplier_risk_documents",
+    "coordination_supplier_risk_links",
+    "coordination_risk_receipts",
+    "coordination_risk_receipt_history",
+)
+_RELEASE_421_EVENT_COLUMNS = ("event_date", "event_time")
 
 # Indikátor „pre-risk“ databáze z éry 3.1.0 (Registr rizik ještě neexistoval).
 LEGACY_MISSING_TABLE = "hazard_identifications"
@@ -327,6 +337,42 @@ def needs_release_420_schema(db_path: Path) -> bool:
         if any(name not in columns for name in _RELEASE_420_CALENDAR_COLUMNS):
             return True
         return "periodic_calendar_occurrences" not in tables
+    finally:
+        connection.close()
+
+
+def needs_release_421_schema(db_path: Path) -> bool:
+    """Veřejná 4.2.0 ještě nemá tabulky rizik dodavatelů nebo sloupce vzniku MU.
+
+    Databáze, ve které pět tabulek už je a chybí jen ``event_date`` a
+    ``event_time``, se zálohuje stejně. Soubor bez vyšetřování i bez těchto
+    tabulek tímto přechodem neprochází: jde o čistou instalaci nebo o starší
+    schéma, které kryje dřívější záloha.
+    """
+    path = Path(db_path)
+    if not path.is_file():
+        return False
+    connection = sqlite3.connect(f"file:{path.resolve()}?mode=ro", uri=True)
+    try:
+        tables = {
+            str(row[0])
+            for row in connection.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table'"
+            ).fetchall()
+        }
+        missing_tables = any(name not in tables for name in _RELEASE_421_TABLES)
+        if "mu_investigations" not in tables:
+            return not missing_tables
+        columns = {
+            str(row[1])
+            for row in connection.execute(
+                "PRAGMA table_info(mu_investigations)"
+            ).fetchall()
+        }
+        missing_columns = any(
+            name not in columns for name in _RELEASE_421_EVENT_COLUMNS
+        )
+        return missing_tables or missing_columns
     finally:
         connection.close()
 
@@ -629,11 +675,15 @@ def prepare_database_for_startup(
     def init_with_release_420_backup() -> None:
         # Záloha 4.1.2 → 4.1.3 už kryje i následující zápis. Tady se zálohuje
         # jen databáze, která schéma 4.1.3 má a teprve dostane sloupce 4.2.0.
+        # Stejně záloha 4.2.0 kryje tabulky rizik dodavatelů a sloupce vzniku MU,
+        # pokud se obě změny zapisují v jednom startu.
         from moduly.nastaveni.sluzby.employee_central_413_schema_migration import (
             needs_employee_central_413_schema,
         )
 
-        backup_path: Path | None = None
+        # Záloha 4.1.3 → 4.2.0 kryje i zápis 4.2.1 ve stejném startu.
+        # Vlastní záloha 4.2.1 je jen pro databázi, která 4.2.0 už má.
+        backup_420: Path | None = None
         if (
             database_path.is_file()
             and not needs_employee_central_413_schema(database_path)
@@ -653,7 +703,7 @@ def prepare_database_for_startup(
                 transition_id=RELEASE_420_TRANSITION_ID,
             )
             try:
-                backup_path = create_verified_pre_migration_backup(
+                backup_420 = create_verified_pre_migration_backup(
                     target_path=target,
                     workspace_root=workspace_root,
                     database_path=database_path,
@@ -668,35 +718,114 @@ def prepare_database_for_startup(
                 ) from exc
             mark_migration_in_progress(
                 workspace_root,
-                backup_path=backup_path,
+                backup_path=backup_420,
                 transition_id=RELEASE_420_TRANSITION_ID,
+            )
+
+        backup_421: Path | None = None
+        if (
+            database_path.is_file()
+            and backup_420 is None
+            and not needs_employee_central_413_schema(database_path)
+            and not needs_release_420_schema(database_path)
+            and needs_release_421_schema(database_path)
+        ):
+            if is_migration_in_progress(workspace_root, RELEASE_421_TRANSITION_ID):
+                state = read_migration_state(workspace_root)
+                backup = (state.get("in_progress") or {}).get("pre_migration_backup")
+                raise MigrationGuardError(
+                    "Předchozí migrace databáze na verzi 4.2.1 nebyla dokončena.\n\n"
+                    "Aplikace nespustí další změnu schématu a zálohu nepřepíše.\n"
+                    "Obnovte data z předmigrační zálohy.\n\n"
+                    f"Záloha: {backup or '(nenalezena)'}"
+                )
+            target = allocate_pre_migration_backup_path(
+                backups_dir,
+                transition_id=RELEASE_421_TRANSITION_ID,
+            )
+            try:
+                backup_421 = create_verified_pre_migration_backup(
+                    target_path=target,
+                    workspace_root=workspace_root,
+                    database_path=database_path,
+                    settings_path=settings_path,
+                )
+            except PreMigrationBackupError as exc:
+                raise PreMigrationBackupError(
+                    "Před změnou databáze na verzi 4.2.1 se nepodařilo vytvořit "
+                    "nebo ověřit zálohu. Migrace nebyla spuštěna a původní databáze "
+                    "zůstala na svém místě beze změny.\n\n"
+                    f"{exc}"
+                ) from exc
+            mark_migration_in_progress(
+                workspace_root,
+                backup_path=backup_421,
+                transition_id=RELEASE_421_TRANSITION_ID,
             )
         try:
             init()
         except MigrationGuardError:
             raise
         except Exception as exc:
-            if backup_path is None:
+            if backup_421 is not None:
+                raise MigrationGuardError(
+                    "Migrace databáze na verzi 4.2.1 selhala.\n\n"
+                    "Další spuštění zálohu nepřepíše a v migraci nebude pokračovat. "
+                    "Obnovte data z předmigrační zálohy.\n\n"
+                    f"Záloha: {backup_421}\n"
+                    f"Detail: {exc}"
+                ) from exc
+            if backup_420 is None:
                 raise
             raise MigrationGuardError(
                 "Migrace databáze na verzi 4.2.0 selhala.\n\n"
                 "Další spuštění zálohu nepřepíše a v migraci nebude pokračovat. "
                 "Obnovte data z předmigrační zálohy.\n\n"
-                f"Záloha: {backup_path}\n"
+                f"Záloha: {backup_420}\n"
                 f"Detail: {exc}"
             ) from exc
-        if backup_path is not None:
-            if needs_release_420_schema(database_path):
-                raise MigrationGuardError(
-                    "Migrace databáze na verzi 4.2.0 schéma nedokončila.\n\n"
-                    "Další spuštění zálohu nepřepíše a v migraci nebude pokračovat. "
-                    "Obnovte data z předmigrační zálohy.\n\n"
-                    f"Záloha: {backup_path}"
-                )
+        if backup_420 is not None and needs_release_420_schema(database_path):
+            raise MigrationGuardError(
+                "Migrace databáze na verzi 4.2.0 schéma nedokončila.\n\n"
+                "Další spuštění zálohu nepřepíše a v migraci nebude pokračovat. "
+                "Obnovte data z předmigrační zálohy.\n\n"
+                f"Záloha: {backup_420}"
+            )
+        if backup_421 is not None and needs_release_421_schema(database_path):
+            raise MigrationGuardError(
+                "Migrace databáze na verzi 4.2.1 schéma nedokončila.\n\n"
+                "Další spuštění zálohu nepřepíše a v migraci nebude pokračovat. "
+                "Obnovte data z předmigrační zálohy.\n\n"
+                f"Záloha: {backup_421}"
+            )
+        if (
+            backup_420 is not None
+            and backup_421 is None
+            and needs_release_421_schema(database_path)
+        ):
+            raise MigrationGuardError(
+                "Migrace databáze na verzi 4.2.1 schéma nedokončila.\n\n"
+                "Další spuštění zálohu nepřepíše a v migraci nebude pokračovat. "
+                "Obnovte data z předmigrační zálohy.\n\n"
+                f"Záloha: {backup_420}"
+            )
+        if backup_420 is not None:
             mark_migration_complete(
                 workspace_root,
-                backup_path=backup_path,
+                backup_path=backup_420,
                 transition_id=RELEASE_420_TRANSITION_ID,
+            )
+        if backup_421 is not None:
+            mark_migration_complete(
+                workspace_root,
+                backup_path=backup_421,
+                transition_id=RELEASE_421_TRANSITION_ID,
+            )
+        elif backup_420 is not None and not needs_release_421_schema(database_path):
+            mark_migration_complete(
+                workspace_root,
+                backup_path=backup_420,
+                transition_id=RELEASE_421_TRANSITION_ID,
             )
 
     # Čistá instalace / už migrovaná DB. Schéma 4.1.3 se u existující

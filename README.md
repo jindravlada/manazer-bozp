@@ -1,10 +1,10 @@
-# Manažer BOZP 4.2.0
+# Manažer BOZP 4.2.1
 
-Aktuální verze: 4.2.0
+Aktuální verze ve zdrojových kódech: 4.2.1
 
 ## 📥 Stažení aplikace
 
-Hotovou aplikaci není nutné sestavovat ze zdrojových kódů.
+Hotovou aplikaci není nutné sestavovat ze zdrojových kódů. Ke stažení je poslední zveřejněné vydání 4.2.0.
 
 ### Linux
 
