@@ -29,6 +29,21 @@ from core.widgets.attachment_widget import AttachmentWidget
 from core.widgets.nullable_date_edit import NullableDateEdit
 from core.widgets.thp_worker_selector import ThpWorkerSelector
 
+
+def _paired_fields(*pairs: tuple[str, QWidget]) -> QWidget:
+    """Dvě související pole na jednom řádku."""
+    row = QWidget()
+    layout = QHBoxLayout(row)
+    layout.setContentsMargins(0, 0, 0, 0)
+    layout.setSpacing(8)
+    for label, widget in pairs:
+        layout.addWidget(QLabel(label))
+        if hasattr(widget, "line_edit"):
+            widget.line_edit.setMinimumWidth(96)
+        layout.addWidget(widget, 1)
+    return row
+
+
 # MU-UX-5 / MU-UX-7 – jednotné popisky a šířky sloupců opakovaných seznamů.
 _ACTION_WIDTH = 90
 _ROW_HEIGHT = 34
@@ -45,11 +60,13 @@ _OOPP_STRETCHES = (3, 2, 2, 3)
 _SKOLENI_HEADERS = (
     "Název školení",
     "Datum školení",
+    "Platnost do",
     "Úspěšně absolvováno",
     "Poznámka",
     "Akce",
 )
-_SKOLENI_STRETCHES = (3, 2, 2, 3)
+_SKOLENI_STRETCHES = (3, 2, 2, 2, 3)
+_ZKOUSKA_PLATNOST_HINT = "Nevyplněné datum znamená platnost bez časového omezení."
 
 _ZKOUSKY_HEADERS = (
     "Název zkoušky / odborné způsobilosti",
@@ -204,6 +221,7 @@ class MuDodrzovaniPredpisuWidget(QWidget):
                 {
                     "typ": row["typ"].text().strip(),
                     "datum": self._date_to_json(row["datum"]),
+                    "platnost": self._date_to_json(row["platnost"]),
                     "osnova": self._radio_choice_value(row["osnova"]),
                     "poznamka": row["poznamka"].text().strip(),
                 }
@@ -562,6 +580,9 @@ class MuDodrzovaniPredpisuWidget(QWidget):
         layout.addWidget(skoleni)
 
         zkousky, body = self._make_group("Zkoušky a odborná způsobilost")
+        zkouska_hint = QLabel(_ZKOUSKA_PLATNOST_HINT)
+        zkouska_hint.setWordWrap(True)
+        body.addWidget(zkouska_hint)
         self.dodrz_zkousky_layout, self.dodrz_zkousky_rows_layout = self._create_dynamic_list(
             body,
             self.dodrz_zkousky_rows,
@@ -579,8 +600,12 @@ class MuDodrzovaniPredpisuWidget(QWidget):
         form.setSpacing(8)
         form.setContentsMargins(0, 0, 0, 0)
         form.addRow("Typ prohlídky:", self.dodrz_lekar_typ)
-        form.addRow("Datum prohlídky:", self.dodrz_lekar_datum)
-        form.addRow("Platnost do:", self.dodrz_lekar_platnost)
+        form.addRow(
+            _paired_fields(
+                ("Datum prohlídky", self.dodrz_lekar_datum),
+                ("Platnost do", self.dodrz_lekar_platnost),
+            )
+        )
         body.addLayout(form)
         layout.addWidget(lekar)
 
@@ -737,6 +762,8 @@ class MuDodrzovaniPredpisuWidget(QWidget):
         for text, stretch in zip(data_headers, stretches, strict=True):
             label = QLabel(text)
             label.setWordWrap(True)
+            if text == "Platnost do":
+                label.setToolTip(_ZKOUSKA_PLATNOST_HINT)
             font = label.font()
             font.setBold(True)
             label.setFont(font)
@@ -801,7 +828,7 @@ class MuDodrzovaniPredpisuWidget(QWidget):
         return [row["typ"], row["datum"], row["platnost"], row["poznamka"]]
 
     def _skoleni_row_widgets(self, row: dict) -> list:
-        return [row["typ"], row["datum"], row["osnova"], row["poznamka"]]
+        return [row["typ"], row["datum"], row["platnost"], row["osnova"], row["poznamka"]]
 
     def _zkouska_row_widgets(self, row: dict) -> list:
         return [row["typ"], row["datum"], row["platnost"], row["poznamka"]]
@@ -929,6 +956,7 @@ class MuDodrzovaniPredpisuWidget(QWidget):
         row = {
             "typ": QLineEdit(data.get("typ", "")),
             "datum": self._new_date_edit(),
+            "platnost": self._new_date_edit(),
             "osnova": self._radio_choice(["ANO", "NE"], compact=True),
             "poznamka": QLineEdit(data.get("poznamka", "")),
         }
@@ -937,6 +965,8 @@ class MuDodrzovaniPredpisuWidget(QWidget):
         row["osnova"].setToolTip("Úspěšně absolvováno")
         if data.get("datum"):
             self._set_date_widget(row["datum"], data.get("datum"))
+        if data.get("platnost"):
+            self._set_date_widget(row["platnost"], data.get("platnost"))
         self._set_radio_choice(row["osnova"], data.get("osnova", ""))
         return row
 
@@ -950,6 +980,7 @@ class MuDodrzovaniPredpisuWidget(QWidget):
         }
         row["typ"].setPlaceholderText("Název zkoušky / odborné způsobilosti")
         row["poznamka"].setPlaceholderText("Poznámka")
+        row["platnost"].setToolTip(_ZKOUSKA_PLATNOST_HINT)
         if data.get("datum"):
             self._set_date_widget(row["datum"], data.get("datum"))
         if data.get("platnost"):

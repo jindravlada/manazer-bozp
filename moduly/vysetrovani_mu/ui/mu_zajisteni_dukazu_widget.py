@@ -28,6 +28,26 @@ from core.widgets.thp_worker_selector import ThpWorkerSelector
 from moduly.vysetrovani_mu.sluzby.mu_source_context import MuSourceContext
 
 
+def _paired_fields(*pairs: tuple[str, QWidget], caption: str = "") -> QWidget:
+    """Datum a čas jedné události na jednom řádku přes celou šířku formuláře."""
+    row = QWidget()
+    layout = QHBoxLayout(row)
+    layout.setContentsMargins(0, 0, 0, 0)
+    layout.setSpacing(8)
+    if caption:
+        layout.addWidget(QLabel(caption))
+    for label, widget in pairs:
+        layout.addWidget(QLabel(label))
+        if widget.inherits("QLineEdit"):
+            widget.setMinimumWidth(88)
+            layout.addWidget(widget, 1)
+        else:
+            if hasattr(widget, "line_edit"):
+                widget.line_edit.setMinimumWidth(96)
+            layout.addWidget(widget, 2)
+    return row
+
+
 class MuZajisteniDukazuWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -253,8 +273,13 @@ class MuZajisteniDukazuWidget(QWidget):
         zaklad_form = QFormLayout(zaklad_group)
         self.event_number_label = QLabel("")
         zaklad_form.addRow("Číslo události:", self.event_number_label)
-        zaklad_form.addRow("Datum provedení:", self.dukazy_datum)
-        zaklad_form.addRow("Čas provedení:", self.dukazy_cas)
+        zaklad_form.addRow(
+            _paired_fields(
+                ("Datum", self.dukazy_datum),
+                ("Čas", self.dukazy_cas),
+                caption="Provedení zajištění:",
+            )
+        )
         zaklad_form.addRow("Provedl:", self.dukazy_provedl)
         layout.addWidget(zaklad_group)
 
@@ -304,8 +329,13 @@ class MuZajisteniDukazuWidget(QWidget):
         foto_layout.addLayout(foto_form_buttons)
         foto_layout.addWidget(self.dukazy_nacrt_porizen)
         foto_form = QFormLayout()
-        foto_form.addRow("Datum pořízení fotek / videa:", self.dukazy_datum_fotek)
-        foto_form.addRow("Čas pořízení fotek / videa:", self.dukazy_cas_fotek)
+        foto_form.addRow(
+            _paired_fields(
+                ("Datum", self.dukazy_datum_fotek),
+                ("Čas", self.dukazy_cas_fotek),
+                caption="Pořízení fotek / videa:",
+            )
+        )
         foto_layout.addLayout(foto_form)
         layout.addWidget(foto_group)
 
@@ -314,8 +344,13 @@ class MuZajisteniDukazuWidget(QWidget):
         self.dukazy_provozni_dokumentace_text.setMinimumHeight(160)
         self.dukazy_provozni_zaznamy_text.setMinimumHeight(160)
         dokumenty_form.addRow("Kamerový záznam mohl zachytit průběh události:", self.dukazy_kamerovy_zaznam_ano_ne)
-        dokumenty_form.addRow("Datum nástupu na směnu:", self.dukazy_dochazka_datum)
-        dokumenty_form.addRow("Čas nástupu na směnu:", self.dukazy_dochazka_cas)
+        dokumenty_form.addRow(
+            _paired_fields(
+                ("Datum", self.dukazy_dochazka_datum),
+                ("Čas", self.dukazy_dochazka_cas),
+                caption="Nástup na směnu:",
+            )
+        )
         dokumenty_form.addRow("Byl vydán pracovní postup / příkaz k práci:", self.dukazy_pracovni_postup_ano_ne)
         dokumenty_form.addRow("Provozní dokumentace, údržba, kniha závad/oprav:", self.dukazy_provozni_dokumentace_text)
         dokumenty_form.addRow("Další provozní záznamy:", self.dukazy_provozni_zaznamy_text)

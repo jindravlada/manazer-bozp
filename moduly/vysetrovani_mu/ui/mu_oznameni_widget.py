@@ -22,6 +22,26 @@ from moduly.vysetrovani_mu.sluzby.mu_oznameni_opatreni import format_checked_oka
 from moduly.vysetrovani_mu.sluzby.mu_source_context import MuSourceContext, resolve_mu_source_context
 
 
+def _paired_fields(*pairs: tuple[str, QWidget], caption: str = "") -> QWidget:
+    """Datum a čas jedné události na jednom řádku přes celou šířku formuláře."""
+    row = QWidget()
+    layout = QHBoxLayout(row)
+    layout.setContentsMargins(0, 0, 0, 0)
+    layout.setSpacing(8)
+    if caption:
+        layout.addWidget(QLabel(caption))
+    for label, widget in pairs:
+        layout.addWidget(QLabel(label))
+        if widget.inherits("QLineEdit"):
+            widget.setMinimumWidth(88)
+            layout.addWidget(widget, 1)
+        else:
+            if hasattr(widget, "line_edit"):
+                widget.line_edit.setMinimumWidth(96)
+            layout.addWidget(widget, 2)
+    return row
+
+
 class MuOznameniWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -178,8 +198,13 @@ class MuOznameniWidget(QWidget):
         f1.addRow("Číslo události:", self.event_number_label)
         f1.addRow("Kdo událost oznámil:", self.oznameni_kdo)
         f1.addRow("Komu byla událost oznámena:", self.oznameni_komu)
-        f1.addRow("Datum oznámení:", self.oznameni_datum)
-        f1.addRow("Čas oznámení:", self.oznameni_cas)
+        f1.addRow(
+            _paired_fields(
+                ("Datum", self.oznameni_datum),
+                ("Čas", self.oznameni_cas),
+                caption="Oznámení události:",
+            )
+        )
         f1.addRow("Oznámeno bezodkladně:", rb_layout)
         f1.addRow("Důvod pozdního oznámení:", self.oznameni_duvod_pozde)
         layout.addWidget(g1)
@@ -233,8 +258,13 @@ class MuOznameniWidget(QWidget):
         f4 = QFormLayout()
         self.oznameni_bozp_datum = NullableDateEdit()
         self.oznameni_bozp_cas = MuTimeLineEdit()
-        f4.addRow("Datum oznámení BOZP:", self.oznameni_bozp_datum)
-        f4.addRow("Čas oznámení BOZP:", self.oznameni_bozp_cas)
+        f4.addRow(
+            _paired_fields(
+                ("Datum", self.oznameni_bozp_datum),
+                ("Čas", self.oznameni_bozp_cas),
+                caption="Oznámení BOZP:",
+            )
+        )
         v4.addLayout(f4)
 
         self.op_informovany_dalsi = QCheckBox("Informovány další osoby podle závažnosti")

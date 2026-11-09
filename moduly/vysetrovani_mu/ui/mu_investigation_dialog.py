@@ -48,6 +48,7 @@ from moduly.vysetrovani_mu.ui.mu_investigation_source_panel import MuInvestigati
 from moduly.vysetrovani_mu.ui.mu_ishikawa_widget import MuIshikawaWidget
 from moduly.vysetrovani_mu.ui.mu_ohledani_mista_widget import MuOhledaniMistaWidget
 from moduly.vysetrovani_mu.ui.mu_oznameni_widget import MuOznameniWidget
+from moduly.vysetrovani_mu.ui.mu_prilohy_widget import MuPrilohyWidget
 from moduly.vysetrovani_mu.ui.mu_source_selector_widget import MuSourceSelectorWidget
 from moduly.vysetrovani_mu.ui.mu_casova_osa_widget import MuCasovaOsaWidget
 from moduly.vysetrovani_mu.ui.mu_dodrzovani_predpisu_widget import MuDodrzovaniPredpisuWidget
@@ -126,6 +127,8 @@ class MuInvestigationDialog(QDialog):
         self.tabs.addTab(self.findings_widget, "Zjištění")
         self.zaver_widget = MuZaverWidget()
         self.tabs.addTab(self.zaver_widget, "Závěr")
+        self.prilohy_widget = MuPrilohyWidget()
+        self.tabs.addTab(self.prilohy_widget, "Přílohy")
         self.tabs.currentChanged.connect(self._on_tab_changed)
         layout.addWidget(self.tabs)
 
@@ -439,6 +442,17 @@ class MuInvestigationDialog(QDialog):
             self.zaver_widget.refresh_measures_summary()
         elif self.tabs.widget(index) is self.findings_widget:
             self.findings_widget.refresh()
+        elif self.tabs.widget(index) is self.prilohy_widget:
+            self._refresh_prilohy()
+
+    def _refresh_prilohy(self) -> None:
+        investigation_id = self.investigation.id if self.investigation is not None else None
+        self.prilohy_widget.refresh(
+            investigation_id,
+            zajisteni_dukazu_json=self.zajisteni_dukazu_widget.get_json(),
+            casova_osa_json=self.casova_osa_widget.get_json(),
+            ohledani_mista_json=self.ohledani_mista_widget.get_json(),
+        )
 
     def _refresh_zaver_sources(self) -> None:
         worker = self.lead_thp_worker_selector.current_person()
