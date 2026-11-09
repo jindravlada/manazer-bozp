@@ -25,6 +25,9 @@ class MuInvestigation(Base):
     source_label: Mapped[str] = mapped_column(String(250), default="")
 
     started_at: Mapped[date | None] = mapped_column(Date, nullable=True)
+    # NULL u event_time = vznik ještě nebyl do spisu převzat. Prázdný řetězec je uložené „neznámo“.
+    event_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    event_time: Mapped[str | None] = mapped_column(String(20), nullable=True)
     status: Mapped[str] = mapped_column(String(30), default=DEFAULT_MU_STATUS, nullable=False)
 
     lead_thp_worker_id: Mapped[int | None] = mapped_column("lead_person_id", Integer, nullable=True)

@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.widgets.nullable_date_edit import NullableDateEdit
+from moduly.vysetrovani_mu.ui.mu_time_edit import MuTimeLineEdit
 from core.widgets.thp_worker_selector import ThpWorkerSelector
 from moduly.vysetrovani_mu.sluzby.mu_oznameni_opatreni import format_checked_okamzita_opatreni
 from moduly.vysetrovani_mu.sluzby.mu_source_context import MuSourceContext, resolve_mu_source_context
@@ -66,7 +67,7 @@ class MuOznameniWidget(QWidget):
         else:
             self.oznameni_datum.clear_date()
 
-        self.oznameni_cas.setText(investigation.oznameni_cas or "")
+        self.oznameni_cas.set_stored_text(investigation.oznameni_cas or "")
 
         if investigation.oznameni_bezodkladne == "NE":
             self.oznameni_bezodkladne_ne.setChecked(True)
@@ -95,7 +96,7 @@ class MuOznameniWidget(QWidget):
         else:
             self.oznameni_bozp_datum.clear_date()
 
-        self.oznameni_bozp_cas.setText(investigation.oznameni_bozp_cas or "")
+        self.oznameni_bozp_cas.set_stored_text(investigation.oznameni_bozp_cas or "")
         self.op_informovany_dalsi.setChecked((investigation.opatreni_informovany_dalsi or "") == "ANO")
 
         if investigation.dalsi_postup:
@@ -108,7 +109,7 @@ class MuOznameniWidget(QWidget):
             "oznameni_kdo": self.oznameni_kdo.text().strip(),
             "oznameni_komu": self.oznameni_komu.currentText().strip(),
             "oznameni_datum": self._date_value(self.oznameni_datum),
-            "oznameni_cas": self.oznameni_cas.text().strip(),
+            "oznameni_cas": self.oznameni_cas.value_for_save(),
             "oznameni_bezodkladne": "ANO" if self.oznameni_bezodkladne_ano.isChecked() else "NE",
             "oznameni_duvod_pozde": self.oznameni_duvod_pozde.toPlainText().strip(),
             "oznameni_popis": self.oznameni_popis.toPlainText().strip(),
@@ -122,7 +123,7 @@ class MuOznameniWidget(QWidget):
             "opatreni_informovan_nadrizeny": "ANO" if self.op_informovan_nadrizeny.isChecked() else "",
             "opatreni_informovan_bozp": "ANO" if self.op_informovan_bozp.isChecked() else "",
             "oznameni_bozp_datum": self._date_value(self.oznameni_bozp_datum),
-            "oznameni_bozp_cas": self.oznameni_bozp_cas.text().strip(),
+            "oznameni_bozp_cas": self.oznameni_bozp_cas.value_for_save(),
             "opatreni_informovany_dalsi": "ANO" if self.op_informovany_dalsi.isChecked() else "",
             "dalsi_postup": self.dalsi_postup.currentText().strip(),
             "dalsi_postup_jiny": self.dalsi_postup_jiny.toPlainText().strip(),
@@ -157,8 +158,7 @@ class MuOznameniWidget(QWidget):
         self.oznameni_komu = ThpWorkerSelector()
         self.oznameni_komu.setEditable(True)
         self.oznameni_datum = NullableDateEdit()
-        self.oznameni_cas = QLineEdit()
-        self.oznameni_cas.setPlaceholderText("např. 14:35")
+        self.oznameni_cas = MuTimeLineEdit()
 
         self.oznameni_bezodkladne_ano = QRadioButton("ANO")
         self.oznameni_bezodkladne_ne = QRadioButton("NE")
@@ -232,8 +232,7 @@ class MuOznameniWidget(QWidget):
 
         f4 = QFormLayout()
         self.oznameni_bozp_datum = NullableDateEdit()
-        self.oznameni_bozp_cas = QLineEdit()
-        self.oznameni_bozp_cas.setPlaceholderText("např. 14:35")
+        self.oznameni_bozp_cas = MuTimeLineEdit()
         f4.addRow("Datum oznámení BOZP:", self.oznameni_bozp_datum)
         f4.addRow("Čas oznámení BOZP:", self.oznameni_bozp_cas)
         v4.addLayout(f4)
@@ -293,7 +292,7 @@ class MuOznameniWidget(QWidget):
             self.oznameni_datum.set_date_value(context.default_oznameni_datum)
 
         if context.default_oznameni_cas and not self.oznameni_cas.text().strip():
-            self.oznameni_cas.setText(context.default_oznameni_cas)
+            self.oznameni_cas.set_stored_text(context.default_oznameni_cas)
 
         if context.default_oznameni_popis and not self.oznameni_popis.toPlainText().strip():
             self.oznameni_popis.setPlainText(context.default_oznameni_popis)

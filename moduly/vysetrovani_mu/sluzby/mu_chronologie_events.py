@@ -10,6 +10,9 @@ def build_system_chronologie_events(
     source_id: int | None = None,
     oznameni_datum: date | None = None,
     oznameni_cas: str = "",
+    event_datum: date | None = None,
+    event_cas: str = "",
+    event_origin_from_spis: bool = False,
 ) -> list[dict]:
     events: list[dict] = []
 
@@ -25,7 +28,10 @@ def build_system_chronologie_events(
             }
         )
 
-    if source_type == SOURCE_TYPE_ACCIDENT and isinstance(source_id, int) and source_id > 0:
+    if event_origin_from_spis:
+        if event_datum is not None:
+            events.append(_event_origin_chronologie_event(event_datum, event_cas, source_type))
+    elif source_type == SOURCE_TYPE_ACCIDENT and isinstance(source_id, int) and source_id > 0:
         accident_event = _accident_chronologie_event(source_id)
         if accident_event is not None:
             events.append(accident_event)
@@ -43,6 +49,21 @@ def build_system_chronologie_events(
         )
 
     return events
+
+
+def _event_origin_chronologie_event(event_datum: date, event_cas: str, source_type: str) -> dict:
+    if source_type == SOURCE_TYPE_ACCIDENT:
+        popis = "Vznik události podle zdrojového záznamu."
+    else:
+        popis = "Vznik události."
+    return {
+        "id": "system:event_origin",
+        "datum": event_datum.isoformat(),
+        "cas": (event_cas or "").strip(),
+        "typ": "Událost",
+        "popis": popis,
+        "source": "system",
+    }
 
 
 def _accident_chronologie_event(source_id: int) -> dict | None:

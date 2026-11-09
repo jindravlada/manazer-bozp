@@ -945,6 +945,9 @@ def _ensure_mu_investigation_columns() -> None:
         "opatreni_informovany_dalsi": "opatreni_informovany_dalsi VARCHAR(10) DEFAULT ''",
         "dalsi_postup": "dalsi_postup VARCHAR(250) DEFAULT ''",
         "dalsi_postup_jiny": "dalsi_postup_jiny TEXT DEFAULT ''",
+        # Bez DEFAULT: existující řádky zůstávají NULL, dokud spis vznik události neuloží.
+        "event_date": "event_date DATE",
+        "event_time": "event_time VARCHAR(20)",
     }
     for column_name, column_sql in additions.items():
         if column_name not in columns:

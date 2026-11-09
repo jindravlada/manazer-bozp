@@ -43,6 +43,7 @@ from moduly.vysetrovani_mu.constants import (
     SOURCE_TYPES,
 )
 from moduly.vysetrovani_mu.ui.mu_findings_widget import MuFindingsWidget
+from moduly.vysetrovani_mu.ui.mu_time_edit import MuTimeLineEdit
 from moduly.vysetrovani_mu.ui.mu_investigation_source_panel import MuInvestigationSourcePanel
 from moduly.vysetrovani_mu.ui.mu_ishikawa_widget import MuIshikawaWidget
 from moduly.vysetrovani_mu.ui.mu_ohledani_mista_widget import MuOhledaniMistaWidget
@@ -62,7 +63,10 @@ from core.widgets.editor_dialog_controller import (
 )
 from moduly.vysetrovani_mu.sluzby.mu_investigation_service import mu_investigation_service
 from moduly.vysetrovani_mu.ui.mu_zajisteni_dukazu_widget import MuZajisteniDukazuWidget
-from moduly.vysetrovani_mu.sluzby.mu_source_context import resolve_mu_source_context
+from moduly.vysetrovani_mu.sluzby.mu_source_context import (
+    resolve_mu_event_origin,
+    resolve_mu_source_context,
+)
 from moduly.vysetrovani_mu.sluzby.mu_investigation_check import InvestigationCheckResult
 
 _SAVE_CLOSE_LABEL = "Uložit a zavřít"
@@ -128,6 +132,8 @@ class MuInvestigationDialog(QDialog):
         layout.addLayout(self._build_footer())
 
         self.started_at_edit.dateChanged.connect(self._sync_casova_osa_started_at)
+        self.event_date_edit.dateChanged.connect(self._sync_casova_osa_event_origin)
+        self.event_time_edit.textChanged.connect(self._sync_casova_osa_event_origin)
         self.oznameni_widget.oznameni_datum.dateChanged.connect(self._sync_casova_osa_oznameni)
         self.oznameni_widget.oznameni_cas.textChanged.connect(self._sync_casova_osa_oznameni)
         self.zajisteni_dukazu_widget.dukazy_datum.dateChanged.connect(self._sync_casova_osa_zajisteni)
@@ -152,6 +158,13 @@ class MuInvestigationDialog(QDialog):
                 investigation.source_label or "",
             )
             self.started_at_edit.set_date_value(investigation.started_at)
+            self._set_event_origin_widgets(
+                *resolve_mu_event_origin(
+                    investigation,
+                    investigation.source_type or DEFAULT_SOURCE_TYPE,
+                    investigation.source_id,
+                )
+            )
             self.status_combo.setCurrentText(investigation.status or DEFAULT_MU_STATUS)
             self.lead_thp_worker_selector.set_person_id(investigation.lead_thp_worker_id)
             self.short_description_edit.setPlainText(investigation.short_description or "")
@@ -257,6 +270,8 @@ class MuInvestigationDialog(QDialog):
 
     def _persist(self) -> bool:
         """Společné uložení pro Uložit, Uložit a zavřít i dotaz při zavření."""
+        if self._reject_invalid_times():
+            return False
         self._warn_unresolved_findings()
         data = self.get_data()
         try:
@@ -485,6 +500,17 @@ class MuInvestigationDialog(QDialog):
         self.started_at_edit = NullableDateEdit()
         self.started_at_edit.set_date_value(date.today())
 
+        self.event_date_edit = NullableDateEdit()
+        self.event_time_edit = MuTimeLineEdit()
+        event_origin_row = QWidget()
+        event_origin_layout = QHBoxLayout(event_origin_row)
+        event_origin_layout.setContentsMargins(0, 0, 0, 0)
+        event_origin_layout.setSpacing(8)
+        event_origin_layout.addWidget(QLabel("Datum"))
+        event_origin_layout.addWidget(self.event_date_edit, 1)
+        event_origin_layout.addWidget(QLabel("Čas"))
+        event_origin_layout.addWidget(self.event_time_edit, 1)
+
         self.status_combo = QComboBox()
         self.status_combo.addItems([
             MU_STATUS_PROBIHA,
@@ -503,6 +529,7 @@ class MuInvestigationDialog(QDialog):
         form.addRow("Charakter události:", self.event_character_combo)
         form.addRow("Zdroj podnětu:", self.source_type_combo)
         form.addRow("Zdroj:", self.source_selector)
+        form.addRow("Vznik události:", event_origin_row)
         form.addRow("Šetření zahájeno:", self.started_at_edit)
         form.addRow("Stav:", self.status_combo)
         form.addRow("Vedoucí šetření:", self.lead_thp_worker_selector)
@@ -557,6 +584,9 @@ class MuInvestigationDialog(QDialog):
             self._on_source_type_changed()
             return
 
+        self._set_event_origin_widgets(
+            *resolve_mu_event_origin(None, SOURCE_TYPE_ACCIDENT, accident_id)
+        )
         self._set_event_character(EVENT_CHARACTER_URAZ)
         self._set_source_type(SOURCE_TYPE_ACCIDENT)
 
@@ -612,14 +642,15 @@ class MuInvestigationDialog(QDialog):
             investigation_id,
             event_number=context.event_number,
         )
+        event_datum, event_cas = self._form_event_origin()
         self.casova_osa_widget.set_context(
             investigation_id,
             event_number=context.event_number,
             started_at=self.started_at_edit.get_date(),
             source_type=source_type,
             source_id=source_id,
-            event_datum=context.event_datum,
-            event_cas=context.event_cas,
+            event_datum=event_datum,
+            event_cas=event_cas,
             **self._casova_osa_oznameni_context(),
         )
         self.casova_osa_widget.set_zajisteni_context(**self._casova_osa_zajisteni_context())
@@ -635,8 +666,39 @@ class MuInvestigationDialog(QDialog):
             "oznameni_cas": oznameni.get("oznameni_cas") or "",
         }
 
+    def _form_event_origin(self) -> tuple[date | None, str]:
+        return self.event_date_edit.get_date(), self.event_time_edit.value_for_save()
+
+    def _set_event_origin_widgets(self, event_date: date | None, event_time: str) -> None:
+        self.event_date_edit.set_date_value(event_date)
+        self.event_time_edit.set_stored_text(event_time or "")
+
+    def _reject_invalid_times(self) -> bool:
+        blocking = [editor for editor in self.findChildren(MuTimeLineEdit) if editor.blocks_save()]
+        if not blocking:
+            return False
+        target = blocking[0]
+        page = target
+        while page is not None and self.tabs.indexOf(page) < 0:
+            page = page.parentWidget()
+        if page is not None:
+            self.tabs.setCurrentWidget(page)
+        target.setFocus()
+        QMessageBox.warning(
+            self,
+            self.windowTitle(),
+            "Čas není ve správném tvaru.\n\n"
+            "Červeně označené pole opravte na HH:MM, "
+            "u synchronizace zařízení na HH:MM:SS, nebo ho vymažte.\n"
+            "Oranžově označený původní zápis zůstane uložený, dokud ho nezměníte.",
+        )
+        return True
+
     def _sync_casova_osa_started_at(self) -> None:
         self.casova_osa_widget.set_started_at(self.started_at_edit.get_date())
+
+    def _sync_casova_osa_event_origin(self) -> None:
+        self.casova_osa_widget.set_event_origin(*self._form_event_origin())
 
     def _sync_casova_osa_oznameni(self) -> None:
         self.casova_osa_widget.set_oznameni_context(**self._casova_osa_oznameni_context())
@@ -645,9 +707,9 @@ class MuInvestigationDialog(QDialog):
         widget = self.zajisteni_dukazu_widget
         return {
             "datum": widget.dukazy_datum.get_date(),
-            "cas": widget.dukazy_cas.text().strip(),
+            "cas": widget.dukazy_cas.value_for_save(),
             "datum_fotek": widget.dukazy_datum_fotek.get_date(),
-            "cas_fotek": widget.dukazy_cas_fotek.text().strip(),
+            "cas_fotek": widget.dukazy_cas_fotek.value_for_save(),
         }
 
     def _sync_casova_osa_zajisteni(self) -> None:
@@ -844,12 +906,6 @@ class MuInvestigationDialog(QDialog):
 
     def build_check_snapshot(self) -> dict:
         data = self.get_data()
-        context = resolve_mu_source_context(
-            self._current_source_type(),
-            self._current_source_id(),
-            self._current_source_label(),
-            self.investigation.number if self.investigation is not None else "",
-        )
 
         investigation_id = self.investigation.id if self.investigation is not None else None
         findings = []
@@ -909,8 +965,8 @@ class MuInvestigationDialog(QDialog):
             "lead_thp_worker_id": data.get("lead_thp_worker_id"),
             "lead_thp_worker_name": data.get("lead_thp_worker_name"),
             "conclusion": data.get("conclusion"),
-            "event_datum": context.event_datum,
-            "event_cas": context.event_cas,
+            "event_datum": data.get("event_date"),
+            "event_cas": data.get("event_time") or "",
             "oznameni": {key: data.get(key) for key in oznameni_keys},
             "zajisteni": _load_json(data.get("zajisteni_dukazu_json", "")),
             "svedci": _load_json(data.get("svedci_json", "")),
@@ -930,6 +986,8 @@ class MuInvestigationDialog(QDialog):
             "source_id": self._current_source_id(),
             "source_label": self._current_source_label(),
             "started_at": self.started_at_edit.get_date(),
+            "event_date": self.event_date_edit.get_date(),
+            "event_time": self.event_time_edit.value_for_save(),
             "status": self.status_combo.currentText(),
             "lead_thp_worker_id": self.lead_thp_worker_selector.current_person_id(),
             "lead_thp_worker_name": worker.display_name if worker is not None else self.lead_thp_worker_selector.currentText().strip(),

@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
 from core.services.attachment_service import attachment_service
 from core.shared.constants import ENTITY_MU_INVESTIGATION
 from core.widgets.thp_worker_selector import ThpWorkerSelector
+from moduly.vysetrovani_mu.ui.mu_time_edit import MuTimeLineEdit
 from core.widgets.workplace_selector import WorkplaceSelector
 
 
@@ -64,8 +65,8 @@ class MuOhledaniMistaWidget(QWidget):
             "ohledani_zapsal": self.ohledani_zapsal.currentText().strip() if hasattr(self.ohledani_zapsal, "currentText") else "",
             "ohledani_provoz": self.ohledani_provoz.currentText().strip() if hasattr(self.ohledani_provoz, "currentText") else self.ohledani_provoz.text().strip(),
             "ohledani_provedli": self.ohledani_provedli.toPlainText().strip(),
-            "ohledani_zahajeni": self.ohledani_zahajeni.text().strip(),
-            "ohledani_ukonceni": self.ohledani_ukonceni.text().strip(),
+            "ohledani_zahajeni": self.ohledani_zahajeni.value_for_save(),
+            "ohledani_ukonceni": self.ohledani_ukonceni.value_for_save(),
             "ohledani_popis_mista": self.ohledani_popis_mista.toPlainText().strip(),
             "ohledani_priloha": self.ohledani_priloha.text().strip(),
         }
@@ -84,8 +85,10 @@ class MuOhledaniMistaWidget(QWidget):
             self.ohledani_provoz.setCurrentText(saved.get("ohledani_provoz", ""))
         self.ohledani_provedli = QTextEdit()
         self.ohledani_provedli.setPlainText(saved.get("ohledani_provedli", ""))
-        self.ohledani_zahajeni = QLineEdit(saved.get("ohledani_zahajeni", ""))
-        self.ohledani_ukonceni = QLineEdit(saved.get("ohledani_ukonceni", ""))
+        self.ohledani_zahajeni = MuTimeLineEdit()
+        self.ohledani_zahajeni.set_stored_text(saved.get("ohledani_zahajeni", ""))
+        self.ohledani_ukonceni = MuTimeLineEdit()
+        self.ohledani_ukonceni.set_stored_text(saved.get("ohledani_ukonceni", ""))
         self.ohledani_popis_mista = QTextEdit()
         self.ohledani_popis_mista.setPlainText(saved.get("ohledani_popis_mista", ""))
         self.ohledani_priloha = QLineEdit(saved.get("ohledani_priloha", ""))
@@ -98,8 +101,8 @@ class MuOhledaniMistaWidget(QWidget):
         if saved.get("ohledani_provoz"):
             self.ohledani_provoz.setCurrentText(saved.get("ohledani_provoz", ""))
         self.ohledani_provedli.setPlainText(saved.get("ohledani_provedli", ""))
-        self.ohledani_zahajeni.setText(saved.get("ohledani_zahajeni", ""))
-        self.ohledani_ukonceni.setText(saved.get("ohledani_ukonceni", ""))
+        self.ohledani_zahajeni.set_stored_text(saved.get("ohledani_zahajeni", ""))
+        self.ohledani_ukonceni.set_stored_text(saved.get("ohledani_ukonceni", ""))
         self.ohledani_popis_mista.setPlainText(saved.get("ohledani_popis_mista", ""))
         self.ohledani_priloha.setText(saved.get("ohledani_priloha", ""))
 

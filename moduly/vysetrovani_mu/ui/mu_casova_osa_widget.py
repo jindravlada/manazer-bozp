@@ -32,6 +32,12 @@ from core.utils.casove_rozdily import (
 )
 from moduly.vysetrovani_mu.sluzby.mu_chronologie_events import build_system_chronologie_events
 from moduly.vysetrovani_mu.ui.mu_chronologie_entry_dialog import MuChronologieEntryDialog
+from moduly.vysetrovani_mu.ui.mu_time_edit import (
+    PRECISION_HHMMSS,
+    MuTimeLineEdit,
+    canonical_time,
+    clock_for_instant,
+)
 
 
 class MuCasovaOsaWidget(QWidget):
@@ -55,6 +61,7 @@ class MuCasovaOsaWidget(QWidget):
         self._source_id: int | None = None
         self._event_datum: date | None = None
         self._event_cas: str = ""
+        self._event_origin_explicit = False
         self._oznameni_datum: date | None = None
         self._oznameni_cas: str = ""
         self._zajisteni_datum: date | None = None
@@ -88,10 +95,18 @@ class MuCasovaOsaWidget(QWidget):
         self._source_id = source_id
         self._event_datum = event_datum
         self._event_cas = (event_cas or "").strip()
+        self._event_origin_explicit = True
         self._oznameni_datum = oznameni_datum
         self._oznameni_cas = (oznameni_cas or "").strip()
         number = event_number.strip()
         self._number_slug = str(number).replace("/", "-").replace("\\", "-").strip() or "bez-cisla"
+        self._refresh_chronologie_table()
+        self._refresh_casove_rozdily()
+
+    def set_event_origin(self, event_datum: date | None, event_cas: str = "") -> None:
+        self._event_datum = event_datum
+        self._event_cas = (event_cas or "").strip()
+        self._event_origin_explicit = True
         self._refresh_chronologie_table()
         self._refresh_casove_rozdily()
 
@@ -145,13 +160,13 @@ class MuCasovaOsaWidget(QWidget):
         return {
             "caszarizeni_fotodokumentace": self._radio_choice_value(self.caszarizeni_fotodokumentace),
             "caszarizeni_reference_source": self.caszarizeni_reference_source.currentText().strip(),
-            "caszarizeni_srovnani_cas": self.caszarizeni_srovnani_cas.text().strip(),
+            "caszarizeni_srovnani_cas": self.caszarizeni_srovnani_cas.value_for_save(),
             "caszarizeni_visible_rows": getattr(self, "caszarizeni_visible_rows", 1),
             "caszarizeni_rows": [
                 {
                     "zarizeni": getattr(self, f"caszarizeni_{i}_zarizeni").text().strip(),
-                    "cas_zarizeni": getattr(self, f"caszarizeni_{i}_cas_zarizeni").text().strip(),
-                    "cas_mobil": getattr(self, f"caszarizeni_{i}_cas_mobil").text().strip(),
+                    "cas_zarizeni": getattr(self, f"caszarizeni_{i}_cas_zarizeni").value_for_save(),
+                    "cas_mobil": getattr(self, f"caszarizeni_{i}_cas_mobil").value_for_save(),
                     "rozdil": getattr(self, f"caszarizeni_{i}_rozdil").text().strip(),
                     "srovnany_cas": getattr(self, f"caszarizeni_{i}_srovnany_cas").text().strip(),
                     "foto": getattr(self, f"caszarizeni_{i}_foto").text().strip(),
@@ -168,16 +183,19 @@ class MuCasovaOsaWidget(QWidget):
         self.caszarizeni_reference_source = QComboBox()
         self.caszarizeni_reference_source.addItem("Mobil / referenční čas v řádcích")
         self._saved_caszarizeni_reference_source = saved.get("caszarizeni_reference_source", "")
-        self.caszarizeni_srovnani_cas = QLineEdit()
-        self.caszarizeni_srovnani_cas.setPlaceholderText("např. 14:35")
-        self.caszarizeni_srovnani_cas.setText(saved.get("caszarizeni_srovnani_cas", ""))
+        self.caszarizeni_srovnani_cas = MuTimeLineEdit(PRECISION_HHMMSS)
+        self.caszarizeni_srovnani_cas.set_stored_text(saved.get("caszarizeni_srovnani_cas", ""))
         self.caszarizeni_rows: list[list[QWidget]] = []
         cas_rows = saved.get("caszarizeni_rows", []) or []
         for i in range(1, 11):
             data = cas_rows[i - 1] if i <= len(cas_rows) else {}
             setattr(self, f"caszarizeni_{i}_zarizeni", QLineEdit(data.get("zarizeni", "")))
-            setattr(self, f"caszarizeni_{i}_cas_zarizeni", QLineEdit(data.get("cas_zarizeni", "")))
-            setattr(self, f"caszarizeni_{i}_cas_mobil", QLineEdit(data.get("cas_mobil", "")))
+            cas_zarizeni = MuTimeLineEdit(PRECISION_HHMMSS)
+            cas_mobil = MuTimeLineEdit(PRECISION_HHMMSS)
+            cas_zarizeni.set_stored_text(data.get("cas_zarizeni", ""))
+            cas_mobil.set_stored_text(data.get("cas_mobil", ""))
+            setattr(self, f"caszarizeni_{i}_cas_zarizeni", cas_zarizeni)
+            setattr(self, f"caszarizeni_{i}_cas_mobil", cas_mobil)
             setattr(self, f"caszarizeni_{i}_rozdil", QLineEdit(data.get("rozdil", "")))
             setattr(self, f"caszarizeni_{i}_srovnany_cas", QLineEdit(data.get("srovnany_cas", "")))
             setattr(self, f"caszarizeni_{i}_foto", QLineEdit(data.get("foto", "")))
@@ -202,14 +220,14 @@ class MuCasovaOsaWidget(QWidget):
             if self.caszarizeni_reference_source.findText(ref_source) < 0:
                 self.caszarizeni_reference_source.addItem(ref_source)
             self.caszarizeni_reference_source.setCurrentText(ref_source)
-        self.caszarizeni_srovnani_cas.setText(cas_saved.get("caszarizeni_srovnani_cas", ""))
+        self.caszarizeni_srovnani_cas.set_stored_text(cas_saved.get("caszarizeni_srovnani_cas", ""))
 
         cas_rows = cas_saved.get("caszarizeni_rows", []) or []
         for i in range(1, 11):
             data = cas_rows[i - 1] if i <= len(cas_rows) else {}
             getattr(self, f"caszarizeni_{i}_zarizeni").setText(data.get("zarizeni", ""))
-            getattr(self, f"caszarizeni_{i}_cas_zarizeni").setText(data.get("cas_zarizeni", ""))
-            getattr(self, f"caszarizeni_{i}_cas_mobil").setText(data.get("cas_mobil", ""))
+            getattr(self, f"caszarizeni_{i}_cas_zarizeni").set_stored_text(data.get("cas_zarizeni", ""))
+            getattr(self, f"caszarizeni_{i}_cas_mobil").set_stored_text(data.get("cas_mobil", ""))
             getattr(self, f"caszarizeni_{i}_rozdil").setText(data.get("rozdil", ""))
             getattr(self, f"caszarizeni_{i}_srovnany_cas").setText(data.get("srovnany_cas", ""))
             getattr(self, f"caszarizeni_{i}_foto").setText(data.get("foto", ""))
@@ -260,9 +278,10 @@ class MuCasovaOsaWidget(QWidget):
         return group
 
     def _reference_event_datetime(self) -> datetime | None:
-        if self._event_datum is None or not self._event_cas:
+        clock = clock_for_instant(self._event_cas)
+        if self._event_datum is None or not clock:
             return None
-        return datetime_from_date_and_time(self._event_datum, self._event_cas)
+        return datetime_from_date_and_time(self._event_datum, clock)
 
     def _set_casovy_rozdil_label(
         self,
@@ -291,9 +310,15 @@ class MuCasovaOsaWidget(QWidget):
             return
 
         reference_dt = self._reference_event_datetime()
-        oznameni_dt = datetime_from_date_and_time(self._oznameni_datum, self._oznameni_cas)
-        zajisteni_dt = datetime_from_date_and_time(self._zajisteni_datum, self._zajisteni_cas)
-        foto_dt = datetime_from_date_and_time(self._zajisteni_datum_fotek, self._zajisteni_cas_fotek)
+        oznameni_dt = datetime_from_date_and_time(
+            self._oznameni_datum, clock_for_instant(self._oznameni_cas)
+        )
+        zajisteni_dt = datetime_from_date_and_time(
+            self._zajisteni_datum, clock_for_instant(self._zajisteni_cas)
+        )
+        foto_dt = datetime_from_date_and_time(
+            self._zajisteni_datum_fotek, clock_for_instant(self._zajisteni_cas_fotek)
+        )
 
         oznameni_rozdil = format_od_udalosti_rozdil(
             reference_dt,
@@ -394,8 +419,8 @@ class MuCasovaOsaWidget(QWidget):
             srovnany = getattr(self, f"caszarizeni_{i}_srovnany_cas")
             foto = getattr(self, f"caszarizeni_{i}_foto")
             zarizeni.setPlaceholderText("např. kamera / lokomotiva")
-            cas_zarizeni.setPlaceholderText("čas zařízení")
-            cas_mobil.setPlaceholderText("referenční čas")
+            cas_zarizeni.setPlaceholderText("HH:MM:SS")
+            cas_mobil.setPlaceholderText("HH:MM:SS")
             rozdil.setPlaceholderText("rozdíl")
             srovnany.setPlaceholderText("přepočet")
             foto.setPlaceholderText("příloha")
@@ -516,7 +541,7 @@ class MuCasovaOsaWidget(QWidget):
         self._refresh_caszarizeni_reference_choices()
 
     def _recalculate_caszarizeni(self) -> None:
-        srovnani = self._parse_time_minutes(self.caszarizeni_srovnani_cas.text())
+        srovnani = self._parse_hhmmss(self.caszarizeni_srovnani_cas.text())
         ref_row = self._caszarizeni_reference_row()
         if srovnani is None:
             base_ref_time = None
@@ -551,8 +576,8 @@ class MuCasovaOsaWidget(QWidget):
         self._recalculate_caszarizeni()
 
     def _caszarizeni_row_offset(self, row: int) -> int | None:
-        cas_zarizeni = self._parse_time_minutes(getattr(self, f"caszarizeni_{row}_cas_zarizeni").text())
-        cas_ref = self._parse_time_minutes(getattr(self, f"caszarizeni_{row}_cas_mobil").text())
+        cas_zarizeni = self._parse_hhmmss(getattr(self, f"caszarizeni_{row}_cas_zarizeni").text())
+        cas_ref = self._parse_hhmmss(getattr(self, f"caszarizeni_{row}_cas_mobil").text())
         if cas_zarizeni is None or cas_ref is None:
             return None
         return cas_zarizeni - cas_ref
@@ -657,6 +682,9 @@ class MuCasovaOsaWidget(QWidget):
             source_id=self._source_id,
             oznameni_datum=self._oznameni_datum,
             oznameni_cas=self._oznameni_cas,
+            event_datum=self._event_datum,
+            event_cas=self._event_cas,
+            event_origin_from_spis=self._event_origin_explicit,
         )
 
     def _merged_chronologie_entries(self) -> list[dict]:
@@ -690,7 +718,9 @@ class MuCasovaOsaWidget(QWidget):
 
     def _chronologie_sort_key(self, entry: dict) -> tuple:
         date_key = entry.get("datum") or "9999-12-31"
-        time_key = self._parse_time_minutes(entry.get("cas")) or 24 * 3600
+        time_key = self._parse_known_clock(entry.get("cas")) 
+        if time_key is None:
+            time_key = 24 * 3600
         return (date_key, time_key, entry.get("typ") or "", entry.get("id") or "")
 
     def _refresh_chronologie_table(self) -> None:
@@ -744,26 +774,24 @@ class MuCasovaOsaWidget(QWidget):
                 child.setChecked(True)
                 return
 
-    def _parse_time_minutes(self, text: str) -> int | None:
-        text = (text or "").strip()
-        if not text:
+    def _parse_hhmmss(self, text: str) -> int | None:
+        clock = canonical_time(text, PRECISION_HHMMSS)
+        if not clock:
             return None
-        text = text.replace(".", ":")
-        parts = text.split(":")
-        try:
-            if len(parts) == 1:
-                h = int(parts[0])
-                m = 0
-                s = 0
-            else:
-                h = int(parts[0])
-                m = int(parts[1])
-                s = int(parts[2]) if len(parts) > 2 else 0
-            if h < 0 or h > 23 or m < 0 or m > 59 or s < 0 or s > 59:
-                return None
-            return h * 3600 + m * 60 + s
-        except Exception:
+        hour, minute, second = (int(part) for part in clock.split(":"))
+        return hour * 3600 + minute * 60 + second
+
+    def _parse_known_clock(self, text: str) -> int | None:
+        clock = clock_for_instant(text)
+        if not clock:
             return None
+        parts = [int(part) for part in clock.split(":")]
+        if len(parts) == 2:
+            hour, minute = parts
+            second = 0
+        else:
+            hour, minute, second = parts
+        return hour * 3600 + minute * 60 + second
 
     def _format_time_minutes(self, seconds: int) -> str:
         if seconds is None:

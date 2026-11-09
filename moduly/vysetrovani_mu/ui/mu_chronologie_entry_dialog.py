@@ -4,12 +4,14 @@ from PySide6.QtWidgets import (
     QDialog,
     QFormLayout,
     QLineEdit,
+    QMessageBox,
     QTextEdit,
     QVBoxLayout,
 )
 
 from core.widgets.dialog_utils import create_save_cancel_box
 from core.widgets.nullable_date_edit import NullableDateEdit
+from moduly.vysetrovani_mu.ui.mu_time_edit import MuTimeLineEdit
 
 
 class MuChronologieEntryDialog(QDialog):
@@ -30,8 +32,7 @@ class MuChronologieEntryDialog(QDialog):
         form = QFormLayout()
 
         self.datum_edit = NullableDateEdit()
-        self.cas_edit = QLineEdit()
-        self.cas_edit.setPlaceholderText("např. 14:35")
+        self.cas_edit = MuTimeLineEdit()
         self.typ_edit = QLineEdit()
         self.typ_edit.setPlaceholderText("např. Oznámení, Ohledání místa")
         self.popis_edit = QTextEdit()
@@ -52,17 +53,28 @@ class MuChronologieEntryDialog(QDialog):
         if entry is not None:
             if entry.get("datum"):
                 self.datum_edit.set_date_iso(entry.get("datum"))
-            self.cas_edit.setText(entry.get("cas") or "")
+            self.cas_edit.set_stored_text(entry.get("cas") or "")
             self.typ_edit.setText(entry.get("typ") or "")
             self.popis_edit.setPlainText(entry.get("popis") or "")
         elif default_date is not None:
             self.datum_edit.set_date_value(default_date)
 
+    def accept(self) -> None:
+        if self.cas_edit.blocks_save():
+            QMessageBox.warning(
+                self,
+                self.windowTitle(),
+                "Čas zadejte ve tvaru HH:MM, nebo pole vymažte.",
+            )
+            self.cas_edit.setFocus()
+            return
+        super().accept()
+
     def get_entry(self) -> dict:
         date_value = self.datum_edit.get_date()
         return {
             "datum": date_value.isoformat() if date_value is not None else "",
-            "cas": self.cas_edit.text().strip(),
+            "cas": self.cas_edit.value_for_save(),
             "typ": self.typ_edit.text().strip(),
             "popis": self.popis_edit.toPlainText().strip(),
         }

@@ -15,6 +15,7 @@ from moduly.vysetrovani_mu.constants import (
     SOURCE_TYPES_WITH_RECORD,
 )
 from moduly.vysetrovani_mu.sluzby.mu_chronologie_events import build_system_chronologie_events
+from moduly.vysetrovani_mu.ui.mu_time_edit import clock_for_instant
 from moduly.vysetrovani_mu.ui.ishikawa_cause_chain import (
     build_rejected_cause_chain_warnings,
     chain_cause_label,
@@ -747,6 +748,9 @@ def _check_casova_osa(snapshot: dict) -> list[InvestigationCheckResult]:
         source_id=snapshot.get("source_id"),
         oznameni_datum=oznameni.get("oznameni_datum"),
         oznameni_cas=_text(oznameni.get("oznameni_cas")),
+        event_datum=snapshot.get("event_datum"),
+        event_cas=_text(snapshot.get("event_cas")),
+        event_origin_from_spis=True,
     )
     manual_events = casova_osa.get("chronologie") or []
     if not system_events and not manual_events:
@@ -760,10 +764,18 @@ def _check_casova_osa(snapshot: dict) -> list[InvestigationCheckResult]:
             )
         )
 
-    reference_dt = datetime_from_date_and_time(snapshot.get("event_datum"), _text(snapshot.get("event_cas")))
-    oznameni_dt = datetime_from_date_and_time(oznameni.get("oznameni_datum"), _text(oznameni.get("oznameni_cas")))
-    zajisteni_dt = datetime_from_date_and_time(_parse_date(zajisteni.get("datum")), _text(zajisteni.get("cas")))
-    foto_dt = datetime_from_date_and_time(_parse_date(zajisteni.get("datum_fotek")), _text(zajisteni.get("cas_fotek")))
+    reference_dt = datetime_from_date_and_time(
+        snapshot.get("event_datum"), clock_for_instant(_text(snapshot.get("event_cas")))
+    )
+    oznameni_dt = datetime_from_date_and_time(
+        oznameni.get("oznameni_datum"), clock_for_instant(_text(oznameni.get("oznameni_cas")))
+    )
+    zajisteni_dt = datetime_from_date_and_time(
+        _parse_date(zajisteni.get("datum")), clock_for_instant(_text(zajisteni.get("cas")))
+    )
+    foto_dt = datetime_from_date_and_time(
+        _parse_date(zajisteni.get("datum_fotek")), clock_for_instant(_text(zajisteni.get("cas_fotek")))
+    )
 
     timeline_issues: list[str] = []
     for label, target_dt, pred_text in (

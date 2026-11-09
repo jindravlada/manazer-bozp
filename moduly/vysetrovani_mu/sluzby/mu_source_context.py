@@ -42,6 +42,27 @@ def _normalize_time_text(value) -> str:
     return text
 
 
+def resolve_mu_event_origin(
+    investigation,
+    source_type: str,
+    source_id: int | None,
+) -> tuple[date | None, str]:
+    """Okamžik vzniku události pro Spis, časovou osu i kontrolu spisu.
+
+    Uložený čas je i prázdný řetězec. NULL znamená starý záznam před převzetím:
+    u úrazu se zdroj jen zobrazí. Neznámý čas se nedoplňuje půlnocí.
+    """
+    if investigation is not None and getattr(investigation, "event_time", None) is not None:
+        event_date = getattr(investigation, "event_date", None)
+        event_time = str(getattr(investigation, "event_time", "") or "").strip()
+        return event_date, event_time
+
+    if source_type == SOURCE_TYPE_ACCIDENT:
+        context = _context_from_accident(source_id)
+        return context.event_datum, context.event_cas
+    return None, ""
+
+
 def resolve_mu_source_context(
     source_type: str,
     source_id: int | None,

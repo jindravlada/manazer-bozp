@@ -18,6 +18,7 @@ from moduly.vysetrovani_mu.constants import (
 from moduly.vysetrovani_mu.modely.mu_investigation import MuInvestigation
 from moduly.vysetrovani_mu.sluzby.mu_chronologie_events import build_system_chronologie_events
 from moduly.vysetrovani_mu.sluzby.mu_investigation_service import mu_investigation_service
+from moduly.vysetrovani_mu.sluzby.mu_source_context import resolve_mu_event_origin
 
 
 def _parse_json(raw: str | None) -> dict:
@@ -216,12 +217,16 @@ class AccidentExportContext:
         mu = self.mu_investigation
         casova = _parse_json(mu.casova_osa_json)
         manual_entries = casova.get("chronologie", []) or []
+        event_datum, event_cas = resolve_mu_event_origin(mu, mu.source_type or "", mu.source_id)
         system_entries = build_system_chronologie_events(
             started_at=mu.started_at,
             source_type=mu.source_type or SOURCE_TYPE_ACCIDENT,
             source_id=mu.source_id,
             oznameni_datum=mu.oznameni_datum,
             oznameni_cas=mu.oznameni_cas,
+            event_datum=event_datum,
+            event_cas=event_cas,
+            event_origin_from_spis=True,
         )
         merged = list(system_entries) + list(manual_entries)
         if not merged:

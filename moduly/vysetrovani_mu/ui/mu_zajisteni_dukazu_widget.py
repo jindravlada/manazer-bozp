@@ -9,7 +9,6 @@ from PySide6.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
     QLabel,
-    QLineEdit,
     QMessageBox,
     QPushButton,
     QRadioButton,
@@ -24,6 +23,7 @@ from core.shared.constants import ENTITY_MU_INVESTIGATION
 from core.ui.photo_picker_dialog import PhotoPickerDialog
 from core.widgets.attachment_widget import AttachmentWidget
 from core.widgets.nullable_date_edit import NullableDateEdit
+from moduly.vysetrovani_mu.ui.mu_time_edit import MuTimeLineEdit
 from core.widgets.thp_worker_selector import ThpWorkerSelector
 from moduly.vysetrovani_mu.sluzby.mu_source_context import MuSourceContext
 
@@ -65,7 +65,7 @@ class MuZajisteniDukazuWidget(QWidget):
         if context.default_oznameni_datum and self.dukazy_datum.get_date() is None:
             self.dukazy_datum.set_date_value(context.default_oznameni_datum)
         if context.default_oznameni_cas and not self.dukazy_cas.text().strip():
-            self.dukazy_cas.setText(context.default_oznameni_cas)
+            self.dukazy_cas.set_stored_text(context.default_oznameni_cas)
         if context.default_oznameni_komu and not self.dukazy_provedl.currentText().strip():
             provedl = context.default_oznameni_komu
             index = self.dukazy_provedl.findText(provedl)
@@ -76,7 +76,7 @@ class MuZajisteniDukazuWidget(QWidget):
         if context.default_oznameni_datum and self.dukazy_datum_fotek.get_date() is None:
             self.dukazy_datum_fotek.set_date_value(context.default_oznameni_datum)
         if context.default_oznameni_cas and not self.dukazy_cas_fotek.text().strip():
-            self.dukazy_cas_fotek.setText(context.default_oznameni_cas)
+            self.dukazy_cas_fotek.set_stored_text(context.default_oznameni_cas)
 
     def load_json(self, raw_json: str) -> None:
         self._loaded_from_record = True
@@ -92,7 +92,7 @@ class MuZajisteniDukazuWidget(QWidget):
     def get_data(self) -> dict:
         return {
             "datum": self._date_to_json(self.dukazy_datum),
-            "cas": self.dukazy_cas.text().strip(),
+            "cas": self.dukazy_cas.value_for_save(),
             "provedl": self.dukazy_provedl.currentText().strip(),
             "presne_misto": self.dukazy_presne_misto_text.toPlainText().strip(),
             "stav_povrchu": self.dukazy_stav_povrchu_text.toPlainText().strip(),
@@ -105,10 +105,10 @@ class MuZajisteniDukazuWidget(QWidget):
             "fotky": dict(self.dukazy_photo_paths),
             "nacrt_porizen": self.dukazy_nacrt_porizen.isChecked(),
             "datum_fotek": self._date_to_json(self.dukazy_datum_fotek),
-            "cas_fotek": self.dukazy_cas_fotek.text().strip(),
+            "cas_fotek": self.dukazy_cas_fotek.value_for_save(),
             "kamerovy_zaznam": self._radio_choice_value(self.dukazy_kamerovy_zaznam_ano_ne),
             "dochazka_datum": self._date_to_json(self.dukazy_dochazka_datum),
-            "dochazka_cas": self.dukazy_dochazka_cas.text().strip(),
+            "dochazka_cas": self.dukazy_dochazka_cas.value_for_save(),
             "pracovni_postup": self._radio_choice_value(self.dukazy_pracovni_postup_ano_ne),
             "provozni_dokumentace": self.dukazy_provozni_dokumentace_text.toPlainText().strip(),
             "provozni_zaznamy": self.dukazy_provozni_zaznamy_text.toPlainText().strip(),
@@ -122,10 +122,9 @@ class MuZajisteniDukazuWidget(QWidget):
         if saved.get("datum"):
             self._set_date_widget(self.dukazy_datum, saved.get("datum"))
 
-        self.dukazy_cas = QLineEdit()
-        self.dukazy_cas.setPlaceholderText("např. 14:35")
+        self.dukazy_cas = MuTimeLineEdit()
         if saved.get("cas"):
-            self.dukazy_cas.setText(saved.get("cas"))
+            self.dukazy_cas.set_stored_text(saved.get("cas"))
 
         self.dukazy_provedl = ThpWorkerSelector()
         self.dukazy_provedl.setEditable(True)
@@ -167,13 +166,12 @@ class MuZajisteniDukazuWidget(QWidget):
         self.dukazy_datum_fotek = self._new_date_edit()
         if saved.get("datum_fotek"):
             self._set_date_widget(self.dukazy_datum_fotek, saved.get("datum_fotek"))
-        self.dukazy_cas_fotek = QLineEdit()
-        self.dukazy_cas_fotek.setPlaceholderText("čas pořízení fotek / videa")
+        self.dukazy_cas_fotek = MuTimeLineEdit()
         if saved.get("cas_fotek"):
-            self.dukazy_cas_fotek.setText(saved.get("cas_fotek"))
+            self.dukazy_cas_fotek.set_stored_text(saved.get("cas_fotek"))
 
         if saved.get("cas_fotek"):
-            self._dukazy_cas_fotek_manual = saved.get("cas_fotek") != self.dukazy_cas.text()
+            self._dukazy_cas_fotek_manual = self.dukazy_cas_fotek.text() != self.dukazy_cas.text()
         self.dukazy_cas.textChanged.connect(self._sync_dukazy_cas_fotek_from_provedeni)
         self.dukazy_cas_fotek.textChanged.connect(self._on_dukazy_cas_fotek_user_edit)
 
@@ -182,9 +180,8 @@ class MuZajisteniDukazuWidget(QWidget):
         self.dukazy_dochazka_datum = self._new_date_edit()
         if saved.get("dochazka_datum"):
             self._set_date_widget(self.dukazy_dochazka_datum, saved.get("dochazka_datum"))
-        self.dukazy_dochazka_cas = QLineEdit()
-        self.dukazy_dochazka_cas.setPlaceholderText("např. 06:00")
-        self.dukazy_dochazka_cas.setText(saved.get("dochazka_cas", ""))
+        self.dukazy_dochazka_cas = MuTimeLineEdit()
+        self.dukazy_dochazka_cas.set_stored_text(saved.get("dochazka_cas", ""))
         self.dukazy_pracovni_postup_ano_ne = self._radio_choice(["ANO", "NE"])
         self._set_radio_choice(self.dukazy_pracovni_postup_ano_ne, saved.get("pracovni_postup", ""))
         self.dukazy_provozni_dokumentace_text = QTextEdit()
@@ -198,7 +195,7 @@ class MuZajisteniDukazuWidget(QWidget):
         saved = self._saved_data
         if saved.get("datum"):
             self._set_date_widget(self.dukazy_datum, saved.get("datum"))
-        self.dukazy_cas.setText(saved.get("cas", ""))
+        self.dukazy_cas.set_stored_text(saved.get("cas", ""))
         provedl = saved.get("provedl") or ""
         if provedl:
             index = self.dukazy_provedl.findText(provedl)
@@ -224,11 +221,11 @@ class MuZajisteniDukazuWidget(QWidget):
         self.dukazy_nacrt_porizen.setChecked(bool(saved.get("nacrt_porizen", False)))
         if saved.get("datum_fotek"):
             self._set_date_widget(self.dukazy_datum_fotek, saved.get("datum_fotek"))
-        self.dukazy_cas_fotek.setText(saved.get("cas_fotek", ""))
+        self.dukazy_cas_fotek.set_stored_text(saved.get("cas_fotek", ""))
         self._set_radio_choice(self.dukazy_kamerovy_zaznam_ano_ne, saved.get("kamerovy_zaznam", ""))
         if saved.get("dochazka_datum"):
             self._set_date_widget(self.dukazy_dochazka_datum, saved.get("dochazka_datum"))
-        self.dukazy_dochazka_cas.setText(saved.get("dochazka_cas", ""))
+        self.dukazy_dochazka_cas.set_stored_text(saved.get("dochazka_cas", ""))
         self._set_radio_choice(self.dukazy_pracovni_postup_ano_ne, saved.get("pracovni_postup", ""))
         self.dukazy_provozni_dokumentace_text.setPlainText(saved.get("provozni_dokumentace", ""))
         self.dukazy_provozni_zaznamy_text.setPlainText(saved.get("provozni_zaznamy", ""))

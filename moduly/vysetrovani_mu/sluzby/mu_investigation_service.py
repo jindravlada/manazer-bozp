@@ -101,6 +101,7 @@ class MuInvestigationService:
             ishikawa_json=ishikawa_json or "",
         )
         self._apply_oznameni_fields(investigation, kwargs)
+        self._apply_event_origin_fields(investigation, kwargs, default_empty_time=True)
         saved = self.repository.add(investigation)
         saved.number = self._make_number(saved)
         return self.repository.update(saved)
@@ -156,9 +157,25 @@ class MuInvestigationService:
         investigation.zaver_json = zaver_json or ""
         investigation.ishikawa_json = ishikawa_json or ""
         self._apply_oznameni_fields(investigation, kwargs)
+        self._apply_event_origin_fields(investigation, kwargs, default_empty_time=False)
         investigation.updated_at = datetime.now()
 
         return self.repository.update(investigation)
+
+    def _apply_event_origin_fields(
+        self,
+        investigation: MuInvestigation,
+        data: dict,
+        *,
+        default_empty_time: bool,
+    ) -> None:
+        if "event_date" in data:
+            investigation.event_date = data["event_date"]
+        if "event_time" in data:
+            value = data["event_time"]
+            investigation.event_time = value.strip() if isinstance(value, str) else ""
+        elif default_empty_time:
+            investigation.event_time = ""
 
     def _apply_oznameni_fields(self, investigation: MuInvestigation, data: dict) -> None:
         for key in _OZNAMENI_FIELDS:
