@@ -17,6 +17,7 @@ from core.widgets.persistent_tooltips import (
 from core.dashboard.attention_item import ITEM_TYPE_PERIODIC
 from core.dashboard.widget_base import DashboardPanel
 from moduly.agenda.constants import (
+    ITEM_TYPE_AUDIT_PLAN,
     ITEM_TYPE_MEETING,
     ITEM_TYPE_TASK,
     ROW_STATE_CANCELED,
@@ -332,6 +333,8 @@ def build_calendar_day_data(
         and not (item.item_type == ITEM_TYPE_TASK and item.row_state == ROW_STATE_DONE)
         # Vypočítaný výskyt periodické činnosti není termín práce.
         and item.item_type != ITEM_TYPE_PERIODIC
+        # Plán auditu je jen řádek Agendy, ne tečka na ploše.
+        and item.item_type != ITEM_TYPE_AUDIT_PLAN
     ]
 
     by_day: dict[date, list[AgendaItem]] = {}

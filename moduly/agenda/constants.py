@@ -6,11 +6,14 @@ LIST_WINDOW_TITLE = "Agenda"
 
 ITEM_TYPE_TASK = "task"
 ITEM_TYPE_MEETING = "meeting"
+# Plánovaný audit ze spisu. Není nativní typ, aby ho filtry braly jako cizí termín.
+ITEM_TYPE_AUDIT_PLAN = "audit_plan"
 NATIVE_ITEM_TYPES = frozenset({ITEM_TYPE_TASK, ITEM_TYPE_MEETING})
 
 TYPE_LABEL_TASK = "Úkol"
 TYPE_LABEL_TASK_CONTROL = "Kontrola úkolu"
 TYPE_LABEL_MEETING = "Událost"
+TYPE_LABEL_PLAN = "Plán"
 
 TYPE_FILTER_TASKS = "Úkoly"
 TYPE_FILTER_MEETINGS = "Události"

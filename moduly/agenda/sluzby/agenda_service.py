@@ -1,4 +1,4 @@
-"""Agregace úkolů, událostí a termínovaných AttentionItem pro společný pohled Agendy."""
+"""Agregace úkolů, událostí, plánovaných auditů a termínovaných AttentionItem."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ from typing import Any
 from core.shared.task_source_display import task_source_short_labels
 from moduly.agenda.constants import (
     DEFAULT_PRIORITY,
+    ITEM_TYPE_AUDIT_PLAN,
     ITEM_TYPE_MEETING,
     ITEM_TYPE_TASK,
     NATIVE_ITEM_TYPES,
@@ -25,6 +26,7 @@ from moduly.agenda.constants import (
     STATUS_MODE_DONE,
     STATUS_MODE_PLANNED,
     TYPE_LABEL_MEETING,
+    TYPE_LABEL_PLAN,
     TYPE_LABEL_TASK,
     TYPE_LABEL_TASK_CONTROL,
 )
@@ -244,6 +246,73 @@ def _attention_dedup_key(title: str, due_date: date | None, source: str) -> tupl
     )
 
 
+def _planned_audit_title(audit) -> str:
+    """Číslo spisu už obsahuje rok, například 14/2026."""
+    number = (getattr(audit, "number", None) or "").strip()
+    if not number:
+        year = getattr(audit, "year", None) or date.today().year
+        number = f"{int(audit.id)}/{int(year)}"
+    return f"Audit č. {number}"
+
+
+def _from_planned_audits() -> list[AgendaItem]:
+    """Plánované audity přímo ze spisu. Bez úkolu, události i bez zápisu do databáze.
+
+    Řádek není součástí get_attention_items, takže se neobjeví na nástěnce.
+    AttentionItem slouží jen k otevření spisu stávající navigací.
+    """
+    from core.dashboard.attention_item import (
+        ITEM_TYPE_AUDIT,
+        SOURCE_LABEL_AUDIT,
+        AttentionItem,
+    )
+    from moduly.audity.constants import AUDIT_STATUS_PLANOVANO
+    from moduly.audity.sluzby.audit_service import audit_service
+
+    items: list[AgendaItem] = []
+    for audit in audit_service.get_all():
+        planned = getattr(audit, "audit_date", None)
+        if planned is None or audit.started_at is not None or audit.finished_at is not None:
+            continue
+        title = _planned_audit_title(audit)
+        source_id = int(audit.id)
+        sort_key = _build_sort_key(
+            planned,
+            item_type=ITEM_TYPE_AUDIT_PLAN,
+            title=title,
+            source_id=source_id,
+        )
+        open_metadata = {"source_type": ITEM_TYPE_AUDIT, "source_id": source_id}
+        items.append(
+            AgendaItem(
+                item_type=ITEM_TYPE_AUDIT_PLAN,
+                source_id=source_id,
+                type_label=TYPE_LABEL_PLAN,
+                title=title,
+                person="",
+                status=AUDIT_STATUS_PLANOVANO,
+                source=SOURCE_LABEL_AUDIT,
+                priority="",
+                due_date=planned,
+                base_title=title,
+                sort_key=sort_key,
+                open_metadata=dict(open_metadata),
+                attention=AttentionItem(
+                    item_type=ITEM_TYPE_AUDIT,
+                    source_type=ITEM_TYPE_AUDIT,
+                    source_id=source_id,
+                    title=title,
+                    date=planned,
+                    subtitle=SOURCE_LABEL_AUDIT,
+                    status=AUDIT_STATUS_PLANOVANO,
+                    open_metadata=dict(open_metadata),
+                    sort_key=sort_key,
+                ),
+            )
+        )
+    return items
+
+
 def _from_attention_items(*, today: date, existing: list[AgendaItem]) -> list[AgendaItem]:
     """Termínované AttentionItems, které Agenda ještě nemá jako úkol/událost."""
     from core.dashboard.attention_item import (
@@ -302,12 +371,12 @@ def get_agenda_items(
     today: date | None = None,
     now: datetime | None = None,
 ) -> list[AgendaItem]:
-    """Vrátí společný seznam úkolů, událostí a termínovaných AttentionItem."""
+    """Vrátí úkoly, události, plánované audity a termínované AttentionItem."""
     from core.dashboard.attention_item import default_due_priority_sort_key
 
     now = now or datetime.now()
     today = today or now.date()
-    items = _from_tasks(today=today) + _from_meetings(now=now)
+    items = _from_tasks(today=today) + _from_meetings(now=now) + _from_planned_audits()
     items = items + _from_attention_items(today=today, existing=items)
     items.sort(
         key=lambda item: default_due_priority_sort_key(
