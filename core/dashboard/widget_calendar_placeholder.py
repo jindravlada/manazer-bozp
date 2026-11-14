@@ -310,6 +310,8 @@ def _tooltip_block(item: AgendaItem) -> str:
         TYPE_LABEL_MEETING if item.item_type == ITEM_TYPE_MEETING else TYPE_LABEL_TASK
     )
     title = item.tooltip_title
+    if item.item_type == ITEM_TYPE_AUDIT_PLAN:
+        return f"• {type_label} – {title}"
     if item.item_type == ITEM_TYPE_MEETING and item.event_at is not None:
         time_line = _format_time_range(item.event_at, item.ends_at)
         return f"• {time_line}\n  {type_label}\n  {title}"
@@ -333,8 +335,6 @@ def build_calendar_day_data(
         and not (item.item_type == ITEM_TYPE_TASK and item.row_state == ROW_STATE_DONE)
         # Vypočítaný výskyt periodické činnosti není termín práce.
         and item.item_type != ITEM_TYPE_PERIODIC
-        # Plán auditu je jen řádek Agendy, ne tečka na ploše.
-        and item.item_type != ITEM_TYPE_AUDIT_PLAN
     ]
 
     by_day: dict[date, list[AgendaItem]] = {}

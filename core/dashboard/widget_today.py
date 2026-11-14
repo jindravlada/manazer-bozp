@@ -30,6 +30,7 @@ from core.dashboard.attention_service import (
     get_state_supervision_reminder_items,
     get_yearly_plan_month_reminder_items,
     kniha_urazu_reminder_items,
+    planned_audit_reminder_items,
 )
 from core.dashboard.task_links import configure_task_label, task_id_from_link, task_link
 from core.dashboard.widget_base import DashboardPanel
@@ -526,6 +527,7 @@ class TodayWidget(DashboardPanel):
             kniha_urazu_reminder_items(attention_items, today=today),
             today,
         )
+        plan_reminders = planned_audit_reminder_items(today=today)
         self._linked_attention = (
             list(month_burning)
             + list(month_due)
@@ -543,6 +545,7 @@ class TodayWidget(DashboardPanel):
             + list(ss_due)
             + list(ku_burning)
             + list(ku_due)
+            + list(plan_reminders)
         )
 
         entries: list[tuple[tuple, str]] = []
@@ -574,6 +577,8 @@ class TodayWidget(DashboardPanel):
         for item in ss_burning:
             _add_attention(item, "🔴")
         for item in ku_burning:
+            _add_attention(item, "🔴")
+        for item in plan_reminders:
             _add_attention(item, "🔴")
         for task in burning:
             _add_task(task, "🔴")

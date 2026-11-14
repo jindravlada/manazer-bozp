@@ -46,7 +46,8 @@ from core.dashboard.state_supervision_attention import (
 )
 from core.shared.task_source_display import task_source_short_labels
 from core.shared.working_days import first_working_day
-from moduly.agenda.constants import PRIORITY_CRITICAL
+from moduly.agenda.constants import ITEM_TYPE_AUDIT_PLAN, PRIORITY_CRITICAL, TYPE_LABEL_PLAN
+from moduly.audity.constants import AUDIT_STATUS_PLANOVANO
 from moduly.audity.sluzby.audit_service import audit_service
 from moduly.proverky.sluzby.bozp_inspection_service import bozp_inspection_service
 from moduly.rocni_plan.constants import (
@@ -158,6 +159,101 @@ def _from_tasks(_today: date) -> list[AttentionItem]:
             )
         )
     return items
+
+
+def planned_audit_display_name(audit) -> str:
+    """Název plánu z provozu. Číslo spisu je jen náhrada, když provoz chybí."""
+    place = (getattr(audit, "workplace_name", None) or "").strip()
+    if place:
+        return f"Audit {place}"
+    number = (getattr(audit, "number", None) or "").strip()
+    if not number:
+        year = getattr(audit, "year", None) or date.today().year
+        number = f"{int(audit.id)}/{int(year)}"
+    return f"Audit č. {number}"
+
+
+def _is_planned_audit_record(audit) -> bool:
+    return (
+        getattr(audit, "audit_date", None) is not None
+        and getattr(audit, "started_at", None) is None
+        and getattr(audit, "finished_at", None) is None
+    )
+
+
+def _attention_item_is_planned_audit(item: AttentionItem) -> bool:
+    return bool((item.open_metadata or {}).get("planned"))
+
+
+def planned_audit_attention_items() -> list[AttentionItem]:
+    """Plánované audity přímo ze spisu. Bez úkolu, události i bez zápisu do databáze.
+
+    Interní typ zůstává audit, aby stávající navigace otevřela spis.
+    Viditelný typ je Plán. Příznak planned vynechá položku ze souhrnu Po termínu.
+    """
+    items: list[AttentionItem] = []
+    for audit in audit_service.get_all():
+        if not _is_planned_audit_record(audit):
+            continue
+        due = audit.audit_date
+        title = planned_audit_display_name(audit)
+        source_id = int(audit.id)
+        items.append(
+            AttentionItem(
+                item_type=ITEM_TYPE_AUDIT,
+                source_type=ITEM_TYPE_AUDIT,
+                source_id=source_id,
+                title=title,
+                date=due,
+                subtitle=SOURCE_LABEL_AUDIT,
+                status=AUDIT_STATUS_PLANOVANO,
+                priority="",
+                open_metadata={
+                    "source_type": ITEM_TYPE_AUDIT,
+                    "source_id": source_id,
+                    "planned": True,
+                },
+                sort_key=build_sort_key(
+                    due,
+                    item_type=ITEM_TYPE_AUDIT_PLAN,
+                    title=title,
+                    source_id=source_id,
+                ),
+                type_label_override=TYPE_LABEL_PLAN,
+            )
+        )
+    return items
+
+
+def planned_audit_reminder_items(*, today: date | None = None) -> list[AttentionItem]:
+    """Prošlý nezahájený plán. Jen pro Připomínky, ne pro Nadcházející."""
+    today = today or date.today()
+    reminders: list[AttentionItem] = []
+    for item in planned_audit_attention_items():
+        due = item.due_date
+        if due is None or due >= today:
+            continue
+        title = f"Nezahájený plánovaný audit – {item.title}"
+        reminders.append(
+            AttentionItem(
+                item_type=ITEM_TYPE_AUDIT,
+                source_type=ITEM_TYPE_AUDIT,
+                source_id=item.source_id,
+                title=title,
+                date=due,
+                subtitle=SOURCE_LABEL_AUDIT,
+                status=item.status,
+                priority="",
+                open_metadata=dict(item.open_metadata or {}),
+                sort_key=build_sort_key(
+                    due,
+                    item_type=ITEM_TYPE_AUDIT_PLAN,
+                    title=title,
+                    source_id=item.source_id,
+                ),
+            )
+        )
+    return reminders
 
 
 def audit_title(audit) -> str:
@@ -974,7 +1070,8 @@ def get_attention_items(*, today: date | None = None) -> list[AttentionItem]:
     """Vrátí položky pro Nadcházející včetně upozornění na měsíc Ročního plánu.
 
     Automaticky vypočítané periodické termíny sem nepatří. Skutečné úkoly
-    a události ano. Externí Neshody/PKZ sem nepatří — jen dny programu auditu
+    a události ano. Plánovaný audit sem patří, jeho prošlá připomínka ne.
+    Externí Neshody/PKZ sem nepatří — jen dny programu auditu
     a úkoly Agendy. Připomínky findings berou get_external_finding_reminder_items.
     """
     today = today or date.today()
@@ -994,6 +1091,7 @@ def get_attention_items(*, today: date | None = None) -> list[AttentionItem]:
         + _from_accident_extraordinary_exams(today)
         + _from_accident_signed_records(today)
         + _from_accident_updated_record_distribution(today)
+        + planned_audit_attention_items()
     )
     items.sort(key=default_attention_sort_key)
     return items
@@ -1048,13 +1146,18 @@ def overdue_attention_items(
     *,
     today: date | None = None,
 ) -> list[AttentionItem]:
-    """Neukončené termínové položky, které Nadcházející označují „Po termínu“."""
+    """Neukončené termínové položky, které Nadcházející označují „Po termínu“.
+
+    Plánovaný audit v Nadcházejících zůstává, do tohoto souhrnu se nepočítá.
+    """
     today = today or date.today()
     if items is None:
         items = get_attention_items(today=today)
     seen: set[tuple] = set()
     overdue: list[AttentionItem] = []
     for item in items:
+        if _attention_item_is_planned_audit(item):
+            continue
         if not attention_item_is_overdue(item, today=today):
             continue
         key = attention_item_identity(item)

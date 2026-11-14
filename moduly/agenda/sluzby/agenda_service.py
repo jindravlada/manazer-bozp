@@ -246,68 +246,28 @@ def _attention_dedup_key(title: str, due_date: date | None, source: str) -> tupl
     )
 
 
-def _planned_audit_title(audit) -> str:
-    """Číslo spisu už obsahuje rok, například 14/2026."""
-    number = (getattr(audit, "number", None) or "").strip()
-    if not number:
-        year = getattr(audit, "year", None) or date.today().year
-        number = f"{int(audit.id)}/{int(year)}"
-    return f"Audit č. {number}"
-
-
 def _from_planned_audits() -> list[AgendaItem]:
-    """Plánované audity přímo ze spisu. Bez úkolu, události i bez zápisu do databáze.
-
-    Řádek není součástí get_attention_items, takže se neobjeví na nástěnce.
-    AttentionItem slouží jen k otevření spisu stávající navigací.
-    """
-    from core.dashboard.attention_item import (
-        ITEM_TYPE_AUDIT,
-        SOURCE_LABEL_AUDIT,
-        AttentionItem,
-    )
-    from moduly.audity.constants import AUDIT_STATUS_PLANOVANO
-    from moduly.audity.sluzby.audit_service import audit_service
+    """Plánované audity ze společného čtení spisu. Bez úkolu, události i bez zápisu."""
+    from core.dashboard.attention_service import planned_audit_attention_items
 
     items: list[AgendaItem] = []
-    for audit in audit_service.get_all():
-        planned = getattr(audit, "audit_date", None)
-        if planned is None or audit.started_at is not None or audit.finished_at is not None:
-            continue
-        title = _planned_audit_title(audit)
-        source_id = int(audit.id)
-        sort_key = _build_sort_key(
-            planned,
-            item_type=ITEM_TYPE_AUDIT_PLAN,
-            title=title,
-            source_id=source_id,
-        )
-        open_metadata = {"source_type": ITEM_TYPE_AUDIT, "source_id": source_id}
+    for attention in planned_audit_attention_items():
+        title = attention.title
         items.append(
             AgendaItem(
                 item_type=ITEM_TYPE_AUDIT_PLAN,
-                source_id=source_id,
+                source_id=int(attention.source_id),
                 type_label=TYPE_LABEL_PLAN,
                 title=title,
                 person="",
-                status=AUDIT_STATUS_PLANOVANO,
-                source=SOURCE_LABEL_AUDIT,
+                status=attention.status,
+                source=attention.source_label,
                 priority="",
-                due_date=planned,
+                due_date=attention.due_date,
                 base_title=title,
-                sort_key=sort_key,
-                open_metadata=dict(open_metadata),
-                attention=AttentionItem(
-                    item_type=ITEM_TYPE_AUDIT,
-                    source_type=ITEM_TYPE_AUDIT,
-                    source_id=source_id,
-                    title=title,
-                    date=planned,
-                    subtitle=SOURCE_LABEL_AUDIT,
-                    status=AUDIT_STATUS_PLANOVANO,
-                    open_metadata=dict(open_metadata),
-                    sort_key=sort_key,
-                ),
+                sort_key=attention.sort_key,
+                open_metadata=dict(attention.open_metadata or {}),
+                attention=attention,
             )
         )
     return items
@@ -322,6 +282,7 @@ def _from_attention_items(*, today: date, existing: list[AgendaItem]) -> list[Ag
     from core.dashboard.attention_service import get_attention_items
 
     seen_native = {(item.item_type, int(item.source_id)) for item in existing}
+    # Plán už je v seznamu podle ID spisu. Stejný název a den nesmí druhý audit zahodit.
     seen_substance = {
         _attention_dedup_key(item.title, item.due_date, item.source)
         for item in existing
@@ -329,6 +290,8 @@ def _from_attention_items(*, today: date, existing: list[AgendaItem]) -> list[Ag
     items: list[AgendaItem] = []
     for attention in get_attention_items(today=today):
         if attention.item_type == ITEM_TYPE_PERIODIC:
+            continue
+        if (attention.open_metadata or {}).get("planned"):
             continue
         if attention.item_type in NATIVE_ITEM_TYPES:
             continue
