@@ -552,8 +552,18 @@ class TestExamsTab(QWidget):
             QMessageBox.warning(self, MODULE_NAME, str(error))
             return
         dialog.exec()
-        if dialog.evaluated:
-            self.focus_exam(exam_id)
+        if not dialog.evaluated:
+            self._update_action_buttons()
+            return
+        self.focus_exam(exam_id)
+        self._show_saved_exam_result(exam_id)
+
+    def _show_saved_exam_result(self, exam_id: int) -> None:
+        """Souhrn už uloženého výsledku. Zavření nic nezapisuje znovu."""
+        detail = TestExamDetailDialog(self, exam_id=exam_id)
+        detail.exec()
+        if detail.results_changed or detail.protocol_changed:
+            self.refresh()
         else:
             self._update_action_buttons()
 

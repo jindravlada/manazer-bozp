@@ -50,10 +50,13 @@ from moduly.testy.constants import (
     ORAL_FAILURE_CLEAR_CONFIRM,
     ORAL_FAILURE_CONFIRM,
     ORAL_PART_FAILED_LINE,
+    WRITTEN_RESULT_FAILED,
+    WRITTEN_RESULT_PASSED,
     WRITTEN_RESULT_UNRATED,
     WRITTEN_RESULT_UNRATED_LABEL,
     written_result_label,
 )
+from moduly.testy.sluzby.exam_protocol_layout import ERROR_LIST_HEADING
 
 from moduly.testy.sluzby.exam_signed_protocol_service import (
     ExamSignedProtocolError,
@@ -67,7 +70,10 @@ from moduly.testy.sluzby.test_exam_service import (
     test_exam_service,
 )
 from moduly.testy.sluzby.written_answer_presentation import (
+    CORRECT_COLOR,
+    ERROR_COLOR,
     UNANSWERED_ERROR,
+    is_incorrect_or_unanswered,
     present_answer,
     qt_answer_style,
     selected_answer,
@@ -92,6 +98,15 @@ class TestExamDetailDialog(QDialog):
         layout = QVBoxLayout(self)
         host = QWidget()
         form = QVBoxLayout(host)
+        self.result_banner = QLabel()
+        self.result_banner.setObjectName("exam-result-banner")
+        self.result_banner.setTextFormat(Qt.TextFormat.PlainText)
+        self.result_banner.setWordWrap(True)
+        self.result_banner.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextSelectableByMouse
+        )
+        self.result_banner.hide()
+        form.addWidget(self.result_banner)
         self.summary = QLabel()
         self.summary.setTextFormat(Qt.TextFormat.PlainText)
         self.summary.setWordWrap(True)
@@ -106,6 +121,11 @@ class TestExamDetailDialog(QDialog):
         )
         self.written_summary.hide()
         form.addWidget(self.written_summary)
+        self.written_errors_box = QGroupBox(ERROR_LIST_HEADING)
+        self.written_errors_box.setObjectName("exam-written-errors")
+        self.written_errors_layout = QVBoxLayout(self.written_errors_box)
+        self.written_errors_box.hide()
+        form.addWidget(self.written_errors_box)
         self.oral_failure_button = QPushButton()
         self.oral_failure_button.setObjectName("exam-oral-failure-button")
         self.oral_failure_button.setAutoDefault(False)
@@ -171,6 +191,8 @@ class TestExamDetailDialog(QDialog):
         exam = test_exam_service.get_exam(exam_id)
         if exam is None:
             self.summary.setText("Zkouška nebyla nalezena.")
+            self._clear_result_banner()
+            self._clear_written_errors()
             self.oral_failure_button.hide()
             self._show_protocol(completed=False, attached=False)
             return
@@ -184,6 +206,8 @@ class TestExamDetailDialog(QDialog):
         oral = test_exam_service.get_oral_questions(exam.id)
         self._fill_summary(exam, commission, written)
         self._fill_written_summary(exam)
+        self._fill_result_banner(exam)
+        self._fill_written_errors(exam, written)
         self._sync_oral_failure_button(exam)
         self._sync_protocol(exam)
         self._fill_written(exam, written)
@@ -246,6 +270,66 @@ class TestExamDetailDialog(QDialog):
         lines.append(f"Výsledek zkoušky: {written_result_label(exam.exam_result)}")
         self.written_summary.setText("\n".join(lines))
         self.written_summary.show()
+
+    def _fill_result_banner(self, exam) -> None:
+        """Výrazný uložený výsledek. Stejné označení jako ve souhrnu, jen barva."""
+        code = str(exam.exam_result or "").strip()
+        if (
+            exam.status == EXAM_STATUS_TECHNICAL
+            or not exam.written_result
+            or exam.written_result == WRITTEN_RESULT_UNRATED
+            or code not in {WRITTEN_RESULT_PASSED, WRITTEN_RESULT_FAILED}
+        ):
+            self._clear_result_banner()
+            return
+        color = CORRECT_COLOR if code == WRITTEN_RESULT_PASSED else ERROR_COLOR
+        self.result_banner.setText(f"Výsledek zkoušky: {written_result_label(code)}")
+        self.result_banner.setStyleSheet(
+            f"color: {color}; font-weight: 700; font-size: 18px;"
+        )
+        self.result_banner.show()
+
+    def _clear_result_banner(self) -> None:
+        self.result_banner.clear()
+        self.result_banner.setStyleSheet("")
+        self.result_banner.hide()
+
+    def _fill_written_errors(self, exam, questions) -> None:
+        """Jen chybné a nezodpovězené otázky. Úplný výpis odpovědí zůstává níž."""
+        self._clear_written_errors()
+        if (
+            exam.status == EXAM_STATUS_TECHNICAL
+            or not exam.written_result
+            or exam.written_result == WRITTEN_RESULT_UNRATED
+        ):
+            return
+        choices = {
+            int(choice.exam_question_id): choice
+            for choice in test_exam_service.get_written_choices(exam.id)
+        }
+        for question in questions:
+            answers = test_exam_service.get_written_answers(question.id)
+            selected = selected_answer(answers, choices.get(int(question.id)))
+            if not is_incorrect_or_unanswered(selected):
+                continue
+            label = QLabel()
+            label.setObjectName(f"written-error-{question.position}")
+            label.setTextFormat(Qt.TextFormat.PlainText)
+            label.setWordWrap(True)
+            label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+            label.setText(f"{int(question.position)}. {question.text}")
+            self.written_errors_layout.addWidget(label)
+        if self.written_errors_layout.count():
+            self.written_errors_box.show()
+
+    def _clear_written_errors(self) -> None:
+        while self.written_errors_layout.count():
+            item = self.written_errors_layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.setParent(None)
+                widget.deleteLater()
+        self.written_errors_box.hide()
 
     def _sync_oral_failure_button(self, exam) -> None:
         action = test_exam_service.oral_failure_action(exam)
