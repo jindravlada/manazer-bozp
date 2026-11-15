@@ -2,6 +2,12 @@
 
 Aktuální verze: 4.2.1
 
+### 🎬 Videonávody a ukázky programu
+
+Na oficiálním YouTube kanálu najdete představení Manažera BOZP, ukázky jednotlivých modulů, návody k jejich používání i přehledy novinek.
+
+**▶️ [Navštívit YouTube kanál Manažer BOZP](https://www.youtube.com/@ManazerBOZP)**
+
 ## 📥 Stažení aplikace
 
 Hotovou aplikaci není nutné sestavovat ze zdrojových kódů. Ke stažení je poslední zveřejněné vydání 4.2.0. Balíčky verze 4.2.1 se teprve připravují.

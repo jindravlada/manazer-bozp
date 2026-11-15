@@ -15,6 +15,7 @@ OFFICIAL_GPL3_SHA256 = (
 )
 _MARKDOWN_LINK = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 _RELEASE_PREFIX = "https://github.com/jindravlada/manazer-bozp/releases"
+OFFICIAL_YOUTUBE_URL = "https://www.youtube.com/@ManazerBOZP"
 # Měň jen ve chvíli, kdy je daný balíček skutečně na stránce vydání.
 # Dokud se liší od APP_VERSION, README smí tento soubor jen pojmenovat, ne na něj odkazovat.
 LAST_PUBLISHED_LINUX_VERSION = "4.2.0"
@@ -72,6 +73,11 @@ class PublicLicenseDocsTestCase(unittest.TestCase):
         self.assertTrue(readme.startswith(f"# Manažer BOZP {APP_VERSION}"))
         self.assertIn(f"Aktuální verze: {APP_VERSION}", readme)
         self.assertIn("GPL-3.0-or-later", readme)
+        self.assertEqual(readme.count(OFFICIAL_YOUTUBE_URL), 1)
+        self.assertLess(
+            readme.index("### 🎬 Videonávody a ukázky programu"),
+            readme.index("## 📥 Stažení aplikace"),
+        )
         self.assertIn("Copyright © 2026 Ing. Vladimír Jindra", readme)
         self.assertNotIn("/home/", readme)
         self.assertNotIn("C:\\Users\\", readme)
@@ -135,6 +141,8 @@ class PublicLicenseDocsTestCase(unittest.TestCase):
                 self.assertIn(target, allowed_release_downloads)
                 continue
             if target.startswith(_RELEASE_PREFIX):
+                continue
+            if target == OFFICIAL_YOUTUBE_URL:
                 continue
             self.assertFalse(target.startswith(("http://", "https://")), target)
             self.assertTrue((readme_path.parent / target).is_file(), target)
