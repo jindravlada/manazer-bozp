@@ -1,6 +1,6 @@
 # Manažer BOZP 4.2.1
 
-Verze 4.2.1 navazuje na veřejné vydání 4.2.0. Datum vydání se doplní při zveřejnění. Linuxový AppImage a instalační program pro Windows se k tomuto textu připojí až jako soubory vydání.
+Verze 4.2.1 navazuje na veřejné vydání 4.2.0. Datum vydání je 15. listopadu 2026. K vydání patří Linux AppImage `Manazer-BOZP-4.2.1-x86_64.AppImage` a Windows instalátor `Manazer_BOZP_4_2_1_Setup.exe`.
 
 ### 🎬 Videonávody a ukázky programu
 

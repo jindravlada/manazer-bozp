@@ -16,10 +16,10 @@ OFFICIAL_GPL3_SHA256 = (
 _MARKDOWN_LINK = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 _RELEASE_PREFIX = "https://github.com/jindravlada/manazer-bozp/releases"
 OFFICIAL_YOUTUBE_URL = "https://www.youtube.com/@ManazerBOZP"
-# Měň jen ve chvíli, kdy je daný balíček skutečně na stránce vydání.
+# Měň jen ve chvíli, kdy je daný balíček určený ke zveřejnění.
 # Dokud se liší od APP_VERSION, README smí tento soubor jen pojmenovat, ne na něj odkazovat.
-LAST_PUBLISHED_LINUX_VERSION = "4.2.0"
-LAST_PUBLISHED_WINDOWS_VERSION = "4.1.3"
+LAST_PUBLISHED_LINUX_VERSION = "4.2.1"
+LAST_PUBLISHED_WINDOWS_VERSION = "4.2.1"
 
 
 def _release_asset_url(version: str, filename: str) -> str:

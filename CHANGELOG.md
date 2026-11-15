@@ -18,7 +18,7 @@
 
 Datum vydání:
 
-Připravuje se
+15. listopadu 2026
 
 Změny od veřejné verze 4.2.0.
 
