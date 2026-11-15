@@ -1,10 +1,10 @@
 # Manažer BOZP 4.2.1
 
-Aktuální verze ve zdrojových kódech: 4.2.1
+Aktuální verze: 4.2.1
 
 ## 📥 Stažení aplikace
 
-Hotovou aplikaci není nutné sestavovat ze zdrojových kódů. Ke stažení je poslední zveřejněné vydání 4.2.0.
+Hotovou aplikaci není nutné sestavovat ze zdrojových kódů. Ke stažení je poslední zveřejněné vydání 4.2.0. Balíčky verze 4.2.1 se teprve připravují.
 
 ### Linux
 
@@ -14,11 +14,15 @@ Hotovou aplikaci není nutné sestavovat ze zdrojových kódů. Ke stažení je 
 
 Po stažení nastavte soubor jako spustitelný a spusťte jej.
 
+Připravovaný soubor verze 4.2.1: `Manazer-BOZP-4.2.1-x86_64.AppImage`.
+
+AppImage verze 4.2.1 zatím není dostupný.
+
 ### Windows
 
 **Poslední dostupná verze: Manažer BOZP 4.1.3 – instalační program**
 
-Instalátor verze 4.2.0 zatím není dostupný.
+Instalátor verze 4.2.1 zatím není dostupný.
 
 [⬇️ Stáhnout Manažer BOZP 4.1.3 pro Windows](https://github.com/jindravlada/manazer-bozp/releases/download/v4.1.3/Manazer_BOZP_4_1_3_Setup.exe)
 

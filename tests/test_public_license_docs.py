@@ -15,12 +15,22 @@ OFFICIAL_GPL3_SHA256 = (
 )
 _MARKDOWN_LINK = re.compile(r"\[[^\]]+\]\(([^)]+)\)")
 _RELEASE_PREFIX = "https://github.com/jindravlada/manazer-bozp/releases"
-# Linuxové stažení sleduje APP_VERSION. Tuto konstantu měň jen při novém Windows instalátoru.
+# Měň jen ve chvíli, kdy je daný balíček skutečně na stránce vydání.
+# Dokud se liší od APP_VERSION, README smí tento soubor jen pojmenovat, ne na něj odkazovat.
+LAST_PUBLISHED_LINUX_VERSION = "4.2.0"
 LAST_PUBLISHED_WINDOWS_VERSION = "4.1.3"
 
 
 def _release_asset_url(version: str, filename: str) -> str:
     return f"{_RELEASE_PREFIX}/download/v{version}/{filename}"
+
+
+def _linux_asset_name(version: str) -> str:
+    return f"Manazer-BOZP-{version}-x86_64.AppImage"
+
+
+def _windows_asset_name(version: str) -> str:
+    return f"Manazer_BOZP_{version.replace('.', '_')}_Setup.exe"
 
 
 def _between(text: str, start: str, end: str) -> str:
@@ -66,26 +76,41 @@ class PublicLicenseDocsTestCase(unittest.TestCase):
         self.assertNotIn("/home/", readme)
         self.assertNotIn("C:\\Users\\", readme)
         self.assertNotIn("DOKUMENTACE.md", readme)
-        linux_url = _release_asset_url(
-            APP_VERSION,
-            f"Manazer-BOZP-{APP_VERSION}-x86_64.AppImage",
-        )
-        windows_filename = (
-            "Manazer_BOZP_"
-            f"{LAST_PUBLISHED_WINDOWS_VERSION.replace('.', '_')}_Setup.exe"
+        prepared_linux_name = _linux_asset_name(APP_VERSION)
+        published_linux_url = _release_asset_url(
+            LAST_PUBLISHED_LINUX_VERSION,
+            _linux_asset_name(LAST_PUBLISHED_LINUX_VERSION),
         )
         windows_url = _release_asset_url(
             LAST_PUBLISHED_WINDOWS_VERSION,
-            windows_filename,
+            _windows_asset_name(LAST_PUBLISHED_WINDOWS_VERSION),
         )
         linux_section = _between(readme, "### Linux", "### Windows")
         windows_section = _between(readme, "### Windows", "## O aplikaci")
-        self.assertIn(linux_url, linux_section)
+        self.assertIn(prepared_linux_name, linux_section)
+        self.assertIn(published_linux_url, linux_section)
         self.assertNotIn(windows_url, linux_section)
         self.assertIn(windows_url, windows_section)
-        self.assertNotIn(linux_url, windows_section)
+        self.assertNotIn(published_linux_url, windows_section)
+        self.assertNotIn(prepared_linux_name, windows_section)
         self.assertNotIn("4.0.10", linux_section)
         self.assertNotIn("4.0.10", windows_section)
+        self.assertIn(
+            f"Současná veřejná verze je {LAST_PUBLISHED_LINUX_VERSION}.",
+            readme,
+        )
+        if LAST_PUBLISHED_LINUX_VERSION != APP_VERSION:
+            self.assertIn(
+                f"AppImage verze {APP_VERSION} zatím není dostupný.",
+                linux_section,
+            )
+            self.assertNotIn(
+                _release_asset_url(APP_VERSION, prepared_linux_name),
+                readme,
+            )
+        else:
+            self.assertNotIn("AppImage verze", linux_section)
+            self.assertNotIn("zatím není dostupný", linux_section)
         if LAST_PUBLISHED_WINDOWS_VERSION != APP_VERSION:
             self.assertIn("Poslední dostupná verze", windows_section)
             self.assertIn(LAST_PUBLISHED_WINDOWS_VERSION, windows_section)
@@ -93,11 +118,22 @@ class PublicLicenseDocsTestCase(unittest.TestCase):
                 f"Instalátor verze {APP_VERSION} zatím není dostupný.",
                 windows_section,
             )
+            self.assertNotIn(
+                _release_asset_url(
+                    APP_VERSION,
+                    _windows_asset_name(APP_VERSION),
+                ),
+                readme,
+            )
         else:
             self.assertNotIn("zatím není dostupný", windows_section)
 
+        allowed_release_downloads = {published_linux_url, windows_url}
         for match in _MARKDOWN_LINK.finditer(readme):
             target = match.group(1).strip()
+            if target.startswith(f"{_RELEASE_PREFIX}/download/"):
+                self.assertIn(target, allowed_release_downloads)
+                continue
             if target.startswith(_RELEASE_PREFIX):
                 continue
             self.assertFalse(target.startswith(("http://", "https://")), target)

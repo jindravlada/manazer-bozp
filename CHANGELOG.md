@@ -18,7 +18,7 @@
 
 Datum vydání:
 
-6. 11. 2026
+Připravuje se
 
 Změny od veřejné verze 4.2.0.
 
@@ -44,6 +44,10 @@ Kniha úrazů
 Audity
 
 - Text zjištění z předchozích auditů zůstává celý. Do přehledu se už nebere jen první řádek oříznutý na 120 znaků.
+- Plánovaný audit se sám ukáže v Agendě. Jde o audit s datem, který ještě nebyl zahájen ani ukončen.
+- Stejný plán je na pracovní ploše v Nadcházejících a v kalendáři v den auditu.
+- Prošlý nezahájený audit se objeví v Připomínkách.
+- Tyto plány se nepočítají do souhrnného počtu položek Po termínu.
 
 Vyšetřování mimořádných událostí
 
@@ -52,6 +56,18 @@ Vyšetřování mimořádných událostí
 - Datum a čas téže události jsou na jednom řádku v oznámení, zajištění důkazů, milníku časové osy i u lékařské prohlídky.
 - Záložka Přílohy na konci spisu ukazuje všechny přílohy vyšetřování jen ke čtení. Zařazení se bere z existující vazby nebo z předpony názvu. Soubory se nekopírují a záznamy příloh se nemění.
 - U školení lze vyplnit platnost do. Prázdná hodnota zůstane prázdná. U zkoušek platnost beze změny znamená platnost bez časového omezení; rok 2999 se nepřepisuje.
+
+Testy
+
+- Po úspěšném uložení odpovědí papírového testu se sám otevře detail zkoušky.
+- Výsledek Vyhověl(a) nebo Nevyhověl(a) je zvýrazněný.
+- Detail vypíše chybně zodpovězené a nezodpovězené otázky. Když žádné nejsou, prázdný seznam se neukáže.
+- Zrušené nebo neúspěšné uložení detail neotevře. Zkouška zůstane v původním stavu.
+
+Ochrana databáze
+
+- Před změnou databáze na verzi 4.2.1 se automaticky vytvoří záloha a ověří se její integrita.
+- Když se zálohu nepodaří vytvořit nebo ověřit, migrace se nespustí a původní databáze zůstane beze změny.
 
 ---
 
